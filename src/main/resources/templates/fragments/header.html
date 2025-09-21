@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- Luxury Header Fragment -->
+    <header th:fragment="site-header" class="luxury-header">
+        <nav class="navbar navbar-expand-lg luxury-navbar fixed-top" id="luxuryNavbar">
+            <div class="container">
+                <!-- Logo -->
+                <a class="navbar-brand" th:href="@{/}">
+                    <i class="fas fa-utensils luxury-icon"></i>
+                    <span class="brand-text">Aurelius</span>
+                </a>
+                
+                <!-- Mobile Toggle Button -->
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" 
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon">
+                        <i class="fas fa-bars"></i>
+                    </span>
+                </button>
+                
+                <!-- Navigation Menu -->
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/}" th:classappend="${currentPath == '/'} ? 'active' : ''">
+                                <i class="fas fa-home nav-icon"></i>
+                                <span>Home</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/restaurants}" th:classappend="${#strings.startsWith(currentPath, '/restaurants')} ? 'active' : ''">
+                                <i class="fas fa-utensils nav-icon"></i>
+                                <span>Restaurants</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/about}" th:classappend="${currentPath == '/about'} ? 'active' : ''">
+                                <i class="fas fa-info-circle nav-icon"></i>
+                                <span>About</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/contact}" th:classappend="${currentPath == '/contact'} ? 'active' : ''">
+                                <i class="fas fa-envelope nav-icon"></i>
+                                <span>Contact</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="isAuthenticated()">
+                            <a class="nav-link" th:href="@{/booking/my}" th:classappend="${#strings.startsWith(currentPath, '/booking/my')} ? 'active' : ''">
+                                <i class="fas fa-calendar-alt nav-icon"></i>
+                                <span>My Reservations</span>
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Auth & CTA Buttons -->
+                    <ul class="navbar-nav">
+                        <!-- Guest Buttons -->
+                        <li class="nav-item" sec:authorize="!isAuthenticated()">
+                            <a th:href="@{/login}" class="btn btn-outline-luxury me-2">
+                                <i class="fas fa-sign-in-alt"></i>
+                                <span>Sign In</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="!isAuthenticated()">
+                            <a th:href="@{/auth/register}" class="btn btn-outline-luxury me-2">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Sign Up</span>
+                            </a>
+                        </li>
+                        
+                        <!-- User Dropdown -->
+                        <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                            <a class="nav-link dropdown-toggle user-dropdown" href="#" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle nav-icon"></i>
+                                <span sec:authentication="name">User</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end luxury-dropdown">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/auth/profile}">
+                                        <i class="fas fa-user luxury-icon"></i>
+                                        Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/booking/my}">
+                                        <i class="fas fa-calendar-alt luxury-icon"></i>
+                                        My Reservations
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form th:action="@{/logout}" method="post" class="d-inline">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fas fa-sign-out-alt luxury-icon"></i>
+                                            Sign Out
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                        
+                        <!-- Main CTA Button -->
+                        <li class="nav-item">
+                            <a th:href="@{/booking/new}" class="btn btn-book-table ms-2">
+                                <i class="fas fa-calendar-plus"></i>
+                                <span>Book Table</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+</body>
+</html> 

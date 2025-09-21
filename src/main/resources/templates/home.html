@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurelius Fine Dining - Experience Culinary Excellence</title>
+    <meta name="description" content="Experience fine dining at its finest. Reserve your table at Aurelius - where culinary excellence meets exceptional service.">
+    <meta name="keywords" content="fine dining, restaurant, luxury dining, table reservation, gourmet food">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Aurelius Fine Dining - Experience Culinary Excellence">
+    <meta property="og:description" content="Experience fine dining at its finest. Reserve your table at Aurelius - where culinary excellence meets exceptional service.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80">
+    <meta property="og:url" content="https://aurelius-dining.com">
+    <meta property="og:type" content="website">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Luxury CSS -->
+    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="fragments/header :: site-header"></div>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Flash Messages -->
+        <div class="container">
+            <div th:insert="fragments/flash :: flash"></div>
+        </div>
+        
+        <!-- Hero Section -->
+        <section class="hero" id="hero">
+            <div class="hero__background"></div>
+            <div class="hero__overlay"></div>
+                
+                <div class="container">
+                    <div class="row min-vh-100 align-items-center">
+                        <div class="col-lg-6">
+                        <div class="hero__content" data-aos="fade-up">
+                            <h1 class="hero__title">Trải nghiệm ẩm thực đẳng cấp</h1>
+                            <h2 class="hero__subtitle">Đặt bàn ngay hôm nay</h2>
+                            <p class="hero__description">
+                                Hành trình ẩm thực không thể quên, nơi mỗi món ăn là một kiệt tác được chế tác với đam mê và phục vụ với sự tao nhã.
+                            </p>
+                            <div class="hero__buttons">
+                                <a th:href="@{/booking/new}" class="btn btn--gold btn--large">
+                                        <i class="fas fa-calendar-plus"></i>
+                                    <span>Đặt bàn ngay</span>
+                                </a>
+                                <a href="#restaurants" class="btn btn--outline btn--large">
+                                    <i class="fas fa-utensils"></i>
+                                    <span>Khám phá menu</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-6">
+                        <div class="hero__booking-form" data-aos="fade-left" data-aos-delay="200">
+                            <div class="booking-card">
+                                <h3 class="booking-card__title">
+                                    <i class="fas fa-concierge-bell"></i>
+                                    Đặt bàn nhanh
+                                    </h3>
+                                    
+                                <form class="booking-form" method="get" action="#" th:action="@{/booking/search}">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                            <label for="date" class="form-label">
+                                                <i class="fas fa-calendar"></i> Ngày
+                                                </label>
+                                            <input type="date" id="date" name="date" class="form-control" required>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                            <label for="time" class="form-label">
+                                                <i class="fas fa-clock"></i> Giờ
+                                                </label>
+                                            <select id="time" name="time" class="form-control" required>
+                                                <option value="">Chọn giờ</option>
+                                                <option value="18:00">18:00</option>
+                                                <option value="18:30">18:30</option>
+                                                <option value="19:00">19:00</option>
+                                                <option value="19:30">19:30</option>
+                                                <option value="20:00">20:00</option>
+                                                <option value="20:30">20:30</option>
+                                                <option value="21:00">21:00</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                            <label for="guests" class="form-label">
+                                                <i class="fas fa-users"></i> Số khách
+                                                </label>
+                                            <select id="guests" name="guests" class="form-control" required>
+                                                <option value="">Số khách</option>
+                                                <option value="1">1 khách</option>
+                                                <option value="2">2 khách</option>
+                                                <option value="3">3 khách</option>
+                                                <option value="4">4 khách</option>
+                                                <option value="5">5 khách</option>
+                                                <option value="6">6 khách</option>
+                                                <option value="8">8 khách</option>
+                                                <option value="10">10+ khách</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                            <label for="location" class="form-label">
+                                                <i class="fas fa-map-marker-alt"></i> Vị trí
+                                            </label>
+                                            <select id="location" name="q" class="form-control">
+                                                <option value="">Tất cả địa điểm</option>
+                                                <option value="district-1">Quận 1</option>
+                                                <option value="district-3">Quận 3</option>
+                                                <option value="district-7">Quận 7</option>
+                                                <option value="binh-thanh">Bình Thạnh</option>
+                                            </select>
+                                        </div>
+                                        </div>
+                                        
+                                    <button type="submit" class="btn btn--gold w-100">
+                                        <i class="fas fa-search"></i>
+                                        <span>Tìm bàn</span>
+                                        </button>
+                                    </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="how-it-works" id="how-it-works">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 text-center mb-5">
+                        <h2 class="section__title" data-aos="fade-up">Cách thức hoạt động</h2>
+                        <p class="section__subtitle" data-aos="fade-up" data-aos-delay="100">Đặt bàn chỉ với 3 bước đơn giản</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="step-card" data-aos="fade-up" data-aos-delay="200">
+                            <div class="step-card__icon">
+                                <i class="fas fa-search"></i>
+                                <span class="step-number">1</span>
+                            </div>
+                            <h4 class="step-card__title">Tìm kiếm</h4>
+                            <p class="step-card__description">
+                                Chọn ngày, giờ và số khách để tìm nhà hàng phù hợp với nhu cầu của bạn.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="step-card" data-aos="fade-up" data-aos-delay="300">
+                            <div class="step-card__icon">
+                                <i class="fas fa-chair"></i>
+                                <span class="step-number">2</span>
+                            </div>
+                            <h4 class="step-card__title">Chọn bàn</h4>
+                            <p class="step-card__description">
+                                Lựa chọn bàn ưng ý từ danh sách các bàn có sẵn với thông tin chi tiết.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="step-card" data-aos="fade-up" data-aos-delay="400">
+                            <div class="step-card__icon">
+                                <i class="fas fa-check-circle"></i>
+                                <span class="step-number">3</span>
+                            </div>
+                            <h4 class="step-card__title">Xác nhận</h4>
+                            <p class="step-card__description">
+                                Hoàn tất đặt bàn và nhận xác nhận qua email để chuẩn bị cho bữa ăn tuyệt vời.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Restaurants Section -->
+        <section class="restaurants" id="restaurants">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 text-center mb-5">
+                        <h2 class="section__title" data-aos="fade-up">Nhà hàng nổi bật</h2>
+                        <p class="section__subtitle" data-aos="fade-up" data-aos-delay="100">Khám phá những địa điểm ẩm thực đẳng cấp</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="restaurant-card" data-aos="fade-up" data-aos-delay="200">
+                            <div class="restaurant-card__image">
+                                <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                                     alt="Aurelius Downtown" class="img-fluid">
+                                <div class="restaurant-card__overlay">
+                                    <a th:href="@{/restaurants/1}" class="btn btn--gold btn--small">Xem chi tiết</a>
+                                </div>
+                            </div>
+                            <div class="restaurant-card__content">
+                                <h4 class="restaurant-card__title">Aurelius Downtown</h4>
+                                <p class="restaurant-card__location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Quận 1, TP. Hồ Chí Minh
+                                </p>
+                                <div class="restaurant-card__rating">
+                                    <div class="stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <span class="rating-text">5.0 (124 đánh giá)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="restaurant-card" data-aos="fade-up" data-aos-delay="300">
+                            <div class="restaurant-card__image">
+                                <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                                     alt="Aurelius Garden" class="img-fluid">
+                                <div class="restaurant-card__overlay">
+                                    <a th:href="@{/restaurants/2}" class="btn btn--gold btn--small">Xem chi tiết</a>
+                                </div>
+                            </div>
+                            <div class="restaurant-card__content">
+                                <h4 class="restaurant-card__title">Aurelius Garden</h4>
+                                <p class="restaurant-card__location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Quận 3, TP. Hồ Chí Minh
+                                </p>
+                                <div class="restaurant-card__rating">
+                                    <div class="stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <span class="rating-text">4.9 (89 đánh giá)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="restaurant-card" data-aos="fade-up" data-aos-delay="400">
+                            <div class="restaurant-card__image">
+                                <img src="https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                                     alt="Aurelius Rooftop" class="img-fluid">
+                                <div class="restaurant-card__overlay">
+                                    <a th:href="@{/restaurants/3}" class="btn btn--gold btn--small">Xem chi tiết</a>
+                                </div>
+                            </div>
+                            <div class="restaurant-card__content">
+                                <h4 class="restaurant-card__title">Aurelius Rooftop</h4>
+                                <p class="restaurant-card__location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Quận 7, TP. Hồ Chí Minh
+                                </p>
+                                <div class="restaurant-card__rating">
+                                    <div class="stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <span class="rating-text">4.8 (156 đánh giá)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12 text-center mt-4">
+                        <a th:href="@{/restaurants}" class="btn btn--outline btn--large" data-aos="fade-up">
+                            <i class="fas fa-utensils"></i>
+                            <span>Xem tất cả nhà hàng</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section class="testimonials" id="testimonials">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 text-center mb-5">
+                        <h2 class="section__title" data-aos="fade-up">Khách hàng nói gì</h2>
+                        <p class="section__subtitle" data-aos="fade-up" data-aos-delay="100">Trải nghiệm từ những thực khách đã ghé thăm</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="testimonial-card" data-aos="fade-up" data-aos-delay="200">
+                            <div class="testimonial-card__quote">
+                                <i class="fas fa-quote-left"></i>
+                            </div>
+                            <blockquote class="testimonial-card__text">
+                                "Trải nghiệm ẩm thực tuyệt vời nhất mà tôi từng có. Mỗi món ăn đều là một tác phẩm nghệ thuật, 
+                                từ hương vị đến cách trình bày."
+                            </blockquote>
+                            <div class="testimonial-card__author">
+                                <div class="author-avatar">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="author-info">
+                                    <h6 class="author-name">Nguyễn Minh Anh</h6>
+                                    <span class="author-title">Food Blogger</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="testimonial-card" data-aos="fade-up" data-aos-delay="300">
+                            <div class="testimonial-card__quote">
+                                <i class="fas fa-quote-left"></i>
+                            </div>
+                            <blockquote class="testimonial-card__text">
+                                "Dịch vụ hoàn hảo và không gian sang trọng. Aurelius đã tạo nên một kỷ niệm đáng nhớ 
+                                cho buổi tối kỷ niệm của chúng tôi."
+                            </blockquote>
+                            <div class="testimonial-card__author">
+                                <div class="author-avatar">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="author-info">
+                                    <h6 class="author-name">Trần Hoàng Nam</h6>
+                                    <span class="author-title">Doanh nhân</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="testimonial-card" data-aos="fade-up" data-aos-delay="400">
+                            <div class="testimonial-card__quote">
+                                <i class="fas fa-quote-left"></i>
+                            </div>
+                            <blockquote class="testimonial-card__text">
+                                "Chất lượng món ăn xuất sắc và đội ngũ phục vụ chuyên nghiệp. 
+                                Tôi sẽ quay lại và giới thiệu cho bạn bè."
+                            </blockquote>
+                            <div class="testimonial-card__author">
+                                <div class="author-avatar">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <div class="author-info">
+                                    <h6 class="author-name">Lê Thu Hương</h6>
+                                    <span class="author-title">Kiến trúc sư</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta" id="cta">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <div class="cta__content" data-aos="fade-up">
+                            <h2 class="cta__title">Sẵn sàng cho trải nghiệm ẩm thực đẳng cấp?</h2>
+                            <p class="cta__description">
+                                Đặt bàn ngay hôm nay và khám phá hành trình ẩm thực tuyệt vời cùng Aurelius Fine Dining.
+                            </p>
+                            <div class="cta__buttons">
+                                <a th:href="@{/booking/new}" class="btn btn--gold btn--large">
+                                    <i class="fas fa-calendar-plus"></i>
+                                    <span>Đặt bàn ngay</span>
+                                </a>
+                                <a th:href="@{/auth/register}" class="btn btn--outline btn--large">
+                                    <i class="fas fa-user-plus"></i>
+                                    <span>Đăng ký thành viên</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    </div>
+        </section>
+    </main>
+
+    <!-- Footer Fragment -->
+    <div th:insert="fragments/footer :: site-footer"></div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- AOS Animation Library -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <!-- Custom JS -->
+    <script th:src="@{/js/main.js}" defer></script>
+    
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true,
+            offset: 100
+        });
+        
+        // Set minimum date for booking form
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('date');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.min = today;
+                dateInput.value = today;
+            }
+        });
+    </script>
+</body>
+</html>

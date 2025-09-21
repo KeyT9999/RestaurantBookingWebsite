@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Server Error - Aurelius Fine Dining</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Luxury CSS -->
+    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--luxury-black) 0%, var(--luxury-dark) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .error-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80') center/cover no-repeat;
+            opacity: 0.1;
+            z-index: -1;
+        }
+        
+        .error-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(18, 18, 18, 0.95) 100%);
+            border: 2px solid var(--luxury-gold);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.1);
+            backdrop-filter: blur(20px);
+            max-width: 600px;
+            margin: 2rem;
+        }
+        
+        .error-icon {
+            font-size: 5rem;
+            color: var(--luxury-gold);
+            margin-bottom: 1.5rem;
+            text-shadow: 0 4px 8px rgba(212, 175, 55, 0.3);
+        }
+        
+        .error-code {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--luxury-gold);
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .error-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--luxury-white);
+            margin-bottom: 1rem;
+        }
+        
+        .error-message {
+            color: var(--luxury-gray);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        
+        .error-details {
+            background: rgba(26, 26, 26, 0.6);
+            border: 1px solid var(--luxury-gold);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 2rem;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .error-details h6 {
+            color: var(--luxury-gold);
+            margin-bottom: 0.5rem;
+            font-family: 'Lato', sans-serif;
+        }
+        
+        .error-details p {
+            color: var(--luxury-gray);
+            margin: 0.25rem 0;
+        }
+        
+        @media (max-width: 768px) {
+            .error-card {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+            
+            .error-code {
+                font-size: 3rem;
+            }
+            
+            .error-title {
+                font-size: 1.5rem;
+            }
+            
+            .error-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="error-page">
+        <div class="error-card">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            
+            <div class="error-code">500</div>
+            
+            <h1 class="error-title">Internal Server Error</h1>
+            
+            <p class="error-message">
+                We're sorry, but something went wrong on our end. Our culinary team is working to fix this issue.
+                Please try again in a few moments.
+            </p>
+            
+            <div class="error-actions">
+                <a th:href="@{/}" class="btn btn--gold btn--large">
+                    <i class="fas fa-home"></i>
+                    <span>Back to Home</span>
+                </a>
+                <button onclick="window.location.reload()" class="btn btn--outline btn--large">
+                    <i class="fas fa-redo-alt"></i>
+                    <span>Try Again</span>
+                </button>
+            </div>
+            
+            <!-- Error Details (only shown in development) -->
+            <div class="error-details" th:if="${#ctx.variableNames.contains('timestamp')}">
+                <h6><i class="fas fa-bug"></i> Error Details (Development Mode)</h6>
+                <p><strong>Timestamp:</strong> <span th:text="${timestamp}">N/A</span></p>
+                <p><strong>Status:</strong> <span th:text="${status}">500</span></p>
+                <p><strong>Error:</strong> <span th:text="${error}">Internal Server Error</span></p>
+                <p><strong>Message:</strong> <span th:text="${message}">N/A</span></p>
+                <p><strong>Path:</strong> <span th:text="${path}">N/A</span></p>
+                <div th:if="${trace}">
+                    <p><strong>Stack Trace:</strong></p>
+                    <pre style="color: var(--luxury-gray); font-size: 0.8rem; max-height: 200px; overflow-y: auto; white-space: pre-wrap;" th:text="${trace}">N/A</pre>
+                </div>
+            </div>
+            
+            <!-- Contact Support -->
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(212, 175, 55, 0.3);">
+                <p style="color: var(--luxury-gray); margin-bottom: 1rem;">
+                    If the problem persists, please contact our support team:
+                </p>
+                <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+                    <a href="mailto:support@aurelius.com" style="color: var(--luxury-gold); text-decoration: none;">
+                        <i class="fas fa-envelope"></i> support@aurelius.com
+                    </a>
+                    <a href="tel:+84281234567" style="color: var(--luxury-gold); text-decoration: none;">
+                        <i class="fas fa-phone"></i> +84 28 1234 5678
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Auto-refresh after 30 seconds (optional)
+        setTimeout(function() {
+            const refreshBtn = document.querySelector('button[onclick*="reload"]');
+            if (refreshBtn) {
+                refreshBtn.innerHTML = '<i class="fas fa-clock"></i> <span>Auto-refreshing...</span>';
+                refreshBtn.disabled = true;
+                
+                setTimeout(function() {
+                    window.location.reload();
+                }, 3000);
+            }
+        }, 30000);
+        
+        // Add some interactive feedback
+        document.addEventListener('DOMContentLoaded', function() {
+            const errorCard = document.querySelector('.error-card');
+            if (errorCard) {
+                errorCard.style.animation = 'fadeInUp 0.8s ease-out';
+            }
+        });
+        
+        // CSS animation keyframes
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html> 

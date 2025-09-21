@@ -1,0 +1,84 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Gradle
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Application
+logs/
+*.log
+*.log.*
+uploads/
+temp/
+
+# Node.js (if any frontend build)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Security - NEVER commit these
+application-local.yml
+*.key
+*.p12
+*.jks
+
+# Environment variables
+.env
+.env.local
+.env.prod
+
+# Spring profiles with secrets (keep template files only)
+src/main/resources/application-dev.yml
+src/main/resources/application-local.yml
+*secrets*
+*.key
+*.pem
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# JVM
+hs_err_pid*
+replay_pid* 

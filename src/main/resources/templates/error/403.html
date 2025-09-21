@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>403 - Không đủ quyền truy cập</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .debug-info {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .debug-info pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="alert alert-danger">
+                <h2><i class="bi bi-shield-exclamation"></i> 403 - Bạn không có quyền truy cập</h2>
+                <p class="mb-0">Bạn cần có quyền <strong>ROLE_CUSTOMER</strong> để truy cập trang này.</p>
+            </div>
+            
+            <!-- Debug Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-bug"></i> Thông tin Debug</h5>
+                </div>
+                <div class="card-body">
+                    <div class="debug-info" sec:authorize="isAuthenticated()">
+                        <strong>🔐 Authentication Status:</strong> AUTHENTICATED<br/>
+                        <strong>👤 Principal:</strong> <span th:text="${#authentication.name}">N/A</span><br/>
+                        <strong>🎭 Principal Type:</strong> <span th:text="${#authentication.principal.class.simpleName}">N/A</span><br/>
+                        <strong>⚡ Authorities:</strong> <span th:text="${#authentication.authorities}">N/A</span><br/>
+                        
+                        <!-- Nếu là OAuth2User -->
+                        <div th:if="${#authentication.principal.class.simpleName == 'DefaultOAuth2User'}">
+                            <strong>📧 OAuth2 Email:</strong> <span th:text="${#authentication.principal.attributes['email']}">N/A</span><br/>
+                            <strong>📝 OAuth2 Name:</strong> <span th:text="${#authentication.principal.attributes['name']}">N/A</span><br/>
+                        </div>
+                        
+                        <!-- Nếu là User entity -->
+                        <div th:if="${#authentication.principal.class.simpleName == 'User'}">
+                            <strong>🆔 User ID:</strong> <span th:text="${#authentication.principal.id}">N/A</span><br/>
+                            <strong>📧 Email:</strong> <span th:text="${#authentication.principal.email}">N/A</span><br/>
+                            <strong>🎯 Role:</strong> <span th:text="${#authentication.principal.role}">N/A</span><br/>
+                            <strong>✅ Email Verified:</strong> <span th:text="${#authentication.principal.emailVerified}">N/A</span><br/>
+                            <strong>🔓 Enabled:</strong> <span th:text="${#authentication.principal.enabled}">N/A</span><br/>
+                        </div>
+                    </div>
+                    
+                    <div class="debug-info" sec:authorize="!isAuthenticated()">
+                        <strong>🔐 Authentication Status:</strong> <span class="text-danger">NOT AUTHENTICATED</span><br/>
+                        <em>Bạn cần đăng nhập để truy cập trang này.</em>
+                    </div>
+                    
+                    <div class="debug-info">
+                        <strong>🕒 Timestamp:</strong> <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd HH:mm:ss')}">N/A</span><br/>
+                        <strong>🌐 Request URL:</strong> <span th:text="${#httpServletRequest.requestURL}">N/A</span><br/>
+                        <strong>🎯 Required Authority:</strong> <code>ROLE_CUSTOMER</code>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="mt-4 text-center">
+                <a href="/login" class="btn btn-primary me-2">
+                    <i class="bi bi-box-arrow-in-right"></i> Đăng nhập lại
+                </a>
+                <a href="/" class="btn btn-secondary me-2">
+                    <i class="bi bi-house"></i> Về trang chủ
+                </a>
+                <a href="/booking/my" class="btn btn-outline-info">
+                    <i class="bi bi-arrow-clockwise"></i> Thử lại
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

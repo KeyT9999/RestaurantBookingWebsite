@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Aurelius Fine Dining</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Font Awesome for luxury icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --luxury-black: #121212;
+            --luxury-dark: #1A1A1A;
+            --luxury-gold: #D4AF37;
+            --luxury-gold-light: #FFD700;
+            --luxury-gold-dark: #B8941F;
+            --luxury-white: #FFFFFF;
+            --luxury-gray: #E0E0E0;
+            --luxury-gray-dark: #8A8A8A;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background: linear-gradient(135deg, var(--luxury-black) 0%, var(--luxury-dark) 100%);
+            min-height: 100vh;
+            color: var(--luxury-white);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Background Pattern */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80') center/cover no-repeat;
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        .register-container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 40px 0;
+        }
+
+        .register-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(18, 18, 18, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--luxury-gold);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.1);
+            padding: 40px 35px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .register-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--luxury-gold), var(--luxury-gold-light), var(--luxury-gold), var(--luxury-gold-dark));
+            z-index: -1;
+            border-radius: 20px;
+        }
+
+        .brand-section {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .brand-icon {
+            font-size: 3.5rem;
+            color: var(--luxury-gold);
+            margin-bottom: 15px;
+            text-shadow: 0 4px 8px rgba(212, 175, 55, 0.3);
+        }
+
+        .brand-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--luxury-gold);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .brand-subtitle {
+            color: var(--luxury-gray);
+            font-size: 1rem;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .form-control {
+            background: rgba(26, 26, 26, 0.8);
+            border: 2px solid var(--luxury-gold);
+            border-radius: 12px;
+            color: var(--luxury-white);
+            padding: 15px 20px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin-bottom: 5px;
+        }
+
+        .form-control:focus {
+            background: rgba(26, 26, 26, 0.9);
+            border-color: var(--luxury-gold-light);
+            box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+            color: var(--luxury-white);
+        }
+
+        .form-control::placeholder {
+            color: var(--luxury-gray-dark);
+        }
+
+        .form-label {
+            color: var(--luxury-gold);
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+
+        .luxury-icon {
+            color: var(--luxury-gold);
+            margin-right: 6px;
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, var(--luxury-gold) 0%, var(--luxury-gold-light) 100%);
+            border: none;
+            color: var(--luxury-black);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 16px 30px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+            font-size: 1rem;
+        }
+
+        .btn-register:hover {
+            background: var(--luxury-black);
+            color: var(--luxury-gold);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6);
+        }
+
+        .btn-google {
+            background: transparent;
+            border: 2px solid #dc3545;
+            color: #dc3545;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 16px 30px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-google:hover {
+            background: #dc3545;
+            color: var(--luxury-white);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+
+        .divider {
+            position: relative;
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--luxury-gold), transparent);
+        }
+
+        .divider span {
+            background: var(--luxury-dark);
+            padding: 0 20px;
+            color: var(--luxury-gray);
+            font-style: italic;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border-left: 4px solid var(--luxury-gold);
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.9), rgba(187, 45, 59, 0.9));
+            color: var(--luxury-white);
+        }
+
+        .invalid-feedback {
+            color: #ff6b6b;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .link-luxury {
+            color: var(--luxury-gold);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .link-luxury:hover {
+            color: var(--luxury-gold-light);
+            text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
+        }
+
+        .required {
+            color: #ff6b6b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .register-card {
+                padding: 30px 25px;
+            }
+
+            .brand-title {
+                font-size: 1.8rem;
+            }
+
+            .brand-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+    <div class="container">
+        <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6 col-xl-5">
+                    <div class="register-card">
+                        <div class="brand-section">
+                            <div class="brand-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <h1 class="brand-title">Join Aurelius</h1>
+                            <p class="brand-subtitle">Create your dining experience account</p>
+                    </div>
+                    
+                    <!-- Error Message -->
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                            <i class="fas fa-exclamation-triangle luxury-icon"></i>
+                        <span th:text="${errorMessage}"></span>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                    </div>
+                    
+                    <!-- Register Form -->
+                    <form th:action="@{/auth/register}" method="post" th:object="${registerForm}">
+                        
+                        <!-- Username -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                    <i class="fas fa-user luxury-icon"></i> Username <span class="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="username" 
+                                   name="username"
+                                   th:field="*{username}"
+                                   th:classappend="${#fields.hasErrors('username')} ? 'is-invalid' : ''"
+                                   placeholder="Nhập username">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" 
+                                 th:errors="*{username}"></div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                    <i class="fas fa-envelope luxury-icon"></i> Email <span class="required">*</span>
+                            </label>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email"
+                                   th:field="*{email}"
+                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                                   placeholder="Nhập email">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" 
+                                 th:errors="*{email}"></div>
+                        </div>
+                        
+                        <!-- Full Name -->
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label">
+                                    <i class="fas fa-id-card luxury-icon"></i> Họ và tên <span class="required">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="fullName" 
+                                   name="fullName"
+                                   th:field="*{fullName}"
+                                   th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
+                                   placeholder="Nhập họ và tên">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" 
+                                 th:errors="*{fullName}"></div>
+                        </div>
+                        
+                        <!-- Phone Number -->
+                        <div class="mb-3">
+                            <label for="phoneNumber" class="form-label">
+                                    <i class="fas fa-phone luxury-icon"></i> Số điện thoại
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="phoneNumber" 
+                                   name="phoneNumber"
+                                   th:field="*{phoneNumber}"
+                                   th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid' : ''"
+                                   placeholder="Nhập số điện thoại (tùy chọn)">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('phoneNumber')}" 
+                                 th:errors="*{phoneNumber}"></div>
+                        </div>
+                        
+                        <!-- Password -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                    <i class="fas fa-lock luxury-icon"></i> Mật khẩu <span class="required">*</span>
+                            </label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password" 
+                                   name="password"
+                                   th:field="*{password}"
+                                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
+                                   placeholder="Nhập mật khẩu">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" 
+                                 th:errors="*{password}"></div>
+                        </div>
+                        
+                        <!-- Confirm Password -->
+                        <div class="mb-4">
+                            <label for="confirmPassword" class="form-label">
+                                    <i class="fas fa-lock luxury-icon"></i> Xác nhận mật khẩu <span class="required">*</span>
+                            </label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="confirmPassword" 
+                                   name="confirmPassword"
+                                   th:field="*{confirmPassword}"
+                                   th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid' : ''"
+                                   placeholder="Nhập lại mật khẩu">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}" 
+                                 th:errors="*{confirmPassword}"></div>
+                        </div>
+                        
+                        <!-- Register Button -->
+                        <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-register">
+                                    <i class="fas fa-user-plus"></i> Đăng ký
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Divider -->
+                        <div class="divider">
+                            <span>hoặc</span>
+                    </div>
+                    
+                    <!-- Google Register -->
+                        <div class="d-grid mb-4">
+                            <a href="/oauth2/authorization/google" class="btn btn-google">
+                                <i class="fab fa-google"></i> Tiếp tục với Google
+                        </a>
+                    </div>
+                    
+                    <!-- Login Link -->
+                    <div class="text-center">
+                            <p class="mb-0" style="color: var(--luxury-gray);">
+                            Đã có tài khoản? 
+                                <a href="/login" class="link-luxury">
+                                    <i class="fas fa-sign-in-alt"></i> Đăng nhập ngay
+                            </a>
+                        </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Password matching validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+            
+            function validatePasswordMatch() {
+                if (password.value !== confirmPassword.value) {
+                    confirmPassword.setCustomValidity('Mật khẩu xác nhận không khớp');
+                } else {
+                    confirmPassword.setCustomValidity('');
+                }
+            }
+            
+            password.addEventListener('input', validatePasswordMatch);
+            confirmPassword.addEventListener('input', validatePasswordMatch);
+        });
+    </script>
+</body>
+</html> 

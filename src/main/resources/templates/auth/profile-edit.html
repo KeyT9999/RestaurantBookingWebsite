@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh sửa profile - Aurelius Fine Dining</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+</head>
+<body class="bg-dark">
+    <!-- Navigation -->
+    <div th:replace="~{fragments/header :: header}"></div>
+    
+    <div class="container mt-5 pt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card luxury-card">
+                    <div class="card-header text-center">
+                        <i class="fas fa-user-edit luxury-icon fa-2x mb-2"></i>
+                        <h3 class="luxury-title">Chỉnh sửa thông tin cá nhân</h3>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Flash Messages -->
+                        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                            <i class="fas fa-check-circle"></i>
+                            <span th:text="${successMessage}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span th:text="${errorMessage}"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Current Avatar -->
+                            <div class="col-md-4 text-center mb-4">
+                                <div class="mb-3">
+                                    <img th:src="${user.profileImageUrl != null ? user.profileImageUrl : 'https://via.placeholder.com/150x150?text=Avatar'}" 
+                                         class="rounded-circle img-fluid" 
+                                         style="width: 150px; height: 150px; object-fit: cover; border: 3px solid var(--luxury-gold);"
+                                         alt="Profile Image">
+                                </div>
+                                <p class="text-muted">Ảnh đại diện hiện tại</p>
+                            </div>
+                            
+                            <!-- Edit Form -->
+                            <div class="col-md-8">
+                                <form th:action="@{/auth/profile/edit}" method="post" th:object="${profileEditForm}">
+                                    <!-- Full Name -->
+                                    <div class="mb-3">
+                                        <label for="fullName" class="form-label luxury-label">
+                                            <i class="fas fa-user luxury-icon"></i> Họ và tên
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control luxury-input" 
+                                               id="fullName" 
+                                               name="fullName"
+                                               th:field="*{fullName}"
+                                               th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
+                                               placeholder="Nhập họ và tên"
+                                               required>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" 
+                                             th:errors="*{fullName}"></div>
+                                    </div>
+                                    
+                                    <!-- Phone Number -->
+                                    <div class="mb-3">
+                                        <label for="phoneNumber" class="form-label luxury-label">
+                                            <i class="fas fa-phone luxury-icon"></i> Số điện thoại
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control luxury-input" 
+                                               id="phoneNumber" 
+                                               name="phoneNumber"
+                                               th:field="*{phoneNumber}"
+                                               th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid' : ''"
+                                               placeholder="Nhập số điện thoại (tùy chọn)">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('phoneNumber')}" 
+                                             th:errors="*{phoneNumber}"></div>
+                                    </div>
+                                    
+                                    <!-- Address -->
+                                    <div class="mb-4">
+                                        <label for="address" class="form-label luxury-label">
+                                            <i class="fas fa-map-marker-alt luxury-icon"></i> Địa chỉ
+                                        </label>
+                                        <textarea class="form-control luxury-input" 
+                                                  id="address" 
+                                                  name="address"
+                                                  th:field="*{address}"
+                                                  th:classappend="${#fields.hasErrors('address')} ? 'is-invalid' : ''"
+                                                  rows="3"
+                                                  placeholder="Nhập địa chỉ (tùy chọn)"></textarea>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" 
+                                             th:errors="*{address}"></div>
+                                    </div>
+                                    
+                                    <!-- Readonly Fields Info -->
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>Lưu ý:</strong> Email và username không thể thay đổi. 
+                                        Để đổi mật khẩu, vui lòng sử dụng chức năng 
+                                        <a href="/auth/change-password" class="alert-link">Đổi mật khẩu</a>.
+                                    </div>
+                                    
+                                    <!-- Buttons -->
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <a href="/auth/profile" class="btn btn-outline-secondary">
+                                            <i class="fas fa-arrow-left"></i> Quay lại
+                                        </a>
+                                        <button type="submit" class="btn btn-luxury">
+                                            <i class="fas fa-save"></i> Lưu thay đổi
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card luxury-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-key fa-2x luxury-icon mb-2"></i>
+                                <h5>Đổi mật khẩu</h5>
+                                <p class="text-muted">Thay đổi mật khẩu đăng nhập</p>
+                                <a href="/auth/change-password" class="btn btn-outline-luxury">
+                                    <i class="fas fa-key"></i> Đổi mật khẩu
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card luxury-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calendar-check fa-2x luxury-icon mb-2"></i>
+                                <h5>Booking của tôi</h5>
+                                <p class="text-muted">Xem danh sách đặt bàn</p>
+                                <a href="/booking/my" class="btn btn-outline-luxury">
+                                    <i class="fas fa-calendar-check"></i> Xem booking
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div th:replace="~{fragments/footer :: footer}"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
