@@ -1,18 +1,12 @@
 # ===== Spring Boot PROD config (Render) =====
-# Cách dùng biến môi trường (ưu tiên):
-#  - JDBC_DATABASE_URL     (chuỗi JDBC đầy đủ)
-#  - JDBC_DATABASE_USERNAME
-#  - JDBC_DATABASE_PASSWORD
-#
-# Nếu bạn CHƯA set biến, YAML bên dưới có fallback sang External URL của bạn.
+# Sử dụng biến môi trường với fallback
 
 spring:
   datasource:
-    # ƯU TIÊN: lấy từ JDBC_DATABASE_URL nếu có; nếu không, lấy từ DATABASE_URL;
-    # cuối cùng fallback sang giá trị cố định của bạn (External host + sslmode=require)
-    url: ${JDBC_DATABASE_URL:${DATABASE_URL:jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a.singapore-postgres.render.com:5432/bookeat_db?sslmode=require}}
-    username: ${JDBC_DATABASE_USERNAME:${DB_USERNAME:bookeat_user}}
-    password: ${JDBC_DATABASE_PASSWORD:${DB_PASSWORD:58IJhzpjEobFFUmJ762dmkEdSLPPRbZX}}
+    # Biến môi trường với fallback đơn giản
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a.singapore-postgres.render.com:5432/bookeat_db?sslmode=require}
+    username: ${DB_USERNAME:bookeat_user}
+    password: ${DB_PASSWORD:58IJhzpjEobFFUmJ762dmkEdSLPPRbZX}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -22,7 +16,6 @@ spring:
       hibernate:
         format_sql: false
     show-sql: false
-    # Đặt dialect tường minh để tránh lỗi khi chưa lấy được JDBC metadata
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   # Email (tuỳ chọn)
