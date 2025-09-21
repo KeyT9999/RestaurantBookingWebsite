@@ -1,15 +1,18 @@
-# ===== Spring Boot PROD config for Render =====
-# YÊU CẦU: đặt các biến môi trường trong Render Dashboard:
-#   JDBC_DATABASE_URL=jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a:5432/bookeat_db?sslmode=require
-#   JDBC_DATABASE_USERNAME=bookeat_user
-#   JDBC_DATABASE_PASSWORD=58IJhzpjEobFFUmJ762dmkEdSLPPRbZX
-# (Nếu chạy ngoài Render, dùng external host và cùng tham số sslmode=require)
+# ===== Spring Boot PROD config (Render) =====
+# Cách dùng biến môi trường (ưu tiên):
+#  - JDBC_DATABASE_URL     (chuỗi JDBC đầy đủ)
+#  - JDBC_DATABASE_USERNAME
+#  - JDBC_DATABASE_PASSWORD
+#
+# Nếu bạn CHƯA set biến, YAML bên dưới có fallback sang External URL của bạn.
 
 spring:
   datasource:
-    url: ${JDBC_DATABASE_URL}
-    username: ${JDBC_DATABASE_USERNAME}
-    password: ${JDBC_DATABASE_PASSWORD}
+    # ƯU TIÊN: lấy từ JDBC_DATABASE_URL nếu có; nếu không, lấy từ DATABASE_URL;
+    # cuối cùng fallback sang giá trị cố định của bạn (External host + sslmode=require)
+    url: ${JDBC_DATABASE_URL:${DATABASE_URL:jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a.singapore-postgres.render.com:5432/bookeat_db?sslmode=require}}
+    username: ${JDBC_DATABASE_USERNAME:${DB_USERNAME:bookeat_user}}
+    password: ${JDBC_DATABASE_PASSWORD:${DB_PASSWORD:58IJhzpjEobFFUmJ762dmkEdSLPPRbZX}}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -17,11 +20,12 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        # Hibernate tự detect PostgreSQLDialect, nên không cần set thủ công
         format_sql: false
     show-sql: false
+    # Đặt dialect tường minh để tránh lỗi khi chưa lấy được JDBC metadata
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
 
-  # Email configuration for production
+  # Email (tuỳ chọn)
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
@@ -47,7 +51,7 @@ spring:
             scope: [openid, email, profile]
             redirect-uri: ${APP_BASE_URL}/login/oauth2/code/google
 
-# Application configuration
+# App config
 app:
   base-url: ${APP_BASE_URL:https://your-app.onrender.com}
   upload:
@@ -55,7 +59,7 @@ app:
     max-file-size: 5MB
     max-request-size: 5MB
 
-# Logging for production
+# Logging
 logging:
   level:
     org.hibernate.SQL: WARN
@@ -65,7 +69,7 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
-# Server configuration
+# Server
 server:
   port: ${PORT:8080}
   error:
