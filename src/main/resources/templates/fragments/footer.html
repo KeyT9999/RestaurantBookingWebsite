@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- Luxury Footer Fragment -->
+    <footer th:fragment="site-footer" class="luxury-footer">
+        <div class="container">
+            <div class="row">
+                <!-- Brand & About -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="footer-brand">
+                        <h4 class="luxury-title mb-3">
+                            <i class="fas fa-utensils luxury-icon"></i>
+                            Aurelius
+                        </h4>
+                        <p class="footer-text">
+                            Experience culinary excellence in every detail. Where fine dining meets exceptional service.
+                        </p>
+                        <div class="social-links mt-3">
+                            <a href="#" class="social-link" aria-label="Facebook">
+                                <i class="fab fa-facebook-f"></i>
+                            </a>
+                            <a href="#" class="social-link" aria-label="Instagram">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="social-link" aria-label="Twitter">
+                                <i class="fab fa-twitter"></i>
+                            </a>
+                            <a href="#" class="social-link" aria-label="TripAdvisor">
+                                <i class="fab fa-tripadvisor"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Links -->
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="footer-heading">Quick Links</h5>
+                    <ul class="footer-links">
+                        <li><a th:href="@{/}" class="footer-link">Home</a></li>
+                        <li><a th:href="@{/restaurants}" class="footer-link">Restaurants</a></li>
+                        <li><a th:href="@{/about}" class="footer-link">About Us</a></li>
+                        <li><a th:href="@{/contact}" class="footer-link">Contact</a></li>
+                        <li><a th:href="@{/booking/new}" class="footer-link">Book Table</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Services -->
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="footer-heading">Services</h5>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">Private Dining</a></li>
+                        <li><a href="#" class="footer-link">Catering</a></li>
+                        <li><a href="#" class="footer-link">Wine Pairing</a></li>
+                        <li><a href="#" class="footer-link">Chef's Table</a></li>
+                        <li><a href="#" class="footer-link">Gift Cards</a></li>
+                    </ul>
+                </div>
+                
+                <!-- Contact & Hours -->
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="footer-heading">Contact Info</h5>
+                    <div class="contact-info">
+                        <div class="contact-item mb-2">
+                            <i class="fas fa-map-marker-alt luxury-icon"></i>
+                            <span>123 Luxury Ave<br>District 1, Ho Chi Minh City</span>
+                        </div>
+                        <div class="contact-item mb-2">
+                            <i class="fas fa-phone luxury-icon"></i>
+                            <span>+84 28 1234 5678</span>
+                        </div>
+                        <div class="contact-item mb-2">
+                            <i class="fas fa-envelope luxury-icon"></i>
+                            <span>info@aurelius.com</span>
+                        </div>
+                    </div>
+                    
+                    <h6 class="footer-subheading mt-3">Opening Hours</h6>
+                    <div class="opening-hours">
+                        <div class="hours-item">
+                            <span class="days">Mon - Thu:</span>
+                            <span class="times">18:00 - 22:00</span>
+                        </div>
+                        <div class="hours-item">
+                            <span class="days">Fri - Sun:</span>
+                            <span class="times">17:30 - 23:00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Newsletter -->
+                <div class="col-lg-3 col-md-12 mb-4">
+                    <h5 class="footer-heading">Stay Connected</h5>
+                    <p class="footer-text mb-3">
+                        Subscribe to receive exclusive offers and dining updates.
+                    </p>
+                    
+                    <form class="newsletter-form" action="#" method="post">
+                        <div class="input-group">
+                            <input type="email" class="form-control newsletter-input" 
+                                   placeholder="Your email address" name="email" required
+                                   aria-label="Email address for newsletter">
+                            <button class="btn btn-newsletter" type="submit" aria-label="Subscribe to newsletter">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <small class="newsletter-note">
+                            We respect your privacy. Unsubscribe anytime.
+                        </small>
+                    </form>
+                    
+                    <!-- Awards/Certifications -->
+                    <div class="awards mt-4">
+                        <div class="award-item">
+                            <i class="fas fa-award luxury-icon"></i>
+                            <span>Michelin Guide 2024</span>
+                        </div>
+                        <div class="award-item">
+                            <i class="fas fa-star luxury-icon"></i>
+                            <span>TripAdvisor Excellence</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <p class="copyright mb-0">
+                            &copy; <span th:text="${#dates.year(#dates.createNow())}">2024</span> Aurelius Fine Dining. 
+                            All rights reserved.
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="footer-legal">
+                            <li><a href="#" class="footer-link">Privacy Policy</a></li>
+                            <li><a href="#" class="footer-link">Terms of Service</a></li>
+                            <li><a href="#" class="footer-link">Cookie Policy</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html> 

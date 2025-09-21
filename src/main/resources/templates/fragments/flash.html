@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- Luxury Flash Messages Fragment -->
+    <th:block th:fragment="flash">
+        <!-- Success Message -->
+        <div th:if="${successMessage}" class="alert alert-luxury-success alert-dismissible fade show" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>Success!</strong>
+                    <span th:text="${successMessage}"></span>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <!-- Error Message -->
+        <div th:if="${errorMessage}" class="alert alert-luxury-danger alert-dismissible fade show" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>Error!</strong>
+                    <span th:text="${errorMessage}"></span>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <!-- Warning Message -->
+        <div th:if="${warningMessage}" class="alert alert-luxury-warning alert-dismissible fade show" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-circle me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>Warning!</strong>
+                    <span th:text="${warningMessage}"></span>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <!-- Info Message -->
+        <div th:if="${infoMessage}" class="alert alert-luxury-info alert-dismissible fade show" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>Info:</strong>
+                    <span th:text="${infoMessage}"></span>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+        </div>
+    </th:block>
+
+    <style>
+        /* Luxury Alert Styles */
+        .alert {
+            border: none;
+            border-radius: 15px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+            border-left: 4px solid var(--luxury-gold);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            animation: slideInDown 0.5s ease-out;
+        }
+
+        .alert-luxury-success {
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.9), rgba(34, 139, 58, 0.9));
+            color: var(--luxury-white);
+        }
+
+        .alert-luxury-danger {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.9), rgba(187, 45, 59, 0.9));
+            color: var(--luxury-white);
+        }
+
+        .alert-luxury-warning {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.9), rgba(253, 126, 20, 0.9));
+            color: var(--luxury-black);
+        }
+
+        .alert-luxury-info {
+            background: linear-gradient(135deg, rgba(23, 162, 184, 0.9), rgba(32, 201, 151, 0.9));
+            color: var(--luxury-white);
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: inherit;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideInDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</body>
+</html> 

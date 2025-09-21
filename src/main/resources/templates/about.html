@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Về chúng tôi - Aurelius Fine Dining</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+</head>
+<body class="bg-dark text-light">
+    <!-- Header -->
+    <div th:replace="~{fragments/header :: site-header}"></div>
+    
+    <div class="container mt-5 pt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="text-center mb-5">
+                    <h1 class="display-4 text-warning">Về Aurelius Fine Dining</h1>
+                    <p class="lead">Trải nghiệm ẩm thực đẳng cấp thế giới</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card bg-secondary">
+                            <div class="card-body">
+                                <h3 class="card-title text-warning">
+                                    <i class="fas fa-utensils"></i> Tầm nhìn
+                                </h3>
+                                <p class="card-text">
+                                    Mang đến những trải nghiệm ẩm thực tuyệt vời nhất với chất lượng 
+                                    dịch vụ hoàn hảo và không gian sang trọng.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card bg-secondary">
+                            <div class="card-body">
+                                <h3 class="card-title text-warning">
+                                    <i class="fas fa-star"></i> Sứ mệnh
+                                </h3>
+                                <p class="card-text">
+                                    Tạo ra những khoảnh khắc đáng nhớ thông qua nghệ thuật ẩm thực 
+                                    và dịch vụ khách hàng xuất sắc.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-5">
+                    <a th:href="@{/booking/new}" class="btn btn-warning btn-lg me-3">
+                        <i class="fas fa-calendar-plus"></i> Đặt bàn ngay
+                    </a>
+                    <a th:href="@{/}" class="btn btn-outline-warning btn-lg">
+                        <i class="fas fa-home"></i> Về trang chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div th:replace="~{fragments/footer :: site-footer}"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

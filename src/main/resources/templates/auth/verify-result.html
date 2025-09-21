@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả xác thực - Aurelius Fine Dining</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --luxury-black: #121212;
+            --luxury-dark: #1A1A1A;
+            --luxury-gold: #D4AF37;
+            --luxury-gold-light: #FFD700;
+            --luxury-white: #FFFFFF;
+            --luxury-gray: #E0E0E0;
+            --luxury-red: #dc3545;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background: linear-gradient(135deg, var(--luxury-black) 0%, var(--luxury-dark) 100%);
+            min-height: 100vh;
+            color: var(--luxury-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(18, 18, 18, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--luxury-gold);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            padding: 50px 40px;
+            text-align: center;
+            max-width: 600px;
+        }
+
+        .result-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--luxury-gold);
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.9), rgba(34, 139, 58, 0.9));
+            color: var(--luxury-white);
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.9), rgba(187, 45, 59, 0.9));
+            color: var(--luxury-white);
+            border-left: 4px solid var(--luxury-red);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--luxury-gold) 0%, var(--luxury-gold-light) 100%);
+            border: none;
+            color: var(--luxury-black);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 15px 30px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background: var(--luxury-black);
+            color: var(--luxury-gold);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--luxury-gold);
+            color: var(--luxury-gold);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 15px 30px;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-outline:hover {
+            background: var(--luxury-gold);
+            color: var(--luxury-black);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="result-card">
+                    <h1 class="result-title">Kết quả xác thực</h1>
+                    
+                    <!-- Success Message -->
+                    <div th:if="${successMessage}" class="alert alert-success">
+                        <i class="fas fa-check-circle" style="margin-right: 10px; font-size: 1.2em;"></i>
+                        <span th:text="${successMessage}"></span>
+                    </div>
+                    
+                    <!-- Error Message -->
+                    <div th:if="${errorMessage}" class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 10px; font-size: 1.2em;"></i>
+                        <span th:text="${errorMessage}"></span>
+                    </div>
+                    
+                    <!-- Default message if no flash attributes -->
+                    <div th:if="${successMessage == null and errorMessage == null}" class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 10px; font-size: 1.2em;"></i>
+                        Link xác thực không hợp lệ hoặc đã hết hạn.
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="/login" class="btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                        </a>
+                        <a href="/auth/register" class="btn-outline">
+                            <i class="fas fa-user-plus"></i> Đăng ký lại
+                        </a>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="/" style="color: var(--luxury-gold); text-decoration: none;">
+                            <i class="fas fa-home"></i> Về trang chủ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

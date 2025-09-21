@@ -1,0 +1,36 @@
+spring:
+  profiles:
+    active: dev  # Default to dev profile
+  
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+    mode: HTML
+    prefix: classpath:/templates/
+    suffix: .html
+  
+  messages:
+    basename: messages
+    encoding: UTF-8
+    cache-duration: 3600
+  
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+server:
+  port: 8080
+  
+# Application configuration
+app:
+  base-url: http://localhost:8080
+  upload:
+    dir: uploads
+    max-file-size: 5MB
+    max-request-size: 5MB
+
+logging:
+  level:
+    org.hibernate.SQL: INFO
+    org.springframework.security: INFO 
