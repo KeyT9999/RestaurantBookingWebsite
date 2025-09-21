@@ -1,16 +1,23 @@
+# ===== Spring Boot PROD config for Render =====
+# YÊU CẦU: đặt các biến môi trường trong Render Dashboard:
+#   JDBC_DATABASE_URL=jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a:5432/bookeat_db?sslmode=require
+#   JDBC_DATABASE_USERNAME=bookeat_user
+#   JDBC_DATABASE_PASSWORD=58IJhzpjEobFFUmJ762dmkEdSLPPRbZX
+# (Nếu chạy ngoài Render, dùng external host và cùng tham số sslmode=require)
+
 spring:
   datasource:
-    url: ${DATABASE_URL}
+    url: ${JDBC_DATABASE_URL}
+    username: ${JDBC_DATABASE_USERNAME}
+    password: ${JDBC_DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # Hibernate tự detect PostgreSQLDialect, nên không cần set thủ công
         format_sql: false
     show-sql: false
 
@@ -63,4 +70,4 @@ server:
   port: ${PORT:8080}
   error:
     include-message: never
-    include-binding-errors: never 
+    include-binding-errors: never
