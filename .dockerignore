@@ -1,0 +1,43 @@
+# Maven
+target/
+!target/restaurant-booking-0.0.1-SNAPSHOT.jar
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Local development
+uploads/
+logs/
+*.log
+
+# Node.js (if any)
+node_modules/
+npm-debug.log*
+
+# Environment
+.env*
+
+# Test
+src/test/
+
+# Temporary
+temp/
+tmp/ 
