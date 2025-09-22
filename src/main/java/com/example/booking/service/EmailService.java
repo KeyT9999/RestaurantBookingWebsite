@@ -84,14 +84,19 @@ public class EmailService {
     }
     
     private void sendEmail(String toEmail, String subject, String message) {
-        // Check if we have proper email configuration
-        if (mailSender == null) {
-            // Mock email sending when no mail sender configured
+        // Force mock mode in dev for testing (no credentials needed)
+        if ("dev".equals(activeProfile)) {
             logger.info("📧 [MOCK EMAIL] To: {}", toEmail);
             logger.info("📧 [MOCK EMAIL] Subject: {}", subject);
             logger.info("📧 [MOCK EMAIL] Message:\n{}", message);
             logger.info("🔗 [VERIFICATION LINK] Check the message above for the verification URL");
             return;
+        }
+        
+        // Production mode - use real email service
+        if (mailSender == null) {
+            logger.error("❌ Mail sender not configured in production mode!");
+            throw new RuntimeException("Email service not configured");
         }
         
         try {
@@ -106,14 +111,6 @@ public class EmailService {
             
         } catch (Exception e) {
             logger.error("❌ Failed to send email to: {}", toEmail, e);
-            // In dev mode, don't throw exception, just log and continue
-            if ("dev".equals(activeProfile)) {
-                logger.warn("🚨 Email sending failed in DEV mode, continuing with mock...");
-                logger.info("📧 [MOCK EMAIL] To: {}", toEmail);
-                logger.info("📧 [MOCK EMAIL] Subject: {}", subject);
-                logger.info("📧 [MOCK EMAIL] Message:\n{}", message);
-                return;
-            }
             throw new RuntimeException("Không thể gửi email", e);
         }
     }
