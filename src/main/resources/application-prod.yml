@@ -1,13 +1,15 @@
 # ===== Spring Boot PROD config (Render) =====
-# Sử dụng biến môi trường với fallback
+# Cấu hình sạch bí mật, hợp chuẩn Spring Boot 3
 
 spring:
   datasource:
-    # Biến môi trường với fallback đơn giản
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a.singapore-postgres.render.com:5432/bookeat_db?sslmode=require}
-    username: ${DB_USERNAME:bookeat_user}
-    password: ${DB_PASSWORD:58IJhzpjEobFFUmJ762dmkEdSLPPRbZX}
+    url: ${JDBC_DATABASE_URL}          # Đặt env này trên Render, dạng JDBC
+    username: ${DB_USERNAME}           # Đặt env, không để default
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
 
   jpa:
     hibernate:
@@ -16,9 +18,15 @@ spring:
       hibernate:
         format_sql: false
     show-sql: false
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    # Tắt Open Session in View để tránh query ngoài transaction
+    open-in-view: false
+    # database-platform: org.hibernate.dialect.PostgreSQLDialect   # <- bỏ
 
-  # Email (tuỳ chọn)
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
@@ -44,15 +52,9 @@ spring:
             scope: [openid, email, profile]
             redirect-uri: ${APP_BASE_URL}/login/oauth2/code/google
 
-# App config
 app:
-  base-url: ${APP_BASE_URL:https://your-app.onrender.com}
-  upload:
-    dir: ${UPLOAD_DIR:/tmp/uploads}
-    max-file-size: 5MB
-    max-request-size: 5MB
+  base-url: ${APP_BASE_URL:https://your-service.onrender.com}
 
-# Logging
 logging:
   level:
     org.hibernate.SQL: WARN
@@ -62,7 +64,6 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
-# Server
 server:
   port: ${PORT:8080}
   error:
