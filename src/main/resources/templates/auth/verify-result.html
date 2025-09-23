@@ -33,16 +33,40 @@
             justify-content: center;
         }
 
+        .result-wrapper {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
         .result-card {
             background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(18, 18, 18, 0.95) 100%);
             backdrop-filter: blur(20px);
             border: 2px solid var(--luxury-gold);
             border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(212, 175, 55, 0.15);
             padding: 50px 40px;
             text-align: center;
-            max-width: 600px;
+            max-width: 620px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
         }
+
+        .result-card::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 20px;
+            background: linear-gradient(45deg, rgba(212,175,55,0.35), rgba(255,215,0,0.15), rgba(212,175,55,0.35));
+            z-index: -1;
+            filter: blur(8px);
+        }
+
+        .btn-group-spaced a { margin: 8px; }
 
         .result-title {
             font-family: 'Playfair Display', serif;
@@ -117,10 +141,11 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="result-card">
+    <div class="result-wrapper">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="result-card">
                     <h1 class="result-title">Kết quả xác thực</h1>
                     
                     <!-- Success Message -->
@@ -135,13 +160,14 @@
                         <span th:text="${errorMessage}"></span>
                     </div>
                     
-                    <!-- Default message if no flash attributes -->
+                    <!-- Default or redirected message -->
                     <div th:if="${successMessage == null and errorMessage == null}" class="alert alert-danger">
                         <i class="fas fa-exclamation-triangle" style="margin-right: 10px; font-size: 1.2em;"></i>
-                        Link xác thực không hợp lệ hoặc đã hết hạn.
+                        <span th:if="${param.unverified != null}">Tài khoản của bạn chưa được xác minh email. Vui lòng kiểm tra hộp thư để xác minh trước khi đăng nhập.</span>
+                        <span th:unless="${param.unverified != null}">Link xác thực không hợp lệ hoặc đã hết hạn.</span>
                     </div>
                     
-                    <div class="mt-4">
+                    <div class="mt-4 btn-group-spaced">
                         <a href="/login" class="btn-primary">
                             <i class="fas fa-sign-in-alt"></i> Đăng nhập
                         </a>
@@ -158,6 +184,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
     
     <!-- Bootstrap 5 JS -->
