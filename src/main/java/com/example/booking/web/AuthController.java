@@ -1,9 +1,12 @@
 package com.example.booking.web;
 
-import com.example.booking.domain.User;
-import com.example.booking.dto.*;
-import com.example.booking.service.SimpleUserService;
-import jakarta.validation.Valid;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -11,16 +14,23 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import com.example.booking.domain.User;
+import com.example.booking.dto.ChangePasswordForm;
+import com.example.booking.dto.ForgotPasswordForm;
+import com.example.booking.dto.ProfileEditForm;
+import com.example.booking.dto.RegisterForm;
+import com.example.booking.dto.ResetPasswordForm;
+import com.example.booking.service.SimpleUserService;
+
+import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("/auth")
@@ -318,7 +328,9 @@ public class AuthController {
     
     private User getCurrentUser(Authentication authentication) {
         if (authentication.getPrincipal() instanceof User) {
-            return (User) authentication.getPrincipal();
+            User principalUser = (User) authentication.getPrincipal();
+            // Always reload from DB to reflect latest changes (e.g., avatar updates)
+            return userService.findById(principalUser.getId());
         } else if (authentication.getPrincipal() instanceof OAuth2User) {
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
             String email = oAuth2User.getAttribute("email");

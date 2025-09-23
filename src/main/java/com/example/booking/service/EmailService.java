@@ -86,33 +86,43 @@ public class EmailService {
     private void sendEmail(String toEmail, String subject, String message) {
         logger.info("🔍 Mail debug -> profile: {}, baseUrl: {}, mailSender? {}", activeProfile, baseUrl, (mailSender != null));
 
-        // Dev mock khi chạy local
+        // Check if we have proper email configuration
+        boolean hasValidEmailConfig = mailSender != null && 
+                                     fromEmail != null && 
+                                     !fromEmail.contains("your-email@gmail.com") &&
+                                     !fromEmail.contains("noreply@bookeat.com") &&
+                                     !fromEmail.isEmpty();
+
+        // Check if we're in localhost development
         boolean isLocalhost = baseUrl.contains("localhost") || baseUrl.contains("127.0.0.1");
+
+        if (isLocalhost && hasValidEmailConfig) {
+            // Localhost with valid email config - try to send real email
+            try {
+                SimpleMailMessage mailMessage = new SimpleMailMessage();
+                mailMessage.setFrom(fromEmail);
+                mailMessage.setTo(toEmail);
+                mailMessage.setSubject(subject);
+                mailMessage.setText(message);
+
+                logger.info("📤 [LOCALHOST REAL EMAIL] Sending... from={}, to={}", fromEmail, toEmail);
+                mailSender.send(mailMessage);
+                logger.info("✅ [LOCALHOST REAL EMAIL] Sent successfully to: {}", toEmail);
+                return;
+            } catch (Exception e) {
+                logger.warn("⚠️ [LOCALHOST EMAIL FAILED] Falling back to mock mode: {}", e.getMessage());
+                // Fall through to mock mode
+            }
+        }
+
+        // Mock mode (localhost without config, or production fallback)
+        logger.info("📧 [MOCK EMAIL] To: {}", toEmail);
+        logger.info("📧 [MOCK EMAIL] Subject: {}", subject);
+        logger.info("📧 [MOCK EMAIL] Message:\n{}", message);
+        logger.info("�� [VERIFICATION LINK] Check the message above for the verification URL");
+        
         if (isLocalhost) {
-            logger.info("📧 [MOCK EMAIL] To: {}", toEmail);
-            logger.info("📧 [MOCK EMAIL] Subject: {}", subject);
-            logger.info("📧 [MOCK EMAIL] Message:\n{}", message);
-            return;
-        }
-
-        if (mailSender == null) {
-            // Nếu tới đây trên Render mà null: thiếu starter mail hoặc env chưa nạp
-            throw new IllegalStateException("spring-boot-starter-mail not configured (JavaMailSender is null)");
-        }
-
-        try {
-            SimpleMailMessage mailMessage = new SimpleMailMessage();
-            mailMessage.setFrom(fromEmail); // phải trùng MAIL_USERNAME khi dùng Gmail
-            mailMessage.setTo(toEmail);
-            mailMessage.setSubject(subject);
-            mailMessage.setText(message);
-
-            logger.info("📤 Sending email... from={}, to={}", fromEmail, toEmail);
-            mailSender.send(mailMessage);
-            logger.info("✅ Email sent");
-        } catch (Exception e) {
-            logger.error("❌ Send email failed", e);
-            throw new RuntimeException("Không thể gửi email", e);
+            logger.info("💡 [TIP] To enable real email on localhost, set MAIL_USERNAME and MAIL_PASSWORD environment variables");
         }
     }
 } 

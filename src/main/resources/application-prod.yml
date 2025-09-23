@@ -1,46 +1,28 @@
-# ===== Spring Boot PROD config (Render) =====
-# Cấu hình sạch bí mật, hợp chuẩn Spring Boot 3
-
 spring:
   datasource:
-    url: ${JDBC_DATABASE_URL}          # Đặt env này trên Render, dạng JDBC
-    username: ${DB_USERNAME}           # Đặt env, không để default
-    password: ${DB_PASSWORD}
+    url: ${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 5
-      minimum-idle: 1
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
     show-sql: false
-    # Tắt Open Session in View để tránh query ngoài transaction
-    open-in-view: false
-    # database-platform: org.hibernate.dialect.PostgreSQLDialect   # <- bỏ
 
-  servlet:
-    multipart:
-      max-file-size: 5MB
-      max-request-size: 5MB
-
+  # Email configuration for production
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    host: ${SPRING_MAIL_HOST:${MAIL_HOST:smtp.gmail.com}}
+    port: ${SPRING_MAIL_PORT:${MAIL_PORT:587}}
+    username: ${MAIL_USERNAME:${SPRING_MAIL_USERNAME:}}
+    password: ${MAIL_PASSWORD:${SPRING_MAIL_PASSWORD:}}
     properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
 
   security:
     oauth2:
@@ -52,9 +34,15 @@ spring:
             scope: [openid, email, profile]
             redirect-uri: ${APP_BASE_URL}/login/oauth2/code/google
 
+# Application configuration
 app:
-  base-url: ${APP_BASE_URL:https://your-service.onrender.com}
+  base-url: ${APP_BASE_URL:https://your-app.onrender.com}
+  upload:
+    dir: ${UPLOAD_DIR:/tmp/uploads}
+    max-file-size: 5MB
+    max-request-size: 5MB
 
+# Logging for production
 logging:
   level:
     org.hibernate.SQL: WARN
@@ -64,8 +52,9 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
+# Server configuration
 server:
   port: ${PORT:8080}
   error:
     include-message: never
-    include-binding-errors: never
+    include-binding-errors: never 
