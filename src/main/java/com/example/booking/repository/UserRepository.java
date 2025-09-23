@@ -1,14 +1,15 @@
 package com.example.booking.repository;
 
-import com.example.booking.domain.User;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.UUID;
+import com.example.booking.domain.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
@@ -16,6 +17,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(String username);
     
     Optional<User> findByEmail(String email);
+
+    Optional<User> findByEmailIgnoreCase(String email);
     
     Optional<User> findByGoogleId(String googleId);
     

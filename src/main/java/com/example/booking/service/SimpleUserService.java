@@ -89,7 +89,13 @@ public class SimpleUserService implements UserDetailsService {
     
     @Transactional(readOnly = true)
     public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        if (email == null) return Optional.empty();
+        return userRepository.findByEmailIgnoreCase(email);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findByGoogleId(String googleId) {
+        return userRepository.findByGoogleId(googleId);
     }
     
     public boolean verifyEmail(String token) {
@@ -177,32 +183,38 @@ public class SimpleUserService implements UserDetailsService {
         if (existingUser.isPresent()) {
             User user = existingUser.get();
             user.setLastLogin(LocalDateTime.now());
-            return userRepository.save(user);
+            User saved = userRepository.save(user);
+            System.out.println("✅ Google upsert (by googleId) id=" + saved.getId());
+            return saved;
         }
         
         // Try to find existing user by email
-        Optional<User> userByEmail = userRepository.findByEmail(email);
+        Optional<User> userByEmail = userRepository.findByEmailIgnoreCase(email);
         if (userByEmail.isPresent()) {
             User user = userByEmail.get();
             user.setGoogleId(googleId); // Link Google account
             user.setEmailVerified(true); // Google accounts are verified
             user.setLastLogin(LocalDateTime.now());
-            return userRepository.save(user);
+            if (user.getRole() == null) user.setRole(UserRole.CUSTOMER);
+            User saved = userRepository.save(user);
+            System.out.println("✅ Google upsert (link by email) id=" + saved.getId());
+            return saved;
         }
         
         // Create new user
         User newUser = new User();
-        newUser.setUsername(email); // Use email as username for Google users
-        newUser.setEmail(email);
-        newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString())); // Random password
+        String normalizedEmail = email != null ? email.toLowerCase() : null;
+        newUser.setUsername(normalizedEmail != null ? normalizedEmail : googleId);
+        newUser.setEmail(normalizedEmail);
+        newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         newUser.setFullName(name != null ? name : "Google User");
         newUser.setGoogleId(googleId);
         newUser.setRole(UserRole.CUSTOMER);
-        newUser.setEmailVerified(true); // Google accounts are verified
+        newUser.setEmailVerified(true);
         newUser.setLastLogin(LocalDateTime.now());
         
         User savedUser = userRepository.save(newUser);
-        System.out.println("✅ New Google user created: " + savedUser.getEmail());
+        System.out.println("✅ New Google user created id=" + savedUser.getId() + " email=" + savedUser.getEmail());
         return savedUser;
     }
 } 
