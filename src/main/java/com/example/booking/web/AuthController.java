@@ -329,12 +329,18 @@ public class AuthController {
     private User getCurrentUser(Authentication authentication) {
         if (authentication.getPrincipal() instanceof User) {
             User principalUser = (User) authentication.getPrincipal();
-            // Always reload from DB to reflect latest changes (e.g., avatar updates)
             return userService.findById(principalUser.getId());
         } else if (authentication.getPrincipal() instanceof OAuth2User) {
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
             String email = oAuth2User.getAttribute("email");
-            return userService.findByEmail(email).orElse(null);
+            if (email != null) {
+                var byEmail = userService.findByEmail(email);
+                if (byEmail.isPresent()) return byEmail.get();
+            }
+            String googleSub = oAuth2User.getAttribute("sub");
+            if (googleSub != null) {
+                return userService.findByGoogleId(googleSub).orElse(null);
+            }
         }
         return null;
     }
