@@ -49,4 +49,18 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
            "ORDER BY b.bookingTime ASC")
     List<Booking> findByRestaurantAndDate(@Param("restaurantId") UUID restaurantId, 
                                         @Param("date") LocalDateTime date);
+
+    long countByBookingTimeBetween(LocalDateTime startDate, LocalDateTime endDate);
+
+    long countByStatus(com.example.booking.domain.BookingStatus status);
+
+    long countByStatusAndBookingTimeBetween(com.example.booking.domain.BookingStatus status, LocalDateTime startDate, LocalDateTime endDate);
+
+    List<Booking> findByCustomerIdAndStatusIn(UUID customerId, List<com.example.booking.domain.BookingStatus> statuses);
+
+    @Query("SELECT r.name, COUNT(b) as bookingCount FROM Booking b JOIN Restaurant r ON b.restaurantId = r.id GROUP BY r.id, r.name ORDER BY bookingCount DESC")
+    List<Object[]> findTopRestaurantsByBookingCount(@Param("limit") int limit);
+
+    @Query("SELECT CAST(b.bookingTime AS date) as bookingDate, COUNT(b) as bookingCount FROM Booking b WHERE b.bookingTime BETWEEN :startDate AND :endDate GROUP BY CAST(b.bookingTime AS date) ORDER BY bookingDate")
+    List<Object[]> findDailyBookingStats(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 } 

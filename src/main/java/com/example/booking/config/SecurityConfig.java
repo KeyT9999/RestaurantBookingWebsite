@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -34,6 +35,7 @@ import com.example.booking.service.SimpleUserService;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 	
 	private final UserDetailsService userDetailsService;
@@ -81,6 +83,7 @@ public class SecurityConfig {
 						"/actuator/**", "/oauth2/**", "/", "/about", "/contact", "/restaurants").permitAll()
 				.requestMatchers("/auth/register", "/auth/register-success", "/auth/verify-email", 
 						"/auth/verify-result", "/auth/forgot-password", "/auth/reset-password").permitAll()
+				.requestMatchers("/admin/**").hasRole("ADMIN")
 				.requestMatchers("/auth/**").authenticated()
 				.requestMatchers("/booking/**").authenticated()
 				.anyRequest().authenticated()
