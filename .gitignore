@@ -66,10 +66,13 @@ application-local.yml
 .env
 .env.local
 .env.prod
+.env.development
+.env.production
 
 # Spring profiles with secrets (keep template files only)
 src/main/resources/application-dev.yml
 src/main/resources/application-local.yml
+src/main/resources/application-prod.yml
 *secrets*
 *.key
 *.pem
@@ -81,6 +84,9 @@ src/main/resources/application-local.yml
 
 # JVM
 hs_err_pid*
-replay_pid* 
+replay_pid*
 
-.env
+# Additional environment files
+application-dev.yml
+application-prod.yml
+application-local.yml
