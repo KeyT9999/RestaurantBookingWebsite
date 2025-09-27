@@ -1,4 +1,4 @@
-package com.example.booking.web;
+package com.example.booking.web.controller;
 
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.User;
@@ -232,4 +232,4 @@ public class BookingController {
         
         throw new IllegalArgumentException("Unknown principal type: " + principal.getClass().getName());
     }
-} 
+}

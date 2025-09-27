@@ -90,3 +90,6 @@ replay_pid*
 application-dev.yml
 application-prod.yml
 application-local.yml
+
+src/main/resources/application-*.yml
+!src/main/resources/application-*.example.yml

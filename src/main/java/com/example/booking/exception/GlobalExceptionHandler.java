@@ -1,4 +1,4 @@
-package com.example.booking.web;
+package com.example.booking.exception;
 
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -23,4 +23,4 @@ public class GlobalExceptionHandler {
         redirectAttributes.addFlashAttribute("errorMessage", "Đã xảy ra lỗi: " + ex.getMessage());
         return "redirect:/booking/my";
     }
-} 
+}

@@ -1,7 +1,7 @@
 package com.example.booking.repository;
 
 import com.example.booking.domain.Booking;
-import com.example.booking.domain.BookingStatus;
+import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.domain.DiningTable;
 import com.example.booking.domain.Restaurant;
 import org.junit.jupiter.api.BeforeEach;
