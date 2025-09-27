@@ -2,8 +2,9 @@ package com.example.booking.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,52 +15,44 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import com.example.booking.common.enums.BookingStatus;
 
 @Entity
-@Table(name = "bookings")
+@Table(name = "booking")
 public class Booking {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "booking_id")
+    private Integer bookingId;
     
-    @Column(name = "customer_id", nullable = false)
-    private UUID customerId;
-    
-    @Column(name = "restaurant_id", nullable = false)
-    private UUID restaurantId;
-    
-    @Column(name = "table_id")
-    private UUID tableId;
-    
-    @Column(name = "guest_count", nullable = false)
-    @Min(value = 1, message = "Số khách tối thiểu là 1")
-    @Max(value = 20, message = "Số khách tối đa là 20")
-    private Integer guestCount;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", nullable = false)
+    private Customer customer;
     
     @Column(name = "booking_time", nullable = false)
     @NotNull(message = "Thời gian đặt bàn không được để trống")
     private LocalDateTime bookingTime;
     
-    @Column(name = "deposit_amount", precision = 10, scale = 2)
-    @DecimalMin(value = "0.0", message = "Số tiền đặt cọc không được âm")
-    private BigDecimal depositAmount = BigDecimal.ZERO;
+    @Column(name = "number_of_guests", nullable = false)
+    @Min(value = 1, message = "Số khách tối thiểu là 1")
+    @Max(value = 20, message = "Số khách tối đa là 20")
+    private Integer numberOfGuests;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private BookingStatus status = BookingStatus.PENDING;
     
-    @Column(length = 500)
-    @Size(max = 500, message = "Ghi chú không được vượt quá 500 ký tự")
-    private String note;
+    @Column(name = "deposit_amount", precision = 18, scale = 2, nullable = false)
+    @DecimalMin(value = "0.0", message = "Số tiền đặt cọc không được âm")
+    private BigDecimal depositAmount = BigDecimal.ZERO;
     
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -67,30 +60,27 @@ public class Booking {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    // JPA relationships (optional for display)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "restaurant_id", insertable = false, updatable = false)
-    private Restaurant restaurant;
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<BookingTable> bookingTables;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "table_id", insertable = false, updatable = false)
-    private DiningTable table;
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<BookingDish> bookingDishes;
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Payment> payments;
     
     // Constructors
     public Booking() {
         this.createdAt = LocalDateTime.now();
     }
     
-    public Booking(UUID customerId, UUID restaurantId, UUID tableId, Integer guestCount, 
-                   LocalDateTime bookingTime, BigDecimal depositAmount, String note) {
+    public Booking(Customer customer, LocalDateTime bookingTime, Integer numberOfGuests,
+            BigDecimal depositAmount) {
         this();
-        this.customerId = customerId;
-        this.restaurantId = restaurantId;
-        this.tableId = tableId;
-        this.guestCount = guestCount;
+        this.customer = customer;
         this.bookingTime = bookingTime;
+        this.numberOfGuests = numberOfGuests;
         this.depositAmount = depositAmount != null ? depositAmount : BigDecimal.ZERO;
-        this.note = note;
     }
     
     @PreUpdate
@@ -99,44 +89,28 @@ public class Booking {
     }
     
     // Getters and Setters
-    public UUID getId() {
-        return id;
+    public Integer getBookingId() {
+        return bookingId;
     }
     
-    public void setId(UUID id) {
-        this.id = id;
+    public void setBookingId(Integer bookingId) {
+        this.bookingId = bookingId;
     }
     
-    public UUID getCustomerId() {
-        return customerId;
+    public Customer getCustomer() {
+        return customer;
     }
     
-    public void setCustomerId(UUID customerId) {
-        this.customerId = customerId;
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
     }
     
-    public UUID getRestaurantId() {
-        return restaurantId;
+    public Integer getNumberOfGuests() {
+        return numberOfGuests;
     }
     
-    public void setRestaurantId(UUID restaurantId) {
-        this.restaurantId = restaurantId;
-    }
-    
-    public UUID getTableId() {
-        return tableId;
-    }
-    
-    public void setTableId(UUID tableId) {
-        this.tableId = tableId;
-    }
-    
-    public Integer getGuestCount() {
-        return guestCount;
-    }
-    
-    public void setGuestCount(Integer guestCount) {
-        this.guestCount = guestCount;
+    public void setNumberOfGuests(Integer numberOfGuests) {
+        this.numberOfGuests = numberOfGuests;
     }
     
     public LocalDateTime getBookingTime() {
@@ -162,15 +136,7 @@ public class Booking {
     public void setStatus(BookingStatus status) {
         this.status = status;
     }
-    
-    public String getNote() {
-        return note;
-    }
-    
-    public void setNote(String note) {
-        this.note = note;
-    }
-    
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -187,20 +153,28 @@ public class Booking {
         this.updatedAt = updatedAt;
     }
     
-    public Restaurant getRestaurant() {
-        return restaurant;
+    public List<BookingTable> getBookingTables() {
+        return bookingTables;
     }
     
-    public void setRestaurant(Restaurant restaurant) {
-        this.restaurant = restaurant;
+    public void setBookingTables(List<BookingTable> bookingTables) {
+        this.bookingTables = bookingTables;
     }
     
-    public DiningTable getTable() {
-        return table;
+    public List<BookingDish> getBookingDishes() {
+        return bookingDishes;
     }
     
-    public void setTable(DiningTable table) {
-        this.table = table;
+    public void setBookingDishes(List<BookingDish> bookingDishes) {
+        this.bookingDishes = bookingDishes;
+    }
+
+    public List<Payment> getPayments() {
+        return payments;
+    }
+
+    public void setPayments(List<Payment> payments) {
+        this.payments = payments;
     }
     
     // Helper methods
