@@ -54,7 +54,7 @@ public class User implements UserDetails {
     private String phoneNumber;
     
     @Column(name = "address")
-    @Size(max = 200, message = "Địa chỉ không được quá 200 ký tự")
+    @Size(max = 500, message = "Địa chỉ không được quá 500 ký tự")
     private String address;
     
     @Column(name = "profile_image_url")
