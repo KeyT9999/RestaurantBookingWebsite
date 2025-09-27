@@ -366,3 +366,4 @@ public class AuthController {
         return "/uploads/" + filename;
     }
 }
+

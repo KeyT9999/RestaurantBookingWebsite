@@ -17,3 +17,4 @@ public class FaviconController {
 		return new ResponseEntity<>(headers, HttpStatus.FOUND);
 	}
 }
+
