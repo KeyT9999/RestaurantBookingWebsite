@@ -1,4 +1,4 @@
-package com.example.booking.web;
+package com.example.booking.web.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,3 +13,4 @@ public class BookingController {
     // BookingController sẽ được cập nhật sau khi hoàn thành việc sửa các model khác
 
 }
+
