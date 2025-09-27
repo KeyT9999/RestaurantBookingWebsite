@@ -1,4 +1,4 @@
-package com.example.booking.web;
+package com.example.booking.web.controller;
 
 import java.io.File;
 import java.io.IOException;
@@ -365,4 +365,4 @@ public class AuthController {
         // Return URL path
         return "/uploads/" + filename;
     }
-} 
+}
