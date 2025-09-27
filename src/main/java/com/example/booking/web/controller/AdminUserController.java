@@ -1,4 +1,4 @@
-package com.example.booking.web;
+package com.example.booking.web.controller;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -161,4 +161,4 @@ public class AdminUserController {
 		repo.save(u);
 		return "redirect:/admin/users";
 	}
-} 
+}

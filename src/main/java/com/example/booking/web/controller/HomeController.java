@@ -1,4 +1,4 @@
-package com.example.booking.web;
+package com.example.booking.web.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -57,4 +57,4 @@ public class HomeController {
         // For now, redirect to restaurants list
         return "redirect:/restaurants";
     }
-} 
+}

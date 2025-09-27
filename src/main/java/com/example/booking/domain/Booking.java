@@ -22,6 +22,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import com.example.booking.common.enums.BookingStatus;
 
 @Entity
 @Table(name = "booking")

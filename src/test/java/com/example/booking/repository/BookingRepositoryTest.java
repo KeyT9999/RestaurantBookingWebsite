@@ -1,5 +1,4 @@
 package com.example.booking.repository;
-
 import org.junit.jupiter.api.Test;
 
 // TODO: Cần cấu hình database test phù hợp với PostgreSQL

@@ -1,4 +1,4 @@
-package com.example.booking.web;
+package com.example.booking.web.controller;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -16,4 +16,4 @@ public class FaviconController {
 		headers.add(HttpHeaders.LOCATION, "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f374.png"); // 🍴
 		return new ResponseEntity<>(headers, HttpStatus.FOUND);
 	}
-} 
+}
