@@ -62,7 +62,7 @@ public class UserDataInitializer implements CommandLineRunner {
         restaurant.setPassword(passwordEncoder.encode("restaurant"));
         restaurant.setFullName("Demo Restaurant Owner");
         restaurant.setPhoneNumber("0111222333");
-        restaurant.setRole(UserRole.RESTAURANT);
+        restaurant.setRole(UserRole.RESTAURANT_OWNER);
         restaurant.setEmailVerified(true); // Pre-verified for demo
         userRepository.save(restaurant);
 
