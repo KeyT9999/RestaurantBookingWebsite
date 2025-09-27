@@ -1,4 +1,4 @@
-package com.example.booking.domain;
+package com.example.booking.common.enums;
 
 public enum BookingStatus {
     PENDING("pending", "Chờ xác nhận"),
@@ -21,4 +21,4 @@ public enum BookingStatus {
     public String getDisplayName() {
         return displayName;
     }
-} 
+}
