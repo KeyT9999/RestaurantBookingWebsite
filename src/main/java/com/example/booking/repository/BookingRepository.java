@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -51,12 +50,13 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
                                         @Param("date") LocalDateTime date);
 
     long countByBookingTimeBetween(LocalDateTime startDate, LocalDateTime endDate);
+    
 
-    long countByStatus(com.example.booking.domain.BookingStatus status);
+    long countByStatus(com.example.booking.common.enums.BookingStatus status);
 
-    long countByStatusAndBookingTimeBetween(com.example.booking.domain.BookingStatus status, LocalDateTime startDate, LocalDateTime endDate);
+    long countByStatusAndBookingTimeBetween(com.example.booking.common.enums.BookingStatus status, LocalDateTime startDate, LocalDateTime endDate);
 
-    List<Booking> findByCustomerIdAndStatusIn(UUID customerId, List<com.example.booking.domain.BookingStatus> statuses);
+    List<Booking> findByCustomerIdAndStatusIn(UUID customerId, List<com.example.booking.common.enums.BookingStatus> statuses);
 
     @Query("SELECT r.name, COUNT(b) as bookingCount FROM Booking b JOIN Restaurant r ON b.restaurantId = r.id GROUP BY r.id, r.name ORDER BY bookingCount DESC")
     List<Object[]> findTopRestaurantsByBookingCount(@Param("limit") int limit);

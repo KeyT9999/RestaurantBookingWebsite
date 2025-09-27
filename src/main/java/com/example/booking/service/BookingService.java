@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.booking.domain.Booking;
-import com.example.booking.domain.BookingStatus;
+import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.mapper.BookingMapper;
 import com.example.booking.repository.BookingRepository;

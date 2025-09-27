@@ -1,11 +1,12 @@
 package com.example.booking.web;
 
 import com.example.booking.domain.Booking;
-import com.example.booking.domain.BookingStatus;
+import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.domain.Restaurant;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.RestaurantService;
+import com.example.booking.web.controller.BookingController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
