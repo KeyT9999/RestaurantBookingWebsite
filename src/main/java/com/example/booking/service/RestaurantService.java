@@ -1,7 +1,7 @@
 package com.example.booking.service;
 
-import com.example.booking.domain.Restaurant;
-import com.example.booking.domain.DiningTable;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantTable;
 import com.example.booking.repository.RestaurantRepository;
 import com.example.booking.repository.DiningTableRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -25,16 +24,20 @@ public class RestaurantService {
         this.diningTableRepository = diningTableRepository;
     }
     
-    public List<Restaurant> findAllRestaurants() {
+    public List<RestaurantProfile> findAllRestaurants() {
         return restaurantRepository.findAll();
     }
     
-    public Restaurant findById(UUID id) {
+    public RestaurantProfile findById(Integer id) {
         return restaurantRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Nhà hàng không tồn tại"));
     }
     
-    public List<DiningTable> findTablesByRestaurant(UUID restaurantId) {
-        return diningTableRepository.findByRestaurantIdOrderByName(restaurantId);
+    public List<RestaurantTable> findTablesByRestaurant(Integer restaurantId) {
+        return diningTableRepository.findByRestaurantRestaurantIdOrderByTableName(restaurantId);
+    }
+
+    public List<RestaurantProfile> searchRestaurants(String name) {
+        return restaurantRepository.findByRestaurantNameContainingIgnoreCase(name);
     }
 } 
