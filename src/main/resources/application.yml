@@ -20,11 +20,11 @@ spring:
       max-request-size: 5MB
 
 server:
-  port: 8080
+  port: 8081
   
 # Application configuration
 app:
-  base-url: http://localhost:8080
+  base-url: http://localhost:8081
   upload:
     dir: uploads
     max-file-size: 5MB
