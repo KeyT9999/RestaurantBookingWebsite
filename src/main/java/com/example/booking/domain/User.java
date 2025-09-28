@@ -5,17 +5,22 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -24,6 +29,7 @@ import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "users")
+@EntityListeners(AuditingEntityListener.class)
 public class User implements UserDetails {
     
     @Id
@@ -79,18 +85,26 @@ public class User implements UserDetails {
     @Column(name = "google_id")
     private String googleId;  // For Google OAuth
     
-    @Column(name = "created_at", nullable = false)
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
-    @Column(name = "updated_at")
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
     
+    @Column(name = "active")
+    private Boolean active = true;
+    
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+    
     // Constructors
     public User() {
-        this.createdAt = LocalDateTime.now();
+        // Không cần set createdAt nữa vì @CreatedDate sẽ tự động set
     }
     
     public User(String username, String email, String password, String fullName) {
@@ -101,15 +115,27 @@ public class User implements UserDetails {
         this.fullName = fullName;
     }
     
+    @PrePersist
+    protected void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+    }
+    
     @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+    protected void preUpdate() {
+        updatedAt = LocalDateTime.now();
     }
     
     // UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        // Sử dụng role.getValue() để lấy giá trị chữ thường thay vì role.name()
+        return Collections.singleton(new SimpleGrantedAuthority("ROLE_" + role.getValue().toUpperCase()));
     }
     
     @Override
@@ -139,8 +165,12 @@ public class User implements UserDetails {
     
     @Override
     public boolean isEnabled() {
-        return emailVerified != null && emailVerified;
+        return active != null && active && 
+               emailVerified != null && emailVerified &&
+               deletedAt == null;
     }
+    
+    // ... existing code ...
     
     // Getters and Setters
     public UUID getId() {
@@ -269,6 +299,22 @@ public class User implements UserDetails {
     
     public void setLastLogin(LocalDateTime lastLogin) {
         this.lastLogin = lastLogin;
+    }
+    
+    public Boolean getActive() {
+        return active;
+    }
+    
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+    
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+    
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
     
     // Helper methods
