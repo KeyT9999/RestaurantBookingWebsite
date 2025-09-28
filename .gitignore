@@ -69,27 +69,34 @@ application-local.yml
 .env.development
 .env.production
 
-# Spring profiles with secrets (keep template files only)
-src/main/resources/application-dev.yml
-src/main/resources/application-local.yml
-src/main/resources/application-prod.yml
-*secrets*
-*.key
-*.pem
-
 # Database
 *.db
 *.sqlite
 *.sqlite3
 
-# JVM
+# JVM - ignore error logs
 hs_err_pid*
 replay_pid*
 
-# Additional environment files
-application-dev.yml
-application-prod.yml
-application-local.yml
+# ALLOW these specific files to be committed:
+# - .gitignore
+# - application.yml
+# - application-dev.example.yml
+# - application-dev.yml
+# - application-prod.yml
+# - messages.properties
+# - messages_vi.properties
+# - pom.xml
 
+# Allow all application yml files except local/secrets
 src/main/resources/application-*.yml
 !src/main/resources/application-*.example.yml
+
+# Explicitly allow specific config files
+src/main/resources/application.yml
+src/main/resources/application-dev.yml
+src/main/resources/application-prod.yml
+src/main/resources/messages.properties
+src/main/resources/messages_vi.properties
+pom.xml
+.gitignore
