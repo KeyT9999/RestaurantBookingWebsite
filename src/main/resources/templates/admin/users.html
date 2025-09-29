@@ -4,44 +4,220 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Quản lý người dùng - BookEat Admin</title>
+	
+	<!-- Google Fonts -->
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+	
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
 	<style>
-		.page-bg { background-color:#121212; min-height:100vh; }
-		.section-title { color:#fff; font-family:'Playfair Display', serif; }
-		.filter-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; }
-		.user-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; border-radius:12px; transition:transform .15s ease, box-shadow .15s ease; }
-		.user-card:hover { transform:translateY(-3px); box-shadow:0 10px 18px rgba(212,175,55,.15); }
-		.user-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(45deg,#D4AF37,#FFD700); color:#121212; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.15rem; }
-		.badge-role { font-size:.8rem; }
-		.badge-status { font-size:.8rem; }
-		.table-muted { color:#BFBFBF; }
-		.pagination .page-link { background:#1A1A1A; color:#D4AF37; border-color:rgba(212,175,55,.2); }
-		.pagination .page-item.active .page-link { background:#D4AF37; color:#121212; border-color:#D4AF37; }
-		.pagination .page-link:hover { background:#2A2A2A; color:#FFD700; }
-		.form-control, .form-select { background:#2A2A2A; color:#E0E0E0; border:1px solid #444; }
+		/* Improved font system */
+		body {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			font-weight: 400;
+			line-height: 1.6;
+		}
+		
+		.page-bg { 
+			background-color:#121212; 
+			min-height:100vh; 
+			font-family: 'Inter', sans-serif;
+		}
+		
+		.section-title { 
+			color:#fff; 
+			font-family:'Poppins', 'Inter', sans-serif; 
+			font-weight: 600;
+			font-size: 2.1rem;
+		}
+		
+		.filter-card { 
+			background:#1A1A1A; 
+			border:1px solid rgba(212,175,55,.2); 
+			color:#E0E0E0; 
+			font-family: 'Inter', sans-serif;
+		}
+		
+		.user-card { 
+			background:#1A1A1A; 
+			border:1px solid rgba(212,175,55,.2); 
+			color:#E0E0E0; 
+			border-radius:16px; 
+			transition:transform .2s ease, box-shadow .2s ease;
+			font-family: 'Inter', sans-serif;
+		}
+		
+		.user-card:hover { 
+			transform:translateY(-5px); 
+			box-shadow:0 15px 30px rgba(212,175,55,.2); 
+		}
+		
+		.user-card h5 {
+			font-family: 'Poppins', sans-serif;
+			font-weight: 600;
+			font-size: 1.1rem;
+		}
+		
+		.user-avatar { 
+			width:60px; 
+			height:60px; 
+			border-radius:50%; 
+			background:linear-gradient(135deg,#D4AF37,#FFD700); 
+			color:#121212; 
+			display:flex; 
+			align-items:center; 
+			justify-content:center; 
+			font-weight:700; 
+			font-size:1.25rem;
+			font-family: 'Poppins', sans-serif;
+		}
+		
+		.badge-role { 
+			font-size:.75rem;
+			font-weight: 500;
+			font-family: 'Inter', sans-serif;
+		}
+		
+		.badge-status { 
+			font-size:.75rem;
+			font-weight: 500;
+			font-family: 'Inter', sans-serif;
+		}
+		
+		.table-muted { 
+			color:#BFBFBF; 
+			font-weight: 400;
+		}
+		
+		.form-label {
+			font-family: 'Inter', sans-serif;
+			font-weight: 500;
+			color: #E0E0E0;
+		}
+		
+		.pagination .page-link { 
+			background:#1A1A1A; 
+			color:#D4AF37; 
+			border-color:rgba(212,175,55,.2);
+			font-family: 'Inter', sans-serif;
+		}
+		
+		.pagination .page-item.active .page-link { 
+			background:#D4AF37; 
+			color:#121212; 
+			border-color:#D4AF37; 
+		}
+		
+		.pagination .page-link:hover { 
+			background:#2A2A2A; 
+			color:#FFD700; 
+		}
+		
+		.form-control, .form-select { 
+			background:#2A2A2A; 
+			color:#E0E0E0; 
+			border:1px solid #444;
+			font-family: 'Inter', sans-serif;
+		}
+		
 		.form-control::placeholder { color:#8a8a8a; }
-		.form-control:focus, .form-select:focus { background:#2A2A2A; color:#E0E0E0; border-color:#D4AF37; box-shadow:0 0 0 0.2rem rgba(212,175,55,.25); }
-		.btn-gold { background:#D4AF37; border-color:#D4AF37; color:#121212; }
-		.btn-gold:hover { background:#FFD700; border-color:#FFD700; color:#121212; }
-		.link-clear { color:#E0E0E0; border-color:#E0E0E0; }
-		.link-clear:hover { background:#E0E0E0; color:#121212; }
+		
+		.form-control:focus, .form-select:focus { 
+			background:#2A2A2A; 
+			color:#E0E0E0; 
+			border-color:#D4AF37; 
+			box-shadow:0 0 0 0.2rem rgba(212,175,55,.25); 
+		}
+		
+		.btn-gold { 
+			background:#D4AF37; 
+			border-color:#D4AF37; 
+			color:#121212;
+			font-family: 'Inter', sans-serif;
+			font-weight: 600;
+			font-size: 0.95rem;
+			padding: 0.75rem 1.5rem;
+			border-radius: 8px;
+		}
+		
+		.btn-gold:hover { 
+			background:#FFD700; 
+			border-color:#FFD700; 
+			color:#121212;
+			transform: translateY(-1px);
+		}
+		
+		.btn-outline-light {
+			font-family: 'Inter', sans-serif;
+			font-weight: 500;
+		}
+		
+		.toggle-btn {
+			font-family: 'Inter', sans-serif;
+			font-weight: 500;
+			border-radius: 8px;
+			transition: all 0.2s ease;
+			min-width: 40px;
+		}
+		
+		.edit-btn {
+			font-family: 'Inter', sans-serif;
+			font-weight: 500;
+			border-radius: 8px;
+			transition: all 0.2s ease;
+		}
+		
+		.toggle-btn:hover {
+			background-color: rgba(255,255,255,0.1);
+			transform: scale(1.05);
+		}
+		
+		.edit-btn:hover {
+			background-color: rgba(212,175,55,0.2);
+			border-color: #D4AF37;
+			color: #D4AF37;
+		}
 		
 		/* Toast styles */
 		.toast-container {
 			position: fixed;
-			top: 20px;
+			top: 80px;
 			right: 20px;
 			z-index: 1055;
 		}
+		
+		.toast-custom {
+			font-family: 'Inter', sans-serif;
+			font-weight: 500;
+			border-radius: 12px;
+			border: none;
+			box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+		}
+		
 		.toast-success {
-			background-color: #198754;
+			background: linear-gradient(#D4AF37;, #FFD700);
+			color: #121212;
+		}
+		
+		.toast-error {
+			background: linear-gradient(#DC3545;, #FD6C6C);
 			color: white;
 		}
-		.toast-error {
-			background-color: #dc3545;
-			color: white;
+		
+		/* Loading spinner */
+		.loading-spinner {
+			animation: spin 1s linear infinite;
+		}
+		
+		@keyframes spin {
+			0% { transform: rotate(.1); }
+			100% { transform: rotate(360deg); }
+		}
+		
+		/* Hide CSRF token input */
+		.csrf-token {
+			display: none;
 		}
 	</style>
 </head>
@@ -49,11 +225,17 @@
 	<div th:replace="~{fragments/header :: site-header}"></div>
 
 	<div class="container py-5">
-		<div class="d-flex align-items-center justify-content-between mb-4">
-			<h1 class="section-title mb-0">
-				<i class="fas fa-users text-warning me-2"></i> Quản lý người dùng
-			</h1>
-			<a class="btn btn-gold" th:href="@{/admin/users/create}"><i class="fas fa-user-plus me-1"></i> Thêm người dùng</a>
+		<!-- Header with Add User Button -->
+		<div class="d-flex align-items-center justify-content-between mb-5">
+			<div>
+				<h1 class="section-title mb-0">
+					<i class="fas fa-users text-warning me-3"></i> Quản lý người dùng
+				</h1>
+				<p class="text-muted mt-2 mb-0">Quản lý và theo dõi tất cả người dùng trong hệ thống</p>
+			</div>
+			<a class="btn btn-gold btn-lg px-4" th:href="@{/admin/users/create}">
+				<i class="fas fa-user-plus me-2"></i> Thêm người dùng mới
+			</a>
 		</div>
 
 		<!-- Filter / Search -->
@@ -62,31 +244,35 @@
 				<form method="get" th:action="@{/admin/users}">
 					<div class="row g-3 align-items-end">
 						<div class="col-md-4">
-							<label class="form-label">Tìm kiếm</label>
-							<input class="form-control" name="q" th:value="${q}" placeholder="Username hoặc email">
+							<label class="form-label">Tìm kiếm người dùng</label>
+							<input class="form-control" name="q" th:value="${q}" placeholder="Nhập username hoặc email...">
 						</div>
 						<div class="col-md-3">
 							<label class="form-label">Vai trò</label>
 							<select name="role" class="form-select">
-								<option th:selected="${role == null}" value="">Tất cả</option>
-								<option value="admin" th:selected="${role?.getValue()=='admin'}">Admin</option>
-								<option value="customer" th:selected="${role?.getValue()=='customer'}">Customer</option>
-								<option value="restaurant_owner" th:selected="${role?.getValue()=='restaurant_owner'}">Restaurant Owner</option>
+								<option th:selected="${role == null}" value="">Tất cả vai trò</option>
+								<option value="admin" th:selected="${role?.getValue()=='admin'}">👑 Admin</option>
+								<option value="customer" th:selected="${role?.getValue()=='customer'}">👥 Customer</option>
+								<option value="restaurant_owner" th:selected="${role?.getValue()=='restaurant_owner'}">🏪 Restaurant Owner</option>
 							</select>
 						</div>
 						<div class="col-md-2">
-							<label class="form-label">Mỗi trang</label>
+							<label class="form-label">Hiển thị</label>
 							<select name="size" class="form-select">
-								<option th:selected="${size==10}" value="10">10</option>
-								<option th:selected="${size==20}" value="20">20</option>
-								<option th:selected="${size==50}" value="50">50</option>
+								<option th:selected="${size==10}" value="10">10 người</option>
+								<option th:selected="${size==20}" value="20">20 người</option>
+								<option th:selected="${size==50}" value="50">50 người</option>
 							</select>
 						</div>
 						<div class="col-md-3 text-end">
 							<input type="hidden" name="sortBy" th:value="${sortBy}">
-							<input type="hidden" name="dir" th:value="${dir}">
-							<button type="submit" class="btn btn-outline-light me-2"><i class="fas fa-filter me-1"></i> Lọc</button>
-							<a th:href="@{/admin/users}" class="btn btn-outline-light link-clear"><i class="fas fa-times me"> Xóa</a>
+							<br type="hidden" name="dir" th:value="${dir}">
+							<button type="submit" class="btn btn-outline-light me-2">
+								<i class="fas fa-search me-1"></i> Tìm kiếm
+							</button>
+							<a th:href="@{/admin/users}" class="btn btn-outline-light">
+								<i class="fas fa-rotate-left me-1"></i> Reset
+							</a>
 						</div>
 					</div>
 				</form>
@@ -94,52 +280,79 @@
 		</div>
 
 		<!-- Users Grid -->
-		<div class="row g-3" th:if="${users.totalElements > 0}">
-			<div class="col-md-6 col-lg-4" th:each="u : ${users.content}">
-				<div class="user-card p-3 h-100" th:data-user-id="${u.id}">
-					<div class="d-flex align-items-center mb-3">
+		<div class="row g-4" th:if="${users.totalElements > 0}">
+			<div class="col-md-6 col-xl-4" th:each="u : ${users.content}">
+				<div class="user-card p-4 h-100" th:data-user-id="${u.id}">
+					<div class="d-flex align-items-center mb-4">
 						<div class="user-avatar me-3" th:text="${(#strings.isEmpty(u.fullName) ? u.username : u.fullName).substring(0,1).toUpperCase()}">U</div>
 						<div>
 							<h5 class="mb-1 text-white" th:text="${#strings.isEmpty(u.fullName) ? u.username : u.fullName}">User</h5>
 							<div class="table-muted small" th:text="${u.email}">email@example.com</div>
+							<div class="table-muted small" th:text="'@' + ${u.username}">@username</div>
 						</div>
 					</div>
-					<div class="mb-2"><span class="table-muted">Username:</span> <span th:text="${u.username}"></span></div>
-					<div class="mb-2">
-						<span class="table-muted">Role:</span>
-						<span class="badge badge-role"
+					
+					<div class="mb-3">
+						<span class="table-muted small fw-500">VAI TRÒ:</span>
+						<br>
+						<span class="badge badge-role mt-1"
 							  th:classappend="${u.role.getValue()=='admin'} ? ' bg-danger' : (${u.role.getValue()=='restaurant_owner'} ? ' bg-info' : ' bg-success')"
 							  th:text="${u.role.getValue().toUpperCase()}">CUSTOMER</span>
 					</div>
-					<div class="mb-2">
-						<span class="table-muted">Trạng thái:</span>
-						<span class="badge badge-status" th:classappend="${u.active && u.emailVerified} ? ' bg-success' : ' bg-warning text-dark'" 
-							  th:text="${u.active && u.emailVerified} ? 'Active' : 'Inactive'">Active</span>
+					
+					<div class="mb-3">
+						<span class="table-muted small fw-500">TRẠNG THÁI:</span>
+						<br>
+						<span class="badge badge-status mt-1 status-badge" 
+							  th:id="'status-badge-' + ${u.id}"
+							  th:classappend="${u.active && u.emailVerified} ? ' bg-success' : ' bg-warning text-dark'" 
+							  th:text="${u.active && u.emailVerified} ? '✅ ACTIVE' : '🚫 INACTIVE'">Active</span>
 					</div>
-					<div class="mb-2"><span class="table-muted">Tạo lúc:</span> <span th:text="${#temporals.format(u.createdAt,'dd/MM/yyyy HH:mm')}"></span></div>
-					<div class="mb-3"><span class="table-muted">Đăng nhập gần nhất:</span> <span th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'dd/MM/yyyy HH:mm') : '-'}"></span></div>
+					
+					<div class="mb-2">
+						<span class="table-muted small">📅 Tạo:</span>
+						<span class="text-light small" th:text="${#temporals.format(u.createdAt,'dd/MM/yyyy')}"></span>
+					</div>
+					
+					<div class="mb-4">
+						<span class="table-muted small">🔐 Đăng nhập cuối:</span>
+						<span class="text-light small" th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'dd/MM/yyyy') : 'Chưa bao giờ'}"></span>
+					</div>
+					
 					<div class="d-flex gap-2">
-						<button type="button" class="btn btn-outline-light btn-sm toggle-active-btn" 
+						<!-- Toggle Active Button với AJAX -->
+						<button type="button" class="btn btn-outline-light btn-sm toggle-btn toggle-active-btn" 
+								th:id="'toggle-btn-' + ${u.id}"
 								th:data-user-id="${u.id}"
-								th:data-current-active="${u.active && u.emailVerified}"
+								th:data-current-status="${u.active && u.emailVerified}"
 								th:title="${u.active && u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
-							<i class="fas" th:classappend="${u.active && u.emailVerified} ? ' fa-lock' : ' fa-unlock'"></i>
+							<i class="fas toggle-icon" th:classappend="${u.active && u.emailVerified} ? ' fa-lock' : ' fa-unlock'"></i>
 						</button>
-						<a class="btn btn-outline-light btn-sm" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa">
-							<i class="fas fa-user-pen"></i>
+						
+						<a class="btn btn-outline-light btn-sm edit-btn" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa thông tin">
+							<i class="fas fa-user-edit"></i>
 						</a>
 					</div>
+
+					<!-- Thêm nút restore nếu user đã bị xóa -->
+					<form th:if="${u.deletedAt != null}" method="post" th:action="@{|/admin/users/${u.id}/restore|}" class="mt-2">
+						<button type="submit" class="btn btn-outline-success btn-sm w-100">
+							<i class="fas fa-undo me-1"></i> Khôi phục tài khoản
+						</button>
+					</form>
 				</div>
 			</div>
 		</div>
 
 		<!-- Empty state -->
-		<div class="alert alert-secondary" th:if="${users.totalElements == 0}">
-			<i class="fas fa-info-circle me-1"></i> Không có người dùng phù hợp.
+		<div class="alert alert-secondary text-center py-5" th:if="${users.totalElements == 0}">
+			<i class="fas fa-users opacity-50" style="font-size: 3rem;"></i>
+			<h5 class="mt-3">Không có người dùng nào</h5>
+			<p class="mb-0">Chưa có người dùng nào phù hợp với tiêu chí tìm kiếm.</p>
 		</div>
 
 		<!-- Pagination -->
-		<nav th:if="${users.totalPages > 1}" class="mt-4" aria-label="Users pagination">
+		<nav th:if="${users.totalPages > 1}" class="mt-5" aria-label="Users pagination">
 			<ul class="pagination justify-content-center">
 				<li class="page-item" th:classappend="${users.first} ? 'disabled'">
 					<a class="page-link" th:href="@{|/admin/users?page=${users.number-1}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}" aria-label="Previous">
@@ -150,7 +363,7 @@
 					<a class="page-link" th:text="${i+1}" th:href="@{|/admin/users?page=${i}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}">1</a>
 				</li>
 				<li class="page-item" th:classappend="${users.last} ? 'disabled'">
-					<a class="page-link" th:href="@{|/admin/users?page=${users.number+1}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}" aria-label="Next">
+					<a class="page-link" th:href="#{/admin/users?page=${users.number+1}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}" aria-label="Next">
 						<span aria-hidden="true">&raquo;</span>
 					</a>
 				</li>
@@ -167,21 +380,23 @@
 	
 	<script>
 	document.addEventListener('DOMContentLoaded', function() {
-		// Get CSRF token
-		const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || 
-						  document.querySelector('input[name="_csrf"]')?.value;
-		
-		// Handle toggle active buttons
+		// Handle toggle active buttons với AJAX
 		document.querySelectorAll('.toggle-active-btn').forEach(button => {
-			button.addEventListener('click', function() {
+			button.addEventListener('click', function(event) {
+				event.preventDefault();
+				
 				const userId = this.dataset.userId;
-				const currentActive = this.dataset.currentActive === 'true';
+				const currentStatus = this.dataset.currentStatus === 'true';
+				
+				console.log(`Toggling user ${userId}, current status: ${currentStatus}`);
 				
 				// Disable button during request
 				this.disabled = true;
-				const originalContent = this.innerHTML;
-				this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+				const icon = this.querySelector('.toggle-icon');
+				const originalClass = icon.className;
+				icon.className = 'fas fa-spinner fa-spin loading-spinner';
 				
+				// AJAX request với CSRF token
 				fetch(`/admin/users/${userId}/toggle-active`, {
 					method: 'POST',
 					headers: {
@@ -190,55 +405,98 @@
 					},
 					body: JSON.stringify({})
 				})
-				.then(response => response.json())
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('Network response was not ok');
+					}
+					return response.json();
+				})
 				.then(data => {
+					console.log('Toggle response:', data);
+					
 					if (data.success) {
-						// Update UI
-						const badge = this.closest('.user-card').querySelector('.badge-status');
-						const icon = this.querySelector('i');
+						// Update status badge
+						const badge = document.getElementById(`status-badge-${userId}`);
 						
-						if (data.data.active) {
-							badge.className = 'badge badge-status bg-success';
-							badge.textContent = 'Active';
-							icon.className = 'fas fa-lock';
+						if (data.data.newStatus === 'ACTIVE') {
+							badge.className = 'badge badge-status mt-1 status-badge bg-success';
+							badge.textContent = '✅ ACTIVE';
+							if (icon) {
+								icon.className = 'fas fa-lock toggle-icon';
+							}
 							this.title = 'Khóa tài khoản';
-							this.dataset.currentActive = 'true';
+							this.dataset.currentStatus = 'true';
 						} else {
-							badge.className = 'badge badge-status bg-warning text-dark';
-							badge.textContent = 'Inactive';
-							icon.className = 'fas fa-unlock';
+							badge.className = 'badge badge-status mt-1 status-badge bg-warning text-dark';
+							badge.textContent = '🚫 INACTIVE';
+							if (icon) {
+								icon.className = 'fas fa-unlock toggle-icon';
+							}
 							this.title = 'Mở khóa tài khoản';
-							this.dataset.currentActive = 'false';
+							this.dataset.currentStatus = 'false';
 						}
 						
-						// Show success toast
 						showToast('success', data.message);
 					} else {
 						showToast('error', data.message || 'Có lỗi xảy ra');
 					}
 				})
 				.catch(error => {
-					console.error('Error:', error);
-					showToast('error', 'Có lỗi xảy ra khi kết nối với server');
+					console.error('Toggle error:', error);
+					showToast('error', 'Không thể kết nối với server. Vui lòng thử lại.');
 				})
 				.finally(() => {
 					// Re-enable button
 					this.disabled = false;
-					this.innerHTML = originalContent;
+					icon.className = originalClass;
 				});
 			});
 		});
+		
+		// Show success message from URL parameters
+		const urlParams = new URLSearchParams(window.location.search);
+		const success = urlParams.get('success');
+		const error = urlParams.get('error');
+		
+		if (success) {
+			let message = '';
+			switch(success) {
+				case 'created': message = 'Đã tạo người dùng mới thành công!'; break;
+				case 'updated': message = 'Đã cập nhật thông tin người dùng thành công!'; break;
+			}
+			if (message) {
+				showToast('success', message);
+				// Clean URL
+				history.replaceState({}, document.title, window.location.pathname);
+			}
+		}
+		
+		// Show error messages
+		if (error) {
+			let message = '';
+			switch(error) {
+				case 'user_not_found': message = 'Không tìm thấy người dùng!'; break;
+				case 'load_failed': message = 'Không thể tải thông tin người dùng!'; break;
+				case 'update_failed': message = 'Cập nhật thông tin thất bại!'; break;
+				default: message = 'Có lỗi xảy ra!'; break;
+			}
+			showToast('error', message);
+			// Clean URL
+			history.replaceState({}, document.title, window.location.pathname);
+		}
 	});
 	
 	function showToast(type, message) {
 		const toastContainer = document.getElementById('toastContainer');
 		
 		const toastElement = document.createElement('div');
-		toastElement.className = `toast toast-${type}`;
+		toastElement.className = `toast toast-custom toast-${type}`;
+		toastElement.setAttribute('role', 'alert');
 		toastElement.innerHTML = `
-			<div class="toast-body">
-				<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
-				${message}
+			<div class="toast-body d-flex align-items-center">
+				<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-3"></i>
+				<span>${message}</span>
+				<button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="toast" aria-label="Close"></button>
 			</div>
 		`;
 		
@@ -246,14 +504,16 @@
 		
 		const toast = new bootstrap.Toast(toastElement, {
 			autohide: true,
-			delay: 3000
+			delay: 4000
 		});
 		
 		toast.show();
 		
 		// Remove toast element after it's hidden
 		toastElement.addEventListener('hidden.bs.toast', function() {
-			toastElement.remove();
+			if (toastElement && toastElement.parentNode) {
+				toastElement.remove();
+			}
 		});
 	}
 	</script>
