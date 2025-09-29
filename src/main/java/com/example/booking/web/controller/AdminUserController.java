@@ -1,12 +1,14 @@
 package com.example.booking.web.controller;
 
-import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -18,11 +20,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.example.booking.common.api.ApiResponse;
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
 import com.example.booking.dto.admin.UserCreateForm;
 import com.example.booking.dto.admin.UserEditForm;
+import com.example.booking.exception.ResourceNotFoundException;
 import com.example.booking.repository.UserRepository;
 
 import jakarta.validation.Valid;
@@ -76,13 +81,13 @@ public class AdminUserController {
 
 	@GetMapping("/create")
 	public String createForm(Model model) {
-		model.addAttribute("userForm", new UserCreateForm());
+		model.addAttribute("form", new UserCreateForm());
 		model.addAttribute("roles", UserRole.values());
 		return "admin/user-form";
 	}
 
 	@PostMapping("/create")
-	public String create(@Valid @ModelAttribute("userForm") UserCreateForm form, 
+	public String create(@Valid @ModelAttribute("form") UserCreateForm form, 
 						BindingResult result, Model model) {
 		if (result.hasErrors()) {
 			model.addAttribute("roles", UserRole.values());
@@ -118,86 +123,134 @@ public class AdminUserController {
 
 	@GetMapping("/{id}/edit")
 	public String editForm(@PathVariable UUID id, Model model) {
-		User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-		
-		UserEditForm form = new UserEditForm();
-		form.setUsername(user.getUsername());
-		form.setEmail(user.getEmail());
-		form.setFullName(user.getFullName());
-		form.setPhoneNumber(user.getPhoneNumber());
-		form.setAddress(user.getAddress());
-		form.setRole(user.getRole());
-		form.setEmailVerified(user.getEmailVerified());
-		form.setActive(user.getActive());
+		try {
+			User user = repo.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("User không tồn tại"));
+			
+			UserEditForm form = new UserEditForm();
+			form.setUsername(user.getUsername());
+			form.setEmail(user.getEmail());
+			form.setFullName(user.getFullName());
+			form.setPhoneNumber(user.getPhoneNumber());
+			form.setAddress(user.getAddress());
+			form.setRole(user.getRole());
+			form.setEmailVerified(user.getEmailVerified() != null ? user.getEmailVerified() : false);
+			form.setActive(user.getActive() != null ? user.getActive() : true);
 
-		model.addAttribute("userForm", form);
-		model.addAttribute("roles", UserRole.values());
-		model.addAttribute("userId", id);
-		return "admin/user-form";
+			model.addAttribute("form", form);
+			model.addAttribute("roles", UserRole.values());
+			model.addAttribute("userId", id);
+
+			return "admin/user-form";
+		} catch (ResourceNotFoundException e) {
+			System.out.println("User not found: " + e.getMessage());
+			return "redirect:/admin/users?error=user_not_found";
+		} catch (Exception e) {
+			System.out.println("ERROR in editForm: " + e.getMessage());
+			e.printStackTrace();
+			return "redirect:/admin/users?error=load_failed";
+		}
 	}
 
-	@PostMapping("/{id}/edit")
+	@PostMapping("/{id}")
 	public String edit(@PathVariable UUID id, 
-					  @Valid @ModelAttribute("userForm") UserEditForm form, 
+					  @Valid @ModelAttribute("form") UserEditForm form, 
 					  BindingResult result, Model model) {
+		System.out.println("=== POST EDIT DEBUG START ===");
+		System.out.println("ID: " + id);
+		System.out.println("Form: " + form.toString());
+		System.out.println("Has Errors: " + result.hasErrors());
+		
 		if (result.hasErrors()) {
-		model.addAttribute("roles", UserRole.values());
-		model.addAttribute("userId", id);
-		return "admin/user-form";
-	}
-
-		User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-
-		// Check username uniqueness (excluding current user)
-		if (!user.getUsername().equals(form.getUsername()) && repo.existsByUsername(form.getUsername())) {
-			result.rejectValue("username", "error.username", "Username đã tồn tại");
+			System.out.println("Validation Errors:");
+			result.getAllErrors().forEach(error -> System.out.println(error.toString()));
 			model.addAttribute("roles", UserRole.values());
 			model.addAttribute("userId", id);
 			return "admin/user-form";
 		}
 
-		// Check email uniqueness (excluding current user)
-		if (!user.getEmail().equals(form.getEmail()) && repo.existsByEmail(form.getEmail())) {
-			result.rejectValue("email", "error.email", "Email đã tồn tại");
-			model.addAttribute("roles", UserRole.values());
-			model.addAttribute("userId", id);
-			return "admin/user-form";
+		try {
+			User user = repo.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("User không tồn tại"));
+
+			// Check username uniqueness (excluding current user)
+			if (!user.getUsername().equals(form.getUsername()) && 
+				repo.existsByUsername(form.getUsername())) {
+				result.rejectValue("username", "error.username", "Username đã tồn tại");
+				model.addAttribute("roles", UserRole.values());
+				model.addAttribute("userId", id);
+				return "admin/user-form";
+			}
+
+			// Check email uniqueness (excluding current user)
+			if (!user.getEmail().equals(form.getEmail()) && 
+				repo.existsByEmail(form.getEmail())) {
+				result.rejectValue("email", "error.email", "Email đã tồn tại");
+				model.addAttribute("roles", UserRole.values());
+				model.addAttribute("userId", id);
+				return "admin/user-form";
+			}
+
+			// Update user fields
+			user.setUsername(form.getUsername());
+			user.setEmail(form.getEmail());
+			user.setFullName(form.getFullName());
+			user.setPhoneNumber(form.getPhoneNumber());
+			user.setAddress(form.getAddress());
+			user.setRole(form.getRole());
+			user.setEmailVerified(form.getEmailVerified());
+			user.setActive(form.getActive());
+
+			// Chỉ encode password mới nếu có giá trị (đúng theo luồng mô tả)
+			if (form.getNewPassword() != null && !form.getNewPassword().trim().isEmpty()) {
+				user.setPassword(passwordEncoder.encode(form.getNewPassword()));
+				System.out.println("Password updated for user: " + user.getUsername());
+			}
+
+			repo.save(user);
+			System.out.println("=== USER UPDATED SUCCESSFULLY ===");
+			return "redirect:/admin/users?success=updated";
+			
+		} catch (ResourceNotFoundException e) {
+			System.out.println("User not found: " + e.getMessage());
+			return "redirect:/admin/users?error=user_not_found";
+		} catch (Exception e) {
+			System.out.println("ERROR in edit POST: " + e.getMessage());
+			e.printStackTrace();
+			return "redirect:/admin/users?error=update_failed";
 		}
-
-		user.setUsername(form.getUsername());
-		user.setEmail(form.getEmail());
-		user.setFullName(form.getFullName());
-		user.setPhoneNumber(form.getPhoneNumber());
-		user.setAddress(form.getAddress());
-		user.setRole(form.getRole());
-		user.setEmailVerified(form.isEmailVerified());
-		user.setActive(form.isActive());
-
-		repo.save(user);
-		return "redirect:/admin/users?success=updated";
 	}
 
-	@PostMapping("/{id}/delete")
-	public String delete(@PathVariable UUID id) {
-		User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-		
-		// Soft delete
-		user.setDeletedAt(LocalDateTime.now());
-		user.setActive(false);
-		repo.save(user);
-		
-		return "redirect:/admin/users?success=deleted";
-	}
-
-	@PostMapping("/{id}/restore")
-	public String restore(@PathVariable UUID id) {
-		User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-		
-		// Restore
-		user.setDeletedAt(null);
-		user.setActive(true);
-		repo.save(user);
-		
-		return "redirect:/admin/users?success=restored";
+	@PostMapping("/{id}/toggle-active")
+	@ResponseBody
+	public ResponseEntity<ApiResponse<Map<String, Object>>> toggleActive(@PathVariable UUID id) {
+		try {
+			User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User không tồn tại"));
+			
+			boolean currentActive = user.getActive() != null && user.getActive();
+			boolean currentEmailVerified = user.getEmailVerified() != null && user.getEmailVerified();
+			boolean currentlyEnabled = currentActive && currentEmailVerified;
+			boolean newStatus = !currentlyEnabled;
+			
+			user.setActive(newStatus);
+			user.setEmailVerified(newStatus);
+			repo.save(user);
+			
+			Map<String, Object> data = new HashMap<>();
+			data.put("active", newStatus);
+			data.put("emailVerified", newStatus);
+			data.put("currentStatus", currentlyEnabled ? "ACTIVE" : "INACTIVE");
+			data.put("newStatus", newStatus ? "ACTIVE" : "INACTIVE");
+			
+			String message = newStatus ? 
+				"Đã mở khóa tài khoản người dùng thành công!" : 
+				"Đã khóa tài khoản người dùng thành công!";
+			
+			return ResponseEntity.ok(ApiResponse.success(message, data));
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.ok(ApiResponse.error("Có lỗi xảy ra: " + e.getMessage()));
+		}
 	}
 }
