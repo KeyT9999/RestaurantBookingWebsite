@@ -53,9 +53,9 @@
 							<label class="form-label">Vai trò</label>
 							<select name="role" class="form-select">
 								<option th:selected="${role == null}" value="">Tất cả</option>
-								<option value="ADMIN" th:selected="${role?.name()=='ADMIN'}">ADMIN</option>
-								<option value="CUSTOMER" th:selected="${role?.name()=='CUSTOMER'}">CUSTOMER</option>
-								<option value="RESTAURANT" th:selected="${role?.name()=='RESTAURANT'}">RESTAURANT</option>
+								<option value="admin" th:selected="${role?.getValue()=='admin'}">Admin</option>
+								<option value="customer" th:selected="${role?.getValue()=='customer'}">Customer</option>
+								<option value="restaurant_owner" th:selected="${role?.getValue()=='restaurant_owner'}">Restaurant Owner</option>
 							</select>
 						</div>
 						<div class="col-md-2">
@@ -69,7 +69,6 @@
 						<div class="col-md-3 text-end">
 							<input type="hidden" name="sortBy" th:value="${sortBy}">
 							<input type="hidden" name="dir" th:value="${dir}">
-							<a class="btn btn-gold me-2" th:href="@{/admin/users/create}"><i class="fas fa-user-plus me-1"></i> Thêm</a>
 							<button type="submit" class="btn btn-outline-light me-2"><i class="fas fa-filter me-1"></i> Lọc</button>
 							<a th:href="@{/admin/users}" class="btn btn-outline-light link-clear"><i class="fas fa-times me-1"></i> Xóa</a>
 						</div>
@@ -93,20 +92,33 @@
 					<div class="mb-2">
 						<span class="table-muted">Role:</span>
 						<span class="badge badge-role"
-							  th:classappend="${u.role.name()=='ADMIN'} ? ' bg-danger' : (${u.role.name()=='RESTAURANT'} ? ' bg-info' : ' bg-success')"
-							  th:text="${u.role.name()}">CUSTOMER</span>
+							  th:classappend="${u.role.getValue()=='admin'} ? ' bg-danger' : (${u.role.getValue()=='restaurant_owner'} ? ' bg-info' : ' bg-success')"
+							  th:text="${u.role.getValue().toUpperCase()}">CUSTOMER</span>
 					</div>
 					<div class="mb-2">
 						<span class="table-muted">Trạng thái:</span>
-						<span class="badge badge-status" th:classappend="${u.emailVerified} ? ' bg-success' : ' bg-warning text-dark'" th:text="${u.emailVerified} ? 'Active' : 'Locked'">Active</span>
+						<span class="badge badge-status" th:classappend="${u.active && u.emailVerified} ? ' bg-success' : ' bg-warning text-dark'" 
+							  th:text="${u.active && u.emailVerified} ? 'Active' : 'Inactive'">Active</span>
 					</div>
 					<div class="mb-2"><span class="table-muted">Tạo lúc:</span> <span th:text="${#temporals.format(u.createdAt,'dd/MM/yyyy HH:mm')}"></span></div>
 					<div class="mb-3"><span class="table-muted">Đăng nhập gần nhất:</span> <span th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'dd/MM/yyyy HH:mm') : '-'}"></span></div>
 					<div class="d-flex gap-2">
 						<form th:action="@{|/admin/users/${u.id}/toggle-active|}" method="post">
-							<button type="submit" class="btn btn-outline-light btn-sm"><i class="fas" th:classappend="${u.emailVerified} ? ' fa-lock' : ' fa-unlock'"></i></button>
+							<button type="submit" class="btn btn-outline-light btn-sm" 
+									th:title="${u.active} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
+								<i class="fas" th:classappend="${u.active} ? ' fa-lock' : ' fa-unlock'"></i>
+							</button>
 						</form>
-						<a class="btn btn-outline-light btn-sm" th:href="@{|/admin/users/${u.id}/edit|}"><i class="fas fa-user-pen"></i></a>
+						<a class="btn btn-outline-light btn-sm" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa">
+							<i class="fas fa-user-pen"></i>
+						</a>
+						<form th:action="@{|/admin/users/${u.id}/delete|}" method="post" 
+							  th:if="${u.deletedAt == null}"
+							  onsubmit="return confirm('Bạn có chắc muốn xóa người dùng này?')">
+							<button type="submit" class="btn btn-outline-danger btn-sm" title="Xóa">
+								<i class="fas fa-trash"></i>
+							</button>
+						</form>
 					</div>
 				</div>
 			</div>
