@@ -81,44 +81,86 @@ public class AdminUserController {
 
 	@GetMapping("/create")
 	public String createForm(Model model) {
-		model.addAttribute("form", new UserCreateForm());
+		System.out.println("=== CREATE FORM DEBUG START ===");
+		UserCreateForm form = new UserCreateForm();
+		form.setRole(UserRole.CUSTOMER);
+		form.setActive(true);
+		form.setEmailVerified(false); // Đúng theo mô tả: emailVerified = false
+		
+		model.addAttribute("form", form);
 		model.addAttribute("roles", UserRole.values());
+		model.addAttribute("userId", null); // Để phân biệt create vs edit trong template
+		
+		System.out.println("Create form initialized: " + form.toString());
+		System.out.println("=== CREATE FORM DEBUG END ===");
+		
 		return "admin/user-form";
 	}
 
-	@PostMapping("/create")
+	@PostMapping("/create") // Đổi từ "/new" thành "/create"  
 	public String create(@Valid @ModelAttribute("form") UserCreateForm form, 
 						BindingResult result, Model model) {
+		
+		System.out.println("=== POST CREATE DEBUG START ===");
+		System.out.println("Form: " + form.toString());
+		System.out.println("Has Errors: " + result.hasErrors());
+		
 		if (result.hasErrors()) {
+			System.out.println("Validation Errors:");
+			result.getAllErrors().forEach(error -> System.out.println(error.toString()));
 			model.addAttribute("roles", UserRole.values());
+			model.addAttribute("userId", null);
 			return "admin/user-form";
 		}
 
+		// Check username uniqueness
 		if (repo.existsByUsername(form.getUsername())) {
 			result.rejectValue("username", "error.username", "Username đã tồn tại");
 			model.addAttribute("roles", UserRole.values());
+			model.addAttribute("userId", null);
 			return "admin/user-form";
 		}
 
+		// Check email uniqueness  
 		if (repo.existsByEmail(form.getEmail())) {
 			result.rejectValue("email", "error.email", "Email đã tồn tại");
 			model.addAttribute("roles", UserRole.values());
+			model.addAttribute("userId", null);
 			return "admin/user-form";
 		}
 
-		User user = new User();
-		user.setUsername(form.getUsername());
-		user.setEmail(form.getEmail());
-		user.setPassword(passwordEncoder.encode(form.getPassword()));
-		user.setFullName(form.getFullName());
-		user.setPhoneNumber(form.getPhoneNumber());
-		user.setAddress(form.getAddress());
-		user.setRole(form.getRole());
-		user.setEmailVerified(form.isEmailVerified());
-		user.setActive(form.isActive());
-
-		repo.save(user);
-		return "redirect:/admin/users?success=created";
+		try {
+			// Create new user (đúng theo mô tả)
+			User user = new User();
+			user.setUsername(form.getUsername());
+			user.setEmail(form.getEmail());
+			user.setPassword(passwordEncoder.encode(form.getPassword()));
+			user.setFullName(form.getFullName());
+			user.setPhoneNumber(form.getPhoneNumber());
+			user.setAddress(form.getAddress());
+			user.setRole(form.getRole());
+			
+			// Đúng theo mô tả: emailVerified = false, active = true (default)
+			user.setEmailVerified(form.isEmailVerified());
+			user.setActive(form.isActive());
+			
+			// Audit: createdAt, updatedAt tự động set bởi @CreatedDate, @LastModifiedDate
+			
+			repo.save(user);
+			
+			System.out.println("=== USER CREATED SUCCESSFULLY ===");
+			System.out.println("User: " + user.toString());
+			
+			// PRG pattern - Redirect về danh sách với flash message
+			return "redirect:/admin/users?success=created";
+			
+		} catch (Exception e) {
+			System.out.println("ERROR in create POST: " + e.getMessage());
+			e.printStackTrace();
+			model.addAttribute("roles", UserRole.values());
+			model.addAttribute("userId", null);
+			return "admin/user-form";
+		}
 	}
 
 	@GetMapping("/{id}/edit")
