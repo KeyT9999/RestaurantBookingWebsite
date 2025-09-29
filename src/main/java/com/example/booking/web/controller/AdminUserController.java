@@ -1,12 +1,15 @@
 package com.example.booking.web.controller;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -18,7 +21,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.example.booking.common.api.ApiResponse;
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
 import com.example.booking.dto.admin.UserCreateForm;
@@ -199,5 +204,32 @@ public class AdminUserController {
 		repo.save(user);
 		
 		return "redirect:/admin/users?success=restored";
+	}
+
+	@PostMapping("/{id}/toggle-active")
+	@ResponseBody
+	public ResponseEntity<ApiResponse<Map<String, Object>>> toggleActive(@PathVariable UUID id) {
+		try {
+			User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+			
+			// Toggle active status
+			boolean newStatus = !(user.getActive() != null && user.getActive() && user.getEmailVerified() != null && user.getEmailVerified());
+			user.setActive(newStatus);
+			user.setEmailVerified(newStatus);
+			repo.save(user);
+			
+			Map<String, Object> data = new HashMap<>();
+			data.put("active", newStatus);
+			data.put("emailVerified", newStatus);
+			
+			String message = newStatus ? 
+				"Đã mở khóa tài khoản người dùng thành công!" : 
+				"Đã khóa tài khoản người dùng thành công!";
+			
+			return ResponseEntity.ok(ApiResponse.success(message, data));
+			
+		} catch (Exception e) {
+			return ResponseEntity.ok(ApiResponse.error("Có lỗi xảy ra: " + e.getMessage()));
+		}
 	}
 }
