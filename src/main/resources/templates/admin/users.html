@@ -27,6 +27,22 @@
 		.btn-gold:hover { background:#FFD700; border-color:#FFD700; color:#121212; }
 		.link-clear { color:#E0E0E0; border-color:#E0E0E0; }
 		.link-clear:hover { background:#E0E0E0; color:#121212; }
+		
+		/* Toast styles */
+		.toast-container {
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			z-index: 1055;
+		}
+		.toast-success {
+			background-color: #198754;
+			color: white;
+		}
+		.toast-error {
+			background-color: #dc3545;
+			color: white;
+		}
 	</style>
 </head>
 <body class="page-bg">
@@ -70,7 +86,7 @@
 							<input type="hidden" name="sortBy" th:value="${sortBy}">
 							<input type="hidden" name="dir" th:value="${dir}">
 							<button type="submit" class="btn btn-outline-light me-2"><i class="fas fa-filter me-1"></i> Lọc</button>
-							<a th:href="@{/admin/users}" class="btn btn-outline-light link-clear"><i class="fas fa-times me-1"></i> Xóa</a>
+							<a th:href="@{/admin/users}" class="btn btn-outline-light link-clear"><i class="fas fa-times me"> Xóa</a>
 						</div>
 					</div>
 				</form>
@@ -80,7 +96,7 @@
 		<!-- Users Grid -->
 		<div class="row g-3" th:if="${users.totalElements > 0}">
 			<div class="col-md-6 col-lg-4" th:each="u : ${users.content}">
-				<div class="user-card p-3 h-100">
+				<div class="user-card p-3 h-100" th:data-user-id="${u.id}">
 					<div class="d-flex align-items-center mb-3">
 						<div class="user-avatar me-3" th:text="${(#strings.isEmpty(u.fullName) ? u.username : u.fullName).substring(0,1).toUpperCase()}">U</div>
 						<div>
@@ -103,22 +119,15 @@
 					<div class="mb-2"><span class="table-muted">Tạo lúc:</span> <span th:text="${#temporals.format(u.createdAt,'dd/MM/yyyy HH:mm')}"></span></div>
 					<div class="mb-3"><span class="table-muted">Đăng nhập gần nhất:</span> <span th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'dd/MM/yyyy HH:mm') : '-'}"></span></div>
 					<div class="d-flex gap-2">
-						<form th:action="@{|/admin/users/${u.id}/toggle-active|}" method="post">
-							<button type="submit" class="btn btn-outline-light btn-sm" 
-									th:title="${u.active} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
-								<i class="fas" th:classappend="${u.active} ? ' fa-lock' : ' fa-unlock'"></i>
-							</button>
-						</form>
+						<button type="button" class="btn btn-outline-light btn-sm toggle-active-btn" 
+								th:data-user-id="${u.id}"
+								th:data-current-active="${u.active && u.emailVerified}"
+								th:title="${u.active && u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
+							<i class="fas" th:classappend="${u.active && u.emailVerified} ? ' fa-lock' : ' fa-unlock'"></i>
+						</button>
 						<a class="btn btn-outline-light btn-sm" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa">
 							<i class="fas fa-user-pen"></i>
 						</a>
-						<form th:action="@{|/admin/users/${u.id}/delete|}" method="post" 
-							  th:if="${u.deletedAt == null}"
-							  onsubmit="return confirm('Bạn có chắc muốn xóa người dùng này?')">
-							<button type="submit" class="btn btn-outline-danger btn-sm" title="Xóa">
-								<i class="fas fa-trash"></i>
-							</button>
-						</form>
 					</div>
 				</div>
 			</div>
@@ -149,8 +158,104 @@
 		</nav>
 	</div>
 
+	<!-- Toast Container -->
+	<div class="toast-container" id="toastContainer"></div>
+
 	<div th:replace="~{fragments/footer :: site-footer}"></div>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 	<script th:src="@{/js/main.js}" defer></script>
+	
+	<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		// Get CSRF token
+		const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || 
+						  document.querySelector('input[name="_csrf"]')?.value;
+		
+		// Handle toggle active buttons
+		document.querySelectorAll('.toggle-active-btn').forEach(button => {
+			button.addEventListener('click', function() {
+				const userId = this.dataset.userId;
+				const currentActive = this.dataset.currentActive === 'true';
+				
+				// Disable button during request
+				this.disabled = true;
+				const originalContent = this.innerHTML;
+				this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+				
+				fetch(`/admin/users/${userId}/toggle-active`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest'
+					},
+					body: JSON.stringify({})
+				})
+				.then(response => response.json())
+				.then(data => {
+					if (data.success) {
+						// Update UI
+						const badge = this.closest('.user-card').querySelector('.badge-status');
+						const icon = this.querySelector('i');
+						
+						if (data.data.active) {
+							badge.className = 'badge badge-status bg-success';
+							badge.textContent = 'Active';
+							icon.className = 'fas fa-lock';
+							this.title = 'Khóa tài khoản';
+							this.dataset.currentActive = 'true';
+						} else {
+							badge.className = 'badge badge-status bg-warning text-dark';
+							badge.textContent = 'Inactive';
+							icon.className = 'fas fa-unlock';
+							this.title = 'Mở khóa tài khoản';
+							this.dataset.currentActive = 'false';
+						}
+						
+						// Show success toast
+						showToast('success', data.message);
+					} else {
+						showToast('error', data.message || 'Có lỗi xảy ra');
+					}
+				})
+				.catch(error => {
+					console.error('Error:', error);
+					showToast('error', 'Có lỗi xảy ra khi kết nối với server');
+				})
+				.finally(() => {
+					// Re-enable button
+					this.disabled = false;
+					this.innerHTML = originalContent;
+				});
+			});
+		});
+	});
+	
+	function showToast(type, message) {
+		const toastContainer = document.getElementById('toastContainer');
+		
+		const toastElement = document.createElement('div');
+		toastElement.className = `toast toast-${type}`;
+		toastElement.innerHTML = `
+			<div class="toast-body">
+				<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
+				${message}
+			</div>
+		`;
+		
+		toastContainer.appendChild(toastElement);
+		
+		const toast = new bootstrap.Toast(toastElement, {
+			autohide: true,
+			delay: 3000
+		});
+		
+		toast.show();
+		
+		// Remove toast element after it's hidden
+		toastElement.addEventListener('hidden.bs.toast', function() {
+			toastElement.remove();
+		});
+	}
+	</script>
 </body>
 </html>
