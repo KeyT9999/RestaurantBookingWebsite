@@ -1,5 +1,8 @@
 package com.example.booking.web.controller;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -49,116 +52,152 @@ public class AdminUserController {
 		Sort sort = "asc".equalsIgnoreCase(dir) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
 		Pageable pageable = PageRequest.of(page, size, sort);
 
-		Page<User> users = (role != null)
-			? (q.isBlank()
-				? repo.findByRole(role, pageable)
-				: repo.findByRoleAndUsernameContainingIgnoreCaseOrRoleAndEmailContainingIgnoreCase(role, q, role, q, pageable))
-			: (q.isBlank()
-				? repo.findAll(pageable)
-				: repo.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(q, q, pageable));
+		Page<User> users;
+		if (role != null) {
+			users = repo.findByRole(role, pageable);
+		} else if (!q.isEmpty()) {
+			users = repo.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(q, q, pageable);
+		} else {
+			users = repo.findAll(pageable);
+		}
 
 		model.addAttribute("users", users);
-		model.addAttribute("q", q);
-		model.addAttribute("role", role);
+		model.addAttribute("currentPage", page);
+		model.addAttribute("totalPages", users.getTotalPages());
+		model.addAttribute("totalElements", users.getTotalElements());
 		model.addAttribute("sortBy", sortBy);
 		model.addAttribute("dir", dir);
-		model.addAttribute("size", size);
+		model.addAttribute("q", q);
+		model.addAttribute("role", role);
+		model.addAttribute("roles", UserRole.values());
+
 		return "admin/users";
 	}
 
 	@GetMapping("/create")
-	public String showCreateForm(Model model) {
-		model.addAttribute("form", new UserCreateForm());
+	public String createForm(Model model) {
+		model.addAttribute("userForm", new UserCreateForm());
 		model.addAttribute("roles", UserRole.values());
 		return "admin/user-form";
 	}
 
-	@PostMapping
-	public String create(@Valid @ModelAttribute("form") UserCreateForm form,
-					   BindingResult binding,
-					   Model model) {
-		if (binding.hasErrors()) {
-			model.addAttribute("roles", UserRole.values());
-			return "admin/user-form";
-		}
-		if (repo.existsByUsername(form.getUsername())) {
-			binding.rejectValue("username", "exists", "Username đã tồn tại");
-		}
-		if (repo.existsByEmail(form.getEmail())) {
-			binding.rejectValue("email", "exists", "Email đã tồn tại");
-		}
-		if (binding.hasErrors()) {
+	@PostMapping("/create")
+	public String create(@Valid @ModelAttribute("userForm") UserCreateForm form, 
+						BindingResult result, Model model) {
+		if (result.hasErrors()) {
 			model.addAttribute("roles", UserRole.values());
 			return "admin/user-form";
 		}
 
-		User u = new User();
-		u.setUsername(form.getUsername());
-		u.setEmail(form.getEmail());
-		u.setPassword(passwordEncoder.encode(form.getPassword()));
-		u.setFullName(form.getFullName());
-		u.setPhoneNumber(form.getPhoneNumber());
-		u.setAddress(form.getAddress());
-		u.setRole(form.getRole());
-		u.setEmailVerified(form.isEmailVerified());
-		repo.save(u);
-		return "redirect:/admin/users";
+		if (repo.existsByUsername(form.getUsername())) {
+			result.rejectValue("username", "error.username", "Username đã tồn tại");
+			model.addAttribute("roles", UserRole.values());
+			return "admin/user-form";
+		}
+
+		if (repo.existsByEmail(form.getEmail())) {
+			result.rejectValue("email", "error.email", "Email đã tồn tại");
+			model.addAttribute("roles", UserRole.values());
+			return "admin/user-form";
+		}
+
+		User user = new User();
+		user.setUsername(form.getUsername());
+		user.setEmail(form.getEmail());
+		user.setPassword(passwordEncoder.encode(form.getPassword()));
+		user.setFullName(form.getFullName());
+		user.setPhoneNumber(form.getPhoneNumber());
+		user.setAddress(form.getAddress());
+		user.setRole(form.getRole());
+		user.setEmailVerified(form.isEmailVerified());
+		user.setActive(form.isActive());
+
+		repo.save(user);
+		return "redirect:/admin/users?success=created";
 	}
 
 	@GetMapping("/{id}/edit")
-	public String showEditForm(@PathVariable("id") java.util.UUID id, Model model) {
-		User u = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("User không tồn tại"));
+	public String editForm(@PathVariable UUID id, Model model) {
+		User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+		
 		UserEditForm form = new UserEditForm();
-		form.setUsername(u.getUsername());
-		form.setEmail(u.getEmail());
-		form.setFullName(u.getFullName());
-		form.setPhoneNumber(u.getPhoneNumber());
-		form.setAddress(u.getAddress());
-		form.setRole(u.getRole());
-		form.setEmailVerified(Boolean.TRUE.equals(u.getEmailVerified()));
-		model.addAttribute("form", form);
+		form.setUsername(user.getUsername());
+		form.setEmail(user.getEmail());
+		form.setFullName(user.getFullName());
+		form.setPhoneNumber(user.getPhoneNumber());
+		form.setAddress(user.getAddress());
+		form.setRole(user.getRole());
+		form.setEmailVerified(user.getEmailVerified());
+		form.setActive(user.getActive());
+
+		model.addAttribute("userForm", form);
 		model.addAttribute("roles", UserRole.values());
 		model.addAttribute("userId", id);
 		return "admin/user-form";
 	}
 
-	@PostMapping("/{id}")
-	public String update(@PathVariable("id") java.util.UUID id,
-					  @Valid @ModelAttribute("form") UserEditForm form,
-					  BindingResult binding,
-					  Model model) {
-		User u = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("User không tồn tại"));
-
-		if (binding.hasErrors()) {
-			model.addAttribute("roles", UserRole.values());
-			model.addAttribute("userId", id);
-			return "admin/user-form";
-		}
-		// uniqueness checks
-		repo.findByUsername(form.getUsername()).filter(x -> !x.getId().equals(id)).ifPresent(x -> binding.rejectValue("username", "exists", "Username đã tồn tại"));
-		repo.findByEmail(form.getEmail()).filter(x -> !x.getId().equals(id)).ifPresent(x -> binding.rejectValue("email", "exists", "Email đã tồn tại"));
-		if (binding.hasErrors()) {
-			model.addAttribute("roles", UserRole.values());
-			model.addAttribute("userId", id);
-			return "admin/user-form";
-		}
-
-		u.setUsername(form.getUsername());
-		u.setEmail(form.getEmail());
-		u.setFullName(form.getFullName());
-		u.setPhoneNumber(form.getPhoneNumber());
-		u.setAddress(form.getAddress());
-		u.setRole(form.getRole());
-		u.setEmailVerified(form.isEmailVerified());
-		repo.save(u);
-		return "redirect:/admin/users";
+	@PostMapping("/{id}/edit")
+	public String edit(@PathVariable UUID id, 
+					  @Valid @ModelAttribute("userForm") UserEditForm form, 
+					  BindingResult result, Model model) {
+		if (result.hasErrors()) {
+		model.addAttribute("roles", UserRole.values());
+		model.addAttribute("userId", id);
+		return "admin/user-form";
 	}
 
-	@PostMapping("/{id}/toggle-active")
-	public String toggleActive(@PathVariable("id") java.util.UUID id) {
-		User u = repo.findById(id).orElseThrow(() -> new IllegalArgumentException("User không tồn tại"));
-		u.setEmailVerified(!Boolean.TRUE.equals(u.getEmailVerified()));
-		repo.save(u);
-		return "redirect:/admin/users";
+		User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+
+		// Check username uniqueness (excluding current user)
+		if (!user.getUsername().equals(form.getUsername()) && repo.existsByUsername(form.getUsername())) {
+			result.rejectValue("username", "error.username", "Username đã tồn tại");
+			model.addAttribute("roles", UserRole.values());
+			model.addAttribute("userId", id);
+			return "admin/user-form";
+		}
+
+		// Check email uniqueness (excluding current user)
+		if (!user.getEmail().equals(form.getEmail()) && repo.existsByEmail(form.getEmail())) {
+			result.rejectValue("email", "error.email", "Email đã tồn tại");
+			model.addAttribute("roles", UserRole.values());
+			model.addAttribute("userId", id);
+			return "admin/user-form";
+		}
+
+		user.setUsername(form.getUsername());
+		user.setEmail(form.getEmail());
+		user.setFullName(form.getFullName());
+		user.setPhoneNumber(form.getPhoneNumber());
+		user.setAddress(form.getAddress());
+		user.setRole(form.getRole());
+		user.setEmailVerified(form.isEmailVerified());
+		user.setActive(form.isActive());
+
+		repo.save(user);
+		return "redirect:/admin/users?success=updated";
+	}
+
+	@PostMapping("/{id}/delete")
+	public String delete(@PathVariable UUID id) {
+		User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+		
+		// Soft delete
+		user.setDeletedAt(LocalDateTime.now());
+		user.setActive(false);
+		repo.save(user);
+		
+		return "redirect:/admin/users?success=deleted";
+	}
+
+	@PostMapping("/{id}/restore")
+	public String restore(@PathVariable UUID id) {
+		User user = repo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+		
+		// Restore
+		user.setDeletedAt(null);
+		user.setActive(true);
+		repo.save(user);
+		
+		return "redirect:/admin/users?success=restored";
 	}
 }
