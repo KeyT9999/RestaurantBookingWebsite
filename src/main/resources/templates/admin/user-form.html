@@ -7,6 +7,15 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
+	<style>
+		.page-bg { background-color:#121212; min-height:100vh; }
+		.filter-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; }
+		.form-control, .form-select { background:#2A2A2A; color:#E0E0E0; border:1px solid #444; }
+		.form-control::placeholder { color:#8a8a8a; }
+		.form-control:focus, .form-select:focus { background:#2A2A2A; color:#E0E0E0; border-color:#D4AF37; box-shadow:0 0 0 0.2rem rgba(212,175,55,.25); }
+		.btn-gold { background:#D4AF37; border-color:#D4AF37; color:#121212; }
+		.btn-gold:hover { background:#FFD700; border-color:#FFD700; color:#121212; }
+	</style>
 </head>
 <body class="page-bg">
 	<div th:replace="~{fragments/header :: site-header}"></div>
@@ -45,14 +54,21 @@
 				<div class="col-md-6">
 					<label class="form-label">Vai trò</label>
 					<select class="form-select" th:field="*{role}">
-						<option th:each="r : ${roles}" th:value="${r}" th:text="${r}"></option>
+						<option th:each="r : ${roles}" th:value="${r}" th:text="${r.getValue().toUpperCase()}"></option>
 					</select>
 				</div>
 				<div class="col-md-6">
-					<label class="form-label">Trạng thái</label>
+					<label class="form-label">Email đã xác thực</label>
 					<select class="form-select" th:field="*{emailVerified}">
-						<option th:value="true">Active</option>
-						<option th:value="false">Locked</option>
+						<option th:value="true">Đã xác thực</option>
+						<option th:value="false">Chưa xác thực</option>
+					</select>
+				</div>
+				<div class="col-md-6" th:if="${userId != null}">
+					<label class="form-label">Trạng thái tài khoản</label>
+					<select class="form-select" th:field="*{active}">
+						<option th:value="true">Hoạt động</option>
+						<option th:value="false">Bị khóa</option>
 					</select>
 				</div>
 			</div>
