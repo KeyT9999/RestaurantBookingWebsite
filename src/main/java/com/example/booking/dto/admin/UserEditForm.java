@@ -24,10 +24,16 @@ public class UserEditForm {
 
 	private UserRole role = UserRole.CUSTOMER;
 
-	private boolean emailVerified = true;
+	private Boolean emailVerified = true;
 	
-	private boolean active = true;
+	private Boolean active = true;
 
+	// Thêm password field cho việc đổi password (không bắt buộc)
+	// Chỉ validate khi có giá trị (không null và không empty)
+	@Size(max = 100, message = "Mật khẩu mới không được quá 100 ký tự")
+	private String newPassword;
+
+	// Getters and Setters
 	public String getUsername() { return username; }
 	public void setUsername(String username) { this.username = username; }
 
@@ -46,9 +52,37 @@ public class UserEditForm {
 	public UserRole getRole() { return role; }
 	public void setRole(UserRole role) { this.role = role; }
 
-	public boolean isEmailVerified() { return emailVerified; }
-	public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+	public Boolean getEmailVerified() { return emailVerified; }
+	public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
 	
-	public boolean isActive() { return active; }
-	public void setActive(boolean active) { this.active = active; }
+	public Boolean getActive() { return active; }
+	public void setActive(Boolean active) { this.active = active; }
+
+	// Thêm getter/setter cho newPassword
+	public String getNewPassword() { return newPassword; }
+	public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+	
+	// Helper methods for form binding
+	public boolean isEmailVerified() { 
+		return emailVerified != null ? emailVerified : false; 
+	}
+	
+	public boolean isActive() { 
+		return active != null ? active : true; 
+	}
+	
+	@Override
+	public String toString() {
+		return "UserEditForm{" +
+				"username='" + username + '\'' +
+				", email='" + email + '\'' +
+				", fullName='" + fullName + '\'' +
+				", phoneNumber='" + phoneNumber + '\'' +
+				", address='" + address + '\'' +
+				", role=" + role +
+				", emailVerified=" + emailVerified +
+				", active=" + active +
+				", newPassword='" + (newPassword != null ? "***" : "null") + '\'' +
+				'}';
+	}
 } 
