@@ -3,81 +3,292 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Người dùng - BookEat Admin</title>
+	<title>User Form - BookEat Admin</title>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
+	
 	<style>
-		.page-bg { background-color:#121212; min-height:100vh; }
-		.filter-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; }
-		.form-control, .form-select { background:#2A2A2A; color:#E0E0E0; border:1px solid #444; }
-		.form-control::placeholder { color:#8a8a8a; }
-		.form-control:focus, .form-select:focus { background:#2A2A2A; color:#E0E0E0; border-color:#D4AF37; box-shadow:0 0 0 0.2rem rgba(212,175,55,.25); }
-		.btn-gold { background:#D4AF37; border-color:#D4AF37; color:#121212; }
-		.btn-gold:hover { background:#FFD700; border-color:#FFD700; color:#121212; }
+		/* Admin Panel Specific Styles */
+		.admin-page { 
+			font-family: 'Inter', sans-serif; 
+			background: #121212; 
+			color: #fff; 
+			min-height: 100vh;
+		}
+		
+		.form-container { 
+			background: #1A1A1A; 
+			border-radius: 16px; 
+			border: 1px solid rgba(212,175,55,.2);
+			box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+		}
+		
+		.form-control, .form-select { 
+			background: #2A2A2A; 
+			color: #E0E0E0; 
+			border: 1px solid #444;
+			font-family: 'Inter', sans-serif;
+			font-size: 0.95rem;
+			padding: 0.75rem 1rem;
+			border-radius: 8px;
+			transition: all 0.2s ease;
+		}
+		
+		.form-control:focus, .form-select:focus { 
+			background: #2A2A2A; 
+			color: #E0E0E0; 
+			border-color: #D4AF37; 
+			box-shadow: 0 0 0 0.2rem rgba(212,175,55,.25);
+		}
+		
+		.btn-gold { 
+			background: #D4AF37; 
+			border-color: #D4AF37; 
+			color: #121212; 
+			font-weight: 600; 
+		}
+		
+		.btn-gold:hover { 
+			background: #FFD700; 
+			border-color: #FFD700; 
+			color: #121212;
+		}
+		
+		/* Label màu trắng */
+		.form-label { color: #ffffff !important; font-weight: 500; }
+		
+		/* Text muted cho dark theme */
+		.text-muted { color: #BFBFBF !important; }
+		
+		/* Password field styling */
+		.password-note {
+			color: #ffffff !important;
+			font-size: 0.875rem;
+		}
+		
+		.alert-info {
+			background: rgba(212,175,55,0.15) !important;
+			border: 1px solid rgba(212,175,55,0.4) !important;
+			color: #ffffff !important;
+		}
+		
+		.text-danger { color: #ff6b6b !important; }
+		
+		.alert-success {
+			background: rgba(40,167,69,0.2) !important;
+			border: 1px solid rgba(40,167,69,0.4) !important;
+			color: #ffffff !important;
+		}
+		
+		/* Page title styling */
+		.page-title {
+			color: #D4AF37;
+			font-family: 'Poppins', sans-serif;
+			font-weight: 600;
+			font-size: 2rem;
+			text-align: center;
+			margin-bottom: 0.5rem;
+		}
+		
+		.page-subtitle {
+			color: #BFBFBF;
+			text-align: center;
+			margin-bottom: 32px;
+		}
+		
+		/* Adjust container for fixed header */
+		.admin-content {
+			padding-top: 120px; /* Account for fixed header */
+		}
 	</style>
 </head>
-<body class="page-bg">
+<body class="admin-page">
+	<!-- Site Header -->
 	<div th:replace="~{fragments/header :: site-header}"></div>
-	<div class="container py-5">
-		<h1 class="text-white mb-4" th:text="${userId != null} ? 'Chỉnh sửa người dùng' : 'Thêm người dùng'"></h1>
-		<form th:action="${userId != null} ? @{'/admin/users/' + ${userId}} : @{/admin/users}" method="post" th:object="${form}" class="card p-4 filter-card">
-			<div class="row g-3">
-				<div class="col-md-6">
-					<label class="form-label">Username</label>
-					<input type="text" class="form-control" th:field="*{username}" placeholder="username">
-					<div class="text-danger small" th:errors="*{username}"></div>
-				</div>
-				<div class="col-md-6">
-					<label class="form-label">Email</label>
-					<input type="email" class="form-control" th:field="*{email}" placeholder="email@example.com">
-					<div class="text-danger small" th:errors="*{email}"></div>
-				</div>
-				<div class="col-md-6" th:if="${userId == null}">
-					<label class="form-label">Mật khẩu</label>
-					<input type="password" class="form-control" th:field="*{password}" placeholder="******">
-					<div class="text-danger small" th:errors="*{password}"></div>
-				</div>
-				<div class="col-md-6">
-					<label class="form-label">Họ tên</label>
-					<input type="text" class="form-control" th:field="*{fullName}" placeholder="Nguyễn Văn A">
-					<div class="text-danger small" th:errors="*{fullName}"></div>
-				</div>
-				<div class="col-md-6">
-					<label class="form-label">Số điện thoại</label>
-					<input type="text" class="form-control" th:field="*{phoneNumber}" placeholder="090...">
-				</div>
-				<div class="col-md-6">
-					<label class="form-label">Địa chỉ</label>
-					<input type="text" class="form-control" th:field="*{address}" placeholder="Địa chỉ">
-				</div>
-				<div class="col-md-6">
-					<label class="form-label">Vai trò</label>
-					<select class="form-select" th:field="*{role}">
-						<option th:each="r : ${roles}" th:value="${r}" th:text="${r.getValue().toUpperCase()}"></option>
-					</select>
-				</div>
-				<div class="col-md-6">
-					<label class="form-label">Email đã xác thực</label>
-					<select class="form-select" th:field="*{emailVerified}">
-						<option th:value="true">Đã xác thực</option>
-						<option th:value="false">Chưa xác thực</option>
-					</select>
-				</div>
-				<div class="col-md-6" th:if="${userId != null}">
-					<label class="form-label">Trạng thái tài khoản</label>
-					<select class="form-select" th:field="*{active}">
-						<option th:value="true">Hoạt động</option>
-						<option th:value="false">Bị khóa</option>
-					</select>
+
+	<!-- Admin Content -->
+	<div class="admin-content">
+		<div class="container py-5">
+			<div class="row justify-content-center">
+				<div class="col-lg-8">
+					
+					<!-- Page Header -->
+					<div class="mb-5">
+						<h1 class="page-title">
+							<i class="fas fa-user-edit me-3"></i>
+							<span th:text="${userId != null} ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'">User Management</span>
+						</h1>
+						<p class="page-subtitle">Quản lý thông tin người dùng trong hệ thống BookEat</p>
+					</div>
+
+					<!-- Main Form -->
+					<div class="card form-container p-4">
+						<form th:action="${userId != null} ? @{'/admin/users/' + ${userId}}" : @{/admin/users/create} 
+							  method="post" th:object="${form}">
+								  
+							<!-- Basic Information Section -->
+							<div class="mb-4">
+								<h5 class="text-light mb-3">
+									<i class="fas fa-id-card me-2"></i>
+									Thông tin cơ bản
+								</h5>
+							</div>
+							  
+							<!-- Username & Email -->
+							<div class="row mb-4">
+								<div class="col-md-6">
+									<label class="form-label">Tên đăng nhập *</label>
+									<input type="text" class="form-control" th:field="*{username}" 
+										   placeholder="Nhập username..." th:value="${form?.username}">
+									<div class="text-danger small mt-1" th:errors="*{username}"></div>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Địa chỉ Email *</label>
+									<input type="email" class="form-control" th:field="*{email}" 
+										   placeholder="email@example.com" th:value="${form?.email}">
+									<div class="text-danger small mt-1" th:errors="*{email}"></div>
+								</div>
+							</div>
+
+							<!-- Password Section -->
+							<div th:if="${userId != null}">
+								<div class="mb-4">
+									<h5 class="text-light mb-3">
+										<i class="fas fa-key me-2"></i>
+										Bảo mật
+									</h5>
+								</div>
+								
+								<div class="row mb-3">
+									<div class="col-md-6">
+										<label class="form-label">Mật khẩu mới (để trống nếu không đổi)</label>
+										<input type="password" class="form-control" th:field="*{newPassword}" 
+											   placeholder="Nhập mật khẩu mới..." autocomplete="new-password">
+										<div class="text-danger small mt-1" th:errors="*{newPassword}"></div>
+										<div class="password-note small mt-1">
+											<i class="fas fa-info-circle me-1"></i>
+											Chỉ nhập khi muốn thay đổi mật khẩu
+										</div>
+									</div>
+									<div class="col-md-6">
+										<label class="form-label">Lưu ý bảo mật</label>
+										<div class="alert alert-info py-3">
+											<i class="fas fa-shield-alt me-2"></i>
+											Để trống ô mật khẩu để giữ nguyên mật khẩu hiện tại
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Password for create mode -->
+							<div class="row mb-4" th:if="${userId == null}">
+								<div class="col-md-6">
+									<label class="form-label">Mật khẩu *</label>
+									<input type="password" class="form-control" th:field="*{password}" 
+										   placeholder="Mật khẩu tối thiểu 6 ký tự">
+									<div class="text-danger small mt-1" th:errors="*{password}"></div>
+								</div>
+							</div>
+
+							<!-- Personal Information Section -->
+							<div class="mb-4 mt-5">
+								<h5 class="text-light mb-3">
+									<i class="fas fa-user me-2"></i>
+									Thông tin cá nhân
+								</h5>
+							</div>
+
+							<!-- Full Name & Phone -->
+							<div class="row mb-4">
+								<div class="col-md-6">
+									<label class="form-label">Họ và tên *</label>
+									<input type="text" class="form-control" th:field="*{fullName}" 
+										   placeholder="Nhập họ tên đầy đủ" th:value="${form?.fullName}">
+									<div class="text-danger small mt-1" th:errors="*{fullName}"></div>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Số điện thoại</label>
+									<input type="tel" class="form-control" th:field="*{phoneNumber}" 
+										   placeholder="090..." th:value="${form?.phoneNumber}">
+								</div>
+							</div>
+
+							<!-- Address -->
+							<div class="row mb-4">
+								<div class="col-md-12">
+									<label class="form-label">Địa chỉ</label>
+									<input type="text" class="form-control" th:field="*{address}" 
+										   placeholder="Nhập địa chỉ cụ thể" th:value="${form?.address}">
+								</div>
+							</div>
+
+							<!-- Account Settings Section -->
+							<div class="mb-4 mt-5">
+								<h5 class="text-light mb-3">
+									<i class="fas fa-cog me-2"></i>
+									Cài đặt tài khoản
+								</h5>
+							</div>
+
+							<!-- Role & Status -->
+							<div class="row mb-4">
+								<div class="col-md-4">
+									<label class="form-label">Vai trò *</label>
+									<select class="form-select" th:field="*{role}">
+										<option value="">-- Chọn vai trò --</option>
+										<option th:each="r : ${roles}" 
+												th:value="${r}" 
+												th:text="${r.getValue().toUpperCase()}"
+												th:selected="${form?.role == r}"></option>
+									</select>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label">Trạng thái Email</label>
+									<select class="form-select" th:field="*{emailVerified}">
+										<option value="true" th:selected="${form?.emailVerified == true}">✅ Đã xác thực</option>
+										<option value="false" th:selected="${form?.emailVerified == false}">❌ Chưa xác thực</option>
+									</select>
+								</div>
+								<div class="col-md-4" th:if="${userId != null}">
+									<label class="form-label">Trạng thái tài khoản</label>
+									<select class="form-select" th:field="*{active}">
+										<option value="true" th:selected="${form?.active == true}">🟢 Hoạt động</option>
+										<option value="false" th:selected="${form?.active == false}">🔴 Bị khóa</option>
+									</select>
+								</div>
+							</div>
+
+							<!-- Submit Buttons -->
+							<div class="row mb-0 mt-5 pt-3">
+								<div class="col-12 text-center">
+									<button class="btn btn-gold btn-lg me-3" type="submit">
+										<i class="fas fa-save me-2"></i> 
+										<span th:text="${userId != null} ? 'Cập nhật người dùng' : 'Tạo người dùng mới'">Lưu thay đổi</span>
+									</button>
+									<a class="btn btn-outline-light btn-lg" th:href="@{/admin/users}">
+										<i class="fas fa-arrow-left me-2"></i> Quay lại
+									</a>
+								</div>
+							</div>
+						</form>
+					</div>
+
+					<!-- Success Message -->
+					<div th:if="${param.success}" class="alert alert-success mt-4">
+						<i class="fas fa-check-circle me-2"></i>
+						<span th:text="${param.success[0] == 'updated'} ? 'Đã cập nhật thông tin người dùng thành công!' : 'Đã tạo người dùng mới thành công!'">Thành công!</span>
+					</div>
 				</div>
 			</div>
-			<div class="mt-4 d-flex gap-2">
-				<button class="btn btn-gold" type="submit"><i class="fas fa-save me-1"></i> Lưu</button>
-				<a class="btn btn-outline-light" th:href="@{/admin/users}"><i class="fas fa-arrow-left me-1"></i> Quay lại</a>
-			</div>
-		</form>
+		</div>
 	</div>
+
+	<!-- Site Footer -->
 	<div th:replace="~{fragments/footer :: site-footer}"></div>
+	
+	<!-- Bootstrap JS -->
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 
