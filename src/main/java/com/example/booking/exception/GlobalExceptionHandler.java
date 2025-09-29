@@ -13,7 +13,7 @@ public class GlobalExceptionHandler {
                                                 Model model, 
                                                 RedirectAttributes redirectAttributes) {
         redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-        return "redirect:/booking/my";
+        return "redirect:/"; // Redirect về trang chủ thay vì /booking/my
     }
     
     @ExceptionHandler(Exception.class)
@@ -21,6 +21,6 @@ public class GlobalExceptionHandler {
                                        Model model, 
                                        RedirectAttributes redirectAttributes) {
         redirectAttributes.addFlashAttribute("errorMessage", "Đã xảy ra lỗi: " + ex.getMessage());
-        return "redirect:/booking/my";
+        return "redirect:/"; // Redirect về trang chủ thay vì /booking/my
     }
 }

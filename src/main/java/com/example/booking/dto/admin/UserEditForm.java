@@ -25,6 +25,8 @@ public class UserEditForm {
 	private UserRole role = UserRole.CUSTOMER;
 
 	private boolean emailVerified = true;
+	
+	private boolean active = true;
 
 	public String getUsername() { return username; }
 	public void setUsername(String username) { this.username = username; }
@@ -46,4 +48,7 @@ public class UserEditForm {
 
 	public boolean isEmailVerified() { return emailVerified; }
 	public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+	
+	public boolean isActive() { return active; }
+	public void setActive(boolean active) { this.active = active; }
 } 
