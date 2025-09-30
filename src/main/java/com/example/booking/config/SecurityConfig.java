@@ -91,6 +91,7 @@ public class SecurityConfig {
 				.requestMatchers("/admin/**").hasRole("ADMIN")
 				.requestMatchers("/auth/**").authenticated()
 				.requestMatchers("/booking/**").authenticated()
+				.requestMatchers("/notifications/**").authenticated()
 				.anyRequest().authenticated()
 			)
 			.userDetailsService(userDetailsService)
