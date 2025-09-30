@@ -6,7 +6,7 @@
     <title>Đăng nhập - Book Eat – Đặt bàn online, giữ chỗ ngay</title>
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -16,14 +16,16 @@
     
     <style>
         :root {
-            --luxury-black: #121212;
-            --luxury-dark: #1A1A1A;
-            --luxury-gold: #D4AF37;
-            --luxury-gold-light: #FFD700;
-            --luxury-gold-dark: #B8941F;
-            --luxury-white: #FFFFFF;
-            --luxury-gray: #E0E0E0;
-            --luxury-gray-dark: #8A8A8A;
+            --primary-blue: #4A90E2;
+            --primary-blue-light: #6BA3F0;
+            --primary-blue-dark: #357ABD;
+            --accent-orange: #FF6B35;
+            --background-light: #F8F9FA;
+            --background-white: #FFFFFF;
+            --text-dark: #2C3E50;
+            --text-medium: #5A6C7D;
+            --text-light: #8A9BA8;
+            --border-light: #E1E8ED;
         }
 
         html, body {
@@ -31,10 +33,10 @@
             overflow: hidden;
         }
         body {
-            font-family: 'Lato', sans-serif;
-            background: linear-gradient(135deg, var(--luxury-black) 0%, var(--luxury-dark) 100%);
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--primary-blue) 100%);
             min-height: 100vh;
-            color: var(--luxury-white);
+            color: var(--background-white);
             position: relative;
             margin: 0;
             overflow: hidden;
@@ -62,112 +64,94 @@
         }
 
         .login-card {
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(18, 18, 18, 0.95) 100%);
-            backdrop-filter: blur(20px);
-            border: 2px solid var(--luxury-gold);
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.1);
-            padding: 36px 28px;
+            background: var(--background-white);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(74, 144, 226, 0.15);
+            padding: 32px 24px;
             position: relative;
             overflow: hidden;
         }
 
         .login-card::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, var(--luxury-gold), var(--luxury-gold-light), var(--luxury-gold), var(--luxury-gold-dark));
-            z-index: -1;
-            border-radius: 20px;
+            display: none;
         }
 
         .brand-section {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .brand-icon {
-            font-size: 4rem;
-            color: var(--luxury-gold);
-            margin-bottom: 20px;
-            text-shadow: 0 4px 8px rgba(212, 175, 55, 0.3);
+            font-size: 3rem;
+            color: var(--primary-blue);
+            margin-bottom: 16px;
         }
 
         .brand-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 2.5rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 2rem;
             font-weight: 700;
-            color: var(--luxury-gold);
-            margin-bottom: 10px;
-            letter-spacing: 2px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            color: var(--text-dark);
+            margin-bottom: 8px;
         }
 
         .brand-subtitle {
-            color: var(--luxury-gray);
-            font-size: 1.1rem;
-            font-weight: 300;
-            letter-spacing: 1px;
+            color: var(--text-medium);
+            font-size: 1rem;
+            font-weight: 400;
         }
 
         .form-control {
-            background: rgba(26, 26, 26, 0.8);
-            border: 2px solid var(--luxury-gold);
-            border-radius: 15px;
-            color: var(--luxury-white);
-            padding: 18px 25px;
-            font-size: 1.1rem;
+            background: var(--background-white);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-dark);
+            padding: 12px 16px;
+            font-size: 1rem;
             transition: all 0.3s ease;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
         .form-control:focus {
-            background: rgba(26, 26, 26, 0.9);
-            border-color: var(--luxury-gold-light);
-            box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
-            color: var(--luxury-white);
+            background: var(--background-white);
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.15);
+            color: var(--text-dark);
         }
 
         .form-control::placeholder {
-            color: var(--luxury-gray-dark);
+            color: var(--text-light);
         }
 
         .form-label {
-            color: var(--luxury-gold);
+            color: var(--text-dark);
             font-weight: 500;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin-bottom: 8px;
             font-size: 0.9rem;
         }
 
         .luxury-icon {
-            color: var(--luxury-gold);
+            color: var(--primary-blue);
             margin-right: 8px;
         }
 
         .btn-login {
-            background: linear-gradient(135deg, var(--luxury-gold) 0%, var(--luxury-gold-light) 100%);
+            background: var(--primary-blue);
             border: none;
-            color: var(--luxury-black);
+            color: var(--background-white);
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 18px 30px;
-            border-radius: 50px;
+            padding: 12px 24px;
+            border-radius: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-            font-size: 1.1rem;
+            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
+            font-size: 1rem;
         }
 
         .btn-login:hover {
-            background: var(--luxury-black);
-            color: var(--luxury-gold);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6);
+            background: var(--primary-blue-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
         }
 
         .btn-google {
@@ -235,15 +219,10 @@
 
 
         .link-luxury {
-            color: var(--luxury-gold);
+            color: var(--primary-blue);
             text-decoration: none;
             transition: all 0.3s ease;
             font-weight: 500;
-        }
-
-        .link-luxury:hover {
-            color: var(--luxury-gold-light);
-            text-shadow: 0 2px 4px rgba(212, 175, 55, 0.3);
         }
 
         .footer-text {
@@ -329,7 +308,7 @@
                         <!-- Remember Me -->
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="checkbox" name="remember-me" id="rememberMe">
-                            <label class="form-check-label" for="rememberMe" style="color: var(--luxury-gray);">
+                            <label class="form-check-label" for="rememberMe" style="color: black;">
                                 <i class="fas fa-clock luxury-icon"></i> Ghi nhớ tôi
                             </label>
                         </div>
