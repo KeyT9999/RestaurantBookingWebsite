@@ -1,43 +1,78 @@
 package com.example.booking.service;
 
-import com.example.booking.domain.RestaurantProfile;
-import com.example.booking.domain.RestaurantTable;
-import com.example.booking.repository.RestaurantRepository;
-import com.example.booking.repository.DiningTableRepository;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantTable;
+import com.example.booking.repository.RestaurantProfileRepository;
+import com.example.booking.repository.RestaurantTableRepository;
 
 @Service
-@Transactional(readOnly = true)
+@Transactional
 public class RestaurantService {
     
-    private final RestaurantRepository restaurantRepository;
-    private final DiningTableRepository diningTableRepository;
+    @Autowired
+    private RestaurantProfileRepository restaurantProfileRepository;
     
     @Autowired
-    public RestaurantService(RestaurantRepository restaurantRepository,
-                           DiningTableRepository diningTableRepository) {
-        this.restaurantRepository = restaurantRepository;
-        this.diningTableRepository = diningTableRepository;
-    }
-    
+    private RestaurantTableRepository restaurantTableRepository;
+
+    /**
+     * Lấy tất cả nhà hàng
+     */
+    @Transactional(readOnly = true)
     public List<RestaurantProfile> findAllRestaurants() {
-        return restaurantRepository.findAll();
-    }
-    
-    public RestaurantProfile findById(Integer id) {
-        return restaurantRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Nhà hàng không tồn tại"));
-    }
-    
-    public List<RestaurantTable> findTablesByRestaurant(Integer restaurantId) {
-        return diningTableRepository.findByRestaurantRestaurantIdOrderByTableName(restaurantId);
+        return restaurantProfileRepository.findAll();
     }
 
-    public List<RestaurantProfile> searchRestaurants(String name) {
-        return restaurantRepository.findByRestaurantNameContainingIgnoreCase(name);
+    /**
+     * Tìm nhà hàng theo ID
+     */
+    @Transactional(readOnly = true)
+    public Optional<RestaurantProfile> findRestaurantById(Integer restaurantId) {
+        return restaurantProfileRepository.findById(restaurantId);
     }
-} 
+
+    /**
+     * Tìm nhà hàng theo tên
+     */
+    @Transactional(readOnly = true)
+    public List<RestaurantProfile> findRestaurantsByName(String name) {
+        return restaurantProfileRepository.findByRestaurantNameContainingIgnoreCase(name);
+    }
+    
+    /**
+     * Lấy danh sách bàn của nhà hàng
+     */
+    @Transactional(readOnly = true)
+    public List<RestaurantTable> findTablesByRestaurant(Integer restaurantId) {
+        return restaurantTableRepository.findByRestaurantRestaurantIdOrderByTableName(restaurantId);
+    }
+
+    /**
+     * Tìm bàn theo ID
+     */
+    @Transactional(readOnly = true)
+    public Optional<RestaurantTable> findTableById(Integer tableId) {
+        return restaurantTableRepository.findById(tableId);
+    }
+
+    /**
+     * Lưu nhà hàng
+     */
+    public RestaurantProfile saveRestaurant(RestaurantProfile restaurant) {
+        return restaurantProfileRepository.save(restaurant);
+    }
+
+    /**
+     * Lưu bàn
+     */
+    public RestaurantTable saveTable(RestaurantTable table) {
+        return restaurantTableRepository.save(table);
+    }
+}

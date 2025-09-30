@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nhà hàng - Book Eat – Đặt bàn online, giữ chỗ ngay</title>
     
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -12,82 +15,124 @@
     <!-- Custom CSS -->
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
 </head>
-<body class="bg-dark text-light">
+<body>
     <!-- Header -->
     <div th:replace="~{fragments/header :: site-header}"></div>
     
-    <div class="container mt-5 pt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-10">
-                <div class="text-center mb-5">
-                    <h1 class="display-4 text-warning">Hệ thống nhà hàng</h1>
-                    <p class="lead">Khám phá các địa điểm ẩm thực đẳng cấp</p>
+    <main class="main-content">
+        <section class="restaurants">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12 text-center mb-5">
+                        <h2 class="section__title">Hệ thống nhà hàng</h2>
+                        <p class="section__subtitle">Khám phá các địa điểm ẩm thực đẳng cấp</p>
+                    </div>
                 </div>
                 
                 <div class="row">
-                    <div class="col-md-4 mb-4">
-                        <div class="card bg-secondary">
-                            <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                 class="card-img-top" alt="Aurelius Downtown" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title text-warning">Aurelius Downtown</h5>
-                                <p class="card-text">
-                                    <i class="fas fa-map-marker-alt text-warning"></i> Quận 1, TP. HCM<br>
-                                    <i class="fas fa-star text-warning"></i> 5.0 (124 đánh giá)
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="restaurant-card">
+                            <div class="restaurant-card__image">
+                                <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                                     alt="Aurelius Downtown" class="img-fluid">
+                                <div class="restaurant-card__overlay">
+                                    <a th:href="@{/booking/new}" class="btn btn--gold btn--small">Đặt bàn</a>
+                                </div>
+                            </div>
+                            <div class="restaurant-card__content">
+                                <h4 class="restaurant-card__title">Aurelius Downtown</h4>
+                                <p class="restaurant-card__location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Quận 1, TP. HCM
                                 </p>
-                                <a th:href="@{/booking/new}" class="btn btn-warning">
-                                    <i class="fas fa-calendar-plus"></i> Đặt bàn
-                                </a>
+                                <div class="restaurant-card__rating">
+                                    <div class="stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <span class="rating-text">5.0 (124 đánh giá)</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="col-md-4 mb-4">
-                        <div class="card bg-secondary">
-                            <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                 class="card-img-top" alt="Aurelius Garden" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title text-warning">Aurelius Garden</h5>
-                                <p class="card-text">
-                                    <i class="fas fa-map-marker-alt text-warning"></i> Quận 3, TP. HCM<br>
-                                    <i class="fas fa-star text-warning"></i> 4.9 (89 đánh giá)
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="restaurant-card">
+                            <div class="restaurant-card__image">
+                                <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                                     alt="Aurelius Garden" class="img-fluid">
+                                <div class="restaurant-card__overlay">
+                                    <a th:href="@{/booking/new}" class="btn btn--gold btn--small">Đặt bàn</a>
+                                </div>
+                            </div>
+                            <div class="restaurant-card__content">
+                                <h4 class="restaurant-card__title">Aurelius Garden</h4>
+                                <p class="restaurant-card__location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Quận 3, TP. HCM
                                 </p>
-                                <a th:href="@{/booking/new}" class="btn btn-warning">
-                                    <i class="fas fa-calendar-plus"></i> Đặt bàn
-                                </a>
+                                <div class="restaurant-card__rating">
+                                    <div class="stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <span class="rating-text">4.9 (89 đánh giá)</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="col-md-4 mb-4">
-                        <div class="card bg-secondary">
-                            <img src="https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                 class="card-img-top" alt="Aurelius Rooftop" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title text-warning">Aurelius Rooftop</h5>
-                                <p class="card-text">
-                                    <i class="fas fa-map-marker-alt text-warning"></i> Quận 7, TP. HCM<br>
-                                    <i class="fas fa-star text-warning"></i> 4.8 (156 đánh giá)
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="restaurant-card">
+                            <div class="restaurant-card__image">
+                                <img src="https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                                     alt="Aurelius Rooftop" class="img-fluid">
+                                <div class="restaurant-card__overlay">
+                                    <a th:href="@{/booking/new}" class="btn btn--gold btn--small">Đặt bàn</a>
+                                </div>
+                            </div>
+                            <div class="restaurant-card__content">
+                                <h4 class="restaurant-card__title">Aurelius Rooftop</h4>
+                                <p class="restaurant-card__location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Quận 7, TP. HCM
                                 </p>
-                                <a th:href="@{/booking/new}" class="btn btn-warning">
-                                    <i class="fas fa-calendar-plus"></i> Đặt bàn
-                                </a>
+                                <div class="restaurant-card__rating">
+                                    <div class="stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                    <span class="rating-text">4.8 (156 đánh giá)</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="text-center mt-5">
-                    <a th:href="@{/booking/new}" class="btn btn-warning btn-lg me-3">
-                        <i class="fas fa-calendar-plus"></i> Đặt bàn ngay
-                    </a>
-                    <a th:href="@{/}" class="btn btn-outline-warning btn-lg">
-                        <i class="fas fa-home"></i> Về trang chủ
-                    </a>
+                <div class="row">
+                    <div class="col-12 text-center mt-4">
+                        <a th:href="@{/booking/new}" class="btn btn--gold btn--large me-3">
+                            <i class="fas fa-calendar-plus"></i>
+                            <span>Đặt bàn ngay</span>
+                        </a>
+                        <a th:href="@{/}" class="btn btn--outline btn--large">
+                            <i class="fas fa-home"></i>
+                            <span>Về trang chủ</span>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
     
     <!-- Footer -->
     <div th:replace="~{fragments/footer :: site-footer}"></div>
