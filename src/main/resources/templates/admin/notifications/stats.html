@@ -8,27 +8,35 @@
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
 	<style>
-		.page-bg { background-color:#121212; min-height:100vh; }
-		.section-title { color:#fff; font-family:'Playfair Display', serif; }
-		.stats-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; border-radius:12px; transition:transform .15s ease, box-shadow .15s ease; }
-		.stats-card:hover { transform:translateY(-3px); box-shadow:0 10px 18px rgba(212,175,55,.15); }
-		.stats-icon { width:64px; height:64px; border-radius:50%; background:linear-gradient(45deg,#D4AF37,#FFD700); color:#121212; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.5rem; }
-		.stats-number { font-size:2.5rem; font-weight:700; color:#D4AF37; }
-		.stats-label { color:#BFBFBF; font-size:0.9rem; }
+		/* Page baseline light/blue */
+		.page-bg { background-color: var(--background-light); min-height: 100vh; }
+		.section-title { color: var(--text-dark); font-family: var(--font-heading); font-weight: 700; font-size: 2.2rem; }
+		
+		/* Cards */
+		.stats-card { background: var(--background-white); border: 1px solid var(--border-light); color: var(--text-dark); border-radius:12px; transition: var(--transition); box-shadow: var(--shadow-card); }
+		.stats-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--primary-blue); }
+		.stats-icon { width:64px; height:64px; border-radius:50%; background: var(--background-light); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.5rem; }
+		.stats-number { font-size:2.2rem; font-weight:700; color: var(--primary-blue); }
+		.stats-label { color: var(--text-light); font-size:0.9rem; }
+		
+		/* Header spacing */
+		.admin-content { padding-top: 100px !important; }
 	</style>
 </head>
 <body class="page-bg">
+	<div th:insert="fragments/flash :: flash"></div>
 	<div th:replace="~{fragments/header :: site-header}"></div>
 
-	<div class="container py-5">
-		<div class="d-flex align-items-center mb-4">
-			<a th:href="@{/admin/notifications}" class="btn btn-outline-light me-3">
-				<i class="fas fa-arrow-left"></i>
-			</a>
-			<h1 class="section-title mb-0">
-				<i class="fas fa-chart-bar text-warning me-2"></i> Thống kê thông báo
-			</h1>
-		</div>
+	<div class="admin-content py-4">
+		<div class="container">
+			<div class="d-flex align-items-center mb-4">
+				<a th:href="@{/admin/notifications}" class="btn btn-outline-secondary me-3">
+					<i class="fas fa-arrow-left"></i>
+				</a>
+				<h1 class="section-title mb-0">
+					<i class="fas fa-chart-bar text-primary me-2"></i> Thống kê thông báo
+				</h1>
+			</div>
 
 		<div class="row g-4">
 			<div class="col-lg-3 col-md-6">
@@ -113,7 +121,7 @@
 				<a th:href="@{/admin/notifications}" class="btn btn-gold me-2">
 					<i class="fas fa-list me-1"></i> Quay lại danh sách
 				</a>
-				<a th:href="@{/admin/notifications/new}" class="btn btn-outline-light">
+				<a th:href="@{/admin/notifications/new}" class="btn btn-outline-secondary">
 					<i class="fas fa-plus me-1"></i> Tạo thông báo mới
 				</a>
 			</div>

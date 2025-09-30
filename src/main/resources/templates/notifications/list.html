@@ -8,46 +8,49 @@
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
 	<style>
-		.page-bg { background-color:#121212; min-height:100vh; }
-		.section-title { color:#fff; font-family:'Playfair Display', serif; }
-		.filter-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; }
-		.notification-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; border-radius:12px; transition:transform .15s ease, box-shadow .15s ease; margin-bottom:1rem; }
-		.notification-card:hover { transform:translateY(-3px); box-shadow:0 10px 18px rgba(212,175,55,.15); }
-		.notification-card.unread { border-left:4px solid #D4AF37; }
-		.badge-role { font-size:.8rem; }
-		.badge-status { font-size:.8rem; }
-		.table-muted { color:#BFBFBF; }
-		.pagination .page-link { background:#1A1A1A; color:#D4AF37; border-color:rgba(212,175,55,.2); }
-		.pagination .page-item.active .page-link { background:#D4AF37; color:#121212; border-color:#D4AF37; }
-		.pagination .page-link:hover { background:#2A2A2A; color:#FFD700; }
-		.btn-gold { background:#D4AF37; border-color:#D4AF37; color:#121212; }
-		.btn-gold:hover { background:#FFD700; border-color:#FFD700; color:#121212; }
-		.link-clear { color:#E0E0E0; border-color:#E0E0E0; }
-		.link-clear:hover { background:#E0E0E0; color:#121212; }
-		.notification-icon { width:48px; height:48px; border-radius:50%; background:linear-gradient(45deg,#D4AF37,#FFD700); color:#121212; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; }
+		/* Page baseline light/blue */
+		.page-bg { background-color: var(--background-light); min-height:100vh; }
+		.section-title { color: var(--text-dark); font-family: var(--font-heading); font-weight: 700; }
+		
+		.notification-card { background: var(--background-white); border:1px solid var(--border-light); color: var(--text-dark); border-radius:12px; transition: var(--transition); margin-bottom:1rem; box-shadow: var(--shadow-card); }
+		.notification-card:hover { transform:translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--primary-blue); }
+		.notification-card.unread { border-left:4px solid var(--primary-blue); }
+		.badge-role, .badge-status { font-size:.8rem; }
+		.table-muted { color: var(--text-light); }
+		
+		.pagination .page-link { background: var(--background-white); color: var(--primary-blue); border-color: var(--border-light); }
+		.pagination .page-item.active .page-link { background: var(--primary-blue); color:#fff; border-color: var(--primary-blue); }
+		.pagination .page-link:hover { background: var(--background-light); color: var(--primary-blue-dark); }
+		
+		.btn-gold { background: var(--primary-blue); border-color: var(--primary-blue); color:#fff; box-shadow: var(--shadow-button); }
+		.btn-gold:hover { background: var(--primary-blue-dark); border-color: var(--primary-blue-dark); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+		
+		.notification-icon { width:48px; height:48px; border-radius:50%; background: var(--background-light); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; }
 		.empty-state { text-align:center; padding:4rem 2rem; }
-		.empty-icon { width:80px; height:80px; border-radius:50%; background:rgba(212,175,55,.1); color:#D4AF37; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 1.5rem; }
+		.empty-icon { width:80px; height:80px; border-radius:50%; background:rgba(74,144,226,.1); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 1.5rem; }
 	</style>
 </head>
 <body class="page-bg">
+	<div th:insert="fragments/flash :: flash"></div>
 	<div th:replace="~{fragments/header :: site-header}"></div>
 
-	<div class="container py-5">
-		<div class="d-flex align-items-center justify-content-between mb-4">
-			<h1 class="section-title mb-0">
-				<i class="fas fa-bell text-warning me-2"></i> Thông báo của tôi
-			</h1>
-			<div class="btn-group" role="group">
-				<a th:href="@{/notifications(unreadOnly=false)}" 
-				   th:class="'btn' + (${!unreadOnly} ? ' btn-gold' : ' btn-outline-light')">
-					<i class="fas fa-list me-1"></i> Tất cả
-				</a>
-				<a th:href="@{/notifications(unreadOnly=true)}" 
-				   th:class="'btn' + (${unreadOnly} ? ' btn-gold' : ' btn-outline-light')">
-					<i class="fas fa-eye-slash me-1"></i> Chưa đọc (<span th:text="${unreadCount}">0</span>)
-				</a>
+	<div class="admin-content py-4">
+		<div class="container">
+			<div class="d-flex align-items-center justify-content-between mb-4">
+				<h1 class="section-title mb-0">
+					<i class="fas fa-bell text-primary me-2"></i> Thông báo của tôi
+				</h1>
+				<div class="btn-group" role="group">
+					<a th:href="@{/notifications(unreadOnly=false)}" 
+					   th:class="'btn' + (${!unreadOnly} ? ' btn-gold' : ' btn-outline-secondary')">
+						<i class="fas fa-list me-1"></i> Tất cả
+					</a>
+					<a th:href="@{/notifications(unreadOnly=true)}" 
+					   th:class="'btn' + (${unreadOnly} ? ' btn-gold' : ' btn-outline-secondary')">
+						<i class="fas fa-eye-slash me-1"></i> Chưa đọc (<span th:text="${unreadCount}">0</span>)
+					</a>
+				</div>
 			</div>
-		</div>
 
 		<!-- Empty state -->
 		<div th:if="${notifications.empty}" class="empty-state">
@@ -96,7 +99,7 @@
 							</div>
 						</div>
 						
-						<p class="mb-2 text-light" th:text="${#strings.abbreviate(notification.content, 120)}">
+						<p class="mb-2" style="color: var(--text-dark);" th:text="${#strings.abbreviate(notification.content, 120)}">
 							Nội dung thông báo...
 						</p>
 						

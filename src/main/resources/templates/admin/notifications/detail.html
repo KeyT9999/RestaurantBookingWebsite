@@ -8,32 +8,36 @@
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
 	<style>
-		.page-bg { background-color:#121212; min-height:100vh; }
-		.section-title { color:#fff; font-family:'Playfair Display', serif; }
-		.detail-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; border-radius:12px; }
-		.notification-icon { width:64px; height:64px; border-radius:50%; background:linear-gradient(45deg,#D4AF37,#FFD700); color:#121212; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.5rem; }
-		.btn-gold { background:#D4AF37; border-color:#D4AF37; color:#121212; }
-		.btn-gold:hover { background:#FFD700; border-color:#FFD700; color:#121212; }
-		.link-clear { color:#E0E0E0; border-color:#E0E0E0; }
-		.link-clear:hover { background:#E0E0E0; color:#121212; }
-		.content-text { color:#E0E0E0; line-height:1.6; }
-		.meta-info { color:#BFBFBF; }
+		/* Page baseline light/blue */
+		.page-bg { background-color: var(--background-light); min-height:100vh; }
+		.section-title { color: var(--text-dark); font-family: var(--font-heading); font-weight: 700; }
+		.detail-card { background: var(--background-white); border:1px solid var(--border-light); color: var(--text-dark); border-radius:12px; box-shadow: var(--shadow-card); }
+		.notification-icon { width:64px; height:64px; border-radius:50%; background: var(--background-light); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.5rem; }
+		.btn-gold { background: var(--primary-blue); border-color: var(--primary-blue); color:#fff; box-shadow: var(--shadow-button); }
+		.btn-gold:hover { background: var(--primary-blue-dark); border-color: var(--primary-blue-dark); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+		.link-clear { color: var(--text-dark); border-color: var(--border-medium); }
+		.link-clear:hover { background: var(--background-light); }
+		.content-text { color: var(--text-dark); line-height:1.6; }
+		.meta-info { color: var(--text-light); }
+		.admin-content { padding-top: 100px !important; }
 	</style>
 </head>
 <body class="page-bg">
+	<div th:insert="fragments/flash :: flash"></div>
 	<div th:replace="~{fragments/header :: site-header}"></div>
 
-	<div class="container py-5">
-		<div class="row justify-content-center">
-			<div class="col-lg-8">
-				<div class="d-flex align-items-center mb-4">
-					<a th:href="@{/admin/notifications}" class="btn btn-outline-light me-3">
-						<i class="fas fa-arrow-left"></i>
-					</a>
-					<h1 class="section-title mb-0">
-						<i class="fas fa-bell text-warning me-2"></i> Chi tiết thông báo
-					</h1>
-				</div>
+	<div class="admin-content py-4">
+		<div class="container">
+			<div class="row justify-content-center">
+				<div class="col-lg-8">
+					<div class="d-flex align-items-center mb-4">
+						<a th:href="@{/admin/notifications}" class="btn btn-outline-secondary me-3">
+							<i class="fas fa-arrow-left"></i>
+						</a>
+						<h1 class="section-title mb-0">
+							<i class="fas fa-bell text-primary me-2"></i> Chi tiết thông báo
+						</h1>
+					</div>
 
 				<div class="card detail-card">
 					<div class="card-body p-4">
@@ -68,15 +72,15 @@
 						
 						<div th:if="${notification.linkUrl != null and !notification.linkUrl.isEmpty()}" class="mb-4">
 							<a th:href="${notification.linkUrl}" 
-							   th:text="${notification.linkUrl}" 
 							   class="btn btn-gold" 
 							   target="_blank">
 								<i class="fas fa-external-link-alt me-1"></i> Xem thêm
 							</a>
+							<div class="small mt-2 text-muted" th:text="${notification.linkUrl}"></div>
 						</div>
 
-						<div class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary">
-							<a th:href="@{/admin/notifications}" class="btn btn-outline-light">
+						<div class="d-flex justify-content-between align-items-center pt-3 border-top" style="border-color: var(--border-light) !important;">
+							<a th:href="@{/admin/notifications}" class="btn btn-outline-secondary">
 								<i class="fas fa-arrow-left me-1"></i> Quay lại
 							</a>
 							<a th:href="@{/}" class="btn btn-gold">
