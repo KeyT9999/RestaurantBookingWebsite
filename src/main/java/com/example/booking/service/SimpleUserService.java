@@ -38,7 +38,7 @@ public class SimpleUserService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByUsername(username)
+        return userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User không tồn tại: " + username));
     }
     
@@ -48,11 +48,11 @@ public class SimpleUserService implements UserDetailsService {
             throw new IllegalArgumentException("Mật khẩu xác nhận không khớp");
         }
         
-        if (userRepository.existsByUsername(form.getUsername())) {
+        if (userRepository.existsByUsernameIgnoreCase(form.getUsername())) {
             throw new IllegalArgumentException("Username đã tồn tại");
         }
         
-        if (userRepository.existsByEmail(form.getEmail())) {
+        if (userRepository.existsByEmailIgnoreCase(form.getEmail())) {
             throw new IllegalArgumentException("Email đã được sử dụng");
         }
         
