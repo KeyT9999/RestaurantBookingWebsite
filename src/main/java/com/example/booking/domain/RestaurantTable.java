@@ -20,6 +20,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import com.example.booking.common.enums.TableStatus;
+
 @Entity
 @Table(name = "restaurant_table")
 public class RestaurantTable {
@@ -122,5 +124,22 @@ public class RestaurantTable {
     
     public void setBookingTables(List<BookingTable> bookingTables) {
         this.bookingTables = bookingTables;
+    }
+
+    // Helper methods
+    public boolean isAvailable() {
+        return status == TableStatus.AVAILABLE;
+    }
+
+    public boolean canAccommodate(Integer guestCount) {
+        return capacity >= guestCount;
+    }
+
+    public String getName() {
+        return tableName;
+    }
+
+    public String getId() {
+        return tableId.toString();
     }
 }
