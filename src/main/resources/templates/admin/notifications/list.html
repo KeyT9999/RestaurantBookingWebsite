@@ -8,47 +8,56 @@
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
 	<style>
-		.page-bg { background-color:#121212; min-height:100vh; }
-		.section-title { color:#fff; font-family:'Playfair Display', serif; }
-		.filter-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; }
-		.notification-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; border-radius:12px; transition:transform .15s ease, box-shadow .15s ease; }
-		.notification-card:hover { transform:translateY(-3px); box-shadow:0 10px 18px rgba(212,175,55,.15); }
-		.badge-role { font-size:.8rem; }
-		.badge-status { font-size:.8rem; }
-		.table-muted { color:#BFBFBF; }
-		.pagination .page-link { background:#1A1A1A; color:#D4AF37; border-color:rgba(212,175,55,.2); }
-		.pagination .page-item.active .page-link { background:#D4AF37; color:#121212; border-color:#D4AF37; }
-		.pagination .page-link:hover { background:#2A2A2A; color:#FFD700; }
-		.form-control, .form-select { background:#2A2A2A; color:#E0E0E0; border:1px solid #444; }
-		.form-control::placeholder { color:#8a8a8a; }
-		.form-control:focus, .form-select:focus { background:#2A2A2A; color:#E0E0E0; border-color:#D4AF37; box-shadow:0 0 0 0.2rem rgba(212,175,55,.25); }
-		.btn-gold { background:#D4AF37; border-color:#D4AF37; color:#121212; }
-		.btn-gold:hover { background:#FFD700; border-color:#FFD700; color:#121212; }
-		.link-clear { color:#E0E0E0; border-color:#E0E0E0; }
-		.link-clear:hover { background:#E0E0E0; color:#121212; }
-		.table-dark { background:#1A1A1A; }
-		.table-dark th { border-color:rgba(212,175,55,.2); color:#D4AF37; }
-		.table-dark td { border-color:rgba(212,175,55,.1); color:#E0E0E0; }
-		.notification-icon { width:48px; height:48px; border-radius:50%; background:linear-gradient(45deg,#D4AF37,#FFD700); color:#121212; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; }
+		/* Page baseline light/blue */
+		.page-bg { background-color: var(--background-light); min-height: 100vh; }
+		.section-title { color: var(--text-dark); font-family: var(--font-heading); font-weight: 700; font-size: 2.2rem; }
+		
+		/* Cards */
+		.filter-card { background: var(--background-white); border: 1px solid var(--border-light); color: var(--text-dark); box-shadow: var(--shadow-card); border-radius: 12px; }
+		.notification-card { background: var(--background-white); border: 1px solid var(--border-light); color: var(--text-dark); border-radius: 12px; transition: var(--transition); box-shadow: var(--shadow-card); }
+		.notification-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--primary-blue); }
+		
+		.badge-role, .badge-status { font-size: .8rem; }
+		.table-muted { color: var(--text-light); }
+		
+		/* Forms */
+		.form-control, .form-select { background: var(--background-white); color: var(--text-dark); border: 1px solid var(--border-medium); border-radius: 6px; }
+		.form-control::placeholder { color: var(--text-light); }
+		.form-control:focus, .form-select:focus { background: var(--background-white); color: var(--text-dark); border-color: var(--primary-blue); box-shadow: 0 0 0 0.2rem rgba(74,144,226,.15); }
+		
+		/* Buttons */
+		.btn-gold { background: var(--primary-blue); border-color: var(--primary-blue); color: var(--background-white); box-shadow: var(--shadow-button); }
+		.btn-gold:hover { background: var(--primary-blue-dark); border-color: var(--primary-blue-dark); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+		
+		/* Table */
+		.table thead th { border-bottom: 2px solid var(--border-medium); color: var(--text-dark); }
+		.table td { color: var(--text-dark); }
+		
+		/* Icon */
+		.notification-icon { width:48px; height:48px; border-radius:50%; background: var(--background-light); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; }
+		/* Space for fixed header */
+		.admin-content { padding-top: 100px !important; }
 	</style>
 </head>
 <body class="page-bg">
+	<div th:insert="fragments/flash :: flash"></div>
 	<div th:replace="~{fragments/header :: site-header}"></div>
 
-	<div class="container py-5">
-		<div class="d-flex align-items-center justify-content-between mb-4">
-			<h1 class="section-title mb-0">
-				<i class="fas fa-bell text-warning me-2"></i> Quản lý thông báo
-			</h1>
-			<div>
-				<a th:href="@{/admin/notifications/stats}" class="btn btn-outline-info me-2">
-					<i class="fas fa-chart-bar me-1"></i> Thống kê
-				</a>
-				<a th:href="@{/admin/notifications/new}" class="btn btn-gold">
-					<i class="fas fa-plus me-1"></i> Tạo thông báo
-				</a>
+	<div class="admin-content py-4">
+		<div class="container">
+			<div class="d-flex align-items-center justify-content-between mb-4">
+				<h1 class="section-title mb-0">
+					<i class="fas fa-bell text-primary me-2"></i> Quản lý thông báo
+				</h1>
+				<div>
+					<a th:href="@{/admin/notifications/stats}" class="btn btn-outline-secondary me-2">
+						<i class="fas fa-chart-bar me-1"></i> Thống kê
+					</a>
+					<a th:href="@{/admin/notifications/new}" class="btn btn-gold position-relative" style="z-index:1;">
+						<i class="fas fa-plus me-1"></i> Tạo thông báo
+					</a>
+				</div>
 			</div>
-		</div>
 
 		<!-- Filter / Search -->
 		<div class="card filter-card mb-4">
@@ -81,8 +90,8 @@
 						<div class="col-md-3 text-end">
 							<input type="hidden" name="sortBy" th:value="${sortBy}">
 							<input type="hidden" name="dir" th:value="${dir}">
-							<button type="submit" class="btn btn-outline-light me-2"><i class="fas fa-filter me-1"></i> Lọc</button>
-							<a th:href="@{/admin/notifications}" class="btn btn-outline-light link-clear"><i class="fas fa-times me-1"></i> Xóa</a>
+								<button type="submit" class="btn btn-outline-secondary me-2"><i class="fas fa-filter me-1"></i> Lọc</button>
+							<a th:href="@{/admin/notifications}" class="btn btn-outline-secondary link-clear"><i class="fas fa-times me-1"></i> Xóa</a>
 						</div>
 					</div>
 				</form>
@@ -103,7 +112,7 @@
 
 		<!-- Notifications Table -->
 		<div th:if="${!notifications.empty}" class="table-responsive">
-			<table class="table table-dark table-striped">
+			<table class="table table-striped">
 				<thead>
 					<tr>
 						<th><i class="fas fa-hashtag me-1"></i> ID</th>
