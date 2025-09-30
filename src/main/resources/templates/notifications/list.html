@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Thông báo của tôi - BookEat</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+	<link th:href="@{/css/luxury.css}" rel="stylesheet">
+	<style>
+		.page-bg { background-color:#121212; min-height:100vh; }
+		.section-title { color:#fff; font-family:'Playfair Display', serif; }
+		.filter-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; }
+		.notification-card { background:#1A1A1A; border:1px solid rgba(212,175,55,.2); color:#E0E0E0; border-radius:12px; transition:transform .15s ease, box-shadow .15s ease; margin-bottom:1rem; }
+		.notification-card:hover { transform:translateY(-3px); box-shadow:0 10px 18px rgba(212,175,55,.15); }
+		.notification-card.unread { border-left:4px solid #D4AF37; }
+		.badge-role { font-size:.8rem; }
+		.badge-status { font-size:.8rem; }
+		.table-muted { color:#BFBFBF; }
+		.pagination .page-link { background:#1A1A1A; color:#D4AF37; border-color:rgba(212,175,55,.2); }
+		.pagination .page-item.active .page-link { background:#D4AF37; color:#121212; border-color:#D4AF37; }
+		.pagination .page-link:hover { background:#2A2A2A; color:#FFD700; }
+		.btn-gold { background:#D4AF37; border-color:#D4AF37; color:#121212; }
+		.btn-gold:hover { background:#FFD700; border-color:#FFD700; color:#121212; }
+		.link-clear { color:#E0E0E0; border-color:#E0E0E0; }
+		.link-clear:hover { background:#E0E0E0; color:#121212; }
+		.notification-icon { width:48px; height:48px; border-radius:50%; background:linear-gradient(45deg,#D4AF37,#FFD700); color:#121212; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; }
+		.empty-state { text-align:center; padding:4rem 2rem; }
+		.empty-icon { width:80px; height:80px; border-radius:50%; background:rgba(212,175,55,.1); color:#D4AF37; display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 1.5rem; }
+	</style>
+</head>
+<body class="page-bg">
+	<div th:replace="~{fragments/header :: site-header}"></div>
+
+	<div class="container py-5">
+		<div class="d-flex align-items-center justify-content-between mb-4">
+			<h1 class="section-title mb-0">
+				<i class="fas fa-bell text-warning me-2"></i> Thông báo của tôi
+			</h1>
+			<div class="btn-group" role="group">
+				<a th:href="@{/notifications(unreadOnly=false)}" 
+				   th:class="'btn' + (${!unreadOnly} ? ' btn-gold' : ' btn-outline-light')">
+					<i class="fas fa-list me-1"></i> Tất cả
+				</a>
+				<a th:href="@{/notifications(unreadOnly=true)}" 
+				   th:class="'btn' + (${unreadOnly} ? ' btn-gold' : ' btn-outline-light')">
+					<i class="fas fa-eye-slash me-1"></i> Chưa đọc (<span th:text="${unreadCount}">0</span>)
+				</a>
+			</div>
+		</div>
+
+		<!-- Empty state -->
+		<div th:if="${notifications.empty}" class="empty-state">
+			<div class="empty-icon">
+				<i class="fas fa-bell-slash"></i>
+			</div>
+			<h4 class="text-muted mb-3">Không có thông báo nào</h4>
+			<p class="text-muted mb-4">Bạn sẽ nhận được thông báo khi có hoạt động mới.</p>
+			<a th:href="@{/}" class="btn btn-gold">
+				<i class="fas fa-home me-1"></i> Về trang chủ
+			</a>
+		</div>
+
+		<!-- Notifications List -->
+		<div th:if="${!notifications.empty}">
+			<div th:each="notification : ${notifications.content}" 
+				 th:class="'notification-card p-4' + (${notification.unread} ? ' unread' : '')">
+				<div class="d-flex align-items-start">
+					<div class="notification-icon me-3" th:text="${notification.type.toString().substring(0,1)}">S</div>
+					<div class="flex-grow-1">
+						<div class="d-flex justify-content-between align-items-start mb-2">
+							<div>
+								<h5 class="mb-1 text-white">
+									<span th:if="${notification.unread}" class="badge bg-warning text-dark me-2">
+										<i class="fas fa-circle me-1"></i>Mới
+									</span>
+									<span th:text="${notification.title}">Tiêu đề thông báo</span>
+								</h5>
+								<div class="mb-2">
+									<span class="badge badge-role" 
+										  th:classappend="${notification.type.name()=='SYSTEM_ANNOUNCEMENT'} ? ' bg-primary' : 
+										  (${notification.type.name()=='BOOKING_CONFIRMED'} ? ' bg-success' : 
+										  (${notification.type.name()=='BOOKING_CANCELLED'} ? ' bg-danger' : 
+										  (${notification.type.name()=='PAYMENT_SUCCESS'} ? ' bg-info' : ' bg-warning')))"
+										  th:text="${notification.type}">SYSTEM</span>
+									<span th:if="${notification.priority > 0}" class="badge bg-danger badge-status ms-1">
+										<i class="fas fa-exclamation-triangle me-1"></i>Ưu tiên cao
+									</span>
+								</div>
+							</div>
+							<div class="text-end">
+								<a th:href="@{/notifications/{id}(id=${notification.id})}" 
+								   class="btn btn-outline-primary btn-sm">
+									<i class="fas fa-eye me-1"></i> Xem
+								</a>
+							</div>
+						</div>
+						
+						<p class="mb-2 text-light" th:text="${#strings.abbreviate(notification.content, 120)}">
+							Nội dung thông báo...
+						</p>
+						
+						<div class="d-flex justify-content-between align-items-center">
+							<small class="table-muted">
+								<i class="fas fa-clock me-1"></i>
+								<span th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy HH:mm')}">
+									01/01/2024 10:00
+								</span>
+							</small>
+							<div th:if="${notification.linkUrl != null and !notification.linkUrl.isEmpty()}">
+								<a th:href="${notification.linkUrl}" 
+								   class="btn btn-outline-light btn-sm" 
+								   target="_blank">
+									<i class="fas fa-external-link-alt me-1"></i> Xem thêm
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Pagination -->
+		<nav th:if="${totalPages > 1}" class="mt-4" aria-label="Notifications pagination">
+			<ul class="pagination justify-content-center">
+				<li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+					<a class="page-link" th:href="@{|/notifications?page=${currentPage-1}&unreadOnly=${unreadOnly}|}" aria-label="Previous">
+						<span aria-hidden="true">&laquo;</span>
+					</a>
+				</li>
+				<li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages-1)}" th:classappend="${i == currentPage} ? 'active'">
+					<a class="page-link" th:text="${i+1}" th:href="@{|/notifications?page=${i}&unreadOnly=${unreadOnly}|}">1</a>
+				</li>
+				<li class="page-item" th:classappend="${currentPage == totalPages-1} ? 'disabled'">
+					<a class="page-link" th:href="@{|/notifications?page=${currentPage+1}&unreadOnly=${unreadOnly}|}" aria-label="Next">
+						<span aria-hidden="true">&raquo;</span>
+					</a>
+				</li>
+			</ul>
+		</nav>
+	</div>
+
+	<div th:replace="~{fragments/footer :: site-footer}"></div>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+	<script th:src="@{/js/main.js}" defer></script>
+</body>
+</html> 

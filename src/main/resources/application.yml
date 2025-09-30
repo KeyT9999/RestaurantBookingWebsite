@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: dev  # Default to dev profile
+    active: prod  # Default to prod profile
   
   thymeleaf:
     cache: false

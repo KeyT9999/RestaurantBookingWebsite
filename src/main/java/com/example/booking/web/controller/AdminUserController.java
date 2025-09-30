@@ -81,10 +81,10 @@ public class AdminUserController {
 			model.addAttribute("roles", UserRole.values());
 			return "admin/user-form";
 		}
-		if (repo.existsByUsername(form.getUsername())) {
+		if (repo.existsByUsernameIgnoreCase(form.getUsername())) {
 			binding.rejectValue("username", "exists", "Username đã tồn tại");
 		}
-		if (repo.existsByEmail(form.getEmail())) {
+		if (repo.existsByEmailIgnoreCase(form.getEmail())) {
 			binding.rejectValue("email", "exists", "Email đã tồn tại");
 		}
 		if (binding.hasErrors()) {
@@ -134,9 +134,13 @@ public class AdminUserController {
 			model.addAttribute("userId", id);
 			return "admin/user-form";
 		}
-		// uniqueness checks
-		repo.findByUsername(form.getUsername()).filter(x -> !x.getId().equals(id)).ifPresent(x -> binding.rejectValue("username", "exists", "Username đã tồn tại"));
-		repo.findByEmail(form.getEmail()).filter(x -> !x.getId().equals(id)).ifPresent(x -> binding.rejectValue("email", "exists", "Email đã tồn tại"));
+		// uniqueness checks (case-insensitive)
+		if (repo.existsByUsernameIgnoreCaseAndIdNot(form.getUsername(), id)) {
+			binding.rejectValue("username", "exists", "Username đã tồn tại");
+		}
+		if (repo.existsByEmailIgnoreCaseAndIdNot(form.getEmail(), id)) {
+			binding.rejectValue("email", "exists", "Email đã tồn tại");
+		}
 		if (binding.hasErrors()) {
 			model.addAttribute("roles", UserRole.values());
 			model.addAttribute("userId", id);

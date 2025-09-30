@@ -53,9 +53,9 @@
 							<label class="form-label">Vai trò</label>
 							<select name="role" class="form-select">
 								<option th:selected="${role == null}" value="">Tất cả</option>
-								<option value="ADMIN" th:selected="${role?.name()=='ADMIN'}">ADMIN</option>
-								<option value="CUSTOMER" th:selected="${role?.name()=='CUSTOMER'}">CUSTOMER</option>
-								<option value="RESTAURANT" th:selected="${role?.name()=='RESTAURANT'}">RESTAURANT</option>
+								<option value="ADMIN" th:selected="${role?.name()=='ADMIN'}">Admin</option>
+								<option value="CUSTOMER" th:selected="${role?.name()=='CUSTOMER'}">Customer</option>
+								<option value="RESTAURANT_OWNER" th:selected="${role?.name()=='RESTAURANT_OWNER'}">Restaurant Owner</option>
 							</select>
 						</div>
 						<div class="col-md-2">

@@ -19,9 +19,9 @@ import com.example.booking.domain.UserRole;
 public interface UserRepository extends JpaRepository<User, UUID> {
     
     Optional<User> findByUsername(String username);
+    Optional<User> findByUsernameIgnoreCase(String username);
     
     Optional<User> findByEmail(String email);
-
     Optional<User> findByEmailIgnoreCase(String email);
     
     Optional<User> findByGoogleId(String googleId);
@@ -31,8 +31,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByPasswordResetToken(String token);
     
     boolean existsByUsername(String username);
+    boolean existsByUsernameIgnoreCase(String username);
+    boolean existsByUsernameIgnoreCaseAndIdNot(String username, UUID id);
     
     boolean existsByEmail(String email);
+    boolean existsByEmailIgnoreCase(String email);
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, UUID id);
     
     @Query("SELECT u FROM User u WHERE u.passwordResetToken = :token AND u.passwordResetTokenExpiry > :now")
     Optional<User> findByValidPasswordResetToken(@Param("token") String token, @Param("now") LocalDateTime now);
