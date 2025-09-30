@@ -1,6 +1,14 @@
 spring:
   profiles:
+<<<<<<< HEAD
     active: prod  # Default to prod profile
+=======
+    active: dev
+  datasource:
+    url: ${JDBC_DATABASE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+>>>>>>> main
   
   thymeleaf:
     cache: false
@@ -22,7 +30,6 @@ spring:
 server:
   port: 8080
   
-# Application configuration
 app:
   base-url: http://localhost:8080
   upload:

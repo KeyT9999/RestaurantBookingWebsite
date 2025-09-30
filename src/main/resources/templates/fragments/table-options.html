@@ -1,0 +1,5 @@
+<!-- Table Options Fragment for AJAX loading -->
+<option value="">-- No specific table preference --</option>
+<option th:each="table : ${tables}" 
+        th:value="${table.tableId}" 
+        th:text="${table.tableName + ' (Capacity: ' + table.capacity + ')'}"></option>

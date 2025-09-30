@@ -5,6 +5,7 @@ import java.util.Set;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -42,16 +43,19 @@ public class SecurityConfig {
 	private final OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService;
 	private final OidcUserService oidcUserService;
 	private final DataSource dataSource;
+	private final ApplicationContext applicationContext;
 	
 	@Autowired
 	public SecurityConfig(@Lazy UserDetailsService userDetailsService, 
 						 @Lazy OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService,
 						 @Lazy OidcUserService oidcUserService,
-						 @Lazy DataSource dataSource) {
+						 @Lazy DataSource dataSource,
+						 ApplicationContext applicationContext) {
 		this.userDetailsService = userDetailsService;
 		this.oAuth2UserService = oAuth2UserService;
 		this.oidcUserService = oidcUserService;
 		this.dataSource = dataSource;
+		this.applicationContext = applicationContext;
 	}
 	
 	@Bean
@@ -81,6 +85,7 @@ public class SecurityConfig {
 				.requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", 
 						"/login", "/error", "/h2-console/**", 
 						"/actuator/**", "/oauth2/**", "/", "/about", "/contact", "/restaurants").permitAll()
+						.requestMatchers("/api/booking/restaurants/**").permitAll()
 				.requestMatchers("/auth/register", "/auth/register-success", "/auth/verify-email", 
 						"/auth/verify-result", "/auth/forgot-password", "/auth/reset-password").permitAll()
 				.requestMatchers("/admin/**").hasRole("ADMIN")
@@ -101,8 +106,16 @@ public class SecurityConfig {
 						response.sendRedirect("/login?error");
 					}
 				})
-			)
-			.oauth2Login(oauth2 -> oauth2
+			);
+		
+		// Conditionally enable OAuth2 login only if ClientRegistrationRepository exists
+		boolean hasOAuth2 = applicationContext.getBeanNamesForType(
+			org.springframework.security.oauth2.client.registration.ClientRegistrationRepository.class
+		).length > 0;
+		
+		if (hasOAuth2) {
+			System.out.println("🔐 OAuth2 configuration detected - enabling OAuth2 login");
+			http.oauth2Login(oauth2 -> oauth2
 				.loginPage("/login")
 				.userInfoEndpoint(userInfo -> userInfo
 					.userService(oAuth2UserService)
@@ -113,7 +126,12 @@ public class SecurityConfig {
 					response.sendRedirect("/");
 				})
 				.permitAll()
-			)
+			);
+		} else {
+			System.out.println("🔐 No OAuth2 configuration - OAuth2 login disabled");
+		}
+		
+		http
 			.rememberMe(rm -> rm
 				.rememberMeServices(rememberMeServices())
 				.rememberMeParameter("remember-me")
