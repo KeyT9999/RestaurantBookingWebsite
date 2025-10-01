@@ -167,6 +167,15 @@
                         <span th:unless="${param.unverified != null}">Link xác thực không hợp lệ hoặc đã hết hạn.</span>
                     </div>
                     
+                    <div th:if="${param.unverified != null}" class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 10px; font-size: 1.2em;"></i>
+                        Tài khoản của bạn chưa được xác minh email. Vui lòng kiểm tra hộp thư để xác minh trước khi đăng nhập.
+                    </div>
+                    <div th:if="${param.locked != null}" class="alert alert-danger">
+                        <i class="fas fa-lock" style="margin-right: 10px; font-size: 1.2em;"></i>
+                        Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.
+                    </div>
+
                     <div class="mt-4 btn-group-spaced">
                         <a href="/login" class="btn-primary">
                             <i class="fas fa-sign-in-alt"></i> Đăng nhập
