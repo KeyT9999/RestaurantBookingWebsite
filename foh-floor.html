@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FOH – Waitlist & Bàn</title>
+    <link rel="stylesheet" href="foh-floor.css" />
+  </head>
+  <body>
+    <!-- MODAL: Tạo waitlist -->
+    <div
+      class="modal"
+      id="wl-modal"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wl-modal-title"
+    >
+      <div class="modal__backdrop" data-close-wl></div>
+      <div class="modal__dialog card" role="document">
+        <div class="modal__head">
+          <h3 class="h3" id="wl-modal-title">Thêm Waitlist</h3>
+          <button class="btn btn-ghost small" data-close-wl>Đóng</button>
+        </div>
+        <form class="grid-3" id="wl-form">
+          <label class="form-item">
+            <span class="form-label">Tên khách</span>
+            <input
+              class="input"
+              type="text"
+              placeholder="VD: Nguyễn A"
+              required
+            />
+          </label>
+          <label class="form-item">
+            <span class="form-label">Điện thoại (tuỳ chọn)</span>
+            <input class="input" type="tel" placeholder="0123 456 789" />
+          </label>
+          <label class="form-item">
+            <span class="form-label">Số khách</span>
+            <select class="input">
+              <option>1</option>
+              <option selected>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+              <option>6</option>
+            </select>
+          </label>
+
+          <label class="form-item full">
+            <span class="form-label">Ghi chú</span>
+            <textarea
+              class="input"
+              rows="3"
+              placeholder="Ghế em bé, dị ứng..."
+            ></textarea>
+          </label>
+
+          <div class="actions full">
+            <button class="btn" type="submit">Thêm vào hàng chờ</button>
+            <button class="btn btn-ghost" type="button" data-close-wl>
+              Hủy
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Nút chuyển sang trang hồ sơ -->
+    <nav class="page-switch card">
+      <a
+        class="nav-btn"
+        href="restaurant-profile.html"
+        title="Về trang Hồ sơ Nhà hàng"
+        >← Hồ sơ Nhà hàng</a
+      >
+    </nav>
+
+    <div class="wrap">
+      <!-- Header + tác vụ nhanh + chế độ xem -->
+      <header class="bar card">
+        <div>
+          <h1 class="h1">FOH – Waitlist & Bàn</h1>
+          <p class="muted">
+            Giao diện thao tác nhanh cho chủ quán (chỉ khung nhìn)
+          </p>
+        </div>
+
+        <div class="bar-actions">
+          <button class="btn">+ Walk-in</button>
+          <button class="btn">+ Reservation</button>
+          <button class="btn">Multi Upload Media</button>
+          <button class="btn btn-ghost" id="btn-simulate-resv">
+            Giả lập khách đặt bàn
+          </button>
+        </div>
+
+        <div class="bar-views">
+          <div class="seg" role="tablist" aria-label="View modes">
+            <button class="segbtn is-active" data-mode="split">Split</button>
+            <button class="segbtn" data-mode="queue">Queue</button>
+            <button class="segbtn" data-mode="tables">Tables</button>
+          </div>
+          <label class="compact-toggle">
+            <input type="checkbox" id="toggle-compact" />
+            <span>Compact</span>
+          </label>
+        </div>
+      </header>
+
+      <!-- Banner đặt bàn đến -->
+      <section class="incoming card" id="incoming-resv" hidden>
+        <div class="incoming-main">
+          <div class="incoming-title">
+            Đặt bàn mới · <strong id="inc-name">Phạm D</strong> ·
+            <span id="inc-party">2 khách</span>
+          </div>
+          <div class="incoming-sub">
+            Thời gian: <span id="inc-time">18:30</span> — Gợi ý bàn:
+            <span id="inc-suggest">T2 (2 chỗ)</span> — Ghi chú:
+            <span id="inc-note">Không</span>
+          </div>
+        </div>
+        <div class="incoming-actions">
+          <button class="btn" id="inc-accept">Chấp nhận &amp; Giữ bàn</button>
+          <button class="btn btn-ghost" id="inc-propose">
+            Đề xuất giờ khác
+          </button>
+          <button class="btn btn-ghost" id="inc-decline">Từ chối</button>
+        </div>
+      </section>
+
+      <!-- Lưới 3 cột -->
+      <main class="layout-3col">
+        <!-- CỘT TRÁI: QUEUES -->
+        <aside class="col card col-left">
+          <div class="block-head sticky">
+            <h2 class="h2">Queues</h2>
+            <div class="seg" id="queue-tabs">
+              <button class="segbtn is-active" data-qtab="waitlist">
+                Waitlist
+              </button>
+              <button class="segbtn" data-qtab="upcoming">Upcoming</button>
+            </div>
+          </div>
+
+          <!-- TAB: WAITLIST -->
+          <section class="qtab is-visible" id="qtab-waitlist">
+            <!-- Tìm nhanh -->
+            <div class="block">
+              <div class="filters grid-2">
+                <input
+                  class="input"
+                  type="text"
+                  placeholder="Tìm tên / số điện thoại..."
+                />
+                <select class="input">
+                  <option>Tất cả size</option>
+                  <option>1–2</option>
+                  <option>3–4</option>
+                  <option>5–6</option>
+                  <option>7+</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Thêm nhanh -->
+            <!-- NÚT mở modal tạo waitlist -->
+            <section class="block">
+              <div class="actions">
+                <button class="btn" id="btn-open-wl">+ Thêm Waitlist</button>
+                <span class="muted" style="margin-left: 8px"> </span>
+              </div>
+            </section>
+
+            <!-- Danh sách Waitlist (accordion) -->
+            <section class="block">
+              <div class="list-head">
+                <h3 class="h3">Hàng chờ hiện tại</h3>
+                <div class="hint">Nhấn hàng để xem chi tiết</div>
+              </div>
+
+              <ul class="list">
+                <!-- HÀNG 1 -->
+                <li class="row row-slim">
+                  <div class="row-main">
+                    <div class="row-title">Nguyễn A · 2 khách</div>
+                    <div class="row-sub">Chờ 08’ · ETA 12’ · Thường</div>
+                  </div>
+                  <div class="row-actions">
+                    <button class="btn btn-ghost small">Báo</button>
+                    <button class="btn btn-ghost small">Xếp</button>
+
+                    <!-- Menu chi tiết/Thao tác thêm (native, không JS) -->
+                    <details class="more">
+                      <summary class="btn btn-ghost small">⋯</summary>
+                      <div class="more-panel">
+                        <div class="kv kv-mini">
+                          <div class="k">Điện thoại</div>
+                          <div class="v">0123 456 789</div>
+                          <div class="k">Ghi chú</div>
+                          <div class="v">Cần ghế em bé</div>
+                          <div class="k">Vào hàng</div>
+                          <div class="v">17:52</div>
+                          <div class="k">Đã báo</div>
+                          <div class="v">0 lần</div>
+                        </div>
+                        <div class="actions">
+                          <button class="btn">Gọi</button>
+                          <button class="btn btn-ghost">SMS</button>
+                          <button class="btn btn-ghost">Sao chép số</button>
+                          <button class="btn btn-ghost">Giữ 5’</button>
+                          <button class="btn btn-ghost">Huỷ</button>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </li>
+
+                <!-- HÀNG 2 -->
+                <li class="row row-slim">
+                  <div class="row-main">
+                    <div class="row-title">Trần B · 4 khách</div>
+                    <div class="row-sub">Chờ 15’ · ETA 10’ · Ưu tiên cao</div>
+                  </div>
+                  <div class="row-actions">
+                    <button class="btn btn-ghost small">Báo</button>
+                    <button class="btn btn-ghost small">Xếp</button>
+                    <details class="more">
+                      <summary class="btn btn-ghost small">⋯</summary>
+                      <div class="more-panel">
+                        <div class="kv kv-mini">
+                          <div class="k">Điện thoại</div>
+                          <div class="v">09xx xxx xxx</div>
+                          <div class="k">Ghi chú</div>
+                          <div class="v">Sinh nhật</div>
+                          <div class="k">Vào hàng</div>
+                          <div class="v">17:40</div>
+                          <div class="k">Đã báo</div>
+                          <div class="v">1 lần</div>
+                        </div>
+                        <div class="actions">
+                          <button class="btn">Gọi</button>
+                          <button class="btn btn-ghost">SMS</button>
+                          <button class="btn btn-ghost">Sao chép số</button>
+                          <button class="btn btn-ghost">Giữ 10’</button>
+                          <button class="btn btn-ghost">Huỷ</button>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </li>
+
+                <!-- HÀNG 3 -->
+                <li class="row row-slim">
+                  <div class="row-main">
+                    <div class="row-title">Lê C · 6 khách</div>
+                    <div class="row-sub">Chờ 03’ · ETA 18’ · Thường</div>
+                  </div>
+                  <div class="row-actions">
+                    <button class="btn btn-ghost small">Báo</button>
+                    <button class="btn btn-ghost small">Xếp</button>
+                    <details class="more">
+                      <summary class="btn btn-ghost small">⋯</summary>
+                      <div class="more-panel">
+                        <div class="kv kv-mini">
+                          <div class="k">Điện thoại</div>
+                          <div class="v">—</div>
+                          <div class="k">Ghi chú</div>
+                          <div class="v">—</div>
+                          <div class="k">Vào hàng</div>
+                          <div class="v">18:02</div>
+                          <div class="k">Đã báo</div>
+                          <div class="v">0 lần</div>
+                        </div>
+                        <div class="actions">
+                          <button class="btn">Gọi</button>
+                          <button class="btn btn-ghost">SMS</button>
+                          <button class="btn btn-ghost">Sao chép số</button>
+                          <button class="btn btn-ghost">Giữ 5’</button>
+                          <button class="btn btn-ghost">Huỷ</button>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                </li>
+              </ul>
+            </section>
+          </section>
+
+          <!-- TAB: UPCOMING -->
+          <section class="qtab" id="qtab-upcoming">
+            <section class="block">
+              <div class="filters grid-2">
+                <input
+                  class="input"
+                  type="text"
+                  placeholder="Tìm theo tên/giờ..."
+                />
+                <select class="input">
+                  <option>Tất cả trạng thái</option>
+                  <option>Chờ xác nhận</option>
+                  <option>Đã xác nhận</option>
+                </select>
+              </div>
+            </section>
+
+            <section class="block">
+              <ul class="list">
+                <!-- Mẫu ẩn để clone -->
+                <li class="row selectable" id="tpl-upcoming" hidden>
+                  <div class="row-main">
+                    <div class="row-title">
+                      <span class="u-time">HH:MM</span> ·
+                      <span class="u-name">Tên</span> ·
+                      <span class="u-party">X khách</span>
+                    </div>
+                    <div class="row-sub">
+                      Đã xác nhận · Bàn dự kiến: <span class="u-table">T?</span>
+                    </div>
+                  </div>
+                  <div class="row-actions">
+                    <button class="btn btn-ghost small">Check-in</button>
+                    <button class="btn btn-ghost small">Giữ bàn</button>
+                  </div>
+                </li>
+
+                <!-- Dữ liệu mẫu -->
+                <li class="row selectable">
+                  <div class="row-main">
+                    <div class="row-title">18:00 · Phạm D · 2 khách</div>
+                    <div class="row-sub">Đã xác nhận · Bàn dự kiến: T2</div>
+                  </div>
+                  <div class="row-actions">
+                    <button class="btn btn-ghost small">Check-in</button>
+                    <button class="btn btn-ghost small">Giữ bàn</button>
+                  </div>
+                </li>
+                <li class="row selectable">
+                  <div class="row-main">
+                    <div class="row-title">18:15 · Võ E · 5 khách</div>
+                    <div class="row-sub">Chờ xác nhận · Ghi chú: sinh nhật</div>
+                  </div>
+                  <div class="row-actions">
+                    <button class="btn btn-ghost small">Xác nhận</button>
+                    <button class="btn btn-ghost small">Gán bàn</button>
+                  </div>
+                </li>
+              </ul>
+            </section>
+          </section>
+        </aside>
+
+        <!-- CỘT GIỮA: DANH SÁCH BÀN -->
+        <section class="col card col-middle">
+          <div class="block-head">
+            <h2 class="h2">Bàn</h2>
+            <div class="filters grid-3">
+              <select class="input">
+                <option>Tất cả khu</option>
+                <option>Khu A</option>
+                <option>Khu B</option>
+                <option>Ngoài trời</option>
+              </select>
+              <select class="input">
+                <option>Tất cả trạng thái</option>
+                <option>AVAILABLE</option>
+                <option>OCCUPIED</option>
+                <option>CLEANING</option>
+                <option>HOLD</option>
+              </select>
+              <select class="input">
+                <option>Sắp xếp</option>
+                <option>Label</option>
+                <option>Sức chứa</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="tables-grid">
+            <div class="table-card selectable">
+              <div class="t-head">
+                <div class="t-label">T1</div>
+                <div class="t-cap">4 chỗ</div>
+              </div>
+              <div class="t-body">
+                <div class="t-status">AVAILABLE</div>
+                <div class="t-timer">~ 0’</div>
+              </div>
+              <div class="t-actions">
+                <button class="btn btn-ghost small">Giữ 5’</button
+                ><button class="btn btn-ghost small">Xếp chỗ</button>
+              </div>
+            </div>
+
+            <div class="table-card selectable">
+              <div class="t-head">
+                <div class="t-label">T2</div>
+                <div class="t-cap">2 chỗ</div>
+              </div>
+              <div class="t-body">
+                <div class="t-status">OCCUPIED</div>
+                <div class="t-timer">còn 12’</div>
+              </div>
+              <div class="t-actions">
+                <button class="btn btn-ghost small">Chuyển bàn</button
+                ><button class="btn btn-ghost small">Kết thúc</button>
+              </div>
+            </div>
+
+            <div class="table-card selectable">
+              <div class="t-head">
+                <div class="t-label">T3</div>
+                <div class="t-cap">6 chỗ</div>
+              </div>
+              <div class="t-body">
+                <div class="t-status">CLEANING</div>
+                <div class="t-timer">2’</div>
+              </div>
+              <div class="t-actions">
+                <button class="btn btn-ghost small">Đánh dấu sẵn sàng</button>
+              </div>
+            </div>
+
+            <div class="table-card selectable" id="table-T4">
+              <div class="t-head">
+                <div class="t-label">T4</div>
+                <div class="t-cap">4 chỗ</div>
+              </div>
+              <div class="t-body">
+                <div class="t-status">HOLD (5’)</div>
+                <div class="t-timer">4’</div>
+              </div>
+              <div class="t-actions">
+                <button class="btn btn-ghost small">Huỷ HOLD</button
+                ><button class="btn btn-ghost small">Xếp chỗ</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions mt-8">
+            <button class="btn">+ Tạo bàn</button>
+            <button class="btn btn-ghost">Ghép bàn</button>
+            <button class="btn btn-ghost">Tách bàn</button>
+          </div>
+        </section>
+
+        <!-- CỘT PHẢI: CHI TIẾT -->
+        <aside class="col card col-right drawer" id="detail-drawer">
+          <button
+            class="btn btn-ghost drawer-toggle"
+            data-drawer="#detail-drawer"
+          >
+            Ẩn/Hiện Chi tiết
+          </button>
+
+          <div class="block">
+            <h2 class="h2">Chi tiết</h2>
+            <p class="muted">
+              Chọn một hàng chờ/đặt bàn/hoặc bàn để xem thông tin và thao tác.
+            </p>
+          </div>
+
+          <section class="block">
+            <h3 class="h3">Khách: Nguyễn A · 2 khách</h3>
+            <div class="kv">
+              <div class="k">Trạng thái</div>
+              <div class="v">WAITING</div>
+              <div class="k">Đã chờ</div>
+              <div class="v">08’</div>
+              <div class="k">ETA</div>
+              <div class="v">12’</div>
+              <div class="k">Ghi chú</div>
+              <div class="v">Cần ghế em bé</div>
+            </div>
+            <div class="actions mt-8">
+              <button class="btn">Báo khách</button>
+              <button class="btn btn-ghost">Giữ bàn 5’</button>
+              <button class="btn btn-ghost">Xếp chỗ</button>
+              <button class="btn btn-ghost">Huỷ</button>
+            </div>
+          </section>
+
+          <section class="block">
+            <h3 class="h3">Gán bàn</h3>
+            <form class="grid-3">
+              <select class="input">
+                <option>Chọn bàn phù hợp</option>
+                <option>T1 (4)</option>
+                <option>T2 (2)</option>
+                <option>T3 (6)</option>
+                <option>T4 (4)</option>
+              </select>
+              <select class="input">
+                <option>Thời lượng (phút)</option>
+                <option>60</option>
+                <option>75</option>
+                <option>90</option>
+              </select>
+              <button class="btn">Xếp chỗ</button>
+            </form>
+          </section>
+
+          <section class="block">
+            <h3 class="h3">Tạo đặt bàn nhanh</h3>
+            <form class="grid-2">
+              <input class="input" type="text" placeholder="Tên khách" />
+              <input class="input" type="tel" placeholder="Điện thoại" />
+              <select class="input">
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+              </select>
+              <input class="input" type="datetime-local" />
+              <textarea
+                class="input full"
+                rows="2"
+                placeholder="Ghi chú"
+              ></textarea>
+              <div class="actions full"><button class="btn">Tạo</button></div>
+            </form>
+          </section>
+
+          <section class="block">
+            <h3 class="h3">Thiết lập nhanh</h3>
+            <form class="grid-3">
+              <label class="form-item"
+                ><span class="form-label">Turn time (phút)</span
+                ><input class="input" type="number" value="75"
+              /></label>
+              <label class="form-item"
+                ><span class="form-label">Cleaning (phút)</span
+                ><input class="input" type="number" value="3"
+              /></label>
+              <label class="form-item"
+                ><span class="form-label">Pacing / 15’</span
+                ><input class="input" type="number" value="6"
+              /></label>
+              <div class="actions full">
+                <button class="btn btn-ghost">Lưu thiết lập</button>
+              </div>
+            </form>
+          </section>
+        </aside>
+      </main>
+
+      <footer class="footer">
+        <p>© 2025 FOH Module (Wireframe)</p>
+      </footer>
+    </div>
+
+    <!-- JS điều khiển -->
+    <script>
+      // View modes
+      document.querySelectorAll("[data-mode]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll("[data-mode]")
+            .forEach((b) => b.classList.remove("is-active"));
+          btn.classList.add("is-active");
+          document.body.classList.remove("mode-queue", "mode-tables");
+          const m = btn.getAttribute("data-mode");
+          if (m === "queue") document.body.classList.add("mode-queue");
+          if (m === "tables") document.body.classList.add("mode-tables");
+        });
+      });
+
+      // Compact toggle
+      document
+        .getElementById("toggle-compact")
+        ?.addEventListener("change", (e) => {
+          document.body.classList.toggle("compact", e.target.checked);
+        });
+
+      // Queue tabs
+      document.querySelectorAll("#queue-tabs .segbtn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document
+            .querySelectorAll("#queue-tabs .segbtn")
+            .forEach((b) => b.classList.remove("is-active"));
+          btn.classList.add("is-active");
+          const name = btn.getAttribute("data-qtab");
+          document
+            .querySelectorAll(".qtab")
+            .forEach((s) => s.classList.remove("is-visible"));
+          document.getElementById("qtab-" + name)?.classList.add("is-visible");
+        });
+      });
+
+      // Drawer toggle (ẩn/hiện cột chi tiết)
+      document.querySelectorAll(".drawer-toggle").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const el = document.querySelector(btn.getAttribute("data-drawer"));
+          if (!el) return;
+          el.classList.toggle("is-hidden");
+          const hidden = el.classList.contains("is-hidden");
+          document.querySelector(".layout-3col").style.gridTemplateColumns =
+            hidden ? "360px 1fr" : "";
+        });
+      });
+
+      // Banner: mô phỏng "khách đặt bàn đến"
+      const btnSim = document.getElementById("btn-simulate-resv");
+      const inc = document.getElementById("incoming-resv");
+      const incAccept = document.getElementById("inc-accept");
+      const incDecline = document.getElementById("inc-decline");
+      const incPropose = document.getElementById("inc-propose");
+
+      btnSim?.addEventListener("click", () => {
+        document.getElementById("inc-name").textContent = "Phạm D";
+        document.getElementById("inc-party").textContent = "2 khách";
+        document.getElementById("inc-time").textContent = "18:30";
+        document.getElementById("inc-suggest").textContent = "T2 (2 chỗ)";
+        document.getElementById("inc-note").textContent = "Không";
+        inc.hidden = false;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        document.querySelector('#queue-tabs [data-qtab="upcoming"]')?.click();
+      });
+
+      function addToUpcoming({ time, name, party, table }) {
+        const upcomingList = document.querySelector("#qtab-upcoming .list");
+        const tpl = document.getElementById("tpl-upcoming");
+        if (!upcomingList || !tpl) return;
+        const li = tpl.cloneNode(true);
+        li.id = "";
+        li.hidden = false;
+        li.querySelector(".u-time").textContent = time;
+        li.querySelector(".u-name").textContent = name;
+        li.querySelector(".u-party").textContent = party + " khách";
+        li.querySelector(".u-table").textContent = table;
+        upcomingList.prepend(li);
+      }
+
+      function holdTableDemo() {
+        const st = document.querySelector("#table-T4 .t-status");
+        const tm = document.querySelector("#table-T4 .t-timer");
+        if (st) st.textContent = "HOLD (5’)";
+        if (tm) tm.textContent = "5’";
+      }
+
+      incAccept?.addEventListener("click", () => {
+        addToUpcoming({ time: "18:30", name: "Phạm D", party: 2, table: "T4" });
+        holdTableDemo();
+        inc.hidden = true;
+      });
+      incDecline?.addEventListener("click", () => {
+        inc.hidden = true;
+      });
+      incPropose?.addEventListener("click", () => {
+        const sub = inc.querySelector(".incoming-sub");
+        sub.textContent = "Đề xuất giờ khác: 18:45 (chờ khách xác nhận)";
+      });
+
+      // ===== Waitlist accordion: mở/đóng chi tiết =====
+      function toggleDetailById(id, btn) {
+        const panel = document.getElementById(id);
+        if (!panel) return;
+        const isHidden = panel.hasAttribute("hidden");
+        panel.toggleAttribute("hidden", !isHidden);
+        if (btn) btn.setAttribute("aria-expanded", String(isHidden));
+      }
+      // Nút mũi tên
+      document.querySelectorAll(".row-wait .expander").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute("aria-controls");
+          toggleDetailById(id, btn);
+        });
+      });
+      // Click vào phần row-main
+      document.querySelectorAll(".row-wait .row-main").forEach((el) => {
+        el.addEventListener("click", () => {
+          const id = el.getAttribute("data-controls");
+          const btn = el.parentElement.querySelector(".expander");
+          toggleDetailById(id, btn);
+        });
+      });
+
+      // Phím tắt: q/t/s/c
+      window.addEventListener("keydown", (e) => {
+        if (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
+        if (e.key === "q") {
+          document.querySelector('[data-mode="queue"]')?.click();
+        }
+        if (e.key === "t") {
+          document.querySelector('[data-mode="tables"]')?.click();
+        }
+        if (e.key === "s") {
+          document.querySelector('[data-mode="split"]')?.click();
+        }
+        if (e.key === "c") {
+          const box = document.getElementById("toggle-compact");
+          if (box) {
+            box.checked = !box.checked;
+            box.dispatchEvent(new Event("change"));
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
+<script>
+  // ===== Modal Waitlist =====
+  const wlModal = document.getElementById("wl-modal");
+  const openWlBtn = document.getElementById("btn-open-wl");
+
+  function openWl() {
+    if (!wlModal) return;
+    wlModal.setAttribute("aria-hidden", "false");
+    // focus ô đầu
+    wlModal.querySelector('input[type="text"]')?.focus();
+  }
+  function closeWl() {
+    wlModal?.setAttribute("aria-hidden", "true");
+  }
+
+  openWlBtn?.addEventListener("click", openWl);
+  wlModal
+    ?.querySelectorAll("[data-close-wl]")
+    .forEach((el) => el.addEventListener("click", closeWl));
+  // ESC để đóng
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && wlModal?.getAttribute("aria-hidden") === "false")
+      closeWl();
+  });
+  // click nền để đóng (đã gán data-close-wl ở backdrop)
+
+  // (Demo) chặn submit thật, đóng modal sau submit
+  document.getElementById("wl-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    // TODO: push lên danh sách (sau này nối BE)
+    closeWl();
+  });
+</script>

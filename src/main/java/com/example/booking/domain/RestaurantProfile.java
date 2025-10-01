@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
@@ -30,7 +31,7 @@ public class RestaurantProfile {
     private Integer restaurantId;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
+    @JoinColumn(name = "owner_id", nullable = true)
     private RestaurantOwner owner;
     
     @Column(name = "restaurant_name", nullable = false)
@@ -110,6 +111,13 @@ public class RestaurantProfile {
         this.openingHours = openingHours;
         this.averagePrice = averagePrice;
         this.websiteUrl = websiteUrl;
+    }
+    
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
     }
     
     @PreUpdate
