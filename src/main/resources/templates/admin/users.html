@@ -13,276 +13,175 @@
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
 	
 	<style>
-		/* Improved font system */
+		/* Typography base */
 		body {
 			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 			font-weight: 400;
 			line-height: 1.6;
 		}
 		
-		/* Admin Page Specific Styles */
-		.page-bg { 
-			background-color:#121212; 
-			min-height:100vh; 
-			font-family: 'Inter', sans-serif;
+		/* Page layout follows light/blue baseline */
+		.page-bg {
+			background-color: var(--background-light);
+			min-height: 100vh;
 		}
 		
-		.section-title { 
-			color:#fff; 
-			font-family:'Poppins', 'Inter', sans-serif; 
-			font-weight: 600;
-			font-size: 2.1rem;
+		.section-title {
+			color: var(--text-dark);
+			font-family: var(--font-heading);
+			font-weight: 700;
+			font-size: 2.2rem;
 		}
 		
-		/* QUAN TRỌNG: Thêm padding-top để tránh header fixed */
+		/* Space for fixed header */
 		.admin-content {
-			padding-top: 120px !important; /* Account for fixed header */
+			padding-top: 100px !important;
 		}
 		
-		/* ĐẢM BẢO NÚT ADD USER HIỂN THỊ RÕ RÀNG */
+		/* Top actions section */
 		.add-user-section {
 			position: relative;
 			z-index: 100;
-			padding: 2rem 0;
-			background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(255,215,0,0.1));
-			border-bottom: 2px solid rgba(212,175,55,0.4);
+			padding: 1.5rem 0;
+			background: var(--background-white);
+			border-bottom: 1px solid var(--border-light);
 			margin-bottom: 2rem;
 			border-radius: 12px;
+			box-shadow: var(--shadow-card);
 		}
 		
+		/* Primary action button consistent with home */
 		.btn-add-user {
-			background: linear-gradient(45deg, #D4AF37, #FFD700) !important;
-			border: none !important;
-			color: #121212 !important;
-			font-weight: 700 !important;
-			font-size: 1.1rem !important;
-			padding: 1rem 2rem !important;
-			border-radius: 12px !important;
-			box-shadow: 0 8px 25px rgba(212,175,55,0.4) !important;
-			transition: all 0.3s ease !important;
-			text-shadow: none !important;
-			position: relative;
-			overflow: hidden;
+			background: var(--primary-blue) !important;
+			border: 1px solid var(--primary-blue) !important;
+			color: var(--background-white) !important;
+			font-weight: 600 !important;
+			font-size: 1rem !important;
+			padding: 0.75rem 1.5rem !important;
+			border-radius: 8px !important;
+			box-shadow: var(--shadow-button) !important;
+			transition: var(--transition) !important;
 		}
 		
 		.btn-add-user:hover {
-			background: linear-gradient(45deg, #FFD700, #D4AF37) !important;
-			color: #121212 !important;
-			transform: translateY(-3px) !important;
-			box-shadow: 0 15px 35px rgba(212,175,55,0.6) !important;
+			background: var(--primary-blue-dark) !important;
+			border-color: var(--primary-blue-dark) !important;
+			transform: translateY(-1px) !important;
+			box-shadow: var(--shadow-hover) !important;
 		}
 		
-		.btn-add-user::before {
-			content: '';
-			position: absolute;
-			top: 0;
-			left: -100%;
-			width: 100%;
-			height: 100%;
-			background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-			transition: left 0.6s ease;
+		/* Cards */
+		.filter-card {
+			background: var(--background-white);
+			border: 1px solid var(--border-light);
+			color: var(--text-dark);
+			box-shadow: var(--shadow-card);
+			border-radius: 12px;
 		}
 		
-		.btn-add-user:hover::before {
-			left: 100%;
+		.user-card {
+			background: var(--background-white);
+			border: 1px solid var(--border-light);
+			color: var(--text-dark);
+			border-radius: 12px;
+			transition: var(--transition);
+			box-shadow: var(--shadow-card);
 		}
 		
-		.btn-add-user i {
-			font-size: 1.2rem;
-			margin-right: 0.5rem;
-		}
-		
-		.filter-card { 
-			background:#1A1A1A; 
-			border:1px solid rgba(212,175,55,.2); 
-			color:#E0E0E0; 
-			font-family: 'Inter', sans-serif;
-		}
-		
-		.user-card { 
-			background:#1A1A1A; 
-			border:1px solid rgba(212,175,55,.2); 
-			color:#E0E0E0; 
-			border-radius:16px; 
-			transition:transform .2s ease, box-shadow .2s ease;
-			font-family: 'Inter', sans-serif;
-		}
-		
-		.user-card:hover { 
-			transform:translateY(-5px); 
-			box-shadow:0 15px 30px rgba(212,175,55,.2); 
+		.user-card:hover {
+			transform: translateY(-3px);
+			box-shadow: var(--shadow-hover);
+			border-color: var(--primary-blue);
 		}
 		
 		.user-card h5 {
-			font-family: 'Poppins', sans-serif;
+			font-family: var(--font-heading);
 			font-weight: 600;
 			font-size: 1.1rem;
 		}
 		
-		.user-avatar { 
-			width:60px; 
-			height:60px; 
-			border-radius:50%; 
-			background:linear-gradient(135deg,#D4AF37,#FFD700); 
-			color:#121212; 
-			display:flex; 
-			align-items:center; 
-			justify-content:center; 
-			font-weight:700; 
-			font-size:1.25rem;
-			font-family: 'Poppins', sans-serif;
+		.user-avatar {
+			width: 56px;
+			height: 56px;
+			border-radius: 50%;
+			background: var(--background-light);
+			color: var(--primary-blue);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: 700;
+			font-size: 1.1rem;
 		}
 		
-		.badge-role { 
-			font-size:.75rem;
+		.badge-role, .badge-status {
+			font-size: .75rem;
 			font-weight: 500;
-			font-family: 'Inter', sans-serif;
 		}
 		
-		.badge-status { 
-			font-size:.75rem;
-			font-weight: 500;
-			font-family: 'Inter', sans-serif;
+		.table-muted { color: var(--text-light); font-weight: 400; }
+		
+		.form-label { font-weight: 500; color: var(--text-dark); }
+		
+		/* Form controls align with booking form */
+		.form-control, .form-select {
+			background: var(--background-white);
+			color: var(--text-dark);
+			border: 1px solid var(--border-medium);
+			border-radius: 6px;
 		}
 		
-		.table-muted { 
-			color:#BFBFBF; 
-			font-weight: 400;
+		.form-control::placeholder { color: var(--text-light); }
+		
+		.form-control:focus, .form-select:focus {
+			background: var(--background-white);
+			color: var(--text-dark);
+			border-color: var(--primary-blue);
+			box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.15);
 		}
 		
-		.form-label {
-			font-family: 'Inter', sans-serif;
-			font-weight: 500;
-			color: #E0E0E0;
-		}
-		
-		.pagination .page-link { 
-			background:#1A1A1A; 
-			color:#D4AF37; 
-			border-color:rgba(212,175,55,.2);
-			font-family: 'Inter', sans-serif;
-		}
-		
-		.pagination .page-item.active .page-link { 
-			background:#D4AF37; 
-			color:#121212; 
-			border-color:#D4AF37; 
-		}
-		
-		.pagination .page-link:hover { 
-			background:#2A2A2A; 
-			color:#FFD700; 
-		}
-		
-		.form-control, .form-select { 
-			background:#2A2A2A; 
-			color:#E0E0E0; 
-			border:1px solid #444;
-			font-family: 'Inter', sans-serif;
-		}
-		
-		.form-control::placeholder { color:#8a8a8a; }
-		
-		.form-control:focus, .form-select:focus { 
-			background:#2A2A2A; 
-			color:#E0E0E0; 
-			border-color:#D4AF37; 
-			box-shadow:0 0 0 0.2rem rgba(212,175,55,.25); 
-		}
-		
-		.btn-gold { 
-			background:#D4AF37; 
-			border-color:#D4AF37; 
-			color:#121212;
-			font-family: 'Inter', sans-serif;
+		.btn-gold { /* keep legacy, map to primary */
+			background: var(--primary-blue);
+			border-color: var(--primary-blue);
+			color: var(--background-white);
 			font-weight: 600;
 			font-size: 0.95rem;
-			padding: 0.75rem 1.5rem;
+			padding: 0.6rem 1.2rem;
 			border-radius: 8px;
+			box-shadow: var(--shadow-button);
 		}
 		
-		.btn-gold:hover { 
-			background:#FFD700; 
-			border-color:#FFD700; 
-			color:#121212;
+		.btn-gold:hover {
+			background: var(--primary-blue-dark);
+			border-color: var(--primary-blue-dark);
 			transform: translateY(-1px);
+			box-shadow: var(--shadow-hover);
 		}
 		
-		.btn-outline-light {
-			font-family: 'Inter', sans-serif;
-			font-weight: 500;
-		}
-		
-		.toggle-btn {
-			font-family: 'Inter', sans-serif;
-			font-weight: 500;
-			border-radius: 8px;
-			transition: all 0.2s ease;
-			min-width: 40px;
-		}
-		
-		.edit-btn {
-			font-family: 'Inter', sans-serif;
-			font-weight: 500;
-			border-radius: 8px;
-			transition: all 0.2s ease;
-		}
-		
-		.toggle-btn:hover {
-			background-color: rgba(255,255,255,0.1);
-			transform: scale(1.05);
-		}
-		
-		.edit-btn:hover {
-			background-color: rgba(212,175,55,0.2);
-			border-color: #D4AF37;
-			color: #D4AF37;
-		}
+		.toggle-btn, .edit-btn { border-radius: 8px; transition: var(--transition); }
+		.toggle-btn:hover { background-color: var(--background-light); transform: scale(1.03); }
+		.edit-btn:hover { border-color: var(--primary-blue); color: var(--primary-blue); background-color: rgba(74,144,226,0.08); }
 		
 		/* Toast styles */
-		.toast-container {
-			position: fixed;
-			top: 140px; /* Adjusted for header */
-			right: 20px;
-			z-index: 1055;
-		}
-		
-		.toast-custom {
-			font-family: 'Inter', sans-serif;
-			font-weight: 500;
-			border-radius: 12px;
-			border: none;
-			box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-		}
-		
-		.toast-success {
-			background: linear-gradient(#D4AF37, #FFD700);
-			color: #121212;
-		}
-		
-		.toast-error {
-			background: linear-gradient(#DC3545, #FD6C6C);
-			color: white;
-		}
+		.toast-container { position: fixed; top: 120px; right: 20px; z-index: 1055; }
+		.toast-custom { font-weight: 500; border-radius: 12px; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+		.toast-success { background: linear-gradient(var(--primary-blue), var(--primary-blue-dark)); color: #fff; }
+		.toast-error { background: linear-gradient(#DC3545, #FD6C6C); color: #fff; }
 		
 		/* Loading spinner */
-		.loading-spinner {
-			animation: spin 1s linear infinite;
-		}
+		.loading-spinner { animation: spin 1s linear infinite; }
+		@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 		
-		@keyframes spin {
-			0% { transform: rotate(0deg); }
-			100% { transform: rotate(360deg); }
-		}
-		
-		/* Hide CSRF token input */
-		.csrf-token {
-			display: none;
-		}
+		.csrf-token { display: none; }
 	</style>
 </head>
 <body class="page-bg">
+	<div th:insert="fragments/flash :: flash"></div>
 	<div th:replace="~{fragments/header :: site-header}"></div>
+
+
+
+
+	</div>
 
 	<!-- THÊM CLASS admin-content để TRÁNH HEADER -->
 	<div class="admin-content py-5">
@@ -292,15 +191,14 @@
 				<div class="row align-items-center">
 					<div class="col-md-8">
 						<h1 class="section-title mb-2">
-							<i class="fas fa-users text-warning me-3"></i> Quản lý người dùng
+							<i class="fas fa-users text-primary me-3"></i> Quản lý người dùng
 						</h1>
 						<p class="text-muted mb-0 fs-6">Quản lý và theo dõi tất cả người dùng trong hệ thống</p>
 					</div>
 					<div class="col-md-4 text-end">
-						<!-- NÚT THÊM USER SIÊU NỔI BẬT -->
 						<a class="btn btn-add-user" th:href="@{/admin/users/create}">
-							<i class="fas fa-user-plus"></i> 
-							<span class="fw-bold">THÊM NGƯỜI DÙNG MỚI</span>
+							<i class="fas fa-user-plus"></i>
+							<span class="fw-bold">Thêm người dùng mới</span>
 						</a>
 					</div>
 				</div>
@@ -334,11 +232,11 @@
 							</div>
 							<div class="col-md-3 text-end">
 								<input type="hidden" name="sortBy" th:value="${sortBy}">
-								<br type="hidden" name="dir" th:value="${dir}">
-								<button type="submit" class="btn btn-outline-light me-2">
+								<input type="hidden" name="dir" th:value="${dir}">
+								<button type="submit" class="btn btn-outline-secondary me-2">
 									<i class="fas fa-search me-1"></i> Tìm kiếm
 								</button>
-								<a th:href="@{/admin/users}" class="btn btn-outline-light">
+								<a th:href="@{/admin/users}" class="btn btn-outline-secondary">
 									<i class="fas fa-rotate-left me-1"></i> Reset
 								</a>
 							</div>
@@ -371,33 +269,33 @@
 						<div class="mb-3">
 							<span class="table-muted small fw-500">TRẠNG THÁI:</span>
 							<br>
-							<span class="badge badge-status mt-1 status-badge" 
-								  th:id="'status-badge-' + ${u.id}"
-								  th:classappend="${u.active && u.emailVerified} ? ' bg-success' : ' bg-warning text-dark'" 
-								  th:text="${u.active && u.emailVerified} ? '✅ ACTIVE' : '🚫 INACTIVE'">Active</span>
+													<span class="badge badge-status mt-1 status-badge" 
+							  th:id="'status-badge-' + ${u.id}"
+							  th:classappend="${u.active && u.emailVerified} ? ' bg-success' : ' bg-warning text-dark'" 
+							  th:text="${u.active && u.emailVerified} ? 'ACTIVE' : 'INACTIVE'">Active</span>
 						</div>
 						
 						<div class="mb-2">
-							<span class="table-muted small">�� Tạo:</span>
+							<span class="table-muted small">Tạo:</span>
 							<span class="text-light small" th:text="${#temporals.format(u.createdAt,'dd/MM/yyyy')}"></span>
 						</div>
 						
 						<div class="mb-4">
-							<span class="table-muted small">🔐 Đăng nhập cuối:</span>
+							<span class="table-muted small">Đăng nhập cuối:</span>
 							<span class="text-light small" th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'dd/MM/yyyy') : 'Chưa bao giờ'}"></span>
 						</div>
 						
 						<div class="d-flex gap-2">
 							<!-- Toggle Active Button với AJAX -->
-							<button type="button" class="btn btn-outline-light btn-sm toggle-btn toggle-active-btn" 
-									th:id="'toggle-btn-' + ${u.id}"
-									th:data-user-id="${u.id}"
-									th:data-current-status="${u.active && u.emailVerified}"
-									th:title="${u.active && u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
+													<button type="button" class="btn btn-outline-secondary btn-sm toggle-btn toggle-active-btn" 
+								th:id="'toggle-btn-' + ${u.id}"
+								th:data-user-id="${u.id}"
+								th:data-current-status="${u.active && u.emailVerified}"
+								th:title="${u.active && u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
 								<i class="fas toggle-icon" th:classappend="${u.active && u.emailVerified} ? ' fa-lock' : ' fa-unlock'"></i>
 							</button>
 							
-							<a class="btn btn-outline-light btn-sm edit-btn" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa thông tin">
+							<a class="btn btn-outline-primary btn-sm edit-btn" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa thông tin">
 								<i class="fas fa-user-edit"></i>
 							</a>
 						</div>
@@ -413,10 +311,10 @@
 			</div>
 
 			<!-- Empty state -->
-			<div class="alert alert-secondary text-center py-5" th:if="${users.totalElements == 0}">
-				<i class="fas fa-users opacity-50" style="font-size: 3rem;"></i>
-				<h5 class="mt-3">Không có người dùng nào</h5>
-				<p class="mb-0">Chưa có người dùng nào phù hợp với tiêu chí tìm kiếm.</p>
+			<div class="alert alert-light text-center py-5 border" th:if="${users.totalElements == 0}">
+				<i class="fas fa-users text-primary" style="font-size: 3rem; opacity: .5;"></i>
+				<h5 class="mt-3 text-dark">Không có người dùng nào</h5>
+				<p class="mb-0 text-muted">Chưa có người dùng nào phù hợp với tiêu chí tìm kiếm.</p>
 			</div>
 
 			<!-- Pagination -->
@@ -431,7 +329,7 @@
 						<a class="page-link" th:text="${i+1}" th:href="@{|/admin/users?page=${i}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}">1</a>
 					</li>
 					<li class="page-item" th:classappend="${users.last} ? 'disabled'">
-						<a class="page-link" th:href="#{/admin/users?page=${users.number+1}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}" aria-label="Next">
+						<a class="page-link" th:href="@{|/admin/users?page=${users.number+1}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}" aria-label="Next">
 							<span aria-hidden="true">&raquo;</span>
 						</a>
 					</li>
@@ -446,6 +344,8 @@
 	<div th:replace="~{fragments/footer :: site-footer}"></div>
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 	<script th:src="@{/js/main.js}" defer></script>
+</body>
+</html>
 	
 	<script>
 	document.addEventListener('DOMContentLoaded', function() {

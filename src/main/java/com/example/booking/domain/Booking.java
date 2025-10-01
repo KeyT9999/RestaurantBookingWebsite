@@ -189,4 +189,27 @@ public class Booking {
     public boolean canBeCancelled() {
         return status == BookingStatus.PENDING || status == BookingStatus.CONFIRMED;
     }
+
+    // Additional helper methods for templates
+    public String getId() {
+        return bookingId.toString();
+    }
+
+    public Integer getGuestCount() {
+        return numberOfGuests;
+    }
+
+    public RestaurantProfile getRestaurant() {
+        if (bookingTables != null && !bookingTables.isEmpty()) {
+            return bookingTables.get(0).getTable().getRestaurant();
+        }
+        return null;
+    }
+
+    public RestaurantTable getTable() {
+        if (bookingTables != null && !bookingTables.isEmpty()) {
+            return bookingTables.get(0).getTable();
+        }
+        return null;
+    }
 } 

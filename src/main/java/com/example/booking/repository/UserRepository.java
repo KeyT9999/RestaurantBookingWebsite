@@ -51,4 +51,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 	
 	@Query("SELECT u FROM User u WHERE (u.username LIKE %:search% OR u.email LIKE %:search%) AND u.deletedAt IS NULL")
 	Page<User> findByUsernameOrEmailContainingAndNotDeleted(@Param("search") String search, Pageable pageable);
+	
+	Optional<User> findByUsernameIgnoreCase(String username);
+	boolean existsByUsernameIgnoreCase(String username);
+	boolean existsByEmailIgnoreCase(String email);
 } 

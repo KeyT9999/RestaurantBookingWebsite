@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Quản lý thông báo - BookEat Admin</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+	<link th:href="@{/css/luxury.css}" rel="stylesheet">
+	<style>
+		/* Page baseline light/blue */
+		.page-bg { background-color: var(--background-light); min-height: 100vh; }
+		.section-title { color: var(--text-dark); font-family: var(--font-heading); font-weight: 700; font-size: 2.2rem; }
+		
+		/* Cards */
+		.filter-card { background: var(--background-white); border: 1px solid var(--border-light); color: var(--text-dark); box-shadow: var(--shadow-card); border-radius: 12px; }
+		.notification-card { background: var(--background-white); border: 1px solid var(--border-light); color: var(--text-dark); border-radius: 12px; transition: var(--transition); box-shadow: var(--shadow-card); }
+		.notification-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--primary-blue); }
+		
+		.badge-role, .badge-status { font-size: .8rem; }
+		.table-muted { color: var(--text-light); }
+		
+		/* Forms */
+		.form-control, .form-select { background: var(--background-white); color: var(--text-dark); border: 1px solid var(--border-medium); border-radius: 6px; }
+		.form-control::placeholder { color: var(--text-light); }
+		.form-control:focus, .form-select:focus { background: var(--background-white); color: var(--text-dark); border-color: var(--primary-blue); box-shadow: 0 0 0 0.2rem rgba(74,144,226,.15); }
+		
+		/* Buttons */
+		.btn-gold { background: var(--primary-blue); border-color: var(--primary-blue); color: var(--background-white); box-shadow: var(--shadow-button); }
+		.btn-gold:hover { background: var(--primary-blue-dark); border-color: var(--primary-blue-dark); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+		
+		/* Table */
+		.table thead th { border-bottom: 2px solid var(--border-medium); color: var(--text-dark); }
+		.table td { color: var(--text-dark); }
+		
+		/* Icon */
+		.notification-icon { width:48px; height:48px; border-radius:50%; background: var(--background-light); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; }
+		/* Space for fixed header */
+		.admin-content { padding-top: 100px !important; }
+	</style>
+</head>
+<body class="page-bg">
+	<div th:insert="fragments/flash :: flash"></div>
+	<div th:replace="~{fragments/header :: site-header}"></div>
+
+	<div class="admin-content py-4">
+		<div class="container">
+			<div class="d-flex align-items-center justify-content-between mb-4">
+				<h1 class="section-title mb-0">
+					<i class="fas fa-bell text-primary me-2"></i> Quản lý thông báo
+				</h1>
+				<div>
+					<a th:href="@{/admin/notifications/stats}" class="btn btn-outline-secondary me-2">
+						<i class="fas fa-chart-bar me-1"></i> Thống kê
+					</a>
+					<a th:href="@{/admin/notifications/new}" class="btn btn-gold position-relative" style="z-index:1;">
+						<i class="fas fa-plus me-1"></i> Tạo thông báo
+					</a>
+				</div>
+			</div>
+
+		<!-- Filter / Search -->
+		<div class="card filter-card mb-4">
+			<div class="card-body">
+				<form method="get" th:action="@{/admin/notifications}">
+					<div class="row g-3 align-items-end">
+						<div class="col-md-4">
+							<label class="form-label">Tìm kiếm</label>
+							<input class="form-control" name="q" th:value="${q}" placeholder="Tiêu đề hoặc nội dung">
+						</div>
+						<div class="col-md-3">
+							<label class="form-label">Loại thông báo</label>
+							<select name="type" class="form-select">
+								<option th:selected="${type == null}" value="">Tất cả</option>
+								<option value="SYSTEM_ANNOUNCEMENT" th:selected="${type == 'SYSTEM_ANNOUNCEMENT'}">Thông báo hệ thống</option>
+								<option value="BOOKING_CONFIRMED" th:selected="${type == 'BOOKING_CONFIRMED'}">Xác nhận đặt bàn</option>
+								<option value="BOOKING_CANCELLED" th:selected="${type == 'BOOKING_CANCELLED'}">Hủy đặt bàn</option>
+								<option value="PAYMENT_SUCCESS" th:selected="${type == 'PAYMENT_SUCCESS'}">Thanh toán thành công</option>
+								<option value="VOUCHER_ASSIGNED" th:selected="${type == 'VOUCHER_ASSIGNED'}">Nhận voucher</option>
+							</select>
+						</div>
+						<div class="col-md-2">
+							<label class="form-label">Mỗi trang</label>
+							<select name="size" class="form-select">
+								<option th:selected="${size==10}" value="10">10</option>
+								<option th:selected="${size==20}" value="20">20</option>
+								<option th:selected="${size==50}" value="50">50</option>
+							</select>
+						</div>
+						<div class="col-md-3 text-end">
+							<input type="hidden" name="sortBy" th:value="${sortBy}">
+							<input type="hidden" name="dir" th:value="${dir}">
+								<button type="submit" class="btn btn-outline-secondary me-2"><i class="fas fa-filter me-1"></i> Lọc</button>
+							<a th:href="@{/admin/notifications}" class="btn btn-outline-secondary link-clear"><i class="fas fa-times me-1"></i> Xóa</a>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Empty state -->
+		<div th:if="${notifications.empty}" class="text-center py-5">
+			<div class="notification-icon mx-auto mb-3">
+				<i class="fas fa-bell-slash"></i>
+			</div>
+			<h4 class="text-muted mb-3">Chưa có thông báo nào</h4>
+			<p class="text-muted mb-4">Tạo thông báo đầu tiên để gửi cho người dùng.</p>
+			<a th:href="@{/admin/notifications/new}" class="btn btn-gold">
+				<i class="fas fa-plus me-1"></i> Tạo thông báo
+			</a>
+		</div>
+
+		<!-- Notifications Table -->
+		<div th:if="${!notifications.empty}" class="table-responsive">
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<th><i class="fas fa-hashtag me-1"></i> ID</th>
+						<th><i class="fas fa-bell me-1"></i> Thông báo</th>
+						<th><i class="fas fa-tag me-1"></i> Loại</th>
+						<th><i class="fas fa-users me-1"></i> Trạng thái</th>
+						<th><i class="fas fa-clock me-1"></i> Thời gian</th>
+						<th><i class="fas fa-user-friends me-1"></i> Người nhận</th>
+						<th><i class="fas fa-cog me-1"></i> Thao tác</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="notification : ${notifications.content}">
+						<td>
+							<span class="badge bg-secondary" th:text="${notification.id}">1</span>
+						</td>
+						<td>
+							<div class="d-flex align-items-start">
+								<div class="notification-icon me-3" th:text="${notification.type.toString().substring(0,1)}">S</div>
+								<div>
+									<strong class="text-white" th:text="${notification.title}">Tiêu đề</strong>
+									<br>
+									<small class="table-muted" th:text="${#strings.abbreviate(notification.content, 60)}">
+										Nội dung thông báo...
+									</small>
+								</div>
+							</div>
+						</td>
+						<td>
+							<span class="badge badge-role" 
+								  th:classappend="${notification.type.name()=='SYSTEM_ANNOUNCEMENT'} ? ' bg-primary' : 
+								  (${notification.type.name()=='BOOKING_CONFIRMED'} ? ' bg-success' : 
+								  (${notification.type.name()=='BOOKING_CANCELLED'} ? ' bg-danger' : 
+								  (${notification.type.name()=='PAYMENT_SUCCESS'} ? ' bg-info' : ' bg-warning')))"
+								  th:text="${notification.type}">SYSTEM</span>
+						</td>
+						<td>
+							<span class="badge bg-secondary">Gộp</span>
+						</td>
+						<td>
+							<div class="table-muted small">
+								<div><i class="fas fa-calendar me-1"></i><span th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy')}">01/01/2024</span></div>
+								<div><i class="fas fa-clock me-1"></i><span th:text="${#temporals.format(notification.publishAt, 'HH:mm')}">10:00</span></div>
+							</div>
+						</td>
+						<td>
+							<span class="badge bg-info me-1" title="Tổng người nhận">
+								Tổng: <span th:text="${notification.totalRecipients}">0</span>
+							</span>
+							<span class="badge bg-success me-1" title="Khách hàng">
+								Khách hàng: <span th:text="${notification.customerRecipients}">0</span>
+							</span>
+							<span class="badge bg-primary" title="Chủ nhà hàng">
+								Chủ nhà hàng: <span th:text="${notification.restaurantOwnerRecipients}">0</span>
+							</span>
+						</td>
+						<td>
+							<div class="btn-group btn-group-sm">
+								<a th:href="@{/admin/notifications/{id}(id=${notification.id})}" 
+								   class="btn btn-outline-primary" title="Xem một bản ghi bất kỳ trong đợt gửi">
+									<i class="fas fa-eye"></i>
+								</a>
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<!-- Pagination -->
+		<nav th:if="${totalPages > 1}" class="mt-4" aria-label="Notifications pagination">
+			<ul class="pagination justify-content-center">
+				<li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+					<a class="page-link" th:href="@{|/admin/notifications?page=${currentPage-1}&size=${size}&q=${q}&type=${type}&sortBy=${sortBy}&dir=${dir}|}" aria-label="Previous">
+						<span aria-hidden="true">&laquo;</span>
+					</a>
+				</li>
+				<li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages-1)}" th:classappend="${i == currentPage} ? 'active'">
+					<a class="page-link" th:text="${i+1}" th:href="@{|/admin/notifications?page=${i}&size=${size}&q=${q}&type=${type}&sortBy=${sortBy}&dir=${dir}|}">1</a>
+				</li>
+				<li class="page-item" th:classappend="${currentPage == totalPages-1} ? 'disabled'">
+					<a class="page-link" th:href="@{|/admin/notifications?page=${currentPage+1}&size=${size}&q=${q}&type=${type}&sortBy=${sortBy}&dir=${dir}|}" aria-label="Next">
+						<span aria-hidden="true">&raquo;</span>
+					</a>
+				</li>
+			</ul>
+		</nav>
+	</div>
+
+	<div th:replace="~{fragments/footer :: site-footer}"></div>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+	<script th:src="@{/js/main.js}" defer></script>
+</body>
+</html> 
