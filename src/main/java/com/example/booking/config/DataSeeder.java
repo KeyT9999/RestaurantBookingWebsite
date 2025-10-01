@@ -13,7 +13,7 @@ import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
-import com.example.booking.domain.TableStatus;
+import com.example.booking.common.enums.TableStatus;
 import com.example.booking.repository.RestaurantRepository;
 import com.example.booking.repository.DiningTableRepository;
 import com.example.booking.repository.DishRepository;

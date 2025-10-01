@@ -9,9 +9,7 @@ import com.example.booking.domain.Waitlist;
 import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.DiningTableRepository;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service for FOH (Front of House) management operations
@@ -34,9 +32,6 @@ public class FOHManagementService {
      * Get all active bookings for today
      */
     public List<Booking> getTodayBookings(Integer restaurantId) {
-        LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
-        LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
-        
         // TODO: Implement when restaurant-specific booking queries are available
         return bookingRepository.findAll();
     }
