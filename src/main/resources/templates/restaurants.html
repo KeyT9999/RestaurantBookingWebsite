@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,52 +25,32 @@
                 </div>
                 
                 <div class="row">
-                    <div class="col-md-4 mb-4">
+                    <!-- Dynamic Restaurant Cards from Database -->
+                    <div class="col-md-4 mb-4" th:each="restaurant : ${restaurants}">
                         <div class="card bg-secondary">
                             <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                 class="card-img-top" alt="Aurelius Downtown" style="height: 200px; object-fit: cover;">
+                                 class="card-img-top" th:alt="${restaurant.restaurantName}" style="height: 200px; object-fit: cover;">
                             <div class="card-body">
-                                <h5 class="card-title text-warning">Aurelius Downtown</h5>
+                                <h5 class="card-title text-warning" th:text="${restaurant.restaurantName}">Restaurant Name</h5>
                                 <p class="card-text">
-                                    <i class="fas fa-map-marker-alt text-warning"></i> Quận 1, TP. HCM<br>
-                                    <i class="fas fa-star text-warning"></i> 5.0 (124 đánh giá)
+                                    <i class="fas fa-map-marker-alt text-warning"></i>
+                                    <span th:text="${restaurant.address}">Address</span><br>
+                                    <i class="fas fa-utensils text-warning"></i>
+                                    <span th:text="${restaurant.cuisineType}">Cuisine</span><br>
+                                    <i class="fas fa-tag text-warning" th:if="${restaurant.averagePrice != null}"></i>
+                                    <span th:if="${restaurant.averagePrice != null}" th:text="${#numbers.formatDecimal(restaurant.averagePrice, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">Price</span>
                                 </p>
-                                <a th:href="@{/booking/new}" class="btn btn-warning">
+                                <!-- View Detail Button -->
+                                <a th:href="@{'/restaurants/' + ${restaurant.restaurantId}}" class="btn btn-info mb-2 w-100">
+                                    <i class="fas fa-eye"></i> Xem chi tiết
+                                </a>
+                                <!-- Booking button - hidden for restaurant owners -->
+                                <a th:href="@{/booking/new}" class="btn btn-warning w-100 mb-2" sec:authorize="!hasRole('RESTAURANT_OWNER')">
                                     <i class="fas fa-calendar-plus"></i> Đặt bàn
                                 </a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4 mb-4">
-                        <div class="card bg-secondary">
-                            <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                 class="card-img-top" alt="Aurelius Garden" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title text-warning">Aurelius Garden</h5>
-                                <p class="card-text">
-                                    <i class="fas fa-map-marker-alt text-warning"></i> Quận 3, TP. HCM<br>
-                                    <i class="fas fa-star text-warning"></i> 4.9 (89 đánh giá)
-                                </p>
-                                <a th:href="@{/booking/new}" class="btn btn-warning">
-                                    <i class="fas fa-calendar-plus"></i> Đặt bàn
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-4 mb-4">
-                        <div class="card bg-secondary">
-                            <img src="https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                 class="card-img-top" alt="Aurelius Rooftop" style="height: 200px; object-fit: cover;">
-                            <div class="card-body">
-                                <h5 class="card-title text-warning">Aurelius Rooftop</h5>
-                                <p class="card-text">
-                                    <i class="fas fa-map-marker-alt text-warning"></i> Quận 7, TP. HCM<br>
-                                    <i class="fas fa-star text-warning"></i> 4.8 (156 đánh giá)
-                                </p>
-                                <a th:href="@{/booking/new}" class="btn btn-warning">
-                                    <i class="fas fa-calendar-plus"></i> Đặt bàn
+                                <!-- Restaurant owner sees dashboard link instead -->
+                                <a th:href="@{/restaurant-owner/dashboard}" class="btn btn-primary w-100" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                    <i class="fas fa-tachometer-alt"></i> Quản lý
                                 </a>
                             </div>
                         </div>

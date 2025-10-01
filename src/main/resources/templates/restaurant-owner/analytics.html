@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title th:text="${pageTitle}">Báo cáo & Thống kê - Analytics</title>
+    <link rel="stylesheet" href="/css/restaurant-admin.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="page-switch card">
+        <a class="nav-btn" href="/restaurant-owner/dashboard" title="Về FOH Dashboard">← FOH Dashboard</a>
+        <a class="nav-btn" href="/restaurant-owner/profile" title="Hồ sơ Nhà hàng">→ Hồ sơ Nhà hàng</a>
+    </nav>
+
+    <div class="container">
+        <header class="nav card">
+            <div class="nav-left">
+                <h1 class="h1">Báo cáo & Thống kê</h1>
+                <p class="muted">Phân tích hiệu suất kinh doanh và xu hướng khách hàng</p>
+            </div>
+            <div class="actions">
+                <button class="btn">Xuất báo cáo</button>
+                <button class="btn btn-ghost">Gửi email</button>
+            </div>
+        </header>
+
+        <!-- Date Range Selector -->
+        <div class="card">
+            <h2 class="h2">Khoảng thời gian</h2>
+            <form class="grid grid-4">
+                <label class="form-item">
+                    <span class="form-label">Từ ngày</span>
+                    <input type="date" value="2025-01-01" />
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Đến ngày</span>
+                    <input type="date" value="2025-01-31" />
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Khoảng thời gian</span>
+                    <select>
+                        <option value="custom">Tùy chỉnh</option>
+                        <option value="today">Hôm nay</option>
+                        <option value="week">Tuần này</option>
+                        <option value="month" selected>Tháng này</option>
+                        <option value="quarter">Quý này</option>
+                        <option value="year">Năm nay</option>
+                    </select>
+                </label>
+                <label class="form-item">
+                    <span class="form-label">So sánh với</span>
+                    <select>
+                        <option value="none">Không so sánh</option>
+                        <option value="previous">Kỳ trước</option>
+                        <option value="last-year">Cùng kỳ năm trước</option>
+                    </select>
+                </label>
+            </form>
+            <div class="actions">
+                <button class="btn">Cập nhật</button>
+                <button class="btn btn-ghost">Đặt lại</button>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-4">
+            <div class="card">
+                <h3 class="h3">Tổng doanh thu</h3>
+                <p style="font-size: 2rem; margin: 0; color: #28a745;">₫45.2M</p>
+                <small class="muted" style="color: #28a745;">+12.5% so với tháng trước</small>
+            </div>
+            <div class="card">
+                <h3 class="h3">Số đặt bàn</h3>
+                <p style="font-size: 2rem; margin: 0; color: #007bff;">342</p>
+                <small class="muted" style="color: #007bff;">+8.3% so với tháng trước</small>
+            </div>
+            <div class="card">
+                <h3 class="h3">Khách trung bình/bàn</h3>
+                <p style="font-size: 2rem; margin: 0; color: #ffc107;">3.2</p>
+                <small class="muted" style="color: #ffc107;">+0.1 so với tháng trước</small>
+            </div>
+            <div class="card">
+                <h3 class="h3">Tỷ lệ lấp đầy</h3>
+                <p style="font-size: 2rem; margin: 0; color: #dc3545;">78%</p>
+                <small class="muted" style="color: #dc3545;">-2.1% so với tháng trước</small>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="grid grid-2">
+            <div class="card">
+                <h2 class="h2">Doanh thu theo ngày</h2>
+                <canvas id="revenueChart" width="400" height="200"></canvas>
+            </div>
+            <div class="card">
+                <h2 class="h2">Đặt bàn theo giờ</h2>
+                <canvas id="bookingsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="grid grid-2">
+            <div class="card">
+                <h2 class="h2">Phân bố khách theo nhóm</h2>
+                <canvas id="customerGroupChart" width="400" height="200"></canvas>
+            </div>
+            <div class="card">
+                <h2 class="h2">Tỷ lệ hủy đặt bàn</h2>
+                <canvas id="cancellationChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Detailed Reports -->
+        <div class="card">
+            <h2 class="h2">Báo cáo chi tiết</h2>
+            <div class="tabs">
+                <button class="tab is-active" data-report="revenue">Doanh thu</button>
+                <button class="tab" data-report="bookings">Đặt bàn</button>
+                <button class="tab" data-report="customers">Khách hàng</button>
+                <button class="tab" data-report="tables">Bàn</button>
+            </div>
+
+            <!-- Revenue Report -->
+            <div id="report-revenue" class="subview is-visible">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Doanh thu</th>
+                                <th>Số đặt bàn</th>
+                                <th>Trung bình/đặt bàn</th>
+                                <th>So với ngày trước</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>29/01/2025</td>
+                                <td>₫2.1M</td>
+                                <td>18</td>
+                                <td>₫116K</td>
+                                <td style="color: #28a745;">+15%</td>
+                            </tr>
+                            <tr>
+                                <td>28/01/2025</td>
+                                <td>₫1.8M</td>
+                                <td>15</td>
+                                <td>₫120K</td>
+                                <td style="color: #dc3545;">-8%</td>
+                            </tr>
+                            <tr>
+                                <td>27/01/2025</td>
+                                <td>₫2.0M</td>
+                                <td>17</td>
+                                <td>₫118K</td>
+                                <td style="color: #28a745;">+12%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bookings Report -->
+            <div id="report-bookings" class="subview">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Giờ</th>
+                                <th>Số đặt bàn</th>
+                                <th>Tỷ lệ lấp đầy</th>
+                                <th>Khách trung bình</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>11:00-12:00</td>
+                                <td>3</td>
+                                <td>25%</td>
+                                <td>2.3</td>
+                            </tr>
+                            <tr>
+                                <td>12:00-13:00</td>
+                                <td>8</td>
+                                <td>67%</td>
+                                <td>3.1</td>
+                            </tr>
+                            <tr>
+                                <td>18:00-19:00</td>
+                                <td>12</td>
+                                <td>100%</td>
+                                <td>3.8</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Customers Report -->
+            <div id="report-customers" class="subview">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nhóm khách</th>
+                                <th>Số lượng</th>
+                                <th>Tỷ lệ</th>
+                                <th>Doanh thu trung bình</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1-2 người</td>
+                                <td>156</td>
+                                <td>45.6%</td>
+                                <td>₫85K</td>
+                            </tr>
+                            <tr>
+                                <td>3-4 người</td>
+                                <td>134</td>
+                                <td>39.2%</td>
+                                <td>₫145K</td>
+                            </tr>
+                            <tr>
+                                <td>5-6 người</td>
+                                <td>42</td>
+                                <td>12.3%</td>
+                                <td>₫280K</td>
+                            </tr>
+                            <tr>
+                                <td>7+ người</td>
+                                <td>10</td>
+                                <td>2.9%</td>
+                                <td>₫450K</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tables Report -->
+            <div id="report-tables" class="subview">
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tên bàn</th>
+                                <th>Số lần sử dụng</th>
+                                <th>Doanh thu</th>
+                                <th>Hiệu suất</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>T1</td>
+                                <td>45</td>
+                                <td>₫3.2M</td>
+                                <td style="color: #28a745;">Tốt</td>
+                            </tr>
+                            <tr>
+                                <td>T2</td>
+                                <td>38</td>
+                                <td>₫2.8M</td>
+                                <td style="color: #ffc107;">Trung bình</td>
+                            </tr>
+                            <tr>
+                                <td>VIP1</td>
+                                <td>12</td>
+                                <td>₫2.1M</td>
+                                <td style="color: #28a745;">Tốt</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Options -->
+        <div class="card">
+            <h2 class="h2">Xuất báo cáo</h2>
+            <div class="grid grid-3">
+                <button class="btn">Xuất Excel</button>
+                <button class="btn btn-ghost">Xuất PDF</button>
+                <button class="btn btn-ghost">Gửi email</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart.js configurations
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: ['1/1', '2/1', '3/1', '4/1', '5/1', '6/1', '7/1'],
+                datasets: [{
+                    label: 'Doanh thu (₫M)',
+                    data: [1.8, 2.1, 1.9, 2.3, 2.0, 2.2, 2.1],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        const bookingsCtx = document.getElementById('bookingsChart').getContext('2d');
+        new Chart(bookingsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['11h', '12h', '13h', '18h', '19h', '20h', '21h'],
+                datasets: [{
+                    label: 'Số đặt bàn',
+                    data: [3, 8, 5, 12, 10, 7, 4],
+                    backgroundColor: '#007bff'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        const customerGroupCtx = document.getElementById('customerGroupChart').getContext('2d');
+        new Chart(customerGroupCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['1-2 người', '3-4 người', '5-6 người', '7+ người'],
+                datasets: [{
+                    data: [45.6, 39.2, 12.3, 2.9],
+                    backgroundColor: ['#28a745', '#007bff', '#ffc107', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        const cancellationCtx = document.getElementById('cancellationChart').getContext('2d');
+        new Chart(cancellationCtx, {
+            type: 'line',
+            data: {
+                labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'],
+                datasets: [{
+                    label: 'Tỷ lệ hủy (%)',
+                    data: [5.2, 4.8, 6.1, 5.5],
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10
+                    }
+                }
+            }
+        });
+
+        // Report tabs
+        document.querySelectorAll('.tab[data-report]').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab[data-report]').forEach(t => t.classList.remove('is-active'));
+                tab.classList.add('is-active');
+                
+                document.querySelectorAll('.subview').forEach(s => s.classList.remove('is-visible'));
+                const reportId = 'report-' + tab.getAttribute('data-report');
+                document.getElementById(reportId).classList.add('is-visible');
+            });
+        });
+    </script>
+</body>
+</html>

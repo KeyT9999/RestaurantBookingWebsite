@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title th:text="${pageTitle}">Quản lý Bàn - Table Management</title>
+    <link rel="stylesheet" href="/css/restaurant-admin.css" />
+</head>
+<body>
+    <nav class="page-switch card">
+        <a class="nav-btn" href="/restaurant-owner/dashboard" title="Về FOH Dashboard">← FOH Dashboard</a>
+        <a class="nav-btn" href="/restaurant-owner/profile" title="Hồ sơ Nhà hàng">→ Hồ sơ Nhà hàng</a>
+    </nav>
+
+    <div class="container">
+        <header class="nav card">
+            <div class="nav-left">
+                <h1 class="h1">Quản lý Bàn</h1>
+                <p class="muted">Quản lý sức chứa, trạng thái và bố trí bàn</p>
+            </div>
+            <div class="actions">
+                <button class="btn" data-open="panel-create-table">+ Tạo bàn mới</button>
+                <button class="btn btn-ghost">Import từ Excel</button>
+            </div>
+        </header>
+
+        <!-- Filters -->
+        <div class="card">
+            <h2 class="h2">Bộ lọc</h2>
+            <form class="grid grid-4">
+                <label class="form-item">
+                    <span class="form-label">Khu vực</span>
+                    <select class="input">
+                        <option value="">Tất cả khu vực</option>
+                        <option>Tầng 1</option>
+                        <option>Tầng 2</option>
+                        <option>Ngoài trời</option>
+                        <option>VIP</option>
+                    </select>
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Sức chứa</span>
+                    <select class="input">
+                        <option value="">Tất cả sức chứa</option>
+                        <option>1-2 người</option>
+                        <option>3-4 người</option>
+                        <option>5-6 người</option>
+                        <option>7+ người</option>
+                    </select>
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Trạng thái</span>
+                    <select class="input">
+                        <option value="">Tất cả trạng thái</option>
+                        <option>AVAILABLE</option>
+                        <option>OCCUPIED</option>
+                        <option>RESERVED</option>
+                        <option>MAINTENANCE</option>
+                    </select>
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Tìm kiếm</span>
+                    <input type="text" placeholder="Tên bàn, ghi chú..." />
+                </label>
+            </form>
+            <div class="actions">
+                <button class="btn">Lọc</button>
+                <button class="btn btn-ghost">Xóa lọc</button>
+                <div class="spacer"></div>
+                <a th:href="@{/restaurant-owner/tables/create}" class="btn">+ Tạo bàn mới</a>
+                <button class="btn btn-ghost">Xuất Excel</button>
+            </div>
+        </div>
+
+        <!-- Table Management -->
+        <div class="card">
+            <h2 class="h2">Danh sách bàn</h2>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Tên bàn</th>
+                            <th>Sức chứa</th>
+                            <th>Khu vực</th>
+                            <th>Trạng thái</th>
+                            <th>Ghi chú</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Flash Messages -->
+                        <tr th:if="${success}" colspan="6">
+                            <td colspan="6" class="alert alert-success" th:text="${success}"></td>
+                        </tr>
+                        <tr th:if="${error}" colspan="6">
+                            <td colspan="6" class="alert alert-danger" th:text="${error}"></td>
+                        </tr>
+                        
+                        <!-- Real data from database -->
+                        <tr th:each="table : ${allTables}">
+                            <td><strong th:text="${table.tableName}">T1</strong></td>
+                            <td th:text="${table.capacity} + ' người'">4 người</td>
+                            <td th:text="${table.area}">Tầng 1</td>
+                            <td>
+                                <span class="chip" 
+                                      th:style="${table.status.toString() == 'AVAILABLE'} ? 'background: #d4edda; color: #155724;' : 
+                                                (${table.status.toString() == 'OCCUPIED'} ? 'background: #f8d7da; color: #721c24;' : 
+                                                'background: #fff3cd; color: #856404;')"
+                                      th:text="${table.status}">AVAILABLE</span>
+                            </td>
+                            <td th:text="${table.notes}">Bàn gần cửa sổ</td>
+                            <td class="actions">
+                                <a th:href="@{'/restaurant-owner/tables/' + ${table.tableId} + '/edit'}" class="btn btn-ghost small">Sửa</a>
+                                <form th:action="@{'/restaurant-owner/tables/' + ${table.tableId} + '/delete'}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn btn-ghost small" onclick="return confirm('Bạn có chắc muốn xóa bàn này?')">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                        
+                        <!-- Empty state -->
+                        <tr th:if="${#lists.isEmpty(allTables)}">
+                            <td colspan="6" class="text-center text-muted">
+                                <div style="padding: 2rem;">
+                                    <div style="font-size: 3rem; margin-bottom: 1rem;">🪑</div>
+                                    <h3>Chưa có bàn nào</h3>
+                                    <p>Tạo bàn đầu tiên cho nhà hàng của bạn!</p>
+                                    <a th:href="@{/restaurant-owner/tables/create}" class="btn">+ Tạo bàn mới</a>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <button class="btn btn-ghost">« Trước</button>
+                <span class="muted">Trang 1/3</span>
+                <button class="btn btn-ghost">Sau »</button>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="grid grid-4">
+            <div class="card">
+                <h3 class="h3">Tổng số bàn</h3>
+                <p style="font-size: 2rem; margin: 0; color: #007bff;">24</p>
+            </div>
+            <div class="card">
+                <h3 class="h3">Đang sử dụng</h3>
+                <p style="font-size: 2rem; margin: 0; color: #dc3545;">8</p>
+            </div>
+            <div class="card">
+                <h3 class="h3">Có sẵn</h3>
+                <p style="font-size: 2rem; margin: 0; color: #28a745;">14</p>
+            </div>
+            <div class="card">
+                <h3 class="h3">Bảo trì</h3>
+                <p style="font-size: 2rem; margin: 0; color: #ffc107;">2</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Create Table -->
+    <aside class="panel" id="panel-create-table" aria-hidden="true">
+        <div class="panel__body card">
+            <div class="panel__head">
+                <h3 class="h3">Tạo Bàn Mới</h3>
+                <button class="btn btn-ghost" data-close>Đóng</button>
+            </div>
+            <form class="grid grid-3">
+                <label class="form-item">
+                    <span class="form-label">Tên bàn</span>
+                    <input type="text" placeholder="VD: T1, VIP1" required />
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Sức chứa</span>
+                    <input type="number" min="1" max="20" value="4" required />
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Khu vực</span>
+                    <select required>
+                        <option value="">Chọn khu vực</option>
+                        <option>Tầng 1</option>
+                        <option>Tầng 2</option>
+                        <option>Ngoài trời</option>
+                        <option>VIP</option>
+                    </select>
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Trạng thái</span>
+                    <select>
+                        <option value="AVAILABLE">AVAILABLE</option>
+                        <option value="OCCUPIED">OCCUPIED</option>
+                        <option value="RESERVED">RESERVED</option>
+                        <option value="MAINTENANCE">MAINTENANCE</option>
+                    </select>
+                </label>
+                <label class="form-item full">
+                    <span class="form-label">Ghi chú</span>
+                    <textarea rows="3" placeholder="Mô tả đặc điểm bàn..."></textarea>
+                </label>
+                <div class="actions full">
+                    <button class="btn">Tạo bàn</button>
+                    <button class="btn btn-ghost" type="reset">Nhập lại</button>
+                </div>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Modal: Edit Table -->
+    <aside class="panel" id="panel-edit-table" aria-hidden="true">
+        <div class="panel__body card">
+            <div class="panel__head">
+                <h3 class="h3">Sửa Bàn</h3>
+                <button class="btn btn-ghost" data-close>Đóng</button>
+            </div>
+            <form class="grid grid-3">
+                <label class="form-item">
+                    <span class="form-label">Tên bàn</span>
+                    <input type="text" value="T1" required />
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Sức chứa</span>
+                    <input type="number" value="4" min="1" max="20" required />
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Khu vực</span>
+                    <select required>
+                        <option value="Tầng 1" selected>Tầng 1</option>
+                        <option>Tầng 2</option>
+                        <option>Ngoài trời</option>
+                        <option>VIP</option>
+                    </select>
+                </label>
+                <label class="form-item">
+                    <span class="form-label">Trạng thái</span>
+                    <select>
+                        <option value="AVAILABLE" selected>AVAILABLE</option>
+                        <option value="OCCUPIED">OCCUPIED</option>
+                        <option value="RESERVED">RESERVED</option>
+                        <option value="MAINTENANCE">MAINTENANCE</option>
+                    </select>
+                </label>
+                <label class="form-item full">
+                    <span class="form-label">Ghi chú</span>
+                    <textarea rows="3">Bàn gần cửa sổ</textarea>
+                </label>
+                <div class="actions full">
+                    <button class="btn">Cập nhật</button>
+                    <button class="btn btn-ghost">Xóa bàn</button>
+                </div>
+            </form>
+        </div>
+    </aside>
+
+    <script>
+        // Mở/đóng panel
+        document.querySelectorAll("[data-open]").forEach((b) => {
+            b.addEventListener("click", () => {
+                const id = b.getAttribute("data-open");
+                const panel = document.getElementById(id);
+                if (panel) panel.setAttribute("aria-hidden", "false");
+            });
+        });
+        
+        document.querySelectorAll("[data-close]").forEach((b) => {
+            b.addEventListener("click", () => {
+                const panel = b.closest(".panel");
+                panel && panel.setAttribute("aria-hidden", "true");
+            });
+        });
+    </script>
+</body>
+</html>
