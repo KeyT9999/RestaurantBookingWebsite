@@ -6,9 +6,6 @@ import java.util.UUID;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.example.booking.domain.User;
-import com.example.booking.service.RestaurantOwnerService;
-import com.example.booking.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -39,13 +36,14 @@ public class BookingController {
 
     // @Autowired
     // private BookingService bookingService; // TODO: Implement when BookingService is ready
-    
-    @Autowired
 
-    private RestaurantOwnerService restaurantOwnerService; // Using this instead for now
-    
+    private BookingService bookingService;
+
     @Autowired
-    private UserRepository userRepository;
+    private CustomerService customerService;
+
+    @Autowired
+    private RestaurantService restaurantService;
 
     /**
      * Show booking form - Only for customers and guests
@@ -57,28 +55,11 @@ public class BookingController {
             return "redirect:/restaurant-owner/dashboard?error=cannot_book_public";
         }
         
-        model.addAttribute("pageTitle", "Đặt bàn - Book Table");
-        model.addAttribute("restaurants", restaurantOwnerService.getAllRestaurants());
-        return "booking/form";
-    }
-
-    private BookingService bookingService;
-
-    @Autowired
-    private CustomerService customerService;
-
-    @Autowired
-    private RestaurantService restaurantService;
-
-    /**
-     * Hiển thị form tạo booking mới
-     */
-    @GetMapping("/new")
-    public String showBookingForm(Model model, Authentication authentication) {
         List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
         model.addAttribute("restaurants", restaurants);
         model.addAttribute("bookingForm", new BookingForm());
         model.addAttribute("tables", List.of()); // Empty initially
+        model.addAttribute("pageTitle", "Đặt bàn - Book Table");
 
         return "booking/form";
     }
@@ -277,8 +258,6 @@ public class BookingController {
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
         return customer.getCustomerId();
     }
-}
-
 
     /**
      * Create booking - Only for customers
@@ -314,42 +293,7 @@ public class BookingController {
         }
     }
 
-    /**
-     * View my bookings - Only for customers
-     */
-    @GetMapping("/my")
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
-    public String myBookings(Model model, Authentication authentication) {
-        model.addAttribute("pageTitle", "Booking của tôi - My Reservations");
-        
-        // TODO: Get user's bookings
-        // User user = userRepository.findByUsername(authentication.getName()).orElse(null);
-        // if (user != null) {
-        //     List<Booking> bookings = bookingService.getBookingsByCustomer(user.getId());
-        //     model.addAttribute("bookings", bookings);
-        // }
-        
-        return "booking/list";
-    }
 
-    /**
-     * Cancel booking - Only for customers
-     */
-    @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
-    public String cancelBooking(@PathVariable Integer id,
-                               Authentication authentication,
-                               RedirectAttributes redirectAttributes) {
-        try {
-            // bookingService.cancelBooking(id);
-            redirectAttributes.addFlashAttribute("success", "Đã hủy booking!");
-            
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi hủy: " + e.getMessage());
-        }
-        
-        return "redirect:/booking/my";
-    }
     
     /**
      * Access denied page for restaurant owners
