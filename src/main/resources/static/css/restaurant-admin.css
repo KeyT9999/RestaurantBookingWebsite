@@ -8,26 +8,27 @@
 }
 
 :root {
-  /* Colors */
-  --primary: #6366f1;
-  --primary-dark: #4f46e5;
-  --secondary: #8b5cf6;
-  --accent: #ec4899;
+  /* Colors - Synced with luxury theme */
+  --primary: #4A90E2;
+  --primary-dark: #357ABD;
+  --primary-light: #6BA3F0;
+  --secondary: #FF6B35;
+  --accent: #FF6B35;
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --dark: #1e293b;
-  --light: #f8fafc;
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-300: #d1d5db;
-  --gray-400: #9ca3af;
-  --gray-500: #6b7280;
-  --gray-600: #4b5563;
-  --gray-700: #374151;
-  --gray-800: #1f2937;
-  --gray-900: #111827;
+  --dark: #2C3E50;
+  --light: #F8F9FA;
+  --gray-50: #F8F9FA;
+  --gray-100: #E1E8ED;
+  --gray-200: #D1D9E0;
+  --gray-300: #D1D9E0;
+  --gray-400: #8A9BA8;
+  --gray-500: #5A6C7D;
+  --gray-600: #5A6C7D;
+  --gray-700: #2C3E50;
+  --gray-800: #2C3E50;
+  --gray-900: #2C3E50;
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -66,7 +67,7 @@ html, body {
 }
 
 body {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
   min-height: 100vh;
   padding-bottom: var(--spacing-2xl);
 }
@@ -167,7 +168,7 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: var(--spacing-lg);
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   padding: var(--spacing-xl);
 }
@@ -341,7 +342,7 @@ textarea:focus,
 .input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
 }
 
 textarea {
@@ -423,7 +424,7 @@ textarea {
 }
 
 .table thead {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
 }
 
@@ -478,7 +479,7 @@ textarea {
 .chip {
   display: inline-block;
   padding: var(--spacing-xs) var(--spacing-md);
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   border-radius: var(--radius-full);
   font-size: 0.85rem;
@@ -521,7 +522,7 @@ textarea {
 .filebox:hover {
   border-color: var(--primary);
   color: var(--primary);
-  background: rgba(99, 102, 241, 0.05);
+  background: rgba(74, 144, 226, 0.05);
 }
 
 .filebox.small {

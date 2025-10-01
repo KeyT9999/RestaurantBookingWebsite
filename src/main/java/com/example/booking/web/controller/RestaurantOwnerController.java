@@ -151,7 +151,7 @@ public class RestaurantOwnerController {
                                  @RequestParam(value = "cover", required = false) MultipartFile cover,
                                  RedirectAttributes redirectAttributes) {
         try {
-            RestaurantProfile savedRestaurant = restaurantOwnerService.createRestaurantProfile(restaurant);
+            restaurantOwnerService.createRestaurantProfile(restaurant);
             redirectAttributes.addFlashAttribute("success", "Tạo nhà hàng thành công!");
             return "redirect:/restaurant-owner/profile";
         } catch (Exception e) {
@@ -185,7 +185,7 @@ public class RestaurantOwnerController {
                                  RedirectAttributes redirectAttributes) {
         try {
             restaurant.setRestaurantId(id);
-            RestaurantProfile updatedRestaurant = restaurantOwnerService.updateRestaurantProfile(restaurant);
+            restaurantOwnerService.updateRestaurantProfile(restaurant);
             redirectAttributes.addFlashAttribute("success", "Cập nhật nhà hàng thành công!");
             return "redirect:/restaurant-owner/profile";
         } catch (Exception e) {
