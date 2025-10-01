@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title th:text="${pageTitle}">Tạo bàn mới</title>
+    <link rel="stylesheet" th:href="@{/css/restaurant-admin.css}" />
+</head>
+<body>
+    <!-- Breadcrumb Navigation -->
+    <nav class="page-switch card">
+        <div class="nav-breadcrumb">
+            <a th:href="@{/}" class="nav-link">← Trang chủ</a>
+            <span class="nav-separator">|</span>
+            <a th:href="@{/restaurant-owner/tables}" class="nav-link">Quản lý Bàn</a>
+            <span class="nav-separator">|</span>
+            <span class="nav-current" th:text="${pageTitle}">Tạo bàn mới</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+        <!-- Form Header -->
+        <div class="card">
+            <h1 class="h1" th:text="${pageTitle}">Tạo bàn mới</h1>
+            <p class="muted">Thêm bàn mới vào nhà hàng của bạn</p>
+        </div>
+
+        <!-- Table Form -->
+        <div class="card">
+            <form th:action="@{/restaurant-owner/tables/create}" method="post">
+                
+                <div class="grid grid-3">
+                    <label class="form-item">
+                        <span class="form-label">Tên bàn *</span>
+                        <input type="text" name="tableName" placeholder="Bàn 1, T1, A1..." required />
+                    </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Sức chứa *</span>
+                        <input type="number" name="capacity" placeholder="4" min="1" max="20" required />
+                    </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Nhà hàng *</span>
+                        <select name="restaurantId" required>
+                            <option value="">Chọn nhà hàng</option>
+                            <option th:each="restaurant : ${restaurants}" 
+                                    th:value="${restaurant.restaurantId}" 
+                                    th:text="${restaurant.restaurantName}">
+                                Nhà hàng A
+                            </option>
+                        </select>
+                    </label>
+                    
+                    <label class="form-item full">
+                        <span class="form-label">Ghi chú</span>
+                        <textarea name="notes" rows="3" placeholder="Ghi chú về bàn (vị trí, đặc điểm...)"></textarea>
+                    </label>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="actions mt-8">
+                    <button type="submit" class="btn">Tạo bàn</button>
+                    <a th:href="@{/restaurant-owner/tables}" class="btn btn-ghost">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

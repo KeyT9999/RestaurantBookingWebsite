@@ -1,9 +1,21 @@
 package com.example.booking.web.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantMedia;
+import com.example.booking.domain.Dish;
+import com.example.booking.domain.RestaurantTable;
+import com.example.booking.service.RestaurantOwnerService;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Controller for handling home page and static pages
@@ -11,13 +23,32 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class HomeController {
     
+    @Autowired
+    private RestaurantOwnerService restaurantOwnerService;
+    
     /**
      * Home page - main landing page
+     * Shows home page for all users, with additional options for authenticated users
      */
     @GetMapping("/")
-    public String home(Model model) {
+    public String home(Model model, Authentication authentication) {
         // Add any model attributes needed for home page
         model.addAttribute("pageTitle", "Aurelius Fine Dining - Experience Culinary Excellence");
+        
+        // Add user role information for conditional display
+        if (authentication != null && authentication.isAuthenticated()) {
+            for (GrantedAuthority authority : authentication.getAuthorities()) {
+                String role = authority.getAuthority();
+                if ("ROLE_ADMIN".equals(role)) {
+                    model.addAttribute("userRole", "ADMIN");
+                    break;
+                } else if ("ROLE_RESTAURANT_OWNER".equals(role)) {
+                    model.addAttribute("userRole", "RESTAURANT_OWNER");
+                    break;
+                }
+            }
+        }
+        
         return "home";
     }
     
@@ -45,16 +76,63 @@ public class HomeController {
     @GetMapping("/restaurants")
     public String restaurants(Model model) {
         model.addAttribute("pageTitle", "Our Restaurants - Aurelius Fine Dining");
-        // TODO: Add restaurants data from service
+        
+        // Get all restaurants from database
+        List<RestaurantProfile> restaurants = restaurantOwnerService.getAllRestaurants();
+        model.addAttribute("restaurants", restaurants);
+        
         return "restaurants";
     }
     
     @GetMapping("/restaurants/{id}")
-    public String restaurantDetail(@PathVariable String id, Model model) {
-        model.addAttribute("pageTitle", "Restaurant Details - Aurelius Fine Dining");
-        model.addAttribute("restaurantId", id);
-        // TODO: Add restaurant detail data from service
-        // For now, redirect to restaurants list
-        return "redirect:/restaurants";
+    public String restaurantDetail(@PathVariable Integer id, Model model) {
+        try {
+            // Get restaurant details
+            var restaurantOpt = restaurantOwnerService.getRestaurantById(id);
+            
+            if (restaurantOpt.isEmpty()) {
+                return "redirect:/restaurants?error=notfound";
+            }
+            
+            RestaurantProfile restaurant = restaurantOpt.get();
+            
+            // Get restaurant media
+            List<RestaurantMedia> allMedia = restaurantOwnerService.getMediaByRestaurant(restaurant);
+            
+            // Organize media by type
+            List<RestaurantMedia> logos = allMedia.stream()
+                .filter(m -> "logo".equalsIgnoreCase(m.getType()))
+                .toList();
+            List<RestaurantMedia> covers = allMedia.stream()
+                .filter(m -> "cover".equalsIgnoreCase(m.getType()))
+                .toList();
+            List<RestaurantMedia> gallery = allMedia.stream()
+                .filter(m -> "gallery".equalsIgnoreCase(m.getType()))
+                .toList();
+            List<RestaurantMedia> menus = allMedia.stream()
+                .filter(m -> "menu".equalsIgnoreCase(m.getType()))
+                .toList();
+            
+            // Get dishes
+            List<Dish> dishes = restaurant.getDishes() != null ? restaurant.getDishes() : new ArrayList<>();
+            
+            // Get tables
+            List<RestaurantTable> tables = restaurant.getTables() != null ? restaurant.getTables() : new ArrayList<>();
+            
+            // Add to model
+            model.addAttribute("pageTitle", restaurant.getRestaurantName() + " - Chi tiết Nhà hàng");
+            model.addAttribute("restaurant", restaurant);
+            model.addAttribute("logo", logos.isEmpty() ? null : logos.get(0));
+            model.addAttribute("cover", covers.isEmpty() ? null : covers.get(0));
+            model.addAttribute("gallery", gallery);
+            model.addAttribute("menus", menus);
+            model.addAttribute("dishes", dishes);
+            model.addAttribute("tables", tables);
+            
+            return "restaurant-detail";
+            
+        } catch (Exception e) {
+            return "redirect:/restaurants?error=" + e.getMessage();
+        }
     }
 }

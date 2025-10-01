@@ -88,6 +88,7 @@ public class SecurityConfig {
 				.requestMatchers("/auth/register", "/auth/register-success", "/auth/verify-email", 
 						"/auth/verify-result", "/auth/forgot-password", "/auth/reset-password").permitAll()
 				.requestMatchers("/admin/**").hasRole("ADMIN")
+				.requestMatchers("/restaurant-owner/**").hasRole("RESTAURANT_OWNER")
 				.requestMatchers("/auth/**").authenticated()
 				.requestMatchers("/booking/**").authenticated()
 				.anyRequest().authenticated()

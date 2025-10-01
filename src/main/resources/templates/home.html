@@ -60,8 +60,14 @@
                                 <a href="#restaurants" class="btn btn--outline btn--large">
                                     <i class="fas fa-utensils"></i>
                                     <span>Khám phá menu</span>
-                                    </a>
-                                </div>
+                                </a>
+                                <!-- Restaurant Owner Management Button in Hero -->
+                                <a th:href="@{/restaurant-owner/dashboard}" class="btn btn--outline btn--large"
+                                   th:if="${userRole == 'RESTAURANT_OWNER'}">
+                                    <i class="fas fa-store"></i>
+                                    <span>Quản lý nhà hàng</span>
+                                </a>
+                            </div>
                             </div>
                         </div>
                         
@@ -387,18 +393,31 @@
                 <div class="row">
                     <div class="col-12 text-center">
                         <div class="cta__content" data-aos="fade-up">
-                            <h2 class="cta__title">Sẵn sàng cho trải nghiệm ẩm thực đẳng cấp?</h2>
-                            <p class="cta__description">
+                            <h2 class="cta__title" th:if="${userRole != 'RESTAURANT_OWNER'}">Sẵn sàng cho trải nghiệm ẩm thực đẳng cấp?</h2>
+                            <h2 class="cta__title" th:if="${userRole == 'RESTAURANT_OWNER'}">Quản lý nhà hàng của bạn một cách chuyên nghiệp</h2>
+                            <p class="cta__description" th:if="${userRole != 'RESTAURANT_OWNER'}">
                                 Đặt bàn ngay hôm nay và khám phá hành trình ẩm thực tuyệt vời cùng Aurelius Fine Dining.
                             </p>
+                            <p class="cta__description" th:if="${userRole == 'RESTAURANT_OWNER'}">
+                                Quản lý thông tin nhà hàng, bàn ăn, món ăn và media một cách hiệu quả với hệ thống quản lý chuyên nghiệp.
+                            </p>
                             <div class="cta__buttons">
-                                <a th:href="@{/booking/new}" class="btn btn--gold btn--large">
+                                <!-- Only show booking button for non-restaurant owners -->
+                                <a th:href="@{/booking/new}" class="btn btn--gold btn--large"
+                                   th:if="${userRole != 'RESTAURANT_OWNER'}">
                                     <i class="fas fa-calendar-plus"></i>
                                     <span>Đặt bàn ngay</span>
                                 </a>
-                                <a th:href="@{/auth/register}" class="btn btn--outline btn--large">
+                                <a th:href="@{/auth/register}" class="btn btn--outline btn--large" 
+                                   th:if="${userRole == null}">
                                     <i class="fas fa-user-plus"></i>
                                     <span>Đăng ký thành viên</span>
+                                </a>
+                                <!-- Restaurant Owner Management Button -->
+                                <a th:href="@{/restaurant-owner/dashboard}" class="btn btn--gold btn--large"
+                                   th:if="${userRole == 'RESTAURANT_OWNER'}">
+                                    <i class="fas fa-store"></i>
+                                    <span>Quản lý nhà hàng</span>
                                 </a>
                             </div>
                         </div>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title th:text="${pageTitle} ?: 'Dashboard - Quản lý Nhà hàng'">Dashboard - Quản lý Nhà hàng</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" th:href="@{/css/restaurant-admin.css}" />
+    
+    <style>
+        /* Dashboard Specific Styles */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            border-left: 4px solid;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card.primary { border-left-color: #6366f1; }
+        .stat-card.success { border-left-color: #10b981; }
+        .stat-card.warning { border-left-color: #f59e0b; }
+        .stat-card.danger { border-left-color: #ef4444; }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-card.primary .stat-icon { background: rgba(99, 102, 241, 0.1); }
+        .stat-card.success .stat-icon { background: rgba(16, 185, 129, 0.1); }
+        .stat-card.warning .stat-icon { background: rgba(245, 158, 11, 0.1); }
+        .stat-card.danger .stat-icon { background: rgba(239, 68, 68, 0.1); }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .booking-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid #6366f1;
+            transition: all 0.2s ease;
+        }
+        
+        .booking-item:hover {
+            background: #f8fafc;
+            transform: translateX(4px);
+        }
+        
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .booking-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .booking-time {
+            color: #6366f1;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .booking-details {
+            display: flex;
+            gap: 1rem;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        
+        .table-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        
+        .table-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .table-capacity {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .table-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .table-status.available {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .table-status.occupied {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .table-status.reserved {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .quick-action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .quick-action-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .quick-action-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #94a3b8;
+        }
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Breadcrumb -->
+    <nav class="page-switch">
+        <div class="nav-breadcrumb">
+            <a th:href="@{/}" class="nav-btn">← Trang chủ</a>
+            <span class="nav-separator">|</span>
+            <span class="nav-current">📊 Dashboard Quản lý</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="nav">
+            <div class="nav-left">
+                <h1 class="h1">🏪 Dashboard Quản lý Nhà hàng</h1>
+                <p class="muted">Tổng quan và quản lý nhanh các hoạt động của nhà hàng</p>
+            </div>
+            <div class="tabs">
+                <a th:href="@{/restaurant-owner/dashboard}" class="tab is-active">Dashboard</a>
+                <a th:href="@{/restaurant-owner/profile}" class="tab">Hồ sơ</a>
+                <a th:href="@{/restaurant-owner/tables}" class="tab">Bàn</a>
+                <a th:href="@{/restaurant-owner/bookings}" class="tab">Booking</a>
+                <a th:href="@{/restaurant-owner/media}" class="tab">Media</a>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card primary">
+                <div class="stat-icon">📅</div>
+                <div class="stat-value" th:text="${todayBookings != null ? todayBookings.size() : 0}">0</div>
+                <div class="stat-label">Booking Hôm nay</div>
+                </div>
+            
+            <div class="stat-card success">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" th:text="${availableTables != null ? availableTables.size() : 0}">0</div>
+                <div class="stat-label">Bàn Trống</div>
+            </div>
+            
+            <div class="stat-card warning">
+                <div class="stat-icon">🍽️</div>
+                <div class="stat-value" th:text="${occupiedTables != null ? occupiedTables.size() : 0}">0</div>
+                <div class="stat-label">Bàn Đang Dùng</div>
+            </div>
+            
+            <div class="stat-card danger">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value">0</div>
+                <div class="stat-label">Khách Hàng Chờ</div>
+                    </div>
+                </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <h2 class="h2">⚡ Thao tác Nhanh</h2>
+            <div class="quick-actions">
+                <a th:href="@{/restaurant-owner/bookings/create}" class="quick-action-btn">
+                    <div class="quick-action-icon">📝</div>
+                    <div>Tạo Booking Mới</div>
+                </a>
+                <a th:href="@{/restaurant-owner/tables/create}" class="quick-action-btn">
+                    <div class="quick-action-icon">➕</div>
+                    <div>Thêm Bàn Mới</div>
+                </a>
+                <a th:href="@{/restaurant-owner/dishes/create}" class="quick-action-btn">
+                    <div class="quick-action-icon">🍴</div>
+                    <div>Thêm Món Ăn</div>
+                </a>
+                <a th:href="@{/restaurant-owner/media}" class="quick-action-btn">
+                    <div class="quick-action-icon">📸</div>
+                    <div>Upload Media</div>
+                </a>
+                        </div>
+                    </div>
+
+        <!-- Two Column Layout -->
+        <div class="grid grid-2">
+            <!-- Today's Bookings -->
+            <div class="card">
+                <h2 class="h2">📅 Booking Hôm Nay</h2>
+                
+                <div th:if="${todayBookings != null and !todayBookings.isEmpty()}">
+                    <div th:each="booking : ${todayBookings}" class="booking-item">
+                        <div class="booking-header">
+                            <span class="booking-name" th:text="${booking.customer?.fullName ?: 'Khách hàng'}">Nguyễn Văn A</span>
+                            <span class="booking-time" th:text="${#temporals.format(booking.bookingTime, 'HH:mm')}">18:00</span>
+                        </div>
+                        <div class="booking-details">
+                            <span>👥 <span th:text="${booking.numberOfGuests}">4</span> khách</span>
+                            <span>📱 <span th:text="${booking.customer?.phone ?: 'N/A'}">0123456789</span></span>
+                            <span class="badge badge-info" th:text="${booking.status}">PENDING</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${todayBookings == null or todayBookings.isEmpty()}" class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <p>Chưa có booking nào hôm nay</p>
+                    <a th:href="@{/restaurant-owner/bookings/create}" class="btn">Tạo Booking Mới</a>
+                        </div>
+                    </div>
+
+            <!-- Available Tables -->
+            <div class="card">
+                <h2 class="h2">✅ Bàn Đang Trống</h2>
+                
+                <div th:if="${availableTables != null and !availableTables.isEmpty()}" class="grid grid-2">
+                    <div th:each="table : ${availableTables}" class="table-card">
+                        <div class="table-name" th:text="${table.tableName}">T1</div>
+                        <div class="table-capacity">
+                            👥 <span th:text="${table.capacity}">4</span> chỗ ngồi
+                        </div>
+                        <span class="table-status available">Trống</span>
+                    </div>
+                </div>
+
+                <div th:if="${availableTables == null or availableTables.isEmpty()}" class="empty-state">
+                    <div class="empty-state-icon">🪑</div>
+                    <p>Không có bàn trống</p>
+                    <a th:href="@{/restaurant-owner/tables}" class="btn">Quản lý Bàn</a>
+                </div>
+            </div>
+                </div>
+
+        <!-- Occupied Tables -->
+        <div class="card" th:if="${occupiedTables != null and !occupiedTables.isEmpty()}">
+            <h2 class="h2">🍽️ Bàn Đang Sử Dụng</h2>
+            
+            <div class="grid grid-4">
+                <div th:each="table : ${occupiedTables}" class="table-card">
+                    <div class="table-name" th:text="${table.tableName}">T2</div>
+                    <div class="table-capacity">
+                        👥 <span th:text="${table.capacity}">2</span> chỗ ngồi
+                    </div>
+                    <span class="table-status occupied">Đang dùng</span>
+                </div>
+            </div>
+                    </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2025 Restaurant Management System | Made with ❤️</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Auto refresh every 60 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 60000);
+        
+        // Add smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
