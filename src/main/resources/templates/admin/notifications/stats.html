@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Thống kê thông báo - BookEat Admin</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+	<link th:href="@{/css/luxury.css}" rel="stylesheet">
+	<style>
+		/* Page baseline light/blue */
+		.page-bg { background-color: var(--background-light); min-height: 100vh; }
+		.section-title { color: var(--text-dark); font-family: var(--font-heading); font-weight: 700; font-size: 2.2rem; }
+		
+		/* Cards */
+		.stats-card { background: var(--background-white); border: 1px solid var(--border-light); color: var(--text-dark); border-radius:12px; transition: var(--transition); box-shadow: var(--shadow-card); }
+		.stats-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--primary-blue); }
+		.stats-icon { width:64px; height:64px; border-radius:50%; background: var(--background-light); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.5rem; }
+		.stats-number { font-size:2.2rem; font-weight:700; color: var(--primary-blue); }
+		.stats-label { color: var(--text-light); font-size:0.9rem; }
+		
+		/* Header spacing */
+		.admin-content { padding-top: 100px !important; }
+	</style>
+</head>
+<body class="page-bg">
+	<div th:insert="fragments/flash :: flash"></div>
+	<div th:replace="~{fragments/header :: site-header}"></div>
+
+	<div class="admin-content py-4">
+		<div class="container">
+			<div class="d-flex align-items-center mb-4">
+				<a th:href="@{/admin/notifications}" class="btn btn-outline-secondary me-3">
+					<i class="fas fa-arrow-left"></i>
+				</a>
+				<h1 class="section-title mb-0">
+					<i class="fas fa-chart-bar text-primary me-2"></i> Thống kê thông báo
+				</h1>
+			</div>
+
+		<div class="row g-4">
+			<div class="col-lg-3 col-md-6">
+				<div class="stats-card p-4 text-center">
+					<div class="stats-icon mx-auto mb-3">
+						<i class="fas fa-paper-plane"></i>
+					</div>
+					<div class="stats-number" th:text="${totalSent}">0</div>
+					<div class="stats-label">Tổng số đã gửi</div>
+				</div>
+			</div>
+
+			<div class="col-lg-3 col-md-6">
+				<div class="stats-card p-4 text-center">
+					<div class="stats-icon mx-auto mb-3">
+						<i class="fas fa-eye"></i>
+					</div>
+					<div class="stats-number" th:text="${totalRead}">0</div>
+					<div class="stats-label">Đã đọc</div>
+				</div>
+			</div>
+
+			<div class="col-lg-3 col-md-6">
+				<div class="stats-card p-4 text-center">
+					<div class="stats-icon mx-auto mb-3">
+						<i class="fas fa-eye-slash"></i>
+					</div>
+					<div class="stats-number" th:text="${totalUnread}">0</div>
+					<div class="stats-label">Chưa đọc</div>
+				</div>
+			</div>
+
+			<div class="col-lg-3 col-md-6">
+				<div class="stats-card p-4 text-center">
+					<div class="stats-icon mx-auto mb-3">
+						<i class="fas fa-percentage"></i>
+					</div>
+					<div class="stats-number" th:text="${totalSent > 0 ? #numbers.formatDecimal(totalRead * 100.0 / totalSent, 1, 1) : 0}">0</div>
+					<div class="stats-label">Tỷ lệ đọc (%)</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row mt-5">
+			<div class="col-12">
+				<div class="stats-card p-4">
+					<h4 class="text-white mb-4">
+						<i class="fas fa-info-circle me-2"></i> Thông tin hệ thống
+					</h4>
+					<div class="row g-3">
+						<div class="col-md-6">
+							<div class="d-flex justify-content-between">
+								<span class="text-muted">Tổng số thông báo:</span>
+								<span class="text-white" th:text="${totalSent}">0</span>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="d-flex justify-content-between">
+								<span class="text-muted">Đã đọc:</span>
+								<span class="text-success" th:text="${totalRead}">0</span>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="d-flex justify-content-between">
+								<span class="text-muted">Chưa đọc:</span>
+								<span class="text-warning" th:text="${totalUnread}">0</span>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="d-flex justify-content-between">
+								<span class="text-muted">Tỷ lệ đọc:</span>
+								<span class="text-info" th:text="${totalSent > 0 ? #numbers.formatDecimal(totalRead * 100.0 / totalSent, 1, 1) + '%' : '0%'}">0%</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row mt-4">
+			<div class="col-12 text-center">
+				<a th:href="@{/admin/notifications}" class="btn btn-gold me-2">
+					<i class="fas fa-list me-1"></i> Quay lại danh sách
+				</a>
+				<a th:href="@{/admin/notifications/new}" class="btn btn-outline-secondary">
+					<i class="fas fa-plus me-1"></i> Tạo thông báo mới
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<div th:replace="~{fragments/footer :: site-footer}"></div>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+	<script th:src="@{/js/main.js}" defer></script>
+</body>
+</html> 

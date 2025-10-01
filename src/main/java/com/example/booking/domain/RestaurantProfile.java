@@ -277,4 +277,21 @@ public class RestaurantProfile {
     public void setMedia(List<RestaurantMedia> media) {
         this.media = media;
     }
+
+    // Helper methods
+    public String getName() {
+        return restaurantName;
+    }
+
+    public String getId() {
+        return restaurantId.toString();
+    }
+
+    public boolean hasTables() {
+        return tables != null && !tables.isEmpty();
+    }
+
+    public int getTableCount() {
+        return tables != null ? tables.size() : 0;
+    }
 }

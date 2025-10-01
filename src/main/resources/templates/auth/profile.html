@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hồ sơ cá nhân - Aurelius Fine Dining</title>
+    <title>Hồ sơ cá nhân - Book Eat</title>
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -15,84 +15,28 @@
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
     
     <style>
-        :root {
-            --luxury-black: #121212;
-            --luxury-dark: #1A1A1A;
-            --luxury-gold: #D4AF37;
-            --luxury-gold-light: #FFD700;
-            --luxury-gold-dark: #B8941F;
-            --luxury-white: #FFFFFF;
-            --luxury-gray: #E0E0E0;
-            --luxury-gray-dark: #8A8A8A;
+        body.page-bg {
+            background: var(--background-light);
+            font-family: var(--font-body);
         }
 
-        body {
-            font-family: 'Lato', sans-serif;
-            background: linear-gradient(135deg, var(--luxury-black) 0%, var(--luxury-dark) 100%);
-            min-height: 100vh;
-            color: var(--luxury-white);
-            position: relative;
-        }
-
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80') center/cover no-repeat;
-            opacity: 0.05;
-            z-index: -1;
-        }
-
-        .main-content {
-            position: relative;
-            z-index: 1;
+        .profile-content {
             padding-top: 100px;
+            padding-bottom: 60px;
         }
 
-        .profile-hero {
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(18, 18, 18, 0.95) 100%);
-            backdrop-filter: blur(20px);
-            border: 2px solid var(--luxury-gold);
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 175, 55, 0.1);
-            padding: 40px;
-            margin-bottom: 30px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .profile-hero::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, var(--luxury-gold), var(--luxury-gold-light), var(--luxury-gold), var(--luxury-gold-dark));
-            z-index: -1;
-            border-radius: 20px;
-        }
-
-        .profile-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 2.5rem;
+        .section-title {
+            font-size: 2.2rem;
             font-weight: 700;
-            color: var(--luxury-gold);
-            text-align: center;
-            margin-bottom: 10px;
-            letter-spacing: 2px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            font-family: var(--font-heading);
         }
 
-        .profile-subtitle {
-            text-align: center;
-            color: var(--luxury-gray);
+        .section__subtitle {
             font-size: 1.1rem;
-            margin-bottom: 40px;
-            font-style: italic;
+            color: var(--text-medium);
+            margin-bottom: 3rem;
         }
 
         .profile-avatar {
@@ -104,31 +48,69 @@
             width: 150px;
             height: 150px;
             border-radius: 50%;
-            border: 4px solid var(--luxury-gold);
-            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+            border: 4px solid var(--primary-blue);
+            box-shadow: var(--shadow-card);
             object-fit: cover;
         }
 
-        .profile-card {
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(18, 18, 18, 0.8) 100%);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--luxury-gold);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        .upload-area {
+            border: 2px dashed var(--primary-blue);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            background: var(--background-white);
+            transition: var(--transition);
         }
 
-        .profile-card h4 {
-            color: var(--luxury-gold);
-            font-family: 'Playfair Display', serif;
+        .upload-area:hover {
+            background: rgba(74, 144, 226, 0.05);
+            border-color: var(--primary-blue-dark);
+        }
+
+        .upload-area input[type="file"] {
+            margin: 10px 0;
+        }
+
+        .upload-area input[type="file"]::file-selector-button {
+            background: var(--primary-blue);
+            color: var(--background-white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .upload-area input[type="file"]::file-selector-button:hover {
+            background: var(--primary-blue-dark);
+        }
+
+        .booking-card {
+            background: var(--background-white);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: var(--card-padding);
+            box-shadow: var(--shadow-card);
+            transition: var(--transition);
+            margin-bottom: 20px;
+        }
+
+        .booking-card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .booking-card h4 {
+            color: var(--text-dark);
             font-weight: 600;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
+            font-family: var(--font-heading);
         }
 
-        .profile-card h4 i {
+        .booking-card h4 i {
+            color: var(--primary-blue);
             margin-right: 10px;
             font-size: 1.2em;
         }
@@ -138,7 +120,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px 0;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            border-bottom: 1px solid var(--border-light);
         }
 
         .profile-info-row:last-child {
@@ -146,20 +128,20 @@
         }
 
         .profile-label {
-            color: var(--luxury-gray);
+            color: var(--text-medium);
             font-weight: 500;
             display: flex;
             align-items: center;
         }
 
         .profile-label i {
-            color: var(--luxury-gold);
+            color: var(--primary-blue);
             margin-right: 8px;
             width: 20px;
         }
 
         .profile-value {
-            color: var(--luxury-white);
+            color: var(--text-dark);
             font-weight: 600;
         }
 
@@ -167,139 +149,59 @@
             background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
             padding: 4px 8px;
-            border-radius: 12px;
+            border-radius: 6px;
             font-size: 0.75rem;
             margin-left: 10px;
         }
 
         .badge-unverified {
             background: linear-gradient(135deg, #ffc107, #fd7e14);
-            color: var(--luxury-black);
+            color: white;
             padding: 4px 8px;
-            border-radius: 12px;
+            border-radius: 6px;
             font-size: 0.75rem;
             margin-left: 10px;
         }
 
-        .btn-luxury {
-            background: linear-gradient(135deg, var(--luxury-gold) 0%, var(--luxury-gold-light) 100%);
-            border: none;
-            color: var(--luxury-black);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 12px 25px;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
-            text-decoration: none;
-            display: inline-block;
-            margin: 5px;
-        }
-
-        .btn-luxury:hover {
-            background: var(--luxury-black);
-            color: var(--luxury-gold);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6);
-        }
-
-        .btn-outline-luxury {
-            background: transparent;
-            border: 2px solid var(--luxury-gold);
-            color: var(--luxury-gold);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 10px 23px;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            margin: 5px;
-        }
-
-        .btn-outline-luxury:hover {
-            background: var(--luxury-gold);
-            color: var(--luxury-black);
-            transform: translateY(-2px);
-        }
-
-                 .upload-area {
-             border: 2px dashed var(--luxury-gold);
-             border-radius: 15px;
-             padding: 20px;
-             text-align: center;
-             background: rgba(212, 175, 55, 0.05);
-             transition: all 0.3s ease;
-         }
-
-         .upload-area:hover {
-             background: rgba(212, 175, 55, 0.1);
-             border-color: var(--luxury-gold-light);
-         }
-
-         .upload-area input[type="file"] {
-             margin: 10px 0;
-         }
-
-         .upload-area input[type="file"]::file-selector-button {
-             background: var(--luxury-gold);
-             color: var(--luxury-black);
-             border: none;
-             padding: 8px 16px;
-             border-radius: 8px;
-             font-weight: 600;
-             margin-right: 10px;
-         }
-
-         .upload-area input[type="file"]::file-selector-button:hover {
-             background: var(--luxury-gold-light);
-         }
-
         .stats-card {
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
-            border: 1px solid var(--luxury-gold);
-            border-radius: 15px;
+            background: var(--background-white);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
             padding: 25px;
             text-align: center;
             margin-bottom: 20px;
+            box-shadow: var(--shadow-card);
+            transition: var(--transition);
+        }
+
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
         }
 
         .stats-number {
             font-size: 2.5rem;
             font-weight: 700;
-            color: var(--luxury-gold);
-            font-family: 'Playfair Display', serif;
+            color: var(--primary-blue);
+            font-family: var(--font-heading);
         }
 
         .stats-label {
-            color: var(--luxury-gray);
+            color: var(--text-medium);
             font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin-top: 8px;
         }
 
-        .alert-luxury {
-            background: linear-gradient(135deg, rgba(40, 167, 69, 0.9), rgba(34, 139, 58, 0.9));
-            border: none;
-            border-radius: 15px;
-            color: var(--luxury-white);
-            border-left: 4px solid #28a745;
-        }
-
-        .alert-luxury-danger {
-            background: linear-gradient(135deg, rgba(220, 53, 69, 0.9), rgba(187, 45, 59, 0.9));
-            border: none;
-            border-radius: 15px;
-            color: var(--luxury-white);
-            border-left: 4px solid #dc3545;
+        .stats-label i {
+            color: var(--primary-blue);
+            margin-right: 6px;
         }
 
         .security-indicator {
             display: flex;
             align-items: center;
             margin: 10px 0;
+            color: var(--text-dark);
         }
 
         .security-indicator i {
@@ -315,164 +217,204 @@
             color: #ffc107;
         }
 
+        .btn--gold,
+        .btn-luxury {
+            background: var(--primary-blue);
+            color: var(--background-white);
+            border-color: var(--primary-blue);
+            box-shadow: var(--shadow-button);
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 5px;
+            transition: var(--transition);
+        }
+
+        .btn--gold:hover,
+        .btn-luxury:hover {
+            background: var(--primary-blue-dark);
+            border-color: var(--primary-blue-dark);
+            color: var(--background-white);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-outline-luxury {
+            background: transparent;
+            color: var(--primary-blue);
+            border: 1px solid var(--primary-blue);
+            padding: 10px 23px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 5px;
+            transition: var(--transition);
+        }
+
+        .btn-outline-luxury:hover {
+            background: var(--primary-blue);
+            color: var(--background-white);
+            transform: translateY(-1px);
+        }
+
         @media (max-width: 768px) {
-            .profile-title {
+            .profile-content {
+                padding-top: 80px;
+            }
+            
+            .section-title {
                 font-size: 2rem;
             }
             
-            .profile-card {
+            .booking-card {
                 padding: 20px;
-            }
-            
-            .main-content {
-                padding-top: 80px;
             }
         }
     </style>
 </head>
-<body>
+<body class="page-bg">
     <!-- Header Fragment -->
     <div th:replace="~{fragments/header :: site-header}"></div>
     
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="profile-content">
         <div class="container">
             <!-- Flash Messages -->
-            <div th:if="${successMessage}" class="alert alert-luxury alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <span th:text="${successMessage}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-            </div>
+            <div th:insert="fragments/flash :: flash"></div>
             
-            <div th:if="${errorMessage}" class="alert alert-luxury-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <span th:text="${errorMessage}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+            <!-- Page Title -->
+            <div class="text-center mb-4">
+                <h1 class="section-title">
+                    <i class="fas fa-user-circle luxury-icon"></i> Hồ sơ cá nhân
+                </h1>
+                <p class="section__subtitle">Quản lý thông tin tài khoản của bạn</p>
             </div>
             
             <!-- Profile Hero Section -->
-            <div class="profile-hero">
-                <h1 class="profile-title">
-                    <i class="fas fa-user-circle"></i> Hồ sơ cá nhân
-                </h1>
-                <p class="profile-subtitle">Quản lý thông tin tài khoản của bạn</p>
-                
-                <div class="row">
-                    <!-- Avatar Section -->
-                    <div class="col-lg-4">
+            <div class="row">
+                <!-- Avatar Section -->
+                <div class="col-lg-4">
+                    <div class="booking-card">
                         <div class="profile-avatar">
                             <img th:src="${user.profileImageUrl != null ? user.profileImageUrl : 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'}" 
                                  alt="Profile Avatar">
                         </div>
                         
-                                                 <!-- Upload Avatar Form -->
-                         <div class="upload-area">
-                             <i class="fas fa-camera fa-2x mb-2" style="color: var(--luxury-gold);"></i>
-                             <h6 style="color: var(--luxury-white); font-weight: 600;">Đổi ảnh đại diện</h6>
-                             <form th:action="@{/auth/profile/avatar}" method="post" enctype="multipart/form-data">
-                                 <input type="file" 
-                                        class="form-control" 
-                                        name="profileImage" 
-                                        accept="image/*" 
-                                        required
-                                        style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold); color: var(--luxury-white);">
-                                 <button type="submit" class="btn btn-luxury mt-2">
-                                     <i class="fas fa-upload"></i> Tải lên
-                                 </button>
-                             </form>
-                         </div>
+                        <!-- Upload Avatar Form -->
+                        <div class="upload-area">
+                            <i class="fas fa-camera fa-2x mb-2 luxury-icon"></i>
+                            <h6 style="color: var(--text-dark); font-weight: 600;">Đổi ảnh đại diện</h6>
+                            <form th:action="@{/auth/profile/avatar}" method="post" enctype="multipart/form-data">
+                                <input type="file" 
+                                       class="form-control" 
+                                       name="profileImage" 
+                                       accept="image/*" 
+                                       required
+                                       style="background: var(--background-white); border: 1px solid var(--border-medium); color: var(--text-dark);">
+                                <button type="submit" class="btn btn--gold mt-2">
+                                    <i class="fas fa-upload"></i> Tải lên
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                    
-                    <!-- Profile Information -->
-                    <div class="col-lg-8">
-                        <div class="profile-card">
-                            <h4><i class="fas fa-id-card"></i> Thông tin cá nhân</h4>
-                            
-                            <div class="profile-info-row">
-                                <div class="profile-label">
-                                    <i class="fas fa-user"></i> Username
-                                </div>
-                                <div class="profile-value" th:text="${user.username}"></div>
+                </div>
+                
+                <!-- Profile Information -->
+                <div class="col-lg-8">
+                    <div class="booking-card">
+                        <h4><i class="fas fa-id-card"></i> Thông tin cá nhân</h4>
+                        
+                        <div class="profile-info-row">
+                            <div class="profile-label">
+                                <i class="fas fa-user"></i> Username
                             </div>
-                            
-                            <div class="profile-info-row">
-                                <div class="profile-label">
-                                    <i class="fas fa-envelope"></i> Email
-                                </div>
-                                <div class="profile-value">
-                                    <span th:text="${user.email}"></span>
-                                    <span th:if="${user.emailVerified}" class="badge-verified">
-                                        <i class="fas fa-check-circle"></i> Đã xác thực
-                                    </span>
-                                    <span th:unless="${user.emailVerified}" class="badge-unverified">
-                                        <i class="fas fa-exclamation-triangle"></i> Chưa xác thực
-                                    </span>
-                                </div>
+                            <div class="profile-value" th:text="${user.username}"></div>
+                        </div>
+                        
+                        <div class="profile-info-row">
+                            <div class="profile-label">
+                                <i class="fas fa-envelope"></i> Email
                             </div>
-                            
-                            <div class="profile-info-row">
-                                <div class="profile-label">
-                                    <i class="fas fa-signature"></i> Họ và tên
-                                </div>
-                                <div class="profile-value" th:text="${user.fullName}"></div>
-                            </div>
-                            
-                            <div class="profile-info-row" th:if="${user.phoneNumber}">
-                                <div class="profile-label">
-                                    <i class="fas fa-phone"></i> Số điện thoại
-                                </div>
-                                <div class="profile-value" th:text="${user.phoneNumber}"></div>
-                            </div>
-                            
-                            <div class="profile-info-row" th:if="${user.address}">
-                                <div class="profile-label">
-                                    <i class="fas fa-map-marker-alt"></i> Địa chỉ
-                                </div>
-                                <div class="profile-value" th:text="${user.address}"></div>
-                            </div>
-                            
-                            <div class="profile-info-row">
-                                <div class="profile-label">
-                                    <i class="fas fa-shield-alt"></i> Vai trò
-                                </div>
-                                <div class="profile-value">
-                                    <span class="badge" style="background: var(--luxury-gold); color: var(--luxury-black);" 
-                                          th:text="${user.role.name()}"></span>
-                                </div>
-                            </div>
-                            
-                            <div class="profile-info-row">
-                                <div class="profile-label">
-                                    <i class="fas fa-calendar-plus"></i> Ngày tham gia
-                                </div>
-                                <div class="profile-value" th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy HH:mm')}"></div>
-                            </div>
-                            
-                            <div class="profile-info-row" th:if="${user.lastLogin}">
-                                <div class="profile-label">
-                                    <i class="fas fa-clock"></i> Đăng nhập cuối
-                                </div>
-                                <div class="profile-value" th:text="${#temporals.format(user.lastLogin, 'dd/MM/yyyy HH:mm')}"></div>
+                            <div class="profile-value">
+                                <span th:text="${user.email}"></span>
+                                <span th:if="${user.emailVerified}" class="badge-verified">
+                                    <i class="fas fa-check-circle"></i> Đã xác thực
+                                </span>
+                                <span th:unless="${user.emailVerified}" class="badge-unverified">
+                                    <i class="fas fa-exclamation-triangle"></i> Chưa xác thực
+                                </span>
                             </div>
                         </div>
                         
-                        <!-- Action Buttons -->
-                        <div class="text-center">
-                            <a th:href="@{/auth/profile/edit}" class="btn btn-luxury">
-                                <i class="fas fa-edit"></i> Chỉnh sửa thông tin
-                            </a>
-                            <a th:href="@{/auth/change-password}" class="btn btn-luxury" th:if="${user.password != null and user.password.startsWith('$2a$')}">
-                                <i class="fas fa-key"></i> Đổi mật khẩu
-                            </a>
-                            <a th:href="@{/booking/my}" class="btn btn-luxury">
-                                <i class="fas fa-calendar-check"></i> Booking của tôi
-                            </a>
+                        <div class="profile-info-row">
+                            <div class="profile-label">
+                                <i class="fas fa-signature"></i> Họ và tên
+                            </div>
+                            <div class="profile-value" th:text="${user.fullName}"></div>
                         </div>
+                        
+                        <div class="profile-info-row" th:if="${user.phoneNumber}">
+                            <div class="profile-label">
+                                <i class="fas fa-phone"></i> Số điện thoại
+                            </div>
+                            <div class="profile-value" th:text="${user.phoneNumber}"></div>
+                        </div>
+                        
+                        <div class="profile-info-row" th:if="${user.address}">
+                            <div class="profile-label">
+                                <i class="fas fa-map-marker-alt"></i> Địa chỉ
+                            </div>
+                            <div class="profile-value" th:text="${user.address}"></div>
+                        </div>
+                        
+                        <div class="profile-info-row">
+                            <div class="profile-label">
+                                <i class="fas fa-shield-alt"></i> Vai trò
+                            </div>
+                            <div class="profile-value">
+                                <span class="badge" style="background: var(--primary-blue); color: var(--background-white);" 
+                                      th:text="${user.role.name()}"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-info-row">
+                            <div class="profile-label">
+                                <i class="fas fa-calendar-plus"></i> Ngày tham gia
+                            </div>
+                            <div class="profile-value" th:text="${#temporals.format(user.createdAt, ''dd/MM/yyyy HH:mm'')}"></div>
+                        </div>
+                        
+                        <div class="profile-info-row" th:if="${user.lastLogin}">
+                            <div class="profile-label">
+                                <i class="fas fa-clock"></i> Đăng nhập cuối
+                            </div>
+                            <div class="profile-value" th:text="${#temporals.format(user.lastLogin, ''dd/MM/yyyy HH:mm'')}"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="text-center">
+                        <a th:href="@{/auth/profile/edit}" class="btn btn--gold">
+                            <i class="fas fa-edit"></i> Chỉnh sửa thông tin
+                        </a>
+                        <a th:href="@{/auth/change-password}" class="btn btn--gold" th:if="${user.password != null and user.password.startsWith(''$2a$'')}">
+                            <i class="fas fa-key"></i> Đổi mật khẩu
+                        </a>
+                        <a th:href="@{/booking/my}" class="btn btn--gold">
+                            <i class="fas fa-calendar-check"></i> Booking của tôi
+                        </a>
                     </div>
                 </div>
             </div>
             
-            <div class="row">
+            <div class="row mt-4">
                 <!-- Quick Stats -->
                 <div class="col-lg-4">
                     <div class="stats-card">
@@ -505,12 +447,12 @@
             <!-- Security Status -->
             <div class="row">
                 <div class="col-lg-6">
-                    <div class="profile-card">
+                    <div class="booking-card">
                         <h4><i class="fas fa-shield-check"></i> Bảo mật tài khoản</h4>
                         
-                        <div class="security-indicator" th:classappend="${user.emailVerified} ? 'verified' : 'unverified'">
-                            <i th:class="${user.emailVerified} ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'"></i>
-                            <span th:text="${user.emailVerified} ? 'Email đã được xác thực' : 'Email chưa được xác thực'"></span>
+                        <div class="security-indicator" th:classappend="${user.emailVerified} ? ''verified'' : ''unverified''">
+                            <i th:class="${user.emailVerified} ? ''fas fa-check-circle'' : ''fas fa-exclamation-triangle''"></i>
+                            <span th:text="${user.emailVerified} ? ''Email đã được xác thực'' : ''Email chưa được xác thực''"></span>
                         </div>
                         
                         <div class="security-indicator verified" th:if="${user.googleId}">
@@ -524,7 +466,7 @@
                         </div>
                         
                         <div class="mt-3">
-                            <a th:href="@{/auth/change-password}" class="btn btn-outline-luxury btn-sm" th:if="${user.password != null and user.password.startsWith('$2a$')}">
+                            <a th:href="@{/auth/change-password}" class="btn btn-outline-luxury btn-sm" th:if="${user.password != null and user.password.startsWith(''$2a$'')}">
                                 <i class="fas fa-key"></i> Đổi mật khẩu
                             </a>
                         </div>
@@ -532,13 +474,13 @@
                 </div>
                 
                 <div class="col-lg-6">
-                    <div class="profile-card">
+                    <div class="booking-card">
                         <h4><i class="fas fa-chart-line"></i> Hoạt động gần đây</h4>
                         
-                        <div class="text-center text-muted">
-                            <i class="fas fa-calendar-alt fa-3x mb-3" style="color: var(--luxury-gold); opacity: 0.5;"></i>
-                            <p>Chưa có hoạt động nào</p>
-                            <a th:href="@{/booking/new}" class="btn btn-luxury btn-sm">
+                        <div class="text-center">
+                            <i class="fas fa-calendar-alt fa-3x mb-3 luxury-icon" style="opacity: 0.5;"></i>
+                            <p class="text-muted">Chưa có hoạt động nào</p>
+                            <a th:href="@{/booking/new}" class="btn btn--gold btn-sm">
                                 <i class="fas fa-plus"></i> Đặt bàn đầu tiên
                             </a>
                         </div>
@@ -549,33 +491,33 @@
             <!-- Quick Actions -->
             <div class="row">
                 <div class="col-12">
-                    <div class="profile-card">
+                    <div class="booking-card">
                         <h4><i class="fas fa-bolt"></i> Thao tác nhanh</h4>
                         
                         <div class="row text-center">
                             <div class="col-md-3 mb-3">
-                                <a th:href="@{/booking/new}" class="btn btn-luxury w-100">
+                                <a th:href="@{/booking/new}" class="btn btn--gold w-100" style="flex-direction: column;">
                                     <i class="fas fa-calendar-plus fa-2x mb-2"></i>
                                     <div>Đặt bàn mới</div>
                                 </a>
                             </div>
                             
                             <div class="col-md-3 mb-3">
-                                <a th:href="@{/booking/my}" class="btn btn-outline-luxury w-100">
+                                <a th:href="@{/booking/my}" class="btn btn-outline-luxury w-100" style="flex-direction: column;">
                                     <i class="fas fa-list fa-2x mb-2"></i>
                                     <div>Booking của tôi</div>
                                 </a>
                             </div>
                             
                             <div class="col-md-3 mb-3">
-                                <a th:href="@{/auth/profile/edit}" class="btn btn-outline-luxury w-100">
+                                <a th:href="@{/auth/profile/edit}" class="btn btn-outline-luxury w-100" style="flex-direction: column;">
                                     <i class="fas fa-user-edit fa-2x mb-2"></i>
                                     <div>Sửa thông tin</div>
                                 </a>
                             </div>
                             
                             <div class="col-md-3 mb-3">
-                                <a th:href="@{/restaurants}" class="btn btn-outline-luxury w-100">
+                                <a th:href="@{/restaurants}" class="btn btn-outline-luxury w-100" style="flex-direction: column;">
                                     <i class="fas fa-utensils fa-2x mb-2"></i>
                                     <div>Khám phá nhà hàng</div>
                                 </a>
@@ -595,20 +537,20 @@
     
     <script>
         // Add some interactive effects
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener(''DOMContentLoaded'', function() {
             // Animate stats on page load
-            const statsNumbers = document.querySelectorAll('.stats-number');
+            const statsNumbers = document.querySelectorAll(''.stats-number'');
             statsNumbers.forEach(stat => {
-                stat.style.opacity = '0';
-                stat.style.transform = 'translateY(20px)';
+                stat.style.opacity = ''0'';
+                stat.style.transform = ''translateY(20px)'';
                 
                 setTimeout(() => {
-                    stat.style.transition = 'all 0.6s ease';
-                    stat.style.opacity = '1';
-                    stat.style.transform = 'translateY(0)';
+                    stat.style.transition = ''all 0.6s ease'';
+                    stat.style.opacity = ''1'';
+                    stat.style.transform = ''translateY(0)'';
                 }, Math.random() * 500);
             });
         });
     </script>
 </body>
-</html> 
+</html>

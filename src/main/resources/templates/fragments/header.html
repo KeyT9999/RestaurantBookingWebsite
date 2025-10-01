@@ -74,6 +74,11 @@
                             </a>
                         </li>
                         
+                        <!-- Notification Bell (for authenticated non-admin users) -->
+                        <li class="nav-item" sec:authorize="isAuthenticated() and !hasRole('ADMIN')">
+                            <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
+                        </li>
+                        
                         <!-- User Dropdown -->
                         <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
                             <a class="nav-link dropdown-toggle user-dropdown" href="#" role="button" 
@@ -107,6 +112,7 @@
                                         User Management
                                     </a>
                                 </li>
+
                                 
                                 <!-- Restaurant Owner Dropdown Item -->
                                 <li sec:authorize="hasRole('RESTAURANT_OWNER')">
@@ -119,6 +125,12 @@
                                     <a class="dropdown-item" th:href="@{/restaurant-owner/profile}">
                                         <i class="fas fa-building luxury-icon"></i>
                                         Hồ sơ nhà hàng
+
+                                <li sec:authorize="hasRole('ADMIN')">
+                                    <a class="dropdown-item" th:href="@{/admin/notifications}">
+                                        <i class="fas fa-bell luxury-icon"></i>
+                                        Notification Management
+
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>

@@ -4,14 +4,13 @@ import com.example.booking.validation.FuturePlus;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 public class BookingForm {
     
     @NotNull(message = "Vui lòng chọn nhà hàng")
-    private UUID restaurantId;
+    private Integer restaurantId;
     
-    private UUID tableId; // Optional
+    private Integer tableId; // Optional
     
     @NotNull(message = "Số khách không được để trống")
     @Min(value = 1, message = "Số khách tối thiểu là 1")
@@ -31,7 +30,7 @@ public class BookingForm {
     // Constructors
     public BookingForm() {}
     
-    public BookingForm(UUID restaurantId, UUID tableId, Integer guestCount, 
+    public BookingForm(Integer restaurantId, Integer tableId, Integer guestCount, 
                        LocalDateTime bookingTime, BigDecimal depositAmount, String note) {
         this.restaurantId = restaurantId;
         this.tableId = tableId;
@@ -42,19 +41,19 @@ public class BookingForm {
     }
     
     // Getters and Setters
-    public UUID getRestaurantId() {
+    public Integer getRestaurantId() {
         return restaurantId;
     }
     
-    public void setRestaurantId(UUID restaurantId) {
+    public void setRestaurantId(Integer restaurantId) {
         this.restaurantId = restaurantId;
     }
     
-    public UUID getTableId() {
+    public Integer getTableId() {
         return tableId;
     }
     
-    public void setTableId(UUID tableId) {
+    public void setTableId(Integer tableId) {
         this.tableId = tableId;
     }
     

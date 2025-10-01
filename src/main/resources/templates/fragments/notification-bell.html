@@ -1,0 +1,69 @@
+<!-- Notification Bell Fragment -->
+<div th:fragment="notification-bell" class="notification-bell">
+    	<div class="dropdown">
+		<button class="btn btn-link position-relative" type="button" id="notificationDropdown" 
+				data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
+			<i class="fas fa-bell nav-icon" style="color: var(--primary-blue);"></i>
+			<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+				  id="notificationBadge" th:text="${unreadCount}" 
+				  th:if="${unreadCount != null and unreadCount > 0}">0</span>
+		</button>
+        
+        		<ul class="dropdown-menu dropdown-menu-end luxury-dropdown" aria-labelledby="notificationDropdown" 
+			style="min-width: 320px; max-height: 400px; overflow-y: auto; background: var(--background-white); border:1px solid var(--border-light); box-shadow: var(--shadow-hover);">
+            			<li>
+				<h6 class="dropdown-header d-flex justify-content-between align-items-center" style="color: var(--text-dark);">
+					<a href="/notifications" class="text-decoration-none" style="color: var(--text-dark);">
+						<i class="fas fa-bell me-2" style="color: var(--primary-blue);"></i>Thông báo
+					</a>
+					<span class="badge bg-primary" th:text="${unreadCount}" 
+					      th:if="${unreadCount != null and unreadCount > 0}">0</span>
+				</h6>
+			</li>
+            <li><hr class="dropdown-divider" style="border-color: rgba(212,175,55,.3);"></li>
+            
+            <!-- Latest notifications -->
+            <div id="latestNotifications">
+                <li th:each="notification : ${latestNotifications}" class="dropdown-item-text px-3 py-2">
+                    <div class="d-flex align-items-start">
+                        				<div class="flex-grow-1">
+					<div class="fw-bold" style="color: var(--text-dark);" th:text="${notification.title}">Title</div>
+					<div class="small" style="color: var(--text-light);" th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy HH:mm')}">Time</div>
+				</div>
+				<div th:if="${notification.unread}" class="ms-2" style="color: var(--primary-blue);">
+					<i class="fas fa-circle" style="font-size: 8px;"></i>
+				</div>
+                    </div>
+                </li>
+                			<li th:if="${#lists.isEmpty(latestNotifications)}" class="dropdown-item-text text-center" style="color: var(--text-light);">
+				<i class="fas fa-bell-slash me-2" style="color: var(--primary-blue);"></i>Không có thông báo mới
+			</li>
+            </div>
+            
+            <li><hr class="dropdown-divider" style="border-color: rgba(212,175,55,.3);"></li>
+            <li>
+                <a class="dropdown-item text-center text-white" href="/notifications">
+                    <i class="fas fa-list me-2"></i>Xem tất cả thông báo
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Auto refresh notification count every 30 seconds
+setInterval(function() {
+    fetch('/notifications/api/unread-count')
+        .then(response => response.json())
+        .then(count => {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(error => console.log('Error fetching notification count:', error));
+}, 30000);
+</script> 

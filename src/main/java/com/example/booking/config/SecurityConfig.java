@@ -85,12 +85,14 @@ public class SecurityConfig {
 				.requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", 
 						"/login", "/error", "/h2-console/**", 
 						"/actuator/**", "/oauth2/**", "/", "/about", "/contact", "/restaurants").permitAll()
+						.requestMatchers("/api/booking/restaurants/**").permitAll()
 				.requestMatchers("/auth/register", "/auth/register-success", "/auth/verify-email", 
 						"/auth/verify-result", "/auth/forgot-password", "/auth/reset-password").permitAll()
 				.requestMatchers("/admin/**").hasRole("ADMIN")
 				.requestMatchers("/restaurant-owner/**").hasRole("RESTAURANT_OWNER")
 				.requestMatchers("/auth/**").authenticated()
 				.requestMatchers("/booking/**").authenticated()
+				.requestMatchers("/notifications/**").authenticated()
 				.anyRequest().authenticated()
 			)
 			.userDetailsService(userDetailsService)
