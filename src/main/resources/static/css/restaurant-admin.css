@@ -718,3 +718,47 @@ textarea {
   background: var(--primary);
   color: white;
 }
+
+/* ===== ACCOUNT ACTIONS ===== */
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.account-actions .btn {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border: 1px solid var(--gray-200);
+  background: white;
+  color: var(--gray-700);
+}
+
+.account-actions .btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 768px) {
+  .account-actions {
+    flex-direction: column;
+  }
+  
+  .account-actions .btn {
+    min-width: auto;
+    width: 100%;
+  }
+}
