@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title th:text="${pageTitle}">Thêm món mới</title>
+    <link rel="stylesheet" th:href="@{/css/restaurant-admin.css}" />
+</head>
+<body>
+    <!-- Breadcrumb Navigation -->
+    <nav class="page-switch card">
+        <div class="nav-breadcrumb">
+            <a th:href="@{/}" class="nav-link">← Trang chủ</a>
+            <span class="nav-separator">|</span>
+            <a th:href="@{/restaurant-owner/profile}" class="nav-link">Hồ sơ Nhà hàng</a>
+            <span class="nav-separator">|</span>
+            <span class="nav-current" th:text="${pageTitle}">Thêm món mới</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+        <!-- Form Header -->
+        <div class="card">
+            <h1 class="h1" th:text="${pageTitle}">Thêm món mới</h1>
+            <p class="muted">Thêm món ăn mới vào menu nhà hàng</p>
+        </div>
+
+        <!-- Dish Form -->
+        <div class="card">
+            <form th:action="@{/restaurant-owner/dishes/create}" 
+                  method="post" 
+                  enctype="multipart/form-data">
+                
+                <div class="grid grid-3">
+                    <label class="form-item">
+                        <span class="form-label">Tên món *</span>
+                        <input type="text" name="dishName" placeholder="Phở bò đặc biệt" required />
+                    </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Danh mục *</span>
+                        <select name="category" required>
+                            <option value="">Chọn danh mục</option>
+                            <option value="Starter">Khai vị</option>
+                            <option value="Main">Món chính</option>
+                            <option value="Dessert">Tráng miệng</option>
+                            <option value="Drink">Đồ uống</option>
+                        </select>
+                    </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Giá (VNĐ) *</span>
+                        <input type="number" name="price" placeholder="85000" min="0" step="1000" required />
+                    </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Nhà hàng *</span>
+                        <select name="restaurantId" required>
+                            <option value="">Chọn nhà hàng</option>
+                            <option th:each="restaurant : ${restaurants}" 
+                                    th:value="${restaurant.restaurantId}" 
+                                    th:text="${restaurant.restaurantName}">
+                                Nhà hàng A
+                            </option>
+                        </select>
+                    </label>
+                    
+                    <label class="form-item full">
+                        <span class="form-label">Mô tả món</span>
+                        <textarea name="description" rows="3" placeholder="Mô tả chi tiết về món ăn..."></textarea>
+                    </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Ảnh món</span>
+                        <input type="file" name="image" accept="image/*" />
+                        <small class="muted">PNG, JPG, WebP. Tối đa 5MB</small>
+                    </label>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="actions mt-8">
+                    <button type="submit" class="btn">Thêm món</button>
+                    <a th:href="@{/restaurant-owner/profile}" class="btn btn-ghost">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

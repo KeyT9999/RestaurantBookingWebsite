@@ -1,0 +1,622 @@
+/* ===== Reset & nền chữ ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+/* ===== Container ===== */
+.wrap {
+  max-width: 1400px;
+  margin: 24px auto 64px;
+  padding: 0 16px;
+}
+
+/* ===== Cards & blocks ===== */
+.card {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 16px;
+}
+.block {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* ===== Typography ===== */
+.h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+.h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+.muted {
+  color: #111;
+  opacity: 0.8;
+}
+
+/* ===== Page switch (dùng chung) ===== */
+.page-switch {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+.nav-btn {
+  display: inline-block;
+  border: 1px solid #111;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  text-decoration: none;
+  color: inherit;
+  white-space: nowrap;
+}
+.nav-btn:focus,
+.nav-btn:hover {
+  outline: 2px dashed #9ca3af;
+}
+
+/* ===== Header bar ===== */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.bar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.bar-views {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ===== Layout 3 cột ===== */
+.layout-3col {
+  display: grid;
+  grid-template-columns: 360px 1fr 420px;
+  gap: 16px;
+  transition: grid-template-columns 0.2s ease;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.col-left,
+.col-right {
+  max-height: calc(100vh - 180px);
+  overflow: auto;
+}
+
+/* ===== Grids phụ ===== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.filters {
+  margin-top: 8px;
+}
+.full {
+  grid-column: 1 / -1;
+}
+.mt-8 {
+  margin-top: 8px;
+}
+
+/* ===== Form & inputs ===== */
+.input,
+input,
+select,
+textarea {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  width: 100%;
+  background: transparent;
+}
+.form-item {
+  display: grid;
+  gap: 6px;
+}
+.form-label {
+  font-weight: 600;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  border: 1px solid #111;
+  background: transparent;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-ghost {
+  border: 1px solid #d1d5db;
+}
+.small {
+  padding: 4px 8px;
+  font-size: 0.92rem;
+}
+
+/* ===== Segmented buttons ===== */
+.seg {
+  display: inline-flex;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.segbtn {
+  border: 0;
+  background: transparent;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-right: 1px solid #d1d5db;
+}
+.segbtn:last-child {
+  border-right: 0;
+}
+.segbtn.is-active {
+  outline: 2px solid #111;
+}
+
+/* ===== List (waitlist/upcoming) ===== */
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.row {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+.row-main {
+  display: grid;
+  gap: 4px;
+}
+.row-title {
+  font-weight: 700;
+}
+.row-sub {
+  font-size: 0.94rem;
+  color: #111;
+  opacity: 0.9;
+}
+.row-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.selectable {
+  cursor: pointer;
+}
+.selectable:focus-within,
+.selectable:hover {
+  outline: 2px dashed #9ca3af;
+}
+.list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.hint {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* ===== Tables grid ===== */
+.tables-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.table-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+.t-head {
+  display: flex;
+  justify-content: space-between;
+}
+.t-label {
+  font-weight: 700;
+}
+.t-cap {
+  opacity: 0.9;
+}
+.t-body {
+  display: flex;
+  justify-content: space-between;
+}
+.t-status {
+  font-weight: 600;
+}
+.t-timer {
+  opacity: 0.9;
+}
+.t-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ===== Tabs & Sticky ===== */
+.qtab {
+  display: none;
+}
+.qtab.is-visible {
+  display: block;
+}
+.sticky {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ===== Drawer (cột Chi tiết) ===== */
+.drawer {
+  position: relative;
+}
+.drawer.is-hidden {
+  display: none;
+}
+.drawer-toggle {
+  position: sticky;
+  top: 0;
+  margin-bottom: 8px;
+}
+
+/* ===== Incoming banner ===== */
+.incoming {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.incoming-main {
+  display: grid;
+  gap: 4px;
+}
+.incoming-title {
+  font-weight: 700;
+}
+.incoming-sub {
+  font-size: 0.95rem;
+  color: #111;
+  opacity: 0.9;
+}
+.incoming-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ===== View modes ===== */
+body.mode-queue .col-middle,
+body.mode-queue .col-right {
+  display: none;
+}
+body.mode-queue .layout-3col {
+  grid-template-columns: 1fr;
+}
+
+body.mode-tables .col-left,
+body.mode-tables .col-right {
+  display: none;
+}
+body.mode-tables .layout-3col {
+  grid-template-columns: 1fr;
+}
+
+/* ===== Compact mode ===== */
+body.compact .card {
+  padding: 10px;
+}
+body.compact .block {
+  padding: 8px;
+  margin-bottom: 8px;
+}
+body.compact .h1 {
+  font-size: 1.35rem;
+}
+body.compact .h2 {
+  font-size: 1.1rem;
+}
+body.compact .h3 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+body.compact .btn {
+  padding: 6px 10px;
+}
+body.compact .small {
+  padding: 3px 8px;
+}
+body.compact .input,
+body.compact select,
+body.compact textarea {
+  padding: 6px;
+}
+body.compact .tables-grid {
+  gap: 8px;
+}
+body.compact .row {
+  padding: 8px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+  .layout-3col {
+    grid-template-columns: 320px 1fr 380px;
+  }
+}
+@media (max-width: 1000px) {
+  .layout-3col {
+    grid-template-columns: 1fr;
+  }
+  .col-left,
+  .col-right {
+    max-height: none;
+  }
+  .tables-grid {
+    grid-template-columns: repeat(2, minmax(200px, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .tables-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* ===== Waitlist rows: head + detail ===== */
+.row-wait {
+  padding: 0;
+}
+.row-wait .row-head {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px dashed #e5e7eb;
+}
+.row-wait .row-actions {
+  justify-content: flex-end;
+}
+
+.expander {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.expander::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 8px;
+  border: 6px solid transparent;
+  border-left-color: #111; /* caret phải */
+}
+.expander[aria-expanded="true"]::after {
+  left: 8px;
+  top: 10px;
+  border: 6px solid transparent;
+  border-top-color: #111; /* caret xuống */
+}
+
+.row-wait .row-main {
+  cursor: pointer;
+} /* click để mở/đóng */
+.row-detail {
+  padding: 10px;
+}
+.row-detail .actions {
+  margin-top: 8px;
+}
+
+/* bản nhỏ hơn cho kv */
+.kv-small {
+  grid-template-columns: 100px 1fr;
+}
+.kv-small .k {
+  font-weight: 600;
+}
+.kv-small .v {
+  word-break: break-word;
+}
+/* Waitlist compact như Upcoming */
+.row-slim {
+  padding: 8px 10px;
+}
+.row-slim .row-title {
+  font-weight: 600;
+}
+.row-slim .row-sub {
+  font-size: 0.92rem;
+  opacity: 0.9;
+}
+.row-slim .row-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Menu chi tiết (dùng <details>) */
+.more {
+  position: relative;
+  display: inline-block;
+}
+.more summary {
+  list-style: none;
+}
+.more summary::-webkit-details-marker {
+  display: none;
+} /* ẩn marker mặc định */
+.more[open] .more-panel {
+  display: grid;
+}
+.more-panel {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 260px;
+  max-width: 340px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+  z-index: 5;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.02); /* chỉ viền nhẹ, không màu */
+}
+
+/* Bảng key-value mini trong panel */
+.kv-mini {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 6px 8px;
+  margin-bottom: 8px;
+}
+.kv-mini .k {
+  font-weight: 600;
+}
+.kv-mini .v {
+  word-break: break-word;
+}
+
+/* Tương thích chế độ Compact */
+body.compact .row-slim {
+  padding: 6px 8px;
+}
+body.compact .more-panel {
+  padding: 8px;
+  min-width: 240px;
+}
+/* ===== POP-UP animation for modal ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
+  z-index: 50;
+}
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.04);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.modal__dialog {
+  position: relative;
+  max-width: 720px;
+  width: 100%;
+  /* POP effect */
+  transform: scale(0.96) translateY(12px);
+  opacity: 0;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease;
+  will-change: transform, opacity;
+}
+
+/* Khi mở (aria-hidden=false) → bật hiệu ứng */
+.modal[aria-hidden="false"] {
+  visibility: visible;
+  opacity: 1;
+}
+.modal[aria-hidden="false"] .modal__backdrop {
+  opacity: 1;
+}
+.modal[aria-hidden="false"] .modal__dialog {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* Tôn trọng người dùng giảm chuyển động */
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .modal__backdrop,
+  .modal__dialog {
+    transition: none !important;
+  }
+  .modal__dialog {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* (giữ nguyên style cũ nếu bạn đã dán trước đó, các dòng trên thay thế phần modal cũ tốt hơn) */
+.modal__backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.24);   /* tăng độ đậm (0.24–0.32 tuỳ thích) */
+  opacity: 0; transition: opacity .18s ease;
+}
+
+.modal__dialog.card {
+  background: #fff;              /* nền trắng, không màu mè */
+  /* (tuỳ chọn) nhấn nhẹ cạnh để tách khỏi nền */
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+}
