@@ -38,108 +38,102 @@
             <div th:insert="fragments/flash :: flash"></div>
         </div>
         
-        <!-- Hero Section -->
+        <!-- Hero Section with Search -->
         <section class="hero" id="hero">
             <div class="hero__background"></div>
             <div class="hero__overlay"></div>
                 
                 <div class="container">
-                    <div class="row min-vh-100 align-items-center">
-                        <div class="col-lg-6">
-                        <div class="hero__content" data-aos="fade-up">
-                            <h1 class="hero__title">Trải nghiệm ẩm thực đẳng cấp</h1>
-                            <h2 class="hero__subtitle">Đặt bàn ngay hôm nay</h2>
-                            <p class="hero__description">
-                                Hành trình ẩm thực không thể quên, nơi mỗi món ăn là một kiệt tác được chế tác với đam mê và phục vụ với sự tao nhã.
-                            </p>
-                            <div class="hero__buttons">
-                                <a th:href="@{/booking/new}" class="btn btn--gold btn--large">
-                                        <i class="fas fa-calendar-plus"></i>
-                                    <span>Đặt bàn ngay</span>
-                                </a>
-                                <a href="#restaurants" class="btn btn--outline btn--large">
-                                    <i class="fas fa-utensils"></i>
-                                    <span>Khám phá menu</span>
-                                </a>
-                                <!-- Restaurant Owner Management Button in Hero -->
-                                <a th:href="@{/restaurant-owner/dashboard}" class="btn btn--outline btn--large"
-                                   th:if="${userRole == 'RESTAURANT_OWNER'}">
-                                    <i class="fas fa-store"></i>
-                                    <span>Quản lý nhà hàng</span>
-                                </a>
-                            </div>
+                    <div class="row align-items-center" style="min-height: 60vh;">
+                        <div class="col-12">
+                            <div class="hero__content text-center" data-aos="fade-up">
+                                <h1 class="hero__title">Tìm nhà hàng yêu thích</h1>
+                                <h2 class="hero__subtitle">Khám phá ẩm thực đẳng cấp</h2>
+                                <p class="hero__description">
+                                    Tìm kiếm và đặt bàn tại những nhà hàng tốt nhất với hệ thống đặt bàn thông minh.
+                                </p>
                             </div>
                         </div>
                         
-                        <div class="col-lg-6">
-                        <div class="hero__booking-form" data-aos="fade-left" data-aos-delay="200">
-                            <div class="booking-card">
-                                <h3 class="booking-card__title">
-                                    <i class="fas fa-concierge-bell"></i>
-                                    Đặt bàn nhanh
+                        <div class="col-12">
+                            <div class="search-filter-section" data-aos="fade-up" data-aos-delay="200">
+                                <div class="search-filter-card">
+                                    <h3 class="search-filter__title">
+                                        <i class="fas fa-search"></i>
+                                        Tìm kiếm nhà hàng
                                     </h3>
                                     
-                                <form class="booking-form" method="get" action="#" th:action="@{/booking/search}">
+                                    <form class="search-filter-form" method="get" action="#" th:action="@{/restaurants}">
                                         <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                            <label for="date" class="form-label">
-                                                <i class="fas fa-calendar"></i> Ngày
+                                            <div class="col-lg-3 col-md-6 mb-3">
+                                                <label for="searchQuery" class="form-label">
+                                                    <i class="fas fa-search"></i> Tìm kiếm
                                                 </label>
-                                            <input type="date" id="date" name="date" class="form-control" required>
+                                                <input type="text" id="searchQuery" name="q" class="form-control" 
+                                                       placeholder="Tên nhà hàng, món ăn...">
                                             </div>
-                                            <div class="col-md-6 mb-3">
-                                            <label for="time" class="form-label">
-                                                <i class="fas fa-clock"></i> Giờ
+                                            
+                                            <div class="col-lg-2 col-md-6 mb-3">
+                                                <label for="cuisineType" class="form-label">
+                                                    <i class="fas fa-utensils"></i> Loại ẩm thực
                                                 </label>
-                                            <select id="time" name="time" class="form-control" required>
-                                                <option value="">Chọn giờ</option>
-                                                <option value="18:00">18:00</option>
-                                                <option value="18:30">18:30</option>
-                                                <option value="19:00">19:00</option>
-                                                <option value="19:30">19:30</option>
-                                                <option value="20:00">20:00</option>
-                                                <option value="20:30">20:30</option>
-                                                <option value="21:00">21:00</option>
+                                                <select id="cuisineType" name="cuisine" class="form-control">
+                                                    <option value="">Tất cả</option>
+                                                    <option value="Vietnamese">Việt Nam</option>
+                                                    <option value="Chinese">Trung Hoa</option>
+                                                    <option value="Japanese">Nhật Bản</option>
+                                                    <option value="Korean">Hàn Quốc</option>
+                                                    <option value="Italian">Ý</option>
+                                                    <option value="French">Pháp</option>
+                                                    <option value="Thai">Thái Lan</option>
                                                 </select>
                                             </div>
-                                        </div>
-                                        
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                            <label for="guests" class="form-label">
-                                                <i class="fas fa-users"></i> Số khách
+                                            
+                                            <div class="col-lg-2 col-md-6 mb-3">
+                                                <label for="location" class="form-label">
+                                                    <i class="fas fa-map-marker-alt"></i> Khu vực
                                                 </label>
-                                            <select id="guests" name="guests" class="form-control" required>
-                                                <option value="">Số khách</option>
-                                                <option value="1">1 khách</option>
-                                                <option value="2">2 khách</option>
-                                                <option value="3">3 khách</option>
-                                                <option value="4">4 khách</option>
-                                                <option value="5">5 khách</option>
-                                                <option value="6">6 khách</option>
-                                                <option value="8">8 khách</option>
-                                                <option value="10">10+ khách</option>
+                                                <select id="location" name="location" class="form-control">
+                                                    <option value="">Tất cả</option>
+                                                    <option value="district-1">Quận 1</option>
+                                                    <option value="district-3">Quận 3</option>
+                                                    <option value="district-7">Quận 7</option>
+                                                    <option value="binh-thanh">Bình Thạnh</option>
+                                                    <option value="tan-binh">Tân Bình</option>
+                                                    <option value="phu-nhuan">Phú Nhuận</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-6 mb-3">
-                                            <label for="location" class="form-label">
-                                                <i class="fas fa-map-marker-alt"></i> Vị trí
-                                            </label>
-                                            <select id="location" name="q" class="form-control">
-                                                <option value="">Tất cả địa điểm</option>
-                                                <option value="district-1">Quận 1</option>
-                                                <option value="district-3">Quận 3</option>
-                                                <option value="district-7">Quận 7</option>
-                                                <option value="binh-thanh">Bình Thạnh</option>
-                                            </select>
+                                            
+                                            <div class="col-lg-2 col-md-6 mb-3">
+                                                <label for="priceRange" class="form-label">
+                                                    <i class="fas fa-tag"></i> Mức giá
+                                                </label>
+                                                <select id="priceRange" name="price" class="form-control">
+                                                    <option value="">Tất cả</option>
+                                                    <option value="0-100000">Dưới 100k</option>
+                                                    <option value="100000-300000">100k - 300k</option>
+                                                    <option value="300000-500000">300k - 500k</option>
+                                                    <option value="500000-1000000">500k - 1M</option>
+                                                    <option value="1000000-9999999">Trên 1M</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="col-lg-3 col-md-12 mb-3">
+                                                <label class="form-label d-block">&nbsp;</label>
+                                                <div class="d-flex gap-2">
+                                                    <button type="submit" class="btn btn--gold flex-fill">
+                                                        <i class="fas fa-search"></i>
+                                                        <span>Tìm kiếm</span>
+                                                    </button>
+                                                    <button type="button" class="btn btn--outline" onclick="clearFilters()">
+                                                        <i class="fas fa-times"></i>
+                                                        <span>Xóa bộ lọc</span>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        </div>
-                                        
-                                    <button type="submit" class="btn btn--gold w-100">
-                                        <i class="fas fa-search"></i>
-                                        <span>Tìm bàn</span>
-                                        </button>
                                     </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -147,58 +141,6 @@
             </div>
         </section>
 
-        <!-- How It Works Section -->
-        <section class="how-it-works" id="how-it-works">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 text-center mb-5">
-                        <h2 class="section__title" data-aos="fade-up">Cách thức hoạt động</h2>
-                        <p class="section__subtitle" data-aos="fade-up" data-aos-delay="100">Đặt bàn chỉ với 3 bước đơn giản</p>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="step-card" data-aos="fade-up" data-aos-delay="200">
-                            <div class="step-card__icon">
-                                <i class="fas fa-search"></i>
-                                <span class="step-number">1</span>
-                            </div>
-                            <h4 class="step-card__title">Tìm kiếm</h4>
-                            <p class="step-card__description">
-                                Chọn ngày, giờ và số khách để tìm nhà hàng phù hợp với nhu cầu của bạn.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="step-card" data-aos="fade-up" data-aos-delay="300">
-                            <div class="step-card__icon">
-                                <i class="fas fa-chair"></i>
-                                <span class="step-number">2</span>
-                            </div>
-                            <h4 class="step-card__title">Chọn bàn</h4>
-                            <p class="step-card__description">
-                                Lựa chọn bàn ưng ý từ danh sách các bàn có sẵn với thông tin chi tiết.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="step-card" data-aos="fade-up" data-aos-delay="400">
-                            <div class="step-card__icon">
-                                <i class="fas fa-check-circle"></i>
-                                <span class="step-number">3</span>
-                            </div>
-                            <h4 class="step-card__title">Xác nhận</h4>
-                            <p class="step-card__description">
-                                Hoàn tất đặt bàn và nhận xác nhận qua email để chuẩn bị cho bữa ăn tuyệt vời.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
 
         <!-- Featured Restaurants Section -->
         <section class="restaurants" id="restaurants">
@@ -387,44 +329,6 @@
             </div>
         </section>
 
-        <!-- CTA Section -->
-        <section class="cta" id="cta">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 text-center">
-                        <div class="cta__content" data-aos="fade-up">
-                            <h2 class="cta__title" th:if="${userRole != 'RESTAURANT_OWNER'}">Sẵn sàng cho trải nghiệm ẩm thực đẳng cấp?</h2>
-                            <h2 class="cta__title" th:if="${userRole == 'RESTAURANT_OWNER'}">Quản lý nhà hàng của bạn một cách chuyên nghiệp</h2>
-                            <p class="cta__description" th:if="${userRole != 'RESTAURANT_OWNER'}">
-                                Đặt bàn ngay hôm nay và khám phá hành trình ẩm thực tuyệt vời cùng Aurelius Fine Dining.
-                            </p>
-                            <p class="cta__description" th:if="${userRole == 'RESTAURANT_OWNER'}">
-                                Quản lý thông tin nhà hàng, bàn ăn, món ăn và media một cách hiệu quả với hệ thống quản lý chuyên nghiệp.
-                            </p>
-                            <div class="cta__buttons">
-                                <!-- Only show booking button for non-restaurant owners -->
-                                <a th:href="@{/booking/new}" class="btn btn--gold btn--large"
-                                   th:if="${userRole != 'RESTAURANT_OWNER'}">
-                                    <i class="fas fa-calendar-plus"></i>
-                                    <span>Đặt bàn ngay</span>
-                                </a>
-                                <a th:href="@{/auth/register}" class="btn btn--outline btn--large" 
-                                   th:if="${userRole == null}">
-                                    <i class="fas fa-user-plus"></i>
-                                    <span>Đăng ký thành viên</span>
-                                </a>
-                                <!-- Restaurant Owner Management Button -->
-                                <a th:href="@{/restaurant-owner/dashboard}" class="btn btn--gold btn--large"
-                                   th:if="${userRole == 'RESTAURANT_OWNER'}">
-                                    <i class="fas fa-store"></i>
-                                    <span>Quản lý nhà hàng</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-    </div>
-        </section>
     </main>
 
     <!-- Footer Fragment -->
@@ -448,14 +352,23 @@
             offset: 100
         });
         
-        // Set minimum date for booking form
+        // Clear filters function
+        function clearFilters() {
+            document.getElementById('searchQuery').value = '';
+            document.getElementById('cuisineType').value = '';
+            document.getElementById('location').value = '';
+            document.getElementById('priceRange').value = '';
+        }
+        
+        // Auto-submit form when filters change
         document.addEventListener('DOMContentLoaded', function() {
-            const dateInput = document.getElementById('date');
-            if (dateInput) {
-                const today = new Date().toISOString().split('T')[0];
-                dateInput.min = today;
-                dateInput.value = today;
-            }
+            const filterSelects = document.querySelectorAll('#cuisineType, #location, #priceRange');
+            filterSelects.forEach(select => {
+                select.addEventListener('change', function() {
+                    // Optional: Auto-submit when filter changes
+                    // this.form.submit();
+                });
+            });
         });
     </script>
 </body>
