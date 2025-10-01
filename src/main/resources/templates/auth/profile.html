@@ -441,6 +441,30 @@
                     <i class="fas fa-user-circle luxury-icon"></i> Hồ sơ cá nhân
                 </h1>
                 <p class="section__subtitle">Quản lý thông tin tài khoản của bạn</p>
+
+                <!-- Top Action Bar -->
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px;">
+                    <a th:href="@{/auth/profile/edit}"
+                       style="background: #000000; color: #ffffff; border: 2px solid #000000; padding: 8px 16px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;"
+                       onmouseover="this.style.background='#333333'; this.style.borderColor='#333333'"
+                       onmouseout="this.style.background='#000000'; this.style.borderColor='#000000'">
+                        <i class="fas fa-edit"></i> Chỉnh sửa thông tin
+                    </a>
+
+                    <a th:href="@{/auth/change-password}"
+                       style="background: #000000; color: #ffffff; border: 2px solid #000000; padding: 8px 16px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;"
+                       onmouseover="this.style.background='#333333'; this.style.borderColor='#333333'"
+                       onmouseout="this.style.background='#000000'; this.style.borderColor='#000000'">
+                        <i class="fas fa-key"></i> Đổi mật khẩu
+                    </a>
+
+                    <a th:href="@{/auth/forgot-password}"
+                       style="background: #000000; color: #ffffff; border: 2px solid #000000; padding: 8px 16px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;"
+                       onmouseover="this.style.background='#333333'; this.style.borderColor='#333333'"
+                       onmouseout="this.style.background='#000000'; this.style.borderColor='#000000'">
+                        <i class="fas fa-question-circle"></i> Quên mật khẩu
+                    </a>
+                </div>
             </div>
 
             <!-- Profile Hero Section -->
@@ -553,6 +577,13 @@
                                     onmouseover="this.style.background='#333333'; this.style.borderColor='#333333'"
                                     onmouseout="this.style.background='#000000'; this.style.borderColor='#000000'">
                                     <i class="fas fa-key"></i> Đổi mật khẩu
+                                </a>
+
+                                <a th:href="@{/auth/forgot-password}"
+                                    style="background: #000000; color: #ffffff; border: 2px solid #000000; padding: 8px 16px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;"
+                                    onmouseover="this.style.background='#333333'; this.style.borderColor='#333333'"
+                                    onmouseout="this.style.background='#000000'; this.style.borderColor='#000000'">
+                                    <i class="fas fa-question-circle"></i> Quên mật khẩu
                                 </a>
                             </div>
                         </div>
