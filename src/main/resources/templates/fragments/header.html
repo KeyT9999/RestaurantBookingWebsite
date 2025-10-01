@@ -62,13 +62,13 @@
                     <ul class="navbar-nav">
                         <!-- Guest Buttons -->
                         <li class="nav-item" sec:authorize="!isAuthenticated()">
-                            <a th:href="@{/login}" class="btn btn-outline-luxury me-2">
+                            <a th:href="@{/login}" class="btn btn--outline me-2">
                                 <i class="fas fa-sign-in-alt"></i>
                                 <span>Sign In</span>
                             </a>
                         </li>
                         <li class="nav-item" sec:authorize="!isAuthenticated()">
-                            <a th:href="@{/auth/register}" class="btn btn-outline-luxury me-2">
+                            <a th:href="@{/auth/register}" class="btn btn--outline me-2">
                                 <i class="fas fa-user-plus"></i>
                                 <span>Sign Up</span>
                             </a>
