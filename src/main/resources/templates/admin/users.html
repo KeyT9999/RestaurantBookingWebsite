@@ -252,7 +252,7 @@
 						<div class="d-flex align-items-center mb-4">
 							<div class="user-avatar me-3" th:text="${(#strings.isEmpty(u.fullName) ? u.username : u.fullName).substring(0,1).toUpperCase()}">U</div>
 							<div>
-								<h5 class="mb-1 text-white" th:text="${#strings.isEmpty(u.fullName) ? u.username : u.fullName}">User</h5>
+								<h5 class="mb-1 text-dark" th:text="${#strings.isEmpty(u.fullName) ? u.username : u.fullName}">User</h5>
 								<div class="table-muted small" th:text="${u.email}">email@example.com</div>
 								<div class="table-muted small" th:text="'@' + ${u.username}">@username</div>
 							</div>
