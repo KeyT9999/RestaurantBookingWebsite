@@ -103,6 +103,8 @@ public class SecurityConfig {
 				.failureHandler((request, response, exception) -> {
 					if (exception instanceof org.springframework.security.authentication.DisabledException) {
 						response.sendRedirect("/auth/verify-result?unverified=1");
+					} else if (exception instanceof org.springframework.security.authentication.LockedException) {
+						response.sendRedirect("/auth/verify-result?locked=1");
 					} else {
 						response.sendRedirect("/login?error");
 					}
