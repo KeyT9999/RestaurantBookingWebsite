@@ -70,8 +70,8 @@ public class DataSeeder implements CommandLineRunner {
         User ownerUser2 = createUser("owner2", "owner2@example.com", "Trần Thị B", "0907654321");
         
         // Step 2: Create RestaurantOwners
-        RestaurantOwner owner1 = createOwner(ownerUser1, "Nguyễn Văn A", "0901234567", "Quận 1, TP.HCM");
-        RestaurantOwner owner2 = createOwner(ownerUser2, "Trần Thị B", "0907654321", "Quận 3, TP.HCM");
+        RestaurantOwner owner1 = createOwner(ownerUser1);
+        RestaurantOwner owner2 = createOwner(ownerUser2);
         
         // Step 3: Create Restaurant 1: Phở Bò ABC
         RestaurantProfile restaurant1 = createRestaurant1(owner1);
@@ -109,12 +109,9 @@ public class DataSeeder implements CommandLineRunner {
         return userRepository.save(user);
     }
     
-    private RestaurantOwner createOwner(User user, String ownerName, String phone, String address) {
+    private RestaurantOwner createOwner(User user) {
         RestaurantOwner owner = new RestaurantOwner();
         owner.setUser(user);
-        owner.setOwnerName(ownerName);
-        owner.setPhone(phone);
-        owner.setAddress(address);
         LocalDateTime now = LocalDateTime.now();
         owner.setCreatedAt(now);
         owner.setUpdatedAt(now);
@@ -185,6 +182,7 @@ public class DataSeeder implements CommandLineRunner {
         table.setCapacity(capacity);
         table.setStatus(TableStatus.valueOf(status));
         table.setTableImage("/images/default-table.jpg"); // Default table image
+        table.setDepositAmount(new BigDecimal("50000")); // Default deposit amount
         table.setRestaurant(restaurant);
         return table;
     }

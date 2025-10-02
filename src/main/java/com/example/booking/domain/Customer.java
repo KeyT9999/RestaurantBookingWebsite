@@ -16,8 +16,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "customer")
@@ -31,20 +29,7 @@ public class Customer {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
-    
-    @Column(name = "full_name", nullable = false)
-    @NotBlank(message = "Họ tên không được để trống")
-    @Size(max = 255, message = "Họ tên không được quá 255 ký tự")
-    private String fullName;
-    
-    @Column(name = "phone")
-    @Size(max = 20, message = "Số điện thoại không được quá 20 ký tự")
-    private String phone;
-    
-    @Column(name = "address")
-    @Size(max = 500, message = "Địa chỉ không được quá 500 ký tự")
-    private String address;
-    
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
@@ -77,12 +62,9 @@ public class Customer {
         this.createdAt = LocalDateTime.now();
     }
     
-    public Customer(User user, String fullName, String phone, String address) {
+    public Customer(User user) {
         this();
         this.user = user;
-        this.fullName = fullName;
-        this.phone = phone;
-        this.address = address;
     }
     
     @PreUpdate
@@ -106,31 +88,7 @@ public class Customer {
     public void setUser(User user) {
         this.user = user;
     }
-    
-    public String getFullName() {
-        return fullName;
-    }
-    
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-    
-    public String getPhone() {
-        return phone;
-    }
-    
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-    
-    public String getAddress() {
-        return address;
-    }
-    
-    public void setAddress(String address) {
-        this.address = address;
-    }
-    
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

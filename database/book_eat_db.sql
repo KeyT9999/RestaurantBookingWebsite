@@ -32,9 +32,6 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS restaurant_owner (
     owner_id    UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id     UUID UNIQUE NOT NULL,
-    owner_name  VARCHAR(255) NOT NULL,
-    phone       VARCHAR(20),
-    address     VARCHAR(500),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT fk_restaurant_owner_user
@@ -44,7 +41,6 @@ CREATE TABLE IF NOT EXISTS restaurant_owner (
 CREATE TABLE IF NOT EXISTS customer (
     customer_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id     UUID UNIQUE NOT NULL,
-   
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT fk_customer_user
@@ -87,7 +83,8 @@ CREATE TABLE IF NOT EXISTS restaurant_table (
     table_name    VARCHAR(100) NOT NULL,
     capacity      INTEGER NOT NULL,
     table_image   VARCHAR(100) NOT NULL,
-    status        VARCHAR(20) NOT NULL DEFAULT 'available'
+    status        VARCHAR(20) NOT NULL DEFAULT 'available',
+    depositamount NUMERIC(18,2) NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS booking_table (

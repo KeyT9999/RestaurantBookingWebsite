@@ -93,6 +93,9 @@ public class RestaurantProfile {
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<RestaurantMedia> media;
     
+    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<RestaurantService> services;
+
     // Constructors
     public RestaurantProfile() {
         this.createdAt = LocalDateTime.now();
@@ -276,6 +279,14 @@ public class RestaurantProfile {
     
     public void setMedia(List<RestaurantMedia> media) {
         this.media = media;
+    }
+
+    public List<RestaurantService> getServices() {
+        return services;
+    }
+
+    public void setServices(List<RestaurantService> services) {
+        this.services = services;
     }
 
     // Helper methods
