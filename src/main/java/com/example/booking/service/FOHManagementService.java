@@ -8,6 +8,7 @@ import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Waitlist;
 import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.DiningTableRepository;
+import com.example.booking.common.enums.TableStatus;
 
 import java.util.List;
 
@@ -120,14 +121,7 @@ public class FOHManagementService {
         // TODO: Implement floor statistics calculation
         return new FloorStats();
     }
-    
-    /**
-     * Enum for table status
-     */
-    public enum TableStatus {
-        AVAILABLE, OCCUPIED, RESERVED, MAINTENANCE, CLEANING
-    }
-    
+
     /**
      * Inner class for floor statistics
      */
