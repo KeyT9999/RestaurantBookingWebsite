@@ -44,9 +44,7 @@ CREATE TABLE IF NOT EXISTS restaurant_owner (
 CREATE TABLE IF NOT EXISTS customer (
     customer_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id     UUID UNIQUE NOT NULL,
-    full_name   VARCHAR(255) NOT NULL,
-    phone       VARCHAR(20),
-    address     VARCHAR(500),
+   
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT fk_customer_user
@@ -58,9 +56,6 @@ CREATE TABLE IF NOT EXISTS restaurant_profile (
     restaurant_id    INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     owner_id         UUID NOT NULL,
     restaurant_name  VARCHAR(255) NOT NULL,
-    address          VARCHAR(500),
-    phone            VARCHAR(20),
-    description      TEXT,
     cuisine_type     VARCHAR(100),
     opening_hours    VARCHAR(100),
     average_price    NUMERIC(18,2),
@@ -216,3 +211,23 @@ CREATE TABLE IF NOT EXISTS persistent_logins (
   last_used TIMESTAMP NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS restaurant_service (
+    service_id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    restaurant_id   INTEGER NOT NULL REFERENCES restaurant_profile(restaurant_id) ON DELETE CASCADE,
+    name            VARCHAR(255) NOT NULL,
+    category        VARCHAR(100),              -- Ví dụ: buffet, đồ uống, trang trí, VIP, …
+    description     TEXT,
+    price           NUMERIC(18,2) NOT NULL,
+    status          VARCHAR(20) NOT NULL DEFAULT 'available',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS booking_service (
+    booking_service_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    booking_id         INTEGER NOT NULL REFERENCES booking(booking_id) ON DELETE CASCADE,
+    service_id         INTEGER NOT NULL REFERENCES restaurant_service(service_id) ON DELETE CASCADE,
+    quantity           INTEGER NOT NULL DEFAULT 1,
+    price              NUMERIC(18,2) NOT NULL,   -- lưu giá lúc booking để tránh thay đổi giá sau này
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+);
