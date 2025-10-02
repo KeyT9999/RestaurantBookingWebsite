@@ -69,6 +69,9 @@ public class Booking {
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> payments;
     
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<BookingService> bookingServices;
+
     // Constructors
     public Booking() {
         this.createdAt = LocalDateTime.now();
@@ -177,6 +180,14 @@ public class Booking {
         this.payments = payments;
     }
     
+    public List<BookingService> getBookingServices() {
+        return bookingServices;
+    }
+
+    public void setBookingServices(List<BookingService> bookingServices) {
+        this.bookingServices = bookingServices;
+    }
+
     // Helper methods
     public boolean hasDeposit() {
         return depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) > 0;
