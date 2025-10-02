@@ -1,5 +1,6 @@
 package com.example.booking.domain;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -15,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -54,6 +56,10 @@ public class RestaurantTable {
     @Column(name = "status", nullable = false)
     private TableStatus status = TableStatus.AVAILABLE;
     
+    @Column(name = "depositamount", precision = 18, scale = 2, nullable = false)
+    @DecimalMin(value = "0.0", message = "Số tiền đặt cọc không được âm")
+    private BigDecimal depositAmount = BigDecimal.ZERO;
+
     @OneToMany(mappedBy = "table", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<BookingTable> bookingTables;
     
@@ -61,12 +67,13 @@ public class RestaurantTable {
     public RestaurantTable() {}
     
     public RestaurantTable(RestaurantProfile restaurant, String tableName, Integer capacity, 
-                          String tableImage, TableStatus status) {
+            String tableImage, TableStatus status, BigDecimal depositAmount) {
         this.restaurant = restaurant;
         this.tableName = tableName;
         this.capacity = capacity;
         this.tableImage = tableImage;
         this.status = status != null ? status : TableStatus.AVAILABLE;
+        this.depositAmount = depositAmount != null ? depositAmount : BigDecimal.ZERO;
     }
     
     // Getters and Setters
@@ -118,6 +125,14 @@ public class RestaurantTable {
         this.status = status;
     }
     
+    public BigDecimal getDepositAmount() {
+        return depositAmount;
+    }
+
+    public void setDepositAmount(BigDecimal depositAmount) {
+        this.depositAmount = depositAmount;
+    }
+
     public List<BookingTable> getBookingTables() {
         return bookingTables;
     }
