@@ -2,9 +2,11 @@ package com.example.booking.domain;
 
 public enum PaymentStatus {
     PENDING("Chờ thanh toán"),
+    PROCESSING("Đang xử lý"),
     COMPLETED("Hoàn thành"),
     FAILED("Thất bại"),
-    REFUNDED("Hoàn tiền");
+    REFUNDED("Hoàn tiền"),
+    CANCELLED("Đã hủy");
 
     private final String displayName;
 
