@@ -17,6 +17,8 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 
+import com.example.booking.common.enums.PaymentType;
+
 @Entity
 @Table(name = "payment")
 public class Payment {
@@ -53,6 +55,38 @@ public class Payment {
     
     @Column(name = "paid_at", nullable = false)
     private LocalDateTime paidAt;
+    
+    // MoMo specific fields
+    @Column(name = "momo_order_id")
+    private String momoOrderId;
+    
+    @Column(name = "momo_request_id")
+    private String momoRequestId;
+    
+    @Column(name = "momo_trans_id")
+    private String momoTransId;
+    
+    @Column(name = "momo_result_code")
+    private String momoResultCode;
+    
+    @Column(name = "momo_message")
+    private String momoMessage;
+    
+    @Column(name = "pay_url")
+    private String payUrl;
+    
+    @Column(name = "ipn_raw", columnDefinition = "jsonb")
+    private String ipnRaw;
+    
+    @Column(name = "redirect_raw", columnDefinition = "jsonb")
+    private String redirectRaw;
+    
+    @Column(name = "refunded_at")
+    private LocalDateTime refundedAt;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_type", nullable = false)
+    private PaymentType paymentType = PaymentType.DEPOSIT;
     
     // Constructors
     public Payment() {
@@ -133,5 +167,86 @@ public class Payment {
     
     public void setPaidAt(LocalDateTime paidAt) {
         this.paidAt = paidAt;
+    }
+    
+    // MoMo specific getters and setters
+    public String getMomoOrderId() {
+        return momoOrderId;
+    }
+    
+    public void setMomoOrderId(String momoOrderId) {
+        this.momoOrderId = momoOrderId;
+    }
+    
+    public String getMomoRequestId() {
+        return momoRequestId;
+    }
+    
+    public void setMomoRequestId(String momoRequestId) {
+        this.momoRequestId = momoRequestId;
+    }
+    
+    public String getMomoTransId() {
+        return momoTransId;
+    }
+    
+    public void setMomoTransId(String momoTransId) {
+        this.momoTransId = momoTransId;
+    }
+    
+    public String getMomoResultCode() {
+        return momoResultCode;
+    }
+    
+    public void setMomoResultCode(String momoResultCode) {
+        this.momoResultCode = momoResultCode;
+    }
+    
+    public String getMomoMessage() {
+        return momoMessage;
+    }
+    
+    public void setMomoMessage(String momoMessage) {
+        this.momoMessage = momoMessage;
+    }
+    
+    public String getPayUrl() {
+        return payUrl;
+    }
+    
+    public void setPayUrl(String payUrl) {
+        this.payUrl = payUrl;
+    }
+    
+    public String getIpnRaw() {
+        return ipnRaw;
+    }
+    
+    public void setIpnRaw(String ipnRaw) {
+        this.ipnRaw = ipnRaw;
+    }
+    
+    public String getRedirectRaw() {
+        return redirectRaw;
+    }
+    
+    public void setRedirectRaw(String redirectRaw) {
+        this.redirectRaw = redirectRaw;
+    }
+    
+    public LocalDateTime getRefundedAt() {
+        return refundedAt;
+    }
+    
+    public void setRefundedAt(LocalDateTime refundedAt) {
+        this.refundedAt = refundedAt;
+    }
+    
+    public PaymentType getPaymentType() {
+        return paymentType;
+    }
+    
+    public void setPaymentType(PaymentType paymentType) {
+        this.paymentType = paymentType;
     }
 }
