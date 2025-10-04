@@ -32,7 +32,7 @@ public class Voucher {
     @Column(name = "voucher_id")
     private Integer voucherId;
     
-    @Column(name = "code", nullable = false, unique = true)
+    @Column(name = "code", nullable = false, unique = true, columnDefinition = "citext")
     @NotBlank(message = "Mã voucher không được để trống")
     @Size(max = 50, message = "Mã voucher không được quá 50 ký tự")
     private String code;
