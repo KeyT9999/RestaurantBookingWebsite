@@ -2,6 +2,7 @@ package com.example.booking.web.controller;
 
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,10 +23,12 @@ import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantTable;
+import com.example.booking.domain.User;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.RestaurantService;
+import com.example.booking.service.SimpleUserService;
 
 import jakarta.validation.Valid;
 
@@ -34,9 +37,7 @@ import jakarta.validation.Valid;
 @PreAuthorize("!hasRole('RESTAURANT_OWNER')") // Block restaurant owners from public booking
 public class BookingController {
 
-    // @Autowired
-    // private BookingService bookingService; // TODO: Implement when BookingService is ready
-
+    @Autowired
     private BookingService bookingService;
 
     @Autowired
@@ -44,6 +45,9 @@ public class BookingController {
 
     @Autowired
     private RestaurantService restaurantService;
+
+    @Autowired
+    private SimpleUserService userService;
 
     /**
      * Show booking form - Only for customers and guests
@@ -56,6 +60,13 @@ public class BookingController {
         }
         
         List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
+        System.out.println("🔍 Found " + restaurants.size() + " restaurants");
+        restaurants.forEach(r -> System.out.println("   - " + r.getRestaurantId() + ": " + r.getRestaurantName()));
+
+        if (restaurants.isEmpty()) {
+            System.out.println("❌ NO RESTAURANTS FOUND! This could be the problem.");
+        }
+
         model.addAttribute("restaurants", restaurants);
         model.addAttribute("bookingForm", new BookingForm());
         model.addAttribute("tables", List.of()); // Empty initially
@@ -75,6 +86,11 @@ public class BookingController {
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
+            System.out.println("❌ Validation errors:");
+            bindingResult.getAllErrors().forEach(error -> {
+                System.out.println("   - " + error.getDefaultMessage());
+            });
+
             List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
             model.addAttribute("restaurants", restaurants);
 
@@ -90,14 +106,27 @@ public class BookingController {
         }
 
         try {
+            System.out.println("✅ Starting booking creation...");
+            System.out.println("   Form data: restaurantId=" + form.getRestaurantId() +
+                    ", tableId=" + form.getTableId() +
+                    ", guestCount=" + form.getGuestCount() +
+                    ", bookingTime=" + form.getBookingTime());
+
             UUID customerId = getCurrentCustomerId(authentication);
+            System.out.println("   Customer ID: " + customerId);
+
+            System.out.println("🔍 Calling bookingService.createBooking...");
             Booking booking = bookingService.createBooking(form, customerId);
+            System.out.println("✅ Booking created successfully! ID: " + booking.getBookingId());
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Booking created successfully! Booking ID: " + booking.getBookingId());
             return "redirect:/booking/my";
 
         } catch (Exception e) {
+            System.err.println("❌ Error creating booking: " + e.getMessage());
+            System.err.println("❌ Exception type: " + e.getClass().getName());
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Error creating booking: " + e.getMessage());
             return "redirect:/booking/new";
@@ -253,10 +282,64 @@ public class BookingController {
      * Helper method để lấy customer ID từ authentication
      */
     private UUID getCurrentCustomerId(Authentication authentication) {
+        System.out.println("🔍 getCurrentCustomerId called");
         String username = authentication.getName();
-        Customer customer = customerService.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
+        System.out.println("   Username: " + username);
+
+        // Tìm customer theo username
+        System.out.println("🔍 Looking for customer by username...");
+        Optional<Customer> customerOpt = customerService.findByUsername(username);
+
+        if (customerOpt.isPresent()) {
+            Customer customer = customerOpt.get();
+            System.out.println("✅ Customer found: " + customer.getCustomerId());
+            return customer.getCustomerId();
+        }
+
+        // Nếu chưa có Customer record, tạo mới
+        System.out.println("ℹ️ Customer not found, creating new customer...");
+        // Lấy User từ authentication - xử lý cả User và OAuth2User
+        User user = getUserFromAuthentication(authentication);
+        System.out.println("✅ User found: " + user.getUsername());
+
+        // Tạo Customer mới
+        System.out.println("🔍 Creating new customer...");
+        Customer customer = new Customer(user);
+        // updatedAt sẽ được set tự động bởi @PrePersist
+        System.out.println("🔍 Saving new customer...");
+        customer = customerService.save(customer);
+
+        System.out.println("✅ Created new Customer record for user: " + username);
         return customer.getCustomerId();
+    }
+
+    /**
+     * Helper method để lấy User từ authentication (xử lý cả User và OAuth2User)
+     */
+    private User getUserFromAuthentication(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+
+        // Nếu là User object trực tiếp (regular login)
+        if (principal instanceof User) {
+            return (User) principal;
+        }
+
+        // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email cho OAuth users
+
+            // Thử tìm User trực tiếp từ UserService
+            // Vì OAuth users có username = email, và UserService có thể tìm theo username
+            try {
+                User user = (User) userService.loadUserByUsername(username);
+                return user;
+            } catch (Exception e) {
+                throw new RuntimeException("User not found for OAuth username: " + username +
+                        ". Error: " + e.getMessage());
+            }
+        }
+
+        throw new RuntimeException("Unsupported authentication principal type: " + principal.getClass().getName());
     }
 
     /**

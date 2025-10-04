@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
@@ -74,7 +75,7 @@ public class Booking {
 
     // Constructors
     public Booking() {
-        this.createdAt = LocalDateTime.now();
+        // createdAt và updatedAt sẽ được set tự động bởi @PrePersist
     }
     
     public Booking(Customer customer, LocalDateTime bookingTime, Integer numberOfGuests,
@@ -86,6 +87,13 @@ public class Booking {
         this.depositAmount = depositAmount != null ? depositAmount : BigDecimal.ZERO;
     }
     
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
