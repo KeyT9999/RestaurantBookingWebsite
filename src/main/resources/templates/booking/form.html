@@ -16,6 +16,36 @@
     
     <!-- Custom Luxury CSS -->
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    
+    <style>
+        .table-card, .dish-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .table-card:hover, .dish-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .table-card.selected, .dish-card.selected {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        .form-check-input:checked + .form-check-label .card {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+        
+        .quantity-control {
+            margin-top: 10px;
+        }
+        
+        .modal-xl {
+            max-width: 90%;
+        }
+    </style>
 </head>
 
 <body>
@@ -36,7 +66,21 @@
                             <p class="text-muted">Create your perfect dining experience</p>
                         </div>
                         
-                        <form action="/booking" 
+                        <!-- Error Messages -->
+                        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle luxury-icon"></i>
+                            <span th:text="${errorMessage}"></span>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <!-- Success Messages -->
+                        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle luxury-icon"></i>
+                            <span th:text="${successMessage}"></span>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <form th:action="${bookingId != null ? '/booking/' + bookingId + '/update' : '/booking'}" 
                               method="post" 
                               th:object="${bookingForm}"
                               onsubmit="return validateForm()">
@@ -63,21 +107,24 @@
                             
                             <!-- Table Selection -->
                             <div class="mb-4">
-                                <label for="tableId" class="form-label">
-                                    <i class="fas fa-chair luxury-icon"></i> Table (Optional)
+                                <label class="form-label">
+                                    <i class="fas fa-chair luxury-icon"></i> Tables (Optional)
                                 </label>
-                                <select class="form-control" 
-                                        id="tableId" 
-                                        name="tableId" 
-                                        th:field="*{tableId}">
-                                    <option value="">-- No specific table preference --</option>
-                                    <option th:each="table : ${tables}" 
-                                            th:value="${table.tableId}" 
-                                            th:text="${table.tableName + ' (Capacity: ' + table.capacity + ')'}"></option>
-                                </select>
+                                <div class="d-flex gap-2">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary" 
+                                            id="viewTablesBtn"
+                                            onclick="openTablePopup()"
+                                            disabled>
+                                        <i class="fas fa-eye"></i> View Tables
+                                    </button>
+                                    <span id="selectedTablesCount" class="text-muted small align-self-center">No tables selected</span>
+                                </div>
                                 <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Leave empty if you don't have a table preference
+                                    Click to view and select multiple tables
                                 </small>
+                                <!-- Hidden input to store selected table ID -->
+                                <input type="hidden" id="selectedTableId" name="tableId" th:field="*{tableId}" value="">
                             </div>
                             
                             <div class="row">
@@ -117,24 +164,87 @@
                                 </div>
                             </div>
                             
-                            <!-- Deposit Amount -->
-                            <div class="mb-4">
-                                <label for="depositAmount" class="form-label">
-                                    <i class="fas fa-credit-card luxury-icon"></i> Deposit Amount (VNĐ)
+                            <!-- Dishes Selection -->
+                            <div class="mb-4" id="dishesSection">
+                                <label class="form-label">
+                                    <i class="fas fa-utensils luxury-icon"></i> Menu Items
                                 </label>
-                                <input type="number" 
-                                       class="form-control" 
+                                <div class="d-flex gap-2">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary" 
+                                            id="viewMenuBtn"
+                                            onclick="openMenuPopup()"
+                                            disabled>
+                                        <i class="fas fa-eye"></i> View Menu
+                                    </button>
+                                    <span id="selectedDishesCount" class="text-muted small align-self-center">No items selected</span>
+                                </div>
+                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
+                                    Click to view and select multiple menu items
+                                </small>
+                                <!-- Hidden input to store selected dish IDs -->
+                                <input type="hidden" id="selectedDishIds" name="dishIds" th:field="*{dishIds}" value="">
+                            </div>
+
+                            <!-- Services Selection -->
+                            <div class="mb-4" id="servicesSection" style="display: none;">
+                                <label for="serviceIds" class="form-label">
+                                    <i class="fas fa-concierge-bell luxury-icon"></i> Additional Services
+                                </label>
+                                <select class="form-control" 
+                                        id="serviceIds" 
+                                        name="serviceIds"
+                                        th:field="*{serviceIds}"
+                                        multiple
+                                        onchange="updateTotalAmount()">
+                                    <!-- Services will be loaded here -->
+                                </select>
+                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
+                                    Hold Ctrl/Cmd to select multiple services
+                                </small>
+                            </div>
+
+                            <!-- Total Amount Display -->
+                            <div class="mb-4">
+                                <div class="luxury-card bg-light">
+                                    <div class="row">
+                                        <div class="col-md-1212">
+                                            <h6 class="mb-2">
+                                                <i class="fas fa-calculator luxury-icon"></i> Booking Summary
+                                            </h6>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Table Deposit:</span>
+                                                <span id="tableDepositAmount">0 VNĐ</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Dishes Total:</span>
+                                                <span id="dishesTotalAmount">0 VNĐ</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Services Total:</span>
+                                                <span id="servicesTotalAmount">0 VNĐ</span>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex justify-content-between">
+                                                <strong>Total Deposit:</strong>
+                                                <strong id="totalDepositAmount" style="color: var(--luxury-gold);">0 VNĐ</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-1212">
+                                            <div class="text-center">
+                                                <i class="fas fa-info-circle luxury-icon text-info"></i>
+                                                <p class="small text-muted mb-0 mt-2">
+                                                    This amount will be charged as deposit for your reservation
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Hidden input to store the calculated deposit amount -->
+                                <input type="hidden" 
                                        id="depositAmount" 
                                        name="depositAmount"
-                                       th:field="*{depositAmount}"
-                                       th:classappend="${#fields.hasErrors('depositAmount')} ? 'is-invalid' : ''"
-                                       min="0" step="1000" 
-                                       placeholder="0">
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('depositAmount')}" 
-                                     th:errors="*{depositAmount}"></div>
-                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Leave empty or enter 0 for no deposit
-                                </small>
+                                       th:field="*{depositAmount}">
                             </div>
                             
                             <!-- Special Requests -->
@@ -174,6 +284,52 @@
         </div>
     </main>
     
+    <!-- Table Selection Modal -->
+    <div class="modal fade" id="tableModal" tabindex="-1" aria-labelledby="tableModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tableModalLabel">
+                        <i class="fas fa-chair"></i> Select Tables
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="tablesList" class="row">
+                        <!-- Tables will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmTableSelection()">Confirm Selection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Selection Modal -->
+    <div class="modal fade" id="menuModal" tabindex="-1" aria-labelledby="menuModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="menuModalLabel">
+                        <i class="fas fa-utensils"></i> Select Menu Items
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="menuList" class="row">
+                        <!-- Menu items will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmMenuSelection()">Confirm Selection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Footer Fragment -->
     <div th:insert="~{fragments/footer :: site-footer}"></div>
     
@@ -184,33 +340,335 @@
     <script th:src="@{/js/main.js}" defer></script>
     
     <script>
-        function loadTables() {
-            const restaurantId = document.getElementById('restaurantId').value;
-            const tableSelect = document.getElementById('tableId');
-            // Clear existing options
-            tableSelect.innerHTML = '<option value="">-- No specific table preference --</option>';
-            if (restaurantId) {
-                fetch(`/booking/api/restaurants/${restaurantId}/tables`)
-                    .then(response => response.text())
-                    .then(html => {
-                        // Parse the HTML response to extract table data
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const options = doc.querySelectorAll('option');
-                        
-                        options.forEach(option => {
-                            if (option.value) {
-                                const newOption = document.createElement('option');
-                                newOption.value = option.value;
-                                newOption.textContent = option.textContent;
-                                tableSelect.appendChild(newOption);
-                            }
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error loading tables:', error);
+        // Global variables to store selections
+        let selectedTables = [];
+        let selectedDishes = [];
+        let availableTables = [];
+        let availableDishes = [];
+
+           function loadTables() {
+               const restaurantId = document.getElementById('restaurantId').value;
+               const viewTablesBtn = document.getElementById('viewTablesBtn');
+               
+               console.log('🔍 Loading tables for restaurant ID:', restaurantId);
+               
+               if (restaurantId) {
+                   viewTablesBtn.disabled = false;
+                   fetch(`/api/booking/restaurants/${restaurantId}/tables`)
+                       .then(response => {
+                           console.log('📡 API Response status:', response.status);
+                           if (!response.ok) {
+                               throw new Error(`HTTP error! status: ${response.status}`);
+                           }
+                           return response.json();
+                       })
+                       .then(tables => {
+                           console.log('📋 Received tables:', tables);
+                           availableTables = tables;
+                           
+                           if (tables.length === 0) {
+                               console.log('⚠️ No tables found for restaurant ID:', restaurantId);
+                           }
+                           
+                           // Load dishes and services for this restaurant
+                           loadDishes(restaurantId);
+                           loadServices(restaurantId);
+                       })
+                       .catch(error => {
+                           console.error('❌ Error loading tables:', error);
+                           availableTables = [];
+                           // Still try to load dishes and services
+                           loadDishes(restaurantId);
+                           loadServices(restaurantId);
+                       });
+               } else {
+                   viewTablesBtn.disabled = true;
+                   document.getElementById('servicesSection').style.display = 'none';
+                   // Reset menu button when no restaurant selected
+                   const viewMenuBtn = document.getElementById('viewMenuBtn');
+                   viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu';
+                   viewMenuBtn.disabled = true;
+                   updateTotalAmount();
+               }
+           }
+
+        function loadDishes(restaurantId) {
+            fetch(`/api/booking/restaurants/${restaurantId}/dishes`)
+                .then(response => response.json())
+                .then(dishes => {
+                    availableDishes = dishes;
+                    
+                    // Update button text based on dishes availability
+                    const viewMenuBtn = document.getElementById('viewMenuBtn');
+                    if (dishes.length === 0) {
+                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu (No items available)';
+                        viewMenuBtn.disabled = true;
+                    } else {
+                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu';
+                        viewMenuBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading dishes:', error);
+                    const viewMenuBtn = document.getElementById('viewMenuBtn');
+                    viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu (Error loading)';
+                    viewMenuBtn.disabled = true;
+                });
+        }
+
+        function loadServices(restaurantId) {
+            fetch(`/api/booking/restaurants/${restaurantId}/services`)
+                .then(response => response.json())
+                .then(services => {
+                    const servicesSelect = document.getElementById('serviceIds');
+                    servicesSelect.innerHTML = '';
+                    
+                    if (services.length === 0) {
+                        document.getElementById('servicesSection').style.display = 'none';
+                        return;
+                    }
+                    
+                    document.getElementById('servicesSection').style.display = 'block';
+                    
+                    services.forEach(service => {
+                        const option = document.createElement('option');
+                        option.value = service.serviceId;
+                        option.textContent = `${service.name} - ${formatCurrency(service.price)}`;
+                        option.setAttribute('data-price', service.price);
+                        servicesSelect.appendChild(option);
                     });
+                })
+                .catch(error => {
+                    console.error('Error loading services:', error);
+                });
+        }
+
+        function openTablePopup() {
+            const tablesList = document.getElementById('tablesList');
+            tablesList.innerHTML = '';
+            
+            availableTables.forEach(table => {
+                const tableCard = document.createElement('div');
+                tableCard.className = 'col-md-4 mb-3';
+                tableCard.innerHTML = `
+                    <div class="card table-card" data-table-id="${table.tableId}" data-deposit="${table.depositAmount || 0}">
+                        <div class="card-body">
+                            <div class="form-check">
+                                <input class="form-check-input table-checkbox" 
+                                       type="checkbox" 
+                                       value="${table.tableId}"
+                                       id="table-${table.tableId}">
+                                <label class="form-check-label w-100" for="table-${table.tableId}">
+                                    <h6 class="card-title">${table.tableName}</h6>
+                                    <p class="card-text">
+                                        <small class="text-muted">Capacity: ${table.capacity} people</small><br>
+                                        <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
+                                    </p>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                tablesList.appendChild(tableCard);
+            });
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('tableModal'));
+            modal.show();
+        }
+
+        function openMenuPopup() {
+            const menuList = document.getElementById('menuList');
+            menuList.innerHTML = '';
+            
+            if (availableDishes.length === 0) {
+                menuList.innerHTML = `
+                    <div class="col-12 text-center">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            No menu items available for this restaurant.
+                        </div>
+                    </div>
+                `;
+            } else {
+                availableDishes.forEach(dish => {
+                    const dishCard = document.createElement('div');
+                    dishCard.className = 'col-md-6 mb-3';
+                    dishCard.innerHTML = `
+                        <div class="card dish-card" data-dish-id="${dish.dishId}" data-price="${dish.price}">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input dish-checkbox" 
+                                           type="checkbox" 
+                                           value="${dish.dishId}"
+                                           id="dish-${dish.dishId}">
+                                    <label class="form-check-label w-100" for="dish-${dish.dishId}">
+                                        <h6 class="card-title">${dish.name}</h6>
+                                        <p class="card-text">
+                                            <small class="text-muted">${dish.description || 'No description'}</small><br>
+                                            <strong class="text-primary">${formatCurrency(dish.price)}</strong>
+                                        </p>
+                                        <div class="quantity-control" style="display: none;">
+                                            <label class="form-label small">Quantity:</label>
+                                            <input type="number" 
+                                                   class="form-control form-control-sm" 
+                                                   min="1" 
+                                                   max="10" 
+                                                   value="1" 
+                                                   style="width: 80px;">
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    menuList.appendChild(dishCard);
+                });
             }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('menuModal'));
+            modal.show();
+            
+            // Add event listeners for dish checkboxes in modal
+            setTimeout(() => {
+                const dishCheckboxes = document.querySelectorAll('#menuModal .dish-checkbox');
+                dishCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        const quantityControl = this.parentElement.querySelector('.quantity-control');
+                        if (quantityControl) {
+                            quantityControl.style.display = this.checked ? 'block' : 'none';
+                        }
+                    });
+                });
+            }, 100);
+        }
+
+        function confirmTableSelection() {
+            const checkboxes = document.querySelectorAll('.table-checkbox:checked');
+            selectedTables = [];
+            
+            checkboxes.forEach(checkbox => {
+                const tableCard = checkbox.closest('.table-card');
+                const tableId = tableCard.getAttribute('data-table-id');
+                const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
+                const tableName = tableCard.querySelector('.card-title').textContent;
+                
+                selectedTables.push({
+                    id: tableId,
+                    name: tableName,
+                    deposit: deposit
+                });
+            });
+            
+            // Update UI
+            updateTableSelectionUI();
+            updateTotalAmount();
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('tableModal'));
+            modal.hide();
+        }
+
+        function confirmMenuSelection() {
+            const checkboxes = document.querySelectorAll('.dish-checkbox:checked');
+            selectedDishes = [];
+            
+            checkboxes.forEach(checkbox => {
+                const dishCard = checkbox.closest('.dish-card');
+                const dishId = dishCard.getAttribute('data-dish-id');
+                const price = parseFloat(dishCard.getAttribute('data-price'));
+                const dishName = dishCard.querySelector('.card-title').textContent;
+                const quantityInput = dishCard.querySelector('.quantity-control input');
+                const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+                
+                selectedDishes.push({
+                    id: dishId,
+                    name: dishName,
+                    price: price,
+                    quantity: quantity
+                });
+            });
+            
+            // Update UI
+            updateMenuSelectionUI();
+            updateTotalAmount();
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('menuModal'));
+            modal.hide();
+        }
+
+        function updateTableSelectionUI() {
+            const countSpan = document.getElementById('selectedTablesCount');
+            const hiddenInput = document.getElementById('selectedTableId');
+            
+            if (selectedTables.length === 0) {
+                countSpan.textContent = 'No tables selected';
+                hiddenInput.value = '';
+            } else {
+                // Only allow one table selection
+                if (selectedTables.length > 1) {
+                    selectedTables = [selectedTables[0]]; // Keep only the first one
+                }
+                countSpan.textContent = `${selectedTables.length} table(s) selected`;
+                hiddenInput.value = selectedTables[0].id;
+            }
+        }
+
+        function updateMenuSelectionUI() {
+            const countSpan = document.getElementById('selectedDishesCount');
+            const hiddenInput = document.getElementById('selectedDishIds');
+            
+            if (selectedDishes.length === 0) {
+                countSpan.textContent = 'No items selected';
+                hiddenInput.value = '';
+            } else {
+                countSpan.textContent = `${selectedDishes.length} item(s) selected`;
+                hiddenInput.value = selectedDishes.map(d => `${d.id}:${d.quantity}`).join(',');
+            }
+        }
+
+        function updateTotalAmount() {
+            let tableDeposit = 0;
+            let dishesTotal = 0;
+            let servicesTotal = 0;
+
+            // Calculate table deposit
+            selectedTables.forEach(table => {
+                tableDeposit += table.deposit;
+            });
+
+            // Calculate dishes total
+            selectedDishes.forEach(dish => {
+                dishesTotal += dish.price * dish.quantity;
+            });
+
+            // Calculate services total
+            const serviceSelect = document.getElementById('serviceIds');
+            const selectedServices = Array.from(serviceSelect.selectedOptions);
+            selectedServices.forEach(option => {
+                const price = parseFloat(option.getAttribute('data-price')) || 0;
+                servicesTotal += price;
+            });
+
+            // Update display
+            document.getElementById('tableDepositAmount').textContent = formatCurrency(tableDeposit);
+            document.getElementById('dishesTotalAmount').textContent = formatCurrency(dishesTotal);
+            document.getElementById('servicesTotalAmount').textContent = formatCurrency(servicesTotal);
+            
+            const totalAmount = tableDeposit + dishesTotal + servicesTotal;
+            document.getElementById('totalDepositAmount').textContent = formatCurrency(totalAmount);
+            
+            // Update hidden input
+            document.getElementById('depositAmount').value = totalAmount;
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
         }
         
         // Form validation before submit
@@ -236,10 +694,27 @@
             now.setMinutes(now.getMinutes() + 30);
             const minDateTime = now.toISOString().slice(0, 16);
             const bookingTimeInput = document.getElementById('bookingTime');            
+            
             // Load tables if restaurant is already selected (edit mode)
             if (document.getElementById('restaurantId').value) {
                 loadTables();
             }
+            
+            // Add change listener for restaurant selection
+            document.getElementById('restaurantId').addEventListener('change', loadTables);
+            
+            // Initialize total amount calculation
+            updateTotalAmount();
+            
+            // Add event listeners for dish checkboxes to show/hide quantity controls
+            document.addEventListener('change', function(e) {
+                if (e.target.classList.contains('dish-checkbox')) {
+                    const quantityControl = e.target.parentElement.querySelector('.quantity-control');
+                    if (quantityControl) {
+                        quantityControl.style.display = e.target.checked ? 'block' : 'none';
+                    }
+                }
+            });
         });
     </script>
 </body>
