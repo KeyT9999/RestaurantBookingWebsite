@@ -20,7 +20,7 @@
 
 <body>
     <!-- Header Fragment -->
-    <div th:insert="fragments/header :: site-header"></div>
+    <div th:insert="~{fragments/header :: site-header}"></div>
     
     <!-- Main Content -->
     <main class="main-content">
@@ -36,9 +36,10 @@
                             <p class="text-muted">Create your perfect dining experience</p>
                         </div>
                         
-                        <form th:action="${bookingId != null ? '/booking/' + bookingId : '/booking'}" 
+                        <form action="/booking" 
                               method="post" 
-                              th:object="${bookingForm}">
+                              th:object="${bookingForm}"
+                              onsubmit="return validateForm()">
                             
                             <!-- Restaurant Selection -->
                             <div class="mb-4">
@@ -53,8 +54,8 @@
                                         onchange="loadTables()">
                                     <option value="">-- Select Restaurant --</option>
                                     <option th:each="restaurant : ${restaurants}" 
-                                            th:value="${restaurant.id}" 
-                                            th:text="${restaurant.name}"></option>
+                                            th:value="${restaurant.restaurantId}" 
+                                            th:text="${restaurant.restaurantName}"></option>
                                 </select>
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('restaurantId')}" 
                                      th:errors="*{restaurantId}"></div>
@@ -71,8 +72,8 @@
                                         th:field="*{tableId}">
                                     <option value="">-- No specific table preference --</option>
                                     <option th:each="table : ${tables}" 
-                                            th:value="${table.id}" 
-                                            th:text="${table.name + ' (Capacity: ' + table.capacity + ')'}"></option>
+                                            th:value="${table.tableId}" 
+                                            th:text="${table.tableName + ' (Capacity: ' + table.capacity + ')'}"></option>
                                 </select>
                                 <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
                                     Leave empty if you don't have a table preference
@@ -174,7 +175,7 @@
     </main>
     
     <!-- Footer Fragment -->
-    <div th:insert="fragments/footer :: site-footer"></div>
+    <div th:insert="~{fragments/footer :: site-footer}"></div>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -186,19 +187,24 @@
         function loadTables() {
             const restaurantId = document.getElementById('restaurantId').value;
             const tableSelect = document.getElementById('tableId');
-            
             // Clear existing options
             tableSelect.innerHTML = '<option value="">-- No specific table preference --</option>';
-            
             if (restaurantId) {
                 fetch(`/booking/api/restaurants/${restaurantId}/tables`)
-                    .then(response => response.json())
-                    .then(tables => {
-                        tables.forEach(table => {
-                            const option = document.createElement('option');
-                            option.value = table.id;
-                            option.textContent = `${table.name} (Capacity: ${table.capacity})`;
-                            tableSelect.appendChild(option);
+                    .then(response => response.text())
+                    .then(html => {
+                        // Parse the HTML response to extract table data
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const options = doc.querySelectorAll('option');
+                        
+                        options.forEach(option => {
+                            if (option.value) {
+                                const newOption = document.createElement('option');
+                                newOption.value = option.value;
+                                newOption.textContent = option.textContent;
+                                tableSelect.appendChild(newOption);
+                            }
                         });
                     })
                     .catch(error => {
@@ -207,13 +213,29 @@
             }
         }
         
+        // Form validation before submit
+        function validateForm() {
+            // Check if form elements exist
+            const restaurantSelect = document.getElementById('restaurantId');
+            const guestCountInput = document.getElementById('guestCount');
+            const bookingTimeInput = document.getElementById('bookingTime');
+            const restaurantId = restaurantSelect.value;
+            const guestCount = guestCountInput.value;
+            const bookingTime = bookingTimeInput.value;
+            // Check if booking time is at least 30 minutes from now and not too far in future
+            const now = new Date();
+            const bookingDateTime = new Date(bookingTime);
+            const minTime = new Date(now.getTime() + 30 * 60000); // 30 minutes
+            const maxTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+            return true;
+        }
+        
         // Set minimum datetime to now + 30 minutes
         document.addEventListener('DOMContentLoaded', function() {
             const now = new Date();
             now.setMinutes(now.getMinutes() + 30);
             const minDateTime = now.toISOString().slice(0, 16);
-            document.getElementById('bookingTime').min = minDateTime;
-            
+            const bookingTimeInput = document.getElementById('bookingTime');            
             // Load tables if restaurant is already selected (edit mode)
             if (document.getElementById('restaurantId').value) {
                 loadTables();
