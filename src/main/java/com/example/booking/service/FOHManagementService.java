@@ -22,11 +22,14 @@ public class FOHManagementService {
     
     private final BookingRepository bookingRepository;
     private final DiningTableRepository diningTableRepository;
+    private final WaitlistService waitlistService;
     
     public FOHManagementService(BookingRepository bookingRepository, 
-                              DiningTableRepository diningTableRepository) {
+            DiningTableRepository diningTableRepository,
+            WaitlistService waitlistService) {
         this.bookingRepository = bookingRepository;
         this.diningTableRepository = diningTableRepository;
+        this.waitlistService = waitlistService;
     }
     
     /**
@@ -66,23 +69,35 @@ public class FOHManagementService {
      * Get waitlist entries
      */
     public List<Waitlist> getWaitlistEntries(Integer restaurantId) {
-        // TODO: Implement when WaitlistRepository is available
-        return List.of();
+        return waitlistService.getAllWaitlistByRestaurant(restaurantId);
     }
     
     /**
      * Add customer to waitlist
      */
-    public Waitlist addToWaitlist(String customerName, String phone, Integer partySize, String notes) {
-        // TODO: Implement waitlist creation logic
-        return new Waitlist();
+    public Waitlist addToWaitlist(Integer restaurantId, Integer partySize, java.util.UUID customerId) {
+        return waitlistService.addToWaitlist(restaurantId, partySize, customerId);
     }
     
     /**
      * Remove customer from waitlist
      */
     public void removeFromWaitlist(Integer waitlistId) {
-        // TODO: Implement waitlist removal logic
+        waitlistService.cancelWaitlist(waitlistId);
+    }
+
+    /**
+     * Call next customer from waitlist
+     */
+    public Waitlist callNextFromWaitlist(Integer restaurantId) {
+        return waitlistService.callNextFromWaitlist(restaurantId);
+    }
+
+    /**
+     * Seat customer from waitlist
+     */
+    public Waitlist seatCustomer(Integer waitlistId, Integer tableId) {
+        return waitlistService.seatCustomer(waitlistId, tableId);
     }
     
     /**

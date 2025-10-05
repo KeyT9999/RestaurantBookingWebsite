@@ -48,7 +48,7 @@ public class BookingDish {
         this.quantity = quantity != null ? quantity : 1;
         this.price = price;
     }
-    
+
     // Getters and Setters
     public Integer getBookingDishId() {
         return bookingDishId;

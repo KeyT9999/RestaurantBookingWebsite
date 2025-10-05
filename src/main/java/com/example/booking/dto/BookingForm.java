@@ -27,6 +27,10 @@ public class BookingForm {
     @Size(max = 500, message = "Ghi chú không được vượt quá 500 ký tự")
     private String note;
     
+    private String dishIds; // Format: "dishId1:quantity1,dishId2:quantity2"
+
+    private String serviceIds; // Comma-separated service IDs
+
     // Constructors
     public BookingForm() {}
     
@@ -87,5 +91,21 @@ public class BookingForm {
     
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public String getDishIds() {
+        return dishIds;
+    }
+
+    public void setDishIds(String dishIds) {
+        this.dishIds = dishIds;
+    }
+
+    public String getServiceIds() {
+        return serviceIds;
+    }
+
+    public void setServiceIds(String serviceIds) {
+        this.serviceIds = serviceIds;
     }
 } 
