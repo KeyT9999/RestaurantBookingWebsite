@@ -3,6 +3,7 @@ package com.example.booking.service.impl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -130,11 +131,13 @@ public class VoucherServiceImpl implements VoucherService {
             }
 
             // Check per-customer usage limit
-            Long customerUsage = redemptionRepository.countByVoucherIdAndCustomerIdForUpdate(
-                voucher.getVoucherId(), req.customerId()
-            );
-            if (customerUsage >= voucher.getPerCustomerLimit()) {
-                return new ApplyResult(false, "PER_CUSTOMER_LIMIT_REACHED", null, null);
+            if (voucher.getPerCustomerLimit() != null) {
+                Long customerUsage = redemptionRepository.countByVoucherIdAndCustomerIdForUpdate(
+                    voucher.getVoucherId(), req.customerId()
+                );
+                if (customerUsage >= voucher.getPerCustomerLimit()) {
+                    return new ApplyResult(false, "PER_CUSTOMER_LIMIT_REACHED", null, null);
+                }
             }
 
             // Check if assigned voucher
@@ -270,6 +273,70 @@ public class VoucherServiceImpl implements VoucherService {
     public List<Voucher> getAllVouchers() {
         return voucherRepository.findAll();
     }
+
+    @Override
+    @Transactional
+    public void assignVoucherToCustomers(Integer voucherId, List<UUID> customerIds) {
+        Voucher voucher = voucherRepository.findById(voucherId)
+            .orElseThrow(() -> new RuntimeException("Voucher not found with ID: " + voucherId));
+        
+        for (UUID customerId : customerIds) {
+            // Check if already assigned
+            Optional<CustomerVoucher> existing = customerVoucherRepository
+                .findByCustomerIdAndVoucherIdForUpdate(customerId, voucherId);
+            
+            if (existing.isEmpty()) {
+                // Create new assignment
+                CustomerVoucher customerVoucher = new CustomerVoucher();
+                customerVoucher.setCustomer(customerRepository.findById(customerId)
+                    .orElseThrow(() -> new RuntimeException("Customer not found")));
+                customerVoucher.setVoucher(voucher);
+                customerVoucher.setTimesUsed(0);
+                customerVoucher.setLastUsedAt(null);
+                
+                customerVoucherRepository.save(customerVoucher);
+            }
+        }
+    }
+
+    @Override
+    public Long countRedemptionsByVoucherId(Integer voucherId) {
+        return redemptionRepository.countByVoucherId(voucherId);
+    }
+
+    @Override
+    public Long countRedemptionsByVoucherIdAndCustomerId(Integer voucherId, UUID customerId) {
+        return redemptionRepository.countByVoucherIdAndCustomerId(voucherId, customerId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Voucher> getVouchersByCustomer(UUID customerId) {
+        // Get vouchers assigned to this customer
+        List<CustomerVoucher> customerVouchers = customerVoucherRepository.findByCustomerId(customerId);
+        
+        // Get global vouchers (not assigned to specific customers)
+        List<Voucher> globalVouchers = voucherRepository.findGlobalVouchers();
+        
+        // Combine both lists
+        List<Voucher> allVouchers = new ArrayList<>();
+        
+        // Add assigned vouchers
+        for (CustomerVoucher cv : customerVouchers) {
+            if (cv.getVoucher().getStatus() == VoucherStatus.ACTIVE) {
+                allVouchers.add(cv.getVoucher());
+            }
+        }
+        
+        // Add global vouchers
+        for (Voucher voucher : globalVouchers) {
+            if (voucher.getStatus() == VoucherStatus.ACTIVE) {
+                allVouchers.add(voucher);
+            }
+        }
+        
+        return allVouchers;
+    }
     
     @Override
     public Voucher getVoucherById(Integer voucherId) {
@@ -336,27 +403,6 @@ public class VoucherServiceImpl implements VoucherService {
             .orElseThrow(() -> new RuntimeException("Voucher not found"));
         voucher.setStatus(VoucherStatus.EXPIRED);
         voucherRepository.save(voucher);
-    }
-
-    @Override
-    @Transactional
-    public void assignVoucherToCustomers(Integer voucherId, List<UUID> customerIds) {
-        Voucher voucher = voucherRepository.findById(voucherId)
-            .orElseThrow(() -> new RuntimeException("Voucher not found"));
-
-        for (UUID customerId : customerIds) {
-            Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
-
-            // Check if already assigned
-            Optional<CustomerVoucher> existing = customerVoucherRepository
-                .findByCustomerAndVoucher(customer, voucher);
-            
-            if (existing.isEmpty()) {
-                CustomerVoucher customerVoucher = new CustomerVoucher(customer, voucher);
-                customerVoucherRepository.save(customerVoucher);
-            }
-        }
     }
 
     @Override

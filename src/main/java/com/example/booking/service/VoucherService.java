@@ -48,7 +48,12 @@ public interface VoucherService {
     
     // Customer assignment methods
     void assignVoucherToCustomers(Integer voucherId, List<UUID> customerIds);
+    
+    Long countRedemptionsByVoucherId(Integer voucherId);
+    
+    Long countRedemptionsByVoucherIdAndCustomerId(Integer voucherId, UUID customerId);
     void revokeVoucherFromCustomer(Integer voucherId, UUID customerId);
+    List<Voucher> getVouchersByCustomer(UUID customerId);
     
     // Status management
     void activateScheduledVouchers();

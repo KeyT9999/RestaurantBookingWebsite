@@ -59,9 +59,9 @@ public class Voucher {
     @Column(name = "global_usage_limit")
     private Integer globalUsageLimit;
     
-    @Column(name = "per_customer_limit", nullable = false)
+    @Column(name = "per_customer_limit")
     @Min(value = 1, message = "Giới hạn sử dụng mỗi khách tối thiểu là 1")
-    private Integer perCustomerLimit = 1;
+    private Integer perCustomerLimit;
     
     @Column(name = "min_order_amount", precision = 18, scale = 2)
     private BigDecimal minOrderAmount;

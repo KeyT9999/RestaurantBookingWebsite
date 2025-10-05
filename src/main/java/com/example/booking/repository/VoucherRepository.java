@@ -35,6 +35,9 @@ public interface VoucherRepository extends JpaRepository<Voucher, Integer> {
     
     List<Voucher> findByRestaurantIsNull();
     
+    @Query("SELECT v FROM Voucher v WHERE v.restaurant IS NULL AND v.status = 'ACTIVE'")
+    List<Voucher> findGlobalVouchers();
+    
     @Query("SELECT v FROM Voucher v WHERE v.status = :status AND " +
            "(:restaurantId IS NULL AND v.restaurant IS NULL) OR " +
            "(:restaurantId IS NOT NULL AND v.restaurant.restaurantId = :restaurantId)")

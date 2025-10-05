@@ -118,9 +118,15 @@
                                 <div class="col-6">
                                     <small class="text-muted">Usage</small>
                                     <div>
-                                        <span th:if="${voucher.globalUsageLimit != null}"
-                                              th:text="${voucher.globalUsageLimit}">100</span>
-                                        <span th:if="${voucher.globalUsageLimit == null}">Unlimited</span>
+                                        <span th:if="${voucher.globalUsageLimit != null}">
+                                            <span th:text="${voucherUsageMap[voucher.voucherId]}">0</span>/<span th:text="${voucher.globalUsageLimit}">100</span>
+                                            <small class="text-muted">
+                                                (<span th:text="${#numbers.formatDecimal((voucherUsageMap[voucher.voucherId] / voucher.globalUsageLimit) * 100, 1, 1)}">0.0</span>%)
+                                            </small>
+                                        </span>
+                                        <span th:if="${voucher.globalUsageLimit == null}">
+                                            <span th:text="${voucherUsageMap[voucher.voucherId]}">0</span> uses
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -219,9 +225,15 @@
                                 <div class="col-6">
                                     <small class="text-muted">Usage</small>
                                     <div>
-                                        <span th:if="${voucher.globalUsageLimit != null}"
-                                              th:text="${voucher.globalUsageLimit}">100</span>
-                                        <span th:if="${voucher.globalUsageLimit == null}">Unlimited</span>
+                                        <span th:if="${voucher.globalUsageLimit != null}">
+                                            <span th:text="${voucherUsageMap[voucher.voucherId]}">0</span>/<span th:text="${voucher.globalUsageLimit}">100</span>
+                                            <small class="text-muted">
+                                                (<span th:text="${#numbers.formatDecimal((voucherUsageMap[voucher.voucherId] / voucher.globalUsageLimit) * 100, 1, 1)}">0.0</span>%)
+                                            </small>
+                                        </span>
+                                        <span th:if="${voucher.globalUsageLimit == null}">
+                                            <span th:text="${voucherUsageMap[voucher.voucherId]}">0</span> uses
+                                        </span>
                                     </div>
                                 </div>
                             </div>
