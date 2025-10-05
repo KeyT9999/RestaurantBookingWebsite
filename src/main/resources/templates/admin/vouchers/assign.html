@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assign Voucher - Admin Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Admin CSS -->
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="fragments/header :: site-header"></div>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container mt-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-user-plus me-2"></i>
+                                Assign Voucher to Customers
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <!-- Voucher Info -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h6 class="alert-heading">
+                                            <i class="fas fa-info-circle me-2"></i>Voucher Information
+                                        </h6>
+                                        <p class="mb-0">
+                                            <strong>Voucher ID:</strong> <span th:text="${voucherId}">123</span>
+                                        </p>
+                                        <small class="text-muted">
+                                            Select customers below to assign this voucher to them. 
+                                            Each customer will be able to use this voucher according to its per-customer limit.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <form th:action="@{/admin/vouchers/{id}/assign(id=${voucherId})}" 
+                                  method="post" 
+                                  th:object="${assignForm}">
+                                
+                                <input type="hidden" th:field="*{voucherId}">
+                                
+                                <!-- Search and Filter -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label for="searchCustomer" class="form-label">Search Customers</label>
+                                                        <input type="text" 
+                                                               class="form-control" 
+                                                               id="searchCustomer" 
+                                                               placeholder="Search by name, email, or phone"
+                                                               onkeyup="filterCustomers()">
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label for="selectAll" class="form-label">Bulk Actions</label>
+                                                        <div class="d-grid">
+                                                            <button type="button" 
+                                                                    class="btn btn-outline-primary btn-sm" 
+                                                                    onclick="selectAllCustomers()">
+                                                                <i class="fas fa-check-square me-1"></i>Select All
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label for="clearSelection" class="form-label">&nbsp;</label>
+                                                        <div class="d-grid">
+                                                            <button type="button" 
+                                                                    class="btn btn-outline-secondary btn-sm" 
+                                                                    onclick="clearSelection()">
+                                                                <i class="fas fa-square me-1"></i>Clear All
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Customer List -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="fas fa-users me-2"></i>
+                                                    Select Customers
+                                                    <span class="badge bg-primary ms-2" id="selectedCount">0</span>
+                                                </h6>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                                    <table class="table table-hover mb-0">
+                                                        <thead class="table-light sticky-top">
+                                                            <tr>
+                                                                <th width="50">
+                                                                    <input type="checkbox" 
+                                                                           id="selectAllCheckbox" 
+                                                                           onchange="toggleAllCustomers()">
+                                                                </th>
+                                                                <th>Name</th>
+                                                                <th>Email</th>
+                                                                <th>Phone</th>
+                                                                <th>Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="customerTableBody">
+                                                            <tr th:each="customer : ${customers}" class="customer-row">
+                                                                <td>
+                                                                    <input type="checkbox" 
+                                                                           class="customer-checkbox" 
+                                                                           th:name="customerIds" 
+                                                                           th:value="${customer.customerId}"
+                                                                           onchange="updateSelectedCount()">
+                                                                </td>
+                                                                <td>
+                                                                    <div class="d-flex align-items-center">
+                                                                        <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                                            <i class="fas fa-user"></i>
+                                                                        </div>
+                                                                        <div>
+                                                                            <div class="fw-medium" th:text="${customer.fullName}">John Doe</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td th:text="${customer.email}">john.doe@example.com</td>
+                                                                <td th:text="${customer.phoneNumber}">+84 123 456 789</td>
+                                                                <td>
+                                                                    <span class="badge bg-success">Active</span>
+                                                                </td>
+                                                            </tr>
+                                                            <tr th:if="${#lists.isEmpty(customers)}">
+                                                                <td colspan="5" class="text-center py-4">
+                                                                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                                                    <p class="text-muted">No customers found</p>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Selected Customers Summary -->
+                                <div class="row mb-4" id="selectedSummary" style="display: none;">
+                                    <div class="col-12">
+                                        <div class="alert alert-success">
+                                            <h6 class="alert-heading">
+                                                <i class="fas fa-check-circle me-2"></i>Selected Customers
+                                            </h6>
+                                            <div id="selectedCustomersList"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between">
+                                            <a th:href="@{/admin/vouchers/{id}(id=${voucherId})}" class="btn btn-secondary">
+                                                <i class="fas fa-arrow-left me-2"></i>Back to Voucher
+                                            </a>
+                                            <div>
+                                                <button type="submit" 
+                                                        class="btn btn-primary me-2" 
+                                                        id="assignBtn" 
+                                                        disabled>
+                                                    <i class="fas fa-user-plus me-2"></i>Assign to Selected Customers
+                                                </button>
+                                                <button type="button" 
+                                                        class="btn btn-outline-secondary" 
+                                                        onclick="clearSelection()">
+                                                    <i class="fas fa-times me-2"></i>Clear Selection
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer Fragment -->
+    <div th:insert="fragments/footer :: site-footer"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function filterCustomers() {
+            const searchTerm = document.getElementById('searchCustomer').value.toLowerCase();
+            const rows = document.querySelectorAll('.customer-row');
+            
+            rows.forEach(row => {
+                const name = row.cells[1].textContent.toLowerCase();
+                const email = row.cells[2].textContent.toLowerCase();
+                const phone = row.cells[3].textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        function toggleAllCustomers() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const customerCheckboxes = document.querySelectorAll('.customer-checkbox');
+            
+            customerCheckboxes.forEach(checkbox => {
+                if (checkbox.closest('tr').style.display !== 'none') {
+                    checkbox.checked = selectAllCheckbox.checked;
+                }
+            });
+            
+            updateSelectedCount();
+        }
+        
+        function selectAllCustomers() {
+            const customerCheckboxes = document.querySelectorAll('.customer-checkbox');
+            customerCheckboxes.forEach(checkbox => {
+                if (checkbox.closest('tr').style.display !== 'none') {
+                    checkbox.checked = true;
+                }
+            });
+            document.getElementById('selectAllCheckbox').checked = true;
+            updateSelectedCount();
+        }
+        
+        function clearSelection() {
+            const customerCheckboxes = document.querySelectorAll('.customer-checkbox');
+            customerCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            document.getElementById('selectAllCheckbox').checked = false;
+            updateSelectedCount();
+        }
+        
+        function updateSelectedCount() {
+            const selectedCheckboxes = document.querySelectorAll('.customer-checkbox:checked');
+            const count = selectedCheckboxes.length;
+            
+            document.getElementById('selectedCount').textContent = count;
+            document.getElementById('assignBtn').disabled = count === 0;
+            
+            // Update selected customers summary
+            const summaryDiv = document.getElementById('selectedSummary');
+            const listDiv = document.getElementById('selectedCustomersList');
+            
+            if (count > 0) {
+                summaryDiv.style.display = 'block';
+                listDiv.innerHTML = `<p class="mb-0">You have selected <strong>${count}</strong> customer(s) for voucher assignment.</p>`;
+            } else {
+                summaryDiv.style.display = 'none';
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSelectedCount();
+        });
+    </script>
+</body>
+</html>

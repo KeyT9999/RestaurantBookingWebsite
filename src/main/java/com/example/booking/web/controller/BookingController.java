@@ -139,9 +139,13 @@ public class BookingController {
                     ", bookingTime=" + form.getBookingTime());
 
             UUID customerId = getCurrentCustomerId(authentication);
+
+            // Voucher integration is now handled in BookingService.createBooking()
+
             System.out.println("   Customer ID: " + customerId);
 
             System.out.println("🔍 Calling bookingService.createBooking...");
+
             Booking booking = bookingService.createBooking(form, customerId);
             System.out.println("✅ Booking created successfully! ID: " + booking.getBookingId());
 

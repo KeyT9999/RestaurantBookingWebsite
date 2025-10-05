@@ -22,8 +22,12 @@ import com.example.booking.domain.BookingTable;
 import com.example.booking.domain.BookingDish;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantTable;
+
+import com.example.booking.domain.Voucher;
+
 import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantService;
+
 import com.example.booking.dto.BookingForm;
 import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.BookingTableRepository;
@@ -32,6 +36,9 @@ import com.example.booking.repository.BookingServiceRepository;
 import com.example.booking.repository.CustomerRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.RestaurantTableRepository;
+
+import com.example.booking.service.VoucherService;
+
 import com.example.booking.repository.NotificationRepository;
 import com.example.booking.repository.DishRepository;
 import com.example.booking.repository.RestaurantServiceRepository;
@@ -39,6 +46,7 @@ import com.example.booking.domain.Notification;
 import com.example.booking.domain.NotificationType;
 import com.example.booking.domain.NotificationStatus;
 import com.example.booking.exception.BookingConflictException;
+
 
 @Service
 @Transactional
@@ -58,6 +66,9 @@ public class BookingService {
 
     @Autowired
     private BookingTableRepository bookingTableRepository;
+    
+    @Autowired
+    private VoucherService voucherService;
 
     @Autowired
     private BookingDishRepository bookingDishRepository;
@@ -123,6 +134,31 @@ public class BookingService {
         validateBookingTime(form.getBookingTime());
         System.out.println("✅ Booking time validated");
 
+        // Process voucher if provided
+        BigDecimal voucherDiscount = BigDecimal.ZERO;
+        if (form.getVoucherCode() != null && !form.getVoucherCode().trim().isEmpty()) {
+            try {
+                // Validate voucher
+                VoucherService.ValidationRequest validationReq = new VoucherService.ValidationRequest(
+                    form.getVoucherCode(),
+                    form.getRestaurantId(),
+                    form.getBookingTime(),
+                    form.getGuestCount(),
+                    customer,
+                    calculateOrderAmount(form) // Placeholder - should be calculated from actual order
+                );
+                
+                VoucherService.ValidationResult validation = voucherService.validate(validationReq);
+                if (validation.valid() && validation.calculatedDiscount() != null) {
+                    voucherDiscount = validation.calculatedDiscount();
+                } else {
+                    throw new IllegalArgumentException("Invalid voucher: " + validation.reason());
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Voucher validation failed: " + e.getMessage());
+            }
+        }
+
         // Create booking
         System.out.println("🔍 Creating booking object...");
         Booking booking = new Booking();
@@ -161,6 +197,26 @@ public class BookingService {
             System.err.println("❌ Error saving booking: " + e.getMessage());
             e.printStackTrace();
             throw e;
+        }
+
+        // Apply voucher if valid
+        if (voucherDiscount.compareTo(BigDecimal.ZERO) > 0) {
+            try {
+                VoucherService.ApplyRequest applyReq = new VoucherService.ApplyRequest(
+                    form.getVoucherCode(),
+                    form.getRestaurantId(),
+                    customerId,
+                    calculateOrderAmount(form),
+                    booking.getBookingId()
+                );
+                
+                VoucherService.ApplyResult applyResult = voucherService.applyToBooking(applyReq);
+                if (!applyResult.success()) {
+                    throw new IllegalArgumentException("Failed to apply voucher: " + applyResult.reason());
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Voucher application failed: " + e.getMessage());
+            }
         }
 
         // Assign table if specified
@@ -247,6 +303,16 @@ public class BookingService {
             e.printStackTrace();
             throw e;
         }
+    }
+    
+    /**
+     * Calculate order amount for voucher validation
+     * This is a placeholder - should be calculated from actual order items
+     */
+    private BigDecimal calculateOrderAmount(BookingForm form) {
+        // For now, use a placeholder amount
+        // In a real implementation, this should calculate from order items
+        return BigDecimal.valueOf(1000000); // 1,000,000 VND placeholder
     }
 
     /**

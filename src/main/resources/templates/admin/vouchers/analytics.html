@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voucher Analytics - Admin Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Admin CSS -->
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="fragments/header :: site-header"></div>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container-fluid mt-4">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Voucher Analytics
+                            </h2>
+                            <p class="text-muted mb-0">Comprehensive voucher usage and performance analytics</p>
+                        </div>
+                        <div>
+                            <a href="/admin/vouchers" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-arrow-left"></i> Back to Vouchers
+                            </a>
+                            <button class="btn btn-primary" onclick="exportData()">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Date Range Filter -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="get" class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="startDate" class="form-label">Start Date</label>
+                                    <input type="date" class="form-control" id="startDate" name="startDate" 
+                                           th:value="${startDate}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="endDate" class="form-label">End Date</label>
+                                    <input type="date" class="form-control" id="endDate" name="endDate" 
+                                           th:value="${endDate}">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="voucherId" class="form-label">Specific Voucher</label>
+                                    <select class="form-select" id="voucherId" name="voucherId">
+                                        <option value="">All Vouchers</option>
+                                        <!-- TODO: Populate with actual vouchers -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="restaurantId" class="form-label">Restaurant</label>
+                                    <select class="form-select" id="restaurantId" name="restaurantId">
+                                        <option value="">All Restaurants</option>
+                                        <option value="global">Global Vouchers</option>
+                                        <!-- TODO: Populate with actual restaurants -->
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary me-2">
+                                        <i class="fas fa-filter"></i> Apply Filters
+                                    </button>
+                                    <a href="/admin/vouchers/analytics" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> Clear Filters
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">Total Vouchers</h4>
+                                    <h2 class="mb-0" th:text="${totalVouchers}">0</h2>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-ticket-alt fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">Active Vouchers</h4>
+                                    <h2 class="mb-0" th:text="${activeVouchers}">0</h2>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">Total Redemptions</h4>
+                                    <h2 class="mb-0" th:text="${totalRedemptions}">0</h2>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-gift fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="card-title">Total Discount Given</h4>
+                                    <h2 class="mb-0" th:text="${totalDiscountGiven}">₫0</h2>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-money-bill-wave fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <!-- Voucher Usage Chart -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Voucher Usage Over Time
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="usageChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Voucher Status Distribution -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Voucher Status Distribution
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="statusChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Performing Vouchers -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-trophy me-2"></i>Top Performing Vouchers
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Voucher Code</th>
+                                            <th>Description</th>
+                                            <th>Type</th>
+                                            <th>Redemptions</th>
+                                            <th>Unique Customers</th>
+                                            <th>Total Discount</th>
+                                            <th>Conversion Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="voucher, iterStat : ${topVouchers}">
+                                            <td>
+                                                <span class="badge bg-primary" th:text="${iterStat.index + 1}">1</span>
+                                            </td>
+                                            <td>
+                                                <code th:text="${voucher.code}">VOUCHER123</code>
+                                            </td>
+                                            <td th:text="${voucher.description}">Welcome discount</td>
+                                            <td>
+                                                <span class="badge" 
+                                                      th:classappend="${voucher.discountType == 'PERCENT'} ? 'bg-info' : 'bg-success'"
+                                                      th:text="${voucher.discountType}">PERCENT</span>
+                                            </td>
+                                            <td th:text="${voucher.totalRedemptions}">150</td>
+                                            <td th:text="${voucher.uniqueCustomers}">120</td>
+                                            <td th:text="'₫' + ${#numbers.formatDecimal(voucher.totalDiscountGiven, 0, 0)}">₫2,500,000</td>
+                                            <td>
+                                                <div class="progress" style="height: 20px;">
+                                                    <div class="progress-bar" 
+                                                         th:style="'width: ' + ${voucher.conversionRate} + '%'"
+                                                         th:text="${voucher.conversionRate} + '%'">85%</div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(topVouchers)}">
+                                            <td colspan="8" class="text-center py-4">
+                                                <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">No voucher data available</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Restaurant Performance -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-store me-2"></i>Restaurant Voucher Performance
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Restaurant</th>
+                                            <th>Vouchers Created</th>
+                                            <th>Total Redemptions</th>
+                                            <th>Total Discount Given</th>
+                                            <th>Average Redemptions per Voucher</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="restaurant : ${restaurantStats}">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                        <i class="fas fa-store"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium" th:text="${restaurant.name}">Restaurant ABC</div>
+                                                        <small class="text-muted" th:text="'ID: ' + ${restaurant.id}">ID: 123</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td th:text="${restaurant.vouchersCreated}">25</td>
+                                            <td th:text="${restaurant.totalRedemptions}">150</td>
+                                            <td th:text="'₫' + ${#numbers.formatDecimal(restaurant.totalDiscountGiven, 0, 0)}">₫2,500,000</td>
+                                            <td th:text="${restaurant.averageRedemptions}">6.0</td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(restaurantStats)}">
+                                            <td colspan="5" class="text-center py-4">
+                                                <i class="fas fa-store fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">No restaurant data available</p>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer Fragment -->
+    <div th:insert="fragments/footer :: site-footer"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Usage Chart
+            const usageCtx = document.getElementById('usageChart').getContext('2d');
+            new Chart(usageCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Voucher Redemptions',
+                        data: [12, 19, 3, 5, 2, 3],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // Status Chart
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Inactive', 'Expired', 'Scheduled'],
+                    datasets: [{
+                        data: [12, 19, 3, 5],
+                        backgroundColor: [
+                            'rgb(75, 192, 192)',
+                            'rgb(255, 205, 86)',
+                            'rgb(255, 99, 132)',
+                            'rgb(54, 162, 235)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        });
+        
+        function exportData() {
+            // TODO: Implement data export functionality
+            alert('Export functionality will be implemented soon');
+        }
+    </script>
+</body>
+</html>

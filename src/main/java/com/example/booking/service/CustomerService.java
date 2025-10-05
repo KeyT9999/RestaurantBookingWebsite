@@ -1,5 +1,6 @@
 package com.example.booking.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,5 +47,13 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public Optional<Customer> findByUserId(UUID userId) {
         return customerRepository.findByUserId(userId);
+    }
+    
+    /**
+     * Lấy tất cả customers
+     */
+    @Transactional(readOnly = true)
+    public List<Customer> findAllCustomers() {
+        return customerRepository.findAll();
     }
 }
