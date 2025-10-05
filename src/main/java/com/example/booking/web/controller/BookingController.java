@@ -1,12 +1,15 @@
 package com.example.booking.web.controller;
 
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -17,18 +20,26 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
 
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.User;
+import com.example.booking.domain.Waitlist;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
-import com.example.booking.service.RestaurantService;
+import com.example.booking.service.RestaurantManagementService;
+import com.example.booking.service.WaitlistService;
 import com.example.booking.service.SimpleUserService;
+
+import com.example.booking.exception.BookingConflictException;
 
 import jakarta.validation.Valid;
 
@@ -44,7 +55,10 @@ public class BookingController {
     private CustomerService customerService;
 
     @Autowired
-    private RestaurantService restaurantService;
+    private RestaurantManagementService restaurantService;
+
+    @Autowired
+    private WaitlistService waitlistService;
 
     @Autowired
     private SimpleUserService userService;
@@ -85,6 +99,17 @@ public class BookingController {
             Authentication authentication,
             RedirectAttributes redirectAttributes) {
 
+        System.out.println("🚨🚨🚨 BOOKING CONTROLLER CALLED! 🚨🚨🚨");
+        System.out.println("Form data:");
+        System.out.println("   Restaurant ID: " + form.getRestaurantId());
+        System.out.println("   Table ID: " + form.getTableId());
+        System.out.println("   Guest Count: " + form.getGuestCount());
+        System.out.println("   Booking Time: " + form.getBookingTime());
+        System.out.println("   Deposit Amount: " + form.getDepositAmount());
+        System.out.println("   Note: " + form.getNote());
+        System.out.println("   Dish IDs: " + form.getDishIds());
+        System.out.println("   Service IDs: " + form.getServiceIds());
+
         if (bindingResult.hasErrors()) {
             System.out.println("❌ Validation errors:");
             bindingResult.getAllErrors().forEach(error -> {
@@ -93,6 +118,7 @@ public class BookingController {
 
             List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
             model.addAttribute("restaurants", restaurants);
+            model.addAttribute("bookingForm", form); // Keep the form data
 
             // Load tables if restaurant is selected
             if (form.getRestaurantId() != null) {
@@ -123,70 +149,16 @@ public class BookingController {
                     "Booking created successfully! Booking ID: " + booking.getBookingId());
             return "redirect:/booking/my";
 
-        } catch (Exception e) {
-            System.err.println("❌ Error creating booking: " + e.getMessage());
-            System.err.println("❌ Exception type: " + e.getClass().getName());
-            e.printStackTrace();
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "Error creating booking: " + e.getMessage());
-            return "redirect:/booking/new";
-        }
-    }
+        } catch (BookingConflictException e) {
+            System.err.println("❌ Booking conflict detected: " + e.getMessage());
+            System.err.println("❌ Conflict type: " + e.getConflictType());
 
-    /**
-     * Hiển thị danh sách booking của customer
-     */
-    @GetMapping("/my")
-    public String showMyBookings(Model model, Authentication authentication) {
-        UUID customerId = getCurrentCustomerId(authentication);
-        List<Booking> bookings = bookingService.findBookingsByCustomer(customerId);
-
-        model.addAttribute("bookings", bookings);
-        return "booking/list";
-    }
-
-    /**
-     * Hiển thị form edit booking
-     */
-    @GetMapping("/{id}/edit")
-    public String showEditForm(@PathVariable("id") Integer bookingId,
-            Model model,
-            Authentication authentication,
-            RedirectAttributes redirectAttributes) {
-
-        try {
-            UUID customerId = getCurrentCustomerId(authentication);
-            Booking booking = bookingService.findBookingById(bookingId)
-                    .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
-
-            // Check if customer owns this booking
-            if (!booking.getCustomer().getCustomerId().equals(customerId)) {
-                redirectAttributes.addFlashAttribute("errorMessage", "You can only edit your own bookings");
-                return "redirect:/booking/my";
-            }
-
-            // Check if booking can be edited
-            if (!booking.canBeEdited()) {
-                redirectAttributes.addFlashAttribute("errorMessage", "This booking cannot be edited");
-                return "redirect:/booking/my";
-            }
-
-            // Create form from booking
-            BookingForm form = new BookingForm();
-            form.setRestaurantId(booking.getBookingTables().isEmpty() ? null
-                    : booking.getBookingTables().get(0).getTable().getRestaurant().getRestaurantId());
-            form.setTableId(booking.getBookingTables().isEmpty() ? null
-                    : booking.getBookingTables().get(0).getTable().getTableId());
-            form.setGuestCount(booking.getNumberOfGuests());
-            form.setBookingTime(booking.getBookingTime());
-            form.setDepositAmount(booking.getDepositAmount());
-
+            // Keep form data and reload form with error message
             List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
             model.addAttribute("restaurants", restaurants);
-            model.addAttribute("bookingForm", form);
-            model.addAttribute("bookingId", bookingId);
+            model.addAttribute("bookingForm", form); // Keep the form data
 
-            // Load tables for the restaurant
+            // Load tables if restaurant is selected
             if (form.getRestaurantId() != null) {
                 List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
                 model.addAttribute("tables", tables);
@@ -194,11 +166,240 @@ public class BookingController {
                 model.addAttribute("tables", List.of());
             }
 
+            model.addAttribute("errorMessage", "Booking conflict: " + e.getMessage());
             return "booking/form";
 
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error loading booking: " + e.getMessage());
-            return "redirect:/booking/my";
+            System.err.println("❌ Error creating booking: " + e.getMessage());
+            System.err.println("❌ Exception type: " + e.getClass().getName());
+            e.printStackTrace();
+
+            // Keep form data and reload form with error message
+            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
+            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("bookingForm", form); // Keep the form data
+
+            // Load tables if restaurant is selected
+            if (form.getRestaurantId() != null) {
+                List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
+                model.addAttribute("tables", tables);
+            } else {
+                model.addAttribute("tables", List.of());
+            }
+
+            model.addAttribute("errorMessage", "Error creating booking: " + e.getMessage());
+            return "booking/form";
+        }
+    }
+
+    /**
+     * Redirect to booking list - booking details now handled by API popup
+     */
+    @GetMapping("/{bookingId}/details")
+    public String getBookingDetails(@PathVariable Integer bookingId, Model model, Authentication authentication) {
+        // Redirect to booking list since details are now shown in popup modal
+        return "redirect:/booking/my";
+    }
+
+    /**
+     * Cập nhật booking với items
+     */
+    @PostMapping("/{bookingId}/update")
+    public String updateBooking(@PathVariable Integer bookingId,
+            @Valid @ModelAttribute("bookingForm") BookingForm form,
+            BindingResult bindingResult,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Validation errors occurred");
+            return "redirect:/booking/" + bookingId + "/details";
+        }
+
+        try {
+            UUID customerId = getCurrentCustomerId(authentication);
+            Booking updatedBooking = bookingService.updateBookingWithItems(bookingId, form, customerId);
+
+            BigDecimal totalAmount = bookingService.calculateTotalAmount(updatedBooking);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Booking updated successfully! Total amount: " + totalAmount);
+
+            return "redirect:/booking/" + bookingId + "/details";
+
+        } catch (Exception e) {
+            System.err.println("❌ Error updating booking: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Error updating booking: " + e.getMessage());
+            return "redirect:/booking/" + bookingId + "/details";
+        }
+    }
+
+    /**
+     * Hiển thị form cập nhật booking
+     */
+    @GetMapping("/{bookingId}/edit")
+    public String showEditBookingForm(@PathVariable Integer bookingId, Model model, Authentication authentication) {
+        try {
+            UUID customerId = getCurrentCustomerId(authentication);
+            Booking booking = bookingService.findBookingById(bookingId)
+                    .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+            // Validate ownership
+            if (!booking.getCustomer().getCustomerId().equals(customerId)) {
+                return "redirect:/booking/my?error=access_denied";
+            }
+
+            // Validate booking can be edited
+            if (!booking.canBeEdited()) {
+                return "redirect:/booking/" + bookingId + "/details?error=cannot_edit";
+            }
+
+            // Load restaurants and tables
+            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
+            List<RestaurantTable> tables = restaurantService
+                    .findTablesByRestaurant(booking.getRestaurant().getRestaurantId());
+
+            // Create form with current booking data
+            BookingForm form = new BookingForm();
+            form.setRestaurantId(booking.getRestaurant().getRestaurantId());
+            form.setTableId(getCurrentTableId(booking));
+            form.setGuestCount(booking.getNumberOfGuests());
+            form.setBookingTime(booking.getBookingTime());
+            form.setDepositAmount(booking.getDepositAmount());
+
+            model.addAttribute("bookingForm", form);
+            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("tables", tables);
+            model.addAttribute("booking", booking);
+            model.addAttribute("bookingId", bookingId);
+            model.addAttribute("pageTitle", "Chỉnh sửa đặt bàn #" + bookingId);
+
+            return "booking/form";
+
+        } catch (Exception e) {
+            System.err.println("❌ Error showing edit form: " + e.getMessage());
+            return "redirect:/booking/my?error=booking_not_found";
+        }
+    }
+
+    /**
+     * Helper method to get current table ID from booking
+     */
+    private Integer getCurrentTableId(Booking booking) {
+        if (booking.getBookingTables() != null && !booking.getBookingTables().isEmpty()) {
+            return booking.getBookingTables().get(0).getTable().getTableId();
+        }
+        return null;
+    }
+
+    /**
+     * Hiển thị danh sách booking của customer với waitlist integration
+     */
+    @GetMapping("/my")
+    public String showMyBookings(Model model, Authentication authentication,
+            @RequestParam(required = false) String filter) {
+        UUID customerId = getCurrentCustomerId(authentication);
+        System.out.println("🔍 Getting bookings for customer ID: " + customerId);
+
+        // Get regular bookings
+        List<Booking> allBookings = bookingService.findBookingsByCustomer(customerId);
+        System.out.println("📋 Found " + allBookings.size() + " bookings for customer");
+
+        // Get waitlist entries
+        List<Waitlist> allWaitlistEntries = waitlistService.getWaitlistByCustomer(customerId);
+        System.out.println("📋 Found " + allWaitlistEntries.size() + " waitlist entries for customer");
+
+        // Calculate estimated wait time for each waitlist entry
+        for (Waitlist waitlist : allWaitlistEntries) {
+            int estimatedWaitTime = waitlistService.calculateEstimatedWaitTimeForCustomer(waitlist.getWaitlistId());
+            waitlist.setEstimatedWaitTime(estimatedWaitTime);
+        }
+
+        // Store original counts before filtering
+        int totalBookingsCount = allBookings.size();
+        int totalWaitlistCount = allWaitlistEntries.size();
+
+        // Apply filter to display lists
+        List<Booking> bookings = allBookings;
+        List<Waitlist> waitlistEntries = allWaitlistEntries;
+
+        if ("bookings".equals(filter)) {
+            waitlistEntries = new ArrayList<>(); // Hide waitlist
+        } else if ("waitlist".equals(filter)) {
+            bookings = new ArrayList<>(); // Hide bookings
+        }
+        // If filter is null or "all", show both
+
+        model.addAttribute("bookings", bookings);
+        model.addAttribute("waitlistEntries", waitlistEntries);
+        model.addAttribute("currentFilter", filter != null ? filter : "all");
+        model.addAttribute("totalBookings", totalBookingsCount); // Use original count
+        model.addAttribute("totalWaitlist", totalWaitlistCount); // Use original count
+
+        return "booking/list";
+    }
+
+    /**
+     * API endpoint để join waitlist từ booking form
+     */
+    @PostMapping("/waitlist")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> joinWaitlist(@RequestBody BookingForm form,
+            Authentication auth) {
+        try {
+            UUID customerId = getCurrentCustomerId(auth);
+
+            // Create waitlist entry
+            Waitlist waitlist = waitlistService.addToWaitlist(
+                    form.getRestaurantId(),
+                    form.getGuestCount(),
+                    customerId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("waitlistId", waitlist.getWaitlistId());
+            response.put("queuePosition", waitlistService.getQueuePosition(waitlist.getWaitlistId()));
+            response.put("estimatedWaitTime", waitlistService.calculateEstimatedWaitTime(form.getRestaurantId()));
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * API endpoint để cancel waitlist
+     */
+    @PostMapping("/waitlist/cancel/{waitlistId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> cancelWaitlist(@PathVariable Integer waitlistId,
+            Authentication auth) {
+        try {
+            UUID customerId = getCurrentCustomerId(auth);
+
+            // Verify ownership
+            Waitlist waitlist = waitlistService.findById(waitlistId);
+            if (!waitlist.getCustomer().getCustomerId().equals(customerId)) {
+                throw new IllegalArgumentException("You can only cancel your own waitlist entries");
+            }
+
+            waitlistService.cancelWaitlist(waitlistId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Waitlist cancelled successfully");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
@@ -342,39 +543,6 @@ public class BookingController {
         throw new RuntimeException("Unsupported authentication principal type: " + principal.getClass().getName());
     }
 
-    /**
-     * Create booking - Only for customers
-     */
-    @PostMapping("/create")
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
-    public String createBooking(@RequestParam Integer restaurantId,
-                                @RequestParam String bookingTime,
-                                @RequestParam Integer numberOfGuests,
-                                @RequestParam(required = false) String specialRequests,
-                                Authentication authentication,
-                                RedirectAttributes redirectAttributes) {
-        try {
-            // TODO: Implement booking creation
-            // Get current user
-            // User user = userRepository.findByUsername(authentication.getName())
-            //         .orElseThrow(() -> new RuntimeException("User not found"));
-            
-            // Create booking
-            // Booking booking = new Booking();
-            // booking.setBookingTime(LocalDateTime.parse(bookingTime));
-            // booking.setNumberOfGuests(numberOfGuests);
-            // Additional logic needed for customer and restaurant mapping
-            
-            // bookingService.createBooking(booking);
-            
-            redirectAttributes.addFlashAttribute("success", "Chức năng đang được phát triển!");
-            return "redirect:/booking/new";
-            
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi đặt bàn: " + e.getMessage());
-            return "redirect:/booking/new";
-        }
-    }
 
 
     

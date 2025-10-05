@@ -52,4 +52,14 @@ public interface RestaurantServiceRepository extends JpaRepository<RestaurantSer
      * @return List of RestaurantService entities
      */
     List<RestaurantService> findByRestaurantAndCategory(RestaurantProfile restaurant, String category);
+
+    /**
+     * Find services by restaurant ID and status
+     * 
+     * @param restaurantId The restaurant ID
+     * @param status       The service status
+     * @return List of RestaurantService entities
+     */
+    List<RestaurantService> findByRestaurantRestaurantIdAndStatusOrderByNameAsc(Integer restaurantId,
+            ServiceStatus status);
 }

@@ -1071,8 +1071,154 @@ section {
 }
 
 /* ========================================
-   SEARCH FILTER STYLES
+   SERVICES CARD SELECTION STYLES
    ======================================== */
+
+.services-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.service-card {
+    background: var(--background-white);
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+}
+
+.service-card:hover {
+    border-color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.service-card.selected {
+    border-color: var(--primary-blue);
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.05), rgba(74, 144, 226, 0.1));
+    box-shadow: var(--shadow-hover);
+}
+
+.service-card.selected::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-blue), var(--primary-blue-light));
+}
+
+.service-checkbox {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-medium);
+    border-radius: 4px;
+    background: var(--background-white);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.service-card.selected .service-checkbox {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.service-card.selected .service-checkbox::after {
+    content: '✓';
+    color: var(--background-white);
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.service-icon {
+    font-size: 2rem;
+    color: var(--primary-blue);
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.service-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.service-description {
+    font-size: 0.9rem;
+    color: var(--text-medium);
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+}
+
+.service-price {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent-orange);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.service-price i {
+    font-size: 0.8rem;
+}
+
+/* Responsive adjustments for services */
+@media (max-width: 768px) {
+    .services-container {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .service-card {
+        padding: 1rem;
+    }
+    
+    .service-icon {
+        font-size: 1.75rem;
+    }
+    
+    .service-name {
+        font-size: 1rem;
+    }
+    
+    .service-description {
+        font-size: 0.85rem;
+    }
+}
+
+/* Animation for service card selection */
+@keyframes serviceSelect {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.service-card.selected {
+    animation: serviceSelect 0.3s ease-out;
+}
+
+/* ========================================
 
 .search-filter-section {
     margin-top: 1rem;

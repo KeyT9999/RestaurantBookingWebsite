@@ -7,14 +7,23 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.example.booking.common.enums.TableStatus;
 import com.example.booking.domain.RestaurantTable;
 
 @Repository
 public interface RestaurantTableRepository extends JpaRepository<RestaurantTable, Integer> {
     
+    // Method để lấy tables theo restaurant ID
     List<RestaurantTable> findByRestaurantRestaurantIdOrderByTableName(Integer restaurantId);
     
+    // Method đơn giản hơn để test
+    List<RestaurantTable> findByRestaurantRestaurantId(Integer restaurantId);
+
     @Query("SELECT t FROM RestaurantTable t WHERE t.restaurant.restaurantId = :restaurantId AND t.capacity >= :capacity")
     List<RestaurantTable> findByRestaurantAndCapacityGreaterThanEqual(@Param("restaurantId") Integer restaurantId, @Param("capacity") Integer capacity);
     
+    /**
+     * Find tables by status
+     */
+    List<RestaurantTable> findByStatus(TableStatus status);
 }

@@ -36,6 +36,12 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     List<Booking> findByCustomerAndStatusIn(Customer customer, List<BookingStatus> statuses);
 
+    /**
+     * Find bookings by customer and booking time range
+     */
+    List<Booking> findByCustomerAndBookingTimeBetween(Customer customer, LocalDateTime startTime,
+                  LocalDateTime endTime);
+
     @Query("SELECT CAST(b.bookingTime AS date) as bookingDate, COUNT(b) as bookingCount " +
                   "FROM Booking b " +
                   "WHERE b.bookingTime BETWEEN :startDate AND :endDate " +
@@ -43,4 +49,21 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
                   "ORDER BY bookingDate")
     List<Object[]> findDailyBookingStats(@Param("startDate") LocalDateTime startDate,
                   @Param("endDate") LocalDateTime endDate);
+
+    /**
+     * Find no-show bookings (PENDING bookings older than threshold)
+     */
+    @Query("SELECT b FROM Booking b " +
+                  "WHERE b.status = 'PENDING' " +
+                  "AND b.bookingTime < :threshold")
+    List<Booking> findNoShowBookings(@Param("threshold") LocalDateTime threshold);
+
+    /**
+     * Find upcoming bookings (PENDING bookings within time range)
+     */
+    @Query("SELECT b FROM Booking b " +
+                  "WHERE b.status = 'PENDING' " +
+                  "AND b.bookingTime BETWEEN :now AND :threshold")
+    List<Booking> findUpcomingBookings(@Param("now") LocalDateTime now,
+                  @Param("threshold") LocalDateTime threshold);
 } 
