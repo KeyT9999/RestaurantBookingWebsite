@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
@@ -69,9 +70,12 @@ public class Booking {
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> payments;
     
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<BookingService> bookingServices;
+
     // Constructors
     public Booking() {
-        this.createdAt = LocalDateTime.now();
+        // createdAt và updatedAt sẽ được set tự động bởi @PrePersist
     }
     
     public Booking(Customer customer, LocalDateTime bookingTime, Integer numberOfGuests,
@@ -83,6 +87,13 @@ public class Booking {
         this.depositAmount = depositAmount != null ? depositAmount : BigDecimal.ZERO;
     }
     
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
@@ -177,6 +188,14 @@ public class Booking {
         this.payments = payments;
     }
     
+    public List<BookingService> getBookingServices() {
+        return bookingServices;
+    }
+
+    public void setBookingServices(List<BookingService> bookingServices) {
+        this.bookingServices = bookingServices;
+    }
+
     // Helper methods
     public boolean hasDeposit() {
         return depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) > 0;

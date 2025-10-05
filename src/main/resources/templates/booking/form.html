@@ -16,11 +16,41 @@
     
     <!-- Custom Luxury CSS -->
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    
+    <style>
+        .table-card, .dish-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .table-card:hover, .dish-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .table-card.selected, .dish-card.selected {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        .form-check-input:checked + .form-check-label .card {
+            border-color: #007bff;
+            background-color: #e3f2fd;
+        }
+        
+        .quantity-control {
+            margin-top: 10px;
+        }
+        
+        .modal-xl {
+            max-width: 90%;
+        }
+    </style>
 </head>
 
 <body>
     <!-- Header Fragment -->
-    <div th:insert="fragments/header :: site-header"></div>
+    <div th:insert="~{fragments/header :: site-header}"></div>
     
     <!-- Main Content -->
     <main class="main-content">
@@ -36,9 +66,24 @@
                             <p class="text-muted">Create your perfect dining experience</p>
                         </div>
                         
-                        <form th:action="${bookingId != null ? '/booking/' + bookingId : '/booking'}" 
+                        <!-- Error Messages -->
+                        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle luxury-icon"></i>
+                            <span th:text="${errorMessage}"></span>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <!-- Success Messages -->
+                        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle luxury-icon"></i>
+                            <span th:text="${successMessage}"></span>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <form th:action="${bookingId != null ? '/booking/' + bookingId + '/update' : '/booking'}" 
                               method="post" 
-                              th:object="${bookingForm}">
+                              th:object="${bookingForm}"
+                              onsubmit="return validateForm()">
                             
                             <!-- Restaurant Selection -->
                             <div class="mb-4">
@@ -53,8 +98,8 @@
                                         onchange="loadTables()">
                                     <option value="">-- Select Restaurant --</option>
                                     <option th:each="restaurant : ${restaurants}" 
-                                            th:value="${restaurant.id}" 
-                                            th:text="${restaurant.name}"></option>
+                                            th:value="${restaurant.restaurantId}" 
+                                            th:text="${restaurant.restaurantName}"></option>
                                 </select>
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('restaurantId')}" 
                                      th:errors="*{restaurantId}"></div>
@@ -62,21 +107,24 @@
                             
                             <!-- Table Selection -->
                             <div class="mb-4">
-                                <label for="tableId" class="form-label">
-                                    <i class="fas fa-chair luxury-icon"></i> Table (Optional)
+                                <label class="form-label">
+                                    <i class="fas fa-chair luxury-icon"></i> Tables (Optional)
                                 </label>
-                                <select class="form-control" 
-                                        id="tableId" 
-                                        name="tableId" 
-                                        th:field="*{tableId}">
-                                    <option value="">-- No specific table preference --</option>
-                                    <option th:each="table : ${tables}" 
-                                            th:value="${table.id}" 
-                                            th:text="${table.name + ' (Capacity: ' + table.capacity + ')'}"></option>
-                                </select>
+                                <div class="d-flex gap-2">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary" 
+                                            id="viewTablesBtn"
+                                            onclick="openTablePopup()"
+                                            disabled>
+                                        <i class="fas fa-eye"></i> View Tables
+                                    </button>
+                                    <span id="selectedTablesCount" class="text-muted small align-self-center">No tables selected</span>
+                                </div>
                                 <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Leave empty if you don't have a table preference
+                                    Click to view and select multiple tables
                                 </small>
+                                <!-- Hidden input to store selected table ID -->
+                                <input type="hidden" id="selectedTableId" name="tableId" th:field="*{tableId}" value="">
                             </div>
                             
                             <div class="row">
@@ -116,24 +164,84 @@
                                 </div>
                             </div>
                             
-                            <!-- Deposit Amount -->
-                            <div class="mb-4">
-                                <label for="depositAmount" class="form-label">
-                                    <i class="fas fa-credit-card luxury-icon"></i> Deposit Amount (VNĐ)
+                            <!-- Dishes Selection -->
+                            <div class="mb-4" id="dishesSection">
+                                <label class="form-label">
+                                    <i class="fas fa-utensils luxury-icon"></i> Menu Items
                                 </label>
-                                <input type="number" 
-                                       class="form-control" 
+                                <div class="d-flex gap-2">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary" 
+                                            id="viewMenuBtn"
+                                            onclick="openMenuPopup()"
+                                            disabled>
+                                        <i class="fas fa-eye"></i> View Menu
+                                    </button>
+                                    <span id="selectedDishesCount" class="text-muted small align-self-center">No items selected</span>
+                                </div>
+                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
+                                    Click to view and select multiple menu items
+                                </small>
+                                <!-- Hidden input to store selected dish IDs -->
+                                <input type="hidden" id="selectedDishIds" name="dishIds" th:field="*{dishIds}" value="">
+                            </div>
+
+                            <!-- Services Selection -->
+                            <div class="mb-4" id="servicesSection" style="display: block;">
+                                <label class="form-label">
+                                    <i class="fas fa-concierge-bell luxury-icon"></i> Additional Services
+                                </label>
+                                <div class="services-container" id="servicesContainer">
+                                    <!-- Services will be loaded here as cards -->
+                                </div>
+                                <small style="color: var(--text-light); font-size: 0.9rem; margin-top: 8px; display: block;">
+                                    Select services to enhance your dining experience
+                                </small>
+                                <!-- Hidden input to store selected service IDs -->
+                                <input type="hidden" id="selectedServiceIds" name="serviceIds" th:field="*{serviceIds}" value="">
+                            </div>
+
+                            <!-- Total Amount Display -->
+                            <div class="mb-4">
+                                <div class="luxury-card bg-light">
+                                    <div class="row">
+                                        <div class="col-md-1212">
+                                            <h6 class="mb-2">
+                                                <i class="fas fa-calculator luxury-icon"></i> Booking Summary
+                                            </h6>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Table Deposit:</span>
+                                                <span id="tableDepositAmount">0 VNĐ</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Dishes Total:</span>
+                                                <span id="dishesTotalAmount">0 VNĐ</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span>Services Total:</span>
+                                                <span id="servicesTotalAmount">0 VNĐ</span>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex justify-content-between">
+                                                <strong>Total Deposit:</strong>
+                                                <strong id="totalDepositAmount" style="color: var(--luxury-gold);">0 VNĐ</strong>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-1212">
+                                            <div class="text-center">
+                                                <i class="fas fa-info-circle luxury-icon text-info"></i>
+                                                <p class="small text-muted mb-0 mt-2">
+                                                    This amount will be charged as deposit for your reservation
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Hidden input to store the calculated deposit amount -->
+                                <input type="hidden" 
                                        id="depositAmount" 
                                        name="depositAmount"
-                                       th:field="*{depositAmount}"
-                                       th:classappend="${#fields.hasErrors('depositAmount')} ? 'is-invalid' : ''"
-                                       min="0" step="1000" 
-                                       placeholder="0">
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('depositAmount')}" 
-                                     th:errors="*{depositAmount}"></div>
-                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Leave empty or enter 0 for no deposit
-                                </small>
+                                       th:field="*{depositAmount}">
                             </div>
                             
                             <!-- Voucher Code -->
@@ -203,6 +311,17 @@
                                     <i class="fas fa-check-circle"></i>
                                     <span th:text="${bookingId != null ? 'Update Reservation' : 'Confirm Reservation'}"></span>
                                 </button>
+                                
+                                <!-- Join Waitlist Button (only show when creating new reservation) -->
+                                <button type="button" 
+                                        class="btn btn-outline-warning me-3" 
+                                        id="joinWaitlistBtn"
+                                        onclick="joinWaitlist()"
+                                        th:if="${bookingId == null}"
+                                        style="display: none;">
+                                    <i class="fas fa-clock"></i> Join Waitlist
+                                </button>
+                                
                                 <a href="/booking/my" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Back to My Reservations
                                 </a>
@@ -214,8 +333,54 @@
         </div>
     </main>
     
+    <!-- Table Selection Modal -->
+    <div class="modal fade" id="tableModal" tabindex="-1" aria-labelledby="tableModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tableModalLabel">
+                        <i class="fas fa-chair"></i> Select Tables
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="tablesList" class="row">
+                        <!-- Tables will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmTableSelection()">Confirm Selection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Selection Modal -->
+    <div class="modal fade" id="menuModal" tabindex="-1" aria-labelledby="menuModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="menuModalLabel">
+                        <i class="fas fa-utensils"></i> Select Menu Items
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="menuList" class="row">
+                        <!-- Menu items will be loaded here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmMenuSelection()">Confirm Selection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Footer Fragment -->
-    <div th:insert="fragments/footer :: site-footer"></div>
+    <div th:insert="~{fragments/footer :: site-footer}"></div>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -224,28 +389,440 @@
     <script th:src="@{/js/main.js}" defer></script>
     
     <script>
-        function loadTables() {
-            const restaurantId = document.getElementById('restaurantId').value;
-            const tableSelect = document.getElementById('tableId');
+        // Global variables to store selections
+        let selectedTables = [];
+        let selectedDishes = [];
+        let availableTables = [];
+        let availableDishes = [];
+
+           function loadTables() {
+               const restaurantId = document.getElementById('restaurantId').value;
+               const viewTablesBtn = document.getElementById('viewTablesBtn');
+               
+               console.log('🔍 Loading tables for restaurant ID:', restaurantId);
+               
+               if (restaurantId) {
+                   viewTablesBtn.disabled = false;
+                   fetch(`/api/booking/restaurants/${restaurantId}/tables`)
+                       .then(response => {
+                           console.log('📡 API Response status:', response.status);
+                           if (!response.ok) {
+                               throw new Error(`HTTP error! status: ${response.status}`);
+                           }
+                           return response.json();
+                       })
+                       .then(tables => {
+                           console.log('📋 Received tables:', tables);
+                           availableTables = tables;
+                           
+                           if (tables.length === 0) {
+                               console.log('⚠️ No tables found for restaurant ID:', restaurantId);
+                           }
+                           
+                           // Load dishes and services for this restaurant
+                           loadDishes(restaurantId);
+                           loadServices(restaurantId);
+                       })
+                       .catch(error => {
+                           console.error('❌ Error loading tables:', error);
+                           availableTables = [];
+                           // Still try to load dishes and services
+                           loadDishes(restaurantId);
+                           loadServices(restaurantId);
+                       });
+               } else {
+                   viewTablesBtn.disabled = true;
+                   // Keep services section visible for debugging
+                   // document.getElementById('servicesSection').style.display = 'none';
+                   // Reset menu button when no restaurant selected
+                   const viewMenuBtn = document.getElementById('viewMenuBtn');
+                   viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu';
+                   viewMenuBtn.disabled = true;
+                   updateTotalAmount();
+               }
+           }
+
+        function loadDishes(restaurantId) {
+            fetch(`/api/booking/restaurants/${restaurantId}/dishes`)
+                .then(response => response.json())
+                .then(dishes => {
+                    availableDishes = dishes;
+                    
+                    // Update button text based on dishes availability
+                    const viewMenuBtn = document.getElementById('viewMenuBtn');
+                    if (dishes.length === 0) {
+                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu (No items available)';
+                        viewMenuBtn.disabled = true;
+                    } else {
+                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu';
+                        viewMenuBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading dishes:', error);
+                    const viewMenuBtn = document.getElementById('viewMenuBtn');
+                    viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu (Error loading)';
+                    viewMenuBtn.disabled = true;
+                });
+        }
+
+        function loadServices(restaurantId) {
+            console.log('🔍 Loading services for restaurant ID:', restaurantId);
             
-            // Clear existing options
-            tableSelect.innerHTML = '<option value="">-- No specific table preference --</option>';
-            
-            if (restaurantId) {
-                fetch(`/booking/api/restaurants/${restaurantId}/tables`)
-                    .then(response => response.json())
-                    .then(tables => {
-                        tables.forEach(table => {
-                            const option = document.createElement('option');
-                            option.value = table.id;
-                            option.textContent = `${table.name} (Capacity: ${table.capacity})`;
-                            tableSelect.appendChild(option);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error loading tables:', error);
+            fetch(`/api/booking/restaurants/${restaurantId}/services`)
+                .then(response => {
+                    console.log('📡 Services API response status:', response.status);
+                    return response.json();
+                })
+                .then(services => {
+                    console.log('📋 Services received:', services);
+                    console.log('📋 Services count:', services.length);
+                    
+                    const servicesContainer = document.getElementById('servicesContainer');
+                    servicesContainer.innerHTML = '';
+                    
+                    // Always show services section for debugging
+                    document.getElementById('servicesSection').style.display = 'block';
+                    
+                    if (services.length === 0) {
+                        console.log('⚠️ No services found, adding placeholder');
+                        servicesContainer.innerHTML = `
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-concierge-bell fa-2x mb-2"></i>
+                                <p>No additional services available for this restaurant.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    services.forEach(service => {
+                        console.log('➕ Adding service:', service.name, 'Price:', service.price);
+                        const serviceCard = createServiceCard(service);
+                        servicesContainer.appendChild(serviceCard);
                     });
+                    
+                    console.log('✅ Services cards created successfully');
+                })
+                .catch(error => {
+                    console.error('❌ Error loading services:', error);
+                    // Still show services section even on error
+                    document.getElementById('servicesSection').style.display = 'block';
+                    const servicesContainer = document.getElementById('servicesContainer');
+                    servicesContainer.innerHTML = `
+                        <div class="text-center text-danger py-4">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p>Error loading services. Please try again.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function createServiceCard(service) {
+            const card = document.createElement('div');
+            card.className = 'service-card';
+            card.dataset.serviceId = service.serviceId;
+            card.dataset.price = service.price || 0;
+            
+            // Service icon mapping
+            const iconMap = {
+                'WIFI': 'fas fa-wifi',
+                'PARKING': 'fas fa-parking',
+                'VALET': 'fas fa-car',
+                'LIVE_MUSIC': 'fas fa-music',
+                'PRIVATE_ROOM': 'fas fa-door-open',
+                'OUTDOOR_SEATING': 'fas fa-tree',
+                'BAR': 'fas fa-cocktail',
+                'KIDS_MENU': 'fas fa-child',
+                'DELIVERY': 'fas fa-truck',
+                'TAKEAWAY': 'fas fa-shopping-bag'
+            };
+            
+            const iconClass = iconMap[service.name] || 'fas fa-concierge-bell';
+            
+            card.innerHTML = `
+                <div class="service-checkbox"></div>
+                <i class="service-icon ${iconClass}"></i>
+                <div class="service-name">${service.name}</div>
+                <div class="service-description">${service.description || 'Enhance your dining experience'}</div>
+                <div class="service-price">
+                    <i class="fas fa-tag"></i>
+                    ${formatCurrency(service.price || 0)}
+                </div>
+            `;
+            
+            // Add click event listener
+            card.addEventListener('click', function() {
+                toggleServiceSelection(this);
+            });
+            
+            return card;
+        }
+
+        function toggleServiceSelection(card) {
+            const isSelected = card.classList.contains('selected');
+            
+            if (isSelected) {
+                card.classList.remove('selected');
+            } else {
+                card.classList.add('selected');
             }
+            
+            updateTotalAmount();
+        }
+
+        function getSelectedServices() {
+            const selectedCards = document.querySelectorAll('.service-card.selected');
+            return Array.from(selectedCards).map(card => ({
+                id: card.dataset.serviceId,
+                price: parseFloat(card.dataset.price) || 0
+            }));
+        }
+
+        function openTablePopup() {
+            const tablesList = document.getElementById('tablesList');
+            tablesList.innerHTML = '';
+            
+            availableTables.forEach(table => {
+                const tableCard = document.createElement('div');
+                tableCard.className = 'col-md-4 mb-3';
+                tableCard.innerHTML = `
+                    <div class="card table-card" data-table-id="${table.tableId}" data-deposit="${table.depositAmount || 0}">
+                        <div class="card-body">
+                            <div class="form-check">
+                                <input class="form-check-input table-checkbox" 
+                                       type="checkbox" 
+                                       value="${table.tableId}"
+                                       id="table-${table.tableId}">
+                                <label class="form-check-label w-100" for="table-${table.tableId}">
+                                    <h6 class="card-title">${table.tableName}</h6>
+                                    <p class="card-text">
+                                        <small class="text-muted">Capacity: ${table.capacity} people</small><br>
+                                        <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
+                                    </p>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                tablesList.appendChild(tableCard);
+            });
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('tableModal'));
+            modal.show();
+        }
+
+        function openMenuPopup() {
+            const menuList = document.getElementById('menuList');
+            menuList.innerHTML = '';
+            
+            if (availableDishes.length === 0) {
+                menuList.innerHTML = `
+                    <div class="col-12 text-center">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            No menu items available for this restaurant.
+                        </div>
+                    </div>
+                `;
+            } else {
+                availableDishes.forEach(dish => {
+                    const dishCard = document.createElement('div');
+                    dishCard.className = 'col-md-6 mb-3';
+                    dishCard.innerHTML = `
+                        <div class="card dish-card" data-dish-id="${dish.dishId}" data-price="${dish.price}">
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input dish-checkbox" 
+                                           type="checkbox" 
+                                           value="${dish.dishId}"
+                                           id="dish-${dish.dishId}">
+                                    <label class="form-check-label w-100" for="dish-${dish.dishId}">
+                                        <h6 class="card-title">${dish.name}</h6>
+                                        <p class="card-text">
+                                            <small class="text-muted">${dish.description || 'No description'}</small><br>
+                                            <strong class="text-primary">${formatCurrency(dish.price)}</strong>
+                                        </p>
+                                        <div class="quantity-control" style="display: none;">
+                                            <label class="form-label small">Quantity:</label>
+                                            <input type="number" 
+                                                   class="form-control form-control-sm" 
+                                                   min="1" 
+                                                   max="10" 
+                                                   value="1" 
+                                                   style="width: 80px;">
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    menuList.appendChild(dishCard);
+                });
+            }
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('menuModal'));
+            modal.show();
+            
+            // Add event listeners for dish checkboxes in modal
+            setTimeout(() => {
+                const dishCheckboxes = document.querySelectorAll('#menuModal .dish-checkbox');
+                dishCheckboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        const quantityControl = this.parentElement.querySelector('.quantity-control');
+                        if (quantityControl) {
+                            quantityControl.style.display = this.checked ? 'block' : 'none';
+                        }
+                    });
+                });
+            }, 100);
+        }
+
+        function confirmTableSelection() {
+            const checkboxes = document.querySelectorAll('.table-checkbox:checked');
+            selectedTables = [];
+            
+            checkboxes.forEach(checkbox => {
+                const tableCard = checkbox.closest('.table-card');
+                const tableId = tableCard.getAttribute('data-table-id');
+                const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
+                const tableName = tableCard.querySelector('.card-title').textContent;
+                
+                selectedTables.push({
+                    id: tableId,
+                    name: tableName,
+                    deposit: deposit
+                });
+            });
+            
+            // Update UI
+            updateTableSelectionUI();
+            updateTotalAmount();
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('tableModal'));
+            modal.hide();
+        }
+
+        function confirmMenuSelection() {
+            const checkboxes = document.querySelectorAll('.dish-checkbox:checked');
+            selectedDishes = [];
+            
+            checkboxes.forEach(checkbox => {
+                const dishCard = checkbox.closest('.dish-card');
+                const dishId = dishCard.getAttribute('data-dish-id');
+                const price = parseFloat(dishCard.getAttribute('data-price'));
+                const dishName = dishCard.querySelector('.card-title').textContent;
+                const quantityInput = dishCard.querySelector('.quantity-control input');
+                const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+                
+                selectedDishes.push({
+                    id: dishId,
+                    name: dishName,
+                    price: price,
+                    quantity: quantity
+                });
+            });
+            
+            // Update UI
+            updateMenuSelectionUI();
+            updateTotalAmount();
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('menuModal'));
+            modal.hide();
+        }
+
+        function updateTableSelectionUI() {
+            const countSpan = document.getElementById('selectedTablesCount');
+            const hiddenInput = document.getElementById('selectedTableId');
+            
+            if (selectedTables.length === 0) {
+                countSpan.textContent = 'No tables selected';
+                hiddenInput.value = '';
+            } else {
+                // Only allow one table selection
+                if (selectedTables.length > 1) {
+                    selectedTables = [selectedTables[0]]; // Keep only the first one
+                }
+                countSpan.textContent = `${selectedTables.length} table(s) selected`;
+                hiddenInput.value = selectedTables[0].id;
+            }
+        }
+
+        function updateMenuSelectionUI() {
+            const countSpan = document.getElementById('selectedDishesCount');
+            const hiddenInput = document.getElementById('selectedDishIds');
+            
+            if (selectedDishes.length === 0) {
+                countSpan.textContent = 'No items selected';
+                hiddenInput.value = '';
+            } else {
+                countSpan.textContent = `${selectedDishes.length} item(s) selected`;
+                hiddenInput.value = selectedDishes.map(d => `${d.id}:${d.quantity}`).join(',');
+            }
+        }
+
+        function updateTotalAmount() {
+            let tableDeposit = 0;
+            let dishesTotal = 0;
+            let servicesTotal = 0;
+
+            // Calculate table deposit
+            selectedTables.forEach(table => {
+                tableDeposit += table.deposit;
+            });
+
+            // Calculate dishes total
+            selectedDishes.forEach(dish => {
+                dishesTotal += dish.price * dish.quantity;
+            });
+
+            // Calculate services total
+            const selectedServices = getSelectedServices();
+            selectedServices.forEach(service => {
+                servicesTotal += service.price;
+            });
+
+            // Update hidden input with selected service IDs
+            const serviceIdsInput = document.getElementById('selectedServiceIds');
+            serviceIdsInput.value = selectedServices.map(s => s.id).join(',');
+
+            // Update display
+            document.getElementById('tableDepositAmount').textContent = formatCurrency(tableDeposit);
+            document.getElementById('dishesTotalAmount').textContent = formatCurrency(dishesTotal);
+            document.getElementById('servicesTotalAmount').textContent = formatCurrency(servicesTotal);
+            
+            const totalAmount = tableDeposit + dishesTotal + servicesTotal;
+            document.getElementById('totalDepositAmount').textContent = formatCurrency(totalAmount);
+            
+            // Update hidden input
+            document.getElementById('depositAmount').value = totalAmount;
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
+        }
+        
+        // Form validation before submit
+        function validateForm() {
+            // Check if form elements exist
+            const restaurantSelect = document.getElementById('restaurantId');
+            const guestCountInput = document.getElementById('guestCount');
+            const bookingTimeInput = document.getElementById('bookingTime');
+            const restaurantId = restaurantSelect.value;
+            const guestCount = guestCountInput.value;
+            const bookingTime = bookingTimeInput.value;
+            // Check if booking time is at least 30 minutes from now and not too far in future
+            const now = new Date();
+            const bookingDateTime = new Date(bookingTime);
+            const minTime = new Date(now.getTime() + 30 * 60000); // 30 minutes
+            const maxTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+            return true;
         }
         
         // Set minimum datetime to now + 30 minutes
@@ -253,12 +830,35 @@
             const now = new Date();
             now.setMinutes(now.getMinutes() + 30);
             const minDateTime = now.toISOString().slice(0, 16);
-            document.getElementById('bookingTime').min = minDateTime;
+            const bookingTimeInput = document.getElementById('bookingTime');            
             
             // Load tables if restaurant is already selected (edit mode)
             if (document.getElementById('restaurantId').value) {
                 loadTables();
             }
+            
+            // Add change listener for restaurant selection
+            document.getElementById('restaurantId').addEventListener('change', loadTables);
+            
+            // Restore form state after conflict/error
+            restoreFormState();
+            
+            // Initialize total amount calculation
+            updateTotalAmount();
+            
+            // Add event listeners for dish checkboxes to show/hide quantity controls
+            document.addEventListener('change', function(e) {
+                if (e.target.classList.contains('dish-checkbox')) {
+                    const quantityControl = e.target.parentElement.querySelector('.quantity-control');
+                    if (quantityControl) {
+                        quantityControl.style.display = e.target.checked ? 'block' : 'none';
+                    }
+                }
+            });
+            
+            // Check waitlist availability when restaurant or guest count changes
+            document.getElementById('restaurantId').addEventListener('change', checkTableAvailability);
+            document.getElementById('guestCount').addEventListener('input', checkTableAvailability);
         });
         
         // Voucher validation function
@@ -305,6 +905,42 @@
             
             // Make API call
             fetch('/api/vouchers/validate', {
+
+        // Waitlist functionality
+        function joinWaitlist() {
+            const restaurantId = document.getElementById('restaurantId').value;
+            const guestCount = document.getElementById('guestCount').value;
+            
+            if (!restaurantId) {
+                alert('Please select a restaurant first');
+                return;
+            }
+            
+            if (!guestCount || guestCount < 1) {
+                alert('Please enter the number of guests');
+                return;
+            }
+            
+            const joinBtn = document.getElementById('joinWaitlistBtn');
+            const originalText = joinBtn.innerHTML;
+            
+            // Show loading state
+            joinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Joining...';
+            joinBtn.disabled = true;
+            
+            // Prepare form data
+            const formData = {
+                restaurantId: parseInt(restaurantId),
+                guestCount: parseInt(guestCount),
+                bookingTime: document.getElementById('bookingTime').value,
+                depositAmount: document.getElementById('depositAmount').value || 0,
+                note: document.getElementById('note').value || '',
+                dishIds: document.getElementById('selectedDishIds').value || '',
+                serviceIds: document.getElementById('selectedServiceIds').value || ''
+            };
+            
+            // Send AJAX request
+            fetch('/booking/waitlist', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -376,6 +1012,204 @@
                 style: 'currency',
                 currency: 'VND'
             }).format(amount);
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showWaitlistSuccess(data);
+                } else {
+                    alert('Error joining waitlist: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error joining waitlist. Please try again.');
+            })
+            .finally(() => {
+                // Restore button state
+                joinBtn.innerHTML = originalText;
+                joinBtn.disabled = false;
+            });
+        }
+        
+        function showWaitlistSuccess(data) {
+            const message = `🎉 Successfully joined waitlist!\n\n` +
+                          `📍 Restaurant: ${document.getElementById('restaurantId').selectedOptions[0].text}\n` +
+                          `👥 Party Size: ${document.getElementById('guestCount').value} guests\n` +
+                          `⏰ Queue Position: #${data.queuePosition}\n` +
+                          `⏱️ Estimated Wait Time: ${data.estimatedWaitTime} minutes\n\n` +
+                          `📱 You will be notified when a table becomes available.\n` +
+                          `💡 You can check your waitlist status in "My Reservations".`;
+            
+            alert(message);
+            
+            // Redirect to booking list to see waitlist entry
+            window.location.href = '/booking/my?filter=waitlist';
+        }
+        
+        function checkTableAvailability() {
+            const restaurantId = document.getElementById('restaurantId').value;
+            const guestCount = parseInt(document.getElementById('guestCount').value);
+            const bookingTime = document.getElementById('bookingTime').value;
+            const joinBtn = document.getElementById('joinWaitlistBtn');
+            
+            if (!restaurantId || !guestCount || !bookingTime) {
+                joinBtn.style.display = 'none';
+                return;
+            }
+            
+            // Check waitlist eligibility based on smart logic
+            const waitlistEligible = checkWaitlistEligibility(guestCount, bookingTime);
+            
+            if (!waitlistEligible.eligible) {
+                joinBtn.style.display = 'none';
+                return;
+            }
+            
+            // Check if there are available tables for the party size
+            fetch(`/api/booking/restaurants/${restaurantId}/tables`)
+                .then(response => response.json())
+                .then(tables => {
+                    const availableTables = tables.filter(table => 
+                        table.status === 'AVAILABLE' && 
+                        table.capacity >= guestCount
+                    );
+                    
+                    // Show join waitlist button if no tables available AND eligible
+                    if (availableTables.length === 0 && waitlistEligible.eligible) {
+                        joinBtn.style.display = 'inline-block';
+                        joinBtn.innerHTML = `<i class="fas fa-clock"></i> Join Waitlist ${waitlistEligible.reason ? '(' + waitlistEligible.reason + ')' : ''}`;
+                    } else {
+                        joinBtn.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking table availability:', error);
+                });
+        }
+        
+        function checkWaitlistEligibility(guestCount, bookingTime) {
+            const now = new Date();
+            const bookingDateTime = new Date(bookingTime);
+            const bookingHour = bookingDateTime.getHours();
+            const bookingDate = bookingDateTime.toDateString();
+            const currentDate = now.toDateString();
+            
+            // Check if it's same day booking
+            const isSameDay = bookingDate === currentDate;
+            
+            // Define peak hours (18:00 - 21:00)
+            const isPeakHour = bookingHour >= 18 && bookingHour <= 21;
+            
+            // Check party size limits
+            const maxWaitlistPartySize = 6; // Can be made configurable later
+            
+            // Rule 1: Party size too large for waitlist
+            if (guestCount > maxWaitlistPartySize) {
+                return {
+                    eligible: false,
+                    reason: `Groups larger than ${maxWaitlistPartySize} cannot join waitlist`
+                };
+            }
+            
+            // Rule 2: Future bookings (not same day) - more restrictive
+            if (!isSameDay) {
+                // For future bookings, only allow waitlist during peak hours
+                if (!isPeakHour) {
+                    return {
+                        eligible: false,
+                        reason: 'Waitlist only available during peak hours (6-9 PM) for future bookings'
+                    };
+                }
+            }
+            
+            // Rule 3: Same day bookings - more flexible
+            if (isSameDay) {
+                // Allow waitlist for same day bookings, but show different message
+                if (isPeakHour) {
+                    return {
+                        eligible: true,
+                        reason: 'Peak hours - high demand expected'
+                    };
+                } else {
+                    return {
+                        eligible: true,
+                        reason: 'Same day booking'
+                    };
+                }
+            }
+            
+            // Rule 4: Very far future bookings (more than 7 days)
+            const daysDifference = Math.ceil((bookingDateTime - now) / (1000 * 60 * 60 * 24));
+            if (daysDifference > 7) {
+                return {
+                    eligible: false,
+                    reason: 'Waitlist not available for bookings more than 7 days in advance'
+                };
+            }
+            
+            return { eligible: true };
+        }
+        
+        // Override loadTables function to also check waitlist availability
+        const originalLoadTables = loadTables;
+        loadTables = function() {
+            originalLoadTables();
+            // Check waitlist availability after loading tables
+            setTimeout(checkTableAvailability, 500);
+        };
+        
+        // Restore form state after conflict/error
+        function restoreFormState() {
+            // Restore table selection if any
+            const selectedTableId = document.getElementById('selectedTableId').value;
+            if (selectedTableId) {
+                // Wait for tables to load, then restore selection
+                setTimeout(() => {
+                    const tableCheckbox = document.querySelector(`input[value="${selectedTableId}"]`);
+                    if (tableCheckbox) {
+                        tableCheckbox.checked = true;
+                        updateTableSelectionUI();
+                    }
+                }, 1000);
+            }
+            
+            // Restore dish selections if any
+            const selectedDishIds = document.getElementById('selectedDishIds').value;
+            if (selectedDishIds) {
+                const dishSelections = selectedDishIds.split(',');
+                dishSelections.forEach(selection => {
+                    const [dishId, quantity] = selection.split(':');
+                    if (dishId && quantity) {
+                        // Wait for dishes to load, then restore selection
+                        setTimeout(() => {
+                            const dishCheckbox = document.querySelector(`input[value="${dishId}"]`);
+                            if (dishCheckbox) {
+                                dishCheckbox.checked = true;
+                                const quantityInput = dishCheckbox.parentElement.querySelector('.quantity-control input');
+                                if (quantityInput) {
+                                    quantityInput.value = quantity;
+                                }
+                                updateMenuSelectionUI();
+                            }
+                        }, 1000);
+                    }
+                });
+            }
+            
+            // Restore service selections if any
+            const selectedServiceIds = document.getElementById('selectedServiceIds').value;
+            if (selectedServiceIds) {
+                const serviceIds = selectedServiceIds.split(',');
+                serviceIds.forEach(serviceId => {
+                    const serviceCard = document.querySelector(`.service-card[data-service-id="${serviceId}"]`);
+                    if (serviceCard) {
+                        serviceCard.classList.add('selected');
+                    }
+                });
+            }
         }
     </script>
 </body>

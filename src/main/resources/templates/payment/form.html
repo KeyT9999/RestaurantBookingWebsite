@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout(~{::head}, ~{::body})}">
+<head>
+    <title th:text="${pageTitle}">Payment Form</title>
+    <style>
+        .payment-method-card {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .payment-method-card:hover {
+            border-color: #007bff;
+            box-shadow: 0 4px 8px rgba(0,123,255,0.1);
+        }
+        .payment-method-card.selected {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .payment-method-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .voucher-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .booking-summary {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <!-- Booking Summary -->
+                <div class="booking-summary">
+                    <h4><i class="fas fa-receipt"></i> Thông tin đặt bàn</h4>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nhà hàng:</strong> <span th:text="${booking.restaurant.restaurantName}">Restaurant Name</span></p>
+                            <p><strong>Thời gian:</strong> <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}">Booking Time</span></p>
+                            <p><strong>Số khách:</strong> <span th:text="${booking.numberOfGuests}">Number of Guests</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Trạng thái:</strong> 
+                                <span class="badge badge-warning" th:text="${booking.status.displayName}">Status</span>
+                            </p>
+                            <p><strong>Tổng tiền:</strong> 
+                                <span class="text-primary font-weight-bold" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-credit-card"></i> Chọn phương thức thanh toán</h4>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/payment/process}" method="post" id="paymentForm">
+                            <input type="hidden" name="bookingId" th:value="${booking.bookingId}">
+                            
+                            <!-- Voucher Section -->
+                            <div class="voucher-section">
+                                <h5><i class="fas fa-tag"></i> Mã giảm giá (tùy chọn)</h5>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="voucherCode" name="voucherCode" 
+                                           placeholder="Nhập mã giảm giá">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-secondary" type="button" id="applyVoucher">
+                                            <i class="fas fa-check"></i> Áp dụng
+                                        </button>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Nhập mã giảm giá để được giảm giá cho đơn hàng
+                                </small>
+                            </div>
+                            
+                            <!-- Payment Type Selection -->
+                            <div class="mb-4">
+                                <h5>Loại thanh toán</h5>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="payment-method-card" data-type="DEPOSIT">
+                                            <div class="text-center">
+                                                <div class="payment-method-icon text-warning">
+                                                    <i class="fas fa-coins"></i>
+                                                </div>
+                                                <h6>Đặt cọc</h6>
+                                                <p class="text-muted small">Thanh toán một phần để giữ bàn</p>
+                                                <small class="text-info">Chỉ hỗ trợ MoMo</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <div class="payment-method-card" data-type="FULL_PAYMENT">
+                                            <div class="text-center">
+                                                <div class="payment-method-icon text-success">
+                                                    <i class="fas fa-credit-card"></i>
+                                                </div>
+                                                <h6>Thanh toán toàn phần</h6>
+                                                <p class="text-muted small">Thanh toán đầy đủ ngay</p>
+                                                <small class="text-success">Hỗ trợ tất cả phương thức</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="paymentType" id="selectedPaymentType" required>
+                            </div>
+                            
+                            <!-- Payment Methods -->
+                            <div class="mb-4" id="paymentMethodsSection" style="display: none;">
+                                <h5>Phương thức thanh toán</h5>
+                                <div class="row">
+                                    <!-- Cash Payment (only for full payment) -->
+                                    <div class="col-md-6 mb-3" id="cashPaymentOption" style="display: none;">
+                                        <div class="payment-method-card" data-method="CASH">
+                                            <div class="text-center">
+                                                <div class="payment-method-icon text-success">
+                                                    <i class="fas fa-money-bill-wave"></i>
+                                                </div>
+                                                <h6>Tiền mặt</h6>
+                                                <p class="text-muted small">Thanh toán tại nhà hàng</p>
+                                                <small class="text-warning">Chỉ áp dụng cho thanh toán toàn phần</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Card Payment -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="payment-method-card" data-method="CARD">
+                                            <div class="text-center">
+                                                <div class="payment-method-icon text-primary">
+                                                    <i class="fas fa-credit-card"></i>
+                                                </div>
+                                                <h6>Thẻ</h6>
+                                                <p class="text-muted small">Visa, Mastercard</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- MoMo Payment -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="payment-method-card" data-method="MOMO">
+                                            <div class="text-center">
+                                                <div class="payment-method-icon text-danger">
+                                                    <i class="fab fa-momo"></i>
+                                                </div>
+                                                <h6>MoMo</h6>
+                                                <p class="text-muted small">Ví điện tử MoMo</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- ZaloPay Payment -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="payment-method-card" data-method="ZALOPAY">
+                                            <div class="text-center">
+                                                <div class="payment-method-icon text-info">
+                                                    <i class="fas fa-mobile-alt"></i>
+                                                </div>
+                                                <h6>ZaloPay</h6>
+                                                <p class="text-muted small">Ví điện tử ZaloPay</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <input type="hidden" name="paymentMethod" id="selectedPaymentMethod" required>
+                            </div>
+                            
+                            <!-- Payment Summary -->
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Tổng kết thanh toán</h6>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Tiền đặt bàn:</span>
+                                        <span th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
+                                    </div>
+                                    <div class="d-flex justify-content-between" id="discountRow" style="display: none;">
+                                        <span>Giảm giá:</span>
+                                        <span class="text-success" id="discountAmount">-0</span> VNĐ
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Tổng cộng:</strong>
+                                        <strong class="text-primary" id="totalAmount" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
+                                    </div>
+                                    <div class="d-flex justify-content-between" id="remainingAmountRow" style="display: none;">
+                                        <span>Số tiền còn lại:</span>
+                                        <span class="text-warning" id="remainingAmount">0</span> VNĐ
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg" id="payButton" disabled>
+                                    <i class="fas fa-credit-card"></i> Thanh toán
+                                </button>
+                                <a href="/booking/my" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedPaymentType = null;
+        
+        // Payment type selection
+        document.querySelectorAll('[data-type]').forEach(card => {
+            card.addEventListener('click', function() {
+                // Remove selected class from all type cards
+                document.querySelectorAll('[data-type]').forEach(c => c.classList.remove('selected'));
+                
+                // Add selected class to clicked card
+                this.classList.add('selected');
+                
+                // Set payment type value
+                selectedPaymentType = this.dataset.type;
+                document.getElementById('selectedPaymentType').value = selectedPaymentType;
+                
+                // Show payment methods section
+                document.getElementById('paymentMethodsSection').style.display = 'block';
+                
+                // Show/hide cash option based on payment type
+                const cashOption = document.getElementById('cashPaymentOption');
+                if (selectedPaymentType === 'FULL_PAYMENT') {
+                    cashOption.style.display = 'block';
+                } else {
+                    cashOption.style.display = 'none';
+                    // Remove cash selection if it was selected
+                    const cashCard = document.querySelector('[data-method="CASH"]');
+                    if (cashCard && cashCard.classList.contains('selected')) {
+                        cashCard.classList.remove('selected');
+                        document.getElementById('selectedPaymentMethod').value = '';
+                        document.getElementById('payButton').disabled = true;
+                    }
+                }
+                
+                // Clear payment method selection
+                document.querySelectorAll('[data-method]').forEach(c => c.classList.remove('selected'));
+                document.getElementById('selectedPaymentMethod').value = '';
+                document.getElementById('payButton').disabled = true;
+                
+                // Update payment summary
+                updatePaymentSummary();
+            });
+        });
+        
+        // Payment method selection
+        document.querySelectorAll('[data-method]').forEach(card => {
+            card.addEventListener('click', function() {
+                // Remove selected class from all method cards
+                document.querySelectorAll('[data-method]').forEach(c => c.classList.remove('selected'));
+                
+                // Add selected class to clicked card
+                this.classList.add('selected');
+                
+                // Set payment method value
+                const method = this.dataset.method;
+                document.getElementById('selectedPaymentMethod').value = method;
+                
+                // Enable pay button
+                document.getElementById('payButton').disabled = false;
+                
+                // Update payment summary
+                updatePaymentSummary();
+                
+                // Update button text based on method and type
+                const payButton = document.getElementById('payButton');
+                const typeText = selectedPaymentType === 'DEPOSIT' ? 'Đặt cọc' : 'Thanh toán';
+                
+                switch(method) {
+                    case 'CASH':
+                        payButton.innerHTML = `<i class="fas fa-money-bill-wave"></i> ${typeText} tiền mặt`;
+                        break;
+                    case 'CARD':
+                        payButton.innerHTML = `<i class="fas fa-credit-card"></i> ${typeText} thẻ`;
+                        break;
+                    case 'MOMO':
+                        payButton.innerHTML = `<i class="fab fa-momo"></i> ${typeText} MoMo`;
+                        break;
+                    case 'ZALOPAY':
+                        payButton.innerHTML = `<i class="fas fa-mobile-alt"></i> ${typeText} ZaloPay`;
+                        break;
+                }
+            });
+        });
+
+        // Update payment summary
+        function updatePaymentSummary() {
+            const depositAmount = /*[[${booking.depositAmount}]]*/ 0;
+            const totalAmountElement = document.getElementById('totalAmount');
+            const remainingAmountRow = document.getElementById('remainingAmountRow');
+            const remainingAmountElement = document.getElementById('remainingAmount');
+            
+            if (selectedPaymentType === 'DEPOSIT') {
+                // For deposit, show deposit amount
+                totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN');
+                remainingAmountRow.style.display = 'none';
+            } else {
+                // For full payment, show full amount (for now same as deposit)
+                totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN');
+                remainingAmountRow.style.display = 'none';
+                // TODO: Calculate and show remaining amount when full payment logic is implemented
+            }
+        }
+
+        // Voucher application
+        document.getElementById('applyVoucher').addEventListener('click', function() {
+            const voucherCode = document.getElementById('voucherCode').value.trim();
+            if (voucherCode) {
+                // TODO: Implement voucher validation via AJAX
+                alert('Tính năng voucher đang được phát triển');
+            }
+        });
+
+        // Form submission
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            const selectedType = document.getElementById('selectedPaymentType').value;
+            const selectedMethod = document.getElementById('selectedPaymentMethod').value;
+            
+            if (!selectedType) {
+                e.preventDefault();
+                alert('Vui lòng chọn loại thanh toán');
+                return;
+            }
+            
+            if (!selectedMethod) {
+                e.preventDefault();
+                alert('Vui lòng chọn phương thức thanh toán');
+                return;
+            }
+            
+            // Validate deposit + cash combination
+            if (selectedType === 'DEPOSIT' && selectedMethod === 'CASH') {
+                e.preventDefault();
+                alert('Đặt cọc không được phép thanh toán bằng tiền mặt. Vui lòng chọn MoMo.');
+                return;
+            }
+            
+            // Show loading state
+            const payButton = document.getElementById('payButton');
+            payButton.disabled = true;
+            payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+        });
+    </script>
+</body>
+</html>

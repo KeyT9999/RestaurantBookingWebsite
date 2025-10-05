@@ -31,8 +31,9 @@ public class Voucher {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "voucher_id")
     private Integer voucherId;
-    
+
     @Column(name = "code", nullable = false, columnDefinition = "citext")
+
     @NotBlank(message = "Mã voucher không được để trống")
     @Size(max = 50, message = "Mã voucher không được quá 50 ký tự")
     private String code;
