@@ -18,6 +18,7 @@ import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Dish;
+import com.example.booking.dto.RestaurantServiceDto;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.User;
 import com.example.booking.dto.BookingDetailsDto;
@@ -122,12 +123,31 @@ public class BookingApiController {
      * API endpoint để lấy danh sách dịch vụ theo nhà hàng
      */
     @GetMapping("/restaurants/{restaurantId}/services")
-    public ResponseEntity<List<RestaurantService>> getServicesByRestaurant(
+    public ResponseEntity<List<RestaurantServiceDto>> getServicesByRestaurant(
             @PathVariable("restaurantId") Integer restaurantId) {
         try {
+            System.out.println("🔍 API: Getting services for restaurant ID: " + restaurantId);
+
             List<RestaurantService> services = restaurantService.findServicesByRestaurant(restaurantId);
-            return ResponseEntity.ok(services);
+            System.out.println("✅ API: Found " + services.size() + " services");
+
+            // Convert to DTO to avoid Hibernate proxy issues
+            List<RestaurantServiceDto> serviceDtos = services.stream()
+                    .map(service -> new RestaurantServiceDto(
+                            service.getServiceId(),
+                            service.getName(),
+                            service.getCategory(),
+                            service.getDescription(),
+                            service.getPrice(),
+                            service.getStatus() != null ? service.getStatus().toString() : "UNKNOWN",
+                            service.getRestaurant() != null ? service.getRestaurant().getRestaurantId() : null))
+                    .collect(Collectors.toList());
+
+            System.out.println("✅ API: Returning " + serviceDtos.size() + " service DTOs");
+            return ResponseEntity.ok(serviceDtos);
         } catch (Exception e) {
+            System.err.println("❌ API Error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }

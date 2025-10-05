@@ -116,6 +116,24 @@ public class RestaurantManagementService {
      */
     @Transactional(readOnly = true)
     public List<RestaurantService> findServicesByRestaurant(Integer restaurantId) {
-        return restaurantServiceRepository.findByRestaurantRestaurantIdAndStatusOrderByNameAsc(restaurantId, ServiceStatus.AVAILABLE);
+        System.out.println("🔍 Looking for services for restaurant " + restaurantId);
+        try {
+            // Use the proper repository method with AVAILABLE status
+            List<RestaurantService> services = restaurantServiceRepository
+                    .findByRestaurantRestaurantIdAndStatusOrderByNameAsc(restaurantId, ServiceStatus.AVAILABLE);
+            System.out.println("🔍 Found " + services.size() + " available services for restaurant " + restaurantId);
+
+            // Log each service for debugging
+            for (RestaurantService service : services) {
+                System.out.println("   - Service: " + service.getName() + " (ID: " + service.getServiceId()
+                        + ", Status: " + service.getStatus() + ")");
+            }
+
+            return services;
+        } catch (Exception e) {
+            System.err.println("❌ Error finding services: " + e.getMessage());
+            e.printStackTrace();
+            return new java.util.ArrayList<>();
+        }
     }
 }
