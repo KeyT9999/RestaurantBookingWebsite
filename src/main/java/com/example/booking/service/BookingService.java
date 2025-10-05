@@ -36,7 +36,6 @@ import com.example.booking.repository.CustomerRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.RestaurantTableRepository;
 
-import com.example.booking.service.VoucherService;
 
 import com.example.booking.repository.NotificationRepository;
 import com.example.booking.repository.DishRepository;
@@ -891,7 +890,93 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    /**
+     * Update booking for restaurant owner (with restaurant ownership validation)
+     */
+    public Booking updateBookingForRestaurantOwner(Integer bookingId, BookingForm form, Integer restaurantId) {
+        System.out
+                .println("🔍 Updating booking for restaurant owner: " + bookingId + " for restaurant: " + restaurantId);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        // Validate restaurant ownership
+        if (!booking.getRestaurant().getRestaurantId().equals(restaurantId)) {
+            throw new IllegalArgumentException("You can only edit bookings for your own restaurant");
+        }
+
+        // Validate booking can be updated (restaurant owners have more flexibility)
+        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.COMPLETED) {
+            throw new IllegalArgumentException("Cannot edit cancelled or completed bookings");
+        }
+
+        // Validate conflicts for update (restaurant owners can override some conflicts)
+        System.out.println("🔍 Validating booking update conflicts for restaurant owner...");
+        try {
+            conflictService.validateBookingUpdateConflicts(bookingId, form, booking.getCustomer().getCustomerId());
+            System.out.println("✅ No conflicts found, proceeding with booking update");
+        } catch (BookingConflictException e) {
+            System.err.println("⚠️ Booking update conflict detected: " + e.getMessage());
+            // Restaurant owners can override some conflicts, but not all
+            if (e.getMessage().contains("Table already booked")) {
+                throw e; // Don't allow table conflicts
+            }
+            System.out.println("⚠️ Restaurant owner overriding conflict: " + e.getMessage());
+        }
+
+        // Validate booking time
+        validateBookingTime(form.getBookingTime());
+
+        // Update booking fields
+        booking.setBookingTime(form.getBookingTime());
+        booking.setNumberOfGuests(form.getGuestCount());
+        booking.setNote(form.getNote());
+
+        // Update restaurant if changed (restaurant owners can change restaurant)
+        if (form.getRestaurantId() != null
+                && !form.getRestaurantId().equals(booking.getRestaurant().getRestaurantId())) {
+            RestaurantProfile restaurant = restaurantProfileRepository.findById(form.getRestaurantId())
+                    .orElseThrow(() -> new IllegalArgumentException("Restaurant not found"));
+            booking.setRestaurant(restaurant);
+        }
+
+        // Update deposit amount if table changed
+        if (form.getTableId() != null && !form.getTableId().equals(getCurrentTableId(booking))) {
+            RestaurantTable table = restaurantTableRepository.findById(form.getTableId())
+                    .orElseThrow(() -> new IllegalArgumentException("Table not found"));
+            booking.setDepositAmount(table.getDepositAmount());
+
+            // Update table assignment
+            bookingTableRepository.deleteByBooking(booking);
+            assignTableToBooking(booking, form.getTableId());
+        }
+
+        // Update dishes
+        bookingDishRepository.deleteByBooking(booking);
+        if (form.getDishIds() != null && !form.getDishIds().trim().isEmpty()) {
+            assignDishesToBooking(booking, form.getDishIds());
+        }
+
+        // Update services
+        bookingServiceRepository.deleteByBooking(booking);
+        if (form.getServiceIds() != null && !form.getServiceIds().trim().isEmpty()) {
+            assignServicesToBooking(booking, form.getServiceIds());
+        }
+
+        Booking saved = bookingRepository.save(booking);
+        System.out.println("✅ Booking updated successfully for restaurant owner: " + saved.getBookingId());
+
+        return saved;
+    }
+
     // Helper methods
+    private Integer getCurrentTableId(Booking booking) {
+        if (booking.getBookingTables() != null && !booking.getBookingTables().isEmpty()) {
+            return booking.getBookingTables().get(0).getTable().getTableId();
+        }
+        return null;
+    }
+
     private Map<Integer, Integer> parseDishIds(String dishIds) {
         Map<Integer, Integer> dishMap = new HashMap<>();
         if (dishIds == null || dishIds.trim().isEmpty()) {
@@ -923,13 +1008,5 @@ public class BookingService {
             }
         }
         return serviceIdList;
-    }
-
-    private Integer getCurrentTableId(Booking booking) {
-        List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
-        if (!bookingTables.isEmpty()) {
-            return bookingTables.get(0).getTable().getTableId();
-        }
-        return null;
     }
 }

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quản lý Waitlist - Waitlist Management</title>
+    <link rel="stylesheet" href="/css/restaurant-admin.css" />
+    <style>
+        .chip-waiting { background: #fff3cd; color: #856404; }
+        .chip-called { background: #d1ecf1; color: #0c5460; }
+        .chip-seated { background: #d4edda; color: #155724; }
+        .chip-cancelled { background: #f8d7da; color: #721c24; }
+        
+        .waitlist-section {
+            margin-bottom: 2rem;
+        }
+        
+        .waitlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .waitlist-count {
+            background: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        .waitlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            background: white;
+        }
+        
+        .waitlist-item:hover {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .customer-info {
+            flex: 1;
+        }
+        
+        .customer-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .customer-details {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .waitlist-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-small {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .estimated-time {
+            background: #e9ecef;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            color: #495057;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="page-switch card">
+        <a class="nav-btn" href="/restaurant-owner/dashboard" title="Về FOH Dashboard">← FOH Dashboard</a>
+        <a class="nav-btn" href="/restaurant-owner/bookings" title="Quản lý Đặt bàn">→ Quản lý Đặt bàn</a>
+    </nav>
+
+    <div class="container">
+        <!-- Error Message -->
+        <div th:if="${error != null}" class="card" style="background: #f8d7da; border-color: #f5c6cb;">
+            <h2 class="h2" style="color: #721c24;">⚠️ Lỗi</h2>
+            <p th:text="${error}" style="color: #721c24;">Có lỗi xảy ra</p>
+            <div class="actions">
+                <a href="/restaurant-owner/dashboard" class="btn btn-ghost">Về Dashboard</a>
+            </div>
+        </div>
+
+        <header class="nav card" th:if="${error == null}">
+            <div class="nav-left">
+                <h1 class="h1">Quản lý Waitlist</h1>
+                <p class="muted">Quản lý danh sách khách hàng chờ bàn</p>
+            </div>
+            <div class="actions">
+                <button class="btn" onclick="callNextCustomer()">📞 Gọi khách tiếp theo</button>
+                <button class="btn btn-ghost" onclick="refreshWaitlist()">🔄 Làm mới</button>
+            </div>
+        </header>
+
+        <!-- Waitlist Statistics -->
+        <div class="card" th:if="${error == null}">
+            <h2 class="h2">Thống kê Waitlist</h2>
+            <div class="grid grid-3">
+                <div class="stat-item">
+                    <div class="stat-number" th:text="${waitingCount}">0</div>
+                    <div class="stat-label">Đang chờ</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" th:text="${calledCount}">0</div>
+                    <div class="stat-label">Đã gọi</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" th:text="${waitingCount + calledCount}">0</div>
+                    <div class="stat-label">Tổng cộng</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waiting Customers -->
+        <div class="waitlist-section" th:if="${error == null}">
+            <div class="waitlist-header">
+                <h2 class="h2">Khách hàng đang chờ</h2>
+                <div class="waitlist-count" th:text="${waitingCount} + ' khách'">0 khách</div>
+            </div>
+            
+            <div th:if="${waitingCustomers != null and !waitingCustomers.empty}">
+                <div th:each="waitlist : ${waitingCustomers}" class="waitlist-item">
+                    <div class="customer-info">
+                        <div class="customer-name" th:text="${waitlist.customer != null and waitlist.customer.user != null and waitlist.customer.user.fullName != null} ? ${waitlist.customer.user.fullName} : 'Khách hàng #' + ${waitlist.waitlistId}">Nguyễn Văn A</div>
+                        <div class="customer-details">
+                            <span th:text="${waitlist.partySize} + ' người'">2 người</span> • 
+                            <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:30</span> • 
+                            <span class="estimated-time" th:if="${waitlist.estimatedWaitTime != null}" th:text="${waitlist.estimatedWaitTime} + ' phút'">15 phút</span>
+                        </div>
+                    </div>
+                    <div class="waitlist-actions">
+                        <a th:href="@{/restaurant-owner/waitlist/{id}(id=${waitlist.waitlistId})}" 
+                           class="btn btn-small btn-info" 
+                           title="Xem chi tiết">
+                            👁️ Chi tiết
+                        </a>
+                        <form th:action="@{/restaurant-owner/waitlist/call-next}" method="post" style="display: inline;">
+                            <input type="hidden" name="restaurantId" th:value="${restaurantId}">
+                            <button type="submit" class="btn btn-small">📞 Gọi</button>
+                        </form>
+                        <form th:action="@{/restaurant-owner/waitlist/cancel/{id}(id=${waitlist.waitlistId})}" method="post" style="display: inline;">
+                            <button type="submit" class="btn btn-small btn-ghost" onclick="return confirm('Bạn có chắc muốn hủy waitlist này?')">❌ Hủy</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div th:if="${waitingCustomers == null or waitingCustomers.empty}" class="empty-state">
+                <div class="empty-state-icon">⏰</div>
+                <h3>Không có khách hàng nào đang chờ</h3>
+                <p>Danh sách waitlist hiện tại trống</p>
+            </div>
+        </div>
+
+        <!-- Called Customers -->
+        <div class="waitlist-section" th:if="${error == null}">
+            <div class="waitlist-header">
+                <h2 class="h2">Khách hàng đã gọi</h2>
+                <div class="waitlist-count" th:text="${calledCount} + ' khách'">0 khách</div>
+            </div>
+            
+            <div th:if="${calledCustomers != null and !calledCustomers.empty}">
+                <div th:each="waitlist : ${calledCustomers}" class="waitlist-item">
+                    <div class="customer-info">
+                        <div class="customer-name" th:text="${waitlist.customer != null and waitlist.customer.user != null and waitlist.customer.user.fullName != null} ? ${waitlist.customer.user.fullName} : 'Khách hàng #' + ${waitlist.waitlistId}">Nguyễn Văn A</div>
+                        <div class="customer-details">
+                            <span th:text="${waitlist.partySize} + ' người'">2 người</span> • 
+                            <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:30</span> • 
+                            <span class="estimated-time">Đã gọi</span>
+                        </div>
+                    </div>
+                    <div class="waitlist-actions">
+                        <a th:href="@{/restaurant-owner/waitlist/{id}(id=${waitlist.waitlistId})}" 
+                           class="btn btn-small btn-info" 
+                           title="Xem chi tiết">
+                            👁️ Chi tiết
+                        </a>
+                        <button class="btn btn-small" th:onclick="'showSeatDialog(' + ${waitlist.waitlistId} + ')'">🪑 Cho ngồi</button>
+                        <form th:action="@{/restaurant-owner/waitlist/cancel/{id}(id=${waitlist.waitlistId})}" method="post" style="display: inline;">
+                            <button type="submit" class="btn btn-small btn-ghost" onclick="return confirm('Bạn có chắc muốn hủy waitlist này?')">❌ Hủy</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div th:if="${calledCustomers == null or calledCustomers.empty}" class="empty-state">
+                <div class="empty-state-icon">📞</div>
+                <h3>Không có khách hàng nào đã được gọi</h3>
+                <p>Chưa có khách hàng nào được gọi từ waitlist</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seat Customer Modal -->
+    <div id="seatModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Cho khách hàng ngồi</h3>
+                <span class="close" onclick="closeSeatDialog()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="seatForm" method="post">
+                    <div class="form-item">
+                        <label class="form-label">Chọn bàn</label>
+                        <select name="tableId" class="form-control" required>
+                            <option value="">-- Chọn bàn --</option>
+                            <!-- Tables will be loaded via AJAX -->
+                        </select>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn">Xác nhận</button>
+                        <button type="button" class="btn btn-ghost" onclick="closeSeatDialog()">Hủy</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function callNextCustomer() {
+            if (confirm('Bạn có chắc muốn gọi khách hàng tiếp theo?')) {
+                // This will be handled by the form submission
+            }
+        }
+
+        function refreshWaitlist() {
+            location.reload();
+        }
+
+        function showSeatDialog(waitlistId) {
+            document.getElementById('seatModal').style.display = 'block';
+            document.getElementById('seatForm').action = '/restaurant-owner/waitlist/seat/' + waitlistId;
+            
+            // Load available tables (simplified - in real app, this would be AJAX)
+            const tableSelect = document.querySelector('select[name="tableId"]');
+            tableSelect.innerHTML = '<option value="">-- Chọn bàn --</option>';
+            // Add some sample tables
+            for (let i = 1; i <= 10; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = 'Bàn ' + i;
+                tableSelect.appendChild(option);
+            }
+        }
+
+        function closeSeatDialog() {
+            document.getElementById('seatModal').style.display = 'none';
+        }
+
+        // Auto refresh every 30 seconds
+        setInterval(function() {
+            // Only refresh if no modal is open
+            if (document.getElementById('seatModal').style.display === 'none') {
+                location.reload();
+            }
+        }, 30000);
+    </script>
+
+    <style>
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            margin-top: 0.5rem;
+        }
+    </style>
+</body>
+</html>
