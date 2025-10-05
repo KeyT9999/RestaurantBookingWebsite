@@ -91,6 +91,7 @@ public class BookingController {
 
         try {
             UUID customerId = getCurrentCustomerId(authentication);
+            // Voucher integration is now handled in BookingService.createBooking()
             Booking booking = bookingService.createBooking(form, customerId);
 
             redirectAttributes.addFlashAttribute("successMessage",

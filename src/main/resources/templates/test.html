@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+</head>
+<body>
+    <h1 th:text="${message}">Test Message</h1>
+    <p th:text="'Total vouchers: ' + ${totalVouchers}">Total: 0</p>
+    
+    <div th:if="${vouchers != null and !vouchers.empty}">
+        <h2>Vouchers List:</h2>
+        <table border="1">
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Status</th>
+                <th>Restaurant</th>
+            </tr>
+            <tr th:each="voucher : ${vouchers}">
+                <td th:text="${voucher.code}">CODE</td>
+                <td th:text="${voucher.description}">DESC</td>
+                <td th:text="${voucher.discountType}">TYPE</td>
+                <td th:text="${voucher.discountValue}">VALUE</td>
+                <td th:text="${voucher.status}">STATUS</td>
+                <td th:text="${voucher.restaurant != null ? voucher.restaurant.restaurantId : 'GLOBAL'}">RESTAURANT</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div th:if="${vouchers == null or vouchers.empty}">
+        <p>No vouchers found</p>
+    </div>
+</body>
+</html>

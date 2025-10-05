@@ -136,6 +136,47 @@
                                 </small>
                             </div>
                             
+                            <!-- Voucher Code -->
+                            <div class="mb-4">
+                                <label for="voucherCode" class="form-label">
+                                    <i class="fas fa-ticket-alt luxury-icon"></i> Voucher Code (Optional)
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="voucherCode" 
+                                           name="voucherCode"
+                                           th:field="*{voucherCode}"
+                                           th:classappend="${#fields.hasErrors('voucherCode')} ? 'is-invalid' : ''"
+                                           maxlength="50" 
+                                           placeholder="Enter voucher code">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary" 
+                                            id="validateVoucherBtn"
+                                            onclick="validateVoucher()">
+                                        <i class="fas fa-check"></i> Check
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('voucherCode')}" 
+                                     th:errors="*{voucherCode}"></div>
+                                
+                                <!-- Voucher validation result -->
+                                <div id="voucherResult" class="mt-2" style="display: none;">
+                                    <div id="voucherSuccess" class="alert alert-success" style="display: none;">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span id="voucherSuccessText"></span>
+                                    </div>
+                                    <div id="voucherError" class="alert alert-danger" style="display: none;">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <span id="voucherErrorText"></span>
+                                    </div>
+                                </div>
+                                
+                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
+                                    Enter a valid voucher code to get discount on your reservation
+                                </small>
+                            </div>
+                            
                             <!-- Special Requests -->
                             <div class="mb-4">
                                 <label for="note" class="form-label">
@@ -219,6 +260,123 @@
                 loadTables();
             }
         });
+        
+        // Voucher validation function
+        function validateVoucher() {
+            const voucherCode = document.getElementById('voucherCode').value.trim();
+            const restaurantId = document.getElementById('restaurantId').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+            const guestCount = document.getElementById('guestCount').value;
+            
+            if (!voucherCode) {
+                showVoucherError('Please enter a voucher code');
+                return;
+            }
+            
+            if (!restaurantId) {
+                showVoucherError('Please select a restaurant first');
+                return;
+            }
+            
+            if (!bookingTime) {
+                showVoucherError('Please select booking time first');
+                return;
+            }
+            
+            if (!guestCount) {
+                showVoucherError('Please enter number of guests first');
+                return;
+            }
+            
+            // Show loading state
+            const validateBtn = document.getElementById('validateVoucherBtn');
+            const originalText = validateBtn.innerHTML;
+            validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            validateBtn.disabled = true;
+            
+            // Prepare request data
+            const requestData = {
+                code: voucherCode,
+                restaurantId: parseInt(restaurantId),
+                bookingTime: bookingTime,
+                guestCount: parseInt(guestCount),
+                orderAmount: 1000000 // Placeholder amount - should be calculated from actual order
+            };
+            
+            // Make API call
+            fetch('/api/vouchers/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    const discountText = data.calculatedDiscount ? 
+                        `Discount: ${formatCurrency(data.calculatedDiscount)}` : 
+                        'Voucher is valid';
+                    showVoucherSuccess(discountText);
+                } else {
+                    const errorMessage = getVoucherErrorMessage(data.reason);
+                    showVoucherError(errorMessage);
+                }
+            })
+            .catch(error => {
+                console.error('Error validating voucher:', error);
+                showVoucherError('Error validating voucher. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                validateBtn.innerHTML = originalText;
+                validateBtn.disabled = false;
+            });
+        }
+        
+        function showVoucherSuccess(message) {
+            hideVoucherMessages();
+            document.getElementById('voucherSuccessText').textContent = message;
+            document.getElementById('voucherSuccess').style.display = 'block';
+            document.getElementById('voucherResult').style.display = 'block';
+        }
+        
+        function showVoucherError(message) {
+            hideVoucherMessages();
+            document.getElementById('voucherErrorText').textContent = message;
+            document.getElementById('voucherError').style.display = 'block';
+            document.getElementById('voucherResult').style.display = 'block';
+        }
+        
+        function hideVoucherMessages() {
+            document.getElementById('voucherSuccess').style.display = 'none';
+            document.getElementById('voucherError').style.display = 'none';
+        }
+        
+        function getVoucherErrorMessage(reason) {
+            const errorMessages = {
+                'EMPTY_CODE': 'Please enter a voucher code',
+                'NOT_FOUND': 'Voucher code not found',
+                'INACTIVE': 'This voucher is not active',
+                'NOT_STARTED': 'This voucher is not yet active',
+                'EXPIRED': 'This voucher has expired',
+                'RESTAURANT_SCOPE_MISMATCH': 'This voucher is not valid for the selected restaurant',
+                'MIN_ORDER_NOT_MET': 'Order amount does not meet minimum requirement',
+                'GLOBAL_LIMIT_REACHED': 'This voucher has reached its usage limit',
+                'PER_CUSTOMER_LIMIT_REACHED': 'You have reached the usage limit for this voucher',
+                'NOT_ASSIGNED': 'This voucher is not assigned to you',
+                'LIMIT_REACHED': 'You have used this voucher too many times',
+                'APPLICATION_ERROR': 'Error applying voucher. Please try again.'
+            };
+            return errorMessages[reason] || 'Invalid voucher code';
+        }
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
+        }
     </script>
 </body>
 </html> 
