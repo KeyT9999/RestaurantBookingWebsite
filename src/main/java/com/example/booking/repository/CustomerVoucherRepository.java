@@ -24,6 +24,9 @@ public interface CustomerVoucherRepository extends JpaRepository<CustomerVoucher
 
     List<CustomerVoucher> findByCustomer_CustomerId(UUID customerId);
     
+    @Query("SELECT cv FROM CustomerVoucher cv WHERE cv.customer.customerId = :customerId")
+    List<CustomerVoucher> findByCustomerId(@Param("customerId") UUID customerId);
+    
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT cv FROM CustomerVoucher cv WHERE cv.customer.customerId = :customerId AND cv.voucher.voucherId = :voucherId")
     Optional<CustomerVoucher> findByCustomerIdAndVoucherIdForUpdate(@Param("customerId") UUID customerId, 

@@ -2,7 +2,9 @@ package com.example.booking.web.controller.admin;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -116,7 +118,15 @@ public class AdminVoucherController {
         
         List<Voucher> pageVouchers = allVouchers.subList(startIndex, endIndex);
         
+        // Add usage statistics for each voucher
+        Map<Integer, Long> voucherUsageMap = new HashMap<>();
+        for (Voucher voucher : pageVouchers) {
+            Long usageCount = voucherService.countRedemptionsByVoucherId(voucher.getVoucherId());
+            voucherUsageMap.put(voucher.getVoucherId(), usageCount);
+        }
+        
         model.addAttribute("vouchers", pageVouchers);
+        model.addAttribute("voucherUsageMap", voucherUsageMap);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalVouchers", totalVouchers);
@@ -380,12 +390,29 @@ public class AdminVoucherController {
             model.addAttribute("voucher", voucher);
             model.addAttribute("voucherId", id);
             
-            // TODO: Get voucher statistics (usage count, total discount, etc.)
-            // For now, we'll use placeholder values
-            model.addAttribute("usageCount", 0);
-            model.addAttribute("totalDiscount", 0);
-            model.addAttribute("usageRate", 0);
-            model.addAttribute("remainingUses", voucher.getGlobalUsageLimit() != null ? voucher.getGlobalUsageLimit() : "Unlimited");
+            // Get voucher statistics (usage count, total discount, etc.)
+            Long usageCount = voucherService.countRedemptionsByVoucherId(id);
+            model.addAttribute("usageCount", usageCount);
+            
+            // Calculate remaining uses
+            String remainingUses;
+            if (voucher.getGlobalUsageLimit() != null) {
+                long remaining = voucher.getGlobalUsageLimit() - usageCount;
+                remainingUses = remaining > 0 ? String.valueOf(remaining) : "0 (Limit reached)";
+            } else {
+                remainingUses = "Unlimited";
+            }
+            model.addAttribute("remainingUses", remainingUses);
+            
+            // Calculate usage rate
+            double usageRate = 0.0;
+            if (voucher.getGlobalUsageLimit() != null && voucher.getGlobalUsageLimit() > 0) {
+                usageRate = (double) usageCount / voucher.getGlobalUsageLimit() * 100;
+            }
+            model.addAttribute("usageRate", String.format("%.1f%%", usageRate));
+            
+            // TODO: Calculate total discount given (requires additional query)
+            model.addAttribute("totalDiscount", "₫0");
             
             return "admin/vouchers/detail";
             
