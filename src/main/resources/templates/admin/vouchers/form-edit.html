@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Voucher - Admin Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Admin CSS -->
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="fragments/header :: site-header"></div>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container mt-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-edit me-2"></i>
+                                Edit Voucher
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/admin/vouchers/{id}/edit(id=${voucherId})}" 
+                                  method="post" 
+                                  th:object="${voucherForm}">
+                                
+                                <!-- Hidden field for voucher code -->
+                                <input type="hidden" th:field="*{code}">
+                                
+                                <!-- Voucher Information (Read-only) -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-info mb-3">
+                                            <i class="fas fa-info-circle me-2"></i>Voucher Information
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Voucher Code</label>
+                                        <div class="form-control-plaintext bg-light p-2 rounded">
+                                            <code th:text="${voucherForm.code}">VOUCHER_CODE</code>
+                                        </div>
+                                        <small class="form-text text-muted">Voucher code cannot be changed after creation</small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Created Date</label>
+                                        <div class="form-control-plaintext bg-light p-2 rounded">
+                                            <i class="fas fa-calendar-plus me-1"></i>
+                                            <span th:text="${#temporals.format(voucherForm.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Basic Information -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-primary mb-3">
+                                            <i class="fas fa-edit me-2"></i>Editable Information
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select class="form-control" id="status" th:field="*{status}">
+                                            <option th:each="status : ${statuses}" 
+                                                    th:value="${status}" 
+                                                    th:text="${status.getDisplayName()}">Active</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-12 mb-3">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control" 
+                                                  id="description" 
+                                                  th:field="*{description}"
+                                                  rows="3" 
+                                                  placeholder="Enter voucher description"></textarea>
+                                    </div>
+                                </div>
+                                
+                                <!-- Discount Configuration -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-success mb-3">
+                                            <i class="fas fa-percentage me-2"></i>Discount Configuration
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="discountType" class="form-label">Discount Type</label>
+                                        <select class="form-control" id="discountType" th:field="*{discountType}">
+                                            <option th:each="type : ${discountTypes}" 
+                                                    th:value="${type.name()}" 
+                                                    th:text="${type.getDisplayName()}">Percentage</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="discountValue" class="form-label">Discount Value</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="discountValue" 
+                                               th:field="*{discountValue}"
+                                               step="0.01" 
+                                               min="0"
+                                               placeholder="Enter discount value">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="minOrderAmount" class="form-label">Minimum Order Amount</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="minOrderAmount" 
+                                               th:field="*{minOrderAmount}"
+                                               step="0.01" 
+                                               min="0"
+                                               placeholder="Enter minimum order amount">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="maxDiscountAmount" class="form-label">Maximum Discount Amount</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="maxDiscountAmount" 
+                                               th:field="*{maxDiscountAmount}"
+                                               step="0.01" 
+                                               min="0"
+                                               placeholder="Enter maximum discount amount">
+                                    </div>
+                                </div>
+                                
+                                <!-- Usage Limits -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-warning mb-3">
+                                            <i class="fas fa-users me-2"></i>Usage Limits
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="globalUsageLimit" class="form-label">Global Usage Limit</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="globalUsageLimit" 
+                                               th:field="*{globalUsageLimit}"
+                                               min="1"
+                                               placeholder="Enter global usage limit">
+                                        <small class="form-text text-muted">Leave empty for unlimited usage</small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="perCustomerLimit" class="form-label">Per Customer Limit</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="perCustomerLimit" 
+                                               th:field="*{perCustomerLimit}"
+                                               min="1"
+                                               placeholder="Enter per customer limit">
+                                        <small class="form-text text-muted">Leave empty for unlimited per customer</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Validity Period -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-info mb-3">
+                                            <i class="fas fa-calendar-alt me-2"></i>Validity Period
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="startDate" class="form-label">Start Date</label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="startDate" 
+                                               th:field="*{startDate}">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="endDate" class="form-label">End Date</label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="endDate" 
+                                               th:field="*{endDate}">
+                                        <small class="form-text text-muted">Leave empty for no expiration</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between">
+                                            <a th:href="@{/admin/vouchers}" class="btn btn-secondary me-md-2">
+                                                <i class="fas fa-arrow-left me-1"></i>Back to List
+                                            </a>
+                                            <button type="submit" class="btn btn-warning">
+                                                <i class="fas fa-save me-1"></i>Update Voucher
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer Fragment -->
+    <div th:insert="fragments/footer :: site-footer"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

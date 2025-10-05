@@ -31,8 +31,9 @@ public class Voucher {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "voucher_id")
     private Integer voucherId;
-    
-    @Column(name = "code", nullable = false, unique = true, columnDefinition = "citext")
+
+    @Column(name = "code", nullable = false, columnDefinition = "citext")
+
     @NotBlank(message = "Mã voucher không được để trống")
     @Size(max = 50, message = "Mã voucher không được quá 50 ký tự")
     private String code;
@@ -42,10 +43,10 @@ public class Voucher {
     private String description;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "discount_type")
+    @Column(name = "discount_type", nullable = false)
     private DiscountType discountType;
     
-    @Column(name = "discount_value", precision = 18, scale = 2)
+    @Column(name = "discount_value", precision = 18, scale = 2, nullable = false)
     @DecimalMin(value = "0.0", message = "Giá trị giảm giá không được âm")
     private BigDecimal discountValue;
     
@@ -55,9 +56,18 @@ public class Voucher {
     @Column(name = "end_date")
     private LocalDate endDate;
     
-    @Column(name = "usage_limit", nullable = false)
-    @Min(value = 1, message = "Giới hạn sử dụng tối thiểu là 1")
-    private Integer usageLimit = 1;
+    @Column(name = "global_usage_limit")
+    private Integer globalUsageLimit;
+    
+    @Column(name = "per_customer_limit", nullable = false)
+    @Min(value = 1, message = "Giới hạn sử dụng mỗi khách tối thiểu là 1")
+    private Integer perCustomerLimit = 1;
+    
+    @Column(name = "min_order_amount", precision = 18, scale = 2)
+    private BigDecimal minOrderAmount;
+    
+    @Column(name = "max_discount_amount", precision = 18, scale = 2)
+    private BigDecimal maxDiscountAmount;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_user", nullable = false)
@@ -78,7 +88,7 @@ public class Voucher {
     private List<CustomerVoucher> customerVouchers;
     
     @OneToMany(mappedBy = "voucher", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Payment> payments;
+    private List<VoucherRedemption> redemptions;
     
     // Constructors
     public Voucher() {
@@ -87,7 +97,8 @@ public class Voucher {
     
     public Voucher(String code, String description, DiscountType discountType, 
                    BigDecimal discountValue, LocalDate startDate, LocalDate endDate, 
-                   Integer usageLimit, User createdByUser, RestaurantProfile restaurant) {
+                   Integer globalUsageLimit, Integer perCustomerLimit, User createdByUser, 
+                   RestaurantProfile restaurant) {
         this();
         this.code = code;
         this.description = description;
@@ -95,7 +106,8 @@ public class Voucher {
         this.discountValue = discountValue;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.usageLimit = usageLimit;
+        this.globalUsageLimit = globalUsageLimit;
+        this.perCustomerLimit = perCustomerLimit;
         this.createdByUser = createdByUser;
         this.restaurant = restaurant;
     }
@@ -157,12 +169,36 @@ public class Voucher {
         this.endDate = endDate;
     }
     
-    public Integer getUsageLimit() {
-        return usageLimit;
+    public Integer getGlobalUsageLimit() {
+        return globalUsageLimit;
     }
     
-    public void setUsageLimit(Integer usageLimit) {
-        this.usageLimit = usageLimit;
+    public void setGlobalUsageLimit(Integer globalUsageLimit) {
+        this.globalUsageLimit = globalUsageLimit;
+    }
+    
+    public Integer getPerCustomerLimit() {
+        return perCustomerLimit;
+    }
+    
+    public void setPerCustomerLimit(Integer perCustomerLimit) {
+        this.perCustomerLimit = perCustomerLimit;
+    }
+    
+    public BigDecimal getMinOrderAmount() {
+        return minOrderAmount;
+    }
+    
+    public void setMinOrderAmount(BigDecimal minOrderAmount) {
+        this.minOrderAmount = minOrderAmount;
+    }
+    
+    public BigDecimal getMaxDiscountAmount() {
+        return maxDiscountAmount;
+    }
+    
+    public void setMaxDiscountAmount(BigDecimal maxDiscountAmount) {
+        this.maxDiscountAmount = maxDiscountAmount;
     }
     
     public User getCreatedByUser() {
@@ -205,12 +241,12 @@ public class Voucher {
         this.customerVouchers = customerVouchers;
     }
     
-    public List<Payment> getPayments() {
-        return payments;
+    public List<VoucherRedemption> getRedemptions() {
+        return redemptions;
     }
     
-    public void setPayments(List<Payment> payments) {
-        this.payments = payments;
+    public void setRedemptions(List<VoucherRedemption> redemptions) {
+        this.redemptions = redemptions;
     }
     
     // Helper methods
@@ -219,5 +255,17 @@ public class Voucher {
         return status == VoucherStatus.ACTIVE && 
                (startDate == null || !now.isBefore(startDate)) &&
                (endDate == null || !now.isAfter(endDate));
+    }
+    
+    public boolean isGlobalVoucher() {
+        return restaurant == null;
+    }
+    
+    public boolean isRestaurantVoucher() {
+        return restaurant != null;
+    }
+    
+    public boolean isAssignedVoucher() {
+        return customerVouchers != null && !customerVouchers.isEmpty();
     }
 }
