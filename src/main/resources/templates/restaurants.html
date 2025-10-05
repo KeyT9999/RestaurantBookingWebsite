@@ -57,13 +57,14 @@
                                 </p>
                                 <div class="restaurant-card__rating">
                                     <div class="stars">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
+                                        <span th:each="i : ${#numbers.sequence(1, restaurant.averageRating)}">
+                                            <i class="fas fa-star"></i>
+                                        </span>
+                                        <span th:each="i : ${#numbers.sequence(restaurant.averageRating + 1, 5)}">
+                                            <i class="far fa-star"></i>
+                                        </span>
                                     </div>
-                                    <span class="rating-text">4.8 (0 đánh giá)</span>
+                                    <span class="rating-text" th:text="|${restaurant.formattedAverageRating} (${restaurant.reviewCount} đánh giá)|">4.8 (0 đánh giá)</span>
                                 </div>
                                 <!-- View Detail Button -->
                                 <div class="mt-3">

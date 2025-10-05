@@ -160,6 +160,11 @@
                                 <a th:href="@{/restaurant-owner/bookings/{id}(id=${booking.bookingId})}" 
                                    class="btn btn-ghost small">Xem</a>
                                 
+                                <!-- Edit button for editable bookings -->
+                                <a th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" 
+                                   th:href="@{/restaurant-owner/bookings/{id}/edit(id=${booking.bookingId})}" 
+                                   class="btn small">Chỉnh sửa</a>
+                                
                                 <!-- Status update buttons based on current status -->
                                 <form th:if="${booking.status.name() == 'PENDING'}" 
                                       th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 

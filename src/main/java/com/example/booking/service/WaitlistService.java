@@ -295,4 +295,141 @@ public class WaitlistService {
             Arrays.asList(WaitlistStatus.WAITING, WaitlistStatus.CALLED)
         );
     }
+
+    /**
+     * Lấy waitlist detail DTO cho customer
+     */
+    public com.example.booking.dto.WaitlistDetailDto getWaitlistDetailForCustomer(Integer waitlistId, UUID customerId) {
+        Waitlist waitlist = waitlistRepository.findById(waitlistId)
+                .orElseThrow(() -> new IllegalArgumentException("Waitlist entry not found"));
+
+        // Verify ownership
+        if (!waitlist.getCustomer().getCustomerId().equals(customerId)) {
+            throw new IllegalArgumentException("You don't have permission to view this waitlist");
+        }
+
+        return convertToDetailDto(waitlist);
+    }
+
+    /**
+     * Lấy waitlist detail DTO cho restaurant owner
+     */
+    public com.example.booking.dto.WaitlistDetailDto getWaitlistDetailForRestaurant(Integer waitlistId,
+            Integer restaurantId) {
+        Waitlist waitlist = waitlistRepository.findById(waitlistId)
+                .orElseThrow(() -> new IllegalArgumentException("Waitlist entry not found"));
+
+        // Verify restaurant ownership
+        if (!waitlist.getRestaurant().getRestaurantId().equals(restaurantId)) {
+            throw new IllegalArgumentException("You don't have permission to view this waitlist");
+        }
+
+        return convertToDetailDto(waitlist);
+    }
+
+    /**
+     * Cập nhật waitlist cho customer (chỉ được update party size và special
+     * requests)
+     */
+    public com.example.booking.dto.WaitlistDetailDto updateWaitlistForCustomer(Integer waitlistId, UUID customerId,
+            Integer partySize, String specialRequests) {
+        Waitlist waitlist = waitlistRepository.findById(waitlistId)
+                .orElseThrow(() -> new IllegalArgumentException("Waitlist entry not found"));
+
+        // Verify ownership
+        if (!waitlist.getCustomer().getCustomerId().equals(customerId)) {
+            throw new IllegalArgumentException("You don't have permission to edit this waitlist");
+        }
+
+        // Verify status allows editing
+        if (waitlist.getStatus() != WaitlistStatus.WAITING) {
+            throw new IllegalArgumentException("Cannot edit waitlist that is not in WAITING status");
+        }
+
+        // Validate party size
+        if (partySize != null) {
+            if (partySize < 1 || partySize > 20) {
+                throw new IllegalArgumentException("Party size must be between 1 and 20");
+            }
+            if (partySize > 6) {
+                throw new IllegalArgumentException("Groups larger than 6 people cannot join waitlist");
+            }
+            waitlist.setPartySize(partySize);
+        }
+
+        // Update special requests (if we add this field to Waitlist entity)
+        // waitlist.setSpecialRequests(specialRequests);
+
+        Waitlist updated = waitlistRepository.save(waitlist);
+
+        // Recalculate estimated wait time
+        int estimatedWaitTime = calculateEstimatedWaitTimeForCustomer(updated.getWaitlistId());
+        updated.setEstimatedWaitTime(estimatedWaitTime);
+
+        return convertToDetailDto(updated);
+    }
+
+    /**
+     * Cập nhật waitlist cho restaurant owner (có thể update tất cả fields trừ
+     * status)
+     */
+    public com.example.booking.dto.WaitlistDetailDto updateWaitlistForRestaurant(Integer waitlistId,
+            Integer restaurantId,
+            Integer partySize, String specialRequests, String notes) {
+        Waitlist waitlist = waitlistRepository.findById(waitlistId)
+                .orElseThrow(() -> new IllegalArgumentException("Waitlist entry not found"));
+
+        // Verify restaurant ownership
+        if (!waitlist.getRestaurant().getRestaurantId().equals(restaurantId)) {
+            throw new IllegalArgumentException("You don't have permission to edit this waitlist");
+        }
+
+        // Verify status allows editing
+        if (waitlist.getStatus() != WaitlistStatus.WAITING && waitlist.getStatus() != WaitlistStatus.CALLED) {
+            throw new IllegalArgumentException("Cannot edit waitlist that is not in WAITING or CALLED status");
+        }
+
+        // Update fields
+        if (partySize != null) {
+            if (partySize < 1 || partySize > 20) {
+                throw new IllegalArgumentException("Party size must be between 1 and 20");
+            }
+            waitlist.setPartySize(partySize);
+        }
+
+        // Update notes (if we add this field to Waitlist entity)
+        // waitlist.setNotes(notes);
+
+        Waitlist updated = waitlistRepository.save(waitlist);
+
+        // Recalculate estimated wait time if party size changed
+        if (partySize != null) {
+            int estimatedWaitTime = calculateEstimatedWaitTimeForCustomer(updated.getWaitlistId());
+            updated.setEstimatedWaitTime(estimatedWaitTime);
+        }
+
+        return convertToDetailDto(updated);
+    }
+
+    /**
+     * Convert Waitlist entity to WaitlistDetailDto
+     */
+    private com.example.booking.dto.WaitlistDetailDto convertToDetailDto(Waitlist waitlist) {
+        com.example.booking.dto.WaitlistDetailDto dto = new com.example.booking.dto.WaitlistDetailDto();
+
+        dto.setWaitlistId(waitlist.getWaitlistId());
+        dto.setCustomerId(waitlist.getCustomer().getCustomerId());
+        dto.setCustomerName(waitlist.getCustomer().getUser().getFullName());
+        dto.setCustomerPhone(waitlist.getCustomer().getUser().getPhoneNumber());
+        dto.setCustomerEmail(waitlist.getCustomer().getUser().getEmail());
+        dto.setRestaurantId(waitlist.getRestaurant().getRestaurantId());
+        dto.setRestaurantName(waitlist.getRestaurant().getRestaurantName());
+        dto.setPartySize(waitlist.getPartySize());
+        dto.setJoinTime(waitlist.getJoinTime());
+        dto.setStatus(waitlist.getStatus());
+        dto.setEstimatedWaitTime(waitlist.getEstimatedWaitTime());
+        dto.setQueuePosition(getQueuePosition(waitlist.getWaitlistId()));
+
+        return dto;
+    }
 }
