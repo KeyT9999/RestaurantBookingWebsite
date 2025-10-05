@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
+import com.example.booking.domain.RestaurantProfile;
 
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Integer> {
@@ -66,4 +67,55 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
                   "AND b.bookingTime BETWEEN :now AND :threshold")
     List<Booking> findUpcomingBookings(@Param("now") LocalDateTime now,
                   @Param("threshold") LocalDateTime threshold);
+
+    // ===== NEW METHODS FOR DIRECT RESTAURANT ACCESS =====
+
+    /**
+     * Find bookings by restaurant ID
+     */
+    List<Booking> findByRestaurantOrderByBookingTimeDesc(RestaurantProfile restaurant);
+
+    /**
+     * Find bookings by restaurant ID and status
+     */
+    List<Booking> findByRestaurantAndStatusOrderByBookingTimeDesc(RestaurantProfile restaurant, BookingStatus status);
+
+    /**
+     * Find bookings by restaurant ID and multiple statuses
+     */
+    List<Booking> findByRestaurantAndStatusInOrderByBookingTimeDesc(RestaurantProfile restaurant,
+                  List<BookingStatus> statuses);
+
+    /**
+     * Find bookings by customer and restaurant
+     */
+    List<Booking> findByCustomerAndRestaurantOrderByBookingTimeDesc(Customer customer, RestaurantProfile restaurant);
+
+    /**
+     * Find bookings by customer, restaurant and status
+     */
+    List<Booking> findByCustomerAndRestaurantAndStatusOrderByBookingTimeDesc(Customer customer,
+                  RestaurantProfile restaurant, BookingStatus status);
+
+    /**
+     * Count bookings by restaurant
+     */
+    long countByRestaurant(RestaurantProfile restaurant);
+
+    /**
+     * Count bookings by restaurant and status
+     */
+    long countByRestaurantAndStatus(RestaurantProfile restaurant, BookingStatus status);
+
+    /**
+     * Find bookings by restaurant and booking time range
+     */
+    List<Booking> findByRestaurantAndBookingTimeBetween(RestaurantProfile restaurant, LocalDateTime startTime,
+                  LocalDateTime endTime);
+
+    /**
+     * Find bookings by restaurant, status and booking time range
+     */
+    List<Booking> findByRestaurantAndStatusAndBookingTimeBetween(RestaurantProfile restaurant, BookingStatus status,
+                  LocalDateTime startTime, LocalDateTime endTime);
 } 

@@ -300,13 +300,39 @@
                 <a th:href="@{/restaurant-owner/dashboard}" class="tab is-active">Dashboard</a>
                 <a th:href="@{/restaurant-owner/profile}" class="tab">Hồ sơ</a>
                 <a th:href="@{/restaurant-owner/tables}" class="tab">Bàn</a>
-                <a th:href="@{/restaurant-owner/bookings}" class="tab">Booking</a>
+                <a th:href="@{/restaurant-owner/bookings}" class="tab">Tất cả Booking</a>
                 <a th:href="@{/restaurant-owner/media}" class="tab">Media</a>
             </div>
         </header>
 
+        <!-- Error Message -->
+        <div th:if="${error != null}" class="card" style="background: #f8d7da; border-color: #f5c6cb;">
+            <h2 class="h2" style="color: #721c24;">⚠️ Lỗi</h2>
+            <p th:text="${error}" style="color: #721c24;">Có lỗi xảy ra</p>
+            <div class="actions">
+                <a href="/restaurant-owner/profile" class="btn">Tạo nhà hàng</a>
+            </div>
+        </div>
+
+        <!-- Restaurant Management -->
+        <div th:if="${error == null and restaurants != null and !restaurants.empty}" class="card">
+            <h2 class="h2">Quản lý Nhà hàng</h2>
+            <div class="grid grid-3">
+                <div th:each="restaurant : ${restaurants}" class="card" style="padding: 1rem;">
+                    <h3 class="h3" th:text="${restaurant.restaurantName}">Nhà hàng ABC</h3>
+                    <p class="muted" th:text="${restaurant.cuisineType ?: 'Chưa có thông tin'}">Việt Nam</p>
+                    <div class="actions">
+                        <a th:href="@{/restaurant-owner/restaurants/{id}/bookings(id=${restaurant.restaurantId})}" 
+                           class="btn small">📋 Booking</a>
+                        <a th:href="@{/restaurant-owner/profile/{id}(id=${restaurant.restaurantId})}" 
+                           class="btn btn-ghost small">⚙️ Quản lý</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Statistics Cards -->
-        <div class="stats-grid">
+        <div class="stats-grid" th:if="${error == null}">
             <div class="stat-card primary">
                 <div class="stat-icon">📅</div>
                 <div class="stat-value" th:text="${todayBookings != null ? todayBookings.size() : 0}">0</div>
@@ -534,6 +560,13 @@
         // Waitlist Management Functions
         function callNextCustomer() {
             if (confirm('Bạn có chắc muốn gọi khách hàng tiếp theo?')) {
+                // Get restaurant ID from template
+                const restaurantId = '[[${restaurants != null and !restaurants.empty ? restaurants[0].restaurantId : ''}]]';
+                if (!restaurantId) {
+                    alert('Không tìm thấy nhà hàng!');
+                    return;
+                }
+                
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '/restaurant-owner/waitlist/call-next';
@@ -541,7 +574,7 @@
                 const restaurantIdInput = document.createElement('input');
                 restaurantIdInput.type = 'hidden';
                 restaurantIdInput.name = 'restaurantId';
-                restaurantIdInput.value = '1'; // Using restaurant ID 1 for now
+                restaurantIdInput.value = restaurantId;
                 
                 form.appendChild(restaurantIdInput);
                 document.body.appendChild(form);

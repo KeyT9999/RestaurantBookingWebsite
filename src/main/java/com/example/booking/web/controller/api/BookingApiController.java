@@ -23,6 +23,8 @@ import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.User;
 import com.example.booking.dto.BookingDetailsDto;
 import com.example.booking.dto.RestaurantTableDto;
+import com.example.booking.dto.DishDto;
+import com.example.booking.dto.RestaurantDto;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.RestaurantManagementService;
@@ -83,12 +85,29 @@ public class BookingApiController {
      * API endpoint để lấy thông tin nhà hàng
      */
     @GetMapping("/restaurants/{restaurantId}")
-    public ResponseEntity<?> getRestaurant(@PathVariable("restaurantId") Integer restaurantId) {
+    public ResponseEntity<RestaurantDto> getRestaurant(@PathVariable("restaurantId") Integer restaurantId) {
         try {
             return restaurantService.findRestaurantById(restaurantId)
-                .map(restaurant -> ResponseEntity.ok(restaurant))
+                    .map(restaurant -> {
+                        RestaurantDto dto = new RestaurantDto(
+                                restaurant.getRestaurantId(),
+                                restaurant.getRestaurantName(),
+                                restaurant.getDescription(),
+                                restaurant.getAddress(),
+                                restaurant.getPhone(),
+                                restaurant.getCuisineType(),
+                                restaurant.getOpeningHours(),
+                                restaurant.getAveragePrice(),
+                                restaurant.getWebsiteUrl(),
+                                restaurant.getCreatedAt(),
+                                restaurant.getUpdatedAt(),
+                                restaurant.getOwner() != null ? restaurant.getOwner().getOwnerId() : null);
+                        return ResponseEntity.ok(dto);
+                    })
                 .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
+            System.err.println("❌ API Error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }
@@ -97,11 +116,36 @@ public class BookingApiController {
      * API endpoint để lấy danh sách nhà hàng
      */
     @GetMapping("/restaurants")
-    public ResponseEntity<List<?>> getAllRestaurants() {
+    public ResponseEntity<List<RestaurantDto>> getAllRestaurants() {
         try {
             List<?> restaurants = restaurantService.findAllRestaurants();
-            return ResponseEntity.ok(restaurants);
+
+            // Convert to DTO to avoid Hibernate proxy issues
+            List<RestaurantDto> restaurantDtos = restaurants.stream()
+                    .map(restaurant -> {
+                        // Cast to RestaurantProfile (assuming that's the type)
+                        var restaurantProfile = (com.example.booking.domain.RestaurantProfile) restaurant;
+                        return new RestaurantDto(
+                                restaurantProfile.getRestaurantId(),
+                                restaurantProfile.getRestaurantName(),
+                                restaurantProfile.getDescription(),
+                                restaurantProfile.getAddress(),
+                                restaurantProfile.getPhone(),
+                                restaurantProfile.getCuisineType(),
+                                restaurantProfile.getOpeningHours(),
+                                restaurantProfile.getAveragePrice(),
+                                restaurantProfile.getWebsiteUrl(),
+                                restaurantProfile.getCreatedAt(),
+                                restaurantProfile.getUpdatedAt(),
+                                restaurantProfile.getOwner() != null ? restaurantProfile.getOwner().getOwnerId()
+                                        : null);
+                    })
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(restaurantDtos);
         } catch (Exception e) {
+            System.err.println("❌ API Error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }
@@ -110,11 +154,30 @@ public class BookingApiController {
      * API endpoint để lấy danh sách món ăn theo nhà hàng
      */
     @GetMapping("/restaurants/{restaurantId}/dishes")
-    public ResponseEntity<List<Dish>> getDishesByRestaurant(@PathVariable("restaurantId") Integer restaurantId) {
+    public ResponseEntity<List<DishDto>> getDishesByRestaurant(@PathVariable("restaurantId") Integer restaurantId) {
         try {
+            System.out.println("🔍 API: Getting dishes for restaurant ID: " + restaurantId);
+
             List<Dish> dishes = restaurantService.findDishesByRestaurant(restaurantId);
-            return ResponseEntity.ok(dishes);
+            System.out.println("✅ API: Found " + dishes.size() + " dishes");
+
+            // Convert to DTO to avoid Hibernate proxy issues
+            List<DishDto> dishDtos = dishes.stream()
+                    .map(dish -> new DishDto(
+                            dish.getDishId(),
+                            dish.getName(),
+                            dish.getDescription(),
+                            dish.getPrice(),
+                            dish.getCategory(),
+                            dish.getStatus() != null ? dish.getStatus().toString() : "UNKNOWN",
+                            dish.getRestaurant() != null ? dish.getRestaurant().getRestaurantId() : null))
+                    .collect(Collectors.toList());
+
+            System.out.println("✅ API: Returning " + dishDtos.size() + " dish DTOs");
+            return ResponseEntity.ok(dishDtos);
         } catch (Exception e) {
+            System.err.println("❌ API Error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }

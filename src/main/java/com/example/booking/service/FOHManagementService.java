@@ -6,10 +6,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Waitlist;
+import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.DiningTableRepository;
+import com.example.booking.repository.RestaurantRepository;
 import com.example.booking.common.enums.TableStatus;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -22,13 +27,16 @@ public class FOHManagementService {
     
     private final BookingRepository bookingRepository;
     private final DiningTableRepository diningTableRepository;
+    private final RestaurantRepository restaurantRepository;
     private final WaitlistService waitlistService;
     
     public FOHManagementService(BookingRepository bookingRepository, 
             DiningTableRepository diningTableRepository,
+            RestaurantRepository restaurantRepository,
             WaitlistService waitlistService) {
         this.bookingRepository = bookingRepository;
         this.diningTableRepository = diningTableRepository;
+        this.restaurantRepository = restaurantRepository;
         this.waitlistService = waitlistService;
     }
     
@@ -36,8 +44,20 @@ public class FOHManagementService {
      * Get all active bookings for today
      */
     public List<Booking> getTodayBookings(Integer restaurantId) {
-        // TODO: Implement when restaurant-specific booking queries are available
-        return bookingRepository.findAll();
+        // Get restaurant
+        var restaurant = restaurantRepository.findById(restaurantId);
+        if (restaurant.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Get today's date range
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+
+        // Get bookings for today
+        return bookingRepository.findByRestaurantAndBookingTimeBetween(
+                restaurant.get(), startOfDay, endOfDay);
     }
     
     /**
@@ -52,6 +72,7 @@ public class FOHManagementService {
      */
     public List<RestaurantTable> getAvailableTables(Integer restaurantId) {
         return diningTableRepository.findAll().stream()
+                .filter(table -> table.getRestaurant().getRestaurantId().equals(restaurantId))
             .filter(table -> table.getStatus().toString().equals("AVAILABLE"))
             .toList();
     }
@@ -61,6 +82,7 @@ public class FOHManagementService {
      */
     public List<RestaurantTable> getOccupiedTables(Integer restaurantId) {
         return diningTableRepository.findAll().stream()
+                .filter(table -> table.getRestaurant().getRestaurantId().equals(restaurantId))
             .filter(table -> table.getStatus().toString().equals("OCCUPIED"))
             .toList();
     }
