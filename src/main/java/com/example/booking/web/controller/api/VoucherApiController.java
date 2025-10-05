@@ -33,18 +33,42 @@ public class VoucherApiController {
 
     @PostMapping("/validate")
     public ResponseEntity<?> validate(@RequestBody ValidateRequest body, Authentication authentication) {
-        Customer customer = null;
-        if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            customer = customerService.findByUsername(username).orElse(null);
-        }
+        try {
+            Customer customer = null;
+            if (authentication != null && authentication.isAuthenticated()) {
+                String username = authentication.getName();
+                customer = customerService.findByUsername(username).orElse(null);
+            }
 
-        var req = new VoucherService.ValidationRequest(
-            body.code(), body.restaurantId(), body.bookingTime(), body.guestCount(), customer, body.orderAmount()
-        );
-        var result = voucherService.validate(req);
-        return ResponseEntity.ok(result);
+            var req = new VoucherService.ValidationRequest(
+                body.code(), body.restaurantId(), body.bookingTime(), body.guestCount(), customer, body.orderAmount()
+            );
+            var result = voucherService.validate(req);
+            
+            // Create a simple response object to avoid Hibernate proxy serialization issues
+            var response = new ValidationResponse(
+                result.valid(),
+                result.reason(),
+                result.calculatedDiscount(),
+                result.voucher() != null ? result.voucher().getVoucherId() : null,
+                result.voucher() != null ? result.voucher().getCode() : null,
+                result.voucher() != null ? result.voucher().getDescription() : null
+            );
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ValidationResponse(false, "APPLICATION_ERROR", null, null, null, null));
+        }
     }
+    
+    public static record ValidationResponse(
+        boolean valid, 
+        String reason, 
+        java.math.BigDecimal calculatedDiscount,
+        Integer voucherId,
+        String voucherCode,
+        String voucherDescription
+    ) {}
 
     @PostMapping("/apply")
     public ResponseEntity<?> apply(@RequestBody ApplyRequest body, Authentication authentication) {
