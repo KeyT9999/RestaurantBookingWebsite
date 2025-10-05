@@ -1259,33 +1259,29 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(requestData)
+                body: JSON.stringify(formData)
             })
             .then(response => response.json())
             .then(data => {
-                if (data.valid) {
-                    // Store voucher discount amount
-                    voucherDiscount = data.calculatedDiscount ? parseFloat(data.calculatedDiscount) : 0;
+                if (data.success) {
+                    // Successfully joined waitlist
+                    alert(`Successfully joined waitlist! Your position: ${data.queuePosition}, Estimated wait time: ${data.estimatedWaitTime} minutes`);
                     
-                    const discountText = data.calculatedDiscount ? 
-                        `Discount: ${formatCurrency(data.calculatedDiscount)}` : 
-                        'Voucher is valid';
-                    showVoucherSuccess(discountText);
+                    // Redirect to booking list or show success message
+                    window.location.href = '/booking/my';
                 } else {
-                    // Reset voucher discount on error
-                    voucherDiscount = 0;
-                    const errorMessage = getVoucherErrorMessage(data.reason);
-                    showVoucherError(errorMessage);
+                    // Show error message
+                    alert('Error joining waitlist: ' + data.error);
                 }
             })
             .catch(error => {
-                console.error('Error validating voucher:', error);
-                showVoucherError('Error validating voucher. Please try again.');
+                console.error('Error joining waitlist:', error);
+                alert('Error joining waitlist. Please try again.');
             })
             .finally(() => {
                 // Reset button state
-                validateBtn.innerHTML = originalText;
-                validateBtn.disabled = false;
+                joinBtn.innerHTML = originalText;
+                joinBtn.disabled = false;
             });
         }
         

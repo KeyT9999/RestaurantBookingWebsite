@@ -408,10 +408,73 @@ public class BookingController {
     }
 
     /**
-     * Xử lý update booking
+     * API endpoint để lấy waitlist detail cho customer
      */
-    @PostMapping("/{id}")
-    public String updateBooking(@PathVariable("id") Integer bookingId,
+    @GetMapping("/waitlist/{waitlistId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getWaitlistDetail(@PathVariable Integer waitlistId,
+            Authentication auth) {
+        try {
+            UUID customerId = getCurrentCustomerId(auth);
+
+            com.example.booking.dto.WaitlistDetailDto detail = waitlistService.getWaitlistDetailForCustomer(waitlistId,
+                    customerId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("waitlist", detail);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * API endpoint để update waitlist cho customer
+     */
+    @PostMapping("/waitlist/{waitlistId}/update")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateWaitlist(@PathVariable Integer waitlistId,
+            @RequestBody Map<String, Object> updateData,
+            Authentication auth) {
+        try {
+            UUID customerId = getCurrentCustomerId(auth);
+
+            Integer partySize = updateData.get("partySize") != null
+                    ? Integer.valueOf(updateData.get("partySize").toString())
+                    : null;
+            String specialRequests = updateData.get("specialRequests") != null
+                    ? updateData.get("specialRequests").toString()
+                    : null;
+
+            com.example.booking.dto.WaitlistDetailDto updated = waitlistService.updateWaitlistForCustomer(
+                    waitlistId, customerId, partySize, specialRequests);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("waitlist", updated);
+            response.put("message", "Waitlist updated successfully");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * Xử lý update booking (legacy method - should be removed)
+     */
+    @PostMapping("/{id}/legacy")
+    public String updateBookingLegacy(@PathVariable("id") Integer bookingId,
             @Valid @ModelAttribute("bookingForm") BookingForm form,
             BindingResult bindingResult,
             Model model,

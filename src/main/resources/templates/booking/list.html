@@ -359,6 +359,13 @@
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <button type="button" 
+                                                            class="btn btn-outline-info btn-sm"
+                                                            title="View Details"
+                                                            onclick="showWaitlistDetails(this)"
+                                                            th:data-waitlist-id="${waitlist.waitlistId}">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button type="button" 
                                                             class="btn btn-outline-danger btn-sm"
                                                             title="Cancel Waitlist"
                                                             onclick="cancelWaitlist(this)"
@@ -421,6 +428,13 @@
                                                   th:if="${waitlist.status.name() == 'CANCELLED'}">Cancelled</span>
                                         </div>
                                         <div class="btn-group btn-group-sm">
+                                            <button type="button" 
+                                                    class="btn btn-outline-info btn-sm"
+                                                    title="View Details"
+                                                    onclick="showWaitlistDetails(this)"
+                                                    th:data-waitlist-id="${waitlist.waitlistId}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
                                             <button type="button" 
                                                     class="btn btn-outline-danger btn-sm"
                                                     onclick="cancelWaitlist(this)"
@@ -497,6 +511,36 @@
                                     <i class="fas fa-trash-alt"></i> Yes, Cancel Reservation
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Waitlist Detail Modal -->
+            <div class="modal fade" id="waitlistDetailModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content" style="border: 2px solid var(--luxury-gold);">
+                        <div class="modal-header" style="border-bottom: 1px solid var(--luxury-gold);">
+                            <h5 class="modal-title luxury-title">
+                                <i class="fas fa-clock" style="color: var(--luxury-gold);"></i>
+                                Waitlist Details
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="waitlistDetailContent">
+                                <div class="text-center">
+                                    <div class="spinner-border text-warning" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading waitlist details...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer" style="border-top: 1px solid var(--luxury-gold);">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times"></i> Close
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -738,6 +782,255 @@
                 alert('Error cancelling waitlist. Please try again.');
                 button.innerHTML = originalText;
                 button.disabled = false;
+            });
+        }
+        
+        function showWaitlistDetails(button) {
+            const waitlistId = button.getAttribute('data-waitlist-id');
+            
+            // Show modal with loading state
+            const modal = new bootstrap.Modal(document.getElementById('waitlistDetailModal'));
+            modal.show();
+            
+            // Reset content to loading state
+            document.getElementById('waitlistDetailContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading waitlist details...</p>
+                </div>
+            `;
+            
+            // Fetch waitlist details
+            fetch(`/booking/waitlist/${waitlistId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const waitlist = data.waitlist;
+                        displayWaitlistDetails(waitlist);
+                    } else {
+                        document.getElementById('waitlistDetailContent').innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Error loading waitlist details: ${data.error}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('waitlistDetailContent').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Error loading waitlist details. Please try again.
+                        </div>
+                    `;
+                });
+        }
+        
+        function displayWaitlistDetails(waitlist) {
+            const statusBadgeClass = waitlist.status === 'WAITING' ? 'bg-warning text-dark' : 
+                                   waitlist.status === 'CALLED' ? 'bg-info' : 
+                                   waitlist.status === 'SEATED' ? 'bg-success' : 'bg-danger';
+            
+            const statusText = waitlist.status === 'WAITING' ? 'Waiting' :
+                              waitlist.status === 'CALLED' ? 'Called' :
+                              waitlist.status === 'SEATED' ? 'Seated' : 'Cancelled';
+            
+            const queueInfo = waitlist.status === 'WAITING' ? 
+                `<div class="alert alert-info">
+                    <i class="fas fa-sort-numeric-up"></i>
+                    <strong>Queue Position:</strong> #${waitlist.queuePosition}
+                    <br>
+                    <i class="fas fa-clock"></i>
+                    <strong>Estimated Wait Time:</strong> ${waitlist.estimatedWaitTime} minutes
+                </div>` : '';
+            
+            const editForm = waitlist.status === 'WAITING' ? `
+                <div class="mt-3">
+                    <button class="btn btn-warning btn-sm" onclick="toggleWaitlistEdit(${waitlist.waitlistId})">
+                        <i class="fas fa-edit"></i> Edit Details
+                    </button>
+                </div>
+                <div id="editForm-${waitlist.waitlistId}" class="mt-3" style="display: none;">
+                    <div class="card" style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
+                        <div class="card-body">
+                            <h6 class="luxury-title">Edit Waitlist</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Party Size</label>
+                                <input type="number" id="editPartySize-${waitlist.waitlistId}" 
+                                       class="form-control" value="${waitlist.partySize}" 
+                                       min="1" max="6">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Special Requests</label>
+                                <textarea id="editSpecialRequests-${waitlist.waitlistId}" 
+                                          class="form-control" rows="3" 
+                                          placeholder="Any special requests..."></textarea>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-success btn-sm" onclick="saveWaitlistChanges(${waitlist.waitlistId})">
+                                    <i class="fas fa-save"></i> Save
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="cancelWaitlistEdit(${waitlist.waitlistId})">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+            
+            document.getElementById('waitlistDetailContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card" style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
+                            <div class="card-body">
+                                <h6 class="luxury-title">
+                                    <i class="fas fa-store" style="color: var(--luxury-gold);"></i>
+                                    Restaurant Information
+                                </h6>
+                                <p class="mb-1"><strong>Name:</strong> ${waitlist.restaurantName}</p>
+                                <p class="mb-0"><strong>Party Size:</strong> ${waitlist.partySize} guests</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card" style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
+                            <div class="card-body">
+                                <h6 class="luxury-title">
+                                    <i class="fas fa-user" style="color: var(--luxury-gold);"></i>
+                                    Your Information
+                                </h6>
+                                <p class="mb-1"><strong>Name:</strong> ${waitlist.customerName}</p>
+                                <p class="mb-1"><strong>Phone:</strong> ${waitlist.customerPhone}</p>
+                                <p class="mb-0"><strong>Email:</strong> ${waitlist.customerEmail}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card" style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
+                            <div class="card-body">
+                                <h6 class="luxury-title">
+                                    <i class="fas fa-info-circle" style="color: var(--luxury-gold);"></i>
+                                    Waitlist Information
+                                </h6>
+                                <p class="mb-1"><strong>Status:</strong> 
+                                    <span class="badge ${statusBadgeClass}">${statusText}</span>
+                                </p>
+                                <p class="mb-1"><strong>Join Time:</strong> ${new Date(waitlist.joinTime).toLocaleString()}</p>
+                                <p class="mb-0"><strong>Waitlist ID:</strong> <code>${waitlist.waitlistId}</code></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${queueInfo}
+                ${editForm}
+                
+                <div class="mt-3 text-center">
+                    <button class="btn btn-danger btn-sm" onclick="cancelWaitlistFromModal(${waitlist.waitlistId})">
+                        <i class="fas fa-times"></i> Cancel Waitlist
+                    </button>
+                </div>
+            `;
+        }
+        
+        function toggleWaitlistEdit(waitlistId) {
+            const editForm = document.getElementById(`editForm-${waitlistId}`);
+            editForm.style.display = editForm.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function cancelWaitlistEdit(waitlistId) {
+            document.getElementById(`editForm-${waitlistId}`).style.display = 'none';
+        }
+        
+        function saveWaitlistChanges(waitlistId) {
+            const partySize = document.getElementById(`editPartySize-${waitlistId}`).value;
+            const specialRequests = document.getElementById(`editSpecialRequests-${waitlistId}`).value;
+            
+            if (!partySize || partySize < 1 || partySize > 6) {
+                alert('Party size must be between 1 and 6');
+                return;
+            }
+            
+            const updateData = {
+                partySize: parseInt(partySize),
+                specialRequests: specialRequests
+            };
+            
+            const saveBtn = event.target;
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+            
+            fetch(`/booking/waitlist/${waitlistId}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Waitlist updated successfully!');
+                    cancelWaitlistEdit(waitlistId);
+                    // Refresh the modal content
+                    showWaitlistDetails({getAttribute: () => waitlistId});
+                } else {
+                    alert('Error updating waitlist: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating waitlist:', error);
+                alert('Error updating waitlist. Please try again.');
+            })
+            .finally(() => {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            });
+        }
+        
+        function cancelWaitlistFromModal(waitlistId) {
+            if (!confirm('Are you sure you want to cancel this waitlist entry?')) {
+                return;
+            }
+            
+            const cancelBtn = event.target;
+            const originalText = cancelBtn.innerHTML;
+            cancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
+            cancelBtn.disabled = true;
+            
+            fetch(`/booking/waitlist/cancel/${waitlistId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Waitlist cancelled successfully!');
+                    // Close modal and refresh page
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('waitlistDetailModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('Error cancelling waitlist: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error cancelling waitlist:', error);
+                alert('Error cancelling waitlist. Please try again.');
+            })
+            .finally(() => {
+                cancelBtn.innerHTML = originalText;
+                cancelBtn.disabled = false;
             });
         }
         
