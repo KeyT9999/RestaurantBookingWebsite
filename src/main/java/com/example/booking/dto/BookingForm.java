@@ -103,6 +103,7 @@ public class BookingForm {
 
     public void setVoucherCode(String voucherCode) {
         this.voucherCode = voucherCode;
+    }
 
     public String getDishIds() {
         return dishIds;
