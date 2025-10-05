@@ -44,10 +44,16 @@
                                 <span>About</span>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/contact}" th:classappend="${currentPath == '/contact'} ? 'active' : ''">
-                                <i class="fas fa-envelope nav-icon"></i>
-                                <span>Contact</span>
+                        <li class="nav-item" sec:authorize="hasRole('CUSTOMER')">
+                            <a class="nav-link" th:href="@{/reviews/my-reviews}" th:classappend="${#strings.startsWith(currentPath, '/reviews')} ? 'active' : ''">
+                                <i class="fas fa-star nav-icon"></i>
+                                <span>My Reviews</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                            <a class="nav-link" th:href="@{/restaurant-owner/reviews}" th:classappend="${#strings.startsWith(currentPath, '/restaurant-owner/reviews')} ? 'active' : ''">
+                                <i class="fas fa-comments nav-icon"></i>
+                                <span>Reviews</span>
                             </a>
                         </li>
                         <li class="nav-item" sec:authorize="isAuthenticated() and !hasRole('RESTAURANT_OWNER')">

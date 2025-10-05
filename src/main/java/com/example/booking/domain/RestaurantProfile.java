@@ -2,6 +2,7 @@ package com.example.booking.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -304,5 +305,39 @@ public class RestaurantProfile {
 
     public int getTableCount() {
         return tables != null ? tables.size() : 0;
+    }
+
+    // Review helper methods
+    public double getAverageRating() {
+        if (reviews == null || reviews.isEmpty()) {
+            return 0.0;
+        }
+        return reviews.stream()
+                .mapToInt(Review::getRating)
+                .average()
+                .orElse(0.0);
+    }
+
+    public int getReviewCount() {
+        return reviews != null ? reviews.size() : 0;
+    }
+
+    public boolean hasReviews() {
+        return reviews != null && !reviews.isEmpty();
+    }
+
+    public String getFormattedAverageRating() {
+        double avg = getAverageRating();
+        return String.format("%.1f", avg);
+    }
+
+    public List<Review> getRecentReviews(int limit) {
+        if (reviews == null || reviews.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return reviews.stream()
+                .sorted((r1, r2) -> r2.getCreatedAt().compareTo(r1.getCreatedAt()))
+                .limit(limit)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

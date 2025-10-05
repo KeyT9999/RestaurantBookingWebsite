@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Card Fragment</title>
+</head>
+<body>
+    <!-- Review Card Fragment -->
+    <div th:fragment="review-card" class="review-item mb-3 p-3 border rounded">
+        <div class="d-flex align-items-center mb-2">
+            <div class="me-3">
+                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+                     style="width: 40px; height: 40px;">
+                    <i class="fas fa-user text-white"></i>
+                </div>
+            </div>
+            <div class="flex-grow-1">
+                <div class="fw-bold" th:text="${review.customerName}">Tên khách hàng</div>
+                <div class="text-muted small" th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy')}">29/01/2025</div>
+            </div>
+            <div class="text-warning">
+                <span th:each="i : ${#numbers.sequence(1, review.rating)}">
+                    <i class="fas fa-star"></i>
+                </span>
+                <span th:each="i : ${#numbers.sequence(review.rating + 1, 5)}">
+                    <i class="far fa-star"></i>
+                </span>
+            </div>
+        </div>
+        <p class="text-muted mb-0" th:text="${review.comment}">Bình luận của khách hàng</p>
+    </div>
+
+    <!-- Review Form Fragment -->
+    <div th:fragment="review-form" class="border rounded p-4">
+        <h5 class="mb-3">
+            <i class="fas fa-star me-2"></i>
+            Viết đánh giá của bạn
+        </h5>
+        
+        <form th:action="@{/reviews}" th:object="${reviewForm}" method="post" id="reviewForm">
+            <input type="hidden" th:field="*{restaurantId}" th:value="${restaurant.restaurantId}">
+            
+            <!-- Rating Input -->
+            <div class="mb-3">
+                <label class="form-label">Đánh giá của bạn <span class="text-danger">*</span></label>
+                <div class="star-rating-input d-flex gap-1 mb-2">
+                    <i class="far fa-star star" data-rating="1" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
+                    <i class="far fa-star star" data-rating="2" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
+                    <i class="far fa-star star" data-rating="3" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
+                    <i class="far fa-star star" data-rating="4" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
+                    <i class="far fa-star star" data-rating="5" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
+                    <input type="hidden" th:field="*{rating}" id="ratingInput" required>
+                </div>
+                <div class="rating-text text-muted small" id="ratingText">Chọn số sao đánh giá</div>
+            </div>
+            
+            <!-- Comment Input -->
+            <div class="mb-3">
+                <label for="comment" class="form-label">Bình luận</label>
+                <textarea th:field="*{comment}" id="comment" class="form-control" rows="3" 
+                          placeholder="Chia sẻ trải nghiệm của bạn về nhà hàng này..."></textarea>
+                <div class="character-count text-muted small mt-1" id="charCount">0/1000 ký tự</div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane me-2"></i>
+                Gửi đánh giá
+            </button>
+        </form>
+    </div>
+
+    <!-- Customer Review Display Fragment -->
+    <div th:fragment="customer-review" class="border rounded p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <h5 class="mb-0">
+                <i class="fas fa-user-check me-2"></i>
+                Đánh giá của bạn
+            </h5>
+            <a th:href="@{/reviews/edit/{id}(id=${customerReview.reviewId})}" 
+               class="btn btn-outline-primary btn-sm" th:if="${customerReview.editable}">
+                <i class="fas fa-edit"></i> Chỉnh sửa
+            </a>
+        </div>
+        
+        <div class="d-flex align-items-center mb-2">
+            <div class="text-warning me-3">
+                <span th:each="i : ${#numbers.sequence(1, customerReview.rating)}">
+                    <i class="fas fa-star"></i>
+                </span>
+                <span th:each="i : ${#numbers.sequence(customerReview.rating + 1, 5)}">
+                    <i class="far fa-star"></i>
+                </span>
+            </div>
+            <div class="text-muted small" th:text="${#temporals.format(customerReview.createdAt, 'dd/MM/yyyy HH:mm')}">29/01/2025 18:30</div>
+        </div>
+        <p class="text-muted mb-0" th:text="${customerReview.comment}">Bình luận của bạn</p>
+    </div>
+</body>
+</html>
