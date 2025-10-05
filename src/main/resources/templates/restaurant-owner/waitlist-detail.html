@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Chi tiết Waitlist - Restaurant Management</title>
+    <link rel="stylesheet" href="/css/restaurant-admin.css" />
+    <style>
+        .waitlist-detail-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .status-waiting { background: #fff3cd; color: #856404; }
+        .status-called { background: #d1ecf1; color: #0c5460; }
+        .status-seated { background: #d4edda; color: #155724; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .info-item {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-value {
+            color: #212529;
+            font-size: 1.1rem;
+        }
+        
+        .edit-form {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            display: none;
+        }
+        
+        .edit-form.show {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background: #138496;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .queue-position {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .estimated-time {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #28a745;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .status-actions {
+            background: #e9ecef;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        
+        .status-actions h4 {
+            margin-bottom: 1rem;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <nav class="page-switch card">
+        <a class="nav-btn" href="/restaurant-owner/waitlist" title="Về Waitlist Management">← Waitlist Management</a>
+        <a class="nav-btn" href="/restaurant-owner/dashboard" title="Về Dashboard">→ Dashboard</a>
+    </nav>
+
+    <div class="container">
+        <!-- Error Message -->
+        <div th:if="${error != null}" class="card" style="background: #f8d7da; border-color: #f5c6cb;">
+            <h2 class="h2" style="color: #721c24;">⚠️ Lỗi</h2>
+            <p th:text="${error}" style="color: #721c24;">Có lỗi xảy ra</p>
+            <div class="actions">
+                <a href="/restaurant-owner/waitlist" class="btn btn-secondary">Về Waitlist</a>
+            </div>
+        </div>
+
+        <!-- Waitlist Detail -->
+        <div th:if="${error == null}" class="waitlist-detail-card">
+            <div class="text-center mb-4">
+                <h1 class="h1">Chi tiết Waitlist</h1>
+                <div class="status-badge" th:class="'status-' + ${waitlistDetail.status.name().toLowerCase()}" 
+                     th:text="${waitlistDetail.statusDisplayName}">Đang chờ</div>
+            </div>
+
+            <!-- Queue Position -->
+            <div th:if="${waitlistDetail.status.name() == 'WAITING'}" class="queue-position">
+                Vị trí trong hàng: #<span th:text="${waitlistDetail.queuePosition}">1</span>
+            </div>
+
+            <!-- Estimated Wait Time -->
+            <div th:if="${waitlistDetail.status.name() == 'WAITING'}" class="estimated-time">
+                Thời gian chờ ước tính: <span th:text="${waitlistDetail.estimatedWaitTime}">15</span> phút
+            </div>
+
+            <!-- Information Grid -->
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Nhà hàng</div>
+                    <div class="info-value" th:text="${waitlistDetail.restaurantName}">Tên nhà hàng</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Số người</div>
+                    <div class="info-value" th:text="${waitlistDetail.partySize} + ' người'">2 người</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Thời gian tham gia</div>
+                    <div class="info-value" th:text="${#temporals.format(waitlistDetail.joinTime, 'dd/MM/yyyy HH:mm')}">01/01/2024 18:30</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Tên khách hàng</div>
+                    <div class="info-value" th:text="${waitlistDetail.customerName}">Nguyễn Văn A</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Số điện thoại</div>
+                    <div class="info-value" th:text="${waitlistDetail.customerPhone}">0123456789</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value" th:text="${waitlistDetail.customerEmail}">email@example.com</div>
+                </div>
+            </div>
+
+            <!-- Status Actions -->
+            <div class="status-actions">
+                <h4>Thao tác theo trạng thái</h4>
+                <div class="action-buttons">
+                    <button th:if="${waitlistDetail.status.name() == 'WAITING'}" 
+                            class="btn btn-info" 
+                            onclick="callCustomer()">
+                        <i class="fas fa-phone"></i> Gọi khách hàng
+                    </button>
+                    
+                    <button th:if="${waitlistDetail.status.name() == 'CALLED'}" 
+                            class="btn btn-success" 
+                            onclick="seatCustomer()">
+                        <i class="fas fa-chair"></i> Xếp chỗ cho khách
+                    </button>
+                    
+                    <button th:if="${waitlistDetail.status.name() == 'WAITING' or waitlistDetail.status.name() == 'CALLED'}" 
+                            class="btn btn-danger" 
+                            onclick="cancelWaitlist()">
+                        <i class="fas fa-times"></i> Hủy Waitlist
+                    </button>
+                </div>
+            </div>
+
+            <!-- General Actions -->
+            <div class="action-buttons">
+                <button th:if="${waitlistDetail.editableByRestaurant}" 
+                        class="btn btn-primary" 
+                        onclick="toggleEditForm()">
+                    <i class="fas fa-edit"></i> Chỉnh sửa thông tin
+                </button>
+                
+                <a href="/restaurant-owner/waitlist" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại Waitlist
+                </a>
+            </div>
+
+            <!-- Edit Form -->
+            <div id="editForm" class="edit-form">
+                <h3>Chỉnh sửa Waitlist</h3>
+                
+                <div class="form-group">
+                    <label class="form-label" for="editPartySize">Số người</label>
+                    <input type="number" 
+                           id="editPartySize" 
+                           class="form-control" 
+                           th:value="${waitlistDetail.partySize}"
+                           min="1" 
+                           max="20" 
+                           required>
+                    <small class="text-muted">Tối đa 20 người</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="editSpecialRequests">Yêu cầu đặc biệt</label>
+                    <textarea id="editSpecialRequests" 
+                              class="form-control" 
+                              rows="3" 
+                              placeholder="Nhập yêu cầu đặc biệt của khách hàng..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="editNotes">Ghi chú nội bộ</label>
+                    <textarea id="editNotes" 
+                              class="form-control" 
+                              rows="3" 
+                              placeholder="Nhập ghi chú nội bộ..."></textarea>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-success" onclick="saveChanges()">
+                        <i class="fas fa-save"></i> Lưu thay đổi
+                    </button>
+                    <button class="btn btn-secondary" onclick="cancelEdit()">
+                        <i class="fas fa-times"></i> Hủy
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div id="alertContainer"></div>
+    </div>
+
+    <!-- Seat Customer Modal -->
+    <div id="seatModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Xếp chỗ cho khách hàng</h3>
+                <span class="close" onclick="closeSeatModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="seatForm" method="post">
+                    <div class="form-group">
+                        <label class="form-label">Chọn bàn</label>
+                        <select name="tableId" class="form-control" required>
+                            <option value="">-- Chọn bàn --</option>
+                            <!-- Tables will be loaded via AJAX -->
+                        </select>
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn btn-success">Xác nhận</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeSeatModal()">Hủy</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const waitlistId = /*[[${waitlistDetail.waitlistId}]]*/ null;
+        const restaurantId = /*[[${restaurantId}]]*/ null;
+        
+        function toggleEditForm() {
+            const editForm = document.getElementById('editForm');
+            editForm.classList.toggle('show');
+        }
+        
+        function cancelEdit() {
+            const editForm = document.getElementById('editForm');
+            editForm.classList.remove('show');
+            
+            // Reset form values
+            document.getElementById('editPartySize').value = /*[[${waitlistDetail.partySize}]]*/ 2;
+            document.getElementById('editSpecialRequests').value = '';
+            document.getElementById('editNotes').value = '';
+        }
+        
+        function saveChanges() {
+            const partySize = document.getElementById('editPartySize').value;
+            const specialRequests = document.getElementById('editSpecialRequests').value;
+            const notes = document.getElementById('editNotes').value;
+            
+            if (!partySize || partySize < 1 || partySize > 20) {
+                showAlert('Số người phải từ 1 đến 20', 'danger');
+                return;
+            }
+            
+            const updateData = {
+                partySize: parseInt(partySize),
+                specialRequests: specialRequests,
+                notes: notes
+            };
+            
+            // Show loading state
+            const saveBtn = event.target;
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+            saveBtn.disabled = true;
+            
+            fetch(`/restaurant-owner/waitlist/${waitlistId}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updateData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Cập nhật waitlist thành công!', 'success');
+                    cancelEdit();
+                    
+                    // Update displayed values
+                    document.querySelector('.info-value').textContent = partySize + ' người';
+                    
+                    // Reload page after 2 seconds to show updated data
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showAlert('Lỗi: ' + data.error, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating waitlist:', error);
+                showAlert('Lỗi khi cập nhật waitlist. Vui lòng thử lại.', 'danger');
+            })
+            .finally(() => {
+                // Reset button state
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            });
+        }
+        
+        function callCustomer() {
+            if (!confirm('Bạn có chắc muốn gọi khách hàng này?')) {
+                return;
+            }
+            
+            const callBtn = event.target;
+            const originalText = callBtn.innerHTML;
+            callBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gọi...';
+            callBtn.disabled = true;
+            
+            fetch(`/restaurant-owner/waitlist/call-next`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `restaurantId=${restaurantId}`
+            })
+            .then(response => {
+                if (response.ok) {
+                    showAlert('Đã gọi khách hàng thành công!', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    throw new Error('Failed to call customer');
+                }
+            })
+            .catch(error => {
+                console.error('Error calling customer:', error);
+                showAlert('Lỗi khi gọi khách hàng. Vui lòng thử lại.', 'danger');
+            })
+            .finally(() => {
+                // Reset button state
+                callBtn.innerHTML = originalText;
+                callBtn.disabled = false;
+            });
+        }
+        
+        function seatCustomer() {
+            document.getElementById('seatModal').style.display = 'block';
+            document.getElementById('seatForm').action = `/restaurant-owner/waitlist/seat/${waitlistId}`;
+            
+            // Load available tables (simplified - in real app, this would be AJAX)
+            const tableSelect = document.querySelector('select[name="tableId"]');
+            tableSelect.innerHTML = '<option value="">-- Chọn bàn --</option>';
+            // Add some sample tables
+            for (let i = 1; i <= 10; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = 'Bàn ' + i;
+                tableSelect.appendChild(option);
+            }
+        }
+        
+        function closeSeatModal() {
+            document.getElementById('seatModal').style.display = 'none';
+        }
+        
+        function cancelWaitlist() {
+            if (!confirm('Bạn có chắc muốn hủy waitlist này?')) {
+                return;
+            }
+            
+            const cancelBtn = event.target;
+            const originalText = cancelBtn.innerHTML;
+            cancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang hủy...';
+            cancelBtn.disabled = true;
+            
+            fetch(`/restaurant-owner/waitlist/cancel/${waitlistId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    showAlert('Hủy waitlist thành công!', 'success');
+                    
+                    // Redirect to waitlist management after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/restaurant-owner/waitlist';
+                    }, 2000);
+                } else {
+                    throw new Error('Failed to cancel waitlist');
+                }
+            })
+            .catch(error => {
+                console.error('Error cancelling waitlist:', error);
+                showAlert('Lỗi khi hủy waitlist. Vui lòng thử lại.', 'danger');
+            })
+            .finally(() => {
+                // Reset button state
+                cancelBtn.innerHTML = originalText;
+                cancelBtn.disabled = false;
+            });
+        }
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        // Auto refresh every 30 seconds
+        setInterval(function() {
+            // Only refresh if no modal is open and no edit form is open
+            if (document.getElementById('seatModal').style.display === 'none' && 
+                !document.getElementById('editForm').classList.contains('show')) {
+                location.reload();
+            }
+        }, 30000);
+    </script>
+
+    <style>
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+    </style>
+</body>
+</html>
