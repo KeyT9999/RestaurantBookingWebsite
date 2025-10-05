@@ -774,6 +774,8 @@ public class RestaurantOwnerController {
         return "redirect:/restaurant-owner/blocked-slots";
     }
 
+
+
     // ==================== WAITLIST MANAGEMENT ====================
 
     /**
@@ -928,3 +930,4 @@ public class RestaurantOwnerController {
         throw new RuntimeException("Unsupported authentication principal type: " + principal.getClass().getName());
     }
 }
+

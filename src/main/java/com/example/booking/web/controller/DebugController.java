@@ -2,65 +2,50 @@ package com.example.booking.web.controller;
 
 import java.util.List;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.example.booking.domain.User;
-import com.example.booking.repository.UserRepository;
+import com.example.booking.domain.Voucher;
+import com.example.booking.service.VoucherService;
 
-@Controller
+@RestController
 @RequestMapping("/debug")
 public class DebugController {
-    
-    private final UserRepository userRepository;
-    
-    public DebugController(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-    
-    @GetMapping("/auth")
-    public String debugAuth(Model model, Authentication authentication) {
-        System.out.println("🔍 Debug Auth Controller called");
-        
-        if (authentication != null) {
-            System.out.println("🔍 User: " + authentication.getName());
-            System.out.println("🔍 Authorities: " + authentication.getAuthorities());
-            System.out.println("🔍 Principal: " + authentication.getPrincipal().getClass().getSimpleName());
-            System.out.println("🔍 Authenticated: " + authentication.isAuthenticated());
+
+    @Autowired
+    private VoucherService voucherService;
+
+    @GetMapping("/vouchers")
+    public String debugVouchers() {
+        try {
+            // Get all vouchers for restaurant ID 16
+            List<Voucher> allVouchers = voucherService.getVouchersByRestaurant(16);
             
-            model.addAttribute("user", authentication.getName());
-            model.addAttribute("authorities", authentication.getAuthorities());
-            model.addAttribute("principal", authentication.getPrincipal().getClass().getSimpleName());
-            model.addAttribute("authenticated", authentication.isAuthenticated());
-        } else {
-            System.out.println("🔍 Authentication is NULL!");
-            model.addAttribute("user", "NULL");
-            model.addAttribute("authorities", "NULL");
-            model.addAttribute("principal", "NULL");
-            model.addAttribute("authenticated", false);
+            System.out.println("DEBUG: All vouchers count: " + allVouchers.size());
+            for (Voucher v : allVouchers) {
+                System.out.println("DEBUG: Voucher - ID: " + v.getVoucherId() + 
+                    ", Code: " + v.getCode() + 
+                    ", Status: " + v.getStatus() + 
+                    ", Restaurant: " + (v.getRestaurant() != null ? v.getRestaurant().getRestaurantId() : "null"));
+            }
+            
+            // Also check all vouchers in database
+            List<Voucher> allVouchersInDb = voucherService.getAllVouchers();
+            System.out.println("DEBUG: Total vouchers in DB: " + allVouchersInDb.size());
+            for (Voucher v : allVouchersInDb) {
+                System.out.println("DEBUG: DB Voucher - ID: " + v.getVoucherId() + 
+                    ", Code: " + v.getCode() + 
+                    ", Status: " + v.getStatus() + 
+                    ", Restaurant: " + (v.getRestaurant() != null ? v.getRestaurant().getRestaurantId() : "null"));
+            }
+            
+            return "Found " + allVouchers.size() + " vouchers for restaurant 16, Total in DB: " + allVouchersInDb.size();
+        } catch (Exception e) {
+            System.out.println("DEBUG ERROR: " + e.getMessage());
+            e.printStackTrace();
+            return "Error: " + e.getMessage();
         }
-        
-        return "debug/auth";
     }
-    
-    @GetMapping("/users")
-    public String debugUsers(Model model) {
-        System.out.println("🔍 Debug Users Controller called");
-        
-        List<User> users = userRepository.findAll();
-        System.out.println("🔍 Found " + users.size() + " users");
-        
-        for (User user : users) {
-            System.out.println("🔍 User: " + user.getUsername() + 
-                             ", Role: " + user.getRole() + 
-                             ", Authorities: " + user.getAuthorities() +
-                             ", Active: " + user.getActive());
-        }
-        
-        model.addAttribute("users", users);
-        return "debug/users";
-    }
-} 
+}

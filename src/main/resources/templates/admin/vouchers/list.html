@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voucher Management - Admin Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Admin CSS -->
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+    
+    <style>
+        .voucher-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .voucher-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .global-voucher {
+            border-left: 5px solid #ffc107;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+        }
+        
+        .restaurant-voucher {
+            border-left: 5px solid #0d6efd;
+            background: linear-gradient(135deg, #e6f3ff 0%, #ffffff 100%);
+        }
+        
+        .voucher-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .voucher-code {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .voucher-scope {
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .global-badge {
+            background: linear-gradient(135deg, #ffc107, #ff8c00);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .restaurant-badge {
+            background: linear-gradient(135deg, #0d6efd, #0056b3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .voucher-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .detail-label {
+            font-size: 0.8em;
+            color: #6c757d;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            font-size: 1em;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .discount-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-expired {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .voucher-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-action {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-view {
+            background: #e9ecef;
+            color: #495057;
+            border: 1px solid #ced4da;
+        }
+        
+        .btn-view:hover {
+            background: #dee2e6;
+            color: #343a40;
+        }
+        
+        .btn-edit {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .btn-edit:hover {
+            background: #ffeaa7;
+            color: #6c5ce7;
+        }
+        
+        .btn-delete {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .btn-delete:hover {
+            background: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .section-subtitle {
+            font-size: 1em;
+            opacity: 0.9;
+            margin: 5px 0 0 0;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stats-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="fragments/header :: site-header"></div>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container-fluid mt-4">
+            <!-- Page Header -->
+            <div class="section-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="section-title">
+                            <i class="fas fa-ticket-alt me-3"></i>
+                            Voucher Management
+                        </h1>
+                        <p class="section-subtitle">Manage platform vouchers and assignments</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="/admin/vouchers/new" class="btn btn-light btn-lg">
+                            <i class="fas fa-plus me-2"></i>
+                            Create New Voucher
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number" th:text="${totalVouchers}">0</div>
+                        <div class="stats-label">Total Vouchers</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number" th:text="${globalVouchers}">0</div>
+                        <div class="stats-label">Global Vouchers</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number" th:text="${restaurantVouchers}">0</div>
+                        <div class="stats-label">Restaurant Vouchers</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number" th:text="${activeVouchers}">0</div>
+                        <div class="stats-label">Active Vouchers</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Voucher List -->
+            <div th:if="${vouchers != null and !vouchers.empty}">
+                <!-- Global Vouchers Section -->
+                <div th:if="${globalVouchers > 0}">
+                    <h3 class="mb-3">
+                        <i class="fas fa-globe me-2 text-warning"></i>
+                        Global Vouchers
+                        <span class="badge bg-warning ms-2" th:text="${globalVouchers}">0</span>
+                    </h3>
+                    
+                    <div class="row">
+                        <div th:each="voucher : ${vouchers}" th:if="${voucher.restaurant == null}" class="col-lg-6 col-xl-4">
+                            <div class="voucher-card global-voucher">
+                                <div class="voucher-header">
+                                    <div class="voucher-code" th:text="${voucher.code}">VOUCHER123</div>
+                                    <div class="voucher-scope">
+                                        <span class="global-badge">
+                                            <i class="fas fa-globe me-1"></i>
+                                            GLOBAL
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="voucher-details">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Description</div>
+                                        <div class="detail-value" th:text="${voucher.description ?: 'No description'}">Welcome discount</div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Type</div>
+                                        <div class="detail-value">
+                                            <span class="badge" th:classappend="${voucher.discountType == 'PERCENT'} ? 'bg-info' : 'bg-success'"
+                                                  th:text="${voucher.discountType}">PERCENT</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Value</div>
+                                        <div class="detail-value discount-value">
+                                            <span th:if="${voucher.discountType == 'PERCENT'}"
+                                                  th:text="${voucher.discountValue} + '%'">10%</span>
+                                            <span th:if="${voucher.discountType == 'FIXED'}"
+                                                  th:text="'₫' + ${#numbers.formatDecimal(voucher.discountValue, 0, 0)}">₫50,000</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Status</div>
+                                        <div class="detail-value">
+                                            <span class="status-badge" 
+                                                  th:classappend="${voucher.status.name() == 'ACTIVE'} ? 'status-active' : 
+                                                                  (${voucher.status.name() == 'INACTIVE'}) ? 'status-inactive' : 'status-expired'"
+                                                  th:text="${voucher.status.getDisplayName()}">Active</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Usage Limit</div>
+                                        <div class="detail-value">
+                                            <span th:if="${voucher.globalUsageLimit != null}"
+                                                  th:text="${voucher.globalUsageLimit}">100</span>
+                                            <span th:if="${voucher.globalUsageLimit == null}">Unlimited</span>
+                                            <small class="text-muted d-block">Per customer: <span th:text="${voucher.perCustomerLimit}">1</span></small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Valid Period</div>
+                                        <div class="detail-value">
+                                            <small th:if="${voucher.startDate != null and voucher.endDate != null}"
+                                                   th:text="${#temporals.format(voucher.startDate, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(voucher.endDate, 'dd/MM/yyyy')}">
+                                                01/01/2024 - 31/12/2024
+                                            </small>
+                                            <small th:if="${voucher.startDate == null and voucher.endDate == null}">No limit</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="voucher-actions">
+                                    <a th:href="@{/admin/vouchers/{id}(id=${voucher.voucherId})}" 
+                                       class="btn-action btn-view">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </a>
+                                    <a th:href="@{/admin/vouchers/{id}/edit(id=${voucher.voucherId})}" 
+                                       class="btn-action btn-edit">
+                                        <i class="fas fa-edit me-1"></i> Edit
+                                    </a>
+                                    <a href="#" class="btn-action btn-delete">
+                                        <i class="fas fa-trash me-1"></i> Delete
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Restaurant Vouchers Section -->
+                <div th:if="${restaurantVouchers > 0}">
+                    <h3 class="mb-3 mt-5">
+                        <i class="fas fa-store me-2 text-primary"></i>
+                        Restaurant Vouchers
+                        <span class="badge bg-primary ms-2" th:text="${restaurantVouchers}">0</span>
+                    </h3>
+                    
+                    <div class="row">
+                        <div th:each="voucher : ${vouchers}" th:if="${voucher.restaurant != null}" class="col-lg-6 col-xl-4">
+                            <div class="voucher-card restaurant-voucher">
+                                <div class="voucher-header">
+                                    <div class="voucher-code" th:text="${voucher.code}">VOUCHER123</div>
+                                    <div class="voucher-scope">
+                                        <span class="restaurant-badge">
+                                            <i class="fas fa-store me-1"></i>
+                                            Restaurant <span th:text="${voucher.restaurant.restaurantId}">1</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="voucher-details">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Description</div>
+                                        <div class="detail-value" th:text="${voucher.description ?: 'No description'}">Welcome discount</div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Type</div>
+                                        <div class="detail-value">
+                                            <span class="badge" th:classappend="${voucher.discountType == 'PERCENT'} ? 'bg-info' : 'bg-success'"
+                                                  th:text="${voucher.discountType}">PERCENT</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Value</div>
+                                        <div class="detail-value discount-value">
+                                            <span th:if="${voucher.discountType == 'PERCENT'}"
+                                                  th:text="${voucher.discountValue} + '%'">10%</span>
+                                            <span th:if="${voucher.discountType == 'FIXED'}"
+                                                  th:text="'₫' + ${#numbers.formatDecimal(voucher.discountValue, 0, 0)}">₫50,000</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Status</div>
+                                        <div class="detail-value">
+                                            <span class="status-badge" 
+                                                  th:classappend="${voucher.status.name() == 'ACTIVE'} ? 'status-active' : 
+                                                                  (${voucher.status.name() == 'INACTIVE'}) ? 'status-inactive' : 'status-expired'"
+                                                  th:text="${voucher.status.getDisplayName()}">Active</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Usage Limit</div>
+                                        <div class="detail-value">
+                                            <span th:if="${voucher.globalUsageLimit != null}"
+                                                  th:text="${voucher.globalUsageLimit}">100</span>
+                                            <span th:if="${voucher.globalUsageLimit == null}">Unlimited</span>
+                                            <small class="text-muted d-block">Per customer: <span th:text="${voucher.perCustomerLimit}">1</span></small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="detail-item">
+                                        <div class="detail-label">Valid Period</div>
+                                        <div class="detail-value">
+                                            <small th:if="${voucher.startDate != null and voucher.endDate != null}"
+                                                   th:text="${#temporals.format(voucher.startDate, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(voucher.endDate, 'dd/MM/yyyy')}">
+                                                01/01/2024 - 31/12/2024
+                                            </small>
+                                            <small th:if="${voucher.startDate == null and voucher.endDate == null}">No limit</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="voucher-actions">
+                                    <a th:href="@{/admin/vouchers/{id}(id=${voucher.voucherId})}" 
+                                       class="btn-action btn-view">
+                                        <i class="fas fa-eye me-1"></i> View
+                                    </a>
+                                    <a th:href="@{/admin/vouchers/{id}/edit(id=${voucher.voucherId})}" 
+                                       class="btn-action btn-edit">
+                                        <i class="fas fa-edit me-1"></i> Edit
+                                    </a>
+                                    <a href="#" class="btn-action btn-delete">
+                                        <i class="fas fa-trash me-1"></i> Delete
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div th:if="${vouchers == null or vouchers.empty}" class="text-center py-5">
+                <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No vouchers found</h5>
+                <p class="text-muted">Get started by creating your first voucher</p>
+                <a href="/admin/vouchers/new" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create First Voucher
+                </a>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

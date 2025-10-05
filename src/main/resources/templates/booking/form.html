@@ -45,6 +45,84 @@
         .modal-xl {
             max-width: 90%;
         }
+        
+        /* Service Cards Styling */
+        .services-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .service-card {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+        }
+        
+        .service-card:hover {
+            border-color: #007bff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+        }
+        
+        .service-card.selected {
+            border-color: #28a745;
+            background-color: #f8fff9;
+            box-shadow: 0 4px 12px rgba(40,167,69,0.15);
+        }
+        
+        .service-card.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .service-icon {
+            font-size: 24px;
+            color: #007bff;
+            margin-bottom: 8px;
+        }
+        
+        .service-card.selected .service-icon {
+            color: #28a745;
+        }
+        
+        .service-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #333;
+        }
+        
+        .service-description {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+        
+        .service-price {
+            font-size: 13px;
+            font-weight: 600;
+            color: #28a745;
+        }
     </style>
 </head>
 
@@ -197,8 +275,12 @@
                                 <small style="color: var(--text-light); font-size: 0.9rem; margin-top: 8px; display: block;">
                                     Select services to enhance your dining experience
                                 </small>
-                                <!-- Hidden input to store selected service IDs -->
-                                <input type="hidden" id="selectedServiceIds" name="serviceIds" th:field="*{serviceIds}" value="">
+                            <!-- Hidden input to store selected service IDs -->
+                            <input type="hidden" id="selectedServiceIds" name="serviceIds" th:field="*{serviceIds}" value="">
+                            
+                            <!-- Hidden inputs for voucher information -->
+                            <input type="hidden" id="voucherDiscountAmount" name="voucherDiscountAmount" value="0">
+                            <input type="hidden" id="voucherCodeApplied" name="voucherCodeApplied" value="">
                             </div>
 
                             <!-- Total Amount Display -->
@@ -221,6 +303,17 @@
                                                 <span>Services Total:</span>
                                                 <span id="servicesTotalAmount">0 VNĐ</span>
                                             </div>
+                                            <div class="d-flex justify-content-between mb-1" id="subtotalRow">
+                                                <span>Subtotal:</span>
+                                                <span id="subtotalAmount">0 VNĐ</span>
+                                            </div>
+                                            <!-- Voucher Discount Row (initially hidden) -->
+                                            <div class="d-flex justify-content-between mb-1" id="voucherDiscountRow" style="display: none;">
+                                                <span class="text-success">
+                                                    <i class="fas fa-ticket-alt"></i> Voucher Discount:
+                                                </span>
+                                                <span class="text-success" id="voucherDiscountAmount">-0 VNĐ</span>
+                                            </div>
                                             <hr>
                                             <div class="d-flex justify-content-between">
                                                 <strong>Total Deposit:</strong>
@@ -242,6 +335,47 @@
                                        id="depositAmount" 
                                        name="depositAmount"
                                        th:field="*{depositAmount}">
+                            </div>
+                            
+                            <!-- Voucher Code -->
+                            <div class="mb-4">
+                                <label for="voucherCode" class="form-label">
+                                    <i class="fas fa-ticket-alt luxury-icon"></i> Voucher Code (Optional)
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="voucherCode" 
+                                           name="voucherCode"
+                                           th:field="*{voucherCode}"
+                                           th:classappend="${#fields.hasErrors('voucherCode')} ? 'is-invalid' : ''"
+                                           maxlength="50" 
+                                           placeholder="Enter voucher code">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary" 
+                                            id="validateVoucherBtn"
+                                            onclick="validateVoucher()">
+                                        <i class="fas fa-check"></i> Check
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('voucherCode')}" 
+                                     th:errors="*{voucherCode}"></div>
+                                
+                                <!-- Voucher validation result -->
+                                <div id="voucherResult" class="mt-2" style="display: none;">
+                                    <div id="voucherSuccess" class="alert alert-success" style="display: none;">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span id="voucherSuccessText"></span>
+                                    </div>
+                                    <div id="voucherError" class="alert alert-danger" style="display: none;">
+                                        <i class="fas fa-exclamation-circle"></i>
+                                        <span id="voucherErrorText"></span>
+                                    </div>
+                                </div>
+                                
+                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
+                                    Enter a valid voucher code to get discount on your reservation
+                                </small>
                             </div>
                             
                             <!-- Special Requests -->
@@ -353,6 +487,7 @@
         let selectedDishes = [];
         let availableTables = [];
         let availableDishes = [];
+        let voucherDiscount = 0; // Store voucher discount amount
 
            function loadTables() {
                const restaurantId = document.getElementById('restaurantId').value;
@@ -748,16 +883,21 @@
             const serviceIdsInput = document.getElementById('selectedServiceIds');
             serviceIdsInput.value = selectedServices.map(s => s.id).join(',');
 
+            // Calculate subtotal
+            const subtotal = tableDeposit + dishesTotal + servicesTotal;
+            
             // Update display
             document.getElementById('tableDepositAmount').textContent = formatCurrency(tableDeposit);
             document.getElementById('dishesTotalAmount').textContent = formatCurrency(dishesTotal);
             document.getElementById('servicesTotalAmount').textContent = formatCurrency(servicesTotal);
+            document.getElementById('subtotalAmount').textContent = formatCurrency(subtotal);
             
-            const totalAmount = tableDeposit + dishesTotal + servicesTotal;
-            document.getElementById('totalDepositAmount').textContent = formatCurrency(totalAmount);
+            // Calculate final total with voucher discount
+            const finalTotal = Math.max(0, subtotal - voucherDiscount);
+            document.getElementById('totalDepositAmount').textContent = formatCurrency(finalTotal);
             
             // Update hidden input
-            document.getElementById('depositAmount').value = totalAmount;
+            document.getElementById('depositAmount').value = finalTotal;
         }
 
         function formatCurrency(amount) {
@@ -819,6 +959,124 @@
             document.getElementById('restaurantId').addEventListener('change', checkTableAvailability);
             document.getElementById('guestCount').addEventListener('input', checkTableAvailability);
         });
+        
+        // Voucher validation function
+        function validateVoucher() {
+            const voucherCode = document.getElementById('voucherCode').value.trim();
+            const restaurantId = document.getElementById('restaurantId').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+            const guestCount = document.getElementById('guestCount').value;
+            
+            if (!voucherCode) {
+                showVoucherError('Please enter a voucher code');
+                return;
+            }
+            
+            if (!restaurantId) {
+                showVoucherError('Please select a restaurant first');
+                return;
+            }
+            
+            if (!bookingTime) {
+                showVoucherError('Please select booking time first');
+                return;
+            }
+            
+            if (!guestCount) {
+                showVoucherError('Please enter number of guests first');
+                return;
+            }
+            
+            // Show loading state
+            const validateBtn = document.getElementById('validateVoucherBtn');
+            const originalText = validateBtn.innerHTML;
+            validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            validateBtn.disabled = true;
+            
+            // Prepare request data
+            const requestData = {
+                code: voucherCode,
+                restaurantId: parseInt(restaurantId),
+                bookingTime: bookingTime,
+                guestCount: parseInt(guestCount),
+                orderAmount: 1000000 // Placeholder amount - should be calculated from actual order
+            };
+            
+            // Make API call
+            fetch('/api/vouchers/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    // Store voucher discount amount
+                    voucherDiscount = data.calculatedDiscount ? parseFloat(data.calculatedDiscount) : 0;
+                    
+                    const discountText = data.calculatedDiscount ? 
+                        `Discount: ${formatCurrency(data.calculatedDiscount)}` : 
+                        'Voucher is valid';
+                    showVoucherSuccess(discountText);
+                } else {
+                    // Reset voucher discount on error
+                    voucherDiscount = 0;
+                    const errorMessage = getVoucherErrorMessage(data.reason);
+                    showVoucherError(errorMessage);
+                }
+            })
+            .catch(error => {
+                console.error('Error validating voucher:', error);
+                showVoucherError('Error validating voucher. Please try again.');
+            })
+            .finally(() => {
+                // Reset button state
+                validateBtn.innerHTML = originalText;
+                validateBtn.disabled = false;
+            });
+        }
+        
+        function showVoucherSuccess(message) {
+            hideVoucherMessages();
+            document.getElementById('voucherSuccessText').textContent = message;
+            document.getElementById('voucherSuccess').style.display = 'block';
+            document.getElementById('voucherResult').style.display = 'block';
+            
+            // Update voucher discount in Booking Summary
+            updateVoucherDiscountInSummary();
+        }
+        
+        function showVoucherError(message) {
+            hideVoucherMessages();
+            document.getElementById('voucherErrorText').textContent = message;
+            document.getElementById('voucherError').style.display = 'block';
+            document.getElementById('voucherResult').style.display = 'block';
+        }
+        
+        function hideVoucherMessages() {
+            document.getElementById('voucherSuccess').style.display = 'none';
+            document.getElementById('voucherError').style.display = 'none';
+        }
+        
+        function getVoucherErrorMessage(reason) {
+            const errorMessages = {
+                'EMPTY_CODE': 'Please enter a voucher code',
+                'NOT_FOUND': 'Voucher code not found',
+                'INACTIVE': 'This voucher is not active',
+                'NOT_STARTED': 'This voucher is not yet active',
+                'EXPIRED': 'This voucher has expired',
+                'RESTAURANT_SCOPE_MISMATCH': 'This voucher is not valid for the selected restaurant',
+                'MIN_ORDER_NOT_MET': 'Order amount does not meet minimum requirement',
+                'GLOBAL_LIMIT_REACHED': 'This voucher has reached its usage limit',
+                'PER_CUSTOMER_LIMIT_REACHED': 'You have reached the usage limit for this voucher',
+                'NOT_ASSIGNED': 'This voucher is not assigned to you',
+                'LIMIT_REACHED': 'You have used this voucher too many times',
+                'APPLICATION_ERROR': 'Error applying voucher. Please try again.'
+            };
+            return errorMessages[reason] || 'Invalid voucher code';
+        }
 
         // Waitlist functionality
         function joinWaitlist() {
@@ -859,26 +1117,81 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(requestData)
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    // Show success message
-                    showWaitlistSuccess(data);
+                if (data.valid) {
+                    // Store voucher discount amount
+                    voucherDiscount = data.calculatedDiscount ? parseFloat(data.calculatedDiscount) : 0;
+                    
+                    const discountText = data.calculatedDiscount ? 
+                        `Discount: ${formatCurrency(data.calculatedDiscount)}` : 
+                        'Voucher is valid';
+                    showVoucherSuccess(discountText);
                 } else {
-                    alert('Error joining waitlist: ' + data.error);
+                    // Reset voucher discount on error
+                    voucherDiscount = 0;
+                    const errorMessage = getVoucherErrorMessage(data.reason);
+                    showVoucherError(errorMessage);
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Error joining waitlist. Please try again.');
+                console.error('Error validating voucher:', error);
+                showVoucherError('Error validating voucher. Please try again.');
             })
             .finally(() => {
-                // Restore button state
-                joinBtn.innerHTML = originalText;
-                joinBtn.disabled = false;
+                // Reset button state
+                validateBtn.innerHTML = originalText;
+                validateBtn.disabled = false;
             });
+        }
+        
+        function showVoucherSuccess(message) {
+            hideVoucherMessages();
+            document.getElementById('voucherSuccessText').textContent = message;
+            document.getElementById('voucherSuccess').style.display = 'block';
+            document.getElementById('voucherResult').style.display = 'block';
+            
+            // Update voucher discount in Booking Summary
+            updateVoucherDiscountInSummary();
+        }
+        
+        function showVoucherError(message) {
+            hideVoucherMessages();
+            document.getElementById('voucherErrorText').textContent = message;
+            document.getElementById('voucherError').style.display = 'block';
+            document.getElementById('voucherResult').style.display = 'block';
+        }
+        
+        function hideVoucherMessages() {
+            document.getElementById('voucherSuccess').style.display = 'none';
+            document.getElementById('voucherError').style.display = 'none';
+        }
+        
+        function getVoucherErrorMessage(reason) {
+            const errorMessages = {
+                'EMPTY_CODE': 'Please enter a voucher code',
+                'NOT_FOUND': 'Voucher code not found',
+                'INACTIVE': 'This voucher is not active',
+                'NOT_STARTED': 'This voucher is not yet active',
+                'EXPIRED': 'This voucher has expired',
+                'RESTAURANT_SCOPE_MISMATCH': 'This voucher is not valid for the selected restaurant',
+                'MIN_ORDER_NOT_MET': 'Order amount does not meet minimum requirement',
+                'GLOBAL_LIMIT_REACHED': 'This voucher has reached its usage limit',
+                'PER_CUSTOMER_LIMIT_REACHED': 'You have reached the usage limit for this voucher',
+                'NOT_ASSIGNED': 'This voucher is not assigned to you',
+                'LIMIT_REACHED': 'You have used this voucher too many times',
+                'APPLICATION_ERROR': 'Error applying voucher. Please try again.'
+            };
+            return errorMessages[reason] || 'Invalid voucher code';
+        }
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
         }
         
         function showWaitlistSuccess(data) {
@@ -1056,6 +1369,30 @@
                         serviceCard.classList.add('selected');
                     }
                 });
+            }
+        }
+        
+        function updateVoucherDiscountInSummary() {
+            if (voucherDiscount > 0) {
+                // Show voucher discount row
+                document.getElementById('voucherDiscountRow').style.display = 'flex';
+                document.getElementById('voucherDiscountAmount').textContent = '-' + formatCurrency(voucherDiscount);
+                
+                // Update hidden inputs
+                document.getElementById('voucherDiscountAmount').value = voucherDiscount;
+                document.getElementById('voucherCodeApplied').value = document.getElementById('voucherCode').value;
+                
+                // Update total amount
+                updateTotalAmount();
+            } else {
+                // Hide voucher discount row
+                document.getElementById('voucherDiscountRow').style.display = 'none';
+                
+                // Reset hidden inputs
+                document.getElementById('voucherDiscountAmount').value = '0';
+                document.getElementById('voucherCodeApplied').value = '';
+                
+                updateTotalAmount();
             }
         }
     </script>

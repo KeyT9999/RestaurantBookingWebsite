@@ -70,6 +70,32 @@ public class RestaurantOwnerService {
     public List<RestaurantProfile> getRestaurantsByOwnerId(UUID ownerId) {
         return restaurantProfileRepository.findByOwnerOwnerId(ownerId);
     }
+    
+    /**
+     * Get restaurant ID by owner ID
+     * For now, returns the first restaurant ID or null
+     * Supports development mode when ownerId is null
+     */
+    public Integer getRestaurantIdByOwnerId(UUID ownerId) {
+        // TODO: Implement proper owner-restaurant relationship
+        // For now, return the first available restaurant ID as a placeholder
+        
+        // Development mode - when ownerId is null, return first available restaurant
+        if (ownerId == null) {
+            List<RestaurantProfile> restaurants = restaurantRepository.findAll();
+            if (!restaurants.isEmpty()) {
+                return restaurants.get(0).getRestaurantId();
+            }
+            return null;
+        }
+        
+        // Normal flow - when ownerId is provided
+        List<RestaurantProfile> restaurants = restaurantRepository.findAll();
+        if (!restaurants.isEmpty()) {
+            return restaurants.get(0).getRestaurantId();
+        }
+        return null;
+    }
 
     /**
      * Get restaurant profile by ID

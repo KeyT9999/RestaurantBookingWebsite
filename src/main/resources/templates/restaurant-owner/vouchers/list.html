@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Restaurant Vouchers - Restaurant Owner Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Admin CSS -->
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container-fluid mt-4">
+            <!-- Page Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="nav">
+                        <div class="nav-left">
+                            <h1 class="h1">
+                                <i class="fas fa-ticket-alt me-2"></i>
+                                My Restaurant Vouchers
+                            </h1>
+                            <p class="muted">Manage vouchers for your restaurant</p>
+                        </div>
+                        <div class="nav-right">
+                            <a href="/restaurant-owner/vouchers/new" class="btn btn-ghost">
+                                <i class="fas fa-plus"></i> Create New Voucher
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Flash Messages -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            
+            <!-- Restaurant Info -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-store me-2"></i>Restaurant Information
+                        </h6>
+                        <p class="mb-0">
+                            <strong>Restaurant ID:</strong> <span th:text="${restaurantId}">123</span>
+                        </p>
+                        <small class="text-muted">
+                            All vouchers created here will be scoped to your restaurant only.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="get" class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="search" class="form-label">Search</label>
+                                    <input type="text" class="form-control" id="search" name="search" 
+                                           th:value="${search}" placeholder="Search by code or description">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="status" class="form-label">Status</label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="">All Statuses</option>
+                                        <option th:each="status : ${T(com.example.booking.domain.VoucherStatus).values()}"
+                                                th:value="${status.name()}"
+                                                th:text="${status.getDisplayName()}"
+                                                th:selected="${status.name() == status}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="sortBy" class="form-label">Sort By</label>
+                                    <select class="form-select" id="sortBy" name="sortBy">
+                                        <option value="createdAt" th:selected="${sortBy == 'createdAt'}">Created Date</option>
+                                        <option value="code" th:selected="${sortBy == 'code'}">Code</option>
+                                        <option value="status" th:selected="${sortBy == 'status'}">Status</option>
+                                        <option value="endDate" th:selected="${sortBy == 'endDate'}">End Date</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="sortDir" class="form-label">Direction</label>
+                                    <select class="form-select" id="sortDir" name="sortDir">
+                                        <option value="desc" th:selected="${sortDir == 'desc'}">Descending</option>
+                                        <option value="asc" th:selected="${sortDir == 'asc'}">Ascending</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary me-2">
+                                        <i class="fas fa-search"></i> Filter
+                                    </button>
+                                    <a href="/restaurant-owner/vouchers" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> Clear
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vouchers Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-list me-2"></i>
+                                Restaurant Vouchers
+                                <span class="badge bg-primary ms-2" th:text="${#lists.size(vouchers)}">0</span>
+                            </h5>
+                            <a th:href="@{/restaurant-owner/vouchers/new}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i>
+                                Tạo Voucher Mới
+                            </a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Description</th>
+                                            <th>Type</th>
+                                            <th>Value</th>
+                                            <th>Status</th>
+                                            <th>Usage Limit</th>
+                                            <th>Valid Period</th>
+                                            <th>Created</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="voucher : ${vouchers}">
+                                            <td>
+                                                <code th:text="${voucher.code}">VOUCHER123</code>
+                                            </td>
+                                            <td>
+                                                <span th:if="${voucher.description != null and !#strings.isEmpty(voucher.description)}" 
+                                                      th:text="${voucher.description}">Welcome discount</span>
+                                                <span th:if="${voucher.description == null or #strings.isEmpty(voucher.description)}" 
+                                                      class="text-muted">Chưa có mô tả</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge" 
+                                                      th:if="${voucher.discountType != null}"
+                                                      th:classappend="${voucher.discountType == 'PERCENT'} ? 'bg-info' : 'bg-success'"
+                                                      th:text="${voucher.discountType}">PERCENT</span>
+                                                <span th:if="${voucher.discountType == null}" class="text-muted">Chưa có</span>
+                                            </td>
+                                            <td>
+                                                <span th:if="${voucher.discountType == 'PERCENT'}"
+                                                      th:text="${voucher.discountValue} + '%'">10%</span>
+                                                <span th:if="${voucher.discountType == 'FIXED'}"
+                                                      th:text="'₫' + ${#numbers.formatDecimal(voucher.discountValue, 0, 0)}">₫50,000</span>
+                                                <span th:if="${voucher.discountType == null}" class="text-muted">Chưa có</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge" 
+                                                      th:classappend="${voucher.status.name() == 'ACTIVE'} ? 'bg-success' : 
+                                                                      (${voucher.status.name() == 'SCHEDULED'}) ? 'bg-primary' :
+                                                                      (${voucher.status.name() == 'INACTIVE'}) ? 'bg-secondary' : 
+                                                                      (${voucher.status.name() == 'EXPIRED'}) ? 'bg-danger' : 'bg-warning'"
+                                                      th:text="${voucher.status != null ? voucher.status.getDisplayName() : 'Unknown'}">Active</span>
+                                            </td>
+                                            <td>
+                                                <span th:if="${voucher.globalUsageLimit != null and voucher.globalUsageLimit > 0}"
+                                                      th:text="${voucher.globalUsageLimit}">100</span>
+                                                <span th:if="${voucher.globalUsageLimit == null or voucher.globalUsageLimit == 0}">Không giới hạn</span>
+                                                <small class="text-muted d-block">Mỗi khách: <span th:text="${voucher.perCustomerLimit}">1</span></small>
+                                            </td>
+                                            <td>
+                                                <small th:if="${voucher.startDate != null and voucher.endDate != null}"
+                                                       th:text="${#temporals.format(voucher.startDate, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(voucher.endDate, 'dd/MM/yyyy')}">
+                                                    01/01/2024 - 31/12/2024
+                                                </small>
+                                                <small th:if="${voucher.startDate != null and voucher.endDate == null}"
+                                                       th:text="'Từ ' + ${#temporals.format(voucher.startDate, 'dd/MM/yyyy')}">
+                                                    Từ 01/01/2024
+                                                </small>
+                                                <small th:if="${voucher.startDate == null and voucher.endDate != null}"
+                                                       th:text="'Đến ' + ${#temporals.format(voucher.endDate, 'dd/MM/yyyy')}">
+                                                    Đến 31/12/2024
+                                                </small>
+                                                <small th:if="${voucher.startDate == null and voucher.endDate == null}">Không giới hạn</small>
+                                            </td>
+                                            <td>
+                                                <small th:if="${voucher.createdAt != null}" 
+                                                       th:text="${#temporals.format(voucher.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</small>
+                                                <small th:if="${voucher.createdAt == null}" class="text-muted">Chưa có</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a th:href="@{/restaurant-owner/vouchers/{id}(id=${voucher.voucherId})}" 
+                                                       class="btn btn-sm btn-outline-primary" title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a th:href="@{/restaurant-owner/vouchers/{id}/edit(id=${voucher.voucherId})}" 
+                                                       class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-outline-warning dropdown-toggle" 
+                                                                data-bs-toggle="dropdown" title="Actions">
+                                                            <i class="fas fa-cog"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li th:if="${voucher.status.name() == 'SCHEDULED'}">
+                                                                <a class="dropdown-item" th:href="@{/restaurant-owner/vouchers/{id}/pause(id=${voucher.voucherId})}"
+                                                                   onclick="return confirm('Bạn có chắc muốn tạm dừng voucher này?')">
+                                                                    <i class="fas fa-pause me-2"></i>Tạm dừng
+                                                                </a>
+                                                            </li>
+                                                            <li th:if="${voucher.status.name() == 'INACTIVE'}">
+                                                                <a class="dropdown-item" th:href="@{/restaurant-owner/vouchers/{id}/resume(id=${voucher.voucherId})}">
+                                                                    <i class="fas fa-play me-2"></i>Tiếp tục
+                                                                </a>
+                                                            </li>
+                                                            <li th:if="${voucher.status.name() != 'EXPIRED'}">
+                                                                <a class="dropdown-item" th:href="@{/restaurant-owner/vouchers/{id}/expire(id=${voucher.voucherId})}"
+                                                                   onclick="return confirm('Are you sure you want to expire this voucher?')">
+                                                                    <i class="fas fa-times me-2"></i>Expire
+                                                                </a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(vouchers)}">
+                                            <td colspan="9" class="text-center py-4">
+                                                <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">No vouchers found for your restaurant</p>
+                                                <a href="/restaurant-owner/vouchers/new" class="btn btn-primary">
+                                                    <i class="fas fa-plus"></i> Create First Voucher
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="card-footer" th:if="${totalPages > 1}">
+                            <nav aria-label="Voucher pagination">
+                                <ul class="pagination pagination-sm justify-content-center mb-0">
+                                    <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                        <a class="page-link" th:href="@{/restaurant-owner/vouchers(page=${currentPage - 1}, size=${size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, status=${status})}">Previous</a>
+                                    </li>
+                                    <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                                        th:classappend="${i == currentPage} ? 'active'">
+                                        <a class="page-link" th:href="@{/restaurant-owner/vouchers(page=${i}, size=${size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, status=${status})}"
+                                           th:text="${i + 1}">1</a>
+                                    </li>
+                                    <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                                        <a class="page-link" th:href="@{/restaurant-owner/vouchers(page=${currentPage + 1}, size=${size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, status=${status})}">Next</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer Fragment -->
+    <div th:insert="fragments/footer :: site-footer"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

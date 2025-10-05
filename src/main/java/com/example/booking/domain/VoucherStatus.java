@@ -1,6 +1,7 @@
 package com.example.booking.domain;
 
 public enum VoucherStatus {
+    SCHEDULED("Đã lên lịch"),
     ACTIVE("Hoạt động"),
     INACTIVE("Không hoạt động"),
     EXPIRED("Hết hạn");

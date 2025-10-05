@@ -1,80 +1,59 @@
 package com.example.booking.repository;
 
+
+import java.time.LocalDate;
+
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import org.springframework.data.jpa.repository.Lock;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.booking.domain.Voucher;
-import com.example.booking.domain.User;
-import com.example.booking.domain.RestaurantProfile;
+
 import com.example.booking.domain.VoucherStatus;
 
-/**
- * Repository for Voucher entity
- * Handles CRUD operations for vouchers
- */
+import jakarta.persistence.LockModeType;
+
 @Repository
 public interface VoucherRepository extends JpaRepository<Voucher, Integer> {
+
+    Optional<Voucher> findByCodeIgnoreCase(String code);
     
-    /**
-     * Find voucher by code
-     * @param code The voucher code
-     * @return Optional containing the Voucher if found
-     */
-    Optional<Voucher> findByCode(String code);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT v FROM Voucher v WHERE v.code = :code")
+    Optional<Voucher> findByCodeForUpdate(@Param("code") String code);
     
-    /**
-     * Find vouchers by created user
-     * @param createdByUser The user who created the voucher
-     * @return List of Voucher entities
-     */
-    List<Voucher> findByCreatedByUser(User createdByUser);
-    
-    /**
-     * Find vouchers by restaurant
-     * @param restaurant The restaurant
-     * @return List of Voucher entities
-     */
-    List<Voucher> findByRestaurant(RestaurantProfile restaurant);
-    
-    /**
-     * Find vouchers by status
-     * @param status The voucher status
-     * @return List of Voucher entities
-     */
     List<Voucher> findByStatus(VoucherStatus status);
     
-    /**
-     * Find active vouchers by restaurant
-     * @param restaurant The restaurant
-     * @return List of active Voucher entities
-     */
-    @Query("SELECT v FROM Voucher v WHERE v.restaurant = :restaurant AND v.status = 'ACTIVE' AND (v.startDate IS NULL OR v.startDate <= CURRENT_DATE) AND (v.endDate IS NULL OR v.endDate >= CURRENT_DATE)")
-    List<Voucher> findActiveVouchersByRestaurant(@Param("restaurant") RestaurantProfile restaurant);
+    List<Voucher> findByRestaurant_RestaurantId(Integer restaurantId);
     
-    /**
-     * Find active vouchers
-     * @return List of active Voucher entities
-     */
-    @Query("SELECT v FROM Voucher v WHERE v.status = 'ACTIVE' AND (v.startDate IS NULL OR v.startDate <= CURRENT_DATE) AND (v.endDate IS NULL OR v.endDate >= CURRENT_DATE)")
-    List<Voucher> findActiveVouchers();
+    List<Voucher> findByRestaurantIsNull();
     
-    /**
-     * Check if voucher code exists
-     * @param code The voucher code
-     * @return true if voucher exists
-     */
-    boolean existsByCode(String code);
+    @Query("SELECT v FROM Voucher v WHERE v.status = :status AND " +
+           "(:restaurantId IS NULL AND v.restaurant IS NULL) OR " +
+           "(:restaurantId IS NOT NULL AND v.restaurant.restaurantId = :restaurantId)")
+    List<Voucher> findByStatusAndRestaurant(@Param("status") VoucherStatus status, 
+                                           @Param("restaurantId") Integer restaurantId);
     
-    /**
-     * Find vouchers by restaurant and status
-     * @param restaurant The restaurant
-     * @param status The voucher status
-     * @return List of Voucher entities
-     */
-    List<Voucher> findByRestaurantAndStatus(RestaurantProfile restaurant, VoucherStatus status);
+    @Query("SELECT v FROM Voucher v WHERE v.status = :status AND " +
+           "v.startDate <= :date AND (v.endDate IS NULL OR v.endDate >= :date)")
+    List<Voucher> findActiveVouchersOnDate(@Param("status") VoucherStatus status, 
+                                          @Param("date") LocalDate date);
+    
+    @Query("SELECT COUNT(r) FROM VoucherRedemption r WHERE r.voucher.voucherId = :voucherId")
+    Long countRedemptionsByVoucherId(@Param("voucherId") Integer voucherId);
+    
+    @Query("SELECT COUNT(r) FROM VoucherRedemption r WHERE r.voucher.voucherId = :voucherId AND r.customerId = :customerId")
+    Long countRedemptionsByVoucherIdAndCustomerId(@Param("voucherId") Integer voucherId, 
+                                                  @Param("customerId") java.util.UUID customerId);
 }
+
+
+
+
