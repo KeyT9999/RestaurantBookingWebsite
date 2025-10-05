@@ -11,12 +11,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "review")
+@Table(name = "review", uniqueConstraints = @UniqueConstraint(columnNames = { "customer_id", "restaurant_id" }))
 public class Review {
     
     @Id
@@ -104,5 +105,33 @@ public class Review {
     
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    // Helper methods
+    public boolean isEditable() {
+        // Review có thể chỉnh sửa trong vòng 30 ngày
+        return createdAt.isAfter(LocalDateTime.now().minusDays(30));
+    }
+
+    public String getCustomerName() {
+        return customer != null && customer.getUser() != null ? customer.getUser().getFullName() : "Anonymous";
+    }
+
+    public String getRestaurantName() {
+        return restaurant != null ? restaurant.getRestaurantName() : "Unknown Restaurant";
+    }
+
+    public String getFormattedCreatedAt() {
+        return createdAt.toString();
+    }
+
+    @Override
+    public String toString() {
+        return "Review{" +
+                "reviewId=" + reviewId +
+                ", rating=" + rating +
+                ", comment='" + comment + '\'' +
+                ", createdAt=" + createdAt +
+                '}';
     }
 }

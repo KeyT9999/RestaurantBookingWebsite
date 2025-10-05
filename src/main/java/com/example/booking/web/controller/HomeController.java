@@ -1,6 +1,9 @@
 package com.example.booking.web.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
@@ -12,10 +15,18 @@ import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantTable;
+import com.example.booking.domain.Customer;
+import com.example.booking.domain.User;
+import com.example.booking.dto.ReviewDto;
+import com.example.booking.dto.ReviewStatisticsDto;
+import com.example.booking.dto.ReviewForm;
 import com.example.booking.service.RestaurantOwnerService;
+import com.example.booking.service.CustomerService;
+import com.example.booking.service.ReviewService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Controller for handling home page and static pages
@@ -26,6 +37,12 @@ public class HomeController {
     @Autowired
     private RestaurantOwnerService restaurantOwnerService;
     
+    @Autowired
+    private CustomerService customerService;
+
+    @Autowired
+    private ReviewService reviewService;
+
     /**
      * Home page - main landing page
      * Shows home page for all users, with additional options for authenticated users
@@ -85,7 +102,7 @@ public class HomeController {
     }
     
     @GetMapping("/restaurants/{id}")
-    public String restaurantDetail(@PathVariable Integer id, Model model) {
+    public String restaurantDetail(@PathVariable Integer id, Model model, Authentication authentication) {
         try {
             // Get restaurant details
             var restaurantOpt = restaurantOwnerService.getRestaurantById(id);
@@ -119,6 +136,49 @@ public class HomeController {
             // Get tables
             List<RestaurantTable> tables = restaurant.getTables() != null ? restaurant.getTables() : new ArrayList<>();
             
+            // Review-related data
+            boolean hasReviewed = false;
+            ReviewDto customerReview = null;
+            List<ReviewDto> recentReviews = new ArrayList<>();
+            ReviewStatisticsDto statistics = null;
+            long totalReviews = 0;
+
+            try {
+                // Check if user has reviewed this restaurant
+                if (authentication != null && authentication.isAuthenticated()) {
+                    User user = (User) authentication.getPrincipal();
+                    Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
+                    if (customerOpt.isPresent()) {
+                        hasReviewed = reviewService.hasCustomerReviewedRestaurant(customerOpt.get().getCustomerId(),
+                                id);
+                        if (hasReviewed) {
+                            // Get customer's review for this restaurant
+                            List<ReviewDto> customerReviews = reviewService
+                                    .getReviewsByCustomer(customerOpt.get().getCustomerId());
+                            Optional<ReviewDto> customerReviewOpt = customerReviews.stream()
+                                    .filter(r -> r.getRestaurantId().equals(id))
+                                    .findFirst();
+                            if (customerReviewOpt.isPresent()) {
+                                customerReview = customerReviewOpt.get();
+                            }
+                        }
+                    }
+                }
+
+                // Get recent reviews (3-5 reviews)
+                Pageable pageable = PageRequest.of(0, 5);
+                Page<ReviewDto> recentReviewsPage = reviewService.getReviewsByRestaurant(id, pageable);
+                recentReviews = recentReviewsPage.getContent();
+
+                // Get review statistics
+                statistics = reviewService.getRestaurantReviewStatistics(id);
+                totalReviews = recentReviewsPage.getTotalElements();
+
+            } catch (Exception e) {
+                // If review service fails, continue without review data
+                System.err.println("Review service error: " + e.getMessage());
+            }
+
             // Add to model
             model.addAttribute("pageTitle", restaurant.getRestaurantName() + " - Chi tiết Nhà hàng");
             model.addAttribute("restaurant", restaurant);
@@ -129,6 +189,18 @@ public class HomeController {
             model.addAttribute("dishes", dishes);
             model.addAttribute("tables", tables);
             
+            // Review data
+            model.addAttribute("hasReviewed", hasReviewed);
+            model.addAttribute("customerReview", customerReview);
+            model.addAttribute("recentReviews", recentReviews);
+            model.addAttribute("statistics", statistics);
+            model.addAttribute("totalReviews", totalReviews);
+
+            // Add ReviewForm for new reviews
+            ReviewForm reviewForm = new ReviewForm();
+            reviewForm.setRestaurantId(id);
+            model.addAttribute("reviewForm", reviewForm);
+
             return "restaurant-detail";
             
         } catch (Exception e) {
