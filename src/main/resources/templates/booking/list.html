@@ -30,9 +30,36 @@
                         </h2>
                         <p class="text-muted mb-0">Manage your dining experiences</p>
                     </div>
-                    <a href="/booking/new" class="btn btn--gold">
-                        <i class="fas fa-plus-circle"></i> New Reservation
-                    </a>
+                    <div class="d-flex gap-2">
+                        <!-- Filter Buttons -->
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="filter" id="filter-all" 
+                                   th:checked="${currentFilter == 'all'}">
+                            <label class="btn btn-outline-warning" for="filter-all" onclick="filterBookings('all')">
+                                <i class="fas fa-list"></i> All
+                                <span class="badge bg-warning text-dark ms-1" 
+                                      th:text="${totalBookings + totalWaitlist}"></span>
+                            </label>
+
+                            <input type="radio" class="btn-check" name="filter" id="filter-bookings"
+                                   th:checked="${currentFilter == 'bookings'}">
+                            <label class="btn btn-outline-warning" for="filter-bookings" onclick="filterBookings('bookings')">
+                                <i class="fas fa-calendar-check"></i> Bookings
+                                <span class="badge bg-warning text-dark ms-1" th:text="${totalBookings}"></span>
+                            </label>
+
+                            <input type="radio" class="btn-check" name="filter" id="filter-waitlist"
+                                   th:checked="${currentFilter == 'waitlist'}">
+                            <label class="btn btn-outline-warning" for="filter-waitlist" onclick="filterBookings('waitlist')">
+                                <i class="fas fa-clock"></i> Waitlist
+                                <span class="badge bg-warning text-dark ms-1" th:text="${totalWaitlist}"></span>
+                            </label>
+                        </div>
+                        
+                        <a href="/booking/new" class="btn btn--gold">
+                            <i class="fas fa-plus-circle"></i> New Reservation
+                        </a>
+                    </div>
                 </div>
             </div>
             
@@ -51,14 +78,21 @@
             
             <!-- Reservations Content -->
             <div class="luxury-card">
-                <div th:if="${#lists.isEmpty(bookings)}" class="text-center py-5">
-                    <i class="fas fa-calendar-times" style="font-size: 5rem; color: var(--luxury-gold); margin-bottom: 2rem; opacity: 0.6;"></i>
-                    <h4 class="luxury-title mb-3">No Reservations Yet</h4>
-                    <p class="text-muted mb-4">Start your culinary journey by making your first reservation!</p>
-                    <a href="/booking/new" class="btn btn--gold">
-                        <i class="fas fa-plus-circle"></i> Make Your First Reservation
-                    </a>
-                </div>
+                <!-- Regular Bookings Section -->
+                <div th:if="${currentFilter == 'all' or currentFilter == 'bookings'}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="luxury-title mb-0">
+                            <i class="fas fa-calendar-check luxury-icon"></i> 
+                            Confirmed Bookings
+                            <span class="badge bg-success ms-2" th:text="${totalBookings}"></span>
+                        </h4>
+                    </div>
+                    
+                    <div th:if="${#lists.isEmpty(bookings)}" class="text-center py-4">
+                        <i class="fas fa-calendar-times" style="font-size: 3rem; color: var(--luxury-gold); margin-bottom: 1rem; opacity: 0.6;"></i>
+                        <h5 class="luxury-title mb-3">No Confirmed Bookings</h5>
+                        <p class="text-muted mb-4">You don't have any confirmed reservations yet.</p>
+                    </div>
                 
                 <div th:unless="${#lists.isEmpty(bookings)}">
                     <!-- Desktop Table View -->
@@ -243,11 +277,169 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Waitlist Section -->
+            <div th:if="${currentFilter == 'all' or currentFilter == 'waitlist'}">
+                <!-- Separator -->
+                <div th:if="${currentFilter == 'all' and !#lists.isEmpty(bookings) and !#lists.isEmpty(waitlistEntries)}" 
+                     class="border-top border-warning my-4"></div>
+                     
+                <div th:if="${currentFilter == 'all' or currentFilter == 'waitlist'}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="luxury-title mb-0">
+                            <i class="fas fa-clock luxury-icon"></i> 
+                            Waitlist Entries
+                            <span class="badge bg-info ms-2" th:text="${totalWaitlist}"></span>
+                        </h4>
+                    </div>
+                    
+                    <div th:if="${#lists.isEmpty(waitlistEntries)}" class="text-center py-4">
+                        <i class="fas fa-clock" style="font-size: 3rem; color: var(--luxury-gold); margin-bottom: 1rem; opacity: 0.6;"></i>
+                        <h5 class="luxury-title mb-3">No Waitlist Entries</h5>
+                        <p class="text-muted mb-4">You're not currently on any waitlists.</p>
+                    </div>
+                    
+                    <div th:unless="${#lists.isEmpty(waitlistEntries)}">
+                        <!-- Desktop Waitlist Table -->
+                        <div class="d-none d-lg-block">
+                            <div class="table-responsive">
+                                <table class="table table-hover" style="color: var(--luxury-white);">
+                                    <thead style="border-bottom: 2px solid var(--luxury-gold);">
+                                        <tr>
+                                            <th style="color: var(--luxury-gold); font-weight: 600;">Position</th>
+                                            <th style="color: var(--luxury-gold); font-weight: 600;">Restaurant</th>
+                                            <th style="color: var(--luxury-gold); font-weight: 600;">Guests</th>
+                                            <th style="color: var(--luxury-gold); font-weight: 600;">Joined</th>
+                                            <th style="color: var(--luxury-gold); font-weight: 600;">Est. Wait</th>
+                                            <th style="color: var(--luxury-gold); font-weight: 600;">Status</th>
+                                            <th style="color: var(--luxury-gold); font-weight: 600;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="waitlist, iterStat : ${waitlistEntries}" 
+                                            style="border-bottom: 1px solid rgba(212, 175, 55, 0.2);">
+                                            <td>
+                                                <span class="badge bg-primary fs-6">#<span th:text="${iterStat.index + 1}"></span></span>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong th:text="${waitlist.restaurant.restaurantName}" style="color: var(--luxury-white);"></strong>
+                                                    <br>
+                                                    <small class="text-muted" th:text="${waitlist.restaurant.address}"></small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info" th:text="|${waitlist.partySize} guests|"></span>
+                                            </td>
+                                            <td>
+                                                <i class="fas fa-clock luxury-icon"></i>
+                                                <span th:text="${#temporals.format(waitlist.joinTime, 'dd/MM HH:mm')}" style="color: var(--luxury-white);"></span>
+                                            </td>
+                                            <td>
+                                                <span th:text="|~${waitlist.estimatedWaitTime} min|" 
+                                                      style="color: var(--luxury-white);"></span>
+                                                <br>
+                                                <small class="text-muted" th:if="${iterStat.index == 0}">Next in line</small>
+                                                <small class="text-muted" th:unless="${iterStat.index == 0}">#<span th:text="${iterStat.index}"></span> in queue</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-warning text-dark"
+                                                      th:if="${waitlist.status.name() == 'WAITING'}">
+                                                    <i class="fas fa-clock"></i> Waiting
+                                                </span>
+                                                <span class="badge bg-success"
+                                                      th:if="${waitlist.status.name() == 'CALLED'}">
+                                                    <i class="fas fa-phone"></i> Called
+                                                </span>
+                                                <span class="badge bg-danger"
+                                                      th:if="${waitlist.status.name() == 'CANCELLED'}">
+                                                    <i class="fas fa-times"></i> Cancelled
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button" 
+                                                            class="btn btn-outline-danger btn-sm"
+                                                            title="Cancel Waitlist"
+                                                            onclick="cancelWaitlist(this)"
+                                                            th:data-waitlist-id="${waitlist.waitlistId}">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Mobile Waitlist Cards -->
+                        <div class="d-lg-none">
+                            <div th:each="waitlist, iterStat : ${waitlistEntries}" class="card mb-3" 
+                                 style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="luxury-title mb-0" th:text="${waitlist.restaurant.restaurantName}"></h6>
+                                        <span class="badge bg-primary">#<span th:text="${iterStat.index + 1}"></span></span>
+                                    </div>
+                                    
+                                    <p class="text-muted small mb-2" th:text="${waitlist.restaurant.address}"></p>
+                                    
+                                    <div class="row mb-2">
+                                        <div class="col-6">
+                                            <small style="color: var(--luxury-gray);">
+                                                <i class="fas fa-users luxury-icon"></i>
+                                                <span th:text="|${waitlist.partySize} guests|"></span>
+                                            </small>
+                                        </div>
+                                        <div class="col-6">
+                                            <small style="color: var(--luxury-gray);">
+                                                <i class="fas fa-clock luxury-icon"></i>
+                                                <span th:text="|~${waitlist.estimatedWaitTime} min|"></span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-2">
+                                        <div class="col-12">
+                                            <small style="color: var(--luxury-gray);">
+                                                <i class="fas fa-calendar luxury-icon"></i>
+                                                <span th:text="${#temporals.format(waitlist.joinTime, 'dd/MM HH:mm')}"></span>
+                                                <span th:if="${iterStat.index == 0}" class="badge bg-success ms-2">Next!</span>
+                                                <span th:unless="${iterStat.index == 0}" class="badge bg-info ms-2">#<span th:text="${iterStat.index}"></span></span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="badge bg-warning text-dark"
+                                                  th:if="${waitlist.status.name() == 'WAITING'}">Waiting</span>
+                                            <span class="badge bg-success"
+                                                  th:if="${waitlist.status.name() == 'CALLED'}">Called</span>
+                                            <span class="badge bg-danger"
+                                                  th:if="${waitlist.status.name() == 'CANCELLED'}">Cancelled</span>
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" 
+                                                    class="btn btn-outline-danger btn-sm"
+                                                    onclick="cancelWaitlist(this)"
+                                                    th:data-waitlist-id="${waitlist.waitlistId}">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Booking Details Modal -->
             <div class="modal fade" id="bookingDetailsModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
-                    <div class="modal-content" style="background: var(--luxury-dark); border: 2px solid var(--luxury-gold);">
+                    <div class="modal-content" style="border: 2px solid var(--luxury-gold);">
                         <div class="modal-header" style="border-bottom: 1px solid var(--luxury-gold);">
                             <h5 class="modal-title luxury-title">
                                 <i class="fas fa-calendar-alt" style="color: var(--luxury-gold);"></i>
@@ -277,7 +469,7 @@
             <!-- Cancel Booking Modal -->
             <div class="modal fade" id="cancelModal" tabindex="-1">
                 <div class="modal-dialog">
-                    <div class="modal-content" style="background: var(--luxury-dark); border: 2px solid var(--luxury-gold);">
+                    <div class="modal-content" style="border: 2px solid var(--luxury-gold);">
                         <div class="modal-header" style="border-bottom: 1px solid var(--luxury-gold);">
                             <h5 class="modal-title luxury-title">
                                 <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
@@ -492,6 +684,76 @@
                         </div>
                     `;
                 });
+        }
+        
+        function filterBookings(filter) {
+            const url = new URL(window.location);
+            if (filter === 'all') {
+                url.searchParams.delete('filter');
+            } else {
+                url.searchParams.set('filter', filter);
+            }
+            window.location.href = url.toString();
+        }
+        
+        function cancelWaitlist(button) {
+            const waitlistId = button.getAttribute('data-waitlist-id');
+            
+            if (!confirm('Are you sure you want to cancel this waitlist entry?')) {
+                return;
+            }
+            
+            // Show loading state
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            // Send AJAX request
+            fetch(`/booking/waitlist/cancel/${waitlistId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remove the row/card
+                    const row = button.closest('tr') || button.closest('.card');
+                    row.style.transition = 'opacity 0.3s';
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        row.remove();
+                        // Update counters
+                        updateCounters();
+                    }, 300);
+                } else {
+                    alert('Error cancelling waitlist: ' + data.error);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error cancelling waitlist. Please try again.');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+        
+        function updateCounters() {
+            // Update badge counters after removing items
+            const waitlistRows = document.querySelectorAll('tbody tr');
+            const waitlistBadge = document.querySelector('#filter-waitlist .badge');
+            if (waitlistBadge) {
+                waitlistBadge.textContent = waitlistRows.length;
+            }
+            
+            const allBadge = document.querySelector('#filter-all .badge');
+            if (allBadge) {
+                const bookingRows = document.querySelectorAll('.booking-row');
+                allBadge.textContent = bookingRows.length + waitlistRows.length;
+            }
         }
     </script>
 </body>

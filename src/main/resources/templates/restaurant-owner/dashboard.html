@@ -160,6 +160,83 @@
             color: #1e40af;
         }
         
+        /* Waitlist Styles */
+        .waitlist-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .waitlist-section {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .waitlist-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid #6366f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .waitlist-item:hover {
+            background: #f8fafc;
+            transform: translateX(4px);
+        }
+        
+        .waitlist-item.called {
+            border-left-color: #10b981;
+        }
+        
+        .waitlist-info {
+            flex: 1;
+        }
+        
+        .customer-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+        
+        .waitlist-details {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        
+        .queue-position {
+            background: #6366f1;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+        }
+        
+        .waitlist-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -250,10 +327,16 @@
             
             <div class="stat-card danger">
                 <div class="stat-icon">👥</div>
-                <div class="stat-value">0</div>
+                <div class="stat-value" th:text="${waitingCustomers != null ? waitingCustomers.size() : 0}">0</div>
                 <div class="stat-label">Khách Hàng Chờ</div>
-                    </div>
-                </div>
+            </div>
+            
+            <div class="stat-card primary">
+                <div class="stat-icon">📞</div>
+                <div class="stat-value" th:text="${calledCustomers != null ? calledCustomers.size() : 0}">0</div>
+                <div class="stat-label">Đã Gọi</div>
+            </div>
+        </div>
 
         <!-- Quick Actions -->
         <div class="card">
@@ -327,6 +410,88 @@
             </div>
                 </div>
 
+        <!-- Waitlist Management -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h2">⏰ Quản lý Danh sách Chờ</h2>
+                <div class="card-actions">
+                    <button type="button" class="btn btn-primary" onclick="callNextCustomer()">
+                        <i class="fas fa-phone"></i> Gọi Khách Tiếp Theo
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="refreshWaitlist()">
+                        <i class="fas fa-sync"></i> Làm Mới
+                    </button>
+                </div>
+            </div>
+            
+            <div class="waitlist-sections">
+                <!-- Waiting Customers -->
+                <div class="waitlist-section">
+                    <h3 class="h3">👥 Khách Đang Chờ (<span th:text="${waitingCustomers != null ? waitingCustomers.size() : 0}">0</span>)</h3>
+                    
+                    <div th:if="${waitingCustomers != null and !waitingCustomers.isEmpty()}">
+                        <div th:each="waitlist, iterStat : ${waitingCustomers}" class="waitlist-item">
+                            <div class="waitlist-info">
+                                <div class="customer-name" th:text="${waitlist.customer.user.fullName}">Nguyễn Văn A</div>
+                                <div class="waitlist-details">
+                                    <span>👥 <span th:text="${waitlist.partySize}">4</span> khách</span>
+                                    <span>⏰ <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:00</span></span>
+                                    <span class="queue-position">#<span th:text="${iterStat.index + 1}">1</span></span>
+                                </div>
+                            </div>
+                            <div class="waitlist-actions">
+                                <button type="button" class="btn btn-sm btn-success" 
+                                        th:onclick="'callCustomer(' + ${waitlist.waitlistId} + ')'">
+                                    <i class="fas fa-phone"></i> Gọi
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        th:onclick="'cancelWaitlist(' + ${waitlist.waitlistId} + ')'">
+                                    <i class="fas fa-times"></i> Hủy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${waitingCustomers == null or waitingCustomers.isEmpty()}" class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p>Không có khách hàng nào đang chờ</p>
+                    </div>
+                </div>
+                
+                <!-- Called Customers -->
+                <div class="waitlist-section">
+                    <h3 class="h3">📞 Khách Đã Gọi (<span th:text="${calledCustomers != null ? calledCustomers.size() : 0}">0</span>)</h3>
+                    
+                    <div th:if="${calledCustomers != null and !calledCustomers.isEmpty()}">
+                        <div th:each="waitlist : ${calledCustomers}" class="waitlist-item called">
+                            <div class="waitlist-info">
+                                <div class="customer-name" th:text="${waitlist.customer.user.fullName}">Nguyễn Văn A</div>
+                                <div class="waitlist-details">
+                                    <span>👥 <span th:text="${waitlist.partySize}">4</span> khách</span>
+                                    <span>📞 Đã gọi lúc <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:00</span></span>
+                                </div>
+                            </div>
+                            <div class="waitlist-actions">
+                                <button type="button" class="btn btn-sm btn-primary" 
+                                        th:onclick="'seatCustomer(' + ${waitlist.waitlistId} + ')'">
+                                    <i class="fas fa-chair"></i> Xếp Chỗ
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        th:onclick="'cancelWaitlist(' + ${waitlist.waitlistId} + ')'">
+                                    <i class="fas fa-times"></i> Hủy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${calledCustomers == null or calledCustomers.isEmpty()}" class="empty-state">
+                        <div class="empty-state-icon">📞</div>
+                        <p>Không có khách hàng nào đã được gọi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Occupied Tables -->
         <div class="card" th:if="${occupiedTables != null and !occupiedTables.isEmpty()}">
             <h2 class="h2">🍽️ Bàn Đang Sử Dụng</h2>
@@ -365,6 +530,65 @@
                 }
             });
         });
+        
+        // Waitlist Management Functions
+        function callNextCustomer() {
+            if (confirm('Bạn có chắc muốn gọi khách hàng tiếp theo?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/restaurant-owner/waitlist/call-next';
+                
+                const restaurantIdInput = document.createElement('input');
+                restaurantIdInput.type = 'hidden';
+                restaurantIdInput.name = 'restaurantId';
+                restaurantIdInput.value = '1'; // Using restaurant ID 1 for now
+                
+                form.appendChild(restaurantIdInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function callCustomer(waitlistId) {
+            if (confirm('Bạn có chắc muốn gọi khách hàng này?')) {
+                // For individual customer calling, we'll use the same endpoint
+                callNextCustomer();
+            }
+        }
+        
+        function seatCustomer(waitlistId) {
+            if (confirm('Bạn có chắc muốn xếp chỗ cho khách hàng này?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/restaurant-owner/waitlist/seat/' + waitlistId;
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function cancelWaitlist(waitlistId) {
+            if (confirm('Bạn có chắc muốn hủy danh sách chờ này?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/restaurant-owner/waitlist/cancel/' + waitlistId;
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        function refreshWaitlist() {
+            // Reload the page to refresh waitlist data
+            location.reload();
+        }
+        
+        // Auto-refresh waitlist every 30 seconds
+        setInterval(function() {
+            // You can implement AJAX refresh here if needed
+            // For now, we'll just reload the page
+            // refreshWaitlist();
+        }, 30000);
     </script>
 </body>
 </html>

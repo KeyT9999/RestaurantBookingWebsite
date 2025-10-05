@@ -16,9 +16,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.FOHManagementService;
 import com.example.booking.service.FileUploadService;
+import com.example.booking.service.WaitlistService;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.RestaurantTable;
+import com.example.booking.domain.Waitlist;
 
 import java.math.BigDecimal;
 
@@ -36,14 +38,17 @@ public class RestaurantOwnerController {
     private final RestaurantOwnerService restaurantOwnerService;
     private final FOHManagementService fohManagementService;
     private final FileUploadService fileUploadService;
+    private final WaitlistService waitlistService;
 
     @Autowired
     public RestaurantOwnerController(RestaurantOwnerService restaurantOwnerService,
                                    FOHManagementService fohManagementService,
-                                   FileUploadService fileUploadService) {
+            FileUploadService fileUploadService,
+            WaitlistService waitlistService) {
         this.restaurantOwnerService = restaurantOwnerService;
         this.fohManagementService = fohManagementService;
         this.fileUploadService = fileUploadService;
+        this.waitlistService = waitlistService;
     }
 
     /**
@@ -59,9 +64,15 @@ public class RestaurantOwnerController {
         List<RestaurantTable> availableTables = fohManagementService.getAvailableTables(1);
         List<RestaurantTable> occupiedTables = fohManagementService.getOccupiedTables(1);
         
+        // Get waitlist data
+        List<Waitlist> waitingCustomers = waitlistService.getWaitlistByRestaurant(1);
+        List<Waitlist> calledCustomers = waitlistService.getCalledCustomers(1);
+
         model.addAttribute("todayBookings", todayBookings);
         model.addAttribute("availableTables", availableTables);
         model.addAttribute("occupiedTables", occupiedTables);
+        model.addAttribute("waitingCustomers", waitingCustomers);
+        model.addAttribute("calledCustomers", calledCustomers);
         
         return "restaurant-owner/dashboard";
     }
@@ -581,5 +592,80 @@ public class RestaurantOwnerController {
         }
         
         return "redirect:/restaurant-owner/blocked-slots";
+    }
+
+    // ==================== WAITLIST MANAGEMENT ====================
+
+    /**
+     * Call next customer from waitlist
+     */
+    @PostMapping("/waitlist/call-next")
+    public String callNextFromWaitlist(@RequestParam Integer restaurantId, RedirectAttributes redirectAttributes) {
+        try {
+            Waitlist calledCustomer = waitlistService.callNextFromWaitlist(restaurantId);
+
+            if (calledCustomer != null) {
+                redirectAttributes.addFlashAttribute("success",
+                        "Đã gọi khách hàng: " + calledCustomer.getCustomer().getUser().getFullName());
+            } else {
+                redirectAttributes.addFlashAttribute("info", "Không có khách hàng nào trong danh sách chờ");
+            }
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi gọi khách hàng: " + e.getMessage());
+        }
+
+        return "redirect:/restaurant-owner/dashboard";
+    }
+
+    /**
+     * Seat customer from waitlist
+     */
+    @PostMapping("/waitlist/seat/{waitlistId}")
+    public String seatCustomer(@PathVariable Integer waitlistId,
+            @RequestParam(required = false) Integer tableId,
+            RedirectAttributes redirectAttributes) {
+        try {
+            Waitlist seatedCustomer = waitlistService.seatCustomer(waitlistId, tableId);
+
+            redirectAttributes.addFlashAttribute("success",
+                    "Đã xếp chỗ cho khách hàng: " + seatedCustomer.getCustomer().getUser().getFullName());
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi xếp chỗ: " + e.getMessage());
+        }
+
+        return "redirect:/restaurant-owner/dashboard";
+    }
+
+    /**
+     * Cancel waitlist entry
+     */
+    @PostMapping("/waitlist/cancel/{waitlistId}")
+    public String cancelWaitlistEntry(@PathVariable Integer waitlistId, RedirectAttributes redirectAttributes) {
+        try {
+            waitlistService.cancelWaitlist(waitlistId);
+
+            redirectAttributes.addFlashAttribute("success", "Đã hủy danh sách chờ");
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi hủy: " + e.getMessage());
+        }
+
+        return "redirect:/restaurant-owner/dashboard";
+    }
+
+    /**
+     * Get waitlist data for AJAX
+     */
+    @GetMapping("/waitlist/data")
+    public String getWaitlistData(@RequestParam Integer restaurantId, Model model) {
+        List<Waitlist> waitingCustomers = waitlistService.getWaitlistByRestaurant(restaurantId);
+        List<Waitlist> calledCustomers = waitlistService.getCalledCustomers(restaurantId);
+
+        model.addAttribute("waitingCustomers", waitingCustomers);
+        model.addAttribute("calledCustomers", calledCustomers);
+
+        return "restaurant-owner/fragments/waitlist-data :: waitlist-data";
     }
 }

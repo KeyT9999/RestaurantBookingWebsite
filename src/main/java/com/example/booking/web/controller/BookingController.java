@@ -1,7 +1,10 @@
 package com.example.booking.web.controller;
 
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.math.BigDecimal;
@@ -17,17 +20,23 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
 
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.User;
+import com.example.booking.domain.Waitlist;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.RestaurantManagementService;
+import com.example.booking.service.WaitlistService;
 import com.example.booking.service.SimpleUserService;
 
 import com.example.booking.exception.BookingConflictException;
@@ -47,6 +56,9 @@ public class BookingController {
 
     @Autowired
     private RestaurantManagementService restaurantService;
+
+    @Autowired
+    private WaitlistService waitlistService;
 
     @Autowired
     private SimpleUserService userService;
@@ -106,6 +118,7 @@ public class BookingController {
 
             List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
             model.addAttribute("restaurants", restaurants);
+            model.addAttribute("bookingForm", form); // Keep the form data
 
             // Load tables if restaurant is selected
             if (form.getRestaurantId() != null) {
@@ -139,16 +152,43 @@ public class BookingController {
         } catch (BookingConflictException e) {
             System.err.println("❌ Booking conflict detected: " + e.getMessage());
             System.err.println("❌ Conflict type: " + e.getConflictType());
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "Booking conflict: " + e.getMessage());
-            return "redirect:/booking/new";
+
+            // Keep form data and reload form with error message
+            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
+            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("bookingForm", form); // Keep the form data
+
+            // Load tables if restaurant is selected
+            if (form.getRestaurantId() != null) {
+                List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
+                model.addAttribute("tables", tables);
+            } else {
+                model.addAttribute("tables", List.of());
+            }
+
+            model.addAttribute("errorMessage", "Booking conflict: " + e.getMessage());
+            return "booking/form";
+
         } catch (Exception e) {
             System.err.println("❌ Error creating booking: " + e.getMessage());
             System.err.println("❌ Exception type: " + e.getClass().getName());
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("errorMessage",
-                    "Error creating booking: " + e.getMessage());
-            return "redirect:/booking/new";
+
+            // Keep form data and reload form with error message
+            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
+            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("bookingForm", form); // Keep the form data
+
+            // Load tables if restaurant is selected
+            if (form.getRestaurantId() != null) {
+                List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
+                model.addAttribute("tables", tables);
+            } else {
+                model.addAttribute("tables", List.of());
+            }
+
+            model.addAttribute("errorMessage", "Error creating booking: " + e.getMessage());
+            return "booking/form";
         }
     }
 
@@ -253,28 +293,115 @@ public class BookingController {
     }
 
     /**
-     * Hiển thị danh sách booking của customer
+     * Hiển thị danh sách booking của customer với waitlist integration
      */
     @GetMapping("/my")
-    public String showMyBookings(Model model, Authentication authentication) {
+    public String showMyBookings(Model model, Authentication authentication,
+            @RequestParam(required = false) String filter) {
         UUID customerId = getCurrentCustomerId(authentication);
         System.out.println("🔍 Getting bookings for customer ID: " + customerId);
 
-        List<Booking> bookings = bookingService.findBookingsByCustomer(customerId);
-        System.out.println("📋 Found " + bookings.size() + " bookings for customer");
+        // Get regular bookings
+        List<Booking> allBookings = bookingService.findBookingsByCustomer(customerId);
+        System.out.println("📋 Found " + allBookings.size() + " bookings for customer");
 
-        // Log each booking
-        for (int i = 0; i < bookings.size(); i++) {
-            Booking booking = bookings.get(i);
-            System.out.println("   Booking " + (i + 1) + ": ID=" + booking.getBookingId() +
-                    ", Time=" + booking.getBookingTime() +
-                    ", Status=" + booking.getStatus());
+        // Get waitlist entries
+        List<Waitlist> allWaitlistEntries = waitlistService.getWaitlistByCustomer(customerId);
+        System.out.println("📋 Found " + allWaitlistEntries.size() + " waitlist entries for customer");
+
+        // Calculate estimated wait time for each waitlist entry
+        for (Waitlist waitlist : allWaitlistEntries) {
+            int estimatedWaitTime = waitlistService.calculateEstimatedWaitTimeForCustomer(waitlist.getWaitlistId());
+            waitlist.setEstimatedWaitTime(estimatedWaitTime);
         }
 
+        // Store original counts before filtering
+        int totalBookingsCount = allBookings.size();
+        int totalWaitlistCount = allWaitlistEntries.size();
+
+        // Apply filter to display lists
+        List<Booking> bookings = allBookings;
+        List<Waitlist> waitlistEntries = allWaitlistEntries;
+
+        if ("bookings".equals(filter)) {
+            waitlistEntries = new ArrayList<>(); // Hide waitlist
+        } else if ("waitlist".equals(filter)) {
+            bookings = new ArrayList<>(); // Hide bookings
+        }
+        // If filter is null or "all", show both
+
         model.addAttribute("bookings", bookings);
+        model.addAttribute("waitlistEntries", waitlistEntries);
+        model.addAttribute("currentFilter", filter != null ? filter : "all");
+        model.addAttribute("totalBookings", totalBookingsCount); // Use original count
+        model.addAttribute("totalWaitlist", totalWaitlistCount); // Use original count
+
         return "booking/list";
     }
 
+    /**
+     * API endpoint để join waitlist từ booking form
+     */
+    @PostMapping("/waitlist")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> joinWaitlist(@RequestBody BookingForm form,
+            Authentication auth) {
+        try {
+            UUID customerId = getCurrentCustomerId(auth);
+
+            // Create waitlist entry
+            Waitlist waitlist = waitlistService.addToWaitlist(
+                    form.getRestaurantId(),
+                    form.getGuestCount(),
+                    customerId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("waitlistId", waitlist.getWaitlistId());
+            response.put("queuePosition", waitlistService.getQueuePosition(waitlist.getWaitlistId()));
+            response.put("estimatedWaitTime", waitlistService.calculateEstimatedWaitTime(form.getRestaurantId()));
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * API endpoint để cancel waitlist
+     */
+    @PostMapping("/waitlist/cancel/{waitlistId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> cancelWaitlist(@PathVariable Integer waitlistId,
+            Authentication auth) {
+        try {
+            UUID customerId = getCurrentCustomerId(auth);
+
+            // Verify ownership
+            Waitlist waitlist = waitlistService.findById(waitlistId);
+            if (!waitlist.getCustomer().getCustomerId().equals(customerId)) {
+                throw new IllegalArgumentException("You can only cancel your own waitlist entries");
+            }
+
+            waitlistService.cancelWaitlist(waitlistId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Waitlist cancelled successfully");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 
     /**
      * Xử lý update booking

@@ -187,21 +187,18 @@
                             </div>
 
                             <!-- Services Selection -->
-                            <div class="mb-4" id="servicesSection" style="display: none;">
-                                <label for="serviceIds" class="form-label">
+                            <div class="mb-4" id="servicesSection" style="display: block;">
+                                <label class="form-label">
                                     <i class="fas fa-concierge-bell luxury-icon"></i> Additional Services
                                 </label>
-                                <select class="form-control" 
-                                        id="serviceIds" 
-                                        name="serviceIds"
-                                        th:field="*{serviceIds}"
-                                        multiple
-                                        onchange="updateTotalAmount()">
-                                    <!-- Services will be loaded here -->
-                                </select>
-                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Hold Ctrl/Cmd to select multiple services
+                                <div class="services-container" id="servicesContainer">
+                                    <!-- Services will be loaded here as cards -->
+                                </div>
+                                <small style="color: var(--text-light); font-size: 0.9rem; margin-top: 8px; display: block;">
+                                    Select services to enhance your dining experience
                                 </small>
+                                <!-- Hidden input to store selected service IDs -->
+                                <input type="hidden" id="selectedServiceIds" name="serviceIds" th:field="*{serviceIds}" value="">
                             </div>
 
                             <!-- Total Amount Display -->
@@ -273,6 +270,17 @@
                                     <i class="fas fa-check-circle"></i>
                                     <span th:text="${bookingId != null ? 'Update Reservation' : 'Confirm Reservation'}"></span>
                                 </button>
+                                
+                                <!-- Join Waitlist Button (only show when creating new reservation) -->
+                                <button type="button" 
+                                        class="btn btn-outline-warning me-3" 
+                                        id="joinWaitlistBtn"
+                                        onclick="joinWaitlist()"
+                                        th:if="${bookingId == null}"
+                                        style="display: none;">
+                                    <i class="fas fa-clock"></i> Join Waitlist
+                                </button>
+                                
                                 <a href="/booking/my" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Back to My Reservations
                                 </a>
@@ -383,7 +391,8 @@
                        });
                } else {
                    viewTablesBtn.disabled = true;
-                   document.getElementById('servicesSection').style.display = 'none';
+                   // Keep services section visible for debugging
+                   // document.getElementById('servicesSection').style.display = 'none';
                    // Reset menu button when no restaurant selected
                    const viewMenuBtn = document.getElementById('viewMenuBtn');
                    viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu';
@@ -417,30 +426,115 @@
         }
 
         function loadServices(restaurantId) {
+            console.log('🔍 Loading services for restaurant ID:', restaurantId);
+            
             fetch(`/api/booking/restaurants/${restaurantId}/services`)
-                .then(response => response.json())
+                .then(response => {
+                    console.log('📡 Services API response status:', response.status);
+                    return response.json();
+                })
                 .then(services => {
-                    const servicesSelect = document.getElementById('serviceIds');
-                    servicesSelect.innerHTML = '';
+                    console.log('📋 Services received:', services);
+                    console.log('📋 Services count:', services.length);
+                    
+                    const servicesContainer = document.getElementById('servicesContainer');
+                    servicesContainer.innerHTML = '';
+                    
+                    // Always show services section for debugging
+                    document.getElementById('servicesSection').style.display = 'block';
                     
                     if (services.length === 0) {
-                        document.getElementById('servicesSection').style.display = 'none';
+                        console.log('⚠️ No services found, adding placeholder');
+                        servicesContainer.innerHTML = `
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-concierge-bell fa-2x mb-2"></i>
+                                <p>No additional services available for this restaurant.</p>
+                            </div>
+                        `;
                         return;
                     }
                     
-                    document.getElementById('servicesSection').style.display = 'block';
-                    
                     services.forEach(service => {
-                        const option = document.createElement('option');
-                        option.value = service.serviceId;
-                        option.textContent = `${service.name} - ${formatCurrency(service.price)}`;
-                        option.setAttribute('data-price', service.price);
-                        servicesSelect.appendChild(option);
+                        console.log('➕ Adding service:', service.name, 'Price:', service.price);
+                        const serviceCard = createServiceCard(service);
+                        servicesContainer.appendChild(serviceCard);
                     });
+                    
+                    console.log('✅ Services cards created successfully');
                 })
                 .catch(error => {
-                    console.error('Error loading services:', error);
+                    console.error('❌ Error loading services:', error);
+                    // Still show services section even on error
+                    document.getElementById('servicesSection').style.display = 'block';
+                    const servicesContainer = document.getElementById('servicesContainer');
+                    servicesContainer.innerHTML = `
+                        <div class="text-center text-danger py-4">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p>Error loading services. Please try again.</p>
+                        </div>
+                    `;
                 });
+        }
+
+        function createServiceCard(service) {
+            const card = document.createElement('div');
+            card.className = 'service-card';
+            card.dataset.serviceId = service.serviceId;
+            card.dataset.price = service.price || 0;
+            
+            // Service icon mapping
+            const iconMap = {
+                'WIFI': 'fas fa-wifi',
+                'PARKING': 'fas fa-parking',
+                'VALET': 'fas fa-car',
+                'LIVE_MUSIC': 'fas fa-music',
+                'PRIVATE_ROOM': 'fas fa-door-open',
+                'OUTDOOR_SEATING': 'fas fa-tree',
+                'BAR': 'fas fa-cocktail',
+                'KIDS_MENU': 'fas fa-child',
+                'DELIVERY': 'fas fa-truck',
+                'TAKEAWAY': 'fas fa-shopping-bag'
+            };
+            
+            const iconClass = iconMap[service.name] || 'fas fa-concierge-bell';
+            
+            card.innerHTML = `
+                <div class="service-checkbox"></div>
+                <i class="service-icon ${iconClass}"></i>
+                <div class="service-name">${service.name}</div>
+                <div class="service-description">${service.description || 'Enhance your dining experience'}</div>
+                <div class="service-price">
+                    <i class="fas fa-tag"></i>
+                    ${formatCurrency(service.price || 0)}
+                </div>
+            `;
+            
+            // Add click event listener
+            card.addEventListener('click', function() {
+                toggleServiceSelection(this);
+            });
+            
+            return card;
+        }
+
+        function toggleServiceSelection(card) {
+            const isSelected = card.classList.contains('selected');
+            
+            if (isSelected) {
+                card.classList.remove('selected');
+            } else {
+                card.classList.add('selected');
+            }
+            
+            updateTotalAmount();
+        }
+
+        function getSelectedServices() {
+            const selectedCards = document.querySelectorAll('.service-card.selected');
+            return Array.from(selectedCards).map(card => ({
+                id: card.dataset.serviceId,
+                price: parseFloat(card.dataset.price) || 0
+            }));
         }
 
         function openTablePopup() {
@@ -645,12 +739,14 @@
             });
 
             // Calculate services total
-            const serviceSelect = document.getElementById('serviceIds');
-            const selectedServices = Array.from(serviceSelect.selectedOptions);
-            selectedServices.forEach(option => {
-                const price = parseFloat(option.getAttribute('data-price')) || 0;
-                servicesTotal += price;
+            const selectedServices = getSelectedServices();
+            selectedServices.forEach(service => {
+                servicesTotal += service.price;
             });
+
+            // Update hidden input with selected service IDs
+            const serviceIdsInput = document.getElementById('selectedServiceIds');
+            serviceIdsInput.value = selectedServices.map(s => s.id).join(',');
 
             // Update display
             document.getElementById('tableDepositAmount').textContent = formatCurrency(tableDeposit);
@@ -703,6 +799,9 @@
             // Add change listener for restaurant selection
             document.getElementById('restaurantId').addEventListener('change', loadTables);
             
+            // Restore form state after conflict/error
+            restoreFormState();
+            
             // Initialize total amount calculation
             updateTotalAmount();
             
@@ -715,7 +814,250 @@
                     }
                 }
             });
+            
+            // Check waitlist availability when restaurant or guest count changes
+            document.getElementById('restaurantId').addEventListener('change', checkTableAvailability);
+            document.getElementById('guestCount').addEventListener('input', checkTableAvailability);
         });
+
+        // Waitlist functionality
+        function joinWaitlist() {
+            const restaurantId = document.getElementById('restaurantId').value;
+            const guestCount = document.getElementById('guestCount').value;
+            
+            if (!restaurantId) {
+                alert('Please select a restaurant first');
+                return;
+            }
+            
+            if (!guestCount || guestCount < 1) {
+                alert('Please enter the number of guests');
+                return;
+            }
+            
+            const joinBtn = document.getElementById('joinWaitlistBtn');
+            const originalText = joinBtn.innerHTML;
+            
+            // Show loading state
+            joinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Joining...';
+            joinBtn.disabled = true;
+            
+            // Prepare form data
+            const formData = {
+                restaurantId: parseInt(restaurantId),
+                guestCount: parseInt(guestCount),
+                bookingTime: document.getElementById('bookingTime').value,
+                depositAmount: document.getElementById('depositAmount').value || 0,
+                note: document.getElementById('note').value || '',
+                dishIds: document.getElementById('selectedDishIds').value || '',
+                serviceIds: document.getElementById('selectedServiceIds').value || ''
+            };
+            
+            // Send AJAX request
+            fetch('/booking/waitlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showWaitlistSuccess(data);
+                } else {
+                    alert('Error joining waitlist: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error joining waitlist. Please try again.');
+            })
+            .finally(() => {
+                // Restore button state
+                joinBtn.innerHTML = originalText;
+                joinBtn.disabled = false;
+            });
+        }
+        
+        function showWaitlistSuccess(data) {
+            const message = `🎉 Successfully joined waitlist!\n\n` +
+                          `📍 Restaurant: ${document.getElementById('restaurantId').selectedOptions[0].text}\n` +
+                          `👥 Party Size: ${document.getElementById('guestCount').value} guests\n` +
+                          `⏰ Queue Position: #${data.queuePosition}\n` +
+                          `⏱️ Estimated Wait Time: ${data.estimatedWaitTime} minutes\n\n` +
+                          `📱 You will be notified when a table becomes available.\n` +
+                          `💡 You can check your waitlist status in "My Reservations".`;
+            
+            alert(message);
+            
+            // Redirect to booking list to see waitlist entry
+            window.location.href = '/booking/my?filter=waitlist';
+        }
+        
+        function checkTableAvailability() {
+            const restaurantId = document.getElementById('restaurantId').value;
+            const guestCount = parseInt(document.getElementById('guestCount').value);
+            const bookingTime = document.getElementById('bookingTime').value;
+            const joinBtn = document.getElementById('joinWaitlistBtn');
+            
+            if (!restaurantId || !guestCount || !bookingTime) {
+                joinBtn.style.display = 'none';
+                return;
+            }
+            
+            // Check waitlist eligibility based on smart logic
+            const waitlistEligible = checkWaitlistEligibility(guestCount, bookingTime);
+            
+            if (!waitlistEligible.eligible) {
+                joinBtn.style.display = 'none';
+                return;
+            }
+            
+            // Check if there are available tables for the party size
+            fetch(`/api/booking/restaurants/${restaurantId}/tables`)
+                .then(response => response.json())
+                .then(tables => {
+                    const availableTables = tables.filter(table => 
+                        table.status === 'AVAILABLE' && 
+                        table.capacity >= guestCount
+                    );
+                    
+                    // Show join waitlist button if no tables available AND eligible
+                    if (availableTables.length === 0 && waitlistEligible.eligible) {
+                        joinBtn.style.display = 'inline-block';
+                        joinBtn.innerHTML = `<i class="fas fa-clock"></i> Join Waitlist ${waitlistEligible.reason ? '(' + waitlistEligible.reason + ')' : ''}`;
+                    } else {
+                        joinBtn.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking table availability:', error);
+                });
+        }
+        
+        function checkWaitlistEligibility(guestCount, bookingTime) {
+            const now = new Date();
+            const bookingDateTime = new Date(bookingTime);
+            const bookingHour = bookingDateTime.getHours();
+            const bookingDate = bookingDateTime.toDateString();
+            const currentDate = now.toDateString();
+            
+            // Check if it's same day booking
+            const isSameDay = bookingDate === currentDate;
+            
+            // Define peak hours (18:00 - 21:00)
+            const isPeakHour = bookingHour >= 18 && bookingHour <= 21;
+            
+            // Check party size limits
+            const maxWaitlistPartySize = 6; // Can be made configurable later
+            
+            // Rule 1: Party size too large for waitlist
+            if (guestCount > maxWaitlistPartySize) {
+                return {
+                    eligible: false,
+                    reason: `Groups larger than ${maxWaitlistPartySize} cannot join waitlist`
+                };
+            }
+            
+            // Rule 2: Future bookings (not same day) - more restrictive
+            if (!isSameDay) {
+                // For future bookings, only allow waitlist during peak hours
+                if (!isPeakHour) {
+                    return {
+                        eligible: false,
+                        reason: 'Waitlist only available during peak hours (6-9 PM) for future bookings'
+                    };
+                }
+            }
+            
+            // Rule 3: Same day bookings - more flexible
+            if (isSameDay) {
+                // Allow waitlist for same day bookings, but show different message
+                if (isPeakHour) {
+                    return {
+                        eligible: true,
+                        reason: 'Peak hours - high demand expected'
+                    };
+                } else {
+                    return {
+                        eligible: true,
+                        reason: 'Same day booking'
+                    };
+                }
+            }
+            
+            // Rule 4: Very far future bookings (more than 7 days)
+            const daysDifference = Math.ceil((bookingDateTime - now) / (1000 * 60 * 60 * 24));
+            if (daysDifference > 7) {
+                return {
+                    eligible: false,
+                    reason: 'Waitlist not available for bookings more than 7 days in advance'
+                };
+            }
+            
+            return { eligible: true };
+        }
+        
+        // Override loadTables function to also check waitlist availability
+        const originalLoadTables = loadTables;
+        loadTables = function() {
+            originalLoadTables();
+            // Check waitlist availability after loading tables
+            setTimeout(checkTableAvailability, 500);
+        };
+        
+        // Restore form state after conflict/error
+        function restoreFormState() {
+            // Restore table selection if any
+            const selectedTableId = document.getElementById('selectedTableId').value;
+            if (selectedTableId) {
+                // Wait for tables to load, then restore selection
+                setTimeout(() => {
+                    const tableCheckbox = document.querySelector(`input[value="${selectedTableId}"]`);
+                    if (tableCheckbox) {
+                        tableCheckbox.checked = true;
+                        updateTableSelectionUI();
+                    }
+                }, 1000);
+            }
+            
+            // Restore dish selections if any
+            const selectedDishIds = document.getElementById('selectedDishIds').value;
+            if (selectedDishIds) {
+                const dishSelections = selectedDishIds.split(',');
+                dishSelections.forEach(selection => {
+                    const [dishId, quantity] = selection.split(':');
+                    if (dishId && quantity) {
+                        // Wait for dishes to load, then restore selection
+                        setTimeout(() => {
+                            const dishCheckbox = document.querySelector(`input[value="${dishId}"]`);
+                            if (dishCheckbox) {
+                                dishCheckbox.checked = true;
+                                const quantityInput = dishCheckbox.parentElement.querySelector('.quantity-control input');
+                                if (quantityInput) {
+                                    quantityInput.value = quantity;
+                                }
+                                updateMenuSelectionUI();
+                            }
+                        }, 1000);
+                    }
+                });
+            }
+            
+            // Restore service selections if any
+            const selectedServiceIds = document.getElementById('selectedServiceIds').value;
+            if (selectedServiceIds) {
+                const serviceIds = selectedServiceIds.split(',');
+                serviceIds.forEach(serviceId => {
+                    const serviceCard = document.querySelector(`.service-card[data-service-id="${serviceId}"]`);
+                    if (serviceCard) {
+                        serviceCard.classList.add('selected');
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html> 
