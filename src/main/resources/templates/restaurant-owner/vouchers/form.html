@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Voucher - Restaurant Owner Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Admin CSS -->
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container mt-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-ticket-alt me-2"></i>
+                                <span>Create New Restaurant Voucher</span>
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <!-- Restaurant Info -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h6 class="alert-heading">
+                                            <i class="fas fa-store me-2"></i>Restaurant Voucher
+                                        </h6>
+                                        <p class="mb-0">
+                                            <strong>Restaurant ID:</strong> <span th:text="${restaurantId}">123</span>
+                                        </p>
+                                        <small class="text-muted">
+                                            This voucher will only be valid for your restaurant.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <form th:action="@{/restaurant-owner/vouchers/new}" 
+                                  method="post" 
+                                  th:object="${voucherForm}">
+                                
+                                <!-- Basic Information -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-primary mb-3">
+                                            <i class="fas fa-info-circle me-2"></i>Basic Information
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="code" class="form-label">
+                                            Voucher Code <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="code" 
+                                               th:field="*{code}"
+                                               th:classappend="${#fields.hasErrors('code')} ? 'is-invalid' : ''"
+                                               placeholder="e.g., WELCOME10">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('code')}" 
+                                             th:errors="*{code}"></div>
+                                        <small class="form-text text-muted">
+                                            Unique code for the voucher (cannot be changed after creation)
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="status" class="form-label">
+                                            Status <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select" 
+                                                id="status" 
+                                                th:field="*{status}"
+                                                th:classappend="${#fields.hasErrors('status')} ? 'is-invalid' : ''">
+                                            <option th:each="status : ${statuses}" 
+                                                    th:value="${status.name()}" 
+                                                    th:text="${status.getDisplayName()}"></option>
+                                        </select>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('status')}" 
+                                             th:errors="*{status}"></div>
+                                    </div>
+                                    
+                                    <div class="col-12 mb-3">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea class="form-control" 
+                                                  id="description" 
+                                                  th:field="*{description}"
+                                                  th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
+                                                  rows="3" 
+                                                  placeholder="Describe the voucher purpose and benefits"></textarea>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" 
+                                             th:errors="*{description}"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Discount Configuration -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-primary mb-3">
+                                            <i class="fas fa-percentage me-2"></i>Discount Configuration
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="discountType" class="form-label">
+                                            Discount Type <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select" 
+                                                id="discountType" 
+                                                th:field="*{discountType}"
+                                                th:classappend="${#fields.hasErrors('discountType')} ? 'is-invalid' : ''"
+                                                onchange="updateDiscountType()">
+                                            <option value="">Select discount type</option>
+                                            <option value="PERCENT">Percentage (%)</option>
+                                            <option value="FIXED">Fixed Amount (₫)</option>
+                                        </select>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('discountType')}" 
+                                             th:errors="*{discountType}"></div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="discountValue" class="form-label">
+                                            Discount Value <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="discountValue" 
+                                                   th:field="*{discountValue}"
+                                                   th:classappend="${#fields.hasErrors('discountValue')} ? 'is-invalid' : ''"
+                                                   step="0.01" 
+                                                   min="0"
+                                                   placeholder="Enter discount value">
+                                            <span class="input-group-text" id="discountUnit">%</span>
+                                        </div>
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('discountValue')}" 
+                                             th:errors="*{discountValue}"></div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="minOrderAmount" class="form-label">Minimum Order Amount (₫)</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="minOrderAmount" 
+                                               th:field="*{minOrderAmount}"
+                                               th:classappend="${#fields.hasErrors('minOrderAmount')} ? 'is-invalid' : ''"
+                                               step="1000" 
+                                               min="0"
+                                               placeholder="0">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('minOrderAmount')}" 
+                                             th:errors="*{minOrderAmount}"></div>
+                                        <small class="form-text text-muted">
+                                            Leave empty for no minimum order requirement
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="maxDiscountAmount" class="form-label">Maximum Discount Amount (₫)</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="maxDiscountAmount" 
+                                               th:field="*{maxDiscountAmount}"
+                                               th:classappend="${#fields.hasErrors('maxDiscountAmount')} ? 'is-invalid' : ''"
+                                               step="1000" 
+                                               min="0"
+                                               placeholder="0">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('maxDiscountAmount')}" 
+                                             th:errors="*{maxDiscountAmount}"></div>
+                                        <small class="form-text text-muted">
+                                            Leave empty for no maximum discount limit
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Usage Limits -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-primary mb-3">
+                                            <i class="fas fa-users me-2"></i>Usage Limits
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="globalUsageLimit" class="form-label">Global Usage Limit</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="globalUsageLimit" 
+                                               th:field="*{globalUsageLimit}"
+                                               th:classappend="${#fields.hasErrors('globalUsageLimit')} ? 'is-invalid' : ''"
+                                               min="1"
+                                               placeholder="Leave empty for unlimited">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('globalUsageLimit')}" 
+                                             th:errors="*{globalUsageLimit}"></div>
+                                        <small class="form-text text-muted">
+                                            Total number of times this voucher can be used
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="perCustomerLimit" class="form-label">
+                                            Per Customer Limit <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="perCustomerLimit" 
+                                               th:field="*{perCustomerLimit}"
+                                               th:classappend="${#fields.hasErrors('perCustomerLimit')} ? 'is-invalid' : ''"
+                                               min="1"
+                                               placeholder="1">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('perCustomerLimit')}" 
+                                             th:errors="*{perCustomerLimit}"></div>
+                                        <small class="form-text text-muted">
+                                            Number of times each customer can use this voucher
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Validity Period -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-primary mb-3">
+                                            <i class="fas fa-calendar me-2"></i>Validity Period
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="startDate" class="form-label">Start Date</label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="startDate" 
+                                               th:field="*{startDate}"
+                                               th:classappend="${#fields.hasErrors('startDate')} ? 'is-invalid' : ''">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('startDate')}" 
+                                             th:errors="*{startDate}"></div>
+                                        <small class="form-text text-muted">
+                                            Leave empty to start immediately
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="endDate" class="form-label">End Date</label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="endDate" 
+                                               th:field="*{endDate}"
+                                               th:classappend="${#fields.hasErrors('endDate')} ? 'is-invalid' : ''">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('endDate')}" 
+                                             th:errors="*{endDate}"></div>
+                                        <small class="form-text text-muted">
+                                            Leave empty for no expiration
+                                        </small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between">
+                                            <a href="/restaurant-owner/vouchers" class="btn btn-secondary">
+                                                <i class="fas fa-arrow-left me-2"></i>Back to List
+                                            </a>
+                                            <div>
+                                                <button type="submit" class="btn btn-primary me-2">
+                                                    <i class="fas fa-save me-2"></i>
+                                                    <span>Create Voucher</span>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+                                                    <i class="fas fa-undo me-2"></i>Reset
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer Fragment -->
+    <div th:insert="fragments/footer :: site-footer"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function updateDiscountType() {
+            const discountType = document.getElementById('discountType').value;
+            const discountUnit = document.getElementById('discountUnit');
+            const discountValue = document.getElementById('discountValue');
+            
+            if (discountType === 'PERCENT') {
+                discountUnit.textContent = '%';
+                discountValue.placeholder = 'Enter percentage (1-100)';
+                discountValue.max = '100';
+            } else if (discountType === 'FIXED') {
+                discountUnit.textContent = '₫';
+                discountValue.placeholder = 'Enter amount in VND';
+                discountValue.removeAttribute('max');
+            }
+        }
+        
+        function resetForm() {
+            if (confirm('Are you sure you want to reset the form? All changes will be lost.')) {
+                document.querySelector('form').reset();
+                updateDiscountType();
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDiscountType();
+        });
+    </script>
+</body>
+</html>
