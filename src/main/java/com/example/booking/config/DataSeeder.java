@@ -11,13 +11,16 @@ import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.RestaurantOwner;
+import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
 import com.example.booking.common.enums.TableStatus;
+import com.example.booking.common.enums.ServiceStatus;
 import com.example.booking.repository.RestaurantRepository;
 import com.example.booking.repository.DiningTableRepository;
 import com.example.booking.repository.DishRepository;
 import com.example.booking.repository.RestaurantMediaRepository;
+import com.example.booking.repository.RestaurantServiceRepository;
 import com.example.booking.repository.RestaurantOwnerRepository;
 import com.example.booking.repository.UserRepository;
 
@@ -51,6 +54,9 @@ public class DataSeeder implements CommandLineRunner {
     @Autowired
     private RestaurantMediaRepository restaurantMediaRepository;
     
+    @Autowired
+    private RestaurantServiceRepository restaurantServiceRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -92,8 +98,13 @@ public class DataSeeder implements CommandLineRunner {
         // Step 7: Create media for restaurants
         createMediaForRestaurants(restaurant1, restaurant2);
         
+        // Step 8: Create services for restaurants
+        createServicesForRestaurant1(restaurant1);
+        createServicesForRestaurant2(restaurant2);
+
         System.out.println("Database seeded successfully!");
-        System.out.println("Created 2 users, 2 restaurant owners, 2 restaurants with tables, dishes, and media.");
+        System.out.println(
+                "Created 2 users, 2 restaurant owners, 2 restaurants with tables, dishes, media, and services.");
     }
 
     private User createUser(String username, String email, String fullName, String phoneNumber) {
@@ -180,7 +191,7 @@ public class DataSeeder implements CommandLineRunner {
         RestaurantTable table = new RestaurantTable();
         table.setTableName(tableName);
         table.setCapacity(capacity);
-        table.setStatus(TableStatus.valueOf(status));
+        table.setStatus(TableStatus.fromValue(status));
         table.setTableImage("/images/default-table.jpg"); // Default table image
         table.setDepositAmount(new BigDecimal("50000")); // Default deposit amount
         table.setRestaurant(restaurant);
@@ -248,5 +259,49 @@ public class DataSeeder implements CommandLineRunner {
         media.setUrl(url);
         media.setCreatedAt(LocalDateTime.now());
         return media;
+    }
+
+    private void createServicesForRestaurant1(RestaurantProfile restaurant) {
+        List<RestaurantService> services = List.of(
+                createService(restaurant, "Live Music", "Entertainment",
+                        "Live traditional Vietnamese music performance", new BigDecimal("200000")),
+                createService(restaurant, "Private Room", "Venue", "Private dining room for special occasions",
+                        new BigDecimal("500000")),
+                createService(restaurant, "Wine Service", "Beverage", "Professional wine service with sommelier",
+                        new BigDecimal("300000")),
+                createService(restaurant, "Cake Service", "Dessert", "Custom birthday cake service",
+                        new BigDecimal("150000")),
+                createService(restaurant, "Delivery Service", "Delivery", "Home delivery within 5km radius",
+                        new BigDecimal("50000")));
+
+        restaurantServiceRepository.saveAll(services);
+    }
+
+    private void createServicesForRestaurant2(RestaurantProfile restaurant) {
+        List<RestaurantService> services = List.of(
+                createService(restaurant, "Wine Pairing", "Beverage", "Expert wine pairing with Italian dishes",
+                        new BigDecimal("400000")),
+                createService(restaurant, "Chef's Table", "Dining", "Exclusive chef's table experience",
+                        new BigDecimal("800000")),
+                createService(restaurant, "Catering Service", "Catering", "Full catering service for events",
+                        new BigDecimal("1000000")),
+                createService(restaurant, "Cooking Class", "Education", "Learn to cook authentic Italian dishes",
+                        new BigDecimal("600000")),
+                createService(restaurant, "Private Party", "Venue", "Private party room for special celebrations",
+                        new BigDecimal("700000")));
+
+        restaurantServiceRepository.saveAll(services);
+    }
+
+    private RestaurantService createService(RestaurantProfile restaurant, String name, String category,
+            String description, BigDecimal price) {
+        RestaurantService service = new RestaurantService();
+        service.setRestaurant(restaurant);
+        service.setName(name);
+        service.setCategory(category);
+        service.setDescription(description);
+        service.setPrice(price);
+        service.setStatus(ServiceStatus.AVAILABLE);
+        return service;
     }
 }

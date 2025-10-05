@@ -17,6 +17,14 @@ import com.example.booking.domain.User;
 public interface RestaurantOwnerRepository extends JpaRepository<RestaurantOwner, UUID> {
     
     /**
+     * Find a restaurant owner by their associated user ID
+     * 
+     * @param userId The User ID
+     * @return Optional containing the RestaurantOwner if found
+     */
+    Optional<RestaurantOwner> findByUserId(UUID userId);
+
+    /**
      * Find a restaurant owner by their associated user
      * @param user The User entity
      * @return Optional containing the RestaurantOwner if found

@@ -162,8 +162,10 @@ public class NotificationServiceImpl implements NotificationService {
             long count = ((Number) rr[5]).longValue();
             String key = type.name()+"|"+title+"|"+content+"|"+publishAt.toString();
             long[] arr = roleMap.computeIfAbsent(key, k -> new long[2]);
-            if (role == com.example.booking.domain.UserRole.CUSTOMER) arr[0] = count;
-            if (role == com.example.booking.domain.UserRole.RESTAURANT_OWNER) arr[1] = count;
+            if (role.isCustomer())
+                arr[0] = count;
+            if (role.isRestaurantOwner())
+                arr[1] = count;
         }
         return rows.map(r -> {
             AdminNotificationSummary s = new AdminNotificationSummary();

@@ -10,7 +10,10 @@ import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantMedia;
+import com.example.booking.domain.User;
 import com.example.booking.repository.RestaurantRepository;
+import com.example.booking.repository.RestaurantOwnerRepository;
+import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.DiningTableRepository;
 import com.example.booking.repository.DishRepository;
@@ -30,6 +33,8 @@ import java.util.UUID;
 public class RestaurantOwnerService {
 
     private final RestaurantRepository restaurantRepository;
+    private final RestaurantOwnerRepository restaurantOwnerRepository;
+    private final RestaurantProfileRepository restaurantProfileRepository;
     private final BookingRepository bookingRepository;
     private final DiningTableRepository diningTableRepository;
     private final DishRepository dishRepository;
@@ -37,11 +42,15 @@ public class RestaurantOwnerService {
 
     @Autowired
     public RestaurantOwnerService(RestaurantRepository restaurantRepository,
+            RestaurantOwnerRepository restaurantOwnerRepository,
+            RestaurantProfileRepository restaurantProfileRepository,
                                 BookingRepository bookingRepository,
                                 DiningTableRepository diningTableRepository,
                                 DishRepository dishRepository,
                                 RestaurantMediaRepository restaurantMediaRepository) {
         this.restaurantRepository = restaurantRepository;
+        this.restaurantOwnerRepository = restaurantOwnerRepository;
+        this.restaurantProfileRepository = restaurantProfileRepository;
         this.bookingRepository = bookingRepository;
         this.diningTableRepository = diningTableRepository;
         this.dishRepository = dishRepository;
@@ -52,18 +61,14 @@ public class RestaurantOwnerService {
      * Get restaurant owner by user ID
      */
     public Optional<RestaurantOwner> getRestaurantOwnerByUserId(UUID userId) {
-        // TODO: Implement when RestaurantOwnerRepository is available
-        // For now, return empty - will be implemented when RestaurantOwner entity is properly set up
-        return Optional.empty();
+        return restaurantOwnerRepository.findByUserId(userId);
     }
 
     /**
      * Get all restaurants owned by a specific owner
      */
     public List<RestaurantProfile> getRestaurantsByOwnerId(UUID ownerId) {
-        // TODO: Implement when RestaurantProfileRepository is available
-        // For now, return empty list - will be implemented when RestaurantProfile entity is properly set up
-        return List.of();
+        return restaurantProfileRepository.findByOwnerOwnerId(ownerId);
     }
     
     /**

@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title th:text="${pageTitle}">Quản lý Đặt bàn - Booking Management</title>
     <link rel="stylesheet" href="/css/restaurant-admin.css" />
+    <style>
+        .chip-pending { background: #fff3cd; color: #856404; }
+        .chip-confirmed { background: #d4edda; color: #155724; }
+        .chip-cancelled { background: #f8d7da; color: #721c24; }
+        .chip-completed { background: #d1ecf1; color: #0c5460; }
+        .chip-default { background: #e2e3e5; color: #383d41; }
+    </style>
 </head>
 <body>
     <nav class="page-switch card">
@@ -13,38 +20,72 @@
     </nav>
 
     <div class="container">
-        <header class="nav card">
+        <!-- Error Message -->
+        <div th:if="${error != null}" class="card" style="background: #f8d7da; border-color: #f5c6cb;">
+            <h2 class="h2" style="color: #721c24;">⚠️ Lỗi</h2>
+            <p th:text="${error}" style="color: #721c24;">Có lỗi xảy ra</p>
+            <div class="actions">
+                <a href="/restaurant-owner/profile" class="btn">Tạo nhà hàng</a>
+                <a href="/restaurant-owner/dashboard" class="btn btn-ghost">Về Dashboard</a>
+            </div>
+        </div>
+
+        <header class="nav card" th:if="${error == null}">
             <div class="nav-left">
-                <h1 class="h1">Quản lý Đặt bàn</h1>
-                <p class="muted">Xem và quản lý tất cả đặt bàn của nhà hàng</p>
+                <h1 class="h1" th:if="${isAllRestaurants}">Quản lý Đặt bàn - Tất cả nhà hàng</h1>
+                <h1 class="h1" th:if="${!isAllRestaurants}">Quản lý Đặt bàn - <span th:text="${currentRestaurant != null ? currentRestaurant.restaurantName : 'Nhà hàng'}">Nhà hàng ABC</span></h1>
+                <p class="muted" th:if="${isAllRestaurants}">Xem và quản lý tất cả đặt bàn của tất cả nhà hàng</p>
+                <p class="muted" th:if="${!isAllRestaurants}">Xem và quản lý đặt bàn của nhà hàng này</p>
             </div>
             <div class="actions">
+                <a th:href="@{/restaurant-owner/bookings}" th:if="${!isAllRestaurants}" class="btn btn-ghost">← Tất cả nhà hàng</a>
                 <button class="btn">+ Tạo đặt bàn</button>
                 <button class="btn btn-ghost">Xuất báo cáo</button>
             </div>
         </header>
 
+        <!-- Restaurant Selection -->
+        <div class="card" th:if="${error == null and restaurants != null and !restaurants.empty}">
+            <h2 class="h2">Chọn nhà hàng</h2>
+            <div class="grid grid-3">
+                <div th:each="restaurant : ${restaurants}" class="card" style="padding: 1rem;">
+                    <h3 class="h3" th:text="${restaurant.restaurantName}">Nhà hàng ABC</h3>
+                    <p class="muted" th:text="${restaurant.cuisineType != null and restaurant.cuisineType != '' ? restaurant.cuisineType : 'Chưa có thông tin'}">Việt Nam</p>
+                    <div class="actions">
+                        <a th:href="@{/restaurant-owner/restaurants/{id}/bookings(id=${restaurant.restaurantId})}" 
+                           class="btn small">Xem Booking</a>
+                        <a th:href="@{/restaurant-owner/profile/{id}(id=${restaurant.restaurantId})}" 
+                           class="btn btn-ghost small">Quản lý</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Filters -->
-        <div class="card">
+        <div class="card" th:if="${error == null}">
             <h2 class="h2">Bộ lọc</h2>
-            <form class="grid grid-4">
+            <form method="get" 
+                  th:action="${isAllRestaurants} ? @{/restaurant-owner/bookings} : @{/restaurant-owner/restaurants/{id}/bookings(id=${restaurantId})}" 
+                  class="grid grid-4">
+                <input type="hidden" name="restaurantId" th:value="${restaurantId}" />
                 <label class="form-item">
                     <span class="form-label">Ngày</span>
-                    <input type="date" value="2025-01-29" />
+                    <input type="date" name="date" th:value="${selectedDate}" />
                 </label>
                 <label class="form-item">
                     <span class="form-label">Trạng thái</span>
-                    <select>
+                    <select name="status">
                         <option value="">Tất cả trạng thái</option>
-                        <option>PENDING</option>
-                        <option>CONFIRMED</option>
-                        <option>CANCELLED</option>
-                        <option>NO_SHOW</option>
+                        <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">PENDING</option>
+                        <option value="CONFIRMED" th:selected="${selectedStatus == 'CONFIRMED'}">CONFIRMED</option>
+                        <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">CANCELLED</option>
+                        <option value="COMPLETED" th:selected="${selectedStatus == 'COMPLETED'}">COMPLETED</option>
+                        <option value="NO_SHOW" th:selected="${selectedStatus == 'NO_SHOW'}">NO_SHOW</option>
                     </select>
                 </label>
                 <label class="form-item">
                     <span class="form-label">Số khách</span>
-                    <select>
+                    <select name="guestCount">
                         <option value="">Tất cả</option>
                         <option>1-2 người</option>
                         <option>3-4 người</option>
@@ -54,19 +95,19 @@
                 </label>
                 <label class="form-item">
                     <span class="form-label">Tìm kiếm</span>
-                    <input type="text" placeholder="Tên khách, số điện thoại..." />
+                    <input type="text" name="search" placeholder="Tên khách, số điện thoại..." />
                 </label>
             </form>
             <div class="actions">
-                <button class="btn">Lọc</button>
-                <button class="btn btn-ghost">Xóa lọc</button>
+                <button type="submit" class="btn">Lọc</button>
+                <a th:href="${isAllRestaurants} ? @{/restaurant-owner/bookings} : @{/restaurant-owner/restaurants/{id}/bookings(id=${restaurantId})}" class="btn btn-ghost">Xóa lọc</a>
                 <div class="spacer"></div>
                 <button class="btn btn-ghost">Lưu bộ lọc</button>
             </div>
         </div>
 
         <!-- Booking List -->
-        <div class="card">
+        <div class="card" th:if="${error == null}">
             <h2 class="h2">Danh sách đặt bàn</h2>
             <div class="table-wrap">
                 <table class="table">
@@ -83,99 +124,77 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td><strong>#BK001</strong></td>
+                        <tr th:each="booking : ${bookings}" th:if="${bookings != null and !bookings.empty}">
+                            <td><strong th:text="'#BK' + ${booking.bookingId}">#BK001</strong></td>
                             <td>
                                 <div>
-                                    <strong>Nguyễn Văn A</strong><br>
-                                    <small>0123 456 789</small>
+                                    <strong th:text="${booking.customer != null and booking.customer.user != null and booking.customer.user.fullName != null ? booking.customer.user.fullName : 'N/A'}">Nguyễn Văn A</strong><br>
+                                    <small th:text="${booking.customer != null and booking.customer.user != null and booking.customer.user.phoneNumber != null ? booking.customer.user.phoneNumber : 'N/A'}">0123 456 789</small>
                                 </div>
                             </td>
                             <td>
                                 <div>
-                                    <strong>29/01/2025</strong><br>
-                                    <small>18:30</small>
+                                    <strong th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy')}">29/01/2025</strong><br>
+                                    <small th:text="${#temporals.format(booking.bookingTime, 'HH:mm')}">18:30</small>
                                 </div>
                             </td>
-                            <td>4 người</td>
-                            <td>T1, T2</td>
-                            <td><span class="chip" style="background: #fff3cd; color: #856404;">PENDING</span></td>
-                            <td>500.000đ</td>
+                            <td th:text="${booking.numberOfGuests} + ' người'">4 người</td>
+                            <td>
+                                <span th:if="${booking.bookingTables != null and !booking.bookingTables.empty}">
+                                    <span th:each="bookingTable, iterStat : ${booking.bookingTables}" 
+                                          th:text="${bookingTable.table.tableName + (iterStat.last ? '' : ', ')}">T1, T2</span>
+                                </span>
+                                <span th:if="${booking.bookingTables == null or booking.bookingTables.empty}">Chưa chọn bàn</span>
+                            </td>
+                            <td>
+                                <span th:class="${'chip ' + 
+                                    (booking.status.name() == 'PENDING' ? 'chip-pending' :
+                                    (booking.status.name() == 'CONFIRMED' ? 'chip-confirmed' :
+                                    (booking.status.name() == 'CANCELLED' ? 'chip-cancelled' :
+                                    (booking.status.name() == 'COMPLETED' ? 'chip-completed' : 'chip-default'))))}"
+                                    th:text="${booking.status.name()}">
+                                </span>
+                            </td>
+                            <td th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">500.000đ</td>
                             <td class="actions">
-                                <button class="btn btn-ghost small">Xem</button>
-                                <button class="btn small">Xác nhận</button>
-                                <button class="btn btn-ghost small">Hủy</button>
+                                <a th:href="@{/restaurant-owner/bookings/{id}(id=${booking.bookingId})}" 
+                                   class="btn btn-ghost small">Xem</a>
+                                
+                                <!-- Status update buttons based on current status -->
+                                <form th:if="${booking.status.name() == 'PENDING'}" 
+                                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
+                                      method="post" style="display: inline;">
+                                    <input type="hidden" name="status" value="CONFIRMED" />
+                                    <button type="submit" class="btn small">Xác nhận</button>
+                                </form>
+                                
+                                <form th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" 
+                                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
+                                      method="post" style="display: inline;">
+                                    <input type="hidden" name="status" value="CANCELLED" />
+                                    <button type="submit" class="btn btn-ghost small">Hủy</button>
+                                </form>
+                                
+                                <form th:if="${booking.status.name() == 'CONFIRMED'}" 
+                                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
+                                      method="post" style="display: inline;">
+                                    <input type="hidden" name="status" value="COMPLETED" />
+                                    <button type="submit" class="btn btn-ghost small">Hoàn thành</button>
+                                </form>
+                                
+                                <form th:if="${booking.status.name() == 'CONFIRMED'}" 
+                                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
+                                      method="post" style="display: inline;">
+                                    <input type="hidden" name="status" value="NO_SHOW" />
+                                    <button type="submit" class="btn btn-ghost small">No Show</button>
+                                </form>
                             </td>
                         </tr>
-                        <tr>
-                            <td><strong>#BK002</strong></td>
-                            <td>
-                                <div>
-                                    <strong>Trần Thị B</strong><br>
-                                    <small>0987 654 321</small>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <strong>29/01/2025</strong><br>
-                                    <small>19:00</small>
-                                </div>
-                            </td>
-                            <td>2 người</td>
-                            <td>T3</td>
-                            <td><span class="chip" style="background: #d4edda; color: #155724;">CONFIRMED</span></td>
-                            <td>200.000đ</td>
-                            <td class="actions">
-                                <button class="btn btn-ghost small">Xem</button>
-                                <button class="btn btn-ghost small">Sửa</button>
-                                <button class="btn btn-ghost small">Hủy</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>#BK003</strong></td>
-                            <td>
-                                <div>
-                                    <strong>Lê Văn C</strong><br>
-                                    <small>0912 345 678</small>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <strong>29/01/2025</strong><br>
-                                    <small>20:00</small>
-                                </div>
-                            </td>
-                            <td>6 người</td>
-                            <td>VIP1</td>
-                            <td><span class="chip" style="background: #f8d7da; color: #721c24;">CANCELLED</span></td>
-                            <td>0đ</td>
-                            <td class="actions">
-                                <button class="btn btn-ghost small">Xem</button>
-                                <button class="btn btn-ghost small">Hoàn tiền</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><strong>#BK004</strong></td>
-                            <td>
-                                <div>
-                                    <strong>Phạm Thị D</strong><br>
-                                    <small>0901 234 567</small>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <strong>30/01/2025</strong><br>
-                                    <small>12:00</small>
-                                </div>
-                            </td>
-                            <td>8 người</td>
-                            <td>T4, T5</td>
-                            <td><span class="chip" style="background: #d4edda; color: #155724;">CONFIRMED</span></td>
-                            <td>1.000.000đ</td>
-                            <td class="actions">
-                                <button class="btn btn-ghost small">Xem</button>
-                                <button class="btn btn-ghost small">Sửa</button>
-                                <button class="btn btn-ghost small">Hủy</button>
+                        
+                        <!-- Empty state -->
+                        <tr th:if="${bookings == null or bookings.empty}">
+                            <td colspan="8" style="text-align: center; padding: 2rem;">
+                                <p class="muted">Không có booking nào</p>
                             </td>
                         </tr>
                     </tbody>
@@ -191,31 +210,31 @@
         </div>
 
         <!-- Statistics -->
-        <div class="grid grid-4">
+        <div class="grid grid-4" th:if="${error == null}">
             <div class="card">
-                <h3 class="h3">Hôm nay</h3>
-                <p style="font-size: 2rem; margin: 0; color: #007bff;">12</p>
+                <h3 class="h3">Tổng cộng</h3>
+                <p style="font-size: 2rem; margin: 0; color: #007bff;" th:text="${totalBookings}">12</p>
                 <small class="muted">đặt bàn</small>
             </div>
             <div class="card">
                 <h3 class="h3">Chờ xác nhận</h3>
-                <p style="font-size: 2rem; margin: 0; color: #ffc107;">3</p>
+                <p style="font-size: 2rem; margin: 0; color: #ffc107;" th:text="${pendingBookings}">3</p>
                 <small class="muted">đặt bàn</small>
             </div>
             <div class="card">
                 <h3 class="h3">Đã xác nhận</h3>
-                <p style="font-size: 2rem; margin: 0; color: #28a745;">8</p>
+                <p style="font-size: 2rem; margin: 0; color: #28a745;" th:text="${confirmedBookings}">8</p>
                 <small class="muted">đặt bàn</small>
             </div>
             <div class="card">
                 <h3 class="h3">Đã hủy</h3>
-                <p style="font-size: 2rem; margin: 0; color: #dc3545;">1</p>
+                <p style="font-size: 2rem; margin: 0; color: #dc3545;" th:text="${cancelledBookings}">1</p>
                 <small class="muted">đặt bàn</small>
             </div>
         </div>
 
         <!-- Quick Actions -->
-        <div class="card">
+        <div class="card" th:if="${error == null}">
             <h2 class="h2">Thao tác nhanh</h2>
             <div class="grid grid-3">
                 <button class="btn">Gửi nhắc nhở SMS</button>

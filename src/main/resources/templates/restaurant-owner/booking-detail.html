@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title th:text="${pageTitle}">Chi tiết Booking - Booking Detail</title>
+    <link rel="stylesheet" href="/css/restaurant-admin.css" />
+</head>
+<body>
+    <nav class="page-switch card">
+        <a class="nav-btn" href="/restaurant-owner/bookings" title="Về danh sách Booking">← Danh sách Booking</a>
+        <a class="nav-btn" href="/restaurant-owner/dashboard" title="Về Dashboard">→ Dashboard</a>
+    </nav>
+
+    <div class="container" th:if="${booking != null}">
+        <!-- Booking Header -->
+        <header class="nav card">
+            <div class="nav-left">
+                <h1 class="h1" th:text="${ 'Booking #BK' + #numbers.formatInteger(booking.bookingId, 3)}">Booking #BK001</h1>
+                <p class="muted">Chi tiết đặt bàn</p>
+            </div>
+            <div class="actions">
+                <!-- Status update buttons -->
+                <form th:if="${booking.status.name() == 'PENDING'}" 
+                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
+                      method="post" style="display: inline;">
+                    <input type="hidden" name="status" value="CONFIRMED" />
+                    <button type="submit" class="btn">Xác nhận</button>
+                </form>
+                
+                <form th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" 
+                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
+                      method="post" style="display: inline;">
+                    <input type="hidden" name="status" value="CANCELLED" />
+                    <button type="submit" class="btn btn-ghost">Hủy</button>
+                </form>
+                
+                <form th:if="${booking.status.name() == 'CONFIRMED'}" 
+                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
+                      method="post" style="display: inline;">
+                    <input type="hidden" name="status" value="COMPLETED" />
+                    <button type="submit" class="btn btn-ghost">Hoàn thành</button>
+                </form>
+                
+                <form th:if="${booking.status.name() == 'CONFIRMED'}" 
+                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
+                      method="post" style="display: inline;">
+                    <input type="hidden" name="status" value="NO_SHOW" />
+                    <button type="submit" class="btn btn-ghost">No Show</button>
+                </form>
+            </div>
+        </header>
+
+        <!-- Booking Information -->
+        <div class="grid grid-2">
+            <!-- Customer Information -->
+            <div class="card">
+                <h2 class="h2">Thông tin khách hàng</h2>
+                <div class="form-item">
+                    <span class="form-label">Tên khách hàng</span>
+                    <p th:text="${(booking.customer != null and booking.customer.user != null and booking.customer.user.fullName != null) ? booking.customer.user.fullName : 'N/A'}">Nguyễn Văn A</p>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">Số điện thoại</span>
+                    <p th:text="${(booking.customer != null and booking.customer.user != null and booking.customer.user.phoneNumber != null) ? booking.customer.user.phoneNumber : 'N/A'}">0123 456 789</p>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">Email</span>
+                    <p th:text="${(booking.customer != null and booking.customer.user != null and booking.customer.user.email != null) ? booking.customer.user.email : 'N/A'}">customer@example.com</p>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">Địa chỉ</span>
+                    <p th:text="${(booking.customer != null and booking.customer.user != null and booking.customer.user.address != null) ? booking.customer.user.address : 'N/A'}">123 Đường ABC, Quận 1, TP.HCM</p>
+                </div>
+            </div>
+
+            <!-- Booking Details -->
+            <div class="card">
+                <h2 class="h2">Chi tiết đặt bàn</h2>
+                <div class="form-item">
+                    <span class="form-label">Trạng thái</span>
+                    <span class="chip" 
+                          th:class="${'chip ' + 
+                            (booking.status.name() == 'PENDING' ? 'chip-pending' : 
+                            (booking.status.name() == 'CONFIRMED' ? 'chip-confirmed' : 
+                            (booking.status.name() == 'CANCELLED' ? 'chip-cancelled' : 
+                            (booking.status.name() == 'COMPLETED' ? 'chip-completed' : 'chip-default'))))}"
+                          th:text="${booking.status.name()}">PENDING</span>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">Thời gian đặt bàn</span>
+                    <p th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}">29/01/2025 18:30</p>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">Số khách</span>
+                    <p th:text="${booking.numberOfGuests} + ' người'">4 người</p>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">Nhà hàng</span>
+                    <p th:text="${(booking.restaurant != null and booking.restaurant.restaurantName != null) ? booking.restaurant.restaurantName : 'N/A'}">Nhà hàng ABC</p>
+                </div>
+                <div class="form-item">
+                    <span class="form-label">Ghi chú</span>
+                    <p th:text="${booking.note != null ? booking.note : 'Không có ghi chú'}">Không có ghi chú</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tables and Items -->
+        <div class="grid grid-2">
+            <!-- Assigned Tables -->
+            <div class="card">
+                <h2 class="h2">Bàn được phân</h2>
+                <div th:if="${booking.bookingTables != null and !booking.bookingTables.empty}">
+                    <div th:each="bookingTable : ${booking.bookingTables}" class="form-item">
+                        <span class="form-label" th:text="${bookingTable.table.tableName}">Bàn T1</span>
+                        <p>Phân bàn lúc: <span th:text="${#temporals.format(bookingTable.assignedAt, 'dd/MM/yyyy HH:mm')}">29/01/2025 18:00</span></p>
+                    </div>
+                </div>
+                <div th:if="${booking.bookingTables == null or booking.bookingTables.empty}">
+                    <p class="muted">Chưa phân bàn</p>
+                </div>
+            </div>
+
+            <!-- Dishes and Services -->
+            <div class="card">
+                <h2 class="h2">Món ăn & Dịch vụ</h2>
+                
+                <!-- Dishes -->
+                <div th:if="${booking.bookingDishes != null and !booking.bookingDishes.empty}">
+                    <h3 class="h3">Món ăn</h3>
+                    <div th:each="bookingDish : ${booking.bookingDishes}" class="form-item">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span th:text="${bookingDish.dish.name + ' x' + bookingDish.quantity}">Phở Bò x2</span>
+                            <span th:text="${#numbers.formatDecimal(bookingDish.totalPrice, 0, 'COMMA', 0, 'POINT')} + 'đ'">200.000đ</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Services -->
+                <div th:if="${booking.bookingServices != null and !booking.bookingServices.empty}">
+                    <h3 class="h3">Dịch vụ</h3>
+                    <div th:each="bookingService : ${booking.bookingServices}" class="form-item">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span th:text="${bookingService.service.name + ' x' + bookingService.quantity}">Dịch vụ VIP x1</span>
+                            <span th:text="${#numbers.formatDecimal(bookingService.totalPrice, 0, 'COMMA', 0, 'POINT')} + 'đ'">100.000đ</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div th:if="${(booking.bookingDishes == null or booking.bookingDishes.empty) and (booking.bookingServices == null or booking.bookingServices.empty)}">
+                    <p class="muted">Không có món ăn hoặc dịch vụ</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Summary -->
+        <div class="card">
+            <h2 class="h2">Tổng kết thanh toán</h2>
+            <div class="grid grid-2">
+                <div>
+                    <div class="form-item">
+                        <span class="form-label">Tiền đặt cọc</span>
+                        <p th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">500.000đ</p>
+                    </div>
+                    <div class="form-item">
+                        <span class="form-label">Tổng tiền món ăn</span>
+                        <p th:text="${#numbers.formatDecimal((booking.bookingDishes != null and !booking.bookingDishes.empty) ? #aggregates.sum(booking.bookingDishes.![totalPrice]) : 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">200.000đ</p>
+                    </div>
+                    <div class="form-item">
+                        <span class="form-label">Tổng tiền dịch vụ</span>
+                        <p th:text="${#numbers.formatDecimal((booking.bookingServices != null and !booking.bookingServices.empty) ? #aggregates.sum(booking.bookingServices.![totalPrice]) : 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">100.000đ</p>
+                    </div>
+                </div>
+                <div>
+                    <div class="form-item">
+                        <span class="form-label" style="font-size: 1.2rem; font-weight: bold;">Tổng cộng</span>
+                        <p style="font-size: 1.5rem; font-weight: bold; color: #007bff;" 
+                           th:text="${#numbers.formatDecimal(booking.depositAmount + ((booking.bookingDishes != null and !booking.bookingDishes.empty) ? #aggregates.sum(booking.bookingDishes.![totalPrice]) : 0) + ((booking.bookingServices != null and !booking.bookingServices.empty) ? #aggregates.sum(booking.bookingServices.![totalPrice]) : 0), 0, 'COMMA', 0, 'POINT')} + 'đ'">800.000đ</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Timeline -->
+        <div class="card">
+            <h2 class="h2">Lịch sử thay đổi</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <h4>Đặt bàn được tạo</h4>
+                        <p th:text="${#temporals.format(booking.createdAt, 'dd/MM/yyyy HH:mm')}">29/01/2025 15:30</p>
+                    </div>
+                </div>
+                <div th:if="${booking.status.name() != 'PENDING'}" class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <h4 th:text="${ 'Trạng thái: ' + booking.status.name()}">Trạng thái: CONFIRMED</h4>
+                        <p th:text="${#temporals.format(booking.updatedAt, 'dd/MM/yyyy HH:mm')}">29/01/2025 16:00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error state -->
+    <div class="container" th:if="${booking == null}">
+        <div class="card">
+            <h1 class="h1">Không tìm thấy booking</h1>
+            <p class="muted" th:text="${error != null ? error : 'Booking không tồn tại'}">Booking không tồn tại</p>
+            <a href="/restaurant-owner/bookings" class="btn">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <style>
+        .chip-pending { background: #fff3cd; color: #856404; }
+        .chip-confirmed { background: #d4edda; color: #155724; }
+        .chip-cancelled { background: #f8d7da; color: #721c24; }
+        .chip-completed { background: #d1ecf1; color: #0c5460; }
+        .chip-default { background: #e2e3e5; color: #383d41; }
+        
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: -2rem;
+            top: 0.5rem;
+            width: 0.75rem;
+            height: 0.75rem;
+            background: #007bff;
+            border-radius: 50%;
+        }
+        
+        .timeline-content {
+            padding-left: 1rem;
+        }
+        
+        .timeline-content h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+        }
+        
+        .timeline-content p {
+            margin: 0;
+            color: #666;
+            font-size: 0.875rem;
+        }
+    </style>
+</body>
+</html>
