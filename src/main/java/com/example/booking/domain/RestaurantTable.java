@@ -5,9 +5,8 @@ import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,6 +22,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import com.example.booking.common.enums.TableStatus;
+import com.example.booking.domain.converter.TableStatusConverter;
 
 @Entity
 @Table(name = "restaurant_table")
@@ -52,7 +52,7 @@ public class RestaurantTable {
     @Size(max = 100, message = "Đường dẫn hình ảnh không được quá 100 ký tự")
     private String tableImage;
     
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = TableStatusConverter.class)
     @Column(name = "status", nullable = false)
     private TableStatus status = TableStatus.AVAILABLE;
     

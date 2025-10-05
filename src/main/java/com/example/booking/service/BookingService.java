@@ -21,6 +21,7 @@ import com.example.booking.domain.Booking;
 import com.example.booking.domain.BookingTable;
 import com.example.booking.domain.BookingDish;
 import com.example.booking.domain.Customer;
+import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantService;
@@ -108,11 +109,13 @@ public class BookingService {
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
         System.out.println("✅ Customer found: " + customer.getCustomerId());
 
-        // Validate restaurant exists
+        // Validate restaurant exists and get restaurant object
+        RestaurantProfile restaurant;
         try {
-            restaurantProfileRepository.findById(form.getRestaurantId())
+            restaurant = restaurantProfileRepository.findById(form.getRestaurantId())
                     .orElseThrow(() -> new IllegalArgumentException("Restaurant not found"));
-            System.out.println("✅ Restaurant found: " + form.getRestaurantId());
+            System.out.println(
+                    "✅ Restaurant found: " + restaurant.getRestaurantId() + " - " + restaurant.getRestaurantName());
         } catch (Exception e) {
             System.err.println("❌ Restaurant validation failed: " + e.getMessage());
             System.err.println("   Looking for restaurant ID: " + form.getRestaurantId());
@@ -127,6 +130,7 @@ public class BookingService {
         System.out.println("🔍 Creating booking object...");
         Booking booking = new Booking();
         booking.setCustomer(customer);
+        booking.setRestaurant(restaurant); // Set restaurant directly
         booking.setBookingTime(form.getBookingTime());
         booking.setNumberOfGuests(form.getGuestCount());
 
@@ -143,6 +147,7 @@ public class BookingService {
             System.out.println("✅ Using form deposit amount: " + depositAmount);
         }
         booking.setDepositAmount(depositAmount);
+        booking.setNote(form.getNote()); // Set note from form
         booking.setStatus(BookingStatus.PENDING);
         System.out.println("✅ Booking object created with status: " + booking.getStatus());
 
@@ -282,6 +287,16 @@ public class BookingService {
         // Update booking fields
         booking.setBookingTime(form.getBookingTime());
         booking.setNumberOfGuests(form.getGuestCount());
+        booking.setNote(form.getNote()); // Update note
+
+        // Update restaurant if changed
+        if (form.getRestaurantId() != null
+                && !form.getRestaurantId().equals(booking.getRestaurant().getRestaurantId())) {
+            RestaurantProfile restaurant = restaurantProfileRepository.findById(form.getRestaurantId())
+                    .orElseThrow(() -> new IllegalArgumentException("Restaurant not found"));
+            booking.setRestaurant(restaurant);
+        }
+
         booking.setDepositAmount(form.getDepositAmount() != null ? form.getDepositAmount() : BigDecimal.ZERO);
 
         // Update table assignment if changed
@@ -361,6 +376,106 @@ public class BookingService {
         }
 
         return bookings;
+    }
+
+    /**
+     * Lấy danh sách booking của restaurant
+     */
+    @Transactional(readOnly = true)
+    public List<Booking> getBookingsByRestaurant(Integer restaurantId) {
+        System.out.println("🔍 BookingService.getBookingsByRestaurant() called for restaurant ID: " + restaurantId);
+
+        // Validate restaurant exists
+        RestaurantProfile restaurant = restaurantProfileRepository.findById(restaurantId)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurant not found"));
+        System.out.println("✅ Restaurant found: " + restaurant.getRestaurantName());
+
+        List<Booking> bookings = bookingRepository.findByRestaurantOrderByBookingTimeDesc(restaurant);
+        System.out.println("📋 Repository returned " + bookings.size() + " bookings for restaurant");
+
+        // Log each booking details
+        for (int i = 0; i < bookings.size(); i++) {
+            Booking booking = bookings.get(i);
+            System.out.println("   Booking " + (i + 1) + ": ID=" + booking.getBookingId() +
+                    ", Time=" + booking.getBookingTime() +
+                    ", Status=" + booking.getStatus() +
+                    ", Customer="
+                    + (booking.getCustomer() != null ? booking.getCustomer().getUser().getFullName() : "null") +
+                    ", Guests=" + booking.getNumberOfGuests());
+        }
+
+        return bookings;
+    }
+
+    /**
+     * Lấy booking theo ID với thông tin đầy đủ
+     */
+    @Transactional(readOnly = true)
+    public Optional<Booking> getBookingDetailById(Integer bookingId) {
+        System.out.println("🔍 BookingService.getBookingDetailById() called for booking ID: " + bookingId);
+
+        Optional<Booking> booking = bookingRepository.findById(bookingId);
+        if (booking.isPresent()) {
+            Booking b = booking.get();
+            System.out.println("✅ Booking found: ID=" + b.getBookingId() +
+                    ", Time=" + b.getBookingTime() +
+                    ", Status=" + b.getStatus() +
+                    ", Restaurant=" + (b.getRestaurant() != null ? b.getRestaurant().getRestaurantName() : "null") +
+                    ", Customer=" + (b.getCustomer() != null ? b.getCustomer().getUser().getFullName() : "null"));
+        } else {
+            System.out.println("❌ Booking not found");
+        }
+
+        return booking;
+    }
+
+    /**
+     * Cập nhật trạng thái booking
+     */
+    @Transactional
+    public Booking updateBookingStatus(Integer bookingId, BookingStatus newStatus) {
+        System.out.println("🔍 BookingService.updateBookingStatus() called for booking ID: " + bookingId +
+                ", new status: " + newStatus);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        BookingStatus oldStatus = booking.getStatus();
+        System.out.println("✅ Booking found: ID=" + booking.getBookingId() +
+                ", old status: " + oldStatus +
+                ", new status: " + newStatus);
+
+        // Validate status transition
+        if (!isValidStatusTransition(oldStatus, newStatus)) {
+            throw new IllegalArgumentException("Invalid status transition from " + oldStatus + " to " + newStatus);
+        }
+
+        booking.setStatus(newStatus);
+        Booking updatedBooking = bookingRepository.save(booking);
+
+        System.out.println("✅ Booking status updated successfully");
+        return updatedBooking;
+    }
+
+    /**
+     * Kiểm tra tính hợp lệ của việc chuyển đổi trạng thái
+     */
+    private boolean isValidStatusTransition(BookingStatus from, BookingStatus to) {
+        // Define valid transitions
+        switch (from) {
+            case PENDING:
+                return to == BookingStatus.CONFIRMED || to == BookingStatus.CANCELLED;
+            case CONFIRMED:
+                return to == BookingStatus.COMPLETED || to == BookingStatus.CANCELLED || to == BookingStatus.NO_SHOW;
+            case COMPLETED:
+                return false; // Cannot change from completed
+            case CANCELLED:
+                return false; // Cannot change from cancelled
+            case NO_SHOW:
+                return false; // Cannot change from no show
+            default:
+                return false;
+        }
     }
 
     /**
@@ -665,6 +780,15 @@ public class BookingService {
         // Update basic booking info
         booking.setBookingTime(form.getBookingTime());
         booking.setNumberOfGuests(form.getGuestCount());
+        booking.setNote(form.getNote()); // Update note
+
+        // Update restaurant if changed
+        if (form.getRestaurantId() != null
+                && !form.getRestaurantId().equals(booking.getRestaurant().getRestaurantId())) {
+            RestaurantProfile restaurant = restaurantProfileRepository.findById(form.getRestaurantId())
+                    .orElseThrow(() -> new IllegalArgumentException("Restaurant not found"));
+            booking.setRestaurant(restaurant);
+        }
 
         // Update deposit amount if table changed
         if (form.getTableId() != null && !form.getTableId().equals(getCurrentTableId(booking))) {

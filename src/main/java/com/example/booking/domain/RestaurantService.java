@@ -6,9 +6,8 @@ import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +23,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import com.example.booking.common.enums.ServiceStatus;
+import com.example.booking.domain.converter.ServiceStatusConverter;
 
 @Entity
 @Table(name = "restaurant_service")
@@ -54,7 +54,7 @@ public class RestaurantService {
     @DecimalMin(value = "0.0", message = "Giá không được âm")
     private BigDecimal price;
     
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = ServiceStatusConverter.class)
     @Column(name = "status", nullable = false)
     private ServiceStatus status = ServiceStatus.AVAILABLE;
     

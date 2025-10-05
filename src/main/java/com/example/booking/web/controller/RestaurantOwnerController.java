@@ -17,14 +17,23 @@ import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.FOHManagementService;
 import com.example.booking.service.FileUploadService;
 import com.example.booking.service.WaitlistService;
+import com.example.booking.service.BookingService;
+import com.example.booking.service.SimpleUserService;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Waitlist;
+import com.example.booking.domain.RestaurantOwner;
+import com.example.booking.domain.User;
+import com.example.booking.domain.UserRole;
+import com.example.booking.common.enums.BookingStatus;
 
 import java.math.BigDecimal;
-
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import org.springframework.security.core.Authentication;
 
 /**
  * Controller for Restaurant Owner management features
@@ -39,16 +48,22 @@ public class RestaurantOwnerController {
     private final FOHManagementService fohManagementService;
     private final FileUploadService fileUploadService;
     private final WaitlistService waitlistService;
+    private final BookingService bookingService;
+    private final SimpleUserService userService;
 
     @Autowired
     public RestaurantOwnerController(RestaurantOwnerService restaurantOwnerService,
                                    FOHManagementService fohManagementService,
             FileUploadService fileUploadService,
-            WaitlistService waitlistService) {
+            WaitlistService waitlistService,
+            BookingService bookingService,
+            SimpleUserService userService) {
         this.restaurantOwnerService = restaurantOwnerService;
         this.fohManagementService = fohManagementService;
         this.fileUploadService = fileUploadService;
         this.waitlistService = waitlistService;
+        this.bookingService = bookingService;
+        this.userService = userService;
     }
 
     /**
@@ -56,24 +71,44 @@ public class RestaurantOwnerController {
      * Main interface for managing waitlist, tables, and floor operations
      */
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
+    public String dashboard(Authentication authentication, Model model) {
         model.addAttribute("pageTitle", "FOH Dashboard - Quản lý sàn");
         
-        // Get real data from database
-        List<Booking> todayBookings = fohManagementService.getTodayBookings(1); // Using restaurant ID 1 for now
-        List<RestaurantTable> availableTables = fohManagementService.getAvailableTables(1);
-        List<RestaurantTable> occupiedTables = fohManagementService.getOccupiedTables(1);
-        
-        // Get waitlist data
-        List<Waitlist> waitingCustomers = waitlistService.getWaitlistByRestaurant(1);
-        List<Waitlist> calledCustomers = waitlistService.getCalledCustomers(1);
+        try {
+            // Get all restaurants owned by current user
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
 
-        model.addAttribute("todayBookings", todayBookings);
-        model.addAttribute("availableTables", availableTables);
-        model.addAttribute("occupiedTables", occupiedTables);
-        model.addAttribute("waitingCustomers", waitingCustomers);
-        model.addAttribute("calledCustomers", calledCustomers);
-        
+            if (restaurants.isEmpty()) {
+                model.addAttribute("error", "Không tìm thấy nhà hàng nào của bạn. Vui lòng tạo nhà hàng trước.");
+                return "restaurant-owner/dashboard";
+            }
+
+            // Use first restaurant for FOH data (can be enhanced to support multiple
+            // restaurants)
+            Integer restaurantId = restaurants.get(0).getRestaurantId();
+
+            // Get real data from database
+            List<Booking> todayBookings = fohManagementService.getTodayBookings(restaurantId);
+            List<RestaurantTable> availableTables = fohManagementService.getAvailableTables(restaurantId);
+            List<RestaurantTable> occupiedTables = fohManagementService.getOccupiedTables(restaurantId);
+
+            // Get waitlist data
+            List<Waitlist> waitingCustomers = waitlistService.getWaitlistByRestaurant(restaurantId);
+            List<Waitlist> calledCustomers = waitlistService.getCalledCustomers(restaurantId);
+
+            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("todayBookings", todayBookings);
+            model.addAttribute("availableTables", availableTables);
+            model.addAttribute("occupiedTables", occupiedTables);
+            model.addAttribute("waitingCustomers", waitingCustomers);
+            model.addAttribute("calledCustomers", calledCustomers);
+
+        } catch (Exception e) {
+            model.addAttribute("error", "Lỗi khi tải dữ liệu: " + e.getMessage());
+            System.err.println("❌ Error in dashboard: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         return "restaurant-owner/dashboard";
     }
 
@@ -446,19 +481,159 @@ public class RestaurantOwnerController {
     // ===== INTERNAL BOOKING MANAGEMENT =====
     
     /**
-     * View all bookings for restaurant
+     * View all bookings for all restaurants owned by current user
      */
     @GetMapping("/bookings")
-    public String viewBookings(Model model) {
-        model.addAttribute("pageTitle", "Quản lý Booking - Bookings Management");
-        
-        // TODO: Get bookings for current restaurant owner
-        // List<Booking> bookings = bookingService.getBookingsByRestaurant(restaurantId);
-        // model.addAttribute("bookings", bookings);
+    public String viewAllBookings(@RequestParam(required = false) String status,
+            @RequestParam(required = false) String date,
+            Authentication authentication,
+            Model model) {
+        model.addAttribute("pageTitle", "Quản lý Booking - Tất cả nhà hàng");
+
+        try {
+            // Get all restaurants owned by current user
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
+
+            if (restaurants.isEmpty()) {
+                model.addAttribute("error", "Không tìm thấy nhà hàng nào của bạn. Vui lòng tạo nhà hàng trước.");
+                return "restaurant-owner/bookings";
+            }
+
+            // Get all bookings from all restaurants
+            List<Booking> allBookings = new ArrayList<>();
+            for (RestaurantProfile restaurant : restaurants) {
+                List<Booking> restaurantBookings = bookingService.getBookingsByRestaurant(restaurant.getRestaurantId());
+                allBookings.addAll(restaurantBookings);
+            }
+
+            // Sort by booking time desc
+            allBookings.sort((b1, b2) -> b2.getBookingTime().compareTo(b1.getBookingTime()));
+
+            // Filter by status if provided
+            if (status != null && !status.isEmpty()) {
+                try {
+                    BookingStatus bookingStatus = BookingStatus.valueOf(status.toUpperCase());
+                    allBookings = allBookings.stream()
+                            .filter(booking -> booking.getStatus() == bookingStatus)
+                            .toList();
+                } catch (IllegalArgumentException e) {
+                    // Invalid status, ignore filter
+                }
+            }
+
+            // Get statistics
+            long totalBookings = allBookings.size();
+            long pendingBookings = allBookings.stream().filter(b -> b.getStatus() == BookingStatus.PENDING).count();
+            long confirmedBookings = allBookings.stream().filter(b -> b.getStatus() == BookingStatus.CONFIRMED).count();
+            long cancelledBookings = allBookings.stream().filter(b -> b.getStatus() == BookingStatus.CANCELLED).count();
+
+            model.addAttribute("bookings", allBookings);
+            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("totalBookings", totalBookings);
+            model.addAttribute("pendingBookings", pendingBookings);
+            model.addAttribute("confirmedBookings", confirmedBookings);
+            model.addAttribute("cancelledBookings", cancelledBookings);
+            model.addAttribute("selectedStatus", status);
+            model.addAttribute("selectedDate", date);
+            model.addAttribute("isAllRestaurants", true);
+
+        } catch (Exception e) {
+            model.addAttribute("error", "Lỗi khi tải dữ liệu: " + e.getMessage());
+            System.err.println("❌ Error in viewAllBookings: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return "restaurant-owner/bookings";
+    }
+
+    /**
+     * View bookings for a specific restaurant
+     */
+    @GetMapping("/restaurants/{id}/bookings")
+    public String viewRestaurantBookings(@PathVariable Integer id,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String date,
+            Authentication authentication,
+            Model model) {
+        model.addAttribute("pageTitle", "Quản lý Booking - Nhà hàng cụ thể");
+
+        try {
+            // Verify restaurant ownership
+            List<RestaurantProfile> ownedRestaurants = getAllRestaurantsByOwner(authentication);
+            Optional<RestaurantProfile> targetRestaurant = ownedRestaurants.stream()
+                    .filter(r -> r.getRestaurantId().equals(id))
+                    .findFirst();
+
+            if (targetRestaurant.isEmpty()) {
+                model.addAttribute("error", "Bạn không có quyền truy cập nhà hàng này.");
+                return "restaurant-owner/bookings";
+            }
+
+            // Get bookings for specific restaurant
+            List<Booking> bookings = bookingService.getBookingsByRestaurant(id);
+
+            // Filter by status if provided
+            if (status != null && !status.isEmpty()) {
+                try {
+                    BookingStatus bookingStatus = BookingStatus.valueOf(status.toUpperCase());
+                    bookings = bookings.stream()
+                            .filter(booking -> booking.getStatus() == bookingStatus)
+                            .toList();
+                } catch (IllegalArgumentException e) {
+                    // Invalid status, ignore filter
+                }
+            }
+
+            // Get statistics
+            long totalBookings = bookings.size();
+            long pendingBookings = bookings.stream().filter(b -> b.getStatus() == BookingStatus.PENDING).count();
+            long confirmedBookings = bookings.stream().filter(b -> b.getStatus() == BookingStatus.CONFIRMED).count();
+            long cancelledBookings = bookings.stream().filter(b -> b.getStatus() == BookingStatus.CANCELLED).count();
+
+            model.addAttribute("bookings", bookings);
+            model.addAttribute("restaurants", ownedRestaurants);
+            model.addAttribute("currentRestaurant", targetRestaurant.get());
+            model.addAttribute("totalBookings", totalBookings);
+            model.addAttribute("pendingBookings", pendingBookings);
+            model.addAttribute("confirmedBookings", confirmedBookings);
+            model.addAttribute("cancelledBookings", cancelledBookings);
+            model.addAttribute("selectedStatus", status);
+            model.addAttribute("selectedDate", date);
+            model.addAttribute("restaurantId", id);
+            model.addAttribute("isAllRestaurants", false);
+
+        } catch (Exception e) {
+            model.addAttribute("error", "Lỗi khi tải dữ liệu: " + e.getMessage());
+            System.err.println("❌ Error in viewRestaurantBookings: " + e.getMessage());
+            e.printStackTrace();
+        }
         
         return "restaurant-owner/bookings";
     }
     
+    /**
+     * View booking detail
+     */
+    @GetMapping("/bookings/{id}")
+    public String viewBookingDetail(@PathVariable Integer id, Model model) {
+        model.addAttribute("pageTitle", "Chi tiết Booking - Booking Detail");
+
+        // Get booking detail
+        var booking = bookingService.getBookingDetailById(id);
+        if (booking.isPresent()) {
+            model.addAttribute("booking", booking.get());
+
+            // Calculate total amount
+            BigDecimal totalAmount = bookingService.calculateTotalAmount(booking.get());
+            model.addAttribute("totalAmount", totalAmount);
+
+            return "restaurant-owner/booking-detail";
+        } else {
+            model.addAttribute("error", "Không tìm thấy booking với ID: " + id);
+            return "redirect:/restaurant-owner/bookings";
+        }
+    }
+
     /**
      * Show create internal booking form
      */
@@ -519,11 +694,16 @@ public class RestaurantOwnerController {
                                      @RequestParam String status,
                                      RedirectAttributes redirectAttributes) {
         try {
-            // TODO: Update booking status
-            // bookingService.updateBookingStatus(id, status);
+            // Convert string to BookingStatus enum
+            BookingStatus newStatus = BookingStatus.valueOf(status.toUpperCase());
+
+            // Update booking status
+            bookingService.updateBookingStatus(id, newStatus);
             
             redirectAttributes.addFlashAttribute("success", "Cập nhật trạng thái thành công!");
             
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", "Trạng thái không hợp lệ: " + status);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Lỗi khi cập nhật: " + e.getMessage());
         }
@@ -667,5 +847,84 @@ public class RestaurantOwnerController {
         model.addAttribute("calledCustomers", calledCustomers);
 
         return "restaurant-owner/fragments/waitlist-data :: waitlist-data";
+    }
+
+    // ===== HELPER METHODS =====
+
+    /**
+     * Get all restaurants owned by current authenticated user
+     */
+    private List<RestaurantProfile> getAllRestaurantsByOwner(Authentication authentication) {
+        try {
+            System.out.println("🔍 getAllRestaurantsByOwner called");
+            String username = authentication.getName();
+            System.out.println("   Username: " + username);
+
+            // Get User from authentication
+            User user = getUserFromAuthentication(authentication);
+            System.out.println("✅ User found: " + user.getUsername());
+
+            // Check if user has RESTAURANT_OWNER role
+            if (!user.getRole().isRestaurantOwner()) {
+                System.out.println("❌ User does not have RESTAURANT_OWNER role: " + user.getRole());
+                return new ArrayList<>();
+            }
+
+            // Get RestaurantOwner record for this user
+            Optional<RestaurantOwner> restaurantOwnerOpt = restaurantOwnerService
+                    .getRestaurantOwnerByUserId(user.getId());
+
+            System.out.println("🔍 Searching for RestaurantOwner with user ID: " + user.getId());
+            System.out.println("🔍 RestaurantOwner found: " + restaurantOwnerOpt.isPresent());
+
+            if (restaurantOwnerOpt.isEmpty()) {
+                System.out.println("❌ No RestaurantOwner record found for user: " + username);
+                System.out.println("❌ User ID: " + user.getId());
+                return new ArrayList<>();
+            }
+
+            RestaurantOwner restaurantOwner = restaurantOwnerOpt.get();
+            System.out.println("✅ RestaurantOwner found: " + restaurantOwner.getOwnerId());
+
+            // Get restaurants owned by this owner
+            List<RestaurantProfile> restaurants = restaurantOwnerService
+                    .getRestaurantsByOwnerId(restaurantOwner.getOwnerId());
+            System.out.println("✅ Found " + restaurants.size() + " restaurants for user: " + username);
+
+            return restaurants;
+
+        } catch (Exception e) {
+            System.err.println("❌ Error getting restaurants by owner: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Helper method để lấy User từ authentication (xử lý cả User và OAuth2User)
+     */
+    private User getUserFromAuthentication(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+
+        // Nếu là User object trực tiếp (regular login)
+        if (principal instanceof User) {
+            return (User) principal;
+        }
+
+        // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email cho OAuth users
+
+            // Tìm User thực tế từ database
+            try {
+                User user = (User) userService.loadUserByUsername(username);
+                return user;
+            } catch (Exception e) {
+                throw new RuntimeException("User not found for OAuth username: " + username +
+                        ". Error: " + e.getMessage());
+            }
+        }
+
+        throw new RuntimeException("Unsupported authentication principal type: " + principal.getClass().getName());
     }
 }
