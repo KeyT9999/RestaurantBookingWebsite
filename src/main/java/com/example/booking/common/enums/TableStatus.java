@@ -4,6 +4,7 @@ public enum TableStatus {
     AVAILABLE("available", "Có sẵn"),
     OCCUPIED("occupied", "Đang sử dụng"),
     RESERVED("reserved", "Đã đặt"),
+    CLEANING("cleaning", "Đang dọn dẹp"),
     MAINTENANCE("maintenance", "Bảo trì");
 
     private final String value;

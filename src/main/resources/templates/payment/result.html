@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout(~{::head}, ~{::body})}">
+<head>
+    <title th:text="${pageTitle}">Payment Result</title>
+    <style>
+        .payment-status {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .status-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        .status-success { color: #28a745; }
+        .status-processing { color: #ffc107; }
+        .status-failed { color: #dc3545; }
+        .status-pending { color: #6c757d; }
+        
+        .payment-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .action-buttons {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Payment Status -->
+                        <div class="payment-status">
+                            <div th:if="${payment.status.name() == 'COMPLETED'}" class="status-success">
+                                <i class="fas fa-check-circle status-icon"></i>
+                                <h3>Thanh toán thành công!</h3>
+                                <p class="text-muted">Đơn hàng của bạn đã được thanh toán thành công</p>
+                            </div>
+                            
+                            <div th:if="${payment.status.name() == 'PROCESSING'}" class="status-processing">
+                                <i class="fas fa-clock status-icon"></i>
+                                <h3>Đang xử lý thanh toán</h3>
+                                <p class="text-muted">Vui lòng chờ trong giây lát...</p>
+                                <div class="loading-spinner"></div>
+                            </div>
+                            
+                            <div th:if="${payment.status.name() == 'FAILED'}" class="status-failed">
+                                <i class="fas fa-times-circle status-icon"></i>
+                                <h3>Thanh toán thất bại</h3>
+                                <p class="text-muted" th:text="${payment.momoMessage}">Lỗi thanh toán</p>
+                            </div>
+                            
+                            <div th:if="${payment.status.name() == 'PENDING'}" class="status-pending">
+                                <i class="fas fa-hourglass-half status-icon"></i>
+                                <h3>Chờ thanh toán</h3>
+                                <p class="text-muted">Vui lòng hoàn tất thanh toán</p>
+                            </div>
+                        </div>
+
+                        <!-- Payment Details -->
+                        <div class="payment-details">
+                            <h5><i class="fas fa-receipt"></i> Chi tiết giao dịch</h5>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Mã giao dịch:</strong> <span th:text="${payment.paymentId}">Payment ID</span></p>
+                                    <p th:if="${payment.momoOrderId}"><strong>Mã đơn hàng:</strong> <span th:text="${payment.momoOrderId}">Order ID</span></p>
+                                    <p th:if="${payment.momoTransId}"><strong>Mã giao dịch MoMo:</strong> <span th:text="${payment.momoTransId}">Transaction ID</span></p>
+                                    <p><strong>Phương thức:</strong> <span th:text="${payment.paymentMethod.displayName}">Payment Method</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Số tiền:</strong> <span class="text-primary font-weight-bold" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ</p>
+                                    <p><strong>Trạng thái:</strong> <span class="badge badge-info" th:text="${payment.status.displayName}">Status</span></p>
+                                    <p><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.paidAt, 'dd/MM/yyyy HH:mm:ss')}">Payment Time</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Booking Details -->
+                        <div class="payment-details">
+                            <h5><i class="fas fa-calendar-alt"></i> Thông tin đặt bàn</h5>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Nhà hàng:</strong> <span th:text="${payment.booking.restaurant.restaurantName}">Restaurant Name</span></p>
+                                    <p><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.booking.bookingTime, 'dd/MM/yyyy HH:mm')}">Booking Time</span></p>
+                                    <p><strong>Số khách:</strong> <span th:text="${payment.booking.numberOfGuests}">Number of Guests</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Mã đặt bàn:</strong> <span th:text="${payment.booking.bookingId}">Booking ID</span></p>
+                                    <p><strong>Trạng thái đặt bàn:</strong> <span class="badge badge-warning" th:text="${payment.booking.status.displayName}">Booking Status</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons text-center">
+                            <div th:if="${payment.status.name() == 'COMPLETED'}">
+                                <a href="/booking/my" class="btn btn-success btn-lg">
+                                    <i class="fas fa-check"></i> Xem đặt bàn của tôi
+                                </a>
+                                <button class="btn btn-outline-primary btn-lg ml-2" onclick="printReceipt()">
+                                    <i class="fas fa-print"></i> In hóa đơn
+                                </button>
+                            </div>
+                            
+                            <div th:if="${payment.status.name() == 'PROCESSING'}">
+                                <button class="btn btn-warning btn-lg" onclick="checkPaymentStatus()">
+                                    <i class="fas fa-sync-alt"></i> Kiểm tra trạng thái
+                                </button>
+                                <a href="/booking/my" class="btn btn-secondary btn-lg ml-2">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                            </div>
+                            
+                            <div th:if="${payment.status.name() == 'FAILED'}">
+                                <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-redo"></i> Thử lại thanh toán
+                                </a>
+                                <a href="/booking/my" class="btn btn-secondary btn-lg ml-2">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                            </div>
+                            
+                            <div th:if="${payment.status.name() == 'PENDING'}">
+                                <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-credit-card"></i> Hoàn tất thanh toán
+                                </a>
+                                <a href="/booking/my" class="btn btn-secondary btn-lg ml-2">
+                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-refresh for processing payments
+        const paymentStatus = /*[[${payment.status.name()}]]*/ 'PENDING';
+        if (paymentStatus === 'PROCESSING') {
+            // Poll payment status every 3 seconds
+            const pollInterval = setInterval(checkPaymentStatus, 3000);
+            
+            // Stop polling after 5 minutes
+            setTimeout(() => {
+                clearInterval(pollInterval);
+            }, 300000);
+        }
+
+        function checkPaymentStatus() {
+            const paymentId = /*[[${payment.paymentId}]]*/ 0;
+            
+            fetch(`/payment/api/status/${paymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'COMPLETED') {
+                        location.reload();
+                    } else if (data.status === 'FAILED') {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking payment status:', error);
+                });
+        }
+
+        function printReceipt() {
+            window.print();
+        }
+
+        // Show success message if redirected from MoMo
+        const urlParams = new URLSearchParams(window.location.search);
+        const resultCode = urlParams.get('resultCode');
+        if (resultCode === '0') {
+            // Success from MoMo redirect
+            console.log('Payment successful from MoMo redirect');
+        }
+    </script>
+</body>
+</html>

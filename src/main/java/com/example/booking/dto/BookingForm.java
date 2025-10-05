@@ -30,6 +30,10 @@ public class BookingForm {
     @Size(max = 50, message = "Mã voucher không hợp lệ")
     private String voucherCode;
     
+    private String dishIds; // Format: "dishId1:quantity1,dishId2:quantity2"
+
+    private String serviceIds; // Comma-separated service IDs
+
     // Constructors
     public BookingForm() {}
     
@@ -92,11 +96,28 @@ public class BookingForm {
         this.note = note;
     }
 
+
     public String getVoucherCode() {
         return voucherCode;
     }
 
     public void setVoucherCode(String voucherCode) {
         this.voucherCode = voucherCode;
+
+    public String getDishIds() {
+        return dishIds;
+    }
+
+    public void setDishIds(String dishIds) {
+        this.dishIds = dishIds;
+    }
+
+    public String getServiceIds() {
+        return serviceIds;
+    }
+
+    public void setServiceIds(String serviceIds) {
+        this.serviceIds = serviceIds;
+
     }
 } 

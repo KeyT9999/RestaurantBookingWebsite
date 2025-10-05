@@ -33,6 +33,16 @@ app:
     max-file-size: 5MB
     max-request-size: 5MB
 
+# Payment configuration
+payment:
+  momo:
+    partner-code: ${MOMO_PARTNER_CODE:MOMOB5D120250831_TEST}
+    access-key: ${MOMO_ACCESS_KEY:ypXZkXcPOxvf9LjI}
+    secret-key: ${MOMO_SECRET_KEY:AmnHqlHHkxj9gQUCIyw4OnJMwx6F1LJx}
+    endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn}
+    return-url: ${MOMO_RETURN_URL:http://localhost:8080/payment/momo/return}
+    notify-url: ${MOMO_NOTIFY_URL:http://localhost:8080/payment/api/momo/ipn}
+
 logging:
   level:
     org.hibernate.SQL: INFO

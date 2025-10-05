@@ -17,8 +17,6 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "restaurant_owner")
@@ -32,20 +30,7 @@ public class RestaurantOwner {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
-    
-    @Column(name = "owner_name", nullable = false)
-    @NotBlank(message = "Tên chủ nhà hàng không được để trống")
-    @Size(max = 255, message = "Tên chủ nhà hàng không được quá 255 ký tự")
-    private String ownerName;
-    
-    @Column(name = "phone")
-    @Size(max = 20, message = "Số điện thoại không được quá 20 ký tự")
-    private String phone;
-    
-    @Column(name = "address")
-    @Size(max = 500, message = "Địa chỉ không được quá 500 ký tự")
-    private String address;
-    
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
@@ -60,12 +45,9 @@ public class RestaurantOwner {
         this.createdAt = LocalDateTime.now();
     }
     
-    public RestaurantOwner(User user, String ownerName, String phone, String address) {
+    public RestaurantOwner(User user) {
         this();
         this.user = user;
-        this.ownerName = ownerName;
-        this.phone = phone;
-        this.address = address;
     }
     
     @PrePersist
@@ -96,31 +78,7 @@ public class RestaurantOwner {
     public void setUser(User user) {
         this.user = user;
     }
-    
-    public String getOwnerName() {
-        return ownerName;
-    }
-    
-    public void setOwnerName(String ownerName) {
-        this.ownerName = ownerName;
-    }
-    
-    public String getPhone() {
-        return phone;
-    }
-    
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-    
-    public String getAddress() {
-        return address;
-    }
-    
-    public void setAddress(String address) {
-        this.address = address;
-    }
-    
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

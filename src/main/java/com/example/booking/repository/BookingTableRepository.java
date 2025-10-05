@@ -1,6 +1,7 @@
 package com.example.booking.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,6 +17,8 @@ public interface BookingTableRepository extends JpaRepository<BookingTable, Inte
     
     void deleteByBooking(Booking booking);
     
+    List<BookingTable> findByBooking(Booking booking);
+
     @Query("SELECT CASE WHEN COUNT(bt) > 0 THEN true ELSE false END " +
            "FROM BookingTable bt " +
            "JOIN bt.booking b " +
@@ -26,4 +29,16 @@ public interface BookingTableRepository extends JpaRepository<BookingTable, Inte
                                            @Param("startTime") LocalDateTime startTime, 
                                            @Param("endTime") LocalDateTime endTime);
     
+    @Query("SELECT CASE WHEN COUNT(bt) > 0 THEN true ELSE false END " +
+                  "FROM BookingTable bt " +
+                  "JOIN bt.booking b " +
+                  "WHERE bt.table = :table " +
+                  "AND b.status IN ('PENDING', 'CONFIRMED') " +
+                  "AND b.bookingTime BETWEEN :startTime AND :endTime " +
+                  "AND b.bookingId != :excludeBookingId")
+    boolean existsByTableAndBookingTimeRangeExcludingBooking(@Param("table") RestaurantTable table,
+                  @Param("startTime") LocalDateTime startTime,
+                  @Param("endTime") LocalDateTime endTime,
+                  @Param("excludeBookingId") Integer excludeBookingId);
+
 }
