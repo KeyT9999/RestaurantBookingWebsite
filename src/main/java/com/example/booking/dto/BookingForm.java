@@ -26,6 +26,9 @@ public class BookingForm {
     
     @Size(max = 500, message = "Ghi chú không được vượt quá 500 ký tự")
     private String note;
+
+    @Size(max = 50, message = "Mã voucher không hợp lệ")
+    private String voucherCode;
     
     private String dishIds; // Format: "dishId1:quantity1,dishId2:quantity2"
 
@@ -35,7 +38,7 @@ public class BookingForm {
     public BookingForm() {}
     
     public BookingForm(Integer restaurantId, Integer tableId, Integer guestCount, 
-                       LocalDateTime bookingTime, BigDecimal depositAmount, String note) {
+                      LocalDateTime bookingTime, BigDecimal depositAmount, String note) {
         this.restaurantId = restaurantId;
         this.tableId = tableId;
         this.guestCount = guestCount;
@@ -93,6 +96,14 @@ public class BookingForm {
         this.note = note;
     }
 
+
+    public String getVoucherCode() {
+        return voucherCode;
+    }
+
+    public void setVoucherCode(String voucherCode) {
+        this.voucherCode = voucherCode;
+
     public String getDishIds() {
         return dishIds;
     }
@@ -107,5 +118,6 @@ public class BookingForm {
 
     public void setServiceIds(String serviceIds) {
         this.serviceIds = serviceIds;
+
     }
 } 

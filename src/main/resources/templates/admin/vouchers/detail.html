@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voucher Details - Admin Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chart.js for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Admin CSS -->
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+    
+    <style>
+        .voucher-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .voucher-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .voucher-code {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .voucher-description {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .status-badge {
+            font-size: 1.1rem;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-block;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .status-active {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+            box-shadow: 0 5px 15px rgba(0,184,148,0.3);
+        }
+        
+        .status-inactive {
+            background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+            box-shadow: 0 5px 15px rgba(99,110,114,0.3);
+        }
+        
+        .info-card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .info-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        }
+        
+        .info-card .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 20px 20px 0 0;
+            border-bottom: none;
+            padding: 2rem;
+            position: relative;
+        }
+        
+        .info-card .card-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .info-card .card-body {
+            padding: 2.5rem;
+        }
+        
+        .discount-display {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .discount-display::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        .discount-value {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .discount-type {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 8s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .action-btn {
+            border-radius: 50px;
+            padding: 1rem 2.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .action-btn:hover::before {
+            left: 100%;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .metric-item {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .metric-item:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .metric-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-label {
+            color: #6c757d;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .progress-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .progress-bar-custom {
+            height: 12px;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-bar-custom::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 3rem;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 1rem;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2.5rem;
+            padding-left: 2.5rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -0.75rem;
+            top: 0.75rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            background: #667eea;
+            border: 4px solid white;
+            box-shadow: 0 0 0 4px #667eea;
+        }
+        
+        .timeline-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 2rem 0;
+        }
+        
+        .floating-elements {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        
+        .floating-element {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            animation: float-up 6s infinite linear;
+        }
+        
+        @keyframes float-up {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="fragments/header :: site-header"></div>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container-fluid mt-4">
+            <!-- Voucher Header -->
+            <div class="voucher-header">
+                <div class="floating-elements">
+                    <div class="floating-element" style="left: 10%; animation-delay: 0s;"></div>
+                    <div class="floating-element" style="left: 20%; animation-delay: 1s;"></div>
+                    <div class="floating-element" style="left: 30%; animation-delay: 2s;"></div>
+                    <div class="floating-element" style="left: 40%; animation-delay: 3s;"></div>
+                    <div class="floating-element" style="left: 50%; animation-delay: 4s;"></div>
+                    <div class="floating-element" style="left: 60%; animation-delay: 5s;"></div>
+                    <div class="floating-element" style="left: 70%; animation-delay: 0.5s;"></div>
+                    <div class="floating-element" style="left: 80%; animation-delay: 1.5s;"></div>
+                    <div class="floating-element" style="left: 90%; animation-delay: 2.5s;"></div>
+                </div>
+                
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <div class="voucher-code" th:text="${voucher.code}">VOUCHER123</div>
+                        <div class="voucher-description" th:text="${voucher.description}">Welcome discount voucher</div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="status-badge" 
+                                  th:classappend="${voucher.status.name() == 'ACTIVE'} ? 'status-active' : 'status-inactive'"
+                                  th:text="${voucher.status.getDisplayName()}">Active</span>
+                            <span class="badge bg-light text-dark fs-6">
+                                <i class="fas fa-calendar me-1"></i>
+                                Created: <span th:text="${#temporals.format(voucher.createdAt, 'dd/MM/yyyy')}">01/01/2024</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 text-end">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a th:href="@{/admin/vouchers/{id}/edit(id=${voucherId})}" 
+                               class="btn btn-light action-btn">
+                                <i class="fas fa-edit me-2"></i>Edit
+                            </a>
+                            <a th:href="@{/admin/vouchers/{id}/assign(id=${voucherId})}" 
+                               class="btn btn-outline-light action-btn">
+                                <i class="fas fa-user-plus me-2"></i>Assign
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Main Content -->
+                <div class="col-lg-8">
+                    <!-- Discount Display -->
+                    <div class="discount-display">
+                        <div class="discount-value">
+                            <span th:if="${voucher.discountType.name() == 'PERCENT'}">
+                                <span th:text="${voucher.discountValue}">20</span>%
+                            </span>
+                            <span th:if="${voucher.discountType.name() == 'FIXED'}">
+                                ₫<span th:text="${#numbers.formatDecimal(voucher.discountValue, 0, 0)}">50,000</span>
+                            </span>
+                        </div>
+                        <div class="discount-type" th:text="${voucher.discountType.name()}">PERCENT</div>
+                        <div th:if="${voucher.discountType.name() == 'PERCENT' and voucher.maxDiscountAmount != null and voucher.maxDiscountAmount > 0}">
+                            <small>Max: ₫<span th:text="${#numbers.formatDecimal(voucher.maxDiscountAmount, 0, 0)}">500,000</span></small>
+                        </div>
+                    </div>
+
+                    <!-- Voucher Information -->
+                    <div class="info-card card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Voucher Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Basic Details</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Voucher Code</label>
+                                        <div class="form-control-plaintext bg-light p-3 rounded">
+                                            <code class="fs-5" th:text="${voucher.code}">VOUCHER123</code>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Description</label>
+                                        <div class="form-control-plaintext bg-light p-3 rounded">
+                                            <span th:text="${voucher.description}">Welcome discount voucher</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Status</label>
+                                        <div>
+                                            <span class="status-badge" 
+                                                  th:classappend="${voucher.status.name() == 'ACTIVE'} ? 'status-active' : 'status-inactive'"
+                                                  th:text="${voucher.status.getDisplayName()}">Active</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Discount Configuration</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Type</label>
+                                        <div>
+                                            <span class="badge" 
+                                                  th:classappend="${voucher.discountType.name() == 'PERCENT'} ? 'bg-info' : 'bg-warning'"
+                                                  th:text="${voucher.discountType.name()}">PERCENT</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Value</label>
+                                        <div class="form-control-plaintext bg-light p-3 rounded">
+                                            <span th:if="${voucher.discountType.name() == 'PERCENT'}">
+                                                <span th:text="${voucher.discountValue}">20</span>%
+                                                <span th:if="${voucher.maxDiscountAmount != null and voucher.maxDiscountAmount > 0}">
+                                                    - ₫<span th:text="${#numbers.formatDecimal(voucher.maxDiscountAmount, 0, 0)}">500,000</span>
+                                                </span>
+                                            </span>
+                                            <span th:if="${voucher.discountType.name() == 'FIXED'}">
+                                                ₫<span th:text="${#numbers.formatDecimal(voucher.discountValue, 0, 0)}">50,000</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">Min Order</label>
+                                        <div class="form-control-plaintext bg-light p-3 rounded">
+                                            <span th:if="${voucher.minOrderAmount != null}">
+                                                ₫<span th:text="${#numbers.formatDecimal(voucher.minOrderAmount, 0, 0)}">100,000</span>
+                                            </span>
+                                            <span th:if="${voucher.minOrderAmount == null}" class="text-muted">No minimum</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Usage & Validity -->
+                    <div class="info-card card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-line me-2"></i>
+                                Usage & Validity
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Usage Limits</h6>
+                                    <div class="metric-grid">
+                                        <div class="metric-item">
+                                            <div class="metric-value" th:text="${voucher.globalUsageLimit != null ? voucher.globalUsageLimit : '∞'}">100</div>
+                                            <div class="metric-label">Global Limit</div>
+                                        </div>
+                                        <div class="metric-item">
+                                            <div class="metric-value" th:text="${voucher.perCustomerLimit != null ? voucher.perCustomerLimit : '∞'}">1</div>
+                                            <div class="metric-label">Per Customer</div>
+                                        </div>
+                                        <div class="metric-item">
+                                            <div class="metric-value" th:text="${usageCount}">0</div>
+                                            <div class="metric-label">Used</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Usage Progress -->
+                                    <div class="progress-container" th:if="${voucher.globalUsageLimit != null}">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="fw-bold">Usage Progress</span>
+                                            <span class="fw-bold" th:text="${usageCount} + '/' + ${voucher.globalUsageLimit}">0/100</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar progress-bar-custom" 
+                                                 th:style="'width: ' + ${usageCount != null and voucher.globalUsageLimit != null ? (usageCount * 100 / voucher.globalUsageLimit) : 0} + '%'">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Validity Period</h6>
+                                    <div class="timeline">
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <h6 class="fw-bold text-primary">Start Date</h6>
+                                                <p class="mb-0" th:if="${voucher.startDate != null}" 
+                                                   th:text="${#temporals.format(voucher.startDate, 'dd/MM/yyyy')}">01/01/2024</p>
+                                                <p class="mb-0 text-muted" th:if="${voucher.startDate == null}">No start date</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <h6 class="fw-bold text-danger">End Date</h6>
+                                                <p class="mb-0" th:if="${voucher.endDate != null}" 
+                                                   th:text="${#temporals.format(voucher.endDate, 'dd/MM/yyyy')}">31/12/2024</p>
+                                                <p class="mb-0 text-muted" th:if="${voucher.endDate == null}">No end date</p>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-content">
+                                                <h6 class="fw-bold text-success">Remaining Uses</h6>
+                                                <p class="mb-0 fs-4 fw-bold" th:text="${remainingUses}">75</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Quick Actions -->
+                    <div class="info-card card mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-bolt me-2"></i>Quick Actions
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-3">
+                                <button class="btn btn-success action-btn" onclick="confirmAction('resume')">
+                                    <i class="fas fa-play me-2"></i>Resume Voucher
+                                </button>
+                                <button class="btn btn-warning action-btn" onclick="confirmAction('pause')">
+                                    <i class="fas fa-pause me-2"></i>Pause Voucher
+                                </button>
+                                <button class="btn btn-danger action-btn" onclick="confirmAction('expire')">
+                                    <i class="fas fa-times me-2"></i>Expire Voucher
+                                </button>
+                                <a th:href="@{/admin/vouchers}" class="btn btn-outline-secondary action-btn">
+                                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistics -->
+                    <div class="info-card card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>Statistics
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="stat-card">
+                                        <div class="stat-number" th:text="${usageCount}">0</div>
+                                        <div class="stat-label">Times Used</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-card">
+                                        <div class="stat-number">₫<span th:text="${#numbers.formatDecimal(totalDiscount, 0, 0)}">0</span></div>
+                                        <div class="stat-label">Total Discount</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="stat-card">
+                                        <div class="stat-number" th:text="${usageRate}">0</div>
+                                        <div class="stat-label">Usage Rate</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-card">
+                                        <div class="stat-number" th:text="${remainingUses}">0</div>
+                                        <div class="stat-label">Remaining</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer Fragment -->
+    <div th:insert="fragments/footer :: site-footer"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function confirmAction(action) {
+            let message = '';
+            let url = '';
+            
+            switch(action) {
+                case 'resume':
+                    message = 'Are you sure you want to resume this voucher?';
+                    url = '/admin/vouchers/' + '[[${voucherId}]]' + '/resume';
+                    break;
+                case 'pause':
+                    message = 'Are you sure you want to pause this voucher?';
+                    url = '/admin/vouchers/' + '[[${voucherId}]]' + '/pause';
+                    break;
+                case 'expire':
+                    message = 'Are you sure you want to expire this voucher?';
+                    url = '/admin/vouchers/' + '[[${voucherId}]]' + '/expire';
+                    break;
+            }
+            
+            if (confirm(message)) {
+                window.location.href = url;
+            }
+        }
+        
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate metric items on scroll
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animation = 'fadeInUp 0.6s ease forwards';
+                    }
+                });
+            }, observerOptions);
+            
+            document.querySelectorAll('.metric-item, .stat-card').forEach(el => {
+                observer.observe(el);
+            });
+        });
+        
+        // Add CSS for fadeInUp animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

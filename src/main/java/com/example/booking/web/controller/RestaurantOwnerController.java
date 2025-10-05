@@ -594,6 +594,8 @@ public class RestaurantOwnerController {
         return "redirect:/restaurant-owner/blocked-slots";
     }
 
+
+
     // ==================== WAITLIST MANAGEMENT ====================
 
     /**
@@ -669,3 +671,4 @@ public class RestaurantOwnerController {
         return "restaurant-owner/fragments/waitlist-data :: waitlist-data";
     }
 }
+

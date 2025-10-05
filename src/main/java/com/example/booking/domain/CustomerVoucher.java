@@ -11,9 +11,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(name = "customer_voucher")
+@Table(name = "customer_voucher", 
+       uniqueConstraints = @UniqueConstraint(columnNames = {"customer_id", "voucher_id"}))
 public class CustomerVoucher {
     
     @Id
@@ -29,14 +31,14 @@ public class CustomerVoucher {
     @JoinColumn(name = "voucher_id", nullable = false)
     private Voucher voucher;
     
-    @Column(name = "is_used", nullable = false)
-    private Boolean isUsed = false;
+    @Column(name = "times_used", nullable = false)
+    private Integer timesUsed = 0;
     
     @Column(name = "assigned_at", nullable = false)
     private LocalDateTime assignedAt;
     
-    @Column(name = "used_at")
-    private LocalDateTime usedAt;
+    @Column(name = "last_used_at")
+    private LocalDateTime lastUsedAt;
     
     // Constructors
     public CustomerVoucher() {
@@ -74,12 +76,12 @@ public class CustomerVoucher {
         this.voucher = voucher;
     }
     
-    public Boolean getIsUsed() {
-        return isUsed;
+    public Integer getTimesUsed() {
+        return timesUsed;
     }
     
-    public void setIsUsed(Boolean isUsed) {
-        this.isUsed = isUsed;
+    public void setTimesUsed(Integer timesUsed) {
+        this.timesUsed = timesUsed;
     }
     
     public LocalDateTime getAssignedAt() {
@@ -90,17 +92,26 @@ public class CustomerVoucher {
         this.assignedAt = assignedAt;
     }
     
-    public LocalDateTime getUsedAt() {
-        return usedAt;
+    public LocalDateTime getLastUsedAt() {
+        return lastUsedAt;
     }
     
-    public void setUsedAt(LocalDateTime usedAt) {
-        this.usedAt = usedAt;
+    public void setLastUsedAt(LocalDateTime lastUsedAt) {
+        this.lastUsedAt = lastUsedAt;
     }
     
-    // Helper method
-    public void markAsUsed() {
-        this.isUsed = true;
-        this.usedAt = LocalDateTime.now();
+    // Helper methods
+    public void incrementUsage() {
+        this.timesUsed++;
+        this.lastUsedAt = LocalDateTime.now();
+    }
+    
+    public boolean canUseMore() {
+        return voucher != null && timesUsed < voucher.getPerCustomerLimit();
+    }
+    
+    public Integer getRemainingUses() {
+        if (voucher == null) return 0;
+        return Math.max(0, voucher.getPerCustomerLimit() - timesUsed);
     }
 }
