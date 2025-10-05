@@ -38,6 +38,10 @@ public class Booking {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "restaurant_id", nullable = false)
+    private RestaurantProfile restaurant;
+
     @Column(name = "booking_time", nullable = false)
     @NotNull(message = "Thời gian đặt bàn không được để trống")
     private LocalDateTime bookingTime;
@@ -55,6 +59,9 @@ public class Booking {
     @DecimalMin(value = "0.0", message = "Số tiền đặt cọc không được âm")
     private BigDecimal depositAmount = BigDecimal.ZERO;
     
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
@@ -78,13 +85,15 @@ public class Booking {
         // createdAt và updatedAt sẽ được set tự động bởi @PrePersist
     }
     
-    public Booking(Customer customer, LocalDateTime bookingTime, Integer numberOfGuests,
-            BigDecimal depositAmount) {
+    public Booking(Customer customer, RestaurantProfile restaurant, LocalDateTime bookingTime, Integer numberOfGuests,
+            BigDecimal depositAmount, String note) {
         this();
         this.customer = customer;
+        this.restaurant = restaurant;
         this.bookingTime = bookingTime;
         this.numberOfGuests = numberOfGuests;
         this.depositAmount = depositAmount != null ? depositAmount : BigDecimal.ZERO;
+        this.note = note;
     }
     
     @PrePersist
@@ -116,6 +125,14 @@ public class Booking {
         this.customer = customer;
     }
     
+    public RestaurantProfile getRestaurant() {
+        return restaurant;
+    }
+
+    public void setRestaurant(RestaurantProfile restaurant) {
+        this.restaurant = restaurant;
+    }
+
     public Integer getNumberOfGuests() {
         return numberOfGuests;
     }
@@ -140,6 +157,14 @@ public class Booking {
         this.depositAmount = depositAmount;
     }
     
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
+
     public BookingStatus getStatus() {
         return status;
     }
@@ -216,13 +241,6 @@ public class Booking {
 
     public Integer getGuestCount() {
         return numberOfGuests;
-    }
-
-    public RestaurantProfile getRestaurant() {
-        if (bookingTables != null && !bookingTables.isEmpty()) {
-            return bookingTables.get(0).getTable().getRestaurant();
-        }
-        return null;
     }
 
     public RestaurantTable getTable() {

@@ -76,6 +76,11 @@ CREATE TABLE IF NOT EXISTS booking (
         FOREIGN KEY (customer_id) REFERENCES customer(customer_id)
 );
 
+ALTER TABLE booking
+ADD COLUMN IF NOT EXISTS restaurant_id INTEGER REFERENCES restaurant_profile(restaurant_id) ON DELETE CASCADE,
+ADD COLUMN IF NOT EXISTS note TEXT;
+
+
 -- các bảng khác giữ nguyên kiểu INTEGER cho khóa tới restaurant_profile/*
 CREATE TABLE IF NOT EXISTS restaurant_table (
     table_id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -147,6 +152,10 @@ CREATE TABLE IF NOT EXISTS payment (
     voucher_id     INTEGER REFERENCES voucher(voucher_id),
     paid_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE booking
+ADD COLUMN IF NOT EXISTS restaurant_id INTEGER REFERENCES restaurant_profile(restaurant_id) ON DELETE CASCADE,
+ADD COLUMN IF NOT EXISTS note TEXT;
 
 -- 5) REVIEW/INTERACTION (tham chiếu customer UUID, owner UUID)
 CREATE TABLE IF NOT EXISTS review (
