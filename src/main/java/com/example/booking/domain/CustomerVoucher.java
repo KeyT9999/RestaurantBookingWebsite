@@ -107,11 +107,14 @@ public class CustomerVoucher {
     }
     
     public boolean canUseMore() {
-        return voucher != null && timesUsed < voucher.getPerCustomerLimit();
+        if (voucher == null) return false;
+        if (voucher.getPerCustomerLimit() == null) return true; // Unlimited if null
+        return timesUsed < voucher.getPerCustomerLimit();
     }
     
     public Integer getRemainingUses() {
         if (voucher == null) return 0;
+        if (voucher.getPerCustomerLimit() == null) return Integer.MAX_VALUE; // Unlimited if null
         return Math.max(0, voucher.getPerCustomerLimit() - timesUsed);
     }
 }

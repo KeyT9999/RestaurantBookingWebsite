@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.booking.domain.Customer;
+import com.example.booking.domain.Voucher;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.VoucherService;
 
@@ -87,16 +89,153 @@ public class VoucherApiController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/demo")
+    public ResponseEntity<?> getDemoVouchers(@RequestParam(required = false) Integer restaurantId, 
+                                            Authentication authentication) {
+        try {
+            // Get real vouchers from database instead of hardcoded demo data
+            List<Voucher> allVouchers = voucherService.getAllVouchers();
+            
+            // Filter only active vouchers
+            List<Voucher> activeVouchers = allVouchers.stream()
+                .filter(v -> v.getStatus() == com.example.booking.domain.VoucherStatus.ACTIVE)
+                .collect(java.util.stream.Collectors.toList());
+            
+            // Filter vouchers by restaurant if restaurantId is provided
+            List<Voucher> filteredVouchers = activeVouchers.stream()
+                .filter(v -> {
+                    // Include global vouchers (restaurant is null)
+                    if (v.getRestaurant() == null) {
+                        return true;
+                    }
+                    // Include restaurant-specific vouchers if restaurantId matches
+                    if (restaurantId != null && v.getRestaurant().getRestaurantId().equals(restaurantId)) {
+                        return true;
+                    }
+                    return false;
+                })
+                .filter(v -> {
+                    // Check if voucher is still valid (not expired)
+                    java.time.LocalDate today = java.time.LocalDate.now();
+                    if (v.getEndDate() != null && today.isAfter(v.getEndDate())) {
+                        return false; // Expired
+                    }
+                    if (v.getStartDate() != null && today.isBefore(v.getStartDate())) {
+                        return false; // Not started yet
+                    }
+                    
+                    // Check global usage limit
+                    if (v.getGlobalUsageLimit() != null) {
+                        Long globalUsage = voucherService.countRedemptionsByVoucherId(v.getVoucherId());
+                        if (globalUsage >= v.getGlobalUsageLimit()) {
+                            return false; // Global limit reached
+                        }
+                    }
+                    
+                    // Check per-customer usage limit if user is authenticated
+                    if (authentication != null && authentication.isAuthenticated()) {
+                        try {
+                            String username = authentication.getName();
+                            com.example.booking.domain.Customer customer = customerService.findByUsername(username).orElse(null);
+                            if (customer != null && v.getPerCustomerLimit() != null) {
+                                Long customerUsage = voucherService.countRedemptionsByVoucherIdAndCustomerId(v.getVoucherId(), customer.getCustomerId());
+                                if (customerUsage >= v.getPerCustomerLimit()) {
+                                    return false; // Customer has reached per-customer limit
+                                }
+                            }
+                        } catch (Exception e) {
+                            // If error getting customer, continue without per-customer check
+                        }
+                    }
+                    
+                    return true; // Valid voucher
+                })
+                .collect(java.util.stream.Collectors.toList());
+            
+            // Convert to simple DTOs to avoid Hibernate proxy issues
+            List<VoucherSummary> voucherSummaries = filteredVouchers.stream()
+                .map(v -> new VoucherSummary(
+                    v.getVoucherId(),
+                    v.getCode(),
+                    v.getDescription(),
+                    v.getDiscountType().name(),
+                    v.getDiscountValue(),
+                    v.getMaxDiscountAmount(),
+                    v.getMinOrderAmount(),
+                    v.getStartDate(),
+                    v.getEndDate(),
+                    v.getStatus().name()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+            
+            return ResponseEntity.ok(voucherSummaries);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error retrieving vouchers: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/my")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<List<VoucherService.CustomerVoucherView>> getMyVouchers(Authentication authentication) {
-        String username = authentication.getName();
-        Customer customer = customerService.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("Customer not found"));
+    public ResponseEntity<?> getMyVouchers(Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            Customer customer = customerService.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
 
-        List<VoucherService.CustomerVoucherView> vouchers = voucherService.getCustomerVouchers(customer.getCustomerId());
-        return ResponseEntity.ok(vouchers);
+            // Get vouchers assigned to this customer
+            List<Voucher> customerVouchers = voucherService.getVouchersByCustomer(customer.getCustomerId());
+            
+            // Convert to simple DTOs to avoid Hibernate proxy issues
+            List<VoucherSummary> voucherSummaries = customerVouchers.stream()
+                .map(v -> new VoucherSummary(
+                    v.getVoucherId(),
+                    v.getCode(),
+                    v.getDescription(),
+                    v.getDiscountType().name(),
+                    v.getDiscountValue(),
+                    v.getMaxDiscountAmount(),
+                    v.getMinOrderAmount(),
+                    v.getStartDate(),
+                    v.getEndDate(),
+                    v.getStatus().name()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+
+            return ResponseEntity.ok(voucherSummaries);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error retrieving vouchers: " + e.getMessage());
+        }
     }
+    
+    @PostMapping("/assign/{voucherId}")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<?> assignVoucherToMe(@PathVariable Integer voucherId, Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            Customer customer = customerService.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+            
+            // Assign voucher to customer
+            voucherService.assignVoucherToCustomers(voucherId, List.of(customer.getCustomerId()));
+            
+            return ResponseEntity.ok("Voucher assigned successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error assigning voucher: " + e.getMessage());
+        }
+    }
+    
+    public static record VoucherSummary(
+        Integer voucherId,
+        String code,
+        String description,
+        String discountType,
+        BigDecimal discountValue,
+        BigDecimal maxDiscountAmount,
+        BigDecimal minOrderAmount,
+        java.time.LocalDate startDate,
+        java.time.LocalDate endDate,
+        String status
+    ) {}
 
     @GetMapping("/stats/{voucherId}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('RESTAURANT_OWNER')")
