@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
@@ -36,6 +37,9 @@ public class Customer {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    @Column(name = "full_name", nullable = false)
+    private String fullName;
+
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Booking> bookings;
     
@@ -59,17 +63,32 @@ public class Customer {
     
     // Constructors
     public Customer() {
-        this.createdAt = LocalDateTime.now();
+        // createdAt and updatedAt will be set by @PrePersist
     }
     
     public Customer(User user) {
         this();
         this.user = user;
+        this.fullName = user.getFullName();
     }
-    
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        // Set fullName from user if not already set
+        if (this.fullName == null && this.user != null) {
+            this.fullName = this.user.getFullName();
+        }
+    }
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+        // Sync fullName with user if user exists
+        if (this.user != null && this.user.getFullName() != null) {
+            this.fullName = this.user.getFullName();
+        }
     }
     
     // Getters and Setters
@@ -105,6 +124,14 @@ public class Customer {
         this.updatedAt = updatedAt;
     }
     
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
     public List<Booking> getBookings() {
         return bookings;
     }
