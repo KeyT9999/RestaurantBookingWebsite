@@ -23,8 +23,6 @@ import com.example.booking.domain.BookingDish;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantTable;
 
-import com.example.booking.domain.Voucher;
-
 import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantService;
 
@@ -136,7 +134,15 @@ public class BookingService {
 
         // Process voucher if provided
         BigDecimal voucherDiscount = BigDecimal.ZERO;
-        if (form.getVoucherCode() != null && !form.getVoucherCode().trim().isEmpty()) {
+        String voucherCodeToApply = null;
+        
+        // Use voucher information from form if available
+        if (form.getVoucherCodeApplied() != null && !form.getVoucherCodeApplied().trim().isEmpty()) {
+            voucherCodeToApply = form.getVoucherCodeApplied();
+            voucherDiscount = form.getVoucherDiscountAmount() != null ? form.getVoucherDiscountAmount() : BigDecimal.ZERO;
+            System.out.println("✅ Using voucher from form: " + voucherCodeToApply + " with discount: " + voucherDiscount);
+        } else if (form.getVoucherCode() != null && !form.getVoucherCode().trim().isEmpty()) {
+            // Fallback to validation if no applied voucher
             try {
                 // Validate voucher
                 VoucherService.ValidationRequest validationReq = new VoucherService.ValidationRequest(
@@ -151,6 +157,7 @@ public class BookingService {
                 VoucherService.ValidationResult validation = voucherService.validate(validationReq);
                 if (validation.valid() && validation.calculatedDiscount() != null) {
                     voucherDiscount = validation.calculatedDiscount();
+                    voucherCodeToApply = form.getVoucherCode();
                 } else {
                     throw new IllegalArgumentException("Invalid voucher: " + validation.reason());
                 }
@@ -200,10 +207,11 @@ public class BookingService {
         }
 
         // Apply voucher if valid
-        if (voucherDiscount.compareTo(BigDecimal.ZERO) > 0) {
+        if (voucherDiscount.compareTo(BigDecimal.ZERO) > 0 && voucherCodeToApply != null) {
             try {
+                System.out.println("🔍 Applying voucher: " + voucherCodeToApply + " with discount: " + voucherDiscount);
                 VoucherService.ApplyRequest applyReq = new VoucherService.ApplyRequest(
-                    form.getVoucherCode(),
+                    voucherCodeToApply,
                     form.getRestaurantId(),
                     customerId,
                     calculateOrderAmount(form),
@@ -214,6 +222,7 @@ public class BookingService {
                 if (!applyResult.success()) {
                     throw new IllegalArgumentException("Failed to apply voucher: " + applyResult.reason());
                 }
+                System.out.println("✅ Voucher applied successfully! Redemption ID: " + applyResult.redemptionId());
             } catch (Exception e) {
                 throw new IllegalArgumentException("Voucher application failed: " + e.getMessage());
             }

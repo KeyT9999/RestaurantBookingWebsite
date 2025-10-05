@@ -30,6 +30,9 @@ public class BookingForm {
     @Size(max = 50, message = "Mã voucher không hợp lệ")
     private String voucherCode;
     
+    private String voucherCodeApplied;
+    private BigDecimal voucherDiscountAmount = BigDecimal.ZERO;
+    
     private String dishIds; // Format: "dishId1:quantity1,dishId2:quantity2"
 
     private String serviceIds; // Comma-separated service IDs
@@ -103,6 +106,22 @@ public class BookingForm {
 
     public void setVoucherCode(String voucherCode) {
         this.voucherCode = voucherCode;
+    }
+
+    public String getVoucherCodeApplied() {
+        return voucherCodeApplied;
+    }
+
+    public void setVoucherCodeApplied(String voucherCodeApplied) {
+        this.voucherCodeApplied = voucherCodeApplied;
+    }
+
+    public BigDecimal getVoucherDiscountAmount() {
+        return voucherDiscountAmount;
+    }
+
+    public void setVoucherDiscountAmount(BigDecimal voucherDiscountAmount) {
+        this.voucherDiscountAmount = voucherDiscountAmount;
     }
 
     public String getDishIds() {
