@@ -60,6 +60,14 @@ public class RestaurantManagementService {
     }
     
     /**
+     * Lấy nhà hàng theo owner
+     */
+    @Transactional(readOnly = true)
+    public List<RestaurantProfile> findRestaurantsByOwner(java.util.UUID ownerId) {
+        return restaurantProfileRepository.findByOwnerOwnerId(ownerId);
+    }
+
+    /**
      * Lấy danh sách bàn của nhà hàng
      */
     @Transactional(readOnly = true)
