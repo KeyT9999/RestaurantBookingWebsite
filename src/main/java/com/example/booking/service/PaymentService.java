@@ -9,24 +9,21 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.booking.common.enums.PaymentType;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.Payment;
 import com.example.booking.domain.PaymentMethod;
 import com.example.booking.domain.PaymentStatus;
 import com.example.booking.domain.Voucher;
-import com.example.booking.common.enums.PaymentType;
-import com.example.booking.dto.MoMoCreateRequest;
-import com.example.booking.dto.MoMoCreateResponse;
-import com.example.booking.dto.MoMoIpnRequest;
-import com.example.booking.repository.PaymentRepository;
 import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.CustomerRepository;
-import com.example.booking.repository.VoucherRepository;
+import com.example.booking.repository.PaymentRepository;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Service for payment processing and management
@@ -47,11 +44,16 @@ public class PaymentService {
     @Autowired
     private CustomerRepository customerRepository;
     
-    @Autowired
-    private VoucherRepository voucherRepository;
+    // Voucher repository is not required for current PayOS flow
     
     @Autowired
-    private MoMoService moMoService;
+    private BookingService bookingService;
+    
+    @Autowired
+    private PayOsService payOsService;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
     
     /**
      * Create payment for booking
@@ -118,48 +120,55 @@ public class PaymentService {
         return savedPayment;
     }
     
-    /**
-     * Process MoMo payment
-     * @param request The MoMo create request
-     * @param customerId The customer ID
-     * @return MoMo create response
-     */
-    public MoMoCreateResponse processMoMoPayment(MoMoCreateRequest request, UUID customerId) {
-        logger.info("Processing MoMo payment for bookingId: {}", request.getBookingId());
-        
-        // Create payment first
-        Payment payment = createPayment(request.getBookingId(), customerId, 
-                                      PaymentMethod.MOMO, PaymentType.DEPOSIT, request.getVoucherCode());
-        
-        // Convert BigDecimal amount to Long for MoMo API (amount is already in VND)
-        Long amountInVND = request.getAmount().longValue();
-        request.setAmount(amountInVND);
-        
-        // Create MoMo payment
-        MoMoCreateResponse response = moMoService.createPayment(request, payment);
-        
-        logger.info("MoMo payment processed successfully. OrderId: {}", response.getOrderId());
-        
-        return response;
-    }
+    
     
     /**
-     * Handle MoMo IPN
-     * @param ipnRequest The IPN request
+     * Handle PayOS webhook
+     * @param rawBody Raw JSON body from PayOS
      * @return true if processed successfully
      */
-    public boolean handleMoMoIpn(MoMoIpnRequest ipnRequest) {
-        logger.info("Handling MoMo IPN for orderId: {}", ipnRequest.getOrderId());
-        
-        boolean success = moMoService.handleIpn(ipnRequest);
-        
-        if (success) {
-            logger.info("MoMo IPN processed successfully for orderId: {}", ipnRequest.getOrderId());
-        } else {
-            logger.error("Failed to process MoMo IPN for orderId: {}", ipnRequest.getOrderId());
+    public boolean handlePayOsWebhook(String rawBody) {
+        try {
+            WebhookPayload payload = objectMapper.readValue(rawBody, WebhookPayload.class);
+            if (payload == null || payload.data == null) {
+                logger.error("Invalid PayOS webhook payload");
+                return false;
+            }
+            if (!payOsService.verifyWebhook(rawBody, payload.signature)) {
+                logger.error("Invalid PayOS webhook signature for orderCode: {}", 
+                    payload.data.orderCode);
+                return false;
+            }
+            Integer paymentId = Integer.valueOf(String.valueOf(payload.data.orderCode));
+            Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
+            if (paymentOpt.isEmpty()) {
+                logger.error("Payment not found for orderCode(paymentId): {}", paymentId);
+                return false;
+            }
+            Payment payment = paymentOpt.get();
+            boolean success = Boolean.TRUE.equals(payload.success) && 
+                ("00".equals(payload.code) || (payload.data.status != null && 
+                    payload.data.status.equalsIgnoreCase("PAID")));
+            if (success) {
+                payment.setStatus(PaymentStatus.COMPLETED);
+                payment.setPaidAt(LocalDateTime.now());
+            } else {
+                payment.setStatus(PaymentStatus.FAILED);
+            }
+            try { payment.setIpnRaw(rawBody); } catch (Exception ignore) {}
+            paymentRepository.save(payment);
+            if (success) {
+                try {
+                    bookingService.confirmBooking(payment.getBooking().getBookingId());
+                } catch (Exception e) {
+                    logger.error("Failed to confirm booking after PayOS payment. paymentId: {}", paymentId, e);
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            logger.error("Error processing PayOS webhook", e);
+            return false;
         }
-        
-        return success;
     }
     
     /**
@@ -183,6 +192,15 @@ public class PaymentService {
         Payment updatedPayment = paymentRepository.save(payment);
         
         logger.info("Cash payment processed successfully. PaymentId: {}", paymentId);
+        
+        // Confirm booking when payment is successful
+        try {
+            bookingService.confirmBooking(payment.getBooking().getBookingId());
+            logger.info("Booking confirmed after cash payment. BookingId: {}", payment.getBooking().getBookingId());
+        } catch (Exception e) {
+            logger.error("Failed to confirm booking after cash payment. BookingId: {}", 
+                payment.getBooking().getBookingId(), e);
+        }
         
         return updatedPayment;
     }
@@ -211,6 +229,15 @@ public class PaymentService {
         
         logger.info("Card payment processed successfully. PaymentId: {}", paymentId);
         
+        // Confirm booking when payment is successful
+        try {
+            bookingService.confirmBooking(payment.getBooking().getBookingId());
+            logger.info("Booking confirmed after card payment. BookingId: {}", payment.getBooking().getBookingId());
+        } catch (Exception e) {
+            logger.error("Failed to confirm booking after card payment. BookingId: {}", 
+                payment.getBooking().getBookingId(), e);
+        }
+        
         return updatedPayment;
     }
     
@@ -223,14 +250,7 @@ public class PaymentService {
         return paymentRepository.findById(paymentId);
     }
     
-    /**
-     * Get payment by MoMo order ID
-     * @param orderId The MoMo order ID
-     * @return Payment if found
-     */
-    public Optional<Payment> findByMoMoOrderId(String orderId) {
-        return paymentRepository.findByMomoOrderId(orderId);
-    }
+    
     
     /**
      * Get payments by customer
@@ -259,21 +279,7 @@ public class PaymentService {
         return paymentRepository.findByStatus(status);
     }
     
-    /**
-     * Get pending MoMo payments that need querying
-     * @return List of pending payments
-     */
-    public List<Payment> getPendingMoMoPayments() {
-        return paymentRepository.findPendingMoMoPayments(PaymentStatus.PENDING);
-    }
     
-    /**
-     * Get processing MoMo payments that need querying
-     * @return List of processing payments
-     */
-    public List<Payment> getProcessingMoMoPayments() {
-        return paymentRepository.findPendingMoMoPayments(PaymentStatus.PROCESSING);
-    }
     
     /**
      * Cancel payment
@@ -399,37 +405,7 @@ public class PaymentService {
         return amount;
     }
     
-    /**
-     * Scheduled task to query pending MoMo payments (fallback mechanism)
-     * Runs every 30 seconds
-     */
-    @Scheduled(fixedRate = 30000) // 30 seconds
-    public void queryPendingMoMoPayments() {
-        try {
-            List<Payment> pendingPayments = getPendingMoMoPayments();
-            List<Payment> processingPayments = getProcessingMoMoPayments();
-            
-            logger.info("Querying {} pending and {} processing MoMo payments", 
-                pendingPayments.size(), processingPayments.size());
-            
-            // Query pending payments
-            for (Payment payment : pendingPayments) {
-                if (payment.getMomoOrderId() != null) {
-                    moMoService.queryPaymentStatus(payment.getMomoOrderId());
-                }
-            }
-            
-            // Query processing payments
-            for (Payment payment : processingPayments) {
-                if (payment.getMomoOrderId() != null) {
-                    moMoService.queryPaymentStatus(payment.getMomoOrderId());
-                }
-            }
-            
-        } catch (Exception e) {
-            logger.error("Error in scheduled MoMo payment query", e);
-        }
-    }
+    // Scheduled MoMo polling removed
     
     /**
      * Validate payment method and type combination
@@ -438,7 +414,7 @@ public class PaymentService {
      */
     private void validatePaymentMethodAndType(PaymentMethod paymentMethod, PaymentType paymentType) {
         if (paymentType == PaymentType.DEPOSIT && paymentMethod == PaymentMethod.CASH) {
-            throw new IllegalArgumentException("Đặt cọc không được phép thanh toán bằng tiền mặt. Vui lòng chọn MoMo.");
+            throw new IllegalArgumentException("Đặt cọc không được phép thanh toán bằng tiền mặt. Vui lòng chọn PayOS.");
         }
         
         // Additional validation rules can be added here
@@ -452,9 +428,26 @@ public class PaymentService {
      * @return Existing payment if found
      */
     private Optional<Payment> findExistingPayment(Booking booking, PaymentType paymentType) {
-        // TODO: Implement query to find payment by booking and type
-        // For now, just check if any payment exists for the booking
-        // In the future, this should query by both booking and paymentType
-        return paymentRepository.findByBooking(booking);
+        // Find payment by booking and payment type
+        // This ensures idempotency - same booking + same payment type = reuse existing payment
+        return paymentRepository.findByBookingAndPaymentType(booking, paymentType);
+    }
+
+    @SuppressWarnings("unused")
+    private static class WebhookPayload {
+        public String code;
+        public String desc;
+        public Boolean success;
+        public Data data;
+        public String signature;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @SuppressWarnings("unused")
+    private static class Data {
+        public Object orderCode; // may be number or string
+        public Long amount;
+        public String status;
+        public String paymentLinkId;
     }
 }

@@ -150,8 +150,8 @@ public class BookingController {
             System.out.println("✅ Booking created successfully! ID: " + booking.getBookingId());
 
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Booking created successfully! Booking ID: " + booking.getBookingId());
-            return "redirect:/booking/my";
+                    "Booking created successfully! Please complete payment to confirm your reservation. Booking ID: " + booking.getBookingId());
+            return "redirect:/payment/" + booking.getBookingId();
 
         } catch (BookingConflictException e) {
             System.err.println("❌ Booking conflict detected: " + e.getMessage());

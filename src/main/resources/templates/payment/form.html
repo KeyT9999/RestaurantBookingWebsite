@@ -48,6 +48,7 @@
                     <hr>
                     <div class="row">
                         <div class="col-md-6">
+                            <p><strong>Booking ID:</strong> <span class="text-primary font-weight-bold" th:text="${booking.bookingId}">#123</span></p>
                             <p><strong>Nhà hàng:</strong> <span th:text="${booking.restaurant.restaurantName}">Restaurant Name</span></p>
                             <p><strong>Thời gian:</strong> <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}">Booking Time</span></p>
                             <p><strong>Số khách:</strong> <span th:text="${booking.numberOfGuests}">Number of Guests</span></p>
@@ -56,10 +57,17 @@
                             <p><strong>Trạng thái:</strong> 
                                 <span class="badge badge-warning" th:text="${booking.status.displayName}">Status</span>
                             </p>
-                            <p><strong>Tổng tiền:</strong> 
-                                <span class="text-primary font-weight-bold" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
+                            <p><strong>Tiền đặt cọc:</strong> 
+                                <span class="text-primary font-weight-bold" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0</span>
+                            </p>
+                            <p th:if="${!#strings.isEmpty(booking.note)}">
+                                <strong>Ghi chú:</strong> <span th:text="${booking.note}">Note</span>
                             </p>
                         </div>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Lưu ý:</strong> Vui lòng hoàn tất thanh toán để xác nhận đặt bàn. Booking sẽ được xác nhận ngay sau khi thanh toán thành công.
                     </div>
                 </div>
 
@@ -189,7 +197,7 @@
                                     <h6>Tổng kết thanh toán</h6>
                                     <div class="d-flex justify-content-between">
                                         <span>Tiền đặt bàn:</span>
-                                        <span th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
+                                        <span th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0</span>
                                     </div>
                                     <div class="d-flex justify-content-between" id="discountRow" style="display: none;">
                                         <span>Giảm giá:</span>
@@ -198,7 +206,7 @@
                                     <hr>
                                     <div class="d-flex justify-content-between">
                                         <strong>Tổng cộng:</strong>
-                                        <strong class="text-primary" id="totalAmount" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
+                                        <strong class="text-primary" id="totalAmount" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0</strong>
                                     </div>
                                     <div class="d-flex justify-content-between" id="remainingAmountRow" style="display: none;">
                                         <span>Số tiền còn lại:</span>
@@ -223,7 +231,7 @@
         </div>
     </div>
 
-    <script>
+    <script th:inline="javascript">
         let selectedPaymentType = null;
         
         // Payment type selection
@@ -309,18 +317,18 @@
 
         // Update payment summary
         function updatePaymentSummary() {
-            const depositAmount = /*[[${booking.depositAmount}]]*/ 0;
+            const depositAmount = parseFloat('[[${booking.depositAmount}]]') || 0;
             const totalAmountElement = document.getElementById('totalAmount');
             const remainingAmountRow = document.getElementById('remainingAmountRow');
             const remainingAmountElement = document.getElementById('remainingAmount');
             
             if (selectedPaymentType === 'DEPOSIT') {
                 // For deposit, show deposit amount
-                totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN');
+                totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN') + ' VNĐ';
                 remainingAmountRow.style.display = 'none';
             } else {
                 // For full payment, show full amount (for now same as deposit)
-                totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN');
+                totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN') + ' VNĐ';
                 remainingAmountRow.style.display = 'none';
                 // TODO: Calculate and show remaining amount when full payment logic is implemented
             }
