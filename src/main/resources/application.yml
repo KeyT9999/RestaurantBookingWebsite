@@ -36,12 +36,23 @@ app:
 # Payment configuration
 payment:
   momo:
-    partner-code: ${MOMO_PARTNER_CODE:MOMOB5D120250831_TEST}
-    access-key: ${MOMO_ACCESS_KEY:ypXZkXcPOxvf9LjI}
-    secret-key: ${MOMO_SECRET_KEY:AmnHqlHHkxj9gQUCIyw4OnJMwx6F1LJx}
-    endpoint: ${MOMO_ENDPOINT:https://test-payment.momo.vn}
-    return-url: ${MOMO_RETURN_URL:http://localhost:8080/payment/momo/return}
-    notify-url: ${MOMO_NOTIFY_URL:http://localhost:8080/payment/api/momo/ipn}
+    partner-code: ${MOMO_PARTNER_CODE:MOMOB5D120250831}
+    access-key: ${MOMO_ACCESS_KEY:LR71jVcxE6fV8oRZ}
+    secret-key: ${MOMO_SECRET_KEY:k4xQbmkX0hAzfYQlHxEg91sZeNvYsIIT}
+    endpoint: ${MOMO_ENDPOINT:https://payment.momo.vn}
+    return-url: ${MOMO_RETURN_URL:http://localhost:8081/payment/momo/return}
+    notify-url: ${MOMO_NOTIFY_URL:http://localhost:8081/payment/api/momo/ipn}
+    # POS configuration (optional)
+    pos-public-key: ${MOMO_POS_PUBLIC_KEY:}
+    pos-endpoint: ${MOMO_POS_ENDPOINT:}
+  payos:
+    client-id: ${PAYOS_CLIENT_ID:59e68d4d-6eb8-4259-93ab-b4c6c3a6af6f}
+    api-key: ${PAYOS_API_KEY:9956541e-86ab-470a-a03c-6d1cc67d95b1}
+    checksum-key: ${PAYOS_CHECKSUM_KEY:eb7485ce4c656e02cae0629fcce02b2933d5b2a9b0a10447c9aa0662125835cf}
+    endpoint: ${PAYOS_ENDPOINT:https://api-merchant.payos.vn}
+    return-url: ${PAYOS_RETURN_URL:${app.base-url}/payment/payos/return}
+    cancel-url: ${PAYOS_CANCEL_URL:${app.base-url}/payment/payos/cancel}
+    webhook-url: ${PAYOS_WEBHOOK_URL:${app.base-url}/payment/api/payos/webhook}
 
 logging:
   level:

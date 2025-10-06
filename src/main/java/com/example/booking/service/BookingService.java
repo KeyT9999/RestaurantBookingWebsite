@@ -2,48 +2,44 @@ package com.example.booking.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-
 import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.domain.Booking;
-import com.example.booking.domain.BookingTable;
 import com.example.booking.domain.BookingDish;
+import com.example.booking.domain.BookingTable;
 import com.example.booking.domain.Customer;
-import com.example.booking.domain.RestaurantProfile;
-import com.example.booking.domain.RestaurantTable;
-
 import com.example.booking.domain.Dish;
+import com.example.booking.domain.Notification;
+import com.example.booking.domain.NotificationStatus;
+import com.example.booking.domain.NotificationType;
+import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantService;
-
+import com.example.booking.domain.RestaurantTable;
 import com.example.booking.dto.BookingForm;
-import com.example.booking.repository.BookingRepository;
-import com.example.booking.repository.BookingTableRepository;
+import com.example.booking.exception.BookingConflictException;
 import com.example.booking.repository.BookingDishRepository;
+import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.BookingServiceRepository;
+import com.example.booking.repository.BookingTableRepository;
 import com.example.booking.repository.CustomerRepository;
+import com.example.booking.repository.DishRepository;
+import com.example.booking.repository.NotificationRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
+import com.example.booking.repository.RestaurantServiceRepository;
 import com.example.booking.repository.RestaurantTableRepository;
 
-
-import com.example.booking.repository.NotificationRepository;
-import com.example.booking.repository.DishRepository;
-import com.example.booking.repository.RestaurantServiceRepository;
-import com.example.booking.domain.Notification;
-import com.example.booking.domain.NotificationType;
-import com.example.booking.domain.NotificationStatus;
-import com.example.booking.exception.BookingConflictException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 
 @Service
@@ -501,6 +497,62 @@ public class BookingService {
         }
 
         return booking;
+    }
+
+    /**
+     * Confirm booking when payment is successful
+     */
+    @Transactional
+    public Booking confirmBooking(Integer bookingId) {
+        System.out.println("🔍 BookingService.confirmBooking() called for booking ID: " + bookingId);
+        
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+        
+        // Validate booking can be confirmed
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new IllegalArgumentException("Booking cannot be confirmed in current status: " + booking.getStatus());
+        }
+        
+        booking.setStatus(BookingStatus.CONFIRMED);
+        Booking confirmedBooking = bookingRepository.save(booking);
+        
+        System.out.println("✅ Booking confirmed successfully: " + confirmedBooking.getBookingId());
+        
+        // Create notification for customer
+        createBookingConfirmationNotification(confirmedBooking);
+        
+        return confirmedBooking;
+    }
+    
+    /**
+     * Create notification for booking confirmation
+     */
+    private void createBookingConfirmationNotification(Booking booking) {
+        System.out.println("🔍 Creating booking confirmation notification for booking ID: " + booking.getBookingId());
+        try {
+            Notification notification = new Notification();
+            notification.setRecipientUserId(booking.getCustomer().getUser().getId());
+            notification.setType(NotificationType.BOOKING_CONFIRMED);
+            notification.setTitle("Đặt bàn đã được xác nhận");
+            notification.setContent(String.format(
+                    "Đặt bàn của bạn đã được xác nhận thành công! Booking ID: %d, Thời gian: %s, Số khách: %d",
+                    booking.getBookingId(),
+                    booking.getBookingTime().toString(),
+                    booking.getNumberOfGuests()));
+            notification.setLinkUrl("/booking/my");
+            notification.setStatus(NotificationStatus.SENT);
+            notification.setPriority(1);
+            notification.setPublishAt(LocalDateTime.now());
+
+            System.out.println("🔍 Saving confirmation notification...");
+            notificationRepository.save(notification);
+            System.out.println("✅ Created booking confirmation notification for customer: " + booking.getCustomer().getCustomerId());
+        } catch (Exception e) {
+            System.err.println("❌ Error creating booking confirmation notification: " + e.getMessage());
+            e.printStackTrace();
+            // Don't throw exception to avoid breaking booking confirmation
+        }
     }
 
     /**
