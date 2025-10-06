@@ -16,7 +16,7 @@ public class EmailService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
     
-    @Value("${app.base-url:http://localhost:8080}")
+    @Value("${app.base-url:http://localhost:8081}")
     private String baseUrl;
     
     @Value("${spring.mail.username:noreply@bookeat.com}")

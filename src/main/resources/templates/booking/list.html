@@ -76,6 +76,17 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
             </div>
             
+            <!-- Payment Info Alert -->
+            <div th:if="${totalBookings > 0}" class="alert alert-info luxury-card mb-3" style="background: rgba(23, 162, 184, 0.1); border: 1px solid rgba(23, 162, 184, 0.3);">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle text-info me-2" style="font-size: 1.2rem;"></i>
+                    <div>
+                        <strong class="text-info">Payment Available</strong>
+                        <p class="mb-0 text-muted">Complete payment for pending reservations to confirm your booking. Look for the <i class="fas fa-credit-card text-success"></i> Pay button on pending bookings.</p>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Reservations Content -->
             <div class="luxury-card">
                 <!-- Regular Bookings Section -->
@@ -188,6 +199,14 @@
                                                    style="border-color: var(--luxury-gold); color: var(--luxury-gold);">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                <!-- Payment Button for PENDING bookings with deposit -->
+                                                <a th:if="${booking.status != null and booking.status.name() == 'PENDING' and booking.hasDeposit()}" 
+                                                   th:href="@{|/payment/${booking.bookingId}|}" 
+                                                   class="btn btn-outline-success btn-sm"
+                                                   title="Complete Payment"
+                                                   style="border-color: var(--luxury-gold); color: var(--luxury-gold); background: rgba(40, 167, 69, 0.1);">
+                                                    <i class="fas fa-credit-card"></i> Pay
+                                                </a>
                                                 <button th:if="${booking.canBeCancelled()}" 
                                                         type="button" 
                                                         class="btn btn-outline-danger btn-sm"
@@ -261,6 +280,14 @@
                                            class="btn btn-outline-warning btn-sm"
                                            style="border-color: var(--luxury-gold); color: var(--luxury-gold);">
                                             <i class="fas fa-edit"></i>
+                                        </a>
+                                        <!-- Payment Button for PENDING bookings with deposit -->
+                                        <a th:if="${booking.status != null and booking.status.name() == 'PENDING' and booking.hasDeposit()}" 
+                                           th:href="@{|/payment/${booking.bookingId}|}" 
+                                           class="btn btn-outline-success btn-sm"
+                                           title="Complete Payment"
+                                           style="border-color: var(--luxury-gold); color: var(--luxury-gold); background: rgba(40, 167, 69, 0.1);">
+                                            <i class="fas fa-credit-card"></i>
                                         </a>
                                         <button th:if="${booking.canBeCancelled()}" 
                                                 type="button" 

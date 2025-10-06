@@ -3,7 +3,8 @@ package com.example.booking.domain;
 public enum PaymentMethod {
     CASH("Tiền mặt"),
     CARD("Thẻ"),
-    MOMO("MoMo"),
+    // MOMO removed
+    PAYOS("payOS"),
     ZALOPAY("ZaloPay");
 
     private final String displayName;

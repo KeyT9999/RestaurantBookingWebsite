@@ -3,22 +3,21 @@ package com.example.booking.repository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.example.booking.domain.Payment;
-import com.example.booking.domain.Customer;
 import com.example.booking.domain.Booking;
-import com.example.booking.domain.PaymentStatus;
+import com.example.booking.domain.Customer;
+import com.example.booking.domain.Payment;
 import com.example.booking.domain.PaymentMethod;
+import com.example.booking.domain.PaymentStatus;
 
 /**
  * Repository for Payment entity
- * Handles CRUD operations for payments and MoMo integration
+ * Handles CRUD operations for payments
  */
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
@@ -59,34 +58,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
      */
     List<Payment> findByPaymentMethod(PaymentMethod paymentMethod);
     
-    /**
-     * Find payment by MoMo order ID
-     * @param momoOrderId The MoMo order ID
-     * @return Optional containing the Payment if found
-     */
-    Optional<Payment> findByMomoOrderId(String momoOrderId);
     
-    /**
-     * Find payment by MoMo request ID
-     * @param momoRequestId The MoMo request ID
-     * @return Optional containing the Payment if found
-     */
-    Optional<Payment> findByMomoRequestId(String momoRequestId);
-    
-    /**
-     * Find payments by MoMo transaction ID
-     * @param momoTransId The MoMo transaction ID
-     * @return List of Payment entities
-     */
-    List<Payment> findByMomoTransId(String momoTransId);
-    
-    /**
-     * Find pending payments that need to be queried (fallback mechanism)
-     * @param status The PaymentStatus (usually PENDING or PROCESSING)
-     * @return List of Payment entities that need querying
-     */
-    @Query("SELECT p FROM Payment p WHERE p.status = :status AND p.paymentMethod = 'MOMO' AND p.momoOrderId IS NOT NULL")
-    List<Payment> findPendingMoMoPayments(@Param("status") PaymentStatus status);
     
     /**
      * Count successful payments by customer
@@ -113,6 +85,14 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     List<Payment> findByCustomerOrderByPaidAtDesc(@Param("customer") Customer customer);
     
     /**
+     * Find payment by booking and payment type
+     * @param booking The Booking entity
+     * @param paymentType The PaymentType
+     * @return Optional containing the Payment if found
+     */
+    Optional<Payment> findByBookingAndPaymentType(Booking booking, com.example.booking.common.enums.PaymentType paymentType);
+    
+    /**
      * Find payments by booking ID
      * @param bookingId The booking ID
      * @return List of Payment entities
@@ -124,20 +104,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
      * Find payments that need refund processing
      * @return List of Payment entities that are completed but not yet refunded
      */
-    @Query("SELECT p FROM Payment p WHERE p.status = 'COMPLETED' AND p.refundedAt IS NULL AND p.paymentMethod IN ('MOMO', 'ZALOPAY')")
+    @Query("SELECT p FROM Payment p WHERE p.status = 'COMPLETED' AND p.refundedAt IS NULL AND p.paymentMethod IN ('PAYOS', 'ZALOPAY', 'CARD')")
     List<Payment> findPaymentsEligibleForRefund();
     
-    /**
-     * Check if payment exists by MoMo order ID
-     * @param momoOrderId The MoMo order ID
-     * @return true if payment exists
-     */
-    boolean existsByMomoOrderId(String momoOrderId);
     
-    /**
-     * Check if payment exists by MoMo request ID
-     * @param momoRequestId The MoMo request ID
-     * @return true if payment exists
-     */
-    boolean existsByMomoRequestId(String momoRequestId);
 }

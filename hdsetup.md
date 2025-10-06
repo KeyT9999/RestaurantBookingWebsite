@@ -16,7 +16,7 @@ MAIL_PASSWORD=your_gmail_app_password_16_chars
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 # Tuỳ chọn
-APP_BASE_URL=http://localhost:8080
+APP_BASE_URL=http://localhost:8081
 ```
 
 Lưu ý Gmail:
@@ -50,7 +50,7 @@ DB_PASSWORD=postgres
 ## 4) Google OAuth2 (bắt buộc nếu dùng Login Google)
 - Vào Google Cloud Console → Credentials → OAuth 2.0 Client IDs.
 - Thêm Authorized redirect URI:
-  - Dev: `http://localhost:8080/login/oauth2/code/google`
+  - Dev: `http://localhost:8081/login/oauth2/code/google`
   - Prod: `https://<your-domain>/login/oauth2/code/google`
 - Lấy `Client ID` và `Client Secret` điền vào `.env` như trên.
 
@@ -67,7 +67,7 @@ Dự án đã có `docker-compose.yml`. Chạy:
 ```
 docker-compose up --build
 ```
-- Compose sẽ nạp biến từ `.env` và map port `8080:8080`.
+- Compose sẽ nạp biến từ `.env` và map port `8081:8081`.
 
 ## 7) Render (Prod) – chỉ đặt biến, không dùng `.env`
 Trong Render Dashboard → Service → Environment:
@@ -97,7 +97,7 @@ spring:
 ```
 
 ## 9) Kiểm tra nhanh
-- Mở `http://localhost:8080`
+- Mở `http://localhost:8081`
 - Google Login → quay về `/` (trang chủ), bấm Profile → `/auth/profile`.
 - Register/Forgot Password → nếu đã cấu hình SMTP đúng, sẽ nhận email thật; nếu không, xem link trong log (MOCK).
 
