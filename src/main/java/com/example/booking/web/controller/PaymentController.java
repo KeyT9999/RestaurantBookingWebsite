@@ -20,17 +20,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.booking.common.enums.PaymentType;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.Payment;
 import com.example.booking.domain.PaymentMethod;
 import com.example.booking.domain.PaymentStatus;
-import com.example.booking.common.enums.PaymentType;
-import com.example.booking.dto.MoMoCreateRequest;
-import com.example.booking.dto.MoMoCreateResponse;
-import com.example.booking.dto.MoMoIpnRequest;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
+import com.example.booking.service.PayOsService;
+import com.example.booking.service.PayOsService.CreateLinkResponse;
 import com.example.booking.service.PaymentService;
 
 
@@ -52,6 +51,9 @@ public class PaymentController {
     
     @Autowired
     private CustomerService customerService;
+    
+    @Autowired
+    private PayOsService payOsService;
     
     /**
      * Show payment form for booking
@@ -106,6 +108,51 @@ public class PaymentController {
     }
     
     /**
+     * Handle PayOS return URL
+     */
+    @GetMapping("/payos/return")
+    public String handlePayOsReturn(@RequestParam(required = false) String orderCode,
+                                   @RequestParam(required = false) String code,
+                                   @RequestParam(required = false) String desc,
+                                   Model model) {
+        try {
+            // With PayOS, orderCode is paymentId we used when creating link
+            if (orderCode == null) {
+                return "error/400";
+            }
+            Integer paymentId = Integer.valueOf(orderCode);
+            Optional<Payment> paymentOpt = paymentService.findById(paymentId);
+            if (paymentOpt.isEmpty()) return "error/404";
+            model.addAttribute("payment", paymentOpt.get());
+            model.addAttribute("payosCode", code);
+            model.addAttribute("payosDesc", desc);
+            model.addAttribute("pageTitle", "Kết quả thanh toán");
+            return "payment/result";
+        } catch (Exception e) {
+            logger.error("Error handling PayOS return", e);
+            return "error/500";
+        }
+    }
+
+    /**
+     * PayOS webhook endpoint
+     */
+    @PostMapping("/api/payos/webhook")
+    @ResponseBody
+    public ResponseEntity<Void> handlePayOsWebhook(@RequestBody String rawBody,
+                                                   @RequestParam(name = "signature", required = false) String signature) {
+        try {
+            boolean ok = payOsService.verifyWebhook(rawBody, signature);
+            if (!ok) return ResponseEntity.badRequest().build();
+            paymentService.handlePayOsWebhook(rawBody);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            logger.error("Error handling PayOS webhook", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * Process payment
      * @param bookingId The booking ID
      * @param paymentMethod The payment method
@@ -148,9 +195,13 @@ public class PaymentController {
                     yield "redirect:/booking/my";
                 }
                 
-                case MOMO -> {
-                    // Redirect to MoMo payment
-                    yield "redirect:/payment/momo/create?paymentId=" + payment.getPaymentId();
+                case PAYOS -> {
+                    // Create PayOS link and redirect to checkout
+                    long orderCode = payment.getPaymentId().longValue();
+                    long amount = payment.getAmount().longValue();
+                    String description = "Thanh toan dat ban #" + payment.getBooking().getBookingId();
+                    CreateLinkResponse res = payOsService.createPaymentLink(orderCode, amount, description);
+                    yield "redirect:" + res.getData().getCheckoutUrl();
                 }
                 
                 case ZALOPAY -> {
@@ -165,6 +216,14 @@ public class PaymentController {
                 }
             };
             
+        } catch (IllegalArgumentException e) {
+            logger.error("Error processing payment: {}", e.getMessage());
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/payment/" + bookingId;
+        } catch (RuntimeException e) {
+            logger.error("Runtime error processing payment", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra. Vui lòng thử lại.");
+            return "redirect:/payment/" + bookingId;
         } catch (Exception e) {
             logger.error("Error processing payment", e);
             redirectAttributes.addFlashAttribute("errorMessage", "Lỗi: " + e.getMessage());
@@ -172,97 +231,6 @@ public class PaymentController {
         }
     }
     
-    /**
-     * Create MoMo payment
-     * @param paymentId The payment ID
-     * @param model The model
-     * @param authentication The authentication
-     * @return MoMo payment creation view
-     */
-    @GetMapping("/momo/create")
-    public String createMoMoPayment(@RequestParam Integer paymentId,
-                                   Model model,
-                                   Authentication authentication) {
-        
-        try {
-            UUID customerId = getCurrentCustomerId(authentication);
-            
-            // Get payment
-            Optional<Payment> paymentOpt = paymentService.findById(paymentId);
-            if (paymentOpt.isEmpty()) {
-                return "error/404";
-            }
-            
-            Payment payment = paymentOpt.get();
-            
-            // Check if customer owns this payment
-            if (!payment.getCustomer().getCustomerId().equals(customerId)) {
-                return "error/403";
-            }
-            
-            // Create MoMo payment request
-            MoMoCreateRequest request = new MoMoCreateRequest();
-            request.setBookingId(payment.getBooking().getBookingId());
-            request.setAmount(payment.getAmount().longValue()); // Convert BigDecimal to Long
-            request.setOrderInfo("Thanh toán đặt bàn #" + payment.getBooking().getBookingId());
-            request.setExtraData("booking_id:" + payment.getBooking().getBookingId());
-            
-            // Process MoMo payment
-            MoMoCreateResponse response = paymentService.processMoMoPayment(request, customerId);
-            
-            // Redirect to MoMo payment page
-            return "redirect:" + response.getPayUrl();
-            
-        } catch (Exception e) {
-            logger.error("Error creating MoMo payment", e);
-            return "error/500";
-        }
-    }
-    
-    /**
-     * Handle MoMo return (redirect from MoMo)
-     * @param orderId The order ID
-     * @param resultCode The result code
-     * @param signature The signature
-     * @param model The model
-     * @param authentication The authentication
-     * @return Payment result view
-     */
-    @GetMapping("/momo/return")
-    public String handleMoMoReturn(@RequestParam String orderId,
-                                  @RequestParam(required = false) String resultCode,
-                                  @RequestParam(required = false) String signature,
-                                  Model model,
-                                  Authentication authentication) {
-        
-        try {
-            UUID customerId = getCurrentCustomerId(authentication);
-            
-            // Get payment by order ID
-            Optional<Payment> paymentOpt = paymentService.findByMoMoOrderId(orderId);
-            if (paymentOpt.isEmpty()) {
-                return "error/404";
-            }
-            
-            Payment payment = paymentOpt.get();
-            
-            // Check if customer owns this payment
-            if (!payment.getCustomer().getCustomerId().equals(customerId)) {
-                return "error/403";
-            }
-            
-            model.addAttribute("payment", payment);
-            model.addAttribute("orderId", orderId);
-            model.addAttribute("resultCode", resultCode);
-            model.addAttribute("pageTitle", "Kết quả thanh toán");
-            
-            return "payment/result";
-            
-        } catch (Exception e) {
-            logger.error("Error handling MoMo return", e);
-            return "error/500";
-        }
-    }
     
     /**
      * Show payment result
@@ -362,31 +330,7 @@ public class PaymentController {
         }
     }
     
-    /**
-     * API endpoint for MoMo IPN (webhook)
-     * @param ipnRequest The IPN request
-     * @return HTTP 204 No Content
-     */
-    @PostMapping("/api/momo/ipn")
-    @ResponseBody
-    public ResponseEntity<Void> handleMoMoIpn(@RequestBody MoMoIpnRequest ipnRequest) {
-        
-        try {
-            logger.info("Received MoMo IPN for orderId: {}", ipnRequest.getOrderId());
-            
-            boolean success = paymentService.handleMoMoIpn(ipnRequest);
-            
-            if (success) {
-                return ResponseEntity.noContent().build(); // 204 No Content
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-            
-        } catch (Exception e) {
-            logger.error("Error handling MoMo IPN", e);
-            return ResponseEntity.status(500).build();
-        }
-    }
+    
     
     /**
      * API endpoint to cancel payment

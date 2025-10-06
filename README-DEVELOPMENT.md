@@ -18,7 +18,7 @@ cd BookEat
 mvn spring-boot:run
 
 # Access application
-http://localhost:8080
+http://localhost:8081
 ```
 
 ### **Default Accounts**
@@ -286,8 +286,8 @@ class ExampleTest {
 
 ### **Common Issues**
 ```bash
-# Port 8080 already in use
-netstat -ano | findstr :8080
+# Port 8081 already in use
+netstat -ano | findstr :8081
 taskkill /PID <process_id> /F
 
 # Circular dependency
@@ -313,13 +313,13 @@ taskkill /PID <process_id> /F
 mvn spring-boot:run -Dlogging.level.com.example.booking=DEBUG
 
 # H2 Console access
-http://localhost:8080/h2-console
+http://localhost:8081/h2-console
 JDBC URL: jdbc:h2:mem:devdb
 Username: sa
 Password: (empty)
 
 # Check application health
-http://localhost:8080/actuator/health
+http://localhost:8081/actuator/health
 ```
 
 ## 📚 **USEFUL RESOURCES**

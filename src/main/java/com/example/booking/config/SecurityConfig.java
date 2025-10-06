@@ -84,7 +84,10 @@ public class SecurityConfig {
 			.authorizeHttpRequests(authz -> authz
 				.requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", 
 						"/login", "/error", "/h2-console/**", 
-						"/actuator/**", "/oauth2/**", "/", "/about", "/contact", "/restaurants").permitAll()
+						"/actuator/**", "/oauth2/**", "/", "/about", "/contact", "/restaurants",
+						"/test/**").permitAll()
+				.requestMatchers("/payment/payos/return").permitAll()
+				.requestMatchers("/payment/api/payos/webhook").permitAll()
 				.requestMatchers("/test-vouchers/**").permitAll()
 				.requestMatchers("/admin-setup/**").permitAll()
 				.requestMatchers("/api/admin/create-admin").permitAll()

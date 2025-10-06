@@ -19,7 +19,7 @@
 ### **2.3. Authorized redirect URIs:**
 **Bấm `Add URI` và nhập:**
 ```
-http://localhost:8080/login/oauth2/code/google
+http://localhost:8081/login/oauth2/code/google
 ```
 
 **✅ URI này là CHÍNH XÁC - đây là endpoint mặc định của Spring Security OAuth2**
@@ -65,16 +65,16 @@ mvn spring-boot:run
 ```
 
 ### **4.2. Test flow:**
-1. **Truy cập:** http://localhost:8080/login
+1. **Truy cập:** http://localhost:8081/login
 2. **Click:** "Đăng nhập với Google"
 3. **Chọn Google account**
 4. **Authorize app**
-5. **Redirect về:** http://localhost:8080/booking/my
+5. **Redirect về:** http://localhost:8081/booking/my
 
 ## 🔍 **Troubleshooting:**
 
 ### **Lỗi "redirect_uri_mismatch":**
-- Kiểm tra URI trong Google Console: `http://localhost:8080/login/oauth2/code/google`
+- Kiểm tra URI trong Google Console: `http://localhost:8081/login/oauth2/code/google`
 - Đảm bảo không có trailing slash
 
 ### **Lỗi "invalid_client":**

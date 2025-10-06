@@ -7,7 +7,7 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * Configuration for RestTemplate
- * Used for HTTP calls to MoMo API
+ * Used for outbound HTTP calls (e.g., PayOS)
  */
 @Configuration
 public class RestTemplateConfig {
@@ -16,7 +16,7 @@ public class RestTemplateConfig {
     public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         
-        // Set timeout for MoMo API calls (30 seconds as per MoMo documentation)
+        // Set timeout for external payment API calls
         factory.setConnectTimeout(30000); // 30 seconds
         factory.setReadTimeout(30000);    // 30 seconds
         

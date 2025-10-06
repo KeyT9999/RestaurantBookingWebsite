@@ -21,8 +21,8 @@ MOMO_PARTNER_CODE=your_partner_code
 MOMO_ACCESS_KEY=your_access_key
 MOMO_SECRET_KEY=your_secret_key
 MOMO_ENDPOINT=https://test-payment.momo.vn
-MOMO_RETURN_URL=http://localhost:8080/payment/momo/return
-MOMO_NOTIFY_URL=http://localhost:8080/payment/api/momo/ipn
+MOMO_RETURN_URL=http://localhost:8081/payment/momo/return
+MOMO_NOTIFY_URL=http://localhost:8081/payment/api/momo/ipn
 ```
 
 ### 2. Database Migration
