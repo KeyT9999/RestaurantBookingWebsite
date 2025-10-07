@@ -1,0 +1,129 @@
+<!-- Global Chat Widget -->
+<div id="chat-widget" class="chat-widget" th:fragment="chat-widget">
+    <!-- Chat Toggle Button -->
+    <div class="chat-toggle" onclick="toggleChatWidget()">
+        <i class="fas fa-comments"></i>
+        <span id="unread-badge" class="unread-badge" style="display: none;">0</span>
+    </div>
+    
+    <!-- Chat Panel -->
+    <div id="chat-panel" class="chat-panel" style="display: none;">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-title">
+                <i class="fas fa-comments"></i>
+                <span>Chat</span>
+            </div>
+            <button class="chat-close" onclick="toggleChatWidget()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- Chat Content -->
+        <div class="chat-content">
+            <!-- Restaurant Selector -->
+            <div id="restaurant-selector" class="restaurant-selector">
+                <div class="selector-header">
+                    <h6>Chọn nhà hàng để chat</h6>
+                </div>
+                <div class="selector-content">
+                    <select id="restaurant-dropdown" class="form-select">
+                        <option value="">Chọn nhà hàng...</option>
+                    </select>
+                    <button id="start-chat-btn" class="btn btn-gold btn-sm" onclick="startChatWithRestaurant()">
+                        <i class="fas fa-comment"></i> Bắt đầu chat
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Rooms List -->
+            <div id="chat-rooms" class="chat-rooms" style="display: none;">
+                <div class="rooms-header">
+                    <h6>Cuộc trò chuyện</h6>
+                    <button class="btn btn-outline btn-sm" onclick="showRestaurantSelector()">
+                        <i class="fas fa-plus"></i> Chat mới
+                    </button>
+                </div>
+                <div id="rooms-list" class="rooms-list">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+            
+            <!-- Chat Interface -->
+            <div id="chat-interface" class="chat-interface" style="display: none;">
+                <!-- Chat Header -->
+                <div class="chat-interface-header">
+                    <div class="chat-info">
+                        <h6 id="current-room-name">Chat Room</h6>
+                        <small id="current-room-status">Online</small>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="backToRooms()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+                
+                <!-- Messages Container -->
+                <div id="messages-container" class="messages-container">
+                    <!-- Dynamic messages -->
+                </div>
+                
+                <!-- Typing Indicator -->
+                <div id="typing-indicator" class="typing-indicator" style="display: none;">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="typing-text">Đang gõ...</span>
+                </div>
+                
+                <!-- Message Input -->
+                <div class="message-input">
+                    <div class="input-group">
+                        <input type="text" id="message-input" class="form-control" 
+                               placeholder="Nhập tin nhắn..." maxlength="1000">
+                        <button id="send-button" class="btn btn-gold" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="input-footer">
+                        <small class="text-muted">Nhấn Enter để gửi</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Room Template (Hidden) -->
+<template id="room-template">
+    <div class="room-item" data-room-id="">
+        <div class="room-avatar">
+            <i class="fas fa-store"></i>
+        </div>
+        <div class="room-info">
+            <div class="room-name"></div>
+            <div class="room-last-message"></div>
+            <div class="room-meta">
+                <span class="room-time"></span>
+                <span class="room-unread" style="display: none;"></span>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Message Template (Hidden) -->
+<template id="message-template">
+    <div class="message-item" data-message-id="">
+        <div class="message-avatar">
+            <i class="fas fa-user"></i>
+        </div>
+        <div class="message-content">
+            <div class="message-header">
+                <span class="message-sender"></span>
+                <span class="message-time"></span>
+            </div>
+            <div class="message-text"></div>
+        </div>
+    </div>
+</template>

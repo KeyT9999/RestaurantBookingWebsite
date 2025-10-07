@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- Chat Widget CSS -->
+    <link th:href="@{/css/chat-widget.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Chat Widget Resources Fragment -->
+    <div th:fragment="chat-resources">
+        <!-- Chat Widget JavaScript -->
+        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+        <script th:src="@{/js/chat-widget.js}"></script>
+    </div>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Customer</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/customer-chat.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <div th:replace="fragments/header :: site-header"></div>
+    
+    <!-- Main Content -->
+    <div class="container-fluid chat-container">
+        <div class="row h-100">
+            <!-- Sidebar - Chat Rooms List -->
+            <div class="col-md-4 col-lg-3 chat-sidebar" id="chat-sidebar">
+                <div class="chat-sidebar-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments text-gold"></i>
+                        Cuộc trò chuyện
+                    </h5>
+                    <div class="unread-badge" id="total-unread-badge" style="display: none;">
+                        <span id="total-unread-count">0</span>
+                    </div>
+                </div>
+                
+                <!-- Available Restaurants Section -->
+                <div class="chat-restaurant-section mb-3">
+                    <h6 class="restaurant-section-title">
+                        <i class="fas fa-store text-gold"></i>
+                        Nhà hàng có sẵn
+                    </h6>
+                    <div class="restaurant-list" id="restaurant-list">
+                        <!-- Restaurant list will be loaded here -->
+                        <div class="text-center text-muted">
+                            <div class="spinner-border spinner-border-sm text-gold" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <small>Đang tải...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Chat Area -->
+            <div class="col-md-8 col-lg-9 chat-main">
+                <div class="chat-main-content">
+                    <!-- Welcome Screen -->
+                    <div id="welcome-screen" class="welcome-screen">
+                        <div class="welcome-content">
+                            <i class="fas fa-comments text-gold"></i>
+                            <h4>Chào mừng đến với Chat</h4>
+                            <p>Chọn một cuộc trò chuyện để bắt đầu</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Interface (Hidden by default) -->
+                    <div id="chat-interface" class="chat-interface" style="display: none;">
+                        <!-- Chat Header -->
+                        <div class="chat-header">
+                            <div class="chat-info">
+                                <div class="chat-participant">
+                                    <i class="fas fa-store" id="participant-icon"></i>
+                                    <span id="participant-name">Participant Name</span>
+                                </div>
+                                <div class="chat-restaurant">
+                                    <i class="fas fa-store"></i>
+                                    <span id="restaurant-name">Restaurant Name</span>
+                                </div>
+                                <div class="chat-status">
+                                    <span class="status-dot"></span>
+                                    <span>Online</span>
+                                </div>
+                            </div>
+                            <div class="chat-actions">
+                                <button class="btn btn-outline-secondary btn-sm" id="back-to-list">
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Messages Container -->
+                        <div class="messages-container" id="messages-container">
+                            <!-- Messages will be loaded here -->
+                        </div>
+                        
+                        <!-- Message Input -->
+                        <div class="message-input">
+                            <div class="input-group">
+                                <input type="text" id="message-input" class="form-control" 
+                                       placeholder="Nhập tin nhắn..." maxlength="1000">
+                                <button id="send-button" class="btn btn-gold">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div class="input-footer">
+                                <small class="text-muted">Nhấn Enter để gửi</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Message Template (Hidden) -->
+    <template id="message-template">
+        <div class="message-item" data-message-id="">
+            <div class="message-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="message-sender"></span>
+                    <span class="message-time"></span>
+                </div>
+                <div class="message-text"></div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Error Notification Template -->
+    <template id="error-template">
+        <div class="error-notification">
+            <div class="error-content">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span class="error-message"></span>
+                <button class="error-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Restaurant Item Template -->
+    <template id="restaurant-item-template">
+        <div class="restaurant-item" data-restaurant-id="">
+            <div class="restaurant-avatar">
+                <i class="fas fa-store"></i>
+            </div>
+            <div class="restaurant-info">
+                <div class="restaurant-name"></div>
+                <div class="restaurant-address"></div>
+            </div>
+            <div class="restaurant-actions">
+                <button class="btn btn-gold btn-sm start-chat-btn">
+                    <i class="fas fa-comments"></i>
+                    Chat
+                </button>
+                <div class="restaurant-meta">
+                    <span class="restaurant-time"></span>
+                    <span class="restaurant-unread" style="display: none;"></span>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script th:src="@{/js/customer-chat.js}"></script>
+</body>
+</html>
