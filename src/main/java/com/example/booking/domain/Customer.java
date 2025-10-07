@@ -55,8 +55,10 @@ public class Customer {
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Payment> payments;
     
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Message> messages;
+    // Messages are accessed through ChatRoom, not direct relationship
+    // @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch =
+    // FetchType.LAZY)
+    // private List<Message> messages;
     
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Waitlist> waitlists;
@@ -172,13 +174,14 @@ public class Customer {
         this.payments = payments;
     }
     
-    public List<Message> getMessages() {
-        return messages;
-    }
-    
-    public void setMessages(List<Message> messages) {
-        this.messages = messages;
-    }
+    // Messages are accessed through ChatRoom, not direct relationship
+    // public List<Message> getMessages() {
+    // return messages;
+    // }
+    //
+    // public void setMessages(List<Message> messages) {
+    // this.messages = messages;
+    // }
     
     public List<Waitlist> getWaitlists() {
         return waitlists;

@@ -101,6 +101,7 @@ public class SecurityConfig {
 				.requestMatchers("/auth/register", "/auth/register-success", "/auth/verify-email", 
 						"/auth/verify-result", "/auth/forgot-password", "/auth/reset-password").permitAll()
 				.requestMatchers("/restaurant-owner/**").hasRole("RESTAURANT_OWNER")
+						.requestMatchers("/customer/**").hasRole("CUSTOMER")
 				.requestMatchers("/auth/**").authenticated()
 				.requestMatchers("/booking/**").authenticated()
 				.requestMatchers("/notifications/**").authenticated()

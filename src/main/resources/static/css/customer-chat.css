@@ -1,0 +1,774 @@
+/* Customer Chat Styles - Giống hệt Restaurant Owner */
+:root {
+    --gold-primary: #4facfe;
+    --dark-bg: #FFFFFF;
+    --dark-secondary: #F5F5F5;
+    --text-primary: #121212;
+    --text-secondary: #5A6C7D;
+    --border-color: #E0E0E0;
+    --success-color: #4facfe;
+    --error-color: #FF0000;
+}
+
+body {
+    color: var(--text-primary);
+    font-family: 'Lato', sans-serif;
+    overflow-x: hidden;
+}
+
+/* Chat Container */
+.chat-container {
+    height: calc(100vh - 80px);
+    margin-top: 80px;
+    padding: 0;
+}
+
+/* Sidebar */
+.chat-sidebar {
+    background: var(--dark-secondary);
+    border-right: 1px solid var(--border-color);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 0px!important;
+    flex-shrink: 0;
+}
+
+/* Custom Scrollbar for Sidebar */
+.chat-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-sidebar::-webkit-scrollbar-track {
+    background: rgba(26, 26, 26, 0.3);
+    border-radius: 4px;
+}
+
+.chat-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(79, 172, 254, 0.8);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.chat-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 172, 254, 1);
+}
+
+.chat-sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, var(--gold-primary), var(--gold-primary));
+    color: #121212;
+}
+
+.chat-sidebar-header h5 {
+    font-weight: 600;
+    margin: 0;
+}
+
+.text-gold {
+    color: var(--gold-primary) !important;
+}
+
+.unread-badge {
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Notification Toast */
+.notification-toast {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 16px;
+    z-index: 9999;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    max-width: 300px;
+}
+
+.notification-toast.show {
+    transform: translateX(0);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-content i {
+    color: var(--gold-primary);
+    font-size: 18px;
+}
+
+.notification-content span {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Restaurant Section */
+.chat-restaurant-section {
+    padding: 0 20px;
+}
+
+.restaurant-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.restaurant-list {
+    overflow-y: auto;
+}
+
+.restaurant-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 6px;
+    background: var(--dark-bg);
+    border: 1px solid var(--border-color);
+}
+
+.restaurant-item:hover {
+    background: rgba(79, 172, 254, 0.1);
+    border-color: var(--gold-primary);
+}
+
+.restaurant-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gold-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.restaurant-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.restaurant-name {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.restaurant-address {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.restaurant-actions {
+    flex-shrink: 0;
+}
+
+.start-chat-btn {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+/* Chat Rooms List */
+.chat-rooms-section {
+    flex: 1;
+    padding: 0 20px;
+    overflow-y: auto;
+}
+
+.rooms-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-room-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    background: var(--dark-bg);
+    border: 1px solid var(--border-color);
+}
+
+.chat-room-item:hover {
+    background: rgba(79, 172, 254, 0.1);
+    border-color: var(--gold-primary);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(79, 172, 254, 0.2);
+}
+
+.chat-room-item.active {
+    background: rgba(79, 172, 254, 0.15);
+    border-color: var(--gold-primary);
+    box-shadow: 0 2px 12px rgba(79, 172, 254, 0.3);
+}
+
+.room-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--gold-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.room-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.room-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.room-restaurant {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.room-last-message {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.room-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.room-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.room-unread {
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+/* Main Chat Area */
+.chat-main {
+    background: var(--dark-bg);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-main-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Welcome Screen */
+.welcome-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--dark-bg);
+}
+
+.welcome-content {
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.welcome-content i {
+    font-size: 64px;
+    margin-bottom: 24px;
+    color: var(--gold-primary);
+}
+
+.welcome-content h4 {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.welcome-content p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Chat Interface */
+.chat-interface {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Chat Header */
+.chat-header {
+    background: var(--dark-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.chat-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.chat-participant {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chat-participant i {
+    color: var(--gold-primary);
+}
+
+.chat-restaurant {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.chat-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--success-color);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success-color);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.chat-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Messages Container */
+.messages-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: var(--dark-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Custom Scrollbar for Messages */
+.messages-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+    background: rgba(26, 26, 26, 0.1);
+    border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+    background: rgba(79, 172, 254, 0.6);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 172, 254, 0.8);
+}
+
+/* Message Styles */
+.message-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 70%;
+}
+
+.message-item.own-message {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--gold-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.message-content {
+    background: var(--dark-secondary);
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    min-width: 0;
+}
+
+.message-item.own-message .message-content {
+    background: var(--gold-primary);
+    color: white;
+    border-color: var(--gold-primary);
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.message-sender {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--gold-primary);
+}
+
+.message-item.own-message .message-sender {
+    color: white;
+}
+
+.message-time {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.message-item.own-message .message-time {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.message-text {
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-primary);
+    word-wrap: break-word;
+}
+
+.message-item.own-message .message-text {
+    color: white;
+}
+
+/* Message Input */
+.message-input {
+    background: var(--dark-secondary);
+    border-top: 1px solid var(--border-color);
+    padding: 16px 20px;
+    flex-shrink: 0;
+}
+
+.input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.form-control {
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 10px 16px;
+    background: var(--dark-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.form-control:focus {
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+    background: var(--dark-bg);
+    color: var(--text-primary);
+}
+
+.btn-gold {
+    background: var(--gold-primary);
+    border: 1px solid var(--gold-primary);
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.btn-gold:hover {
+    background: #3d8bfe;
+    border-color: #3d8bfe;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+}
+
+.btn-gold:active {
+    transform: translateY(0);
+}
+
+.input-footer {
+    margin-top: 8px;
+    text-align: center;
+}
+
+/* Error Notification */
+.error-notification {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 1050;
+    max-width: 400px;
+}
+
+.error-content {
+    background: var(--error-color);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+}
+
+.error-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    margin-left: auto;
+}
+
+.error-close:hover {
+    opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .chat-sidebar {
+        position: fixed;
+        top: 80px;
+        left: -100%;
+        width: 80%;
+        height: calc(100vh - 80px);
+        z-index: 1000;
+        transition: left 0.3s ease;
+    }
+    
+    .chat-sidebar.show {
+        left: 0;
+    }
+    
+    .chat-main {
+        width: 100%;
+    }
+    
+    .chat-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .message-item {
+        max-width: 85%;
+    }
+}
+
+@media (max-width: 576px) {
+    .chat-sidebar {
+        width: 100%;
+    }
+    
+    .message-item {
+        max-width: 95%;
+    }
+    
+    .messages-container {
+        padding: 12px;
+    }
+    
+    .message-input {
+        padding: 12px;
+    }
+}
+
+/* Loading States */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Button Styles */
+.btn-outline-secondary {
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+.btn-outline-secondary:hover {
+    background: var(--border-color);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+/* Restaurant Meta and Unread Count */
+.restaurant-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.restaurant-time {
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.restaurant-unread {
+    background: #ff4444;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
+}
+
+/* Utility Classes */
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
