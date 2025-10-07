@@ -72,13 +72,31 @@ public class ChatApiController {
             
             // Convert to DTO to avoid Hibernate proxy issues
             List<RestaurantChatDto> restaurantDtos = restaurants.stream()
-                .map(restaurant -> new RestaurantChatDto(
-                    restaurant.getRestaurantId(),
-                    restaurant.getRestaurantName(),
-                    restaurant.getAddress(),
-                    restaurant.getPhone(),
-                    true // Default to active, can be enhanced later
-                ))
+                    .map(restaurant -> {
+                        // Check if there's an existing room for this restaurant and user
+                        String existingRoomId = chatService.getExistingRoomId(user.getId(), userRole,
+                                restaurant.getRestaurantId());
+
+                        RestaurantChatDto dto = new RestaurantChatDto(
+                                restaurant.getRestaurantId(),
+                                restaurant.getRestaurantName(),
+                                restaurant.getAddress(),
+                                restaurant.getPhone(),
+                                true // Default to active, can be enhanced later
+                        );
+                        dto.setRoomId(existingRoomId); // Set room ID if available
+
+                        // If room exists, get unread count
+                        if (existingRoomId != null) {
+                            Map<String, Object> unreadData = chatService.getUnreadCountForRoom(existingRoomId,
+                                    user.getId());
+                            dto.setUnreadCount((Long) unreadData.get("unreadCount"));
+                        } else {
+                            dto.setUnreadCount(0L);
+                        }
+
+                        return dto;
+                    })
                 .collect(Collectors.toList());
             
             return ResponseEntity.ok(restaurantDtos);

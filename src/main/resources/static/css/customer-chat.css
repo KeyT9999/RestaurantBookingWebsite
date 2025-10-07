@@ -76,7 +76,7 @@ body {
 }
 
 .unread-badge {
-    background: var(--error-color);
+    background: #ff4444;
     color: white;
     border-radius: 50%;
     width: 24px;
@@ -86,6 +86,49 @@ body {
     justify-content: center;
     font-size: 12px;
     font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Notification Toast */
+.notification-toast {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 16px;
+    z-index: 9999;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    max-width: 300px;
+}
+
+.notification-toast.show {
+    transform: translateX(0);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-content i {
+    color: var(--gold-primary);
+    font-size: 18px;
+}
+
+.notification-content span {
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
 /* Restaurant Section */
@@ -270,7 +313,7 @@ body {
 }
 
 .room-unread {
-    background: var(--error-color);
+    background: #ff4444;
     color: white;
     border-radius: 50%;
     width: 18px;
@@ -281,6 +324,8 @@ body {
     font-size: 10px;
     font-weight: bold;
     flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
 }
 
 .empty-state {
@@ -677,6 +722,34 @@ body {
     background: var(--border-color);
     border-color: var(--border-color);
     color: var(--text-primary);
+}
+
+/* Restaurant Meta and Unread Count */
+.restaurant-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.restaurant-time {
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.restaurant-unread {
+    background: #ff4444;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    animation: pulse 2s infinite;
 }
 
 /* Utility Classes */

@@ -192,7 +192,7 @@ public class ChatService {
                 throw new RuntimeException("Invalid user role: " + role);
         }
         
-        return rooms.stream().map(this::convertToDto).collect(Collectors.toList());
+        return rooms.stream().map(room -> convertToDto(room, userId)).collect(Collectors.toList());
     }
     
     /**
@@ -444,6 +444,45 @@ public class ChatService {
     }
 
     /**
+     * Get unread count for a specific room and user
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getUnreadCountForRoom(String roomId, UUID userId) {
+        Map<String, Object> result = new HashMap<>();
+        long unreadCount = messageRepository.countUnreadMessagesByRoomIdAndUserId(roomId, userId);
+        result.put("roomId", roomId);
+        result.put("userId", userId);
+        result.put("unreadCount", unreadCount);
+        return result;
+    }
+
+    /**
+     * Get total unread count for a user across all rooms
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTotalUnreadCountForUser(UUID userId) {
+        Map<String, Object> result = new HashMap<>();
+        long totalUnreadCount = messageRepository.countTotalUnreadMessagesByUserId(userId);
+        result.put("userId", userId);
+        result.put("totalUnreadCount", totalUnreadCount);
+        return result;
+    }
+
+    /**
+     * Get existing room ID for participants if room already exists
+     */
+    @Transactional(readOnly = true)
+    public String getExistingRoomId(UUID userId, UserRole userRole, Integer restaurantId) {
+        try {
+            Optional<ChatRoom> existingRoom = chatRoomRepository.findExistingRoom(userId, restaurantId);
+            return existingRoom.map(ChatRoom::getRoomId).orElse(null);
+        } catch (Exception e) {
+            System.err.println("Error getting existing room ID: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Get room ID for participants
      */
     @Transactional(readOnly = true)
@@ -584,12 +623,22 @@ public class ChatService {
     }
     
     public ChatRoomDto convertToDto(ChatRoom room) {
+        return convertToDto(room, null);
+    }
+
+    public ChatRoomDto convertToDto(ChatRoom room, UUID currentUserId) {
         // Get last message
         List<Message> lastMessages = messageRepository.findLastMessageByRoomId(room.getRoomId());
         Message lastMessage = lastMessages.isEmpty() ? null : lastMessages.get(0);
         String lastMessageContent = lastMessage != null ? lastMessage.getContent() : null;
         LocalDateTime lastMessageAt = lastMessage != null ? lastMessage.getSentAt() : room.getCreatedAt();
         
+        // Calculate unread count for current user
+        Long unreadCount = 0L;
+        if (currentUserId != null) {
+            unreadCount = messageRepository.countUnreadMessagesByRoomIdAndUserId(room.getRoomId(), currentUserId);
+        }
+
         // Get participant info
         UUID participantId;
         String participantName;
@@ -664,7 +713,7 @@ public class ChatService {
             room.getRestaurant() != null ? room.getRestaurant().getRestaurantName() : "Unknown Restaurant",
             lastMessageContent,
             lastMessageAt,
-            0L, // Will be calculated separately if needed
+                unreadCount,
             room.getIsActive()
         );
     }
@@ -681,5 +730,21 @@ public class ChatService {
             message.getSentAt(),
             message.getIsRead()
         );
+    }
+
+    /**
+     * Get restaurant owner ID from restaurant ID
+     */
+    public UUID getRestaurantOwnerId(Integer restaurantId) {
+        try {
+            Optional<RestaurantProfile> restaurantOpt = restaurantProfileRepository.findById(restaurantId);
+            if (restaurantOpt.isPresent()) {
+                RestaurantProfile restaurant = restaurantOpt.get();
+                return restaurant.getOwner().getUser().getId();
+            }
+        } catch (Exception e) {
+            System.err.println("Error getting restaurant owner ID: " + e.getMessage());
+        }
+        return null;
     }
 }

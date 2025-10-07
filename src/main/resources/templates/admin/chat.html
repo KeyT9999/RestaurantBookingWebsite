@@ -35,7 +35,7 @@
             <!-- Sidebar -->
             <div class="chat-sidebar" id="chat-sidebar">
                 <!-- Available Restaurants Section -->
-                <div class="chat-restaurant-section mb-3">
+                <div class="chat-restaurant-section">
                     <h6 class="restaurant-section-title">
                         <i class="fas fa-store text-gold"></i>
                         Nhà hàng có sẵn
@@ -54,6 +54,7 @@
 
             <!-- Chat Area -->
             <div class="chat-area">
+                <!-- Welcome Screen -->
                 <div class="chat-welcome" id="chat-welcome">
                     <div class="welcome-content">
                         <i class="fas fa-comments fa-3x text-gold mb-3"></i>
@@ -62,18 +63,44 @@
                     </div>
                 </div>
 
+                <!-- Chat Interface (Hidden by default) -->
                 <div class="chat-messages" id="chat-messages" style="display: none;">
+                    <!-- Chat Header -->
+                    <div class="chat-header">
+                        <div class="chat-info">
+                            <div class="chat-restaurant">
+                                <i class="fas fa-store"></i>
+                                <span id="restaurant-name">Restaurant Name</span>
+                            </div>
+                            <div class="chat-status">
+                                <span class="status-dot"></span>
+                                <span>Online</span>
+                            </div>
+                        </div>
+                        <div class="chat-actions">
+                            <button class="btn btn-outline-secondary btn-sm" id="back-to-list">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Messages Container -->
                     <div class="messages-container" id="messages-container">
                         <!-- Messages will be loaded here -->
                     </div>
-                </div>
-
-                <div class="chat-input" id="chat-input" style="display: none;">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="message-input" placeholder="Nhập tin nhắn...">
-                        <button class="btn btn-gold" id="send-button">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
+                    
+                    <!-- Message Input -->
+                    <div class="message-input">
+                        <div class="input-group">
+                            <input type="text" id="message-input" class="form-control" 
+                                   placeholder="Nhập tin nhắn..." maxlength="1000">
+                            <button id="send-button" class="btn btn-gold">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="input-footer">
+                            <small class="text-muted">Nhấn Enter để gửi</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -95,6 +122,9 @@
                     <i class="fas fa-comments"></i>
                     Chat
                 </button>
+                <div class="restaurant-meta">
+                    <span class="restaurant-unread" style="display: none;"></span>
+                </div>
             </div>
         </div>
     </template>
@@ -108,10 +138,10 @@
             <div class="room-info">
                 <div class="room-name"></div>
                 <div class="room-last-message"></div>
-                <div class="room-time"></div>
-            </div>
-            <div class="room-status">
-                <span class="badge bg-success">Online</span>
+                <div class="room-meta">
+                    <span class="room-time"></span>
+                    <span class="room-unread" style="display: none;"></span>
+                </div>
             </div>
         </div>
     </template>

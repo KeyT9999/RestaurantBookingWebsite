@@ -1,6 +1,10 @@
 package com.example.booking.websocket;
 
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,9 +14,13 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import com.example.booking.domain.ChatRoom;
+import com.example.booking.domain.Customer;
 import com.example.booking.domain.Message;
 import com.example.booking.domain.MessageType;
 import com.example.booking.domain.User;
+import com.example.booking.repository.CustomerRepository;
+import com.example.booking.repository.RestaurantOwnerRepository;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.SimpleUserService;
 
@@ -31,6 +39,12 @@ public class ChatMessageController {
     @Autowired
     private SimpleUserService userService;
     
+    @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
+    private RestaurantOwnerRepository restaurantOwnerRepository;
+
     /**
      * Handle incoming chat messages - Optimized and safe version
      */
@@ -101,6 +115,9 @@ public class ChatMessageController {
             
             System.out.println("Message broadcasted to /topic/room/" + request.getRoomId());
             
+            // Broadcast unread count updates to all participants
+            broadcastUnreadCountUpdates(request.getRoomId(), senderId);
+
         } catch (Exception e) {
             System.err.println("Error in sendMessage: " + e.getMessage());
             e.printStackTrace();
@@ -183,6 +200,9 @@ public class ChatMessageController {
             int updatedCount = chatService.markMessagesAsRead(request.getRoomId(), userId);
             System.out.println("Marked " + updatedCount + " messages as read for user " + user.getUsername());
             
+            // Broadcast unread count updates after marking messages as read
+            broadcastUnreadCountUpdates(request.getRoomId(), userId);
+
             // Notify room that user joined (only for actual new joins, not tab switches)
             // Commented out to prevent empty messages when switching tabs
             // messagingTemplate.convertAndSend("/topic/room/" + request.getRoomId(),
@@ -209,6 +229,146 @@ public class ChatMessageController {
         }
     }
     
+    /**
+     * Broadcast unread count updates to all participants in a room
+     */
+    private void broadcastUnreadCountUpdates(String roomId, UUID senderId) {
+        try {
+            // Get room participants
+            Optional<ChatRoom> roomOpt = chatService.getChatRoomById(roomId);
+            if (!roomOpt.isPresent()) {
+                return;
+            }
+
+            ChatRoom room = roomOpt.get();
+
+            // Get all participants
+            List<UUID> participantIds = new ArrayList<>();
+
+            if (room.isCustomerRestaurantChat()) {
+                // For customer-restaurant chat, extract participants from room ID to avoid
+                // LazyInitializationException
+                String[] parts = roomId.split("_");
+                if (parts.length >= 2 && parts[0].equals("customer")) {
+                    try {
+                        UUID customerId = UUID.fromString(parts[1]);
+                        participantIds.add(customerId);
+                        System.out.println("Added customer participant: " + customerId);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing customer ID from room ID: " + e.getMessage());
+                    }
+                }
+
+                // For restaurant owner, extract restaurant ID and get owner
+                if (parts.length >= 4 && parts[2].equals("restaurant")) {
+                    try {
+                        Integer restaurantId = Integer.parseInt(parts[3]);
+                        // Get restaurant owner ID from restaurant ID
+                        UUID restaurantOwnerId = chatService.getRestaurantOwnerId(restaurantId);
+                        if (restaurantOwnerId != null) {
+                            participantIds.add(restaurantOwnerId);
+                            System.out.println("Added restaurant owner participant: " + restaurantOwnerId);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Error parsing restaurant ID or getting owner: " + e.getMessage());
+                    }
+                }
+
+            } else if (room.isAdminRestaurantChat()) {
+                // For admin-restaurant chat, extract admin ID from room ID
+                String[] parts = roomId.split("_");
+                if (parts.length >= 2 && parts[0].equals("admin")) {
+                    try {
+                        UUID adminId = UUID.fromString(parts[1]);
+                        participantIds.add(adminId);
+                        System.out.println("Added admin participant: " + adminId);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing admin ID from room ID: " + e.getMessage());
+                    }
+                }
+
+                // For restaurant owner, we need to get from restaurant ID
+                // This is a limitation - we need restaurant owner ID but only have restaurant
+                // ID
+                // For now, we'll skip restaurant owner to avoid LazyInitializationException
+                System.out.println("Skipping restaurant owner to avoid LazyInitializationException");
+            }
+
+            // Send unread count updates to each participant
+            for (UUID participantId : participantIds) {
+                // Send to ALL participants including the sender (who joined the room)
+                Map<String, Object> roomUnreadCount = chatService.getUnreadCountForRoom(roomId, participantId);
+                Map<String, Object> totalUnreadCount = chatService.getTotalUnreadCountForUser(participantId);
+
+                UnreadCountUpdate update = new UnreadCountUpdate(
+                        roomId,
+                        participantId,
+                        (Long) roomUnreadCount.get("unreadCount"),
+                        (Long) totalUnreadCount.get("totalUnreadCount"));
+
+                // Extract username from room ID or use participant ID as fallback
+                String username = extractUsernameFromRoomId(roomId, participantId);
+
+                messagingTemplate.convertAndSendToUser(username, "/queue/unread-updates", update);
+                System.out.println("Sent unread count update to user " + username + " (ID: " + participantId
+                        + "): room=" +
+                        roomUnreadCount.get("unreadCount") + ", total=" + totalUnreadCount.get("totalUnreadCount"));
+
+                // Debug: Also try sending to participant ID as fallback
+                try {
+                    messagingTemplate.convertAndSendToUser(participantId.toString(), "/queue/unread-updates", update);
+                    System.out.println("Also sent unread count update to participant ID " + participantId.toString());
+                } catch (Exception e) {
+                    System.err.println("Failed to send to participant ID: " + e.getMessage());
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error broadcasting unread count updates: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Extract username from room ID for WebSocket messaging
+     */
+    private String extractUsernameFromRoomId(String roomId, UUID participantId) {
+        try {
+            // Format: "customer_" + customerId + "_restaurant_" + restaurantId
+            // Format: "admin_" + adminId + "_restaurant_" + restaurantId
+
+            if (roomId.startsWith("customer_")) {
+                // Extract customer ID from room ID
+                String[] parts = roomId.split("_");
+                if (parts.length >= 2) {
+                    String customerIdStr = parts[1];
+                    try {
+                        UUID customerId = UUID.fromString(customerIdStr);
+                        // For now, use customer ID directly to avoid LazyInitializationException
+                        // We can enhance this later with proper transaction handling
+                        return customerIdStr;
+                    } catch (Exception e) {
+                        System.err.println("Error parsing customer ID " + customerIdStr + ": " + e.getMessage());
+                    }
+                    return customerIdStr; // Fallback to ID
+                }
+            } else if (roomId.startsWith("admin_")) {
+                // Extract admin ID from room ID
+                String[] parts = roomId.split("_");
+                if (parts.length >= 2) {
+                    String adminIdStr = parts[1];
+                    // For admin, we can use the ID directly as username since it's from users table
+                    return adminIdStr;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error extracting username from room ID " + roomId + ": " + e.getMessage());
+        }
+
+        // Fallback to participant ID
+        return participantId.toString();
+    }
+
     /**
      * Helper method to get User from Principal (handles User, UsernamePasswordAuthenticationToken, OAuth2User, and OAuth2AuthenticationToken)
      */
@@ -407,5 +567,35 @@ public class ChatMessageController {
         }
         
         public String getMessage() { return message; }
+    }
+
+    public static class UnreadCountUpdate {
+        private String roomId;
+        private String userId;
+        private Long roomUnreadCount;
+        private Long totalUnreadCount;
+
+        public UnreadCountUpdate(String roomId, UUID userId, Long roomUnreadCount, Long totalUnreadCount) {
+            this.roomId = roomId;
+            this.userId = userId.toString();
+            this.roomUnreadCount = roomUnreadCount;
+            this.totalUnreadCount = totalUnreadCount;
+        }
+
+        public String getRoomId() {
+            return roomId;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public Long getRoomUnreadCount() {
+            return roomUnreadCount;
+        }
+
+        public Long getTotalUnreadCount() {
+            return totalUnreadCount;
+        }
     }
 }

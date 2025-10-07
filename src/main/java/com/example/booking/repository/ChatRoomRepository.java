@@ -64,4 +64,12 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, String> {
      */
     @Query("SELECT COUNT(cr) FROM ChatRoom cr WHERE cr.isActive = true")
     long countActiveRooms();
+
+    /**
+     * Find existing room for user and restaurant
+     */
+    @Query("SELECT cr FROM ChatRoom cr WHERE " +
+            "(cr.customer.user.id = :userId AND cr.restaurant.restaurantId = :restaurantId) OR " +
+            "(cr.admin.id = :userId AND cr.restaurant.restaurantId = :restaurantId)")
+    Optional<ChatRoom> findExistingRoom(@Param("userId") UUID userId, @Param("restaurantId") Integer restaurantId);
 }

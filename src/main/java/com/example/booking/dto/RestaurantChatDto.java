@@ -1,23 +1,33 @@
 package com.example.booking.dto;
 
-import java.util.UUID;
-
 public class RestaurantChatDto {
     private Integer restaurantId;
     private String restaurantName;
-    private String ownerName;
-    private String ownerEmail;
+    private String address;
+    private String phone;
     private boolean isActive;
+    private String roomId;
+    private Long unreadCount;
 
     public RestaurantChatDto() {}
 
-    public RestaurantChatDto(Integer restaurantId, String restaurantName, String ownerName, String ownerEmail,
+    public RestaurantChatDto(Integer restaurantId, String restaurantName, String address, String phone,
             boolean isActive) {
         this.restaurantId = restaurantId;
         this.restaurantName = restaurantName;
-        this.ownerName = ownerName;
-        this.ownerEmail = ownerEmail;
+        this.address = address;
+        this.phone = phone;
         this.isActive = isActive;
+    }
+
+    public RestaurantChatDto(Integer restaurantId, String restaurantName, String address, String phone,
+            boolean isActive, String roomId) {
+        this.restaurantId = restaurantId;
+        this.restaurantName = restaurantName;
+        this.address = address;
+        this.phone = phone;
+        this.isActive = isActive;
+        this.roomId = roomId;
     }
 
     public Integer getRestaurantId() {
@@ -36,20 +46,20 @@ public class RestaurantChatDto {
         this.restaurantName = restaurantName;
     }
 
-    public String getOwnerName() {
-        return ownerName;
+    public String getAddress() {
+        return address;
     }
 
-    public void setOwnerName(String ownerName) {
-        this.ownerName = ownerName;
+    public void setAddress(String address) {
+        this.address = address;
     }
 
-    public String getOwnerEmail() {
-        return ownerEmail;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setOwnerEmail(String ownerEmail) {
-        this.ownerEmail = ownerEmail;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public boolean isActive() {
@@ -58,5 +68,21 @@ public class RestaurantChatDto {
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public String getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(String roomId) {
+        this.roomId = roomId;
+    }
+
+    public Long getUnreadCount() {
+        return unreadCount;
+    }
+
+    public void setUnreadCount(Long unreadCount) {
+        this.unreadCount = unreadCount;
     }
 }
