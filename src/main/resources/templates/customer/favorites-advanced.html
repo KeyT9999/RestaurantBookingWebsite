@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhà hàng yêu thích - BookEat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .favorite-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .favorite-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .restaurant-image {
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .heart-icon {
+            color: #e74c3c;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .heart-icon:hover {
+            transform: scale(1.2);
+        }
+        
+        .heart-icon.favorited {
+            animation: heartbeat 0.6s ease-in-out;
+        }
+        
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        .rating-stars {
+            color: #ffc107;
+        }
+        
+        .cuisine-badge {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .price-range {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #dee2e6;
+        }
+        
+        .filter-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .sort-dropdown {
+            min-width: 150px;
+        }
+        
+        .pagination-custom .page-link {
+            border-radius: 8px;
+            margin: 0 2px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .pagination-custom .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+        
+        .filter-chip {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 2px;
+            display: inline-block;
+        }
+        
+        .filter-chip .remove {
+            cursor: pointer;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+        
+        .advanced-toggle {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .advanced-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        
+        .filter-group {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .quick-filter-btn {
+            background: white;
+            border: 2px solid #e9ecef;
+            color: #6c757d;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-filter-btn:hover {
+            border-color: #007bff;
+            color: #007bff;
+            transform: translateY(-1px);
+        }
+        
+        .quick-filter-btn.active {
+            background: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+        
+        .results-summary {
+            background: linear-gradient(45deg, #17a2b8, #138496);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-utensils me-2"></i>BookEat
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/restaurants">
+                    <i class="fas fa-search me-1"></i>Tìm nhà hàng
+                </a>
+                <a class="nav-link active" href="/customer/favorites">
+                    <i class="fas fa-heart me-1"></i>Yêu thích
+                </a>
+                <a class="nav-link" href="/booking/my">
+                    <i class="fas fa-calendar me-1"></i>Đặt bàn
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="mb-3">
+                    <i class="fas fa-heart text-danger me-2"></i>
+                    Nhà hàng yêu thích
+                </h2>
+                <p class="text-muted">
+                    <span th:text="${totalElements}">0</span> nhà hàng đã được thêm vào danh sách yêu thích
+                </p>
+            </div>
+        </div>
+
+        <!-- Results Summary -->
+        <div class="results-summary">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="mb-1">
+                        <i class="fas fa-filter me-2"></i>
+                        Kết quả tìm kiếm
+                    </h5>
+                    <p class="mb-0">Tìm thấy <strong id="resultsCount">0</strong> nhà hàng phù hợp</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-light btn-sm" onclick="toggleViewMode()">
+                        <i class="fas fa-th me-1"></i>Thay đổi chế độ xem
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Filters and Sort -->
+        <div class="filter-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="mb-0">
+                    <i class="fas fa-magic me-2"></i>
+                    Bộ lọc thông minh
+                </h5>
+                <div class="d-flex gap-2">
+                    <button class="btn advanced-toggle" onclick="toggleAdvancedFilters()">
+                        <i class="fas fa-cog me-1"></i>Bộ lọc nâng cao
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="clearAllFilters()">
+                        <i class="fas fa-times me-1"></i>Xóa tất cả
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Filters -->
+            <div class="filter-group">
+                <h6 class="mb-3">
+                    <i class="fas fa-bolt me-2"></i>Lọc nhanh
+                </h6>
+                <div class="d-flex flex-wrap">
+                    <button class="quick-filter-btn" onclick="applyQuickFilter('nearby')">
+                        <i class="fas fa-map-marker-alt me-1"></i>Gần tôi
+                    </button>
+                    <button class="quick-filter-btn" onclick="applyQuickFilter('high-rating')">
+                        <i class="fas fa-star me-1"></i>Đánh giá cao
+                    </button>
+                    <button class="quick-filter-btn" onclick="applyQuickFilter('cheap')">
+                        <i class="fas fa-dollar-sign me-1"></i>Giá rẻ
+                    </button>
+                    <button class="quick-filter-btn" onclick="applyQuickFilter('popular')">
+                        <i class="fas fa-fire me-1"></i>Phổ biến
+                    </button>
+                    <button class="quick-filter-btn" onclick="applyQuickFilter('new')">
+                        <i class="fas fa-sparkles me-1"></i>Mới nhất
+                    </button>
+                    <button class="quick-filter-btn" onclick="applyQuickFilter('open-now')">
+                        <i class="fas fa-clock me-1"></i>Đang mở
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Basic Filters Row -->
+            <div class="row align-items-end mb-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-search me-1"></i>Tìm kiếm
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" 
+                               th:value="${search}" placeholder="Tên nhà hàng, địa chỉ, món ăn...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-utensils me-1"></i>Ẩm thực
+                    </label>
+                    <select class="form-select" id="cuisineFilter">
+                        <option value="">Tất cả</option>
+                        <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">🇻🇳 Việt Nam</option>
+                        <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">🇨🇳 Trung Quốc</option>
+                        <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">🇯🇵 Nhật Bản</option>
+                        <option value="Korean" th:selected="${cuisineType == 'Korean'}">🇰🇷 Hàn Quốc</option>
+                        <option value="Italian" th:selected="${cuisineType == 'Italian'}">🇮🇹 Ý</option>
+                        <option value="American" th:selected="${cuisineType == 'American'}">🇺🇸 Mỹ</option>
+                        <option value="French" th:selected="${cuisineType == 'French'}">🇫🇷 Pháp</option>
+                        <option value="Thai" th:selected="${cuisineType == 'Thai'}">🇹🇭 Thái Lan</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-dollar-sign me-1"></i>Khoảng giá
+                    </label>
+                    <select class="form-select" id="priceFilter">
+                        <option value="">Tất cả</option>
+                        <option value="under-50k" th:selected="${priceRange == 'under-50k'}">💰 Dưới 50k</option>
+                        <option value="50k-100k" th:selected="${priceRange == '50k-100k'}">💰💰 50k - 100k</option>
+                        <option value="100k-200k" th:selected="${priceRange == '100k-200k'}">💰💰💰 100k - 200k</option>
+                        <option value="over-200k" th:selected="${priceRange == 'over-200k'}">💰💰💰💰 Trên 200k</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-star me-1"></i>Đánh giá
+                    </label>
+                    <select class="form-select" id="ratingFilter">
+                        <option value="">Tất cả</option>
+                        <option value="5-star" th:selected="${ratingFilter == '5-star'}">⭐⭐⭐⭐⭐ 5 sao</option>
+                        <option value="4-star" th:selected="${ratingFilter == '4-star'}">⭐⭐⭐⭐ 4 sao trở lên</option>
+                        <option value="3-star" th:selected="${ratingFilter == '3-star'}">⭐⭐⭐ 3 sao trở lên</option>
+                        <option value="2-star" th:selected="${ratingFilter == '2-star'}">⭐⭐ 2 sao trở lên</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-sort me-1"></i>Sắp xếp
+                    </label>
+                    <select class="form-select sort-dropdown" id="sortSelect">
+                        <option value="createdAt-desc" th:selected="${sortBy == 'createdAt' && sortDir == 'desc'}">🕒 Mới nhất</option>
+                        <option value="createdAt-asc" th:selected="${sortBy == 'createdAt' && sortDir == 'asc'}">🕒 Cũ nhất</option>
+                        <option value="restaurantName-asc" th:selected="${sortBy == 'restaurantName' && sortDir == 'asc'}">🔤 Tên A-Z</option>
+                        <option value="restaurantName-desc" th:selected="${sortBy == 'restaurantName' && sortDir == 'desc'}">🔤 Tên Z-A</option>
+                        <option value="averagePrice-asc" th:selected="${sortBy == 'averagePrice' && sortDir == 'asc'}">💰 Giá thấp</option>
+                        <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' && sortDir == 'desc'}">💰 Giá cao</option>
+                        <option value="averageRating-desc" th:selected="${sortBy == 'averageRating' && sortDir == 'desc'}">⭐ Đánh giá cao</option>
+                        <option value="averageRating-asc" th:selected="${sortBy == 'averageRating' && sortDir == 'asc'}">⭐ Đánh giá thấp</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Advanced Filters (Collapsible) -->
+            <div id="advancedFilters" class="collapse">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <h6 class="mb-3">
+                                <i class="fas fa-map-marker-alt me-2"></i>Khoảng cách
+                            </h6>
+                            <select class="form-select" id="distanceFilter">
+                                <option value="">Tất cả</option>
+                                <option value="under-1km">📍 Dưới 1km</option>
+                                <option value="1km-3km">📍 1km - 3km</option>
+                                <option value="3km-5km">📍 3km - 5km</option>
+                                <option value="over-5km">📍 Trên 5km</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <h6 class="mb-3">
+                                <i class="fas fa-clock me-2"></i>Giờ mở cửa
+                            </h6>
+                            <select class="form-select" id="hoursFilter">
+                                <option value="">Tất cả</option>
+                                <option value="open-now">🕐 Đang mở cửa</option>
+                                <option value="breakfast">🌅 Sáng (6h-11h)</option>
+                                <option value="lunch">☀️ Trưa (11h-14h)</option>
+                                <option value="dinner">🌙 Tối (17h-22h)</option>
+                                <option value="late-night">🌃 Khuya (22h-2h)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <h6 class="mb-3">
+                                <i class="fas fa-heart me-2"></i>Mức độ yêu thích
+                            </h6>
+                            <select class="form-select" id="popularityFilter">
+                                <option value="">Tất cả</option>
+                                <option value="most-popular">🔥 Phổ biến nhất</option>
+                                <option value="recently-added">🆕 Mới thêm</option>
+                                <option value="trending">📈 Đang hot</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <h6 class="mb-3">
+                                <i class="fas fa-tags me-2"></i>Đặc điểm
+                            </h6>
+                            <div class="d-flex flex-wrap gap-1">
+                                <input type="checkbox" class="btn-check" id="wifiCheck" value="wifi">
+                                <label class="btn btn-outline-primary btn-sm" for="wifiCheck">📶 WiFi</label>
+                                
+                                <input type="checkbox" class="btn-check" id="parkingCheck" value="parking">
+                                <label class="btn btn-outline-primary btn-sm" for="parkingCheck">🅿️ Đỗ xe</label>
+                                
+                                <input type="checkbox" class="btn-check" id="deliveryCheck" value="delivery">
+                                <label class="btn btn-outline-primary btn-sm" for="deliveryCheck">🚚 Giao hàng</label>
+                                
+                                <input type="checkbox" class="btn-check" id="outdoorCheck" value="outdoor">
+                                <label class="btn btn-outline-primary btn-sm" for="outdoorCheck">🌳 Ngoài trời</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Active Filters Display -->
+            <div id="activeFilters" class="mt-3" style="display: none;">
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="badge bg-primary">Bộ lọc đang áp dụng:</span>
+                    <div id="activeFiltersList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p class="mt-2">Đang tìm kiếm nhà hàng phù hợp...</p>
+        </div>
+
+        <!-- Restaurant Grid -->
+        <div id="restaurantGrid" class="row">
+            <div th:if="${favorites.isEmpty()}" class="col-12">
+                <div class="empty-state">
+                    <i class="fas fa-heart-broken"></i>
+                    <h4>Chưa có nhà hàng yêu thích</h4>
+                    <p>Hãy khám phá và thêm những nhà hàng bạn yêu thích vào danh sách!</p>
+                    <a href="/restaurants" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Khám phá nhà hàng
+                    </a>
+                </div>
+            </div>
+            
+            <div th:each="favorite : ${favorites}" class="col-md-6 col-lg-4 mb-4">
+                <div class="card favorite-card h-100">
+                    <div class="position-relative">
+                        <img th:src="${favorite.imageUrl != null ? favorite.imageUrl : '/images/restaurant-placeholder.jpg'}" 
+                             class="card-img-top restaurant-image" 
+                             th:alt="${favorite.restaurantName}">
+                        <div class="position-absolute top-0 end-0 p-2">
+                            <i class="fas fa-heart heart-icon favorited" 
+                               th:data-restaurant-id="${favorite.restaurantId}"
+                               onclick="toggleFavorite(this)"
+                               title="Bỏ yêu thích"></i>
+                        </div>
+                        <div class="position-absolute top-0 start-0 p-2">
+                            <span class="cuisine-badge" th:text="${favorite.cuisineType}">Cuisine</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title" th:text="${favorite.restaurantName}">Restaurant Name</h5>
+                        <p class="card-text text-muted small" th:text="${favorite.address}">Address</p>
+                        
+                        <div class="mb-2">
+                            <div class="rating-stars">
+                                <i class="fas fa-star" th:each="i : ${#numbers.sequence(1, 5)}" 
+                                   th:classappend="${i <= favorite.averageRating} ? '' : 'text-muted'"></i>
+                                <span class="ms-1" th:text="${favorite.averageRating}">4.5</span>
+                                <span class="text-muted small">(<span th:text="${favorite.reviewCount}">0</span> đánh giá)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <span class="price-range" th:text="${favorite.averagePrice != null ? favorite.averagePrice + ' VNĐ' : 'Liên hệ'}">Price</span>
+                        </div>
+                        
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Thêm <span th:text="${#temporals.format(favorite.favoritedAt, 'dd/MM/yyyy')}">01/01/2024</span>
+                                </small>
+                                <a th:href="@{/restaurants/{id}(id=${favorite.restaurantId})}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div th:if="${totalPages > 1}" class="d-flex justify-content-center mt-4">
+            <nav>
+                <ul class="pagination pagination-custom">
+                    <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
+                        <a class="page-link" th:href="@{/customer/favorites(page=${currentPage - 1}, size=${favorites.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter}, distanceFilter=${distanceFilter}, hoursFilter=${hoursFilter}, popularityFilter=${popularityFilter}, features=${features})}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    
+                    <li th:each="page : ${#numbers.sequence(0, totalPages - 1)}" 
+                        class="page-item" 
+                        th:classappend="${page == currentPage} ? 'active' : ''">
+                        <a class="page-link" th:href="@{/customer/favorites(page=${page}, size=${favorites.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter}, distanceFilter=${distanceFilter}, hoursFilter=${hoursFilter}, popularityFilter=${popularityFilter}, features=${features})}"
+                           th:text="${page + 1}">1</a>
+                    </li>
+                    
+                    <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''">
+                        <a class="page-link" th:href="@{/customer/favorites(page=${currentPage + 1}, size=${favorites.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter}, distanceFilter=${distanceFilter}, hoursFilter=${hoursFilter}, popularityFilter=${popularityFilter}, features=${features})}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let currentFilters = {};
+        let isAdvancedOpen = false;
+        let viewMode = 'grid'; // 'grid' or 'list'
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateResultsCount();
+            updateActiveFilters();
+            setupEventListeners();
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Search input with debounce
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    applyFilters();
+                }, 500);
+            });
+
+            // Filter selects
+            const filterSelects = ['cuisineFilter', 'priceFilter', 'ratingFilter', 'sortSelect', 'distanceFilter', 'hoursFilter', 'popularityFilter'];
+            filterSelects.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('change', applyFilters);
+                }
+            });
+
+            // Checkboxes
+            const checkboxes = ['wifiCheck', 'parkingCheck', 'deliveryCheck', 'outdoorCheck'];
+            checkboxes.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('change', applyFilters);
+                }
+            });
+        }
+
+        // Toggle advanced filters
+        function toggleAdvancedFilters() {
+            const advancedFilters = document.getElementById('advancedFilters');
+            const toggleBtn = document.querySelector('.advanced-toggle');
+            
+            if (isAdvancedOpen) {
+                advancedFilters.classList.remove('show');
+                toggleBtn.innerHTML = '<i class="fas fa-cog me-1"></i>Bộ lọc nâng cao';
+                isAdvancedOpen = false;
+            } else {
+                advancedFilters.classList.add('show');
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-up me-1"></i>Thu gọn';
+                isAdvancedOpen = true;
+            }
+        }
+
+        // Apply quick filters
+        function applyQuickFilter(type) {
+            // Remove active class from all quick filter buttons
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Apply specific filter based on type
+            switch(type) {
+                case 'nearby':
+                    document.getElementById('distanceFilter').value = 'under-1km';
+                    break;
+                case 'high-rating':
+                    document.getElementById('ratingFilter').value = '4-star';
+                    break;
+                case 'cheap':
+                    document.getElementById('priceFilter').value = 'under-50k';
+                    break;
+                case 'popular':
+                    document.getElementById('popularityFilter').value = 'most-popular';
+                    break;
+                case 'new':
+                    document.getElementById('sortSelect').value = 'createdAt-desc';
+                    break;
+                case 'open-now':
+                    document.getElementById('hoursFilter').value = 'open-now';
+                    break;
+            }
+            
+            applyFilters();
+        }
+
+        // Apply filters
+        function applyFilters() {
+            showLoading();
+            
+            // Collect all filter values
+            const filters = {
+                search: document.getElementById('searchInput').value,
+                cuisineType: document.getElementById('cuisineFilter').value,
+                priceRange: document.getElementById('priceFilter').value,
+                ratingFilter: document.getElementById('ratingFilter').value,
+                sortBy: document.getElementById('sortSelect').value.split('-')[0],
+                sortDir: document.getElementById('sortSelect').value.split('-')[1],
+                distanceFilter: document.getElementById('distanceFilter')?.value || '',
+                hoursFilter: document.getElementById('hoursFilter')?.value || '',
+                popularityFilter: document.getElementById('popularityFilter')?.value || '',
+                features: []
+            };
+            
+            // Collect checked features
+            const featureCheckboxes = ['wifiCheck', 'parkingCheck', 'deliveryCheck', 'outdoorCheck'];
+            featureCheckboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox && checkbox.checked) {
+                    filters.features.push(checkbox.value);
+                }
+            });
+            
+            // Build URL with filters
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', '0'); // Reset to first page
+            
+            Object.keys(filters).forEach(key => {
+                if (filters[key] && filters[key] !== '') {
+                    if (Array.isArray(filters[key])) {
+                        url.searchParams.set(key, filters[key].join(','));
+                    } else {
+                        url.searchParams.set(key, filters[key]);
+                    }
+                } else {
+                    url.searchParams.delete(key);
+                }
+            });
+            
+            // Navigate to filtered URL
+            window.location.href = url.toString();
+        }
+
+        // Clear all filters
+        function clearAllFilters() {
+            // Reset all form elements
+            document.getElementById('searchInput').value = '';
+            document.getElementById('cuisineFilter').value = '';
+            document.getElementById('priceFilter').value = '';
+            document.getElementById('ratingFilter').value = '';
+            document.getElementById('sortSelect').value = 'createdAt-desc';
+            document.getElementById('distanceFilter').value = '';
+            document.getElementById('hoursFilter').value = '';
+            document.getElementById('popularityFilter').value = '';
+            
+            // Uncheck all feature checkboxes
+            const featureCheckboxes = ['wifiCheck', 'parkingCheck', 'deliveryCheck', 'outdoorCheck'];
+            featureCheckboxes.forEach(id => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) checkbox.checked = false;
+            });
+            
+            // Remove active class from quick filter buttons
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Navigate to clean URL
+            window.location.href = '/customer/favorites';
+        }
+
+        // Update results count
+        function updateResultsCount() {
+            const count = document.querySelectorAll('.favorite-card').length;
+            document.getElementById('resultsCount').textContent = count;
+        }
+
+        // Update active filters display
+        function updateActiveFilters() {
+            const activeFiltersDiv = document.getElementById('activeFilters');
+            const activeFiltersList = document.getElementById('activeFiltersList');
+            
+            const filters = [];
+            
+            // Check each filter and add to active list
+            if (document.getElementById('searchInput').value) {
+                filters.push(`<span class="filter-chip">Tìm kiếm: "${document.getElementById('searchInput').value}" <span class="remove" onclick="removeFilter('search')">×</span></span>`);
+            }
+            
+            if (document.getElementById('cuisineFilter').value) {
+                const cuisine = document.getElementById('cuisineFilter').selectedOptions[0].text;
+                filters.push(`<span class="filter-chip">Ẩm thực: ${cuisine} <span class="remove" onclick="removeFilter('cuisine')">×</span></span>`);
+            }
+            
+            if (document.getElementById('priceFilter').value) {
+                const price = document.getElementById('priceFilter').selectedOptions[0].text;
+                filters.push(`<span class="filter-chip">Giá: ${price} <span class="remove" onclick="removeFilter('price')">×</span></span>`);
+            }
+            
+            if (document.getElementById('ratingFilter').value) {
+                const rating = document.getElementById('ratingFilter').selectedOptions[0].text;
+                filters.push(`<span class="filter-chip">Đánh giá: ${rating} <span class="remove" onclick="removeFilter('rating')">×</span></span>`);
+            }
+            
+            if (filters.length > 0) {
+                activeFiltersList.innerHTML = filters.join('');
+                activeFiltersDiv.style.display = 'block';
+            } else {
+                activeFiltersDiv.style.display = 'none';
+            }
+        }
+
+        // Remove specific filter
+        function removeFilter(type) {
+            switch(type) {
+                case 'search':
+                    document.getElementById('searchInput').value = '';
+                    break;
+                case 'cuisine':
+                    document.getElementById('cuisineFilter').value = '';
+                    break;
+                case 'price':
+                    document.getElementById('priceFilter').value = '';
+                    break;
+                case 'rating':
+                    document.getElementById('ratingFilter').value = '';
+                    break;
+            }
+            applyFilters();
+        }
+
+        // Toggle view mode
+        function toggleViewMode() {
+            const grid = document.getElementById('restaurantGrid');
+            if (viewMode === 'grid') {
+                grid.className = 'row list-view';
+                viewMode = 'list';
+            } else {
+                grid.className = 'row';
+                viewMode = 'grid';
+            }
+        }
+
+        // Show loading spinner
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('restaurantGrid').style.display = 'none';
+        }
+
+        // Hide loading spinner
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('restaurantGrid').style.display = 'block';
+        }
+
+        // Toggle favorite
+        function toggleFavorite(heartIcon) {
+            const restaurantId = heartIcon.dataset.restaurantId;
+            const isCurrentlyFavorited = heartIcon.classList.contains('favorited');
+            
+            // Update UI immediately for instant feedback
+            if (isCurrentlyFavorited) {
+                heartIcon.classList.remove('favorited');
+            } else {
+                heartIcon.classList.add('favorited');
+                heartIcon.style.animation = 'heartbeat 0.6s ease-in-out';
+            }
+            
+            // Disable button during request
+            heartIcon.style.pointerEvents = 'none';
+            heartIcon.style.opacity = '0.6';
+            
+            // Prepare request
+            const request = {
+                restaurantId: parseInt(restaurantId)
+            };
+            
+            // Send AJAX request
+            fetch('/customer/favorites/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(request)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    // Remove card from grid if unfavorited
+                    if (!isCurrentlyFavorited) {
+                        heartIcon.closest('.col-md-6').remove();
+                        updateResultsCount();
+                    }
+                } else {
+                    // Revert UI change on error
+                    if (isCurrentlyFavorited) {
+                        heartIcon.classList.add('favorited');
+                    } else {
+                        heartIcon.classList.remove('favorited');
+                    }
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert UI change on error
+                if (isCurrentlyFavorited) {
+                    heartIcon.classList.add('favorited');
+                } else {
+                    heartIcon.classList.remove('favorited');
+                }
+                showToast('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
+            })
+            .finally(() => {
+                // Re-enable button
+                heartIcon.style.pointerEvents = 'auto';
+                heartIcon.style.opacity = '1';
+                heartIcon.style.animation = '';
+            });
+        }
+
+        // Show toast notification
+        function showToast(message, type) {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+            
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+            
+            // Remove toast element after it's hidden
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                toastElement.remove();
+            });
+        }
+    </script>
+</body>
+</html>
