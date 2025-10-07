@@ -23,6 +23,36 @@
             border-radius: 8px;
             padding: 20px;
             margin: 20px 0;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Bill Summary Box */
+        .payment-details .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 2px solid #28a745;
+        }
+        
+        .payment-details h5 i {
+            color: #667eea;
+        }
+        
+        /* Download Invoice Button */
+        .btn-success.btn-lg {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-success.btn-lg:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        /* Notice Box */
+        .alert-warning h6 {
+            color: #856404;
+            font-weight: 600;
         }
         
         .loading-spinner {
@@ -258,8 +288,14 @@
                         <div class="payment-status" th:if="${payment != null}">
                             <div th:if="${payment.status.name() == 'COMPLETED'}" class="status-success">
                                 <i class="fas fa-check-circle status-icon"></i>
-                                <h3>Thanh toán thành công!</h3>
-                                <p class="text-muted">Đơn hàng của bạn đã được thanh toán thành công</p>
+                                <h3>✅ Thanh toán thành công!</h3>
+                                <p class="text-success font-weight-bold" th:if="${isDeposit}">
+                                    Bạn đã đặt cọc thành công <span th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
+                                </p>
+                                <p class="text-success font-weight-bold" th:unless="${isDeposit}">
+                                    Bạn đã thanh toán toàn bộ <span th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
+                                </p>
+                                <p class="text-muted">Cảm ơn quý khách đã sử dụng dịch vụ!</p>
                             </div>
                             
                             <div th:if="${payment.status.name() == 'PROCESSING'}" class="status-processing">
@@ -356,15 +392,77 @@
                             </div>
                         </div>
 
-                        <!-- Payment Details -->
-                        <div class="payment-details" th:if="${payment != null}">
+                        <!-- Payment Bill Details - COMPLETED -->
+                        <div class="payment-details" th:if="${payment != null && payment.status.name() == 'COMPLETED'}">
+                            <h5 class="text-center mb-4"><i class="fas fa-file-invoice-dollar"></i> HÓA ĐƠN THANH TOÁN</h5>
+                            <hr>
+                            
+                            <!-- Summary Box -->
+                            <div class="alert alert-success mb-4" style="border-left: 5px solid #28a745;">
+                                <div class="row">
+                                    <div class="col-md-4 text-center">
+                                        <h6 class="mb-1">Tổng giá trị đơn hàng</h6>
+                                        <h4 class="mb-0 text-primary" th:text="${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</h4>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <h6 class="mb-1">Đã thanh toán</h6>
+                                        <h4 class="mb-0 text-success" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</h4>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <h6 class="mb-1">Còn lại</h6>
+                                        <h4 class="mb-0" th:classappend="${remainingAmount > 0} ? 'text-danger' : 'text-success'" 
+                                            th:text="${#numbers.formatDecimal(remainingAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</h4>
+                                        <small class="text-muted" th:if="${remainingAmount > 0}">
+                                            <i class="fas fa-info-circle"></i> Thanh toán tại nhà hàng
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Transaction Details -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong><i class="fas fa-hashtag"></i> Mã giao dịch:</strong> <span class="text-primary" th:text="${payment.paymentId}">Payment ID</span></p>
+                                    <p th:if="${payment.orderCode != null}"><strong><i class="fas fa-barcode"></i> Mã đơn hàng:</strong> <span th:text="${payment.orderCode}">Order Code</span></p>
+                                    <p th:if="${payment.payosPaymentLinkId != null}"><strong><i class="fas fa-link"></i> Mã giao dịch PayOS:</strong> <span class="small text-muted" th:text="${payment.payosPaymentLinkId}">Payment Link ID</span></p>
+                                    <p><strong><i class="fas fa-credit-card"></i> Phương thức:</strong> <span class="badge badge-info" th:text="${payment.paymentMethod.displayName}">Payment Method</span></p>
+                                    <p><strong><i class="fas fa-tag"></i> Loại thanh toán:</strong> 
+                                        <span th:if="${isDeposit}" class="badge badge-warning">
+                                            <i class="fas fa-coins"></i> Đặt cọc
+                                        </span>
+                                        <span th:unless="${isDeposit}" class="badge badge-success">
+                                            <i class="fas fa-check-circle"></i> Thanh toán toàn bộ
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong><i class="fas fa-check-circle"></i> Trạng thái:</strong> 
+                                        <span class="badge badge-success" th:text="${payment.status.displayName}">Status</span>
+                                    </p>
+                                    <p th:if="${payment.paidAt != null}">
+                                        <strong><i class="fas fa-clock"></i> Thời gian thanh toán:</strong> 
+                                        <span th:text="${#temporals.format(payment.paidAt, 'dd/MM/yyyy HH:mm:ss')}">Payment Time</span>
+                                    </p>
+                                    <p th:if="${payment.payosCode != null}">
+                                        <strong><i class="fas fa-info-circle"></i> Mã phản hồi:</strong> 
+                                        <span th:text="${payment.payosCode}">00</span>
+                                    </p>
+                                    <p th:if="${payment.payosDesc != null}">
+                                        <strong><i class="fas fa-comment"></i> Mô tả:</strong> 
+                                        <span class="text-muted small" th:text="${payment.payosDesc}">Success</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Details - OTHER STATUS -->
+                        <div class="payment-details" th:if="${payment != null && payment.status.name() != 'COMPLETED'}">
                             <h5><i class="fas fa-receipt"></i> Chi tiết giao dịch</h5>
                             <hr>
                             <div class="row">
                                 <div class="col-md-6">
                                     <p><strong>Mã giao dịch:</strong> <span th:text="${payment.paymentId}">Payment ID</span></p>
                                     <p th:if="${payment.orderCode != null}"><strong>Mã đơn hàng:</strong> <span th:text="${payment.orderCode}">Order Code</span></p>
-                                    <p th:if="${payment.payosPaymentLinkId != null}"><strong>Mã giao dịch PayOS:</strong> <span th:text="${payment.payosPaymentLinkId}">Payment Link ID</span></p>
                                     <p><strong>Phương thức:</strong> <span th:text="${payment.paymentMethod.displayName}">Payment Method</span></p>
                                     <p><strong>Loại thanh toán:</strong> 
                                         <span th:if="${isDeposit}" class="badge badge-warning">
@@ -376,15 +474,8 @@
                                     </p>
                                 </div>
                                 <div class="col-md-6">
-                                    <p><strong>Số tiền đã thanh toán:</strong> <span class="text-success font-weight-bold" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ</p>
-                                    <p th:if="${totalAmount != null}"><strong>Tổng giá trị đặt bàn:</strong> <span class="text-info font-weight-bold" th:text="${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ</p>
-                                    <p th:if="${isDeposit and remainingAmount != null and remainingAmount > 0}">
-                                        <strong>Số tiền còn lại:</strong> 
-                                        <span class="text-danger font-weight-bold" th:text="${#numbers.formatDecimal(remainingAmount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
-                                        <br><small class="text-muted"><i class="fas fa-info-circle"></i> Thanh toán tại nhà hàng</small>
-                                    </p>
+                                    <p><strong>Số tiền:</strong> <span class="text-success font-weight-bold" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ</p>
                                     <p><strong>Trạng thái:</strong> <span class="badge badge-info" th:text="${payment.status.displayName}">Status</span></p>
-                                    <p th:if="${payment.paidAt != null}"><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.paidAt, 'dd/MM/yyyy HH:mm:ss')}">Payment Time</span></p>
                                 </div>
                             </div>
                         </div>
@@ -409,18 +500,33 @@
                         <!-- Action Buttons -->
                         <div class="action-buttons text-center" th:if="${payment != null}">
                             <div th:if="${payment.status.name() == 'COMPLETED'}">
-                                <a href="/booking/my" class="btn btn--gold btn-lg">
-                                    <i class="fas fa-check"></i> Xem đặt bàn của tôi
-                                </a>
-                                <button class="btn btn--outline btn-lg ml-2" onclick="printReceipt()">
+                                <div class="mb-3">
+                                    <h5 class="text-muted"><i class="fas fa-hand-pointer"></i> Thao tác</h5>
+                                </div>
+                                
+                                
+                                <!-- Other Actions -->
+                                <div class="row justify-content-center">
+                                    <div class="col-md-4 mb-2">
+                                        <a href="/booking/my" class="btn btn--gold btn-lg w-100">
+                                            <i class="fas fa-list"></i> Xem đặt bàn của tôi
+                                        </a>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <button class="btn btn--outline btn-lg w-100" onclick="printReceipt()">
                                     <i class="fas fa-print"></i> In hóa đơn
                                 </button>
-                                <a th:if="${payment.paymentMethod.name() == 'PAYOS' and payment.orderCode != null}" 
-                                   th:href="@{/payment/api/payos/invoice/{orderCode}/download(orderCode=${payment.orderCode})}" 
-                                   class="btn btn--outline btn-lg ml-2" 
-                                   target="_blank">
-                                    <i class="fas fa-file-pdf"></i> Tải hóa đơn PayOS (PDF)
-                                </a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Important Notice for Deposit -->
+                                <div th:if="${isDeposit && remainingAmount > 0}" class="alert alert-warning mt-4">
+                                    <h6><i class="fas fa-exclamation-triangle"></i> Lưu ý quan trọng</h6>
+                                    <p class="mb-1">Bạn đã đặt cọc thành công. Vui lòng thanh toán phần còn lại tại nhà hàng:</p>
+                                    <h5 class="text-danger mb-0">
+                                        <strong th:text="${#numbers.formatDecimal(remainingAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
+                                    </h5>
+                                </div>
                             </div>
                             
                             <div th:if="${payment.status.name() == 'PROCESSING'}">

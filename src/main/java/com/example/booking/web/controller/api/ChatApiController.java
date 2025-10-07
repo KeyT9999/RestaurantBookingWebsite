@@ -40,6 +40,9 @@ public class ChatApiController {
     private RestaurantManagementService restaurantService;
     
     @Autowired
+    private com.example.booking.service.RestaurantOwnerService restaurantOwnerService;
+    
+    @Autowired
     private SimpleUserService userService;
     
     /**
@@ -64,7 +67,7 @@ public class ChatApiController {
                 case RESTAURANT_OWNER:
                 case restaurant_owner:
                     // Restaurant owners can only chat with customers of their restaurants
-                    restaurants = restaurantService.findRestaurantsByOwner(user.getId());
+                    restaurants = restaurantOwnerService.getRestaurantsByUserId(user.getId());
                     break;
                 default:
                     return ResponseEntity.badRequest().body("Invalid user role: " + userRole);
