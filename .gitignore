@@ -93,10 +93,13 @@ application-secrets.properties
 # ENVIRONMENT VARIABLES
 ############################
 .env
+.env.*
 .env.local
 .env.prod
 .env.production
 .env.development
+.env.backup
+*.env.backup
 
 ############################
 # DATABASE FILES
