@@ -14,6 +14,56 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    
+    <!-- Heart Toggle Styles -->
+    <style>
+        .heart-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+        }
+        
+        .heart-icon {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .heart-icon:hover {
+            color: #e74c3c;
+            background: rgba(255, 255, 255, 0.9);
+            transform: scale(1.1);
+        }
+        
+        .heart-icon.favorited {
+            color: #e74c3c;
+            background: rgba(255, 255, 255, 0.9);
+            animation: heartbeat 0.6s ease-in-out;
+        }
+        
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -36,6 +86,15 @@
                             <div class="restaurant-card__image">
                                 <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
                                      th:alt="${restaurant.restaurantName}" class="img-fluid">
+                                
+                                <!-- Heart Toggle Button -->
+                                <div class="heart-toggle" sec:authorize="hasRole('CUSTOMER')">
+                                    <i class="fas fa-heart heart-icon" 
+                                       th:data-restaurant-id="${restaurant.restaurantId}"
+                                       onclick="toggleFavorite(this)"
+                                       title="Thêm vào yêu thích"></i>
+                                </div>
+                                
                                 <div class="restaurant-card__overlay">
                                     <a th:href="@{/booking/new}" class="btn btn--gold btn--small" sec:authorize="!hasRole('RESTAURANT_OWNER')">Đặt bàn</a>
                                     <a th:href="@{/restaurant-owner/dashboard}" class="btn btn--gold btn--small" sec:authorize="hasRole('RESTAURANT_OWNER')">Quản lý</a>
@@ -105,7 +164,146 @@
     <!-- Footer -->
     <div th:replace="~{fragments/footer :: site-footer}"></div>
     
+    <!-- Toast Container -->
+    <div class="toast-container">
+        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-heart text-danger me-2"></i>
+                <strong class="me-auto">Thông báo</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                <!-- Message will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Heart Toggle JavaScript -->
+    <script>
+        // Load favorite status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFavoriteStatus();
+        });
+        
+        // Load favorite status for all restaurants
+        function loadFavoriteStatus() {
+            fetch('/customer/favorites/ids')
+                .then(response => {
+                    if (!response.ok) {
+                        // If not authenticated or other error, skip silently
+                        if (response.status === 401 || response.status === 403) {
+                            console.log('User not authenticated, skipping favorite status load');
+                            return [];
+                        }
+                        throw new Error('Failed to fetch favorite restaurant IDs');
+                    }
+                    return response.json();
+                })
+                .then(restaurantIds => {
+                    console.log('Loaded favorite restaurant IDs:', restaurantIds);
+                    
+                    restaurantIds.forEach(restaurantId => {
+                        const heartIcon = document.querySelector(`.heart-icon[data-restaurant-id="${restaurantId}"]`);
+                        if (heartIcon) {
+                            heartIcon.classList.add('favorited');
+                            console.log(`Marked restaurant ${restaurantId} as favorited`);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading favorite status:', error);
+                });
+        }
+        
+        // Toggle favorite function
+        function toggleFavorite(heartIcon) {
+            const restaurantId = heartIcon.dataset.restaurantId;
+            const isCurrentlyFavorited = heartIcon.classList.contains('favorited');
+            
+            // Update UI immediately for instant feedback
+            if (isCurrentlyFavorited) {
+                heartIcon.classList.remove('favorited');
+            } else {
+                heartIcon.classList.add('favorited');
+                // Add pulse animation for instant visual feedback
+                heartIcon.style.animation = 'heartbeat 0.6s ease-in-out';
+            }
+            
+            // Disable button during request
+            heartIcon.style.pointerEvents = 'none';
+            heartIcon.style.opacity = '0.6';
+            
+            // Prepare request - backend will auto-toggle based on current state
+            const request = {
+                restaurantId: parseInt(restaurantId)
+            };
+            
+            // Send AJAX request
+            fetch('/customer/favorites/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(request)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // UI already updated, just show message
+                    showToast(data.message, 'success');
+                } else {
+                    // Revert UI change on error
+                    if (isCurrentlyFavorited) {
+                        heartIcon.classList.add('favorited');
+                    } else {
+                        heartIcon.classList.remove('favorited');
+                    }
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert UI change on error
+                if (isCurrentlyFavorited) {
+                    heartIcon.classList.add('favorited');
+                } else {
+                    heartIcon.classList.remove('favorited');
+                }
+                showToast('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
+            })
+            .finally(() => {
+                // Re-enable button
+                heartIcon.style.pointerEvents = 'auto';
+                heartIcon.style.opacity = '1';
+                // Reset animation
+                heartIcon.style.animation = '';
+            });
+        }
+        
+        // Show toast notification
+        function showToast(message, type) {
+            const toastElement = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            
+            if (type === 'success') {
+                toastElement.classList.add('bg-success', 'text-white');
+            } else if (type === 'error') {
+                toastElement.classList.add('bg-danger', 'text-white');
+            }
+            
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+            
+            // Remove classes after toast is hidden
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                toastElement.classList.remove('bg-success', 'bg-danger', 'text-white');
+            });
+        }
+    </script>
 </body>
 </html>

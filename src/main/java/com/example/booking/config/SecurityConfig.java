@@ -92,7 +92,6 @@ public class SecurityConfig {
 				.requestMatchers("/admin-setup/**").permitAll()
 				.requestMatchers("/api/admin/create-admin").permitAll()
 						.requestMatchers("/api/booking/restaurants/**").permitAll()
-						.requestMatchers("/api/vouchers/**").permitAll()
 						.requestMatchers("/restaurant-owner/vouchers/debug").permitAll()
 				.requestMatchers("/admin/vouchers/test").permitAll()
 				.requestMatchers("/admin/vouchers").permitAll()

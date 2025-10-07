@@ -105,19 +105,11 @@
         </dependency>
 
         <!-- Auto-load .env for local dev runs -->
-        <!-- Temporarily disabled due to encoding issues
         <dependency>
             <groupId>me.paulschwarz</groupId>
             <artifactId>spring-dotenv</artifactId>
             <version>3.0.0</version>
         </dependency>
-        -->
-
-        <dependency>
-    <groupId>me.paulschwarz</groupId>
-    <artifactId>spring-dotenv</artifactId>
-    <version>3.0.0</version>
-</dependency>
 
         
         <!-- HTTP Client for MoMo API -->
@@ -131,26 +123,12 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-<<<<<<< HEAD
-
-       
-=======
         
->>>>>>> bc437e9aabcfd26b6581514912747451d504175f
         <!-- WebSocket for Real-time Chat -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
-<<<<<<< HEAD
-        
-        <!-- WebSocket Support -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>
-=======
->>>>>>> bc437e9aabcfd26b6581514912747451d504175f
     </dependencies>
     
     <build>
