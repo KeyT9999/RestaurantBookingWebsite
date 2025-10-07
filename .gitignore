@@ -100,3 +100,5 @@ src/main/resources/messages.properties
 src/main/resources/messages_vi.properties
 pom.xml
 .gitignore
+
+.env

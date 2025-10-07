@@ -36,13 +36,14 @@ app:
 # Payment configuration
 payment:
   payos:
-    client-id: ${PAYOS_CLIENT_ID:59e68d4d-6eb8-4259-93ab-b4c6c3a6af6f}
-    api-key: ${PAYOS_API_KEY:9956541e-86ab-470a-a03c-6d1cc67d95b1}
-    checksum-key: ${PAYOS_CHECKSUM_KEY:eb7485ce4c656e02cae0629fcce02b2933d5b2a9b0a10447c9aa0662125835cf}
-    endpoint: ${PAYOS_ENDPOINT:https://api-merchant.payos.vn}
-    return-url: ${PAYOS_RETURN_URL:${app.base-url}/payment/payos/return}
-    cancel-url: ${PAYOS_CANCEL_URL:${app.base-url}/payment/payos/cancel}
-    webhook-url: ${PAYOS_WEBHOOK_URL:${app.base-url}/payment/api/payos/webhook}
+    # PayOS credentials - Updated with real account credentials
+    client-id: 59e68d4d-6eb8-4259-93ab-b4c6c3a6af6f
+    api-key: 9956541e-86ab-470a-a03c-6d1cc67d95b1
+    checksum-key: eb7485ce4c656e02cae0629fcce02b2933d5b2a9b0a10447c9aa0662125835cf
+    endpoint: https://api-merchant.payos.vn
+    return-url: ${app.base-url}/payment/payos/return
+    cancel-url: ${app.base-url}/payment/payos/cancel
+    webhook-url: ${app.base-url}/payment/api/payos/webhook
 
 logging:
   level:

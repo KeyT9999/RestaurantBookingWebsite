@@ -68,6 +68,9 @@ public class Payment {
     
     @Column(name = "payos_desc")
     private String payosDesc;
+
+    @Column(name = "order_code", nullable = false, unique = true)
+    private Long orderCode;
     
     @Column(name = "pay_url")
     private String payUrl;
@@ -194,9 +197,17 @@ public class Payment {
     public String getPayosDesc() {
         return payosDesc;
     }
-    
+
     public void setPayosDesc(String payosDesc) {
         this.payosDesc = payosDesc;
+    }
+
+    public Long getOrderCode() {
+        return orderCode;
+    }
+
+    public void setOrderCode(Long orderCode) {
+        this.orderCode = orderCode;
     }
     
     public String getPayUrl() {

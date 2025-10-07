@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html th:replace="~{fragments/layout :: layout(~{::head}, ~{::body})}">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Payment Result</title>
     <style>
         .payment-status {
@@ -41,16 +43,219 @@
         .action-buttons {
             margin-top: 30px;
         }
+        
+        /* PayOS QR Code Styles */
+        .payos-qr-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .qr-container {
+            text-align: center;
+        }
+        
+        .qr-header h5 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .qr-code-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
+        }
+        
+        .qr-code-container:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        }
+        
+        .qr-placeholder {
+            padding: 2rem;
+            color: #6c757d;
+        }
+        
+        .qr-image img {
+            max-width: 250px;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .payment-info {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .info-item {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-item strong {
+            color: #495057;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-item .amount {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .info-item .order-code {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .payment-instructions {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .payment-instructions h6 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .payment-instructions ol {
+            margin-bottom: 0;
+            padding-left: 1.5rem;
+        }
+        
+        .payment-instructions li {
+            margin-bottom: 0.5rem;
+            color: #6c757d;
+        }
+        
+        .qr-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .qr-actions .btn {
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .qr-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Cash Payment Styles */
+        .cash-payment-section {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2);
+        }
+        
+        .cash-container {
+            text-align: center;
+        }
+        
+        .cash-header h5 {
+            color: #856404;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .cash-info .alert {
+            border: none;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Loading Animation for QR */
+        .qr-loading {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .payos-qr-section, .cash-payment-section {
+                padding: 1.5rem;
+                margin: 1rem 0;
+            }
+            
+            .qr-code-container {
+                padding: 1.5rem;
+            }
+            
+            .qr-image img {
+                max-width: 200px;
+            }
+            
+            .payment-info, .payment-instructions {
+                padding: 1rem;
+            }
+            
+            .qr-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .qr-actions .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
     </style>
+    <!-- Bootstrap & Icons (match usage on other pages) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/luxury.css}" rel="stylesheet">
 </head>
 <body>
-    <div class="container mt-4">
+    <!-- Header Fragment -->
+    <div th:insert="~{fragments/header :: site-header}"></div>
+
+    <main class="main-content">
+    <div class="container mt-4" th:with="statusName=${payment != null ? payment.status.name() : 'PENDING'}, pid=${payment != null ? payment.paymentId : 0}">
+        <div class="container"><div th:insert="~{fragments/flash :: flash}"></div></div>
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-body">
+                        <div th:if="${payment == null}" class="alert alert-warning">
+                            Không tìm thấy thông tin thanh toán. Vui lòng thử lại sau hoặc kiểm tra lịch sử đặt bàn.
+                        </div>
                         <!-- Payment Status -->
-                        <div class="payment-status">
+                        <div class="payment-status" th:if="${payment != null}">
                             <div th:if="${payment.status.name() == 'COMPLETED'}" class="status-success">
                                 <i class="fas fa-check-circle status-icon"></i>
                                 <h3>Thanh toán thành công!</h3>
@@ -67,43 +272,117 @@
                             <div th:if="${payment.status.name() == 'FAILED'}" class="status-failed">
                                 <i class="fas fa-times-circle status-icon"></i>
                                 <h3>Thanh toán thất bại</h3>
-                                <p class="text-muted" th:text="${payment.momoMessage}">Lỗi thanh toán</p>
+                                <p class="text-muted" th:text="${payment.payosDesc} ?: 'Lỗi thanh toán'"></p>
                             </div>
                             
                             <div th:if="${payment.status.name() == 'PENDING'}" class="status-pending">
                                 <i class="fas fa-hourglass-half status-icon"></i>
                                 <h3>Chờ thanh toán</h3>
                                 <p class="text-muted">Vui lòng hoàn tất thanh toán</p>
+                                
+                                <!-- PayOS QR Code Section -->
+                                <div th:if="${payment.paymentMethod.name() == 'PAYOS'}" class="payos-qr-section mt-4">
+                                    <div class="qr-container">
+                                        <div class="qr-header">
+                                            <h5><i class="fas fa-qrcode"></i> Quét mã QR để thanh toán</h5>
+                                            <p class="text-muted">Sử dụng ứng dụng ngân hàng để quét mã QR bên dưới</p>
+                                        </div>
+                                        
+                                        <div class="qr-code-container">
+                                            <div class="qr-placeholder" id="qrPlaceholder">
+                                                <i class="fas fa-qrcode fa-3x text-muted"></i>
+                                                <p class="mt-2">Đang tải mã QR...</p>
+                                            </div>
+                                            <div class="qr-image" id="qrImage" style="display: none;">
+                                                <img id="qrCodeImg" src="" alt="PayOS QR Code" class="img-fluid">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="payment-info mt-3">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="info-item">
+                                                        <strong>Số tiền:</strong>
+                                                        <span class="amount" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="info-item">
+                                                        <strong>Mã đơn hàng:</strong>
+                                                        <span class="order-code" th:text="${payment.paymentId}">#123</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="payment-instructions mt-3">
+                                            <h6><i class="fas fa-info-circle"></i> Hướng dẫn thanh toán:</h6>
+                                            <ol class="text-left">
+                                                <li>Mở ứng dụng ngân hàng trên điện thoại</li>
+                                                <li>Chọn tính năng "Quét QR" hoặc "VietQR"</li>
+                                                <li>Quét mã QR bên trên</li>
+                                                <li>Xác nhận thông tin và hoàn tất thanh toán</li>
+                                            </ol>
+                                        </div>
+                                        
+                                        <div class="qr-actions mt-3">
+                                            <button class="btn btn-primary btn-sm" onclick="refreshQRCode()">
+                                                <i class="fas fa-sync-alt"></i> Làm mới QR
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm ml-2" onclick="copyPaymentInfo()">
+                                                <i class="fas fa-copy"></i> Copy thông tin
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cash Payment Instructions -->
+                                <div th:if="${payment.paymentMethod.name() == 'CASH'}" class="cash-payment-section mt-4">
+                                    <div class="cash-container">
+                                        <div class="cash-header">
+                                            <h5><i class="fas fa-money-bill-wave"></i> Thanh toán tiền mặt</h5>
+                                            <p class="text-muted">Vui lòng thanh toán tại nhà hàng</p>
+                                        </div>
+                                        
+                                        <div class="cash-info">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle"></i>
+                                                <strong>Lưu ý:</strong> Bạn sẽ thanh toán <span th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span> 
+                                                khi đến nhà hàng. Vui lòng giữ mã đặt bàn <strong th:text="${payment.booking.bookingId}">#123</strong> để xác nhận.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Payment Details -->
-                        <div class="payment-details">
+                        <div class="payment-details" th:if="${payment != null}">
                             <h5><i class="fas fa-receipt"></i> Chi tiết giao dịch</h5>
                             <hr>
                             <div class="row">
                                 <div class="col-md-6">
                                     <p><strong>Mã giao dịch:</strong> <span th:text="${payment.paymentId}">Payment ID</span></p>
-                                    <p th:if="${payment.momoOrderId}"><strong>Mã đơn hàng:</strong> <span th:text="${payment.momoOrderId}">Order ID</span></p>
-                                    <p th:if="${payment.momoTransId}"><strong>Mã giao dịch MoMo:</strong> <span th:text="${payment.momoTransId}">Transaction ID</span></p>
+                                    <p th:if="${payment.orderCode != null}"><strong>Mã đơn hàng:</strong> <span th:text="${payment.orderCode}">Order Code</span></p>
+                                    <p th:if="${payment.payosPaymentLinkId != null}"><strong>Mã giao dịch PayOS:</strong> <span th:text="${payment.payosPaymentLinkId}">Payment Link ID</span></p>
                                     <p><strong>Phương thức:</strong> <span th:text="${payment.paymentMethod.displayName}">Payment Method</span></p>
                                 </div>
                                 <div class="col-md-6">
                                     <p><strong>Số tiền:</strong> <span class="text-primary font-weight-bold" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ</p>
                                     <p><strong>Trạng thái:</strong> <span class="badge badge-info" th:text="${payment.status.displayName}">Status</span></p>
-                                    <p><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.paidAt, 'dd/MM/yyyy HH:mm:ss')}">Payment Time</span></p>
+                                    <p th:if="${payment.paidAt != null}"><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.paidAt, 'dd/MM/yyyy HH:mm:ss')}">Payment Time</span></p>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Booking Details -->
-                        <div class="payment-details">
+                        <div class="payment-details" th:if="${payment != null}">
                             <h5><i class="fas fa-calendar-alt"></i> Thông tin đặt bàn</h5>
                             <hr>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <p><strong>Nhà hàng:</strong> <span th:text="${payment.booking.restaurant.restaurantName}">Restaurant Name</span></p>
-                                    <p><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.booking.bookingTime, 'dd/MM/yyyy HH:mm')}">Booking Time</span></p>
+                                    <p><strong>Nhà hàng:</strong> <span th:text="${payment.booking != null && payment.booking.restaurant != null ? payment.booking.restaurant.restaurantName : '—'}">Restaurant Name</span></p>
+                                    <p th:if="${payment.booking != null && payment.booking.bookingTime != null}"><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.booking.bookingTime, 'dd/MM/yyyy HH:mm')}">Booking Time</span></p>
                                     <p><strong>Số khách:</strong> <span th:text="${payment.booking.numberOfGuests}">Number of Guests</span></p>
                                 </div>
                                 <div class="col-md-6">
@@ -114,40 +393,88 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="action-buttons text-center">
+                        <div class="action-buttons text-center" th:if="${payment != null}">
                             <div th:if="${payment.status.name() == 'COMPLETED'}">
-                                <a href="/booking/my" class="btn btn-success btn-lg">
+                                <a href="/booking/my" class="btn btn--gold btn-lg">
                                     <i class="fas fa-check"></i> Xem đặt bàn của tôi
                                 </a>
-                                <button class="btn btn-outline-primary btn-lg ml-2" onclick="printReceipt()">
+                                <button class="btn btn--outline btn-lg ml-2" onclick="printReceipt()">
                                     <i class="fas fa-print"></i> In hóa đơn
+                                </button>
+                                <button class="btn btn--outline btn-lg ml-2" onclick="viewInvoices()">
+                                    <i class="fas fa-file-invoice"></i> Xem hóa đơn điện tử
                                 </button>
                             </div>
                             
                             <div th:if="${payment.status.name() == 'PROCESSING'}">
-                                <button class="btn btn-warning btn-lg" onclick="checkPaymentStatus()">
+                                <button class="btn btn--gold btn-lg" onclick="checkPaymentStatus()">
                                     <i class="fas fa-sync-alt"></i> Kiểm tra trạng thái
                                 </button>
-                                <a href="/booking/my" class="btn btn-secondary btn-lg ml-2">
+                                <a href="/booking/my" class="btn btn--outline btn-lg ml-2">
                                     <i class="fas fa-arrow-left"></i> Quay lại
                                 </a>
                             </div>
                             
                             <div th:if="${payment.status.name() == 'FAILED'}">
-                                <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}" class="btn btn-primary btn-lg">
+                                <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}" class="btn btn--gold btn-lg">
                                     <i class="fas fa-redo"></i> Thử lại thanh toán
                                 </a>
-                                <a href="/booking/my" class="btn btn-secondary btn-lg ml-2">
+                                <a href="/booking/my" class="btn btn--outline btn-lg ml-2">
                                     <i class="fas fa-arrow-left"></i> Quay lại
                                 </a>
                             </div>
                             
                             <div th:if="${payment.status.name() == 'PENDING'}">
-                                <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-credit-card"></i> Hoàn tất thanh toán
-                                </a>
-                                <a href="/booking/my" class="btn btn-secondary btn-lg ml-2">
-                                    <i class="fas fa-arrow-left"></i> Quay lại
+                                <div class="mb-3">
+                                    <h5 class="text-center text-muted">Chọn phương thức thanh toán</h5>
+                                </div>
+                                
+                                <!-- PayOS Payment Button -->
+                                <div th:if="${payment.paymentMethod.name() == 'PAYOS'}" class="mb-3">
+                                    <button class="btn btn--gold btn-lg w-100" onclick="initiatePayOSPayment()">
+                                        <i class="fas fa-qrcode"></i> Thanh toán bằng PayOS
+                                        <br><small class="text-muted">Quét mã QR để thanh toán</small>
+                                    </button>
+                                </div>
+                                
+                                <!-- Cash Payment Option -->
+                                <div th:if="${payment.paymentMethod.name() == 'CASH'}" class="mb-3">
+                                    <button class="btn btn--gold btn-lg w-100" onclick="confirmCashPayment()">
+                                        <i class="fas fa-money-bill-wave"></i> Xác nhận thanh toán tiền mặt
+                                        <br><small class="text-muted">Thanh toán tại nhà hàng</small>
+                                    </button>
+                                </div>
+                                
+                                <!-- Alternative Payment Methods -->
+                                <div class="row mt-3">
+                                    <div class="col-md-4">
+                                        <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}" class="btn btn--outline btn-lg w-100">
+                                            <i class="fas fa-credit-card"></i> Đổi phương thức
+                                        </a>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn--outline btn-lg w-100" onclick="checkPayOSStatus()">
+                                            <i class="fas fa-sync-alt"></i> Kiểm tra PayOS
+                                        </button>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button class="btn btn--outline btn-lg w-100" onclick="cancelPayOSPayment()">
+                                            <i class="fas fa-times"></i> Hủy thanh toán
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center mt-3">
+                                    <a href="/booking/my" class="btn btn-link">
+                                        <i class="fas fa-arrow-left"></i> Quay lại danh sách đặt bàn
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Always-show helper (fallback) -->
+                            <div class="mt-3">
+                                <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}" class="btn btn-link">
+                                    <i class="fas fa-external-link-alt"></i> Đi tới trang thanh toán
                                 </a>
                             </div>
                         </div>
@@ -156,10 +483,14 @@
             </div>
         </div>
     </div>
+    </main>
+
+    <!-- Footer Fragment -->
+    <div th:insert="~{fragments/footer :: site-footer}"></div>
 
     <script>
         // Auto-refresh for processing payments
-        const paymentStatus = /*[[${payment.status.name()}]]*/ 'PENDING';
+        const paymentStatus = /*[[${statusName}]]*/ 'PENDING';
         if (paymentStatus === 'PROCESSING') {
             // Poll payment status every 3 seconds
             const pollInterval = setInterval(checkPaymentStatus, 3000);
@@ -169,9 +500,180 @@
                 clearInterval(pollInterval);
             }, 300000);
         }
+        
+        // Load PayOS QR Code
+        function loadPayOSQRCode() {
+            const paymentId = /*[[${pid}]]*/ 0;
+            const qrPlaceholder = document.getElementById('qrPlaceholder');
+            const qrImage = document.getElementById('qrImage');
+            const qrCodeImg = document.getElementById('qrCodeImg');
+            
+            if (paymentId === 0) {
+                console.error('Payment ID not found');
+                return;
+            }
+            
+            // Show loading state
+            qrPlaceholder.innerHTML = '<div class="qr-loading"></div><p class="mt-2">Đang tải mã QR...</p>';
+            
+            // Call PayOS API to get payment info and QR code
+            fetch(`/payment/api/payos/status/${paymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.paymentInfo && data.paymentInfo.qrCode) {
+                        // Show QR code
+                        qrCodeImg.src = data.paymentInfo.qrCode;
+                        qrPlaceholder.style.display = 'none';
+                        qrImage.style.display = 'block';
+                        
+                        console.log('QR Code loaded successfully');
+                    } else {
+                        // Fallback: try to create new payment link
+                        createNewPayOSLink();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading QR code:', error);
+                    createNewPayOSLink();
+                });
+        }
+        
+        // Create new PayOS payment link
+        function createNewPayOSLink() {
+            const paymentId = /*[[${pid}]]*/ 0;
+            const qrPlaceholder = document.getElementById('qrPlaceholder');
+            const qrImage = document.getElementById('qrImage');
+            const qrCodeImg = document.getElementById('qrCodeImg');
+            
+            qrPlaceholder.innerHTML = '<div class="qr-loading"></div><p class="mt-2">Đang tạo link thanh toán...</p>';
+            
+            fetch(`/payment/api/payos/create/${paymentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.paymentLink && data.paymentLink.qrCode) {
+                    // Show QR code
+                    qrCodeImg.src = data.paymentLink.qrCode;
+                    qrPlaceholder.style.display = 'none';
+                    qrImage.style.display = 'block';
+                    
+                    console.log('New PayOS link created and QR code loaded');
+                } else {
+                    // Show error
+                    qrPlaceholder.innerHTML = '<i class="fas fa-exclamation-triangle fa-3x text-warning"></i><p class="mt-2 text-warning">Không thể tải mã QR</p><p class="small">Vui lòng thử lại sau</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error creating PayOS link:', error);
+                qrPlaceholder.innerHTML = '<i class="fas fa-exclamation-triangle fa-3x text-danger"></i><p class="mt-2 text-danger">Lỗi tải mã QR</p><p class="small">Vui lòng thử lại sau</p>';
+            });
+        }
+        
+        // Refresh QR Code
+        function refreshQRCode() {
+            const refreshBtn = event.target.closest('button');
+            const originalText = refreshBtn.innerHTML;
+            
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang làm mới...';
+            refreshBtn.disabled = true;
+            
+            // Reset QR display
+            document.getElementById('qrPlaceholder').style.display = 'block';
+            document.getElementById('qrImage').style.display = 'none';
+            
+            // Load new QR code
+            setTimeout(() => {
+                loadPayOSQRCode();
+                refreshBtn.innerHTML = originalText;
+                refreshBtn.disabled = false;
+            }, 1000);
+        }
+        
+        // Copy payment info to clipboard
+        function copyPaymentInfo() {
+            const paymentId = /*[[${pid}]]*/ 0;
+            const amount = document.querySelector('.amount').textContent;
+            const orderCode = document.querySelector('.order-code').textContent;
+            
+            const paymentInfo = `Mã đơn hàng: ${orderCode}\nSố tiền: ${amount}\nPhương thức: PayOS`;
+            
+            navigator.clipboard.writeText(paymentInfo).then(() => {
+                // Show success notification
+                showNotification('Đã copy thông tin thanh toán!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showNotification('Không thể copy thông tin', 'error');
+            });
+        }
+        
+        // Notification function
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                max-width: 300px;
+            `;
+            
+            switch(type) {
+                case 'success':
+                    notification.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+                    break;
+                case 'warning':
+                    notification.style.background = 'linear-gradient(135deg, #ffc107, #fd7e14)';
+                    break;
+                case 'error':
+                    notification.style.background = 'linear-gradient(135deg, #dc3545, #e83e8c)';
+                    break;
+                default:
+                    notification.style.background = 'linear-gradient(135deg, #17a2b8, #6f42c1)';
+            }
+            
+            notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times' : 'info'}"></i> ${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Auto-load QR code when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if this is a PayOS payment and status is PENDING
+            const paymentMethod = /*[[${payment != null ? payment.paymentMethod.name() : 'NONE'}]]*/ 'NONE';
+            const paymentStatus = /*[[${statusName}]]*/ 'PENDING';
+            
+            if (paymentMethod === 'PAYOS' && paymentStatus === 'PENDING') {
+                // Load QR code after a short delay
+                setTimeout(() => {
+                    loadPayOSQRCode();
+                }, 1000);
+            }
+        });
 
         function checkPaymentStatus() {
-            const paymentId = /*[[${payment.paymentId}]]*/ 0;
+            const paymentId = /*[[${pid}]]*/ 0;
             
             fetch(`/payment/api/status/${paymentId}`)
                 .then(response => response.json())
@@ -191,12 +693,247 @@
             window.print();
         }
 
-        // Show success message if redirected from MoMo
+        function viewInvoices() {
+            const paymentId = /*[[${pid}]]*/ 0;
+            
+            // Show loading state
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải...';
+            button.disabled = true;
+            
+            fetch(`/payment/api/payos/invoices/${paymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.invoices && data.invoices.length > 0) {
+                        // Show invoice list
+                        showInvoiceList(data.invoices, paymentId);
+                    } else {
+                        alert('Không có hóa đơn điện tử nào cho giao dịch này.');
+                    }
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error getting invoices:', error);
+                    alert('Có lỗi xảy ra khi tải hóa đơn.');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+        }
+
+        function showInvoiceList(invoices, paymentId) {
+            let invoiceListHtml = '<div class="invoice-list"><h5>Danh sách hóa đơn điện tử:</h5><ul>';
+            
+            invoices.forEach(invoice => {
+                invoiceListHtml += `
+                    <li class="invoice-item">
+                        <div class="invoice-info">
+                            <strong>Số hóa đơn:</strong> ${invoice.invoiceNumber || 'N/A'}<br>
+                            <strong>Ngày phát hành:</strong> ${invoice.issuedDatetime || 'N/A'}<br>
+                            <strong>Mã giao dịch:</strong> ${invoice.transactionId || 'N/A'}
+                        </div>
+                        <button class="btn btn--gold btn-sm" onclick="downloadInvoice('${paymentId}', '${invoice.invoiceId}')">
+                            <i class="fas fa-download"></i> Tải PDF
+                        </button>
+                    </li>
+                `;
+            });
+            
+            invoiceListHtml += '</ul></div>';
+            
+            // Show modal or alert with invoice list
+            const modal = document.createElement('div');
+            modal.className = 'invoice-modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                    ${invoiceListHtml}
+                </div>
+            `;
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.5); z-index: 1000; display: flex; 
+                align-items: center; justify-content: center;
+            `;
+            modal.querySelector('.modal-content').style.cssText = `
+                background: white; padding: 20px; border-radius: 8px; 
+                max-width: 600px; max-height: 80vh; overflow-y: auto;
+            `;
+            modal.querySelector('.close').style.cssText = `
+                float: right; font-size: 28px; font-weight: bold; cursor: pointer;
+            `;
+            modal.querySelector('.invoice-list ul').style.cssText = `
+                list-style: none; padding: 0;
+            `;
+            modal.querySelector('.invoice-item').style.cssText = `
+                border: 1px solid #ddd; margin: 10px 0; padding: 15px; 
+                border-radius: 5px; display: flex; justify-content: space-between; align-items: center;
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function downloadInvoice(paymentId, invoiceId) {
+            const downloadUrl = `/payment/api/payos/invoices/${paymentId}/download/${invoiceId}`;
+            
+            // Create temporary link to download
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `invoice_${paymentId}_${invoiceId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function initiatePayOSPayment() {
+            const paymentId = /*[[${pid}]]*/ 0;
+            
+            // Show loading state
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo giao dịch...';
+            button.disabled = true;
+            
+            // Call PayOS API to create payment link
+            fetch(`/payment/api/payos/create/${paymentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.paymentUrl) {
+                    // Redirect to PayOS payment page
+                    window.location.href = data.paymentUrl;
+                } else {
+                    alert('Không thể tạo giao dịch PayOS. Vui lòng thử lại.');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error initiating PayOS payment:', error);
+                alert('Có lỗi xảy ra. Vui lòng thử lại.');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        function confirmCashPayment() {
+            const paymentId = /*[[${pid}]]*/ 0;
+            
+            if (confirm('Xác nhận thanh toán tiền mặt tại nhà hàng?')) {
+                // Show loading state
+                const button = event.target.closest('button');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+                button.disabled = true;
+                
+                // Mark payment as completed for cash
+                fetch(`/payment/api/cash/confirm/${paymentId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Thanh toán tiền mặt đã được xác nhận!');
+                        location.reload();
+                    } else {
+                        alert('Không thể xác nhận thanh toán. Vui lòng thử lại.');
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error confirming cash payment:', error);
+                    alert('Có lỗi xảy ra. Vui lòng thử lại.');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+            }
+        }
+
+        function checkPayOSStatus() {
+            const paymentId = /*[[${pid}]]*/ 0;
+            
+            // Show loading state
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...';
+            button.disabled = true;
+            
+            fetch(`/payment/api/payos/status/${paymentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Trạng thái PayOS: ${data.status}\nĐã thanh toán: ${data.amountPaid} VND\nCòn lại: ${data.amountRemaining} VND`);
+                        if (data.status === 'PAID') {
+                            location.reload();
+                        }
+                    } else {
+                        alert('Không thể kiểm tra trạng thái PayOS. Vui lòng thử lại.');
+                    }
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error checking PayOS status:', error);
+                    alert('Có lỗi xảy ra khi kiểm tra trạng thái.');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+        }
+
+        function cancelPayOSPayment() {
+            const paymentId = /*[[${pid}]]*/ 0;
+            const reason = prompt('Lý do hủy thanh toán (tùy chọn):');
+            
+            if (confirm('Bạn có chắc chắn muốn hủy thanh toán này?')) {
+                // Show loading state
+                const button = event.target.closest('button');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang hủy...';
+                button.disabled = true;
+                
+                const url = reason ? `/payment/api/payos/cancel/${paymentId}?reason=${encodeURIComponent(reason)}` : `/payment/api/payos/cancel/${paymentId}`;
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Thanh toán đã được hủy thành công!');
+                        location.reload();
+                    } else {
+                        alert('Không thể hủy thanh toán. Vui lòng thử lại.');
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cancelling PayOS payment:', error);
+                    alert('Có lỗi xảy ra khi hủy thanh toán.');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+            }
+        }
+
+        // Show success message if redirected from PayOS
         const urlParams = new URLSearchParams(window.location.search);
         const resultCode = urlParams.get('resultCode');
         if (resultCode === '0') {
-            // Success from MoMo redirect
-            console.log('Payment successful from MoMo redirect');
+            // Success from PayOS redirect
+            console.log('Payment successful from PayOS redirect');
         }
     </script>
 </body>

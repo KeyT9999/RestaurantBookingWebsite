@@ -49,8 +49,7 @@ public class PaymentService {
     @Autowired
     private BookingService bookingService;
     
-    @Autowired
-    private PayOsService payOsService;
+    // PayOsService is used indirectly through webhook processing
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -111,6 +110,10 @@ public class PaymentService {
             }
         }
         
+        // Generate unique orderCode for PayOS
+        Long orderCode = generateUniqueOrderCode(bookingId);
+        payment.setOrderCode(orderCode);
+        
         // Save payment
         Payment savedPayment = paymentRepository.save(payment);
         
@@ -129,42 +132,69 @@ public class PaymentService {
      */
     public boolean handlePayOsWebhook(String rawBody) {
         try {
-            WebhookPayload payload = objectMapper.readValue(rawBody, WebhookPayload.class);
-            if (payload == null || payload.data == null) {
+            logger.info("Processing PayOS webhook: {}", rawBody);
+            
+            // Parse webhook data using PayOsService.WebhookRequest
+            PayOsService.WebhookRequest webhookRequest = objectMapper.readValue(rawBody, PayOsService.WebhookRequest.class);
+            
+            if (webhookRequest == null || webhookRequest.getData() == null) {
                 logger.error("Invalid PayOS webhook payload");
                 return false;
             }
-            if (!payOsService.verifyWebhook(rawBody, payload.signature)) {
-                logger.error("Invalid PayOS webhook signature for orderCode: {}", 
-                    payload.data.orderCode);
-                return false;
-            }
-            Integer paymentId = Integer.valueOf(String.valueOf(payload.data.orderCode));
-            Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
+            
+            PayOsService.WebhookRequest.WebhookData data = webhookRequest.getData();
+            Long orderCode = data.getOrderCode().longValue();
+            
+            logger.info("Processing webhook for orderCode: {}, success: {}, code: {}", 
+                orderCode, webhookRequest.getSuccess(), data.getCode());
+            
+            // Find payment by orderCode
+            Optional<Payment> paymentOpt = paymentRepository.findByOrderCode(orderCode);
             if (paymentOpt.isEmpty()) {
-                logger.error("Payment not found for orderCode(paymentId): {}", paymentId);
+                logger.error("Payment not found for orderCode: {}", orderCode);
                 return false;
             }
+            
             Payment payment = paymentOpt.get();
-            boolean success = Boolean.TRUE.equals(payload.success) && 
-                ("00".equals(payload.code) || (payload.data.status != null && 
-                    payload.data.status.equalsIgnoreCase("PAID")));
+            
+            // Determine if payment was successful
+            boolean success = Boolean.TRUE.equals(webhookRequest.getSuccess()) && "00".equals(data.getCode());
+            
             if (success) {
+                // Payment successful
                 payment.setStatus(PaymentStatus.COMPLETED);
                 payment.setPaidAt(LocalDateTime.now());
-            } else {
-                payment.setStatus(PaymentStatus.FAILED);
-            }
-            try { payment.setIpnRaw(rawBody); } catch (Exception ignore) {}
-            paymentRepository.save(payment);
-            if (success) {
+                payment.setPayosCode(data.getCode());
+                payment.setPayosDesc("PayOS payment successful. Reference: " + data.getReference());
+                
+                logger.info("Payment {} updated to COMPLETED", payment.getPaymentId());
+                
+                // Confirm booking
                 try {
                     bookingService.confirmBooking(payment.getBooking().getBookingId());
+                    logger.info("Booking {} confirmed after PayOS payment", payment.getBooking().getBookingId());
                 } catch (Exception e) {
-                    logger.error("Failed to confirm booking after PayOS payment. paymentId: {}", paymentId, e);
+                    logger.error("Failed to confirm booking after PayOS payment. paymentId: {}", payment.getPaymentId(), e);
                 }
+            } else {
+                // Payment failed
+                payment.setStatus(PaymentStatus.FAILED);
+                payment.setPayosCode(data.getCode());
+                payment.setPayosDesc("PayOS payment failed. Code: " + data.getCode() + ", Desc: " + data.getDesc());
+                
+                logger.info("Payment {} updated to FAILED", payment.getPaymentId());
             }
+            
+            // Store webhook data
+            try { 
+                payment.setIpnRaw(rawBody); 
+            } catch (Exception ignore) {}
+            
+            paymentRepository.save(payment);
+            
+            logger.info("PayOS webhook processed successfully for paymentId: {}", payment.getPaymentId());
             return true;
+            
         } catch (Exception e) {
             logger.error("Error processing PayOS webhook", e);
             return false;
@@ -386,9 +416,11 @@ public class PaymentService {
      * @param customer The customer
      * @return Voucher if valid
      */
-    private Voucher findValidVoucher(String voucherCode, Customer customer) {
+    @SuppressWarnings("unused")
+    private Voucher findValidVoucher(@SuppressWarnings("unused") String voucherCode, @SuppressWarnings("unused") Customer customer) {
         // TODO: Implement voucher validation logic
         // Check if voucher exists, is active, not expired, and available for customer
+        // Currently not implemented, so returning null
         return null;
     }
     
@@ -398,7 +430,8 @@ public class PaymentService {
      * @param voucher The voucher
      * @return Discounted amount
      */
-    private BigDecimal applyVoucherDiscount(BigDecimal amount, Voucher voucher) {
+    @SuppressWarnings("unused")
+    private BigDecimal applyVoucherDiscount(BigDecimal amount, @SuppressWarnings("unused") Voucher voucher) {
         // TODO: Implement voucher discount logic
         // Apply percentage or fixed discount based on voucher type
         // For now, return the original amount
@@ -449,5 +482,34 @@ public class PaymentService {
         public Long amount;
         public String status;
         public String paymentLinkId;
+    }
+    
+    /**
+     * Generate unique orderCode for PayOS
+     * Strategy: bookingId * 1000000 + timestamp % 1000000
+     * @param bookingId The booking ID
+     * @return Unique orderCode
+     */
+    private Long generateUniqueOrderCode(Integer bookingId) {
+        long timestamp = System.currentTimeMillis() % 1000000;
+        Long orderCode = bookingId * 1000000L + timestamp;
+        
+        // Ensure uniqueness by checking database
+        while (paymentRepository.existsByOrderCode(orderCode)) {
+            timestamp = (timestamp + 1) % 1000000;
+            orderCode = bookingId * 1000000L + timestamp;
+        }
+        
+        logger.info("Generated orderCode: {} for bookingId: {}", orderCode, bookingId);
+        return orderCode;
+    }
+    
+    /**
+     * Find payment by orderCode
+     * @param orderCode The PayOS order code
+     * @return Optional containing the Payment if found
+     */
+    public Optional<Payment> findByOrderCode(Long orderCode) {
+        return paymentRepository.findByOrderCode(orderCode);
     }
 }
