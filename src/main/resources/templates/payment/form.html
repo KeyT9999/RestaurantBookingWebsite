@@ -555,8 +555,8 @@
                                 <div class="payment-summary">
                                     <h6><i class="fas fa-calculator"></i> Tổng kết thanh toán</h6>
                                     <div class="d-flex justify-content-between">
-                                        <span>Tiền đặt bàn:</span>
-                                        <span th:text="${hasBooking ? #numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0</span>
+                                        <span id="amountLabel">Tổng giá trị đặt bàn:</span>
+                                        <span id="baseAmount" th:text="${fullTotalAmount != null ? #numbers.formatDecimal(fullTotalAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</span>
                                     </div>
                                     <div class="d-flex justify-content-between" id="discountRow" style="display: none;">
                                         <span>Giảm giá:</span>
@@ -564,12 +564,12 @@
                                     </div>
                                     <hr>
                                     <div class="d-flex justify-content-between">
-                                        <strong>Tổng cộng:</strong>
-                                        <strong class="text-primary" id="totalAmount" th:text="${hasBooking ? #numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0</strong>
+                                        <strong id="totalLabel">Tổng cộng:</strong>
+                                        <strong class="text-primary" id="totalAmount">0 VNĐ</strong>
                                     </div>
                                     <div class="d-flex justify-content-between" id="remainingAmountRow" style="display: none;">
                                         <span>Số tiền còn lại:</span>
-                                        <span class="text-warning" id="remainingAmount">0</span> VNĐ
+                                        <span class="text-warning" id="remainingAmount">0 VNĐ</span>
                                 </div>
                             </div>
                             
@@ -714,7 +714,12 @@
                     payButton.innerHTML = `<i class="fas fa-credit-card"></i> ${typeText} thẻ`;
                     break;
                 case 'PAYOS':
-                    payButton.innerHTML = `<i class="fas fa-qrcode"></i> ${typeText} PayOS`;
+                    // Nếu đặt cọc: "Đặt cọc PayOS", nếu thanh toán full: "Thanh toán"
+                    if (selectedPaymentType === 'DEPOSIT') {
+                        payButton.innerHTML = `<i class="fas fa-qrcode"></i> Đặt cọc PayOS`;
+                    } else {
+                        payButton.innerHTML = `<i class="fas fa-qrcode"></i> Thanh toán`;
+                    }
                     break;
                 case 'ZALOPAY':
                     payButton.innerHTML = `<i class="fas fa-mobile-alt"></i> ${typeText} ZaloPay`;
@@ -724,20 +729,38 @@
 
         // Update payment summary
         function updatePaymentSummary() {
-            const depositAmount = parseFloat('[(${booking != null ? booking.depositAmount : 0})]') || 0;
+            const fullTotal = parseFloat('[(${fullTotalAmount != null ? fullTotalAmount : 0})]') || 0;
             const totalAmountElement = document.getElementById('totalAmount');
+            const totalLabelElement = document.getElementById('totalLabel');
             const remainingAmountRow = document.getElementById('remainingAmountRow');
             const remainingAmountElement = document.getElementById('remainingAmount');
             
-            if (selectedPaymentType === 'DEPOSIT') {
-                // For deposit, show deposit amount
-                totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN') + ' VNĐ';
-                remainingAmountRow.style.display = 'none';
+            // Calculate deposit amount based on new logic
+            let depositAmount;
+            if (fullTotal > 500000) {
+                depositAmount = fullTotal * 0.1; // 10% if > 500k
             } else {
-                // For full payment, show full amount (for now same as deposit)
+                depositAmount = 10000; // Min 10k if <= 500k
+            }
+            
+            if (selectedPaymentType === 'DEPOSIT') {
+                // Update label
+                totalLabelElement.textContent = 'Số tiền phải trả (Đặt cọc 10%):';
+                
+                // Show deposit amount
                 totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN') + ' VNĐ';
+                
+                // Show remaining amount
+                const remaining = fullTotal - depositAmount;
+                remainingAmountElement.textContent = remaining.toLocaleString('vi-VN') + ' VNĐ';
+                remainingAmountRow.style.display = 'flex';
+            } else {
+                // Update label
+                totalLabelElement.textContent = 'Tổng cộng (Thanh toán 100%):';
+                
+                // Show full amount
+                totalAmountElement.textContent = fullTotal.toLocaleString('vi-VN') + ' VNĐ';
                 remainingAmountRow.style.display = 'none';
-                // TODO: Calculate and show remaining amount when full payment logic is implemented
             }
         }
 
@@ -755,12 +778,12 @@
                 const defaultMethod = document.querySelector('[data-method="PAYOS"]');
                 
                 if (defaultType) {
-                    defaultType.classList.add('selected');
+                    handleTypePick(defaultType); // Gọi function để trigger logic
                     console.log('✅ DEPOSIT card highlighted');
                 }
                 
                 if (defaultMethod) {
-                    defaultMethod.classList.add('selected');
+                    handleMethodPick(defaultMethod); // Gọi function để trigger logic
                     console.log('✅ PAYOS card highlighted');
                 }
                 

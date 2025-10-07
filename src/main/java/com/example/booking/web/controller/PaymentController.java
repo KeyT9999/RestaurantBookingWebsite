@@ -1,5 +1,6 @@
 package com.example.booking.web.controller;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,8 +30,10 @@ import com.example.booking.domain.Customer;
 import com.example.booking.domain.Payment;
 import com.example.booking.domain.PaymentMethod;
 import com.example.booking.domain.PaymentStatus;
+import com.example.booking.repository.PaymentRepository;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
+import com.example.booking.service.EmailService;
 import com.example.booking.service.PayOsService;
 import com.example.booking.service.PayOsService.CreateLinkResponse;
 import com.example.booking.service.PaymentService;
@@ -61,6 +64,12 @@ public class PaymentController {
     
     @Autowired
     private ObjectMapper objectMapper;
+    
+    @Autowired
+    private PaymentRepository paymentRepository;
+    
+    @Autowired
+    private EmailService emailService;
     
     /**
      * Show payment form for booking
@@ -101,7 +110,11 @@ public class PaymentController {
                 }
             }
             
+            // Calculate total amount for full payment display
+            java.math.BigDecimal fullTotalAmount = bookingService.calculateTotalAmount(booking);
+            
             model.addAttribute("booking", booking);
+            model.addAttribute("fullTotalAmount", fullTotalAmount);
             model.addAttribute("paymentMethods", PaymentMethod.values());
             model.addAttribute("paymentTypes", PaymentType.values());
             model.addAttribute("pageTitle", "Thanh toán - Payment");
@@ -115,56 +128,171 @@ public class PaymentController {
     }
     
     /**
-     * Handle PayOS return URL
+     * Handle PayOS return URL - User redirected here after payment
      */
-    @GetMapping("/payment/payos/return")
+    @GetMapping("/payos/return")
     public String handlePayOsReturn(@RequestParam(required = false) String orderCode,
-                                   @RequestParam(required = false) String code,
-                                   @RequestParam(required = false) String desc,
-                                   Model model) {
+                                   @RequestParam(required = false) String status,
+                                   RedirectAttributes redirectAttributes) {
         try {
-            logger.info("PayOS return - orderCode={}, code={}, desc={}", orderCode, code, desc);
+            logger.info("========================================");
+            logger.info("🔙 PayOS RETURN URL");
+            logger.info("   - OrderCode: {}", orderCode);
+            logger.info("   - Status: {}", status);
+            logger.info("========================================");
             
-            // With PayOS, orderCode is the unique identifier we used when creating link
             if (orderCode == null) {
-                return "error/400";
+                logger.error("❌ OrderCode is null in return URL");
+                redirectAttributes.addFlashAttribute("errorMessage", "Thiếu mã đơn hàng");
+                return "redirect:/booking/my";
             }
+            
             Long orderCodeParam = Long.valueOf(orderCode);
             Optional<Payment> paymentOpt = paymentService.findByOrderCode(orderCodeParam);
-            if (paymentOpt.isEmpty()) return "error/404";
-            model.addAttribute("payment", paymentOpt.get());
-            model.addAttribute("payosCode", code);
-            model.addAttribute("payosDesc", desc);
-            model.addAttribute("pageTitle", "Kết quả thanh toán");
-            return "payment/result";
+            
+            if (paymentOpt.isEmpty()) {
+                logger.error("❌ Payment not found for orderCode: {}", orderCode);
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy thông tin thanh toán");
+                return "redirect:/booking/my";
+            }
+            
+            Payment payment = paymentOpt.get();
+            
+            // If payment already COMPLETED (webhook processed), just show result
+            if (payment.getStatus() == PaymentStatus.COMPLETED) {
+                logger.info("✅ Payment already COMPLETED (webhook processed)");
+                return "redirect:/payment/result/" + payment.getPaymentId();
+            }
+            
+            // If payment still PENDING, verify with PayOS API
+            if (payment.getStatus() == PaymentStatus.PENDING) {
+                logger.info("⏳ Payment still PENDING, verifying with PayOS API...");
+                
+                try {
+                    // Get payment info from PayOS
+                    var paymentInfo = payOsService.getPaymentInfo(orderCodeParam);
+                    
+                    if (paymentInfo != null && paymentInfo.getData() != null) {
+                        String payosStatus = paymentInfo.getData().getStatus();
+                        logger.info("   - PayOS Status: {}", payosStatus);
+                        
+                        if ("PAID".equals(payosStatus)) {
+                            // Manually trigger what webhook would do (fallback if webhook failed)
+                            logger.warn("⚠️ Webhook might have failed, manually updating payment...");
+                            
+                            payment.setStatus(PaymentStatus.COMPLETED);
+                            payment.setPaidAt(LocalDateTime.now());
+                            payment.setPayosCode("00");
+                            payment.setPayosDesc("PayOS payment verified via return URL");
+                            payment.setPayosPaymentLinkId(paymentInfo.getData().getId());
+                            paymentRepository.save(payment);
+                            
+                            // Confirm booking
+                            try {
+                                bookingService.confirmBooking(payment.getBooking().getBookingId());
+                                logger.info("✅ Booking confirmed via return URL fallback");
+                            } catch (Exception e) {
+                                logger.error("Failed to confirm booking", e);
+                            }
+                            
+                            // Send emails (same as webhook)
+                            try {
+                                Booking booking = payment.getBooking();
+                                Customer customer = booking.getCustomer();
+                                java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
+                                java.math.BigDecimal remainingAmount = totalAmount.subtract(payment.getAmount());
+                                
+                                String customerEmail = customer.getUser().getEmail();
+                                String customerName = customer.getFullName();
+                                String restaurantName = booking.getRestaurant().getRestaurantName();
+                                String bookingTime = booking.getBookingTime().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+                                
+                                emailService.sendPaymentSuccessEmail(
+                                    customerEmail, customerName, booking.getBookingId(),
+                                    restaurantName, bookingTime, booking.getNumberOfGuests(),
+                                    payment.getAmount(), remainingAmount,
+                                    payment.getPaymentMethod().getDisplayName()
+                                );
+                                
+                                String ownerEmail = booking.getRestaurant().getOwner().getUser().getEmail();
+                                emailService.sendPaymentNotificationToRestaurant(
+                                    ownerEmail, restaurantName, booking.getBookingId(),
+                                    customerName, bookingTime, booking.getNumberOfGuests(),
+                                    payment.getAmount(), payment.getPaymentMethod().getDisplayName()
+                                );
+                                
+                                logger.info("✅ Emails sent via return URL fallback");
+                            } catch (Exception e) {
+                                logger.error("Failed to send emails", e);
+                            }
+                            
+                            return "redirect:/payment/result/" + payment.getPaymentId();
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.error("❌ Error verifying with PayOS API", e);
+                }
+            }
+            
+            // Default: redirect to result page
+            return "redirect:/payment/result/" + payment.getPaymentId();
+            
         } catch (Exception e) {
-            logger.error("Error handling PayOS return", e);
-            return "error/500";
+            logger.error("❌ Error handling PayOS return", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra khi xử lý kết quả thanh toán");
+            return "redirect:/booking/my";
         }
     }
 
     /**
-     * Handle PayOS cancel URL
+     * Handle PayOS cancel URL - User cancelled payment
      */
-    @GetMapping("/payment/payos/cancel")
+    @GetMapping("/payos/cancel")
     public String handlePayOsCancel(@RequestParam(required = false) String orderCode,
-                                   Model model) {
+                                   RedirectAttributes redirectAttributes) {
         try {
-            logger.info("PayOS cancel - orderCode={}", orderCode);
+            logger.info("========================================");
+            logger.info("❌ PayOS CANCEL URL");
+            logger.info("   - OrderCode: {}", orderCode);
+            logger.info("========================================");
             
             if (orderCode == null) {
-                return "error/400";
+                logger.error("❌ OrderCode is null in cancel URL");
+                redirectAttributes.addFlashAttribute("errorMessage", "Thiếu mã đơn hàng");
+                return "redirect:/booking/my";
             }
+            
             Long orderCodeParam = Long.valueOf(orderCode);
             Optional<Payment> paymentOpt = paymentService.findByOrderCode(orderCodeParam);
-            if (paymentOpt.isEmpty()) return "error/404";
             
-            model.addAttribute("payment", paymentOpt.get());
-            model.addAttribute("pageTitle", "Hủy thanh toán");
-            return "payment/result";
+            if (paymentOpt.isEmpty()) {
+                logger.error("❌ Payment not found for orderCode: {}", orderCode);
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy thông tin thanh toán");
+                return "redirect:/booking/my";
+            }
+            
+            Payment payment = paymentOpt.get();
+            
+            // Mark payment as CANCELLED if still PENDING
+            if (payment.getStatus() == PaymentStatus.PENDING) {
+                payment.setStatus(PaymentStatus.CANCELLED);
+                payment.setPayosDesc("User cancelled payment on PayOS");
+                paymentRepository.save(payment);
+                logger.info("⚠️ Payment {} marked as CANCELLED", payment.getPaymentId());
+            }
+            
+            // Redirect back to payment form to allow retry
+            Integer bookingId = payment.getBooking().getBookingId();
+            redirectAttributes.addFlashAttribute("errorMessage", 
+                "Bạn đã hủy thanh toán. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.");
+            
+            logger.info("🔄 Redirecting to payment form for retry: /payment/{}", bookingId);
+            return "redirect:/payment/" + bookingId;
+            
         } catch (Exception e) {
-            logger.error("Error handling PayOS cancel", e);
-            return "error/500";
+            logger.error("❌ Error handling PayOS cancel", e);
+            redirectAttributes.addFlashAttribute("errorMessage", "Có lỗi xảy ra");
+            return "redirect:/booking/my";
         }
     }
 
@@ -682,7 +810,15 @@ public class PaymentController {
                 return "error/403";
             }
             
+            // Calculate remaining amount for deposit payments
+            Booking booking = payment.getBooking();
+            java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
+            java.math.BigDecimal remainingAmount = totalAmount.subtract(payment.getAmount());
+            
             model.addAttribute("payment", payment);
+            model.addAttribute("totalAmount", totalAmount);
+            model.addAttribute("remainingAmount", remainingAmount);
+            model.addAttribute("isDeposit", payment.getPaymentType() == PaymentType.DEPOSIT);
             model.addAttribute("pageTitle", "Kết quả thanh toán");
             
             return "payment/result";
@@ -690,6 +826,75 @@ public class PaymentController {
         } catch (Exception e) {
             logger.error("Error showing payment result", e);
             return "error/500";
+        }
+    }
+    
+    /**
+     * Download PayOS invoice PDF
+     */
+    @GetMapping("/api/payos/invoice/{orderCode}/download")
+    public ResponseEntity<byte[]> downloadPayOSInvoice(@PathVariable Long orderCode,
+                                                       Authentication authentication) {
+        try {
+            logger.info("📥 Downloading PayOS invoice for orderCode: {}", orderCode);
+            
+            UUID customerId = getCurrentCustomerId(authentication);
+            
+            // Verify payment ownership
+            Optional<Payment> paymentOpt = paymentService.findByOrderCode(orderCode);
+            if (paymentOpt.isEmpty()) {
+                logger.error("❌ Payment not found for orderCode: {}", orderCode);
+                return ResponseEntity.notFound().build();
+            }
+            
+            Payment payment = paymentOpt.get();
+            if (!payment.getCustomer().getCustomerId().equals(customerId)) {
+                logger.error("❌ Unauthorized access to invoice for orderCode: {}", orderCode);
+                return ResponseEntity.status(403).build();
+            }
+            
+            // Only completed payments can have invoices
+            if (payment.getStatus() != PaymentStatus.COMPLETED) {
+                logger.error("❌ Payment not completed, cannot download invoice. Status: {}", payment.getStatus());
+                return ResponseEntity.badRequest()
+                    .body("Payment not completed".getBytes());
+            }
+            
+            // Get invoice info from PayOS
+            var invoiceInfo = payOsService.getInvoiceInfo(orderCode);
+            if (invoiceInfo == null || invoiceInfo.getData() == null || 
+                invoiceInfo.getData().getInvoices() == null || 
+                invoiceInfo.getData().getInvoices().isEmpty()) {
+                logger.error("❌ No invoice found for orderCode: {}", orderCode);
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Get first invoice ID
+            String invoiceId = invoiceInfo.getData().getInvoices().get(0).getInvoiceId();
+            logger.info("📄 Found invoiceId: {}", invoiceId);
+            
+            // Download invoice PDF
+            byte[] pdfBytes = payOsService.downloadInvoice(orderCode, invoiceId);
+            if (pdfBytes == null || pdfBytes.length == 0) {
+                logger.error("❌ Failed to download invoice PDF");
+                return ResponseEntity.status(500).build();
+            }
+            
+            // Return PDF file
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", 
+                "invoice_" + orderCode + "_" + System.currentTimeMillis() + ".pdf");
+            headers.setContentLength(pdfBytes.length);
+            
+            logger.info("✅ Invoice downloaded successfully. Size: {} bytes", pdfBytes.length);
+            return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfBytes);
+                
+        } catch (Exception e) {
+            logger.error("❌ Error downloading PayOS invoice for orderCode: {}", orderCode, e);
+            return ResponseEntity.status(500).build();
         }
     }
     

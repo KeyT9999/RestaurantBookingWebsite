@@ -366,9 +366,23 @@
                                     <p th:if="${payment.orderCode != null}"><strong>Mã đơn hàng:</strong> <span th:text="${payment.orderCode}">Order Code</span></p>
                                     <p th:if="${payment.payosPaymentLinkId != null}"><strong>Mã giao dịch PayOS:</strong> <span th:text="${payment.payosPaymentLinkId}">Payment Link ID</span></p>
                                     <p><strong>Phương thức:</strong> <span th:text="${payment.paymentMethod.displayName}">Payment Method</span></p>
+                                    <p><strong>Loại thanh toán:</strong> 
+                                        <span th:if="${isDeposit}" class="badge badge-warning">
+                                            <i class="fas fa-coins"></i> Đặt cọc
+                                        </span>
+                                        <span th:unless="${isDeposit}" class="badge badge-success">
+                                            <i class="fas fa-check-circle"></i> Thanh toán toàn bộ
+                                        </span>
+                                    </p>
                                 </div>
                                 <div class="col-md-6">
-                                    <p><strong>Số tiền:</strong> <span class="text-primary font-weight-bold" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ</p>
+                                    <p><strong>Số tiền đã thanh toán:</strong> <span class="text-success font-weight-bold" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ</p>
+                                    <p th:if="${totalAmount != null}"><strong>Tổng giá trị đặt bàn:</strong> <span class="text-info font-weight-bold" th:text="${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ</p>
+                                    <p th:if="${isDeposit and remainingAmount != null and remainingAmount > 0}">
+                                        <strong>Số tiền còn lại:</strong> 
+                                        <span class="text-danger font-weight-bold" th:text="${#numbers.formatDecimal(remainingAmount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
+                                        <br><small class="text-muted"><i class="fas fa-info-circle"></i> Thanh toán tại nhà hàng</small>
+                                    </p>
                                     <p><strong>Trạng thái:</strong> <span class="badge badge-info" th:text="${payment.status.displayName}">Status</span></p>
                                     <p th:if="${payment.paidAt != null}"><strong>Thời gian:</strong> <span th:text="${#temporals.format(payment.paidAt, 'dd/MM/yyyy HH:mm:ss')}">Payment Time</span></p>
                                 </div>
@@ -401,9 +415,12 @@
                                 <button class="btn btn--outline btn-lg ml-2" onclick="printReceipt()">
                                     <i class="fas fa-print"></i> In hóa đơn
                                 </button>
-                                <button class="btn btn--outline btn-lg ml-2" onclick="viewInvoices()">
-                                    <i class="fas fa-file-invoice"></i> Xem hóa đơn điện tử
-                                </button>
+                                <a th:if="${payment.paymentMethod.name() == 'PAYOS' and payment.orderCode != null}" 
+                                   th:href="@{/payment/api/payos/invoice/{orderCode}/download(orderCode=${payment.orderCode})}" 
+                                   class="btn btn--outline btn-lg ml-2" 
+                                   target="_blank">
+                                    <i class="fas fa-file-pdf"></i> Tải hóa đơn PayOS (PDF)
+                                </a>
                             </div>
                             
                             <div th:if="${payment.status.name() == 'PROCESSING'}">
