@@ -131,19 +131,26 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+<<<<<<< HEAD
 
        
+=======
+        
+>>>>>>> bc437e9aabcfd26b6581514912747451d504175f
         <!-- WebSocket for Real-time Chat -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+<<<<<<< HEAD
         
         <!-- WebSocket Support -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+=======
+>>>>>>> bc437e9aabcfd26b6581514912747451d504175f
     </dependencies>
     
     <build>
@@ -155,4 +162,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project> 

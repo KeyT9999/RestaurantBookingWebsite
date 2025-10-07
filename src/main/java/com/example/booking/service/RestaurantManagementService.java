@@ -22,16 +22,16 @@ import com.example.booking.repository.RestaurantServiceRepository;
 @Service
 @Transactional
 public class RestaurantManagementService {
-    
+
     @Autowired
     private RestaurantProfileRepository restaurantProfileRepository;
-    
+
     @Autowired
     private RestaurantTableRepository restaurantTableRepository;
-    
+
     @Autowired
     private DishRepository dishRepository;
-    
+
     @Autowired
     private RestaurantServiceRepository restaurantServiceRepository;
 
@@ -58,7 +58,15 @@ public class RestaurantManagementService {
     public List<RestaurantProfile> findRestaurantsByName(String name) {
         return restaurantProfileRepository.findByRestaurantNameContainingIgnoreCase(name);
     }
-    
+
+    /**
+     * Lấy nhà hàng theo owner
+     */
+    @Transactional(readOnly = true)
+    public List<RestaurantProfile> findRestaurantsByOwner(java.util.UUID ownerId) {
+        return restaurantProfileRepository.findByOwnerOwnerId(ownerId);
+    }
+
     /**
      * Lấy danh sách bàn của nhà hàng
      */
@@ -67,12 +75,14 @@ public class RestaurantManagementService {
         try {
             // Thêm logging để debug
             System.out.println("🔍 Finding tables for restaurant ID: " + restaurantId);
-            
-            List<RestaurantTable> tables = restaurantTableRepository.findByRestaurantRestaurantIdOrderByTableName(restaurantId);
-            
+
+            List<RestaurantTable> tables = restaurantTableRepository
+                    .findByRestaurantRestaurantIdOrderByTableName(restaurantId);
+
             System.out.println("✅ Found " + tables.size() + " tables");
-            tables.forEach(table -> System.out.println("   - " + table.getTableName() + " (Capacity: " + table.getCapacity() + ", Deposit: " + table.getDepositAmount() + ")"));
-            
+            tables.forEach(table -> System.out.println("   - " + table.getTableName() + " (Capacity: "
+                    + table.getCapacity() + ", Deposit: " + table.getDepositAmount() + ")"));
+
             return tables;
         } catch (Exception e) {
             System.err.println("❌ Error finding tables: " + e.getMessage());
@@ -102,7 +112,7 @@ public class RestaurantManagementService {
     public RestaurantTable saveTable(RestaurantTable table) {
         return restaurantTableRepository.save(table);
     }
-    
+
     /**
      * Lấy danh sách món ăn của nhà hàng
      */
@@ -110,7 +120,7 @@ public class RestaurantManagementService {
     public List<Dish> findDishesByRestaurant(Integer restaurantId) {
         return dishRepository.findByRestaurantRestaurantIdAndStatusOrderByNameAsc(restaurantId, DishStatus.AVAILABLE);
     }
-    
+
     /**
      * Lấy danh sách dịch vụ của nhà hàng
      */
