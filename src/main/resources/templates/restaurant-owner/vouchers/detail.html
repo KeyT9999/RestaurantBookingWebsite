@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết Voucher - Restaurant Booking</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+    
+    <style>
+        .voucher-detail-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .voucher-header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            text-align: center;
+            color: white;
+        }
+        
+        .voucher-code {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .voucher-scope {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .scope-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .voucher-content {
+            background: white;
+            padding: 2rem;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .detail-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .detail-section h5 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            color: #6c757d;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-expired {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .usage-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+        
+        .usage-progress {
+            background: rgba(255,255,255,0.2);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .usage-progress-bar {
+            background: rgba(255,255,255,0.8);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
+        .btn-action {
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-edit {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background: #0056b3;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            background: #c82333;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-back {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-back:hover {
+            background: #545b62;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .restaurant-info {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        .restaurant-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 0.5rem;
+        }
+        
+        .restaurant-details {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Content -->
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2>
+                        <i class="fas fa-ticket-alt me-2 text-primary"></i>
+                        Chi tiết Voucher
+                    </h2>
+                    <a th:href="@{/restaurant-owner/vouchers(restaurantId=${selectedRestaurantId})}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error/Success Messages -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span th:text="${errorMessage}">Error message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <span th:text="${successMessage}">Success message</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Voucher Detail Card -->
+        <div th:if="${voucher != null}" class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="voucher-detail-card">
+                    <!-- Voucher Header -->
+                    <div class="voucher-header">
+                        <div class="voucher-code" th:text="${voucher.code}">VOUCHER123</div>
+                        <p class="mb-0" th:text="${voucher.description ?: 'Chưa có mô tả'}">Mô tả voucher</p>
+                        
+                        <div class="voucher-scope">
+                            <span class="scope-badge">
+                                <i class="fas fa-store me-1"></i>
+                                RESTAURANT VOUCHER
+                            </span>
+                            <span class="scope-badge" th:classappend="${voucher.status.name() == 'ACTIVE'} ? 'status-active' : 'status-inactive'"
+                                  th:text="${voucher.status}">ACTIVE</span>
+                        </div>
+                    </div>
+
+                    <!-- Voucher Content -->
+                    <div class="voucher-content">
+                        <!-- Restaurant Info -->
+                        <div class="restaurant-info">
+                            <div class="restaurant-name" th:text="${voucher.restaurant.restaurantName}">Tên nhà hàng</div>
+                            <div class="restaurant-details">
+                                <div><i class="fas fa-map-marker-alt me-1"></i> <span th:text="${voucher.restaurant.address}">Địa chỉ</span></div>
+                                <div><i class="fas fa-phone me-1"></i> <span th:text="${voucher.restaurant.phone}">Số điện thoại</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Usage Statistics -->
+                        <div class="usage-stats" th:if="${totalLimit > 0}">
+                            <h5 class="mb-3">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Thống kê sử dụng
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="text-center">
+                                        <div class="h3 mb-1" th:text="${usedCount}">0</div>
+                                        <div class="text-white-50">Đã sử dụng</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="text-center">
+                                        <div class="h3 mb-1" th:text="${totalLimit}">100</div>
+                                        <div class="text-white-50">Tổng giới hạn</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="usage-progress">
+                                <div class="usage-progress-bar" 
+                                     th:style="'width: ' + ${usagePercentage} + '%'"></div>
+                            </div>
+                            <div class="text-center text-white-50">
+                                <span th:text="${#numbers.formatDecimal(usagePercentage, 1, 1)}">0.0</span>% đã sử dụng
+                            </div>
+                        </div>
+
+                        <!-- Detail Grid -->
+                        <div class="detail-grid">
+                            <!-- Discount Information -->
+                            <div class="detail-section">
+                                <h5><i class="fas fa-percentage me-2"></i>Thông tin giảm giá</h5>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Loại giảm giá</span>
+                                    <span class="detail-value">
+                                        <span class="badge" th:classappend="${voucher.discountType.name() == 'PERCENT'} ? 'bg-info' : 'bg-success'"
+                                              th:text="${voucher.discountType}">PERCENT</span>
+                                    </span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Giá trị giảm</span>
+                                    <span class="detail-value">
+                                        <span th:if="${voucher.discountType.name() == 'PERCENT'}"
+                                              th:text="${voucher.discountValue} + '%'">10%</span>
+                                        <span th:if="${voucher.discountType.name() == 'FIXED'}"
+                                              th:text="'₫' + ${#numbers.formatDecimal(voucher.discountValue, 0, 0)}">₫50,000</span>
+                                    </span>
+                                </div>
+                                
+                                <div class="detail-item" th:if="${voucher.maxDiscountAmount != null}">
+                                    <span class="detail-label">Giảm tối đa</span>
+                                    <span class="detail-value" th:text="'₫' + ${#numbers.formatDecimal(voucher.maxDiscountAmount, 0, 0)}">₫100,000</span>
+                                </div>
+                                
+                                <div class="detail-item" th:if="${voucher.minOrderAmount != null}">
+                                    <span class="detail-label">Đơn hàng tối thiểu</span>
+                                    <span class="detail-value" th:text="'₫' + ${#numbers.formatDecimal(voucher.minOrderAmount, 0, 0)}">₫200,000</span>
+                                </div>
+                            </div>
+
+                            <!-- Usage Limits -->
+                            <div class="detail-section">
+                                <h5><i class="fas fa-users me-2"></i>Giới hạn sử dụng</h5>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Giới hạn tổng</span>
+                                    <span class="detail-value">
+                                        <span th:if="${voucher.globalUsageLimit != null}"
+                                              th:text="${voucher.globalUsageLimit}">100</span>
+                                        <span th:if="${voucher.globalUsageLimit == null}">Không giới hạn</span>
+                                    </span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Mỗi khách hàng</span>
+                                    <span class="detail-value" th:text="${voucher.perCustomerLimit}">1</span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Trạng thái</span>
+                                    <span class="detail-value">
+                                        <span class="badge" 
+                                              th:classappend="${voucher.status == 'ACTIVE'} ? 'bg-success' : ${voucher.status == 'INACTIVE'} ? 'bg-danger' : 'bg-warning'"
+                                              th:text="${voucher.status == 'ACTIVE' ? 'Hoạt động' : voucher.status == 'INACTIVE' ? 'Không hoạt động' : 'Hết hạn'}">ACTIVE</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Validity Period -->
+                            <div class="detail-section">
+                                <h5><i class="fas fa-calendar-alt me-2"></i>Thời gian hiệu lực</h5>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Ngày bắt đầu</span>
+                                    <span class="detail-value">
+                                        <span th:if="${voucher.startDate != null}"
+                                              th:text="${#temporals.format(voucher.startDate, 'dd/MM/yyyy')}">01/01/2024</span>
+                                        <span th:if="${voucher.startDate == null}">Không giới hạn</span>
+                                    </span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Ngày kết thúc</span>
+                                    <span class="detail-value">
+                                        <span th:if="${voucher.endDate != null}"
+                                              th:text="${#temporals.format(voucher.endDate, 'dd/MM/yyyy')}">31/12/2024</span>
+                                        <span th:if="${voucher.endDate == null}">Không giới hạn</span>
+                                    </span>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <span class="detail-label">Ngày tạo</span>
+                                    <span class="detail-value" th:text="${#temporals.format(voucher.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <a th:href="@{/restaurant-owner/vouchers/{id}/edit(id=${voucher.voucherId}, restaurantId=${selectedRestaurantId})}" 
+                               class="btn-action btn-edit">
+                                <i class="fas fa-edit me-1"></i> Chỉnh sửa
+                            </a>
+                            
+                            <button type="button" class="btn-action btn-delete" 
+                                    onclick="confirmDelete()">
+                                <i class="fas fa-trash me-1"></i> Xóa
+                            </button>
+                            
+                            <a th:href="@{/restaurant-owner/vouchers(restaurantId=${selectedRestaurantId})}" 
+                               class="btn-action btn-back">
+                                <i class="fas fa-arrow-left me-1"></i> Quay lại
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Voucher Found -->
+        <div th:if="${voucher == null}" class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="card text-center">
+                    <div class="card-body py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h4>Không tìm thấy voucher</h4>
+                        <p class="text-muted">Voucher bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
+                        <a th:href="@{/restaurant-owner/vouchers}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-1"></i> Quay lại danh sách
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        Xác nhận xóa voucher
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa voucher <strong th:text="${voucher?.code}">VOUCHER123</strong>?</p>
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        Hành động này không thể hoàn tác!
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <form th:action="@{/restaurant-owner/vouchers/{id}/delete(id=${voucher?.voucherId}, restaurantId=${selectedRestaurantId})}" 
+                          method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash me-1"></i> Xóa voucher
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function confirmDelete() {
+            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+        }
+    </script>
+</body>
+</html>

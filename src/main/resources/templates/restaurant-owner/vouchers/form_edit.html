@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Voucher - Restaurant Owner Panel</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Admin CSS -->
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="~{fragments/header :: site-header}"></div>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container mt-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-edit me-2"></i>
+                                Edit Restaurant Voucher
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/restaurant-owner/vouchers/{id}/edit(id=${voucher.voucherId})}" 
+                                  method="post">
+                                
+                                <!-- Hidden fields -->
+                                <input type="hidden" name="voucherId" th:value="${voucher.voucherId}">
+                                <input type="hidden" name="code" th:value="${voucher.code}">
+                                <input type="hidden" name="discountType" th:value="${voucher.discountType.name()}">
+                                
+                                <!-- Voucher Information (Read-only) -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-info mb-3">
+                                            <i class="fas fa-info-circle me-2"></i>Thông Tin Voucher
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Mã Voucher</label>
+                                        <div class="form-control-plaintext bg-light p-2 rounded">
+                                            <code th:text="${voucher.code}">VOUCHER_CODE</code>
+                                        </div>
+                                        <small class="form-text text-muted">Mã voucher không thể thay đổi sau khi tạo</small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Nhà Hàng</label>
+                                        <div class="form-control-plaintext bg-light p-2 rounded">
+                                            <i class="fas fa-store me-1"></i>
+                                            <span th:text="${voucher.restaurant.restaurantName}">Restaurant Name</span>
+                                        </div>
+                                        <small class="form-text text-muted">Nhà hàng không thể thay đổi</small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Ngày Tạo</label>
+                                        <div class="form-control-plaintext bg-light p-2 rounded">
+                                            <i class="fas fa-calendar-plus me-1"></i>
+                                            <span th:text="${#temporals.format(voucher.createdAt, 'dd/MM/yyyy HH:mm')}">01/01/2024 10:00</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Loại Giảm Giá</label>
+                                        <div class="form-control-plaintext bg-light p-2 rounded">
+                                            <i class="fas fa-percentage me-1"></i>
+                                            <span th:text="${voucher.discountType == T(com.example.booking.domain.DiscountType).PERCENT ? 'Phần trăm (%)' : 'Số tiền cố định (₫)'}">Percentage</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Basic Information -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-primary mb-3">
+                                            <i class="fas fa-edit me-2"></i>Thông Tin Có Thể Chỉnh Sửa
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="status" class="form-label">Trạng Thái <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="status" name="status">
+                                            <option value="ACTIVE" th:selected="${voucher.status.name() == 'ACTIVE'}">Hoạt động</option>
+                                            <option value="INACTIVE" th:selected="${voucher.status.name() == 'INACTIVE'}">Không hoạt động</option>
+                                            <option value="EXPIRED" th:selected="${voucher.status.name() == 'EXPIRED'}">Hết hạn</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="col-12 mb-3">
+                                        <label for="description" class="form-label">Mô Tả</label>
+                                        <textarea class="form-control" 
+                                                  id="description" 
+                                                  name="description"
+                                                  rows="3" 
+                                                  th:text="${voucher.description}"
+                                                  placeholder="Nhập mô tả voucher"></textarea>
+                                    </div>
+                                </div>
+                                
+                                <!-- Discount Configuration -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-success mb-3">
+                                            <i class="fas fa-percentage me-2"></i>Cấu Hình Giảm Giá
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="discountValue" class="form-label">Giá Trị Giảm Giá <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="discountValue" 
+                                                   name="discountValue"
+                                                   th:value="${voucher.discountValue}"
+                                                   step="0.01" 
+                                                   min="0"
+                                                   placeholder="Nhập giá trị giảm giá">
+                                            <span class="input-group-text" th:text="${voucher.discountType == T(com.example.booking.domain.DiscountType).PERCENT ? '%' : '₫'}">%</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="minOrderAmount" class="form-label">Đơn Hàng Tối Thiểu (₫)</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="minOrderAmount" 
+                                               name="minOrderAmount"
+                                               th:value="${voucher.minOrderAmount}"
+                                               step="0.01" 
+                                               min="0"
+                                               placeholder="Nhập đơn hàng tối thiểu">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3" th:if="${voucher.discountType == T(com.example.booking.domain.DiscountType).PERCENT}">
+                                        <label for="maxDiscountAmount" class="form-label">Giảm Tối Đa (₫)</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="maxDiscountAmount" 
+                                               name="maxDiscountAmount"
+                                               th:value="${voucher.maxDiscountAmount}"
+                                               step="0.01" 
+                                               min="0"
+                                               placeholder="Nhập giảm tối đa">
+                                    </div>
+                                </div>
+                                
+                                <!-- Usage Limits -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-warning mb-3">
+                                            <i class="fas fa-users me-2"></i>Giới Hạn Sử Dụng
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="globalUsageLimit" class="form-label">Giới Hạn Tổng Cộng</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="globalUsageLimit" 
+                                               name="globalUsageLimit"
+                                               th:value="${voucher.globalUsageLimit}"
+                                               min="1"
+                                               placeholder="Nhập giới hạn tổng cộng">
+                                        <small class="form-text text-muted">Để trống để không giới hạn</small>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="perCustomerLimit" class="form-label">Giới Hạn Mỗi Khách</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="perCustomerLimit" 
+                                               name="perCustomerLimit"
+                                               th:value="${voucher.perCustomerLimit}"
+                                               min="1"
+                                               placeholder="Nhập giới hạn mỗi khách">
+                                        <small class="form-text text-muted">Để trống để không giới hạn</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Validity Period -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h5 class="text-info mb-3">
+                                            <i class="fas fa-calendar-alt me-2"></i>Thời Gian Hiệu Lực
+                                        </h5>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="startDate" class="form-label">Ngày Bắt Đầu <span class="text-danger">*</span></label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="startDate" 
+                                               name="startDate"
+                                               th:value="${voucher.startDate}">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="endDate" class="form-label">Ngày Kết Thúc</label>
+                                        <input type="date" 
+                                               class="form-control" 
+                                               id="endDate" 
+                                               name="endDate"
+                                               th:value="${voucher.endDate}">
+                                        <small class="form-text text-muted">Để trống để không có ngày hết hạn</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Action Buttons -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between">
+                                            <a th:href="@{/restaurant-owner/vouchers(restaurantId=${voucher.restaurant.restaurantId})}" class="btn btn-secondary me-md-2">
+                                                <i class="fas fa-arrow-left me-1"></i>Quay Lại Danh Sách
+                                            </a>
+                                            <button type="submit" class="btn btn-warning">
+                                                <i class="fas fa-save me-1"></i>Cập Nhật Voucher
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer Fragment -->
+    <div th:insert="~{fragments/footer :: site-footer}"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
