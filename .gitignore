@@ -1,40 +1,52 @@
-# Maven
+# ============================================================
+# 🌿 SPRING BOOT + MAVEN + INTELLIJ + PAYOS PROJECT
+# ============================================================
+
+############################
+# MAVEN BUILD
+############################
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# Gradle
-.gradle
+############################
+# GRADLE (nếu có)
+############################
+.gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-# IDE
+############################
+# IDE FILES
+############################
 .idea/
-*.iws
+.vscode/
 *.iml
 *.ipr
-.vscode/
+*.iws
 *.swp
 *.swo
 *~
-
-# Eclipse
-.project
 .classpath
+.project
 .settings/
 bin/
 
-# NetBeans
+############################
+# NETBEANS
+############################
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-# OS
+############################
+# OS FILES
+############################
 .DS_Store
 .DS_Store?
 ._*
@@ -43,60 +55,85 @@ bin/
 ehthumbs.db
 Thumbs.db
 
-# Application
+############################
+# APPLICATION RUNTIME
+############################
 logs/
 *.log
 *.log.*
 uploads/
 temp/
+out/
+hs_err_pid*
+replay_pid*
 
-# Node.js (if any frontend build)
+############################
+# NODE / FRONTEND (nếu có)
+############################
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Security - NEVER commit these
+############################
+# SECURITY / SECRETS
+############################
+# 🔒 Tuyệt đối không commit các file chứa key bí mật
 application-local.yml
+application-local.properties
+application-secrets.yml
+application-secrets.properties
 *.key
 *.p12
 *.jks
+*.pem
+*.crt
 
-# Environment variables
+############################
+# ENVIRONMENT VARIABLES
+############################
 .env
+.env.*
 .env.local
 .env.prod
-.env.development
 .env.production
+.env.development
+.env.backup
+*.env.backup
 
-# Database
+############################
+# DATABASE FILES
+############################
 *.db
 *.sqlite
 *.sqlite3
 
-# JVM - ignore error logs
-hs_err_pid*
-replay_pid*
+############################
+# ALLOW-LIST (giữ lại file cần thiết)
+############################
+# Giữ các file cấu hình chung, không chứa bí mật
+!application.yml
+!application-dev.yml
+!application-prod.yml
+!application-example.yml
+!application-sample.yml
+!src/main/resources/application.yml
+!src/main/resources/application-dev.yml
+!src/main/resources/application-prod.yml
+!src/main/resources/application-example.yml
+!src/main/resources/messages.properties
+!src/main/resources/messages_vi.properties
+!pom.xml
+!.gitignore
 
-# ALLOW these specific files to be committed:
-# - .gitignore
-# - application.yml
-# - application-dev.example.yml
-# - application-dev.yml
-# - application-prod.yml
-# - messages.properties
-# - messages_vi.properties
-# - pom.xml
-
-# Allow all application yml files except local/secrets
-src/main/resources/application-*.yml
-!src/main/resources/application-*.example.yml
-
-# Explicitly allow specific config files
-src/main/resources/application.yml
-src/main/resources/application-dev.yml
-src/main/resources/application-prod.yml
-src/main/resources/messages.properties
-src/main/resources/messages_vi.properties
-pom.xml
-.gitignore
+############################
+# PAYOS & DEPLOYMENT NOTES
+############################
+# PayOS credentials nên được đặt trong .env hoặc application-local.yml
+# KHÔNG được push lên GitHub:
+#   PAYOS_CLIENT_ID
+#   PAYOS_API_KEY
+#   PAYOS_CHECKSUM_KEY
+#
+# Nếu cần file mẫu, tạo:
+#   src/main/resources/

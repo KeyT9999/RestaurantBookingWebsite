@@ -1,121 +1,506 @@
 <!DOCTYPE html>
-<html th:replace="~{fragments/layout :: layout(~{::head}, ~{::body})}">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Payment Form</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/luxury.css}" rel="stylesheet">
     <style>
+        /* Enhanced Payment Form Styles */
+        .main-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        
+        .payment-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        
+        .payment-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .payment-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .payment-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .payment-body {
+            padding: 2rem;
+        }
+        
+        /* Booking Summary Card */
+        .booking-summary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .booking-summary h4 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .booking-info {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .booking-info p {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .booking-info strong {
+            color: #495057;
+        }
+        
+        .booking-info .text-primary {
+            color: #667eea !important;
+            font-weight: 600;
+        }
+        
+        /* Payment Method Cards */
+        .payment-section {
+            margin-bottom: 2rem;
+        }
+        
+        .payment-section h5 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
         .payment-method-card {
             border: 2px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
             cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        
+        .payment-method-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+        
+        .payment-method-card:hover::before {
+            left: 100%;
+        }
+        
+        .payment-method-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .payment-method-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+        }
+        
+        .payment-method-card.selected .payment-method-icon {
+            color: white !important;
+        }
+        
+        .payment-method-card.selected h6 {
+            color: white !important;
+        }
+        
+        .payment-method-card.selected p {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        .payment-method-card.selected small {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        .payment-method-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
             transition: all 0.3s ease;
         }
-        .payment-method-card:hover {
-            border-color: #007bff;
-            box-shadow: 0 4px 8px rgba(0,123,255,0.1);
+        
+        .payment-method-card:hover .payment-method-icon {
+            transform: scale(1.1);
         }
-        .payment-method-card.selected {
-            border-color: #007bff;
-            background-color: #f8f9fa;
+        
+        .payment-method-card h6 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
         }
+        
+        .payment-method-card p {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .payment-method-card small {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        /* Voucher Section */
+        .voucher-section {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 25px rgba(255, 193, 7, 0.2);
+        }
+        
+        .voucher-section h5 {
+            color: #856404;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .voucher-input-group {
+            position: relative;
+        }
+        
+        .voucher-input-group .form-control {
+            border: 2px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .voucher-input-group .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .voucher-input-group .btn {
+            border-radius: 0 10px 10px 0;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .voucher-input-group .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Payment Summary */
+        .payment-summary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .payment-summary h6 {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .payment-summary .d-flex {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+        
+        .payment-summary .text-primary {
+            color: #667eea !important;
+            font-weight: 600;
+        }
+        
+        .payment-summary .text-success {
+            color: #28a745 !important;
+            font-weight: 600;
+        }
+        
+        .payment-summary .text-warning {
+            color: #ffc107 !important;
+            font-weight: 600;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            margin-top: 2rem;
+        }
+        
+        .btn--gold {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            border: none;
+            color: #333;
+            font-weight: 600;
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn--gold::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn--gold:hover::before {
+            left: 100%;
+        }
+        
+        .btn--gold:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(255, 215, 0, 0.4);
+        }
+        
+        .btn--gold:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn--gold:disabled {
+            opacity: 0.6;
+            transform: none;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+        }
+        
+        .btn--outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+            font-weight: 600;
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn--outline:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Loading Animation */
+        .btn--gold .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem 0;
+            }
+            
+            .payment-header {
+                padding: 1.5rem;
+            }
+            
+            .payment-header h1 {
+                font-size: 2rem;
+            }
+            
+            .payment-body {
+                padding: 1.5rem;
+            }
+            
+            .payment-method-card {
+                padding: 1rem;
+            }
+            
         .payment-method-icon {
             font-size: 2rem;
-            margin-bottom: 10px;
+            }
+            
+            .btn--gold, .btn--outline {
+                padding: 0.875rem 1.5rem;
+                font-size: 1rem;
+            }
         }
-        .voucher-section {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
+        
+        /* Focus States for Accessibility */
+        .payment-method-card:focus {
+            outline: 3px solid #667eea;
+            outline-offset: 2px;
         }
-        .booking-summary {
-            background-color: #fff;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
+        
+        .btn--gold:focus, .btn--outline:focus {
+            outline: 3px solid #667eea;
+            outline-offset: 2px;
+        }
+        
+        /* Animation for form elements */
+        .payment-section {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Success/Error States */
+        .alert {
+            border: none;
+            border-radius: 15px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            color: #0c5460;
+        }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
         }
     </style>
 </head>
 <body>
-    <div class="container mt-4">
+    <div th:insert="~{fragments/header :: site-header}"></div>
+
+    <main class="main-content">
+        <div class="container" th:with="hasBooking=${booking != null}">
+            <div class="container"><div th:insert="~{fragments/flash :: flash}"></div></div>
         <div class="row justify-content-center">
-            <div class="col-md-8">
+                <div class="col-lg-10 col-xl-8">
+                    <div class="payment-container">
+                        <!-- Payment Header -->
+                        <div class="payment-header">
+                            <h1><i class="fas fa-credit-card"></i> Thanh toán</h1>
+                            <p>Hoàn tất thanh toán để xác nhận đặt bàn của bạn</p>
+                        </div>
+                        
+                        <div class="payment-body" th:if="${hasBooking}">
                 <!-- Booking Summary -->
                 <div class="booking-summary">
                     <h4><i class="fas fa-receipt"></i> Thông tin đặt bàn</h4>
-                    <hr>
+                                <div class="booking-info">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Booking ID:</strong> <span class="text-primary font-weight-bold" th:text="${booking.bookingId}">#123</span></p>
-                            <p><strong>Nhà hàng:</strong> <span th:text="${booking.restaurant.restaurantName}">Restaurant Name</span></p>
-                            <p><strong>Thời gian:</strong> <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}">Booking Time</span></p>
-                            <p><strong>Số khách:</strong> <span th:text="${booking.numberOfGuests}">Number of Guests</span></p>
+                                            <p><strong>Booking ID:</strong> <span class="text-primary" th:text="${hasBooking ? booking.bookingId : '—'}">#123</span></p>
+                                            <p th:if="${hasBooking && booking.restaurant != null}"><strong>Nhà hàng:</strong> <span th:text="${booking.restaurant.restaurantName}">Restaurant Name</span></p>
+                                            <p th:if="${hasBooking && booking.bookingTime != null}"><strong>Thời gian:</strong> <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}">Booking Time</span></p>
+                                            <p><strong>Số khách:</strong> <span th:text="${hasBooking ? booking.numberOfGuests : 0}">Number of Guests</span></p>
                         </div>
                         <div class="col-md-6">
                             <p><strong>Trạng thái:</strong> 
-                                <span class="badge badge-warning" th:text="${booking.status.displayName}">Status</span>
+                                                <span class="badge bg-warning text-dark" th:text="${hasBooking ? booking.status.displayName : 'N/A'}">Status</span>
                             </p>
                             <p><strong>Tiền đặt cọc:</strong> 
-                                <span class="text-primary font-weight-bold" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0</span>
+                                                <span class="text-primary" th:text="${hasBooking ? #numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0</span>
                             </p>
-                            <p th:if="${!#strings.isEmpty(booking.note)}">
+                                            <p th:if="${hasBooking && !#strings.isEmpty(booking.note)}">
                                 <strong>Ghi chú:</strong> <span th:text="${booking.note}">Note</span>
                             </p>
                         </div>
                     </div>
-                    <div class="alert alert-info mt-3">
+                                </div>
+                                <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
                         <strong>Lưu ý:</strong> Vui lòng hoàn tất thanh toán để xác nhận đặt bàn. Booking sẽ được xác nhận ngay sau khi thanh toán thành công.
                     </div>
                 </div>
-
-                <!-- Payment Form -->
-                <div class="card">
-                    <div class="card-header">
-                        <h4><i class="fas fa-credit-card"></i> Chọn phương thức thanh toán</h4>
-                    </div>
-                    <div class="card-body">
                         <form th:action="@{/payment/process}" method="post" id="paymentForm">
-                            <input type="hidden" name="bookingId" th:value="${booking.bookingId}">
+                                <input type="hidden" name="bookingId" th:value="${hasBooking ? booking.bookingId : 0}">
                             
                             <!-- Voucher Section -->
                             <div class="voucher-section">
                                 <h5><i class="fas fa-tag"></i> Mã giảm giá (tùy chọn)</h5>
+                                    <div class="voucher-input-group">
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="voucherCode" name="voucherCode" 
                                            placeholder="Nhập mã giảm giá">
-                                    <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary" type="button" id="applyVoucher">
+                                            <button class="btn btn-warning" type="button" id="applyVoucher">
                                             <i class="fas fa-check"></i> Áp dụng
                                         </button>
                                     </div>
                                 </div>
-                                <small class="form-text text-muted">
+                                    <small class="form-text text-muted mt-2">
                                     Nhập mã giảm giá để được giảm giá cho đơn hàng
                                 </small>
                             </div>
                             
                             <!-- Payment Type Selection -->
-                            <div class="mb-4">
-                                <h5>Loại thanh toán</h5>
+                                <div class="payment-section">
+                                    <h5><i class="fas fa-list"></i> Loại thanh toán</h5>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <div class="payment-method-card" data-type="DEPOSIT">
+                                            <div class="payment-method-card" data-type="DEPOSIT" tabindex="0">
                                             <div class="text-center">
                                                 <div class="payment-method-icon text-warning">
                                                     <i class="fas fa-coins"></i>
                                                 </div>
                                                 <h6>Đặt cọc</h6>
                                                 <p class="text-muted small">Thanh toán một phần để giữ bàn</p>
-                                                <small class="text-info">Chỉ hỗ trợ MoMo</small>
+                                                <small class="text-info">Chỉ hỗ trợ PayOS</small>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <div class="col-md-6 mb-3">
-                                        <div class="payment-method-card" data-type="FULL_PAYMENT">
+                                            <div class="payment-method-card" data-type="FULL_PAYMENT" tabindex="0">
                                             <div class="text-center">
                                                 <div class="payment-method-icon text-success">
                                                     <i class="fas fa-credit-card"></i>
@@ -127,16 +512,16 @@
                                         </div>
                                     </div>
                                 </div>
-                                <input type="hidden" name="paymentType" id="selectedPaymentType" required>
+                                <input type="hidden" name="paymentType" id="selectedPaymentType" value="DEPOSIT" required>
                             </div>
                             
                             <!-- Payment Methods -->
-                            <div class="mb-4" id="paymentMethodsSection" style="display: none;">
-                                <h5>Phương thức thanh toán</h5>
+                                <div class="payment-section" id="paymentMethodsSection" style="display: none;">
+                                    <h5><i class="fas fa-credit-card"></i> Phương thức thanh toán</h5>
                                 <div class="row">
                                     <!-- Cash Payment (only for full payment) -->
                                     <div class="col-md-6 mb-3" id="cashPaymentOption" style="display: none;">
-                                        <div class="payment-method-card" data-method="CASH">
+                                            <div class="payment-method-card" data-method="CASH" tabindex="0">
                                             <div class="text-center">
                                                 <div class="payment-method-icon text-success">
                                                     <i class="fas fa-money-bill-wave"></i>
@@ -148,56 +533,30 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Card Payment -->
+                                    <!-- PayOS Payment -->
                                     <div class="col-md-6 mb-3">
-                                        <div class="payment-method-card" data-method="CARD">
-                                            <div class="text-center">
-                                                <div class="payment-method-icon text-primary">
-                                                    <i class="fas fa-credit-card"></i>
-                                                </div>
-                                                <h6>Thẻ</h6>
-                                                <p class="text-muted small">Visa, Mastercard</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- MoMo Payment -->
-                                    <div class="col-md-6 mb-3">
-                                        <div class="payment-method-card" data-method="MOMO">
+                                            <div class="payment-method-card" data-method="PAYOS" tabindex="0">
                                             <div class="text-center">
                                                 <div class="payment-method-icon text-danger">
-                                                    <i class="fab fa-momo"></i>
+                                                    <i class="fas fa-qrcode"></i>
                                                 </div>
-                                                <h6>MoMo</h6>
-                                                <p class="text-muted small">Ví điện tử MoMo</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- ZaloPay Payment -->
-                                    <div class="col-md-6 mb-3">
-                                        <div class="payment-method-card" data-method="ZALOPAY">
-                                            <div class="text-center">
-                                                <div class="payment-method-icon text-info">
-                                                    <i class="fas fa-mobile-alt"></i>
-                                                </div>
-                                                <h6>ZaloPay</h6>
-                                                <p class="text-muted small">Ví điện tử ZaloPay</p>
+                                                <h6>PayOS</h6>
+                                                <p class="text-muted small">Thanh toán VietQR qua PayOS</p>
+                                                    <small class="text-info">Hỗ trợ tất cả loại thanh toán</small>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <input type="hidden" name="paymentMethod" id="selectedPaymentMethod" required>
+                                <input type="hidden" name="paymentMethod" id="selectedPaymentMethod" value="PAYOS" required>
                             </div>
                             
                             <!-- Payment Summary -->
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h6>Tổng kết thanh toán</h6>
+                                <div class="payment-summary">
+                                    <h6><i class="fas fa-calculator"></i> Tổng kết thanh toán</h6>
                                     <div class="d-flex justify-content-between">
-                                        <span>Tiền đặt bàn:</span>
-                                        <span th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0</span>
+                                        <span id="amountLabel">Tổng giá trị đặt bàn:</span>
+                                        <span id="baseAmount" th:text="${fullTotalAmount != null ? #numbers.formatDecimal(fullTotalAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</span>
                                     </div>
                                     <div class="d-flex justify-content-between" id="discountRow" style="display: none;">
                                         <span>Giảm giá:</span>
@@ -205,134 +564,236 @@
                                     </div>
                                     <hr>
                                     <div class="d-flex justify-content-between">
-                                        <strong>Tổng cộng:</strong>
-                                        <strong class="text-primary" id="totalAmount" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0</strong>
+                                        <strong id="totalLabel">Tổng cộng:</strong>
+                                        <strong class="text-primary" id="totalAmount">0 VNĐ</strong>
                                     </div>
                                     <div class="d-flex justify-content-between" id="remainingAmountRow" style="display: none;">
                                         <span>Số tiền còn lại:</span>
-                                        <span class="text-warning" id="remainingAmount">0</span> VNĐ
-                                    </div>
+                                        <span class="text-warning" id="remainingAmount">0 VNĐ</span>
                                 </div>
                             </div>
                             
                             <!-- Action Buttons -->
-                            <div class="d-grid gap-2 mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg" id="payButton" disabled>
-                                    <i class="fas fa-credit-card"></i> Thanh toán
+                                <div class="action-buttons">
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn--gold btn-lg" id="payButton">
+                                    <i class="fas fa-qrcode"></i> Đặt cọc PayOS
                                 </button>
-                                <a href="/booking/my" class="btn btn-secondary">
+                                        <a href="/booking/my" class="btn btn--outline">
                                     <i class="fas fa-arrow-left"></i> Quay lại
                                 </a>
+                                    </div>
                             </div>
                         </form>
                     </div>
+                        
+                        <div class="payment-body" th:if="${!hasBooking}">
+                            <div class="alert alert-warning mb-0">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Không tìm thấy booking. Vui lòng quay lại trang đặt bàn.
+                            </div>
+                        </div>
                 </div>
             </div>
         </div>
     </div>
+    </main>
+
+    <div th:insert="~{fragments/footer :: site-footer}"></div>
 
     <script th:inline="javascript">
         let selectedPaymentType = null;
         
-        // Payment type selection
-        document.querySelectorAll('[data-type]').forEach(card => {
-            card.addEventListener('click', function() {
-                // Remove selected class from all type cards
-                document.querySelectorAll('[data-type]').forEach(c => c.classList.remove('selected'));
-                
-                // Add selected class to clicked card
-                this.classList.add('selected');
-                
-                // Set payment type value
-                selectedPaymentType = this.dataset.type;
-                document.getElementById('selectedPaymentType').value = selectedPaymentType;
-                
-                // Show payment methods section
-                document.getElementById('paymentMethodsSection').style.display = 'block';
-                
-                // Show/hide cash option based on payment type
-                const cashOption = document.getElementById('cashPaymentOption');
-                if (selectedPaymentType === 'FULL_PAYMENT') {
-                    cashOption.style.display = 'block';
+        function handleTypePick(el) {
+            // Remove selected class from all type cards
+            document.querySelectorAll('[data-type]').forEach(c => c.classList.remove('selected'));
+            
+            // Add selected class to clicked card
+            el.classList.add('selected');
+            
+            // Set payment type value
+            selectedPaymentType = el.dataset.type;
+            document.getElementById('selectedPaymentType').value = selectedPaymentType;
+            
+            // Show payment methods section
+            const methodsSection = document.getElementById('paymentMethodsSection');
+            methodsSection.style.display = 'block';
+            
+            // Show/hide cash option based on payment type
+            const cashOption = document.getElementById('cashPaymentOption');
+            if (selectedPaymentType === 'FULL_PAYMENT') {
+                cashOption.style.display = 'block';
+            } else {
+                cashOption.style.display = 'none';
+            }
+            
+            // For DEPOSIT, only show PAYOS
+            const methodCards = document.querySelectorAll('[data-method]');
+            methodCards.forEach(m => {
+                if (selectedPaymentType === 'DEPOSIT') {
+                    m.style.display = (m.dataset.method === 'PAYOS') ? 'block' : 'none';
                 } else {
-                    cashOption.style.display = 'none';
-                    // Remove cash selection if it was selected
-                    const cashCard = document.querySelector('[data-method="CASH"]');
-                    if (cashCard && cashCard.classList.contains('selected')) {
-                        cashCard.classList.remove('selected');
-                        document.getElementById('selectedPaymentMethod').value = '';
-                        document.getElementById('payButton').disabled = true;
-                    }
+                    m.style.display = 'block';
                 }
-                
-                // Clear payment method selection
-                document.querySelectorAll('[data-method]').forEach(c => c.classList.remove('selected'));
-                document.getElementById('selectedPaymentMethod').value = '';
-                document.getElementById('payButton').disabled = true;
-                
-                // Update payment summary
-                updatePaymentSummary();
             });
-        });
+            
+            // Update payment summary
+            updatePaymentSummary();
+        }
+
+        // Bind click + keyboard enter/space for accessibility
+        function bindTypeCardEvents() {
+            document.querySelectorAll('[data-type]').forEach(card => {
+                // Remove existing listeners to avoid duplicates
+                card.removeEventListener('click', handleTypePick);
+                card.removeEventListener('keydown', handleTypeKeydown);
+                
+                // Add new listeners
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleTypePick(card);
+                });
+                card.addEventListener('keydown', handleTypeKeydown);
+            });
+        }
+        
+        function handleTypeKeydown(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleTypePick(e.target.closest('[data-type]'));
+            }
+        }
+        
+        // Bind payment method card events
+        function bindMethodCardEvents() {
+            document.querySelectorAll('[data-method]').forEach(card => {
+                // Remove existing listeners to avoid duplicates
+                card.removeEventListener('click', handleMethodPick);
+                card.removeEventListener('keydown', handleMethodKeydown);
+                
+                // Add new listeners
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleMethodPick(card);
+                });
+                card.addEventListener('keydown', handleMethodKeydown);
+            });
+        }
+        
+        function handleMethodKeydown(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleMethodPick(e.target.closest('[data-method]'));
+            }
+        }
         
         // Payment method selection
-        document.querySelectorAll('[data-method]').forEach(card => {
-            card.addEventListener('click', function() {
-                // Remove selected class from all method cards
-                document.querySelectorAll('[data-method]').forEach(c => c.classList.remove('selected'));
-                
-                // Add selected class to clicked card
-                this.classList.add('selected');
-                
-                // Set payment method value
-                const method = this.dataset.method;
-                document.getElementById('selectedPaymentMethod').value = method;
-                
-                // Enable pay button
-                document.getElementById('payButton').disabled = false;
-                
-                // Update payment summary
-                updatePaymentSummary();
-                
-                // Update button text based on method and type
-                const payButton = document.getElementById('payButton');
-                const typeText = selectedPaymentType === 'DEPOSIT' ? 'Đặt cọc' : 'Thanh toán';
-                
-                switch(method) {
-                    case 'CASH':
-                        payButton.innerHTML = `<i class="fas fa-money-bill-wave"></i> ${typeText} tiền mặt`;
-                        break;
-                    case 'CARD':
-                        payButton.innerHTML = `<i class="fas fa-credit-card"></i> ${typeText} thẻ`;
-                        break;
-                    case 'MOMO':
-                        payButton.innerHTML = `<i class="fab fa-momo"></i> ${typeText} MoMo`;
-                        break;
-                    case 'ZALOPAY':
-                        payButton.innerHTML = `<i class="fas fa-mobile-alt"></i> ${typeText} ZaloPay`;
-                        break;
-                }
-            });
-        });
+        function handleMethodPick(el) {
+            // Remove selected class from all method cards
+            document.querySelectorAll('[data-method]').forEach(c => c.classList.remove('selected'));
+            
+            // Add selected class to clicked card
+            el.classList.add('selected');
+            
+            // Set payment method value
+            const method = el.dataset.method;
+            document.getElementById('selectedPaymentMethod').value = method;
+            
+            // Update payment summary
+            updatePaymentSummary();
+            
+            // Update button text based on method and type
+            const payButton = document.getElementById('payButton');
+            const typeText = selectedPaymentType === 'DEPOSIT' ? 'Đặt cọc' : 'Thanh toán';
+            
+            switch(method) {
+                case 'CASH':
+                    payButton.innerHTML = `<i class="fas fa-money-bill-wave"></i> ${typeText} tiền mặt`;
+                    break;
+                case 'CARD':
+                    payButton.innerHTML = `<i class="fas fa-credit-card"></i> ${typeText} thẻ`;
+                    break;
+                case 'PAYOS':
+                    // Nếu đặt cọc: "Đặt cọc PayOS", nếu thanh toán full: "Thanh toán"
+                    if (selectedPaymentType === 'DEPOSIT') {
+                        payButton.innerHTML = `<i class="fas fa-qrcode"></i> Đặt cọc PayOS`;
+                    } else {
+                        payButton.innerHTML = `<i class="fas fa-qrcode"></i> Thanh toán`;
+                    }
+                    break;
+                case 'ZALOPAY':
+                    payButton.innerHTML = `<i class="fas fa-mobile-alt"></i> ${typeText} ZaloPay`;
+                    break;
+            }
+        }
 
         // Update payment summary
         function updatePaymentSummary() {
-            const depositAmount = parseFloat('[[${booking.depositAmount}]]') || 0;
+            const fullTotal = parseFloat('[(${fullTotalAmount != null ? fullTotalAmount : 0})]') || 0;
             const totalAmountElement = document.getElementById('totalAmount');
+            const totalLabelElement = document.getElementById('totalLabel');
             const remainingAmountRow = document.getElementById('remainingAmountRow');
             const remainingAmountElement = document.getElementById('remainingAmount');
             
-            if (selectedPaymentType === 'DEPOSIT') {
-                // For deposit, show deposit amount
-                totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN') + ' VNĐ';
-                remainingAmountRow.style.display = 'none';
+            // Calculate deposit amount based on new logic
+            let depositAmount;
+            if (fullTotal > 500000) {
+                depositAmount = fullTotal * 0.1; // 10% if > 500k
             } else {
-                // For full payment, show full amount (for now same as deposit)
+                depositAmount = 10000; // Min 10k if <= 500k
+            }
+            
+            if (selectedPaymentType === 'DEPOSIT') {
+                // Update label
+                totalLabelElement.textContent = 'Số tiền phải trả (Đặt cọc 10%):';
+                
+                // Show deposit amount
                 totalAmountElement.textContent = depositAmount.toLocaleString('vi-VN') + ' VNĐ';
+                
+                // Show remaining amount
+                const remaining = fullTotal - depositAmount;
+                remainingAmountElement.textContent = remaining.toLocaleString('vi-VN') + ' VNĐ';
+                remainingAmountRow.style.display = 'flex';
+            } else {
+                // Update label
+                totalLabelElement.textContent = 'Tổng cộng (Thanh toán 100%):';
+                
+                // Show full amount
+                totalAmountElement.textContent = fullTotal.toLocaleString('vi-VN') + ' VNĐ';
                 remainingAmountRow.style.display = 'none';
-                // TODO: Calculate and show remaining amount when full payment logic is implemented
             }
         }
+
+        // Auto-select sensible defaults to ensure flow works ngay khi mở trang
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Payment form loaded - Nút đã sẵn sàng!');
+            
+            // Bind event listeners first
+            bindTypeCardEvents();
+            bindMethodCardEvents();
+            
+            // Auto-highlight cards với animation
+            setTimeout(() => {
+                const defaultType = document.querySelector('[data-type="DEPOSIT"]');
+                const defaultMethod = document.querySelector('[data-method="PAYOS"]');
+                
+                if (defaultType) {
+                    handleTypePick(defaultType); // Gọi function để trigger logic
+                    console.log('✅ DEPOSIT card highlighted');
+                }
+                
+                if (defaultMethod) {
+                    handleMethodPick(defaultMethod); // Gọi function để trigger logic
+                    console.log('✅ PAYOS card highlighted');
+                }
+                
+                // Show payment methods section
+                const methodsSection = document.getElementById('paymentMethodsSection');
+                methodsSection.style.display = 'block';
+                
+                console.log('🎉 Form ready! Nút màu vàng có thể click ngay!');
+            }, 300);
+        });
 
         // Voucher application
         document.getElementById('applyVoucher').addEventListener('click', function() {
@@ -343,35 +804,64 @@
             }
         });
 
-        // Form submission
-        document.getElementById('paymentForm').addEventListener('submit', function(e) {
-            const selectedType = document.getElementById('selectedPaymentType').value;
-            const selectedMethod = document.getElementById('selectedPaymentMethod').value;
-            
-            if (!selectedType) {
-                e.preventDefault();
-                alert('Vui lòng chọn loại thanh toán');
-                return;
-            }
-            
-            if (!selectedMethod) {
-                e.preventDefault();
-                alert('Vui lòng chọn phương thức thanh toán');
-                return;
-            }
-            
-            // Validate deposit + cash combination
-            if (selectedType === 'DEPOSIT' && selectedMethod === 'CASH') {
-                e.preventDefault();
-                alert('Đặt cọc không được phép thanh toán bằng tiền mặt. Vui lòng chọn MoMo.');
-                return;
-            }
-            
+        // Form submission with enhanced UX
+        const formEl = document.getElementById('paymentForm');
+        formEl.addEventListener('submit', function(e) {
             // Show loading state
             const payButton = document.getElementById('payButton');
             payButton.disabled = true;
-            payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+            payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý thanh toán...';
+            
+            console.log('🚀 Form submitting with:');
+            console.log('  - paymentType:', document.getElementById('selectedPaymentType').value);
+            console.log('  - paymentMethod:', document.getElementById('selectedPaymentMethod').value);
+            console.log('  - bookingId:', document.querySelector('input[name="bookingId"]').value);
         });
+        
+        // Notification function
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                color: white;
+                font-weight: 600;
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+            `;
+            
+            switch(type) {
+                case 'success':
+                    notification.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+                    break;
+                case 'warning':
+                    notification.style.background = 'linear-gradient(135deg, #ffc107, #fd7e14)';
+                    break;
+                case 'error':
+                    notification.style.background = 'linear-gradient(135deg, #dc3545, #e83e8c)';
+                    break;
+                default:
+                    notification.style.background = 'linear-gradient(135deg, #17a2b8, #6f42c1)';
+            }
+            
+            notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'warning' ? 'exclamation-triangle' : type === 'error' ? 'times' : 'info'}"></i> ${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
     </script>
 </body>
 </html>

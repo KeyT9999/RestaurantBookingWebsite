@@ -49,11 +49,13 @@ public class PaymentService {
     @Autowired
     private BookingService bookingService;
     
-    @Autowired
-    private PayOsService payOsService;
+    // PayOsService is used indirectly through webhook processing
     
     @Autowired
     private ObjectMapper objectMapper;
+    
+    @Autowired
+    private EmailService emailService;
     
     /**
      * Create payment for booking
@@ -81,15 +83,52 @@ public class PaymentService {
         // Validate payment method and type combination
         validatePaymentMethodAndType(paymentMethod, paymentType);
         
+        // Calculate total amount based on payment type (do this FIRST)
+        BigDecimal totalAmount = calculateTotalAmount(booking, paymentType, voucherCode);
+        
         // Check if payment already exists for this booking and type
         Optional<Payment> existingPayment = findExistingPayment(booking, paymentType);
         if (existingPayment.isPresent()) {
-            logger.warn("Payment already exists for bookingId: {} and type: {}", bookingId, paymentType);
-            return existingPayment.get();
+            Payment payment = existingPayment.get();
+            
+            // If payment is PENDING, update amount with new calculation
+            if (payment.getStatus() == PaymentStatus.PENDING) {
+                BigDecimal oldAmount = payment.getAmount();
+                
+                // If amount changed, reset orderCode to create new payment link
+                if (oldAmount.compareTo(totalAmount) != 0) {
+                    logger.info("Amount changed from {} to {} → Resetting orderCode for new PayOS link", 
+                        oldAmount, totalAmount);
+                    
+                    payment.setAmount(totalAmount);
+                    
+                    // Reset PayOS fields to create fresh payment link
+                    payment.setOrderCode(null);
+                    payment.setPayosCheckoutUrl(null);
+                    payment.setPayosPaymentLinkId(null);
+                    
+                    Payment updatedPayment = paymentRepository.save(payment);
+                    
+                    // Generate new orderCode
+                    Long newOrderCode = generateUniqueOrderCode(booking.getBookingId());
+                    updatedPayment.setOrderCode(newOrderCode);
+                    updatedPayment = paymentRepository.save(updatedPayment);
+                    
+                    logger.info("Payment updated: PaymentId={}, Amount={}, NewOrderCode={}", 
+                        updatedPayment.getPaymentId(), updatedPayment.getAmount(), newOrderCode);
+                    
+                    return updatedPayment;
+                } else {
+                    logger.info("Amount unchanged ({}), reusing existing payment", totalAmount);
+                    return payment;
+                }
+            }
+            
+            // If payment is already COMPLETED or other status, just return it
+            logger.warn("Payment already exists for bookingId: {} and type: {} with status: {}", 
+                bookingId, paymentType, payment.getStatus());
+            return payment;
         }
-        
-        // Calculate total amount based on payment type
-        BigDecimal totalAmount = calculateTotalAmount(booking, paymentType, voucherCode);
         
         // Create payment record
         Payment payment = new Payment();
@@ -111,6 +150,10 @@ public class PaymentService {
             }
         }
         
+        // Generate unique orderCode for PayOS
+        Long orderCode = generateUniqueOrderCode(bookingId);
+        payment.setOrderCode(orderCode);
+        
         // Save payment
         Payment savedPayment = paymentRepository.save(payment);
         
@@ -129,42 +172,118 @@ public class PaymentService {
      */
     public boolean handlePayOsWebhook(String rawBody) {
         try {
-            WebhookPayload payload = objectMapper.readValue(rawBody, WebhookPayload.class);
-            if (payload == null || payload.data == null) {
+            logger.info("Processing PayOS webhook: {}", rawBody);
+            
+            // Parse webhook data using PayOsService.WebhookRequest
+            PayOsService.WebhookRequest webhookRequest = objectMapper.readValue(rawBody, PayOsService.WebhookRequest.class);
+            
+            if (webhookRequest == null || webhookRequest.getData() == null) {
                 logger.error("Invalid PayOS webhook payload");
                 return false;
             }
-            if (!payOsService.verifyWebhook(rawBody, payload.signature)) {
-                logger.error("Invalid PayOS webhook signature for orderCode: {}", 
-                    payload.data.orderCode);
-                return false;
-            }
-            Integer paymentId = Integer.valueOf(String.valueOf(payload.data.orderCode));
-            Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
+            
+            PayOsService.WebhookRequest.WebhookData data = webhookRequest.getData();
+            Long orderCode = data.getOrderCode().longValue();
+            
+            logger.info("Processing webhook for orderCode: {}, success: {}, code: {}", 
+                orderCode, webhookRequest.getSuccess(), data.getCode());
+            
+            // Find payment by orderCode
+            Optional<Payment> paymentOpt = paymentRepository.findByOrderCode(orderCode);
             if (paymentOpt.isEmpty()) {
-                logger.error("Payment not found for orderCode(paymentId): {}", paymentId);
+                logger.error("Payment not found for orderCode: {}", orderCode);
                 return false;
             }
+            
             Payment payment = paymentOpt.get();
-            boolean success = Boolean.TRUE.equals(payload.success) && 
-                ("00".equals(payload.code) || (payload.data.status != null && 
-                    payload.data.status.equalsIgnoreCase("PAID")));
+            
+            // Determine if payment was successful
+            boolean success = Boolean.TRUE.equals(webhookRequest.getSuccess()) && "00".equals(data.getCode());
+            
             if (success) {
+                // Payment successful
                 payment.setStatus(PaymentStatus.COMPLETED);
                 payment.setPaidAt(LocalDateTime.now());
-            } else {
-                payment.setStatus(PaymentStatus.FAILED);
-            }
-            try { payment.setIpnRaw(rawBody); } catch (Exception ignore) {}
-            paymentRepository.save(payment);
-            if (success) {
+                payment.setPayosCode(data.getCode());
+                payment.setPayosDesc("PayOS payment successful. Reference: " + data.getReference());
+                payment.setPayosPaymentLinkId(data.getPaymentLinkId());
+                
+                logger.info("Payment {} updated to COMPLETED", payment.getPaymentId());
+                
+                // Confirm booking
                 try {
                     bookingService.confirmBooking(payment.getBooking().getBookingId());
+                    logger.info("Booking {} confirmed after PayOS payment", payment.getBooking().getBookingId());
                 } catch (Exception e) {
-                    logger.error("Failed to confirm booking after PayOS payment. paymentId: {}", paymentId, e);
+                    logger.error("Failed to confirm booking after PayOS payment. paymentId: {}", payment.getPaymentId(), e);
                 }
+                
+                // Send success emails
+                try {
+                    Booking booking = payment.getBooking();
+                    Customer customer = booking.getCustomer();
+                    
+                    // Calculate remaining amount
+                    java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
+                    java.math.BigDecimal remainingAmount = totalAmount.subtract(payment.getAmount());
+                    
+                    // Send email to customer
+                    String customerEmail = customer.getUser().getEmail();
+                    String customerName = customer.getFullName();
+                    String restaurantName = booking.getRestaurant().getRestaurantName();
+                    String bookingTime = booking.getBookingTime().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+                    
+                    emailService.sendPaymentSuccessEmail(
+                        customerEmail,
+                        customerName,
+                        booking.getBookingId(),
+                        restaurantName,
+                        bookingTime,
+                        booking.getNumberOfGuests(),
+                        payment.getAmount(),
+                        remainingAmount,
+                        payment.getPaymentMethod().getDisplayName()
+                    );
+                    
+                    // Send email to restaurant owner
+                    String ownerEmail = booking.getRestaurant().getOwner().getUser().getEmail();
+                    emailService.sendPaymentNotificationToRestaurant(
+                        ownerEmail,
+                        restaurantName,
+                        booking.getBookingId(),
+                        customerName,
+                        bookingTime,
+                        booking.getNumberOfGuests(),
+                        payment.getAmount(),
+                        payment.getPaymentMethod().getDisplayName()
+                    );
+                    
+                    logger.info("✅ Payment success emails sent for payment {}", payment.getPaymentId());
+                    
+                } catch (Exception e) {
+                    logger.error("❌ Failed to send payment success emails for payment {}", payment.getPaymentId(), e);
+                    // Don't fail the webhook processing if email fails
+                }
+                
+            } else {
+                // Payment failed
+                payment.setStatus(PaymentStatus.FAILED);
+                payment.setPayosCode(data.getCode());
+                payment.setPayosDesc("PayOS payment failed. Code: " + data.getCode() + ", Desc: " + data.getDesc());
+                
+                logger.info("Payment {} updated to FAILED", payment.getPaymentId());
             }
+            
+            // Store webhook data
+            try { 
+                payment.setIpnRaw(rawBody); 
+            } catch (Exception ignore) {}
+            
+            paymentRepository.save(payment);
+            
+            logger.info("PayOS webhook processed successfully for paymentId: {}", payment.getPaymentId());
             return true;
+            
         } catch (Exception e) {
             logger.error("Error processing PayOS webhook", e);
             return false;
@@ -333,32 +452,55 @@ public class PaymentService {
     
     /**
      * Calculate total amount for booking based on payment type
+     * NEW LOGIC: 
+     * - Deposit = 10% of total if total > 500k, else minimum 10k
+     * - Full payment = 100% total
      * @param booking The booking
      * @param paymentType The payment type
      * @param voucherCode The voucher code
      * @return Total amount
      */
     private BigDecimal calculateTotalAmount(Booking booking, PaymentType paymentType, String voucherCode) {
-        BigDecimal totalAmount;
+        // Calculate FULL total first (deposit + dishes + services)
+        BigDecimal fullTotal = calculateFullPaymentAmount(booking);
+        
+        logger.info("💰 Calculating payment amount - Full total: {}, Type: {}", fullTotal, paymentType);
+        
+        BigDecimal paymentAmount;
         
         if (paymentType == PaymentType.DEPOSIT) {
-            // For deposit, use the deposit amount from booking
-            totalAmount = booking.getDepositAmount();
+            // NEW LOGIC: Deposit = 10% if total > 500k
+            BigDecimal threshold = new BigDecimal("500000");
+            BigDecimal minimumDeposit = new BigDecimal("10000");
+            
+            if (fullTotal.compareTo(threshold) > 0) {
+                // Total > 500k → deposit = 10%
+                paymentAmount = fullTotal.multiply(new BigDecimal("0.1"));
+                logger.info("   → Deposit (10% of {}): {}", fullTotal, paymentAmount);
+            } else {
+                // Total <= 500k → minimum deposit 10k
+                paymentAmount = minimumDeposit;
+                logger.info("   → Minimum deposit (total <= 500k): {}", paymentAmount);
+            }
         } else {
-            // For full payment, calculate total amount including dishes, services, etc.
-            totalAmount = calculateFullPaymentAmount(booking);
+            // FULL_PAYMENT: use full total
+            paymentAmount = fullTotal;
+            logger.info("   → Full payment: {}", paymentAmount);
         }
         
-        // Apply voucher discount
+        // Apply voucher discount (if applicable)
         if (voucherCode != null && !voucherCode.trim().isEmpty()) {
             Customer customer = booking.getCustomer();
             Voucher voucher = findValidVoucher(voucherCode, customer);
             if (voucher != null) {
-                totalAmount = applyVoucherDiscount(totalAmount, voucher);
+                BigDecimal originalAmount = paymentAmount;
+                paymentAmount = applyVoucherDiscount(paymentAmount, voucher);
+                logger.info("   → After voucher discount: {} (was: {})", paymentAmount, originalAmount);
             }
         }
         
-        return totalAmount;
+        logger.info("✅ Final payment amount: {}", paymentAmount);
+        return paymentAmount;
     }
     
     /**
@@ -367,17 +509,11 @@ public class PaymentService {
      * @return Full payment amount
      */
     private BigDecimal calculateFullPaymentAmount(Booking booking) {
-        BigDecimal totalAmount = booking.getDepositAmount();
-        
-        // TODO: Add logic to calculate dish prices, service prices, etc.
-        // For now, just use deposit amount as base
-        // In the future, this should include:
+        // Use BookingService's calculateTotalAmount which includes:
+        // - Deposit amount (table fees)
         // - Dish prices from bookingDishes
         // - Service prices from bookingServices
-        // - Table fees
-        // - Any additional charges
-        
-        return totalAmount;
+        return bookingService.calculateTotalAmount(booking);
     }
     
     /**
@@ -386,9 +522,11 @@ public class PaymentService {
      * @param customer The customer
      * @return Voucher if valid
      */
-    private Voucher findValidVoucher(String voucherCode, Customer customer) {
+    @SuppressWarnings("unused")
+    private Voucher findValidVoucher(@SuppressWarnings("unused") String voucherCode, @SuppressWarnings("unused") Customer customer) {
         // TODO: Implement voucher validation logic
         // Check if voucher exists, is active, not expired, and available for customer
+        // Currently not implemented, so returning null
         return null;
     }
     
@@ -398,7 +536,8 @@ public class PaymentService {
      * @param voucher The voucher
      * @return Discounted amount
      */
-    private BigDecimal applyVoucherDiscount(BigDecimal amount, Voucher voucher) {
+    @SuppressWarnings("unused")
+    private BigDecimal applyVoucherDiscount(BigDecimal amount, @SuppressWarnings("unused") Voucher voucher) {
         // TODO: Implement voucher discount logic
         // Apply percentage or fixed discount based on voucher type
         // For now, return the original amount
@@ -449,5 +588,34 @@ public class PaymentService {
         public Long amount;
         public String status;
         public String paymentLinkId;
+    }
+    
+    /**
+     * Generate unique orderCode for PayOS
+     * Strategy: bookingId * 1000000 + timestamp % 1000000
+     * @param bookingId The booking ID
+     * @return Unique orderCode
+     */
+    private Long generateUniqueOrderCode(Integer bookingId) {
+        long timestamp = System.currentTimeMillis() % 1000000;
+        Long orderCode = bookingId * 1000000L + timestamp;
+        
+        // Ensure uniqueness by checking database
+        while (paymentRepository.existsByOrderCode(orderCode)) {
+            timestamp = (timestamp + 1) % 1000000;
+            orderCode = bookingId * 1000000L + timestamp;
+        }
+        
+        logger.info("Generated orderCode: {} for bookingId: {}", orderCode, bookingId);
+        return orderCode;
+    }
+    
+    /**
+     * Find payment by orderCode
+     * @param orderCode The PayOS order code
+     * @return Optional containing the Payment if found
+     */
+    public Optional<Payment> findByOrderCode(Long orderCode) {
+        return paymentRepository.findByOrderCode(orderCode);
     }
 }

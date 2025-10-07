@@ -56,12 +56,6 @@
                                 <span>Reviews</span>
                             </a>
                         </li>
-                        <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER')">
-                            <a class="nav-link" th:href="@{/restaurant-owner/chat}" th:classappend="${#strings.startsWith(currentPath, '/restaurant-owner/chat')} ? 'active' : ''">
-                                <i class="fas fa-comments nav-icon"></i>
-                                <span>Chat</span>
-                            </a>
-                        </li>
                         <li class="nav-item" sec:authorize="isAuthenticated() and !hasRole('RESTAURANT_OWNER')">
                             <a class="nav-link" th:href="@{/booking/my}" th:classappend="${#strings.startsWith(currentPath, '/booking/my')} ? 'active' : ''">
                                 <i class="fas fa-calendar-alt nav-icon"></i>
@@ -124,18 +118,7 @@
                                         User Management
                                     </a>
                                 </li>
-                                <li sec:authorize="hasRole('ADMIN') or hasRole('ROLE_ADMIN') or hasRole('ROLE_admin')">
-                                    <a class="dropdown-item" th:href="@{/admin/chat}">
-                                        <i class="fas fa-comments luxury-icon"></i>
-                                        Chat với nhà hàng
-                                    </a>
-                                </li>
-                                <li sec:authorize="hasRole('ADMIN') or hasRole('ROLE_ADMIN') or hasRole('ROLE_admin')">
-                                    <a class="dropdown-item" th:href="@{/admin/notifications}">
-                                        <i class="fas fa-bell luxury-icon"></i>
-                                        Notification Management
-                                    </a>
-                                </li>
+
                                 
                                 <!-- Restaurant Owner Dropdown Item -->
                                 <li sec:authorize="hasRole('RESTAURANT_OWNER')">
@@ -148,18 +131,12 @@
                                     <a class="dropdown-item" th:href="@{/restaurant-owner/profile}">
                                         <i class="fas fa-building luxury-icon"></i>
                                         Hồ sơ nhà hàng
-                                    </a>
-                                </li>
-                                <li sec:authorize="hasRole('RESTAURANT_OWNER')">
-                                    <a class="dropdown-item" th:href="@{/restaurant-owner/chat}">
-                                        <i class="fas fa-comments luxury-icon"></i>
-                                        Chat với khách hàng
-                                    </a>
-                                </li>
+
                                 <li sec:authorize="hasRole('ADMIN')">
-                                    <a class="dropdown-item" th:href="@{/admin/chat}">
-                                        <i class="fas fa-comments luxury-icon"></i>
-                                        Chat với nhà hàng
+                                    <a class="dropdown-item" th:href="@{/admin/notifications}">
+                                        <i class="fas fa-bell luxury-icon"></i>
+                                        Notification Management
+
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
@@ -193,28 +170,6 @@
                 </div>
             </div>
         </nav>
-        
-        <!-- WebSocket Libraries -->
-        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-        
-        <!-- Customer Chat Link -->
-        <div sec:authorize="isAuthenticated() and hasRole('CUSTOMER') or hasRole('customer')" id="chat-button" class="customer-chat-link" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-            <a th:href="@{/customer/chat}" style="width: 60px; height: 60px; background: linear-gradient(135deg, #4facfe, #4facfe); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3); text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                <i class="fas fa-comments" style="color: white; font-size: 24px;"></i>
-            </a>
-        </div>
-
-        <script>
-            // Ẩn nút chat ở các trang chat
-            const path = window.location.pathname;
-            if (path.includes('/customer/chat') ||
-                path.includes('/restaurant-owner/chat') ||
-                path.includes('/admin/chat')) {
-                document.getElementById('chat-button').style.display = 'none';
-            }
-        </script>
-        
     </header>
 </body>
-</html>
+</html> 

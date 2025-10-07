@@ -83,6 +83,131 @@ public class EmailService {
         }
     }
     
+    /**
+     * Send payment success email to customer
+     */
+    public void sendPaymentSuccessEmail(String toEmail, String customerName, 
+                                       Integer bookingId, String restaurantName,
+                                       String bookingTime, Integer numberOfGuests,
+                                       java.math.BigDecimal paidAmount, 
+                                       java.math.BigDecimal remainingAmount,
+                                       String paymentMethod) {
+        try {
+            String subject = "✅ Thanh toán thành công - Booking #" + bookingId;
+            
+            String message = String.format("""
+                Xin chào %s,
+                
+                Thanh toán của bạn đã được xử lý thành công! ✅
+                
+                ══════════════════════════════════════
+                📅 THÔNG TIN ĐẶT BÀN
+                ══════════════════════════════════════
+                • Mã booking: #%d
+                • Nhà hàng: %s
+                • Thời gian: %s
+                • Số khách: %d người
+                • Trạng thái: ĐÃ XÁC NHẬN ✅
+                
+                ══════════════════════════════════════
+                💰 THÔNG TIN THANH TOÁN
+                ══════════════════════════════════════
+                • Phương thức: %s
+                • Đã thanh toán: %s VNĐ
+                %s
+                
+                💡 LƯU Ý QUAN TRỌNG:
+                • Vui lòng đến đúng giờ đã đặt
+                • Nhà hàng sẽ liên hệ trước 24h nếu cần
+                • Mang theo mã booking khi đến nhà hàng
+                
+                🔗 Xem chi tiết booking:
+                %s/booking/my
+                
+                Cảm ơn bạn đã sử dụng Book Eat!
+                
+                Trân trọng,
+                Book Eat Team
+                """, 
+                customerName,
+                bookingId,
+                restaurantName,
+                bookingTime,
+                numberOfGuests,
+                paymentMethod,
+                String.format("%,d", paidAmount.intValue()),
+                remainingAmount != null && remainingAmount.compareTo(java.math.BigDecimal.ZERO) > 0 
+                    ? "• Số tiền còn lại: " + String.format("%,d", remainingAmount.intValue()) + " VNĐ\n  (Thanh toán tại nhà hàng)" 
+                    : "• Trạng thái: ĐÃ THANH TOÁN TOÀN BỘ ✅",
+                baseUrl);
+            
+            sendEmail(toEmail, subject, message);
+            logger.info("✅ Payment success email sent to: {}", toEmail);
+            
+        } catch (Exception e) {
+            logger.error("❌ Failed to send payment success email to: {}", toEmail, e);
+        }
+    }
+    
+    /**
+     * Send payment notification email to restaurant owner
+     */
+    public void sendPaymentNotificationToRestaurant(String toEmail, String restaurantName,
+                                                   Integer bookingId, String customerName,
+                                                   String bookingTime, Integer numberOfGuests,
+                                                   java.math.BigDecimal paidAmount,
+                                                   String paymentMethod) {
+        try {
+            String subject = "🔔 Booking mới đã thanh toán #" + bookingId;
+            
+            String message = String.format("""
+                Xin chào %s,
+                
+                Có booking mới đã được thanh toán! 🎉
+                
+                ══════════════════════════════════════
+                📅 THÔNG TIN BOOKING
+                ══════════════════════════════════════
+                • Mã booking: #%d
+                • Khách hàng: %s
+                • Thời gian: %s
+                • Số khách: %d người
+                
+                ══════════════════════════════════════
+                💰 THÔNG TIN THANH TOÁN
+                ══════════════════════════════════════
+                • Phương thức: %s
+                • Số tiền đã nhận: %s VNĐ
+                • Trạng thái: ĐÃ XÁC NHẬN ✅
+                
+                💡 HÀNH ĐỘNG CẦN THIẾT:
+                • Chuẩn bị bàn cho thời gian đã đặt
+                • Liên hệ khách hàng nếu cần xác nhận
+                
+                🔗 Xem chi tiết:
+                %s/restaurant/bookings/%d
+                
+                Trân trọng,
+                Book Eat System
+                """,
+                restaurantName,
+                bookingId,
+                customerName,
+                bookingTime,
+                numberOfGuests,
+                paymentMethod,
+                String.format("%,d", paidAmount.intValue()),
+                baseUrl,
+                bookingId);
+            
+            sendEmail(toEmail, subject, message);
+            logger.info("✅ Payment notification sent to restaurant: {}", toEmail);
+            
+        } catch (Exception e) {
+            logger.error("❌ Failed to send payment notification to restaurant: {}", toEmail, e);
+        }
+    }
+    
     private void sendEmail(String toEmail, String subject, String message) {
         logger.info("🔍 Mail debug -> profile: {}, baseUrl: {}, mailSender? {}", activeProfile, baseUrl, (mailSender != null));
 

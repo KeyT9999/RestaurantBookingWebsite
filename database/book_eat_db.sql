@@ -296,3 +296,23 @@ ALTER TABLE payment ADD CONSTRAINT payment_type_check
 
 
 
+BEGIN;
+
+-- 1) Gỡ các cột riêng của MoMo (không còn dùng)
+ALTER TABLE payment
+  DROP COLUMN IF EXISTS momo_order_id,
+  DROP COLUMN IF EXISTS momo_request_id,
+  DROP COLUMN IF EXISTS momo_trans_id,
+  DROP COLUMN IF EXISTS momo_result_code,
+  DROP COLUMN IF EXISTS momo_message;
+
+-- 2) Thêm các cột tùy chọn cho PayOS (nếu muốn lưu thêm thông tin)
+ALTER TABLE payment
+  ADD COLUMN IF NOT EXISTS payos_payment_link_id varchar(128),
+  ADD COLUMN IF NOT EXISTS payos_checkout_url text,
+  ADD COLUMN IF NOT EXISTS payos_code varchar(8),
+  ADD COLUMN IF NOT EXISTS payos_desc text;
+
+COMMIT;
+
+ALTER TABLE payment RENAME COLUMN pay_url TO payos_checkout_url;

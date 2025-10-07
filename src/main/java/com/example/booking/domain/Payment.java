@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 
 import com.example.booking.common.enums.PaymentType;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -68,13 +71,18 @@ public class Payment {
     
     @Column(name = "payos_desc")
     private String payosDesc;
+
+    @Column(name = "order_code", nullable = false, unique = true)
+    private Long orderCode;
     
     @Column(name = "pay_url")
     private String payUrl;
     
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "ipn_raw", columnDefinition = "jsonb")
     private String ipnRaw;
     
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "redirect_raw", columnDefinition = "jsonb")
     private String redirectRaw;
     
@@ -194,9 +202,17 @@ public class Payment {
     public String getPayosDesc() {
         return payosDesc;
     }
-    
+
     public void setPayosDesc(String payosDesc) {
         this.payosDesc = payosDesc;
+    }
+
+    public Long getOrderCode() {
+        return orderCode;
+    }
+
+    public void setOrderCode(Long orderCode) {
+        this.orderCode = orderCode;
     }
     
     public String getPayUrl() {

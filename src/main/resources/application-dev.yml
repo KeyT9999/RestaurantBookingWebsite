@@ -1,0 +1,53 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a.singapore-postgres.render.com:5432/bookeat_db
+    driver-class-name: org.postgresql.Driver
+    username: bookeat_user
+    password: 58IJhzpjEobFFUmJ762dmkEdSLPPRbZX
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+
+  # Email configuration for development (Gmail SMTP)
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:your-email@gmail.com}
+    password: ${MAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:dummy-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:dummy-secret}
+            scope: [openid, profile, email]
+            redirect-uri: http://localhost:8081/login/oauth2/code/google
+        provider:
+          google:
+            issuer-uri: https://accounts.google.com
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.security.oauth2.client: DEBUG
+    com.example.booking: DEBUG

@@ -107,5 +107,18 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     @Query("SELECT p FROM Payment p WHERE p.status = 'COMPLETED' AND p.refundedAt IS NULL AND p.paymentMethod IN ('PAYOS', 'ZALOPAY', 'CARD')")
     List<Payment> findPaymentsEligibleForRefund();
     
+    /**
+     * Find payment by PayOS order code
+     * @param orderCode The PayOS order code
+     * @return Optional containing the Payment if found
+     */
+    Optional<Payment> findByOrderCode(Long orderCode);
+    
+    /**
+     * Check if order code exists
+     * @param orderCode The PayOS order code
+     * @return true if order code exists
+     */
+    boolean existsByOrderCode(Long orderCode);
     
 }
