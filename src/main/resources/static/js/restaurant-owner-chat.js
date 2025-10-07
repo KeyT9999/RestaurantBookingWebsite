@@ -436,9 +436,22 @@ class RestaurantOwnerChatManager {
     
     // Update room info
     updateRoomInfo(roomId) {
-        // This would typically fetch room details from server
-        document.getElementById('participant-name').textContent = 'Participant';
-        document.getElementById('restaurant-name').textContent = 'Restaurant';
+      // Find the room data from the current rooms list
+      const roomElement = document.querySelector(`[data-room-id="${roomId}"]`);
+      if (roomElement) {
+        const participantName =
+          roomElement.querySelector(".room-name").textContent;
+        const restaurantName =
+          roomElement.querySelector(".room-restaurant").textContent;
+
+        document.getElementById("participant-name").textContent =
+          participantName;
+        document.getElementById("restaurant-name").textContent = restaurantName;
+      } else {
+        // Fallback if room element not found
+        document.getElementById("participant-name").textContent = "Participant";
+        document.getElementById("restaurant-name").textContent = "Restaurant";
+      }
     }
     
     // Back to room list

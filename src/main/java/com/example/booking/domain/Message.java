@@ -34,11 +34,11 @@ public class Message {
     private User sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumn(name = "customer_id", nullable = true)
     private Customer customer;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
+    @JoinColumn(name = "owner_id", nullable = true)
     private RestaurantOwner owner;
     
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
@@ -84,19 +84,64 @@ public class Message {
 
     // Helper methods
     public String getSenderName() {
-        return sender != null ? sender.getFullName() : "Unknown";
+        if (sender == null) {
+            System.out.println("=== DEBUG MESSAGE SENDER NAME ===");
+            System.out.println("Sender is NULL");
+            return "Unknown";
+        }
+
+        System.out.println("=== DEBUG MESSAGE SENDER NAME ===");
+        System.out.println("Sender ID: " + sender.getId());
+        System.out.println("Sender Role: " + sender.getRole());
+        System.out.println("Sender FullName: " + sender.getFullName());
+        System.out.println("Customer object: " + (customer != null ? "NOT NULL" : "NULL"));
+        if (customer != null) {
+            System.out.println("Customer FullName: " + customer.getFullName());
+            System.out.println("Customer User FullName: "
+                    + (customer.getUser() != null ? customer.getUser().getFullName() : "NULL"));
+        }
+
+        // For customers: ALWAYS prioritize sender.fullName (from users table)
+        // because customer.fullName might be outdated/unsynchronized
+        if (sender.getRole().isCustomer()) {
+            System.out.println("Processing as CUSTOMER");
+            String userFullName = sender.getFullName();
+            if (userFullName != null && !userFullName.trim().isEmpty()) {
+                System.out.println("Using sender.fullName (prioritized): " + userFullName);
+                return userFullName;
+            }
+            // If user table doesn't have fullName, fallback to customer table
+            if (customer != null && customer.getFullName() != null && !customer.getFullName().trim().isEmpty()) {
+                System.out.println("Using customer.fullName (fallback): " + customer.getFullName());
+                return customer.getFullName();
+            }
+            System.out.println("Final fallback to Unknown Customer");
+            return sender.getEmail() != null ? sender.getEmail() : "Unknown Customer";
+        }
+
+        // For admins and restaurant owners: use user.fullName (from users table)
+        System.out.println("Processing as ADMIN/RESTAURANT_OWNER");
+        String userFullName = sender.getFullName();
+        if (userFullName != null && !userFullName.trim().isEmpty()) {
+            System.out.println("Using sender.fullName: " + userFullName);
+            return userFullName;
+        }
+
+        // Last resort: use email
+        System.out.println("Using email as last resort: " + sender.getEmail());
+        return sender.getEmail() != null ? sender.getEmail() : "Unknown";
     }
 
     public boolean isFromCustomer() {
-        return sender != null && sender.getRole() == UserRole.CUSTOMER;
+        return sender != null && sender.getRole().isCustomer();
     }
 
     public boolean isFromRestaurantOwner() {
-        return sender != null && sender.getRole() == UserRole.RESTAURANT_OWNER;
+        return sender != null && sender.getRole().isRestaurantOwner();
     }
 
     public boolean isFromAdmin() {
-        return sender != null && sender.getRole() == UserRole.ADMIN;
+        return sender != null && sender.getRole().isAdmin();
     }
 
     // Getters and Setters

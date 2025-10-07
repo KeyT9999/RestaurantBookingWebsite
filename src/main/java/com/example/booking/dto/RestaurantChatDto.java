@@ -1,64 +1,62 @@
 package com.example.booking.dto;
 
-/**
- * DTO for restaurant information in chat context
- */
+import java.util.UUID;
+
 public class RestaurantChatDto {
     private Integer restaurantId;
     private String restaurantName;
-    private String address;
-    private String phoneNumber;
-    private Boolean isActive;
-    
-    // Constructors
+    private String ownerName;
+    private String ownerEmail;
+    private boolean isActive;
+
     public RestaurantChatDto() {}
-    
-    public RestaurantChatDto(Integer restaurantId, String restaurantName, String address, String phoneNumber, Boolean isActive) {
+
+    public RestaurantChatDto(Integer restaurantId, String restaurantName, String ownerName, String ownerEmail,
+            boolean isActive) {
         this.restaurantId = restaurantId;
         this.restaurantName = restaurantName;
-        this.address = address;
-        this.phoneNumber = phoneNumber;
+        this.ownerName = ownerName;
+        this.ownerEmail = ownerEmail;
         this.isActive = isActive;
     }
-    
-    // Getters and Setters
+
     public Integer getRestaurantId() {
         return restaurantId;
     }
-    
+
     public void setRestaurantId(Integer restaurantId) {
         this.restaurantId = restaurantId;
     }
-    
+
     public String getRestaurantName() {
         return restaurantName;
     }
-    
+
     public void setRestaurantName(String restaurantName) {
         this.restaurantName = restaurantName;
     }
-    
-    public String getAddress() {
-        return address;
+
+    public String getOwnerName() {
+        return ownerName;
     }
-    
-    public void setAddress(String address) {
-        this.address = address;
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
     }
-    
-    public String getPhoneNumber() {
-        return phoneNumber;
+
+    public String getOwnerEmail() {
+        return ownerEmail;
     }
-    
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+
+    public void setOwnerEmail(String ownerEmail) {
+        this.ownerEmail = ownerEmail;
     }
-    
-    public Boolean getIsActive() {
+
+    public boolean isActive() {
         return isActive;
     }
-    
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 }

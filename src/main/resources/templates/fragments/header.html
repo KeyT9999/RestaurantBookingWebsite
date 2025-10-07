@@ -124,7 +124,18 @@
                                         User Management
                                     </a>
                                 </li>
-
+                                <li sec:authorize="hasRole('ADMIN') or hasRole('ROLE_ADMIN') or hasRole('ROLE_admin')">
+                                    <a class="dropdown-item" th:href="@{/admin/chat}">
+                                        <i class="fas fa-comments luxury-icon"></i>
+                                        Chat với nhà hàng
+                                    </a>
+                                </li>
+                                <li sec:authorize="hasRole('ADMIN') or hasRole('ROLE_ADMIN') or hasRole('ROLE_admin')">
+                                    <a class="dropdown-item" th:href="@{/admin/notifications}">
+                                        <i class="fas fa-bell luxury-icon"></i>
+                                        Notification Management
+                                    </a>
+                                </li>
                                 
                                 <!-- Restaurant Owner Dropdown Item -->
                                 <li sec:authorize="hasRole('RESTAURANT_OWNER')">
@@ -145,12 +156,10 @@
                                         Chat với khách hàng
                                     </a>
                                 </li>
-
                                 <li sec:authorize="hasRole('ADMIN')">
-                                    <a class="dropdown-item" th:href="@{/admin/notifications}">
-                                        <i class="fas fa-bell luxury-icon"></i>
-                                        Notification Management
-
+                                    <a class="dropdown-item" th:href="@{/admin/chat}">
+                                        <i class="fas fa-comments luxury-icon"></i>
+                                        Chat với nhà hàng
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
@@ -185,498 +194,27 @@
             </div>
         </nav>
         
-        
         <!-- WebSocket Libraries -->
         <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
         
-        <!-- Simple Chat Widget Test -->
-        <div sec:authorize="isAuthenticated() and hasRole('CUSTOMER') or hasRole('customer')" id="chat-widget" class="chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-            <div class="chat-toggle" onclick="toggleChatWidget()" style="width: 60px; height: 60px; background: linear-gradient(135deg, #D4AF37, #FFD700); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);">
-                <i class="fas fa-comments" style="color: #121212; font-size: 24px;"></i>
-            </div>
-            
-            <!-- Simple Chat Panel -->
-            <div id="chat-panel" class="chat-panel" style="position: absolute; bottom: 70px; right: 0; width: 380px; height: 600px; background: #1A1A1A; border-radius: 12px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); border: 1px solid #D4AF37; overflow: hidden; display: none;">
-                <div style="background: linear-gradient(135deg, #D4AF37, #FFD700); color: #121212; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                    <div style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
-                        <i class="fas fa-comments" style="font-size: 18px;"></i>
-                        <span>Chat</span>
-                    </div>
-                    <button onclick="toggleChatWidget()" style="background: none; border: none; color: #121212; font-size: 18px; cursor: pointer; padding: 5px; border-radius: 50%;">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div style="flex: 1; padding: 20px; color: white;">
-                    <h6 style="color: #D4AF37; margin-bottom: 15px;">Chọn nhà hàng để chat</h6>
-                    <select id="restaurant-dropdown" style="background: #2A2A2A; border: 1px solid #444; color: #E0E0E0; border-radius: 8px; padding: 12px; font-size: 14px; width: 100%; margin-bottom: 15px;">
-                        <option value="">Chọn nhà hàng...</option>
-                    </select>
-                    <button onclick="startChat()" style="background: linear-gradient(135deg, #D4AF37, #FFD700); border: none; color: #121212; font-weight: 600; border-radius: 8px; padding: 12px 20px; width: 100%;">
-                        <i class="fas fa-comment"></i> Bắt đầu chat
-                    </button>
-                </div>
-            </div>
+        <!-- Customer Chat Link -->
+        <div sec:authorize="isAuthenticated() and hasRole('CUSTOMER') or hasRole('customer')" id="chat-button" class="customer-chat-link" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+            <a th:href="@{/customer/chat}" style="width: 60px; height: 60px; background: linear-gradient(135deg, #4facfe, #4facfe); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3); text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                <i class="fas fa-comments" style="color: white; font-size: 24px;"></i>
+            </a>
         </div>
-        
-        <!-- JavaScript for Chat Widget -->
+
         <script>
-            function toggleChatWidget() {
-                console.log('Toggle chat widget clicked');
-                const panel = document.getElementById('chat-panel');
-                if (panel.style.display === 'none') {
-                    panel.style.display = 'flex';
-                    console.log('Chat panel opened');
-                    loadRestaurants(); // Load restaurants when panel opens
-                } else {
-                    panel.style.display = 'none';
-                    console.log('Chat panel closed');
-                }
-            }
-            
-            async function loadRestaurants() {
-                try {
-                    console.log('Loading restaurants...');
-                    
-                    // Test with credentials to ensure session is sent
-                    const response = await fetch('/api/chat/available-restaurants', {
-                        method: 'GET',
-                        credentials: 'same-origin', // Include cookies/session
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    
-                    console.log('Restaurants API response status:', response.status);
-                    console.log('Response headers:', response.headers.get('content-type'));
-                    console.log('Response URL:', response.url);
-                    
-                    if (response.ok) {
-                        // Check if response is JSON
-                        const contentType = response.headers.get('content-type');
-                        if (contentType && contentType.includes('application/json')) {
-                            const restaurants = await response.json();
-                            console.log('Restaurants loaded:', restaurants);
-                            populateRestaurantDropdown(restaurants);
-                        } else {
-                            // Server returned HTML instead of JSON
-                            const htmlText = await response.text();
-                            console.error('Server returned HTML instead of JSON:', htmlText.substring(0, 200));
-                            alert('Lỗi: Server trả về HTML thay vì JSON. Response URL: ' + response.url);
-                        }
-                    } else {
-                        // Handle error responses
-                        const errorText = await response.text();
-                        console.error('API Error:', response.status, errorText);
-                        
-                        if (response.status === 401) {
-                            alert('Lỗi: Chưa đăng nhập hoặc session hết hạn. Vui lòng đăng nhập lại.');
-                        } else if (response.status === 403) {
-                            alert('Lỗi: Không có quyền truy cập API này.');
-                        } else if (response.status === 404) {
-                            alert('Lỗi: API endpoint không tồn tại. Kiểm tra đường dẫn API.');
-                        } else if (response.status === 500) {
-                            alert('Lỗi: Server internal error. Kiểm tra logs server.');
-                        } else {
-                            alert('Lỗi tải nhà hàng (' + response.status + '): ' + errorText.substring(0, 100));
-                        }
-                    }
-                } catch (error) {
-                    console.error('Failed to load restaurants:', error);
-                    if (error.name === 'SyntaxError' && error.message.includes('Unexpected token')) {
-                        alert('Lỗi: Server trả về HTML thay vì JSON. Kiểm tra API endpoint.');
-                    } else {
-                        alert('Lỗi kết nối: ' + error.message);
-                    }
-                }
-            }
-            
-            function populateRestaurantDropdown(restaurants) {
-                const dropdown = document.getElementById('restaurant-dropdown');
-                dropdown.innerHTML = '<option value="">Chọn nhà hàng...</option>';
-                
-                restaurants.forEach(restaurant => {
-                    const option = document.createElement('option');
-                    option.value = restaurant.restaurantId;
-                    option.textContent = restaurant.restaurantName;
-                    dropdown.appendChild(option);
-                });
-                
-                console.log('Restaurant dropdown populated with', restaurants.length, 'restaurants');
-            }
-            
-            async function startChat() {
-                const restaurantId = document.getElementById('restaurant-dropdown').value;
-                if (!restaurantId) {
-                    alert('Vui lòng chọn nhà hàng');
-                    return;
-                }
-                
-                try {
-                    console.log('Starting chat with restaurant:', restaurantId);
-                    const response = await fetch('/api/chat/rooms?restaurantId=' + restaurantId, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        }
-                    });
-                    
-                    console.log('Response status:', response.status);
-                    console.log('Response headers:', response.headers.get('content-type'));
-                    
-                    if (response.ok) {
-                        // Check if response is JSON
-                        const contentType = response.headers.get('content-type');
-                        if (contentType && contentType.includes('application/json')) {
-                            const result = await response.json();
-                            console.log('Chat room created:', result);
-                            
-                            // Open chat interface with the created room
-                            openChatRoom(result.roomId, result.restaurantId);
-                        } else {
-                            // Server returned HTML instead of JSON
-                            const htmlText = await response.text();
-                            console.error('Server returned HTML instead of JSON:', htmlText.substring(0, 200));
-                            alert('Lỗi: Server trả về HTML thay vì JSON. Có thể API chưa được triển khai hoặc có lỗi authentication.');
-                        }
-                    } else {
-                        // Handle error responses
-                        const errorText = await response.text();
-                        console.error('Error creating chat room:', response.status, errorText);
-                        
-                        if (response.status === 401) {
-                            alert('Lỗi: Chưa đăng nhập hoặc session hết hạn. Vui lòng đăng nhập lại.');
-                        } else if (response.status === 403) {
-                            alert('Lỗi: Không có quyền truy cập API này.');
-                        } else if (response.status === 404) {
-                            alert('Lỗi: API endpoint không tồn tại. Kiểm tra đường dẫn API.');
-                        } else if (response.status === 500) {
-                            alert('Lỗi: Server internal error. Kiểm tra logs server.');
-                        } else {
-                            alert('Lỗi tạo chat room (' + response.status + '): ' + errorText.substring(0, 100));
-                        }
-                    }
-                } catch (error) {
-                    console.error('Failed to create chat room:', error);
-                    if (error.name === 'SyntaxError' && error.message.includes('Unexpected token')) {
-                        alert('Lỗi: Server trả về HTML thay vì JSON. Kiểm tra API endpoint.');
-                    } else {
-                        alert('Lỗi kết nối: ' + error.message);
-                    }
-                }
-            }
-            
-            async function openChatRoom(roomId, restaurantId) {
-                console.log('Opening chat room:', roomId, 'for restaurant:', restaurantId);
-                
-                // Hide restaurant selection panel
-                const restaurantPanel = document.querySelector('.chat-panel > div:last-child');
-                if (restaurantPanel) {
-                    restaurantPanel.style.display = 'none';
-                }
-                
-                // Create chat interface
-                const chatInterface = document.createElement('div');
-                chatInterface.id = 'chat-interface';
-                chatInterface.style.cssText = `
-                    display: flex;
-                    flex-direction: column;
-                    height: 100%;
-                    background: #1A1A1A;
-                `;
-                
-                // Chat header
-                const chatHeader = document.createElement('div');
-                chatHeader.className = 'chat-header';
-                chatHeader.style.cssText = `
-                    background: linear-gradient(135deg, #D4AF37, #FFD700);
-                    color: #121212;
-                    padding: 15px 20px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    font-weight: 600;
-                `;
-                chatHeader.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-comments" style="font-size: 18px;"></i>
-                        <span>Chat Room: ${roomId}</span>
-                    </div>
-                    <button onclick="closeChatRoom()" style="background: none; border: none; color: #121212; font-size: 18px; cursor: pointer; padding: 5px; border-radius: 50%;">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                
-                // Messages area
-                const messagesArea = document.createElement('div');
-                messagesArea.id = 'messages-area';
-                messagesArea.style.cssText = `
-                    flex: 1;
-                    padding: 20px;
-                    overflow-y: auto;
-                    background: #1A1A1A;
-                    color: #E0E0E0;
-                `;
-                messagesArea.innerHTML = '<div style="text-align: center; color: #D4AF37;">Loading messages...</div>';
-                
-                // Message input area
-                const inputArea = document.createElement('div');
-                inputArea.style.cssText = `
-                    padding: 20px;
-                    background: #2A2A2A;
-                    border-top: 1px solid #444;
-                    display: flex;
-                    gap: 10px;
-                `;
-                inputArea.innerHTML = `
-                    <input type="text" id="message-input" placeholder="Type your message..." style="
-                        flex: 1;
-                        background: #1A1A1A;
-                        border: 1px solid #444;
-                        color: #E0E0E0;
-                        padding: 12px;
-                        border-radius: 8px;
-                        font-size: 14px;
-                    ">
-                    <button onclick="sendMessage()" style="
-                        background: linear-gradient(135deg, #D4AF37, #FFD700);
-                        border: none;
-                        color: #121212;
-                        padding: 12px 20px;
-                        border-radius: 8px;
-                        font-weight: 600;
-                        cursor: pointer;
-                    ">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                `;
-                
-                // Assemble chat interface
-                chatInterface.appendChild(chatHeader);
-                chatInterface.appendChild(messagesArea);
-                chatInterface.appendChild(inputArea);
-                
-                // Replace chat panel content
-                const chatPanel = document.getElementById('chat-panel');
-                chatPanel.innerHTML = '';
-                chatPanel.appendChild(chatInterface);
-                
-                // Load messages
-                await loadMessages(roomId);
-                
-                // Connect WebSocket
-                connectWebSocket(roomId);
-                
-                console.log('Chat interface opened for room:', roomId);
-            }
-            
-            function closeChatRoom() {
-                console.log('Closing chat room');
-                
-                // Disconnect WebSocket
-                if (window.stompClient) {
-                    window.stompClient.disconnect();
-                    window.stompClient = null;
-                }
-                
-                // Reset chat panel to restaurant selection
-                const chatPanel = document.getElementById('chat-panel');
-                chatPanel.innerHTML = `
-                    <div style="background: linear-gradient(135deg, #D4AF37, #FFD700); color: #121212; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
-                            <i class="fas fa-comments" style="font-size: 18px;"></i>
-                            <span>Chat</span>
-                        </div>
-                        <button onclick="toggleChatWidget()" style="background: none; border: none; color: #121212; font-size: 18px; cursor: pointer; padding: 5px; border-radius: 50%;">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div style="flex: 1; padding: 20px; color: white;">
-                        <h6 style="color: #D4AF37; margin-bottom: 15px;">Chọn nhà hàng để chat</h6>
-                        <select id="restaurant-dropdown" style="background: #2A2A2A; border: 1px solid #444; color: #E0E0E0; border-radius: 8px; padding: 12px; font-size: 14px; width: 100%; margin-bottom: 15px;">
-                            <option value="">Chọn nhà hàng...</option>
-                        </select>
-                        <button onclick="startChat()" style="background: linear-gradient(135deg, #D4AF37, #FFD700); border: none; color: #121212; font-weight: 600; border-radius: 8px; padding: 12px 20px; width: 100%;">
-                            <i class="fas fa-comment"></i> Bắt đầu chat
-                        </button>
-                    </div>
-                `;
-                
-                // Reload restaurants
-                loadRestaurants();
-            }
-            
-            async function loadMessages(roomId) {
-                try {
-                    console.log('Loading messages for room:', roomId);
-                    const response = await fetch(`/api/chat/rooms/${roomId}/messages`, {
-                        credentials: 'same-origin',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const messages = await response.json();
-                        console.log('Messages loaded:', messages);
-                        displayMessages(messages);
-                    } else {
-                        console.error('Failed to load messages:', response.status);
-                        document.getElementById('messages-area').innerHTML = '<div style="text-align: center; color: #ff6b6b;">Failed to load messages</div>';
-                    }
-                } catch (error) {
-                    console.error('Error loading messages:', error);
-                    document.getElementById('messages-area').innerHTML = '<div style="text-align: center; color: #ff6b6b;">Error loading messages</div>';
-                }
-            }
-            
-            function displayMessages(messages) {
-                const messagesArea = document.getElementById('messages-area');
-                if (!messages || messages.length === 0) {
-                    messagesArea.innerHTML = '<div style="text-align: center; color: #D4AF37;">No messages yet. Start the conversation!</div>';
-                    return;
-                }
-                
-                const messagesHtml = messages.map(msg => {
-                    // Safe handling of senderName
-                    const senderName = msg.senderName || 'Người dùng';
-                    
-                    // Safe handling of sentAt
-                    let timeText = 'Thời gian không xác định';
-                    if (msg.sentAt) {
-                        try {
-                            const date = new Date(msg.sentAt);
-                            if (!isNaN(date.getTime())) {
-                                timeText = date.toLocaleString('vi-VN');
-                            }
-                        } catch (e) {
-                            timeText = 'Thời gian không hợp lệ';
-                        }
-                    }
-                    
-                    // Safe handling of content
-                    const content = msg.content || '';
-                    
-                    return `
-                        <div style="margin-bottom: 15px; padding: 10px; background: #2A2A2A; border-radius: 8px;">
-                            <div style="font-size: 12px; color: #D4AF37; margin-bottom: 5px;">
-                                ${senderName} • ${timeText}
-                            </div>
-                            <div style="color: #E0E0E0;">${content}</div>
-                        </div>
-                    `;
-                }).join('');
-                
-                messagesArea.innerHTML = messagesHtml;
-                messagesArea.scrollTop = messagesArea.scrollHeight;
-            }
-            
-            function connectWebSocket(roomId) {
-                console.log('Connecting WebSocket for room:', roomId);
-                
-                // Disconnect existing connection
-                if (window.stompClient) {
-                    window.stompClient.disconnect();
-                }
-                
-                const socket = new SockJS('/ws');
-                window.stompClient = Stomp.over(socket);
-                
-                window.stompClient.connect({}, function(frame) {
-                    console.log('WebSocket connected:', frame);
-                    
-                    // Subscribe to room messages
-                    window.stompClient.subscribe(`/topic/room/${roomId}`, function(message) {
-                        const messageData = JSON.parse(message.body);
-                        console.log('Received message:', messageData);
-                        
-                        // Only process valid chat messages (not join notifications or other events)
-                        if (!messageData || !messageData.messageId || !messageData.content || !messageData.senderName || !messageData.sentAt) {
-                            console.log('Ignoring non-message data:', messageData);
-                            return;
-                        }
-                        
-                        // Add new message to display
-                        const messagesArea = document.getElementById('messages-area');
-                        const messageDiv = document.createElement('div');
-                        messageDiv.style.cssText = 'margin-bottom: 15px; padding: 10px; background: #2A2A2A; border-radius: 8px;';
-                        
-                        // Safe handling of senderName
-                        const senderName = messageData.senderName || 'Người dùng';
-                        
-                        // Safe handling of sentAt
-                        let timeText = 'Thời gian không xác định';
-                        if (messageData.sentAt) {
-                            try {
-                                const date = new Date(messageData.sentAt);
-                                if (!isNaN(date.getTime())) {
-                                    timeText = date.toLocaleString('vi-VN');
-                                }
-                            } catch (e) {
-                                timeText = 'Thời gian không hợp lệ';
-                            }
-                        }
-                        
-                        // Safe handling of content
-                        const content = messageData.content || '';
-                        
-                        messageDiv.innerHTML = `
-                            <div style="font-size: 12px; color: #D4AF37; margin-bottom: 5px;">
-                                ${senderName} • ${timeText}
-                            </div>
-                            <div style="color: #E0E0E0;">${content}</div>
-                        `;
-                        messagesArea.appendChild(messageDiv);
-                        messagesArea.scrollTop = messagesArea.scrollHeight;
-                    });
-                    
-                }, function(error) {
-                    console.error('WebSocket connection error:', error);
-                });
-            }
-            
-            function sendMessage() {
-                const messageInput = document.getElementById('message-input');
-                const content = messageInput.value.trim();
-                
-                if (!content) return;
-                
-                // Get room ID from chat header
-                const chatHeader = document.querySelector('#chat-interface .chat-header');
-                if (!chatHeader) {
-                    console.error('Chat header not found');
-                    alert('Chat header not found. Please refresh and try again.');
-                    return;
-                }
-                
-                const roomIdSpan = chatHeader.querySelector('span');
-                if (!roomIdSpan) {
-                    console.error('Room ID span not found');
-                    alert('Room ID not found. Please refresh and try again.');
-                    return;
-                }
-                
-                const roomId = roomIdSpan.textContent.split(': ')[1];
-                console.log('Sending message to room:', roomId);
-                
-                if (window.stompClient && window.stompClient.connected) {
-                    window.stompClient.send('/app/chat.sendMessage', {}, JSON.stringify({
-                        roomId: roomId,
-                        content: content,
-                        type: 'TEXT'
-                    }));
-                    
-                    messageInput.value = '';
-                    console.log('Message sent:', content);
-                } else {
-                    console.error('WebSocket not connected');
-                    alert('WebSocket not connected. Please refresh and try again.');
-                }
+            // Ẩn nút chat ở các trang chat
+            const path = window.location.pathname;
+            if (path.includes('/customer/chat') ||
+                path.includes('/restaurant-owner/chat') ||
+                path.includes('/admin/chat')) {
+                document.getElementById('chat-button').style.display = 'none';
             }
         </script>
         
-        
     </header>
 </body>
-</html> 
+</html>

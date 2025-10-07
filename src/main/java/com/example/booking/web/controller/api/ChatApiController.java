@@ -356,6 +356,36 @@ public class ChatApiController {
     }
     
     /**
+     * Create chat room between admin and restaurant
+     */
+    @PostMapping("/rooms/restaurant")
+    public ResponseEntity<?> createChatRoomWithRestaurant(@RequestParam Integer restaurantId,
+            Authentication authentication) {
+        try {
+            System.out.println("=== Creating Admin-Restaurant Chat Room ===");
+            System.out.println("Restaurant ID: " + restaurantId);
+
+            User user = getUserFromAuthentication(authentication);
+            System.out.println("User: " + user.getUsername() + " (Role: " + user.getRole() + ")");
+
+            if (user.getRole() != UserRole.ADMIN && user.getRole() != UserRole.admin) {
+                System.err.println("ERROR: User is not admin");
+                return ResponseEntity.status(403).body("Only admins can chat with restaurants");
+            }
+
+            System.out.println("Creating chat room...");
+            ChatRoom room = chatService.createAdminRestaurantRoom(user.getId(), restaurantId);
+            System.out.println("Room created successfully: " + room.getRoomId());
+
+            return ResponseEntity.ok(new CreateRoomResponse(room.getRoomId(), room.getRestaurant().getRestaurantId()));
+        } catch (Exception e) {
+            System.err.println("ERROR creating admin-restaurant room: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
      * Helper method to get User from Authentication (handles both User and OAuth2User)
      */
     private User getUserFromAuthentication(Authentication authentication) {

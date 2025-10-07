@@ -7,7 +7,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.example.booking.domain.User;
@@ -15,12 +14,9 @@ import com.example.booking.dto.ChatRoomDto;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.SimpleUserService;
 
-/**
- * Controller for restaurant owner chat functionality
- */
 @Controller
-@RequestMapping("/restaurant-owner/chat")
-public class RestaurantOwnerChatController {
+@RequestMapping("/customer")
+public class CustomerChatController {
     
     @Autowired
     private ChatService chatService;
@@ -28,51 +24,17 @@ public class RestaurantOwnerChatController {
     @Autowired
     private SimpleUserService userService;
     
-    /**
-     * Main chat page for restaurant owner
-     */
-    @GetMapping
+    @GetMapping("/chat")
     public String chatPage(Authentication authentication, Model model) {
         User user = getUserFromAuthentication(authentication);
         
-        // Get all chat rooms for this restaurant owner
+        // Load chat rooms for customer
         List<ChatRoomDto> chatRooms = chatService.getUserChatRooms(user.getId(), user.getRole());
         
         model.addAttribute("chatRooms", chatRooms);
         model.addAttribute("currentUser", user);
         
-        return "restaurant-owner/chat";
-    }
-    
-    /**
-     * Chat room detail page
-     */
-    @GetMapping("/room/{roomId}")
-    public String chatRoom(@PathVariable String roomId, Authentication authentication, Model model) {
-        User user = getUserFromAuthentication(authentication);
-        
-        // Validate user can access this room
-        if (!chatService.canUserAccessRoom(roomId, user.getId(), user.getRole())) {
-            return "error/403";
-        }
-        
-        // Get room details
-        var roomOpt = chatService.getChatRoomById(roomId);
-        if (!roomOpt.isPresent()) {
-            return "error/404";
-        }
-        
-        // Get room DTO with participant info
-        ChatRoomDto roomDto = chatService.convertToDto(roomOpt.get());
-
-        model.addAttribute("roomId", roomId);
-        model.addAttribute("currentUser", user);
-        model.addAttribute("room", roomDto);
-        model.addAttribute("participantName", roomDto.getParticipantName());
-        model.addAttribute("participantRole", roomDto.getParticipantRole());
-        model.addAttribute("restaurantName", roomDto.getRestaurantName());
-        
-        return "restaurant-owner/chat-room";
+        return "customer/chat";
     }
     
     /**

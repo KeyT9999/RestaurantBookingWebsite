@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Room - Restaurant Owner</title>
+    <title>Chat - Customer</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
-    <link th:href="@{/css/restaurant-owner-chat.css}" rel="stylesheet">
+    <link th:href="@{/css/customer-chat.css}" rel="stylesheet">
 </head>
 <body>
     <!-- Header -->
@@ -20,38 +20,59 @@
     <div class="container-fluid chat-container">
         <div class="row h-100">
             <!-- Sidebar - Chat Rooms List -->
-            <div class="col-md-4 col-lg-3 chat-sidebar">
+            <div class="col-md-4 col-lg-3 chat-sidebar" id="chat-sidebar">
                 <div class="chat-sidebar-header">
                     <h5 class="mb-0">
                         <i class="fas fa-comments text-gold"></i>
                         Cuộc trò chuyện
                     </h5>
-                    <a th:href="@{/restaurant-owner/chat}" class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-arrow-left"></i>
-                    </a>
+                    <div class="unread-badge" id="total-unread-badge" style="display: none;">
+                        <span id="total-unread-count">0</span>
+                    </div>
                 </div>
                 
-                <div class="chat-rooms-list" id="chat-rooms-list">
-                    <!-- Chat rooms will be loaded dynamically -->
+                <!-- Available Restaurants Section -->
+                <div class="chat-restaurant-section mb-3">
+                    <h6 class="restaurant-section-title">
+                        <i class="fas fa-store text-gold"></i>
+                        Nhà hàng có sẵn
+                    </h6>
+                    <div class="restaurant-list" id="restaurant-list">
+                        <!-- Restaurant list will be loaded here -->
+                        <div class="text-center text-muted">
+                            <div class="spinner-border spinner-border-sm text-gold" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <small>Đang tải...</small>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <!-- Main Chat Area -->
             <div class="col-md-8 col-lg-9 chat-main">
                 <div class="chat-main-content">
-                    <!-- Chat Interface -->
-                    <div id="chat-interface" class="chat-interface">
+                    <!-- Welcome Screen -->
+                    <div id="welcome-screen" class="welcome-screen">
+                        <div class="welcome-content">
+                            <i class="fas fa-comments text-gold"></i>
+                            <h4>Chào mừng đến với Chat</h4>
+                            <p>Chọn một cuộc trò chuyện để bắt đầu</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Interface (Hidden by default) -->
+                    <div id="chat-interface" class="chat-interface" style="display: none;">
                         <!-- Chat Header -->
                         <div class="chat-header">
                             <div class="chat-info">
                                 <div class="chat-participant">
-                                    <i class="fas fa-user" th:if="${participantRole == 'CUSTOMER'}"></i>
-                                    <i class="fas fa-user-shield" th:if="${participantRole == 'ADMIN'}"></i>
-                                    <span id="participant-name" th:text="${participantName}">Participant Name</span>
+                                    <i class="fas fa-store" id="participant-icon"></i>
+                                    <span id="participant-name">Participant Name</span>
                                 </div>
                                 <div class="chat-restaurant">
                                     <i class="fas fa-store"></i>
-                                    <span id="restaurant-name" th:text="${restaurantName}">Restaurant Name</span>
+                                    <span id="restaurant-name">Restaurant Name</span>
                                 </div>
                                 <div class="chat-status">
                                     <span class="status-dot"></span>
@@ -59,7 +80,7 @@
                                 </div>
                             </div>
                             <div class="chat-actions">
-                                <button class="btn btn-outline-secondary btn-sm" onclick="window.location.href='/restaurant-owner/chat'">
+                                <button class="btn btn-outline-secondary btn-sm" id="back-to-list">
                                     <i class="fas fa-arrow-left"></i>
                                 </button>
                             </div>
@@ -68,16 +89,6 @@
                         <!-- Messages Container -->
                         <div class="messages-container" id="messages-container">
                             <!-- Messages will be loaded here -->
-                        </div>
-                        
-                        <!-- Typing Indicator -->
-                        <div id="typing-indicator" class="typing-indicator" style="display: none;">
-                            <div class="typing-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                            <span class="typing-text">Đang gõ...</span>
                         </div>
                         
                         <!-- Message Input -->
@@ -128,23 +139,29 @@
         </div>
     </template>
     
+    <!-- Restaurant Item Template -->
+    <template id="restaurant-item-template">
+        <div class="restaurant-item" data-restaurant-id="">
+            <div class="restaurant-avatar">
+                <i class="fas fa-store"></i>
+            </div>
+            <div class="restaurant-info">
+                <div class="restaurant-name"></div>
+                <div class="restaurant-address"></div>
+            </div>
+            <div class="restaurant-actions">
+                <button class="btn btn-gold btn-sm start-chat-btn">
+                    <i class="fas fa-comments"></i>
+                    Chat
+                </button>
+            </div>
+        </div>
+    </template>
+    
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-    <script th:src="@{/js/restaurant-owner-chat.js}"></script>
-    
-    <!-- Initialize chat room -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const roomId = /*[[${roomId}]]*/ '';
-            if (roomId) {
-                // Initialize chat room
-                if (window.chatManager) {
-                    window.chatManager.openChatRoom(roomId);
-                }
-            }
-        });
-    </script>
+    <script th:src="@{/js/customer-chat.js}"></script>
 </body>
 </html>

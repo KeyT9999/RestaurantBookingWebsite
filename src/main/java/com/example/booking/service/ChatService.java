@@ -25,6 +25,7 @@ import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
 import com.example.booking.dto.ChatMessageDto;
 import com.example.booking.dto.ChatRoomDto;
+import com.example.booking.dto.RestaurantChatDto;
 import com.example.booking.repository.ChatRoomRepository;
 import com.example.booking.repository.CustomerRepository;
 import com.example.booking.repository.MessageRepository;
@@ -85,24 +86,46 @@ public class ChatService {
      * Create chat room between admin and restaurant
      */
     public ChatRoom createAdminRestaurantRoom(UUID adminId, Integer restaurantId) {
+        System.out.println("=== ChatService.createAdminRestaurantRoom ===");
+        System.out.println("Admin ID: " + adminId);
+        System.out.println("Restaurant ID: " + restaurantId);
+
         // Check if room already exists
         Optional<ChatRoom> existingRoom = chatRoomRepository.findByAdminAndRestaurant(adminId, restaurantId);
         if (existingRoom.isPresent()) {
+            System.out.println("Room already exists: " + existingRoom.get().getRoomId());
             return existingRoom.get();
         }
         
         // Get entities
+        System.out.println("Finding admin user...");
         User admin = userRepository.findById(adminId)
             .orElseThrow(() -> new RuntimeException("Admin not found"));
+        System.out.println("Admin found: " + admin.getUsername() + " (Role: " + admin.getRole() + ")");
+
+        System.out.println("Finding restaurant...");
         RestaurantProfile restaurant = restaurantProfileRepository.findById(restaurantId)
             .orElseThrow(() -> new RuntimeException("Restaurant not found"));
+        System.out.println("Restaurant found: " + restaurant.getRestaurantName());
+
+        // Verify restaurant has owner
+        if (restaurant.getOwner() == null) {
+            System.err.println("ERROR: Restaurant has no owner");
+            throw new RuntimeException("Restaurant has no owner: " + restaurantId);
+        }
+        System.out.println("Restaurant owner: " + restaurant.getOwner().getUser().getUsername());
         
         // Create room ID
         String roomId = generateAdminRestaurantRoomId(adminId, restaurantId);
+        System.out.println("Generated room ID: " + roomId);
         
         // Create room
         ChatRoom room = new ChatRoom(roomId, admin, restaurant);
-        return chatRoomRepository.save(room);
+        System.out.println("Saving room to database...");
+        ChatRoom savedRoom = chatRoomRepository.save(room);
+        System.out.println("Room saved successfully: " + savedRoom.getRoomId());
+
+        return savedRoom;
     }
     
     /**
@@ -190,54 +213,65 @@ public class ChatService {
         // Create message
         Message message = new Message(room, sender, content, messageType);
         
-        // Set customer and owner based on room type
-        if (sender.getRole() == UserRole.CUSTOMER || sender.getRole() == UserRole.customer) {
-            // Customer sending message to restaurant
-            Customer customer = customerRepository.findByUserId(senderId)
-                .orElseThrow(() -> new RuntimeException("Customer not found for user: " + senderId));
+        System.out.println("=== DEBUG MESSAGE CREATION ===");
+        System.out.println("Room ID: " + roomId);
+        System.out.println("Sender ID: " + senderId);
+        System.out.println("Sender Role: " + sender.getRole());
+        System.out.println(
+                "Room Type: " + (room.isCustomerRestaurantChat() ? "Customer-Restaurant" : "Admin-Restaurant"));
+        System.out.println("Message customer before setting: " + message.getCustomer());
+        System.out.println("Message owner before setting: " + message.getOwner());
+
+        // Set message data based on room type and sender role
+        if (room.isCustomerRestaurantChat()) {
+            // Customer-Restaurant Chat: Set both customer and owner
+            Customer customer = room.getCustomer();
+            if (customer != null) {
+                customer.getUser().getFullName(); // Force load
             message.setCustomer(customer);
-            
-            // Set owner as restaurant owner
+            System.out.println("✅ Set customer for customer-restaurant chat: " + customer.getCustomerId());
+        }
+
             if (room.getRestaurant() != null && room.getRestaurant().getOwner() != null) {
                 RestaurantOwner owner = room.getRestaurant().getOwner();
-                if (owner.getOwnerId() == null) {
-                    throw new RuntimeException("Restaurant owner ID is null for room: " + roomId);
-                }
+                owner.getUser().getFullName(); // Force load
                 message.setOwner(owner);
-            } else {
-                throw new RuntimeException("Restaurant owner not found for room: " + roomId);
-            }
-        } else if (sender.getRole() == UserRole.RESTAURANT_OWNER || sender.getRole() == UserRole.restaurant_owner) {
-            // Restaurant owner sending message to customer
-            // Find RestaurantOwner record for this user
-            Optional<RestaurantOwner> ownerOpt = restaurantOwnerRepository.findByUserId(senderId);
-            if (ownerOpt.isEmpty()) {
-                throw new RuntimeException("Restaurant owner not found for user: " + senderId);
+                System.out.println("✅ Set owner for customer-restaurant chat: " + owner.getOwnerId());
             }
             
-            RestaurantOwner owner = ownerOpt.get();
-            
-            // Verify owner has valid ID
-            if (owner.getOwnerId() == null) {
-                throw new RuntimeException("Restaurant owner ID is null for user: " + senderId);
-            }
-            
-            message.setOwner(owner);
-            message.setCustomer(room.getCustomer());
-        } else if (sender.getRole() == UserRole.ADMIN || sender.getRole() == UserRole.admin) {
-            // Admin sending message - need to find restaurant owner for this room
+        } else if (room.isAdminRestaurantChat()) {
+            // Admin-Restaurant Chat: Set owner only
             if (room.getRestaurant() != null && room.getRestaurant().getOwner() != null) {
                 RestaurantOwner owner = room.getRestaurant().getOwner();
-                if (owner.getOwnerId() == null) {
-                    throw new RuntimeException("Restaurant owner ID is null for room: " + roomId);
-                }
+                owner.getUser().getFullName(); // Force load
                 message.setOwner(owner);
-            } else {
-                throw new RuntimeException("Restaurant owner not found for room: " + roomId);
+                System.out.println("✅ Set owner for admin-restaurant chat: " + owner.getOwnerId());
             }
-            message.setCustomer(room.getCustomer());
+
+            // For admin-restaurant chat, determine customer based on sender role
+            if (sender.getRole() == UserRole.CUSTOMER || sender.getRole() == UserRole.customer) {
+                // If customer is sending in admin-restaurant room, find the customer
+                Customer customer = customerRepository.findByUserId(senderId)
+                        .orElseThrow(() -> new RuntimeException("Customer not found for user: " + senderId));
+                message.setCustomer(customer);
+                System.out.println(
+                        "✅ Set customer for customer sending in admin-restaurant chat: " + customer.getCustomerId());
+            } else {
+                // Admin or Restaurant Owner sending - find existing customer or use
+                // restaurant's customer
+                Customer customerForMessage = findCustomerForAdminRestaurantChat(room);
+                message.setCustomer(customerForMessage);
+                System.out.println("✅ Set customer for admin-restaurant chat: " +
+                        (customerForMessage != null ? customerForMessage.getCustomerId() : "NULL"));
+            }
         }
         
+        System.out.println("=== DEBUG MESSAGE BEFORE SAVE ===");
+        System.out.println("Message customer after setting: " + message.getCustomer());
+        System.out.println("Message owner after setting: " + message.getOwner());
+        System.out.println("Message sender: " + message.getSender());
+        System.out.println("Message room: " + message.getRoom());
+
         message = messageRepository.save(message);
         
         // Update room's last message time
@@ -392,7 +426,23 @@ public class ChatService {
     public List<User> getAvailableAdmins() {
         return userRepository.findByRole(UserRole.ADMIN, org.springframework.data.domain.Pageable.unpaged()).getContent();
     }
-    
+
+    /**
+     * Get available restaurants for admin to chat with
+     */
+    @Transactional(readOnly = true)
+    public List<RestaurantChatDto> getAvailableRestaurants() {
+        List<RestaurantProfile> restaurants = restaurantProfileRepository.findAll();
+        return restaurants.stream()
+                .map(restaurant -> new RestaurantChatDto(
+                        restaurant.getRestaurantId(),
+                        restaurant.getRestaurantName(),
+                        restaurant.getOwner() != null ? restaurant.getOwner().getUser().getFullName() : "Unknown Owner",
+                        restaurant.getOwner() != null ? restaurant.getOwner().getUser().getEmail() : "Unknown Email",
+                        true))
+                .collect(Collectors.toList());
+    }
+
     /**
      * Get room ID for participants
      */
@@ -431,6 +481,39 @@ public class ChatService {
         return "admin_" + adminId + "_restaurant_" + restaurantId;
     }
     
+    /**
+     * Find customer for admin-restaurant chat to avoid foreign key constraint
+     * violation
+     * Strategy: Use admin_id from room to find User, then create Customer object
+     */
+    private Customer findCustomerForAdminRestaurantChat(ChatRoom room) {
+        if (room == null || room.getAdmin() == null) {
+            return null;
+        }
+
+        // Get admin User from room
+        User adminUser = room.getAdmin();
+        System.out.println("✅ Found admin user: " + adminUser.getId() + " - " + adminUser.getFullName());
+
+        // Check if admin already has a customer record
+        Customer existingCustomer = customerRepository.findByUserId(adminUser.getId()).orElse(null);
+        if (existingCustomer != null) {
+            System.out.println("✅ Found existing customer record for admin: " + existingCustomer.getCustomerId());
+            return existingCustomer;
+        }
+
+        // Create new Customer record for admin
+        Customer adminAsCustomer = new Customer();
+        adminAsCustomer.setUser(adminUser);
+        adminAsCustomer.setFullName(adminUser.getFullName());
+
+        // Save to database first to get proper customer_id
+        adminAsCustomer = customerRepository.save(adminAsCustomer);
+
+        System.out.println("✅ Created and saved customer record for admin: " + adminAsCustomer.getCustomerId());
+        return adminAsCustomer;
+    }
+
     private boolean canUserSendMessage(ChatRoom room, User sender) {
         UserRole senderRole = sender.getRole();
         
@@ -444,15 +527,15 @@ public class ChatService {
         if (room.isCustomerRestaurantChat()) {
             // Check if sender is customer
             boolean isCustomer = (senderRole == UserRole.CUSTOMER || senderRole == UserRole.customer) && 
-                               room.getCustomer() != null && 
-                               room.getCustomer().getUser() != null &&
+                    room.getCustomer() != null &&
+                    room.getCustomer().getUser() != null &&
                                room.getCustomer().getUser().getId().equals(sender.getId());
             
             // Check if sender is restaurant owner
             boolean isRestaurantOwner = (senderRole == UserRole.RESTAURANT_OWNER || senderRole == UserRole.restaurant_owner) && 
-                                       room.getRestaurant() != null &&
-                                       room.getRestaurant().getOwner() != null &&
-                                       room.getRestaurant().getOwner().getUser() != null &&
+                    room.getRestaurant() != null &&
+                    room.getRestaurant().getOwner() != null &&
+                    room.getRestaurant().getOwner().getUser() != null &&
                                        room.getRestaurant().getOwner().getUser().getId().equals(sender.getId());
             
             System.out.println("Customer check: " + isCustomer);
@@ -464,20 +547,34 @@ public class ChatService {
         } else if (room.isAdminRestaurantChat()) {
             // Check if sender is admin
             boolean isAdmin = (senderRole == UserRole.ADMIN || senderRole == UserRole.admin) && 
-                             room.getAdmin() != null && 
+                    room.getAdmin() != null &&
                              room.getAdmin().getId().equals(sender.getId());
             
             // Check if sender is restaurant owner
             boolean isRestaurantOwner = (senderRole == UserRole.RESTAURANT_OWNER || senderRole == UserRole.restaurant_owner) && 
-                                       room.getRestaurant() != null &&
-                                       room.getRestaurant().getOwner() != null &&
-                                       room.getRestaurant().getOwner().getUser() != null &&
+                    room.getRestaurant() != null &&
+                    room.getRestaurant().getOwner() != null &&
+                    room.getRestaurant().getOwner().getUser() != null &&
                                        room.getRestaurant().getOwner().getUser().getId().equals(sender.getId());
             
             System.out.println("Admin check: " + isAdmin);
             System.out.println("Restaurant Owner check: " + isRestaurantOwner);
             System.out.println("Room Admin ID: " + (room.getAdmin() != null ? room.getAdmin().getId() : "NULL"));
-            System.out.println("Room Restaurant Owner ID: " + (room.getRestaurant() != null && room.getRestaurant().getOwner() != null && room.getRestaurant().getOwner().getUser() != null ? room.getRestaurant().getOwner().getUser().getId() : "NULL"));
+            System.out.println("Room Restaurant: "
+                    + (room.getRestaurant() != null ? room.getRestaurant().getRestaurantId() : "NULL"));
+            System.out.println(
+                    "Room Restaurant Owner: " + (room.getRestaurant() != null && room.getRestaurant().getOwner() != null
+                            ? room.getRestaurant().getOwner().getOwnerId()
+                            : "NULL"));
+            System.out.println("Room Restaurant Owner User: " + (room.getRestaurant() != null
+                    && room.getRestaurant().getOwner() != null && room.getRestaurant().getOwner().getUser() != null
+                            ? room.getRestaurant().getOwner().getUser().getId()
+                            : "NULL"));
+            System.out.println("Sender ID: " + sender.getId());
+            System.out.println("Expected Restaurant Owner User ID: " + (room.getRestaurant() != null
+                    && room.getRestaurant().getOwner() != null && room.getRestaurant().getOwner().getUser() != null
+                            ? room.getRestaurant().getOwner().getUser().getId()
+                            : "NULL"));
             
             return isAdmin || isRestaurantOwner;
         }
@@ -486,7 +583,7 @@ public class ChatService {
         return false;
     }
     
-    private ChatRoomDto convertToDto(ChatRoom room) {
+    public ChatRoomDto convertToDto(ChatRoom room) {
         // Get last message
         List<Message> lastMessages = messageRepository.findLastMessageByRoomId(room.getRoomId());
         Message lastMessage = lastMessages.isEmpty() ? null : lastMessages.get(0);
@@ -500,11 +597,57 @@ public class ChatService {
         
         if (room.isCustomerRestaurantChat()) {
             participantId = room.getCustomer() != null ? room.getCustomer().getUser().getId() : null;
-            participantName = room.getCustomer() != null ? room.getCustomer().getFullName() : "Unknown Customer";
+            if (room.getCustomer() != null) {
+                System.out.println("=== DEBUG CHATROOM CUSTOMER INFO ===");
+                System.out.println("Room ID: " + room.getRoomId());
+                System.out.println("Customer ID: " + room.getCustomer().getCustomerId());
+                System.out.println("Customer FullName: " + room.getCustomer().getFullName());
+                System.out.println("Customer User ID: "
+                        + (room.getCustomer().getUser() != null ? room.getCustomer().getUser().getId() : "NULL"));
+                System.out.println("Customer User FullName: "
+                        + (room.getCustomer().getUser() != null ? room.getCustomer().getUser().getFullName() : "NULL"));
+
+                // For customers: ALWAYS prioritize user.fullName (from users table)
+                // because customer.fullName might be outdated/unsynchronized
+                String userFullName = room.getCustomer().getUser().getFullName();
+                if (userFullName != null && !userFullName.trim().isEmpty()) {
+                    participantName = userFullName;
+                    System.out.println("Using user fullName (prioritized): " + participantName);
+                } else {
+                    String customerName = room.getCustomer().getFullName();
+                    participantName = customerName;
+                    System.out.println("Using customer fullName (fallback): " + participantName);
+                }
+
+                // If still null/empty, use email
+                if (participantName == null || participantName.trim().isEmpty()) {
+                    participantName = room.getCustomer().getUser().getEmail();
+                    System.out.println("Using email as fallback: " + participantName);
+                }
+
+                // Final fallback
+                if (participantName == null || participantName.trim().isEmpty()) {
+                    participantName = "Unknown Customer";
+                    System.out.println("Final fallback to Unknown Customer");
+                }
+            } else {
+                System.out.println("ERROR: Customer is null in room: " + room.getRoomId());
+                participantName = "Unknown Customer";
+            }
             participantRole = "CUSTOMER";
         } else if (room.isAdminRestaurantChat()) {
             participantId = room.getAdmin() != null ? room.getAdmin().getId() : null;
-            participantName = room.getAdmin() != null ? room.getAdmin().getFullName() : "Unknown Admin";
+            if (room.getAdmin() != null) {
+                participantName = room.getAdmin().getFullName();
+                if (participantName == null || participantName.trim().isEmpty()) {
+                    participantName = room.getAdmin().getEmail();
+                }
+                if (participantName == null || participantName.trim().isEmpty()) {
+                    participantName = "Unknown Admin";
+                }
+            } else {
+                participantName = "Unknown Admin";
+            }
             participantRole = "ADMIN";
         } else {
             participantId = null;

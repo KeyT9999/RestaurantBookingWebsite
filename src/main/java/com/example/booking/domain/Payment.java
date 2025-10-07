@@ -3,6 +3,8 @@ package com.example.booking.domain;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.example.booking.common.enums.PaymentType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,8 +18,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-
-import com.example.booking.common.enums.PaymentType;
 
 @Entity
 @Table(name = "payment")
@@ -56,21 +56,18 @@ public class Payment {
     @Column(name = "paid_at", nullable = false)
     private LocalDateTime paidAt;
     
-    // MoMo specific fields
-    @Column(name = "momo_order_id")
-    private String momoOrderId;
+    // PayOS specific fields
+    @Column(name = "payos_payment_link_id")
+    private String payosPaymentLinkId;
     
-    @Column(name = "momo_request_id")
-    private String momoRequestId;
+    @Column(name = "payos_checkout_url")
+    private String payosCheckoutUrl;
     
-    @Column(name = "momo_trans_id")
-    private String momoTransId;
+    @Column(name = "payos_code")
+    private String payosCode;
     
-    @Column(name = "momo_result_code")
-    private String momoResultCode;
-    
-    @Column(name = "momo_message")
-    private String momoMessage;
+    @Column(name = "payos_desc")
+    private String payosDesc;
     
     @Column(name = "pay_url")
     private String payUrl;
@@ -169,45 +166,37 @@ public class Payment {
         this.paidAt = paidAt;
     }
     
-    // MoMo specific getters and setters
-    public String getMomoOrderId() {
-        return momoOrderId;
+    // PayOS specific getters and setters
+    public String getPayosPaymentLinkId() {
+        return payosPaymentLinkId;
     }
     
-    public void setMomoOrderId(String momoOrderId) {
-        this.momoOrderId = momoOrderId;
+    public void setPayosPaymentLinkId(String payosPaymentLinkId) {
+        this.payosPaymentLinkId = payosPaymentLinkId;
     }
     
-    public String getMomoRequestId() {
-        return momoRequestId;
+    public String getPayosCheckoutUrl() {
+        return payosCheckoutUrl;
     }
     
-    public void setMomoRequestId(String momoRequestId) {
-        this.momoRequestId = momoRequestId;
+    public void setPayosCheckoutUrl(String payosCheckoutUrl) {
+        this.payosCheckoutUrl = payosCheckoutUrl;
     }
     
-    public String getMomoTransId() {
-        return momoTransId;
+    public String getPayosCode() {
+        return payosCode;
     }
     
-    public void setMomoTransId(String momoTransId) {
-        this.momoTransId = momoTransId;
+    public void setPayosCode(String payosCode) {
+        this.payosCode = payosCode;
     }
     
-    public String getMomoResultCode() {
-        return momoResultCode;
+    public String getPayosDesc() {
+        return payosDesc;
     }
     
-    public void setMomoResultCode(String momoResultCode) {
-        this.momoResultCode = momoResultCode;
-    }
-    
-    public String getMomoMessage() {
-        return momoMessage;
-    }
-    
-    public void setMomoMessage(String momoMessage) {
-        this.momoMessage = momoMessage;
+    public void setPayosDesc(String payosDesc) {
+        this.payosDesc = payosDesc;
     }
     
     public String getPayUrl() {

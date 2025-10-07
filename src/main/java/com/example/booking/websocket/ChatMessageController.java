@@ -95,7 +95,7 @@ public class ChatMessageController {
             
             System.out.println("Message saved successfully: " + message.getMessageId());
             
-            // Broadcast to room participants
+            // Broadcast to room participants only
             messagingTemplate.convertAndSend("/topic/room/" + request.getRoomId(), 
                 new ChatMessageResponse(message));
             
@@ -121,12 +121,29 @@ public class ChatMessageController {
     @MessageMapping("/chat.typing")
     public void handleTyping(@Payload TypingRequest request, 
                            SimpMessageHeaderAccessor headerAccessor) {
-        Principal principal = headerAccessor.getUser();
-        if (principal == null) return;
-        
-        // Broadcast typing indicator to room (except sender)
-        messagingTemplate.convertAndSend("/topic/room/" + request.getRoomId() + "/typing",
-            new TypingResponse(principal.getName(), request.isTyping()));
+        try {
+            System.out.println("=== WebSocket Typing Received ===");
+            System.out.println("Request: " + request);
+
+            Principal principal = headerAccessor.getUser();
+            if (principal == null) {
+                System.err.println("ERROR: Principal is null for typing");
+                return;
+            }
+
+            System.out.println("User: " + principal.getName() + " typing: " + request.isTyping());
+            System.out.println("Room: " + request.getRoomId());
+
+            // Broadcast typing indicator to room (except sender)
+            messagingTemplate.convertAndSend("/topic/room/" + request.getRoomId() + "/typing",
+                    new TypingResponse(principal.getName(), request.isTyping()));
+
+            System.out.println("Typing indicator broadcasted to /topic/room/" + request.getRoomId() + "/typing");
+
+        } catch (Exception e) {
+            System.err.println("Error in handleTyping: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
     /**
@@ -299,6 +316,7 @@ public class ChatMessageController {
         private String roomId;
         private String senderId;
         private String senderName;
+        private String senderRole;
         private String content;
         private String messageType;
         private String sentAt;
@@ -308,6 +326,7 @@ public class ChatMessageController {
             this.roomId = message.getRoom().getRoomId();
             this.senderId = message.getSender().getId().toString();
             this.senderName = message.getSenderName();
+            this.senderRole = message.getSender().getRole().toString();
             this.content = message.getContent();
             this.messageType = message.getMessageType().getValue();
             this.sentAt = message.getSentAt().toString();
@@ -318,6 +337,10 @@ public class ChatMessageController {
         public String getRoomId() { return roomId; }
         public String getSenderId() { return senderId; }
         public String getSenderName() { return senderName; }
+
+        public String getSenderRole() {
+            return senderRole;
+        }
         public String getContent() { return content; }
         public String getMessageType() { return messageType; }
         public String getSentAt() { return sentAt; }

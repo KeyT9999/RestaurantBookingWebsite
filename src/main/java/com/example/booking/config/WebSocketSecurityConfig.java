@@ -58,34 +58,26 @@ public class WebSocketSecurityConfig implements WebSocketMessageBrokerConfigurer
 
     @Override
     public void configureClientInboundChannel(@NonNull ChannelRegistration registration) {
+        System.out.println("🔧 WebSocketSecurityConfig: configureClientInboundChannel called");
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
+                System.out.println("🔧 WebSocketSecurityConfig: preSend called");
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 
+                if (accessor != null) {
+                    System.out.println("🔧 WebSocketSecurityConfig: StompCommand = " + accessor.getCommand());
+                }
+
                 if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-                    // Extract user information from headers or session
-                    String userId = accessor.getFirstNativeHeader("userId");
+                    System.out.println("=== WebSocket CONNECT ===");
+                    System.out.println("Headers: " + accessor.toNativeHeaderMap());
+                    System.out.println("Session attributes: " + accessor.getSessionAttributes());
                     
-                    if (userId != null) {
-                        try {
-                            // Load user from database
-                            var userOpt = userRepository.findById(UUID.fromString(userId));
-                            if (userOpt.isPresent()) {
-                                User user = userOpt.get();
-                                // Create authentication
-                                Authentication auth = new UsernamePasswordAuthenticationToken(
-                                    user, null, user.getAuthorities()
-                                );
-                                SecurityContextHolder.getContext().setAuthentication(auth);
-                                accessor.setUser(auth);
-                            }
-                        } catch (Exception e) {
-                            // Log error and reject connection
-                            System.err.println("WebSocket authentication failed: " + e.getMessage());
-                            return null; // Reject the message
-                        }
-                    }
+                    // For WebSocket authentication, we rely on HTTP session
+                    // The user is already authenticated via HTTP session
+                    // Spring Security will automatically handle the authentication
+                    System.out.println("✅ WebSocket connection accepted (using HTTP session authentication)");
                 }
                 
                 return message;
