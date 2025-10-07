@@ -14,8 +14,14 @@ public class VoucherEditForm {
     @NotNull
     private Integer voucherId;
     
+    @Size(max = 50, message = "Code must not exceed 50 characters")
+    private String code;
+    
     @Size(max = 255, message = "Description must not exceed 255 characters")
     private String description;
+    
+    @NotNull(message = "Discount type is required")
+    private String discountType;
     
     @DecimalMin(value = "0.0", message = "Discount value must be positive")
     private BigDecimal discountValue;
@@ -26,7 +32,6 @@ public class VoucherEditForm {
     
     private Integer globalUsageLimit;
     
-    @NotNull(message = "Per customer limit is required")
     private Integer perCustomerLimit;
     
     @DecimalMin(value = "0.0", message = "Minimum order amount must be positive")
@@ -36,7 +41,7 @@ public class VoucherEditForm {
     private BigDecimal maxDiscountAmount;
     
     @NotNull(message = "Status is required")
-    private VoucherStatus status;
+    private String status;
     
     // Constructors
     public VoucherEditForm() {}
@@ -50,8 +55,24 @@ public class VoucherEditForm {
         this.voucherId = voucherId;
     }
     
+    public String getCode() {
+        return code;
+    }
+    
+    public void setCode(String code) {
+        this.code = code;
+    }
+    
     public String getDescription() {
         return description;
+    }
+    
+    public String getDiscountType() {
+        return discountType;
+    }
+    
+    public void setDiscountType(String discountType) {
+        this.discountType = discountType;
     }
     
     public void setDescription(String description) {
@@ -114,11 +135,11 @@ public class VoucherEditForm {
         this.maxDiscountAmount = maxDiscountAmount;
     }
     
-    public VoucherStatus getStatus() {
+    public String getStatus() {
         return status;
     }
     
-    public void setStatus(VoucherStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 }

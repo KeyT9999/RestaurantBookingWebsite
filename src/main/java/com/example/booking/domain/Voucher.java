@@ -33,7 +33,6 @@ public class Voucher {
     private Integer voucherId;
 
     @Column(name = "code", nullable = false, columnDefinition = "citext")
-
     @NotBlank(message = "Mã voucher không được để trống")
     @Size(max = 50, message = "Mã voucher không được quá 50 ký tự")
     private String code;
@@ -267,5 +266,9 @@ public class Voucher {
     
     public boolean isAssignedVoucher() {
         return customerVouchers != null && !customerVouchers.isEmpty();
+    }
+    
+    public int getUsedCount() {
+        return redemptions != null ? redemptions.size() : 0;
     }
 }

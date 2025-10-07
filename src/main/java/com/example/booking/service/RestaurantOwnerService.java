@@ -18,11 +18,14 @@ import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.DiningTableRepository;
 import com.example.booking.repository.DishRepository;
 import com.example.booking.repository.RestaurantMediaRepository;
+import com.example.booking.service.SimpleUserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.security.core.Authentication;
 
 /**
  * Service for Restaurant Owner management operations
@@ -39,6 +42,7 @@ public class RestaurantOwnerService {
     private final DiningTableRepository diningTableRepository;
     private final DishRepository dishRepository;
     private final RestaurantMediaRepository restaurantMediaRepository;
+    private final SimpleUserService userService;
 
     @Autowired
     public RestaurantOwnerService(RestaurantRepository restaurantRepository,
@@ -47,7 +51,8 @@ public class RestaurantOwnerService {
                                 BookingRepository bookingRepository,
                                 DiningTableRepository diningTableRepository,
                                 DishRepository dishRepository,
-                                RestaurantMediaRepository restaurantMediaRepository) {
+                                RestaurantMediaRepository restaurantMediaRepository,
+                                SimpleUserService userService) {
         this.restaurantRepository = restaurantRepository;
         this.restaurantOwnerRepository = restaurantOwnerRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
@@ -55,6 +60,7 @@ public class RestaurantOwnerService {
         this.diningTableRepository = diningTableRepository;
         this.dishRepository = dishRepository;
         this.restaurantMediaRepository = restaurantMediaRepository;
+        this.userService = userService;
     }
 
     /**
@@ -95,6 +101,83 @@ public class RestaurantOwnerService {
             return restaurants.get(0).getRestaurantId();
         }
         return null;
+    }
+
+    /**
+     * Get all restaurants owned by a specific user through authentication
+     * This method properly handles the User -> RestaurantOwner -> RestaurantProfile relationship
+     */
+    public List<RestaurantProfile> getRestaurantsByUserId(UUID userId) {
+        // First, get the RestaurantOwner by userId
+        Optional<RestaurantOwner> ownerOpt = restaurantOwnerRepository.findByUserId(userId);
+        
+        if (ownerOpt.isEmpty()) {
+            return List.of(); // Return empty list if no owner found
+        }
+        
+        RestaurantOwner owner = ownerOpt.get();
+        // Get all restaurants owned by this owner
+        return restaurantProfileRepository.findByOwnerOwnerId(owner.getOwnerId());
+    }
+
+    /**
+     * Get restaurants owned by current authenticated user
+     * This is a convenience method for controllers
+     */
+    public List<RestaurantProfile> getRestaurantsByCurrentUser(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return List.of();
+        }
+        
+        try {
+            // Try to parse as UUID first (if using UUID-based authentication)
+            UUID userId = UUID.fromString(authentication.getName());
+            return getRestaurantsByUserId(userId);
+        } catch (IllegalArgumentException e) {
+            // If not a UUID, this is username-based authentication
+            // We need to get the User first, then get their restaurants
+            try {
+                // Get User by username
+                User user = getUserFromAuthentication(authentication);
+                if (user == null) {
+                    return List.of();
+                }
+                
+                // Get restaurants owned by this user
+                return getRestaurantsByUserId(user.getId());
+            } catch (Exception ex) {
+                System.err.println("❌ Error getting restaurants for user: " + ex.getMessage());
+                return List.of();
+            }
+        }
+    }
+    
+    /**
+     * Helper method to get User from authentication
+     * This should be moved to a utility class in a real application
+     */
+    private User getUserFromAuthentication(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        
+        // If it's a User object directly (regular login)
+        if (principal instanceof User) {
+            return (User) principal;
+        }
+        
+        // If it's OAuth2User (OAuth2 login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email for OAuth users
+            
+            // Find actual User from database
+            try {
+                return (User) userService.loadUserByUsername(username);
+            } catch (Exception e) {
+                throw new RuntimeException("User not found for OAuth username: " + username +
+                        ". Error: " + e.getMessage());
+            }
+        }
+        
+        throw new RuntimeException("Unsupported authentication principal type: " + principal.getClass().getSimpleName());
     }
 
     /**

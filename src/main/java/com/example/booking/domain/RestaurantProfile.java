@@ -32,7 +32,7 @@ public class RestaurantProfile {
     private Integer restaurantId;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = true)
+    @JoinColumn(name = "owner_id", nullable = false)
     private RestaurantOwner owner;
     
     @Column(name = "restaurant_name", nullable = false)
