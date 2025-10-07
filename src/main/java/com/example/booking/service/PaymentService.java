@@ -80,6 +80,13 @@ public class PaymentService {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + customerId));
         
+        // NEW POLICY: Only DEPOSIT is allowed via web booking (> 500k threshold)
+        // FULL_PAYMENT is only for internal/admin use or cash at restaurant
+        if (paymentType == PaymentType.FULL_PAYMENT && paymentMethod != PaymentMethod.CASH) {
+            logger.warn("⚠️ FULL_PAYMENT rejected for non-CASH method. Forcing DEPOSIT.");
+            paymentType = PaymentType.DEPOSIT;
+        }
+        
         // Validate payment method and type combination
         validatePaymentMethodAndType(paymentMethod, paymentType);
         

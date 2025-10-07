@@ -149,9 +149,33 @@ public class BookingController {
             Booking booking = bookingService.createBooking(form, customerId);
             System.out.println("✅ Booking created successfully! ID: " + booking.getBookingId());
 
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Booking created successfully! Please complete payment to confirm your reservation. Booking ID: " + booking.getBookingId());
-            return "redirect:/payment/" + booking.getBookingId();
+            // Calculate total amount to decide payment flow
+            java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
+            java.math.BigDecimal threshold = new java.math.BigDecimal("500000");
+            
+            System.out.println("💰 Total amount: " + totalAmount);
+            System.out.println("📊 Threshold: " + threshold);
+            
+            if (totalAmount.compareTo(threshold) <= 0) {
+                // ≤ 500k: Auto confirm booking, no payment needed
+                System.out.println("✅ Amount <= 500k: Auto-confirming booking");
+                bookingService.confirmBooking(booking.getBookingId());
+                
+                String formattedAmount = String.format("%,.0f", totalAmount);
+                redirectAttributes.addFlashAttribute("successMessage",
+                    "✅ Đặt bàn thành công! Vui lòng thanh toán " + formattedAmount + " VNĐ khi đến nhà hàng.");
+                return "redirect:/booking/my";
+                
+            } else {
+                // > 500k: Require 10% deposit via PayOS
+                System.out.println("💳 Amount > 500k: Redirecting to payment for deposit");
+                java.math.BigDecimal depositAmount = totalAmount.multiply(new java.math.BigDecimal("0.1"));
+                String formattedDeposit = String.format("%,.0f", depositAmount);
+                
+                redirectAttributes.addFlashAttribute("successMessage",
+                    "Đặt bàn thành công! Vui lòng đặt cọc " + formattedDeposit + " VNĐ để xác nhận.");
+                return "redirect:/payment/" + booking.getBookingId();
+            }
 
         } catch (BookingConflictException e) {
             System.err.println("❌ Booking conflict detected: " + e.getMessage());

@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -64,6 +65,9 @@ public class PaymentController {
     
     @Autowired
     private ObjectMapper objectMapper;
+    
+    @Autowired
+    private com.example.booking.repository.VoucherRedemptionRepository voucherRedemptionRepository;
     
     @Autowired
     private PaymentRepository paymentRepository;
@@ -113,8 +117,21 @@ public class PaymentController {
             // Calculate total amount for full payment display
             java.math.BigDecimal fullTotalAmount = bookingService.calculateTotalAmount(booking);
             
+            // Get voucher info if applied
+            java.math.BigDecimal voucherDiscount = java.math.BigDecimal.ZERO;
+            String voucherCode = null;
+            List<com.example.booking.domain.VoucherRedemption> redemptions = 
+                voucherRedemptionRepository.findByBooking_BookingId(bookingId);
+            if (!redemptions.isEmpty()) {
+                com.example.booking.domain.VoucherRedemption redemption = redemptions.get(0);
+                voucherDiscount = redemption.getDiscountApplied();
+                voucherCode = redemption.getVoucher().getCode();
+            }
+            
             model.addAttribute("booking", booking);
             model.addAttribute("fullTotalAmount", fullTotalAmount);
+            model.addAttribute("voucherDiscount", voucherDiscount);
+            model.addAttribute("voucherCode", voucherCode);
             model.addAttribute("paymentMethods", PaymentMethod.values());
             model.addAttribute("paymentTypes", PaymentType.values());
             model.addAttribute("pageTitle", "Thanh toán - Payment");
@@ -700,7 +717,14 @@ public class PaymentController {
                         yield "redirect:/payment/" + bookingId;
                     }
                     paymentService.processCashPayment(payment.getPaymentId());
-                    redirectAttributes.addFlashAttribute("successMessage", "Thanh toán tiền mặt thành công!");
+                    
+                    // Get booking amount for message
+                    java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(payment.getBooking());
+                    String formattedAmount = String.format("%,.0f", totalAmount);
+                    
+                    redirectAttributes.addFlashAttribute("successMessage", 
+                        "✅ Đặt bàn đã được xác nhận! Vui lòng thanh toán " + formattedAmount + " VNĐ khi đến nhà hàng.");
+                    logger.info("✅ Cash payment confirmed. Booking: {}, Amount: {}", bookingId, totalAmount);
                     yield "redirect:/booking/my";
                 }
                 
@@ -1005,5 +1029,174 @@ public class PaymentController {
         Customer customer = customerService.findByUsername(username)
             .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
         return customer.getCustomerId();
+    }
+    
+    /**
+     * DEBUG: Check booking payment mapping
+     */
+    @GetMapping("/debug/booking/{bookingId}")
+    @ResponseBody
+    public ResponseEntity<String> debugBookingPayment(@PathVariable Integer bookingId) {
+        try {
+            Optional<Booking> bookingOpt = bookingService.findBookingById(bookingId);
+            if (bookingOpt.isEmpty()) {
+                return ResponseEntity.ok("Booking not found: " + bookingId);
+            }
+            
+            Booking booking = bookingOpt.get();
+            Optional<Payment> paymentOpt = paymentService.findByBooking(booking);
+            
+            StringBuilder result = new StringBuilder();
+            result.append("=== DEBUG BOOKING PAYMENT ===\n");
+            result.append("Booking ID: ").append(bookingId).append("\n");
+            result.append("Restaurant: ").append(booking.getRestaurant().getRestaurantName()).append("\n");
+            result.append("Status: ").append(booking.getStatus()).append("\n\n");
+            
+            if (paymentOpt.isPresent()) {
+                Payment payment = paymentOpt.get();
+                result.append("Payment ID: ").append(payment.getPaymentId()).append("\n");
+                result.append("Order Code: ").append(payment.getOrderCode()).append("\n");
+                result.append("Amount: ").append(payment.getAmount()).append("\n");
+                result.append("Status: ").append(payment.getStatus()).append("\n");
+                result.append("Method: ").append(payment.getPaymentMethod()).append("\n");
+                result.append("Type: ").append(payment.getPaymentType()).append("\n");
+            } else {
+                result.append("No payment found for this booking\n");
+            }
+            
+            return ResponseEntity.ok(result.toString());
+            
+        } catch (Exception e) {
+            return ResponseEntity.ok("Error: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * ADMIN/DEBUG: Manually sync payment status from PayOS
+     * Use this when webhook fails
+     * Supports both GET and POST
+     */
+    @RequestMapping(value = "/debug/sync-payos/{paymentId}", method = {RequestMethod.GET, RequestMethod.POST})
+    @ResponseBody
+    public ResponseEntity<String> syncPayOSStatus(@PathVariable Integer paymentId) {
+        try {
+            logger.info("========================================");
+            logger.info("🔄 MANUAL PAYOS SYNC");
+            logger.info("   - Payment ID: {}", paymentId);
+            logger.info("========================================");
+            
+            Optional<Payment> paymentOpt = paymentService.findById(paymentId);
+            if (paymentOpt.isEmpty()) {
+                return ResponseEntity.ok("Payment not found: " + paymentId);
+            }
+            
+            Payment payment = paymentOpt.get();
+            
+            if (payment.getPaymentMethod() != PaymentMethod.PAYOS) {
+                return ResponseEntity.ok("Payment is not PayOS method");
+            }
+            
+            if (payment.getStatus() == PaymentStatus.COMPLETED) {
+                return ResponseEntity.ok("Payment already COMPLETED");
+            }
+            
+            // Get status from PayOS
+            var payOSResponse = payOsService.getPaymentInfo(payment.getOrderCode());
+            
+            if (payOSResponse == null || !"00".equals(payOSResponse.getCode())) {
+                return ResponseEntity.ok("Failed to get PayOS info");
+            }
+            
+            var data = payOSResponse.getData();
+            String payosStatus = data.getStatus();
+            
+            logger.info("   - PayOS Status: {}", payosStatus);
+            logger.info("   - Amount Paid: {}", data.getAmountPaid());
+            logger.info("   - Amount Remaining: {}", data.getAmountRemaining());
+            
+            StringBuilder result = new StringBuilder();
+            result.append("=== PAYOS SYNC RESULT ===\n");
+            result.append("Payment ID: ").append(paymentId).append("\n");
+            result.append("Order Code: ").append(payment.getOrderCode()).append("\n");
+            result.append("DB Status: ").append(payment.getStatus()).append("\n");
+            result.append("PayOS Status: ").append(payosStatus).append("\n");
+            result.append("Amount Paid: ").append(data.getAmountPaid()).append("\n");
+            result.append("Amount Remaining: ").append(data.getAmountRemaining()).append("\n\n");
+            
+            if ("PAID".equals(payosStatus)) {
+                // Update payment status
+                payment.setStatus(PaymentStatus.COMPLETED);
+                payment.setPaidAt(LocalDateTime.now());
+                payment.setPayosCode("00");
+                payment.setPayosDesc("Synced from PayOS - Payment confirmed");
+                payment.setPayosPaymentLinkId(data.getId());
+                paymentRepository.save(payment);
+                
+                result.append("✅ Payment updated to COMPLETED\n");
+                logger.info("✅ Payment {} updated to COMPLETED", paymentId);
+                
+                // Confirm booking
+                try {
+                    bookingService.confirmBooking(payment.getBooking().getBookingId());
+                    result.append("✅ Booking confirmed\n");
+                    logger.info("✅ Booking {} confirmed", payment.getBooking().getBookingId());
+                } catch (Exception e) {
+                    result.append("⚠️ Booking confirmation failed: ").append(e.getMessage()).append("\n");
+                    logger.error("Failed to confirm booking", e);
+                }
+                
+                // Send emails
+                try {
+                    Booking booking = payment.getBooking();
+                    Customer customer = booking.getCustomer();
+                    java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
+                    java.math.BigDecimal remainingAmount = totalAmount.subtract(payment.getAmount());
+                    
+                    String customerEmail = customer.getUser().getEmail();
+                    String customerName = customer.getFullName();
+                    String restaurantName = booking.getRestaurant().getRestaurantName();
+                    String bookingTime = booking.getBookingTime().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+                    
+                    emailService.sendPaymentSuccessEmail(
+                        customerEmail, customerName, booking.getBookingId(),
+                        restaurantName, bookingTime, booking.getNumberOfGuests(),
+                        payment.getAmount(), remainingAmount,
+                        payment.getPaymentMethod().getDisplayName()
+                    );
+                    
+                    String ownerEmail = booking.getRestaurant().getOwner().getUser().getEmail();
+                    emailService.sendPaymentNotificationToRestaurant(
+                        ownerEmail, restaurantName, booking.getBookingId(),
+                        customerName, bookingTime, booking.getNumberOfGuests(),
+                        payment.getAmount(), payment.getPaymentMethod().getDisplayName()
+                    );
+                    
+                    result.append("✅ Emails sent\n");
+                    logger.info("✅ Emails sent");
+                } catch (Exception e) {
+                    result.append("⚠️ Email sending failed: ").append(e.getMessage()).append("\n");
+                    logger.error("Failed to send emails", e);
+                }
+                
+                result.append("\n🎉 Sync completed successfully!\n");
+                result.append("Redirect to: /payment/result/").append(paymentId);
+                
+            } else if ("CANCELLED".equals(payosStatus)) {
+                payment.setStatus(PaymentStatus.CANCELLED);
+                payment.setPayosDesc("Cancelled on PayOS");
+                paymentRepository.save(payment);
+                result.append("⚠️ Payment was CANCELLED on PayOS\n");
+                
+            } else {
+                result.append("ℹ️ Payment still PENDING on PayOS\n");
+                result.append("Please wait for customer to complete payment\n");
+            }
+            
+            return ResponseEntity.ok(result.toString());
+            
+        } catch (Exception e) {
+            logger.error("❌ Error syncing PayOS status", e);
+            return ResponseEntity.ok("Error: " + e.getMessage());
+        }
     }
 }
