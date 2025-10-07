@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Test Simple</title>
+</head>
+<body>
+    <h1>Test Simple Template</h1>
+    <p th:text="${vouchers.size()}">0</p>
+    <div th:each="voucher : ${vouchers}">
+        <p th:text="${voucher.code}">Code</p>
+        <p th:text="${voucher.status}">Status</p>
+    </div>
+</body>
+</html>
