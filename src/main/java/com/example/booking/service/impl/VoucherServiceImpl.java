@@ -23,6 +23,7 @@ import com.example.booking.domain.VoucherRedemption;
 import com.example.booking.domain.VoucherStatus;
 import com.example.booking.repository.CustomerRepository;
 import com.example.booking.repository.CustomerVoucherRepository;
+import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.UserRepository;
 import com.example.booking.repository.VoucherRedemptionRepository;
 import com.example.booking.repository.VoucherRepository;
@@ -46,6 +47,9 @@ public class VoucherServiceImpl implements VoucherService {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private RestaurantProfileRepository restaurantProfileRepository;
 
     @Override
     public Optional<Voucher> findByCode(String code) {
@@ -243,8 +247,9 @@ public class VoucherServiceImpl implements VoucherService {
             .findFirst()
             .orElseThrow(() -> new RuntimeException("No restaurant owner user found"));
 
-        RestaurantProfile restaurant = new RestaurantProfile();
-        restaurant.setRestaurantId(restaurantId);
+        // Load restaurant from database instead of creating new object
+        RestaurantProfile restaurant = restaurantProfileRepository.findById(restaurantId)
+            .orElseThrow(() -> new RuntimeException("Restaurant not found with ID: " + restaurantId));
 
         Voucher voucher = new Voucher();
         voucher.setCode(dto.code());
@@ -361,6 +366,28 @@ public class VoucherServiceImpl implements VoucherService {
         voucher.setMinOrderAmount(dto.minOrderAmount());
         voucher.setMaxDiscountAmount(dto.maxDiscountAmount());
         voucher.setStatus(dto.status());
+        
+        return voucherRepository.save(voucher);
+    }
+
+    @Override
+    @Transactional
+    public Voucher updateVoucher(Integer voucherId, VoucherEditDto dto) {
+        Voucher voucher = voucherRepository.findById(voucherId)
+            .orElseThrow(() -> new RuntimeException("Voucher not found with ID: " + voucherId));
+        
+        // Update voucher fields
+        voucher.setCode(dto.code());
+        voucher.setDescription(dto.description());
+        voucher.setDiscountType(DiscountType.valueOf(dto.discountType()));
+        voucher.setDiscountValue(dto.discountValue());
+        voucher.setStartDate(dto.startDate());
+        voucher.setEndDate(dto.endDate());
+        voucher.setGlobalUsageLimit(dto.globalUsageLimit());
+        voucher.setPerCustomerLimit(dto.perCustomerLimit());
+        voucher.setMinOrderAmount(dto.minOrderAmount());
+        voucher.setMaxDiscountAmount(dto.maxDiscountAmount());
+        voucher.setStatus(VoucherStatus.valueOf(dto.status()));
         
         return voucherRepository.save(voucher);
     }
