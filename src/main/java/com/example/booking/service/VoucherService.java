@@ -22,6 +22,11 @@ public interface VoucherService {
     
     record ApplyRequest(String code, Integer restaurantId, UUID customerId, BigDecimal orderAmount, Integer bookingId) {}
     record ApplyResult(boolean success, String reason, BigDecimal discountApplied, Integer redemptionId) {}
+    
+    record VoucherEditDto(String code, String description, String discountType, BigDecimal discountValue, 
+                         LocalDate startDate, LocalDate endDate, Integer globalUsageLimit, 
+                         Integer perCustomerLimit, BigDecimal minOrderAmount, BigDecimal maxDiscountAmount, 
+                         String status) {}
 
     Optional<Voucher> findByCode(String code);
 
@@ -37,6 +42,7 @@ public interface VoucherService {
     Voucher createAdminVoucher(VoucherCreateDto dto);
     Voucher createRestaurantVoucher(Integer restaurantId, VoucherCreateDto dto);
     Voucher updateVoucher(Integer voucherId, VoucherCreateDto dto);
+    Voucher updateVoucher(Integer voucherId, VoucherEditDto dto);
     List<Voucher> getVouchersByRestaurant(Integer restaurantId);
     List<Voucher> getAllVouchers();
     Voucher getVoucherById(Integer voucherId);
