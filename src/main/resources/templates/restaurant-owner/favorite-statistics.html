@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống kê yêu thích - Restaurant Owner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .stats-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .stats-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+        .badge-favorite {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        .owner-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/restaurant-owner/dashboard">
+                <i class="fas fa-utensils me-2"></i>Restaurant Owner
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/restaurant-owner/dashboard">Dashboard</a>
+                <a class="nav-link active" href="/restaurant-owner/favorites">Thống kê yêu thích</a>
+                <a class="nav-link" href="/logout">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Owner Header -->
+        <div class="owner-header text-center">
+            <h1 class="mb-3">
+                <i class="fas fa-heart me-2"></i>
+                Thống kê yêu thích nhà hàng
+            </h1>
+            <p class="mb-0">Phân tích mức độ yêu thích của khách hàng đối với nhà hàng của bạn</p>
+            <div class="mt-3">
+                <span class="badge badge-favorite">
+                    <i class="fas fa-user me-1"></i>
+                    <span th:text="${ownerName}">Chủ nhà hàng</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div th:if="${error != null}" class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span th:text="${error}">Có lỗi xảy ra</span>
+        </div>
+        
+        <div th:if="${success != null}" class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>
+            <span th:text="${success}">Thành công</span>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stats-card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-store stats-icon mb-3"></i>
+                        <div class="stats-number" th:text="${statistics.size()}">0</div>
+                        <h6>Tổng nhà hàng</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-heart stats-icon mb-3"></i>
+                        <div class="stats-number" th:text="${totalFavorites}">0</div>
+                        <h6>Tổng lượt yêu thích</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-star stats-icon mb-3"></i>
+                        <div class="stats-number" th:text="${averageRating}">0.0</div>
+                        <h6>Đánh giá trung bình</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card bg-info text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-comments stats-icon mb-3"></i>
+                        <div class="stats-number" th:text="${totalReviews}">0</div>
+                        <h6>Tổng đánh giá</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Chi tiết thống kê từng nhà hàng
+                </h5>
+            </div>
+            <div class="card-body">
+                <div th:if="${statistics.isEmpty()}" class="text-center py-5">
+                    <i class="fas fa-heart-broken text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="text-muted mt-3">Chưa có dữ liệu yêu thích</h4>
+                    <p class="text-muted">Khách hàng chưa thêm nhà hàng nào vào danh sách yêu thích</p>
+                </div>
+                
+                <div th:if="${!statistics.isEmpty()}">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="fas fa-store me-1"></i>Tên nhà hàng</th>
+                                    <th><i class="fas fa-heart me-1"></i>Lượt yêu thích</th>
+                                    <th><i class="fas fa-star me-1"></i>Đánh giá TB</th>
+                                    <th><i class="fas fa-comments me-1"></i>Số đánh giá</th>
+                                    <th><i class="fas fa-chart-line me-1"></i>Xếp hạng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="stat, iterStat : ${statistics}">
+                                    <td>
+                                        <strong th:text="${stat.restaurantName}">Tên nhà hàng</strong>
+                                        <br>
+                                        <small class="text-muted">ID: <span th:text="${stat.restaurantId}">0</span></small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger fs-6" th:text="${stat.favoriteCount}">0</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning fs-6" th:text="${stat.averageRating}">0.0</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info fs-6" th:text="${stat.reviewCount}">0</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary fs-6" th:text="${iterStat.index + 1}">1</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Section -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Gợi ý cải thiện
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${statistics.isEmpty()}" class="text-muted">
+                            <p><i class="fas fa-info-circle me-2"></i>Hãy tạo thêm nội dung hấp dẫn để thu hút khách hàng yêu thích nhà hàng của bạn.</p>
+                        </div>
+                        <div th:if="${!statistics.isEmpty()}">
+                            <div th:if="${totalFavorites == 0}" class="text-warning">
+                                <p><i class="fas fa-exclamation-triangle me-2"></i>Chưa có lượt yêu thích nào. Hãy cải thiện chất lượng dịch vụ và trải nghiệm khách hàng.</p>
+                            </div>
+                            <div th:if="${totalFavorites > 0}" class="text-success">
+                                <p><i class="fas fa-check-circle me-2"></i>Nhà hàng của bạn đã có <span th:text="${totalFavorites}">0</span> lượt yêu thích! Tiếp tục duy trì chất lượng.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-trophy me-2"></i>
+                            Thành tích
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${statistics.isEmpty()}" class="text-muted">
+                            <p><i class="fas fa-info-circle me-2"></i>Chưa có dữ liệu để đánh giá thành tích.</p>
+                        </div>
+                        <div th:if="${!statistics.isEmpty()}">
+                            <div th:if="${totalFavorites == 0}" class="text-muted">
+                                <p><i class="fas fa-info-circle me-2"></i>Hãy bắt đầu xây dựng cộng đồng yêu thích nhà hàng của bạn.</p>
+                            </div>
+                            <div th:if="${totalFavorites > 0}">
+                                <p><i class="fas fa-medal me-2"></i>Bạn có <span th:text="${statistics.size()}">0</span> nhà hàng được yêu thích</p>
+                                <p><i class="fas fa-heart me-2"></i>Tổng cộng <span th:text="${totalFavorites}">0</span> lượt yêu thích</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -14,6 +14,78 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    
+    <!-- Heart Toggle Styles -->
+    <style>
+        .heart-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+        }
+        
+        .heart-icon {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .heart-icon:hover {
+            color: #e74c3c;
+            background: rgba(255, 255, 255, 0.9);
+            transform: scale(1.1);
+        }
+        
+        .heart-icon.favorited {
+            color: #e74c3c;
+            background: rgba(255, 255, 255, 0.9);
+            animation: heartbeat 0.6s ease-in-out;
+        }
+        
+        @keyframes heartbeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1055;
+        }
+        
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .sort-dropdown {
+            min-width: 150px;
+        }
+        
+        .pagination-custom .page-link {
+            border-radius: 8px;
+            margin: 0 2px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .pagination-custom .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -28,14 +100,92 @@
                         <p class="section__subtitle">Khám phá các địa điểm ẩm thực đẳng cấp</p>
                     </div>
                 </div>
+
+                <!-- Filters and Sort -->
+                <div class="filter-section">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label">Tìm kiếm:</label>
+                            <input type="text" class="form-control" id="searchInput" 
+                                   th:value="${search}" placeholder="Tên nhà hàng...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Loại ẩm thực:</label>
+                            <select class="form-select" id="cuisineFilter">
+                                <option value="">Tất cả</option>
+                                <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
+                                <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
+                                <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
+                                <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
+                                <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
+                                <option value="American" th:selected="${cuisineType == 'American'}">Mỹ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Khoảng giá:</label>
+                            <select class="form-select" id="priceFilter">
+                                <option value="">Tất cả</option>
+                                <option value="under-50k" th:selected="${priceRange == 'under-50k'}">Dưới 50k</option>
+                                <option value="50k-100k" th:selected="${priceRange == '50k-100k'}">50k - 100k</option>
+                                <option value="100k-200k" th:selected="${priceRange == '100k-200k'}">100k - 200k</option>
+                                <option value="over-200k" th:selected="${priceRange == 'over-200k'}">Trên 200k</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Đánh giá:</label>
+                            <select class="form-select" id="ratingFilter">
+                                <option value="">Tất cả</option>
+                                <option value="5-star" th:selected="${ratingFilter == '5-star'}">5 sao</option>
+                                <option value="4-star" th:selected="${ratingFilter == '4-star'}">4 sao trở lên</option>
+                                <option value="3-star" th:selected="${ratingFilter == '3-star'}">3 sao trở lên</option>
+                                <option value="2-star" th:selected="${ratingFilter == '2-star'}">2 sao trở lên</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Sắp xếp:</label>
+                            <select class="form-select sort-dropdown" id="sortSelect">
+                                <option value="restaurantName-asc" th:selected="${sortBy == 'restaurantName' && sortDir == 'asc'}">Tên A-Z</option>
+                                <option value="restaurantName-desc" th:selected="${sortBy == 'restaurantName' && sortDir == 'desc'}">Tên Z-A</option>
+                                <option value="averagePrice-asc" th:selected="${sortBy == 'averagePrice' && sortDir == 'asc'}">Giá thấp</option>
+                                <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' && sortDir == 'desc'}">Giá cao</option>
+                                <option value="averageRating-desc" th:selected="${sortBy == 'averageRating' && sortDir == 'desc'}">Đánh giá cao</option>
+                                <option value="averageRating-asc" th:selected="${sortBy == 'averageRating' && sortDir == 'asc'}">Đánh giá thấp</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary" onclick="applyFilters()">
+                                    <i class="fas fa-filter me-1"></i>Lọc
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>Xóa bộ lọc
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="row">
                     <!-- Dynamic Restaurant Cards from Database -->
-                    <div class="col-lg-4 col-md-6 mb-4" th:each="restaurant : ${restaurants}">
+                    <div class="col-lg-4 col-md-6 mb-4" th:each="restaurant : ${restaurants.content}">
                         <div class="restaurant-card">
                             <div class="restaurant-card__image">
                                 <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
                                      th:alt="${restaurant.restaurantName}" class="img-fluid">
+                                
+                                <!-- Heart Toggle Button -->
+                                <div class="heart-toggle" sec:authorize="hasRole('CUSTOMER')">
+                                    <i class="fas fa-heart heart-icon" 
+                                       th:data-restaurant-id="${restaurant.restaurantId}"
+                                       onclick="toggleFavorite(this)"
+                                       title="Thêm vào yêu thích"></i>
+                                </div>
+                                
                                 <div class="restaurant-card__overlay">
                                     <a th:href="@{/booking/new}" class="btn btn--gold btn--small" sec:authorize="!hasRole('RESTAURANT_OWNER')">Đặt bàn</a>
                                     <a th:href="@{/restaurant-owner/dashboard}" class="btn btn--gold btn--small" sec:authorize="hasRole('RESTAURANT_OWNER')">Quản lý</a>
@@ -77,14 +227,39 @@
                     </div>
                     
                     <!-- Show message if no restaurants found -->
-                    <div class="col-12 text-center" th:if="${#lists.isEmpty(restaurants)}">
+                    <div class="col-12 text-center" th:if="${restaurants.empty}">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
-                            <h4>Chưa có nhà hàng nào</h4>
-                            <p>Hiện tại chưa có nhà hàng nào trong hệ thống. Vui lòng quay lại sau.</p>
+                            <h4>Không tìm thấy nhà hàng</h4>
+                            <p>Không có nhà hàng nào phù hợp với bộ lọc của bạn. Hãy thử điều chỉnh các tiêu chí tìm kiếm.</p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Pagination -->
+                <nav th:if="${totalPages > 1}" aria-label="Pagination" class="mt-4">
+                    <ul class="pagination pagination-custom justify-content-center">
+                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                            <a class="page-link" th:href="@{/restaurants(page=${currentPage - 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        <li th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}" 
+                            class="page-item" 
+                            th:classappend="${pageNum == currentPage} ? 'active'">
+                            <a class="page-link" 
+                               th:href="@{/restaurants(page=${pageNum}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}"
+                               th:text="${pageNum + 1}">1</a>
+                        </li>
+                        
+                        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                            <a class="page-link" th:href="@{/restaurants(page=${currentPage + 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
                 
                 <div class="row">
                     <div class="col-12 text-center mt-4">
@@ -105,7 +280,199 @@
     <!-- Footer -->
     <div th:replace="~{fragments/footer :: site-footer}"></div>
     
+    <!-- Toast Container -->
+    <div class="toast-container">
+        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-heart text-danger me-2"></i>
+                <strong class="me-auto">Thông báo</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                <!-- Message will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Heart Toggle JavaScript -->
+    <script>
+        // Load favorite status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFavoriteStatus();
+        });
+        
+        // Load favorite status for all restaurants
+        function loadFavoriteStatus() {
+            fetch('/customer/favorites/ids')
+                .then(response => {
+                    if (!response.ok) {
+                        // If not authenticated or other error, skip silently
+                        if (response.status === 401 || response.status === 403) {
+                            console.log('User not authenticated, skipping favorite status load');
+                            return [];
+                        }
+                        throw new Error('Failed to fetch favorite restaurant IDs');
+                    }
+                    return response.json();
+                })
+                .then(restaurantIds => {
+                    console.log('Loaded favorite restaurant IDs:', restaurantIds);
+                    
+                    restaurantIds.forEach(restaurantId => {
+                        const heartIcon = document.querySelector(`.heart-icon[data-restaurant-id="${restaurantId}"]`);
+                        if (heartIcon) {
+                            heartIcon.classList.add('favorited');
+                            console.log(`Marked restaurant ${restaurantId} as favorited`);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading favorite status:', error);
+                });
+        }
+        
+        // Toggle favorite function
+        function toggleFavorite(heartIcon) {
+            const restaurantId = heartIcon.dataset.restaurantId;
+            const isCurrentlyFavorited = heartIcon.classList.contains('favorited');
+            
+            // Update UI immediately for instant feedback
+            if (isCurrentlyFavorited) {
+                heartIcon.classList.remove('favorited');
+            } else {
+                heartIcon.classList.add('favorited');
+                // Add pulse animation for instant visual feedback
+                heartIcon.style.animation = 'heartbeat 0.6s ease-in-out';
+            }
+            
+            // Disable button during request
+            heartIcon.style.pointerEvents = 'none';
+            heartIcon.style.opacity = '0.6';
+            
+            // Prepare request - backend will auto-toggle based on current state
+            const request = {
+                restaurantId: parseInt(restaurantId)
+            };
+            
+            // Send AJAX request
+            fetch('/customer/favorites/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(request)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // UI already updated, just show message
+                    showToast(data.message, 'success');
+                } else {
+                    // Revert UI change on error
+                    if (isCurrentlyFavorited) {
+                        heartIcon.classList.add('favorited');
+                    } else {
+                        heartIcon.classList.remove('favorited');
+                    }
+                    showToast(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Revert UI change on error
+                if (isCurrentlyFavorited) {
+                    heartIcon.classList.add('favorited');
+                } else {
+                    heartIcon.classList.remove('favorited');
+                }
+                showToast('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
+            })
+            .finally(() => {
+                // Re-enable button
+                heartIcon.style.pointerEvents = 'auto';
+                heartIcon.style.opacity = '1';
+                // Reset animation
+                heartIcon.style.animation = '';
+            });
+        }
+        
+        // Show toast notification
+        function showToast(message, type) {
+            const toastElement = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            
+            if (type === 'success') {
+                toastElement.classList.add('bg-success', 'text-white');
+            } else if (type === 'error') {
+                toastElement.classList.add('bg-danger', 'text-white');
+            }
+            
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+            
+            // Remove classes after toast is hidden
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                toastElement.classList.remove('bg-success', 'bg-danger', 'text-white');
+            });
+        }
+        
+        // Apply filters
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value;
+            const cuisineType = document.getElementById('cuisineFilter').value;
+            const priceRange = document.getElementById('priceFilter').value;
+            const ratingFilter = document.getElementById('ratingFilter').value;
+            const sortValue = document.getElementById('sortSelect').value;
+            const [sortBy, sortDir] = sortValue.split('-');
+            
+            const url = new URL(window.location);
+            url.searchParams.set('search', search);
+            url.searchParams.set('cuisineType', cuisineType);
+            url.searchParams.set('priceRange', priceRange);
+            url.searchParams.set('ratingFilter', ratingFilter);
+            url.searchParams.set('sortBy', sortBy);
+            url.searchParams.set('sortDir', sortDir);
+            url.searchParams.set('page', '0'); // Reset to first page when filtering
+            
+            window.location.href = url.toString();
+        }
+        
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('cuisineFilter').value = '';
+            document.getElementById('priceFilter').value = '';
+            document.getElementById('ratingFilter').value = '';
+            document.getElementById('sortSelect').value = 'restaurantName-asc';
+            
+            const url = new URL(window.location);
+            url.searchParams.delete('search');
+            url.searchParams.delete('cuisineType');
+            url.searchParams.delete('priceRange');
+            url.searchParams.delete('ratingFilter');
+            url.searchParams.set('sortBy', 'restaurantName');
+            url.searchParams.set('sortDir', 'asc');
+            url.searchParams.set('page', '0');
+            
+            window.location.href = url.toString();
+        }
+        
+        // Auto-submit on Enter key in search input
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        applyFilters();
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

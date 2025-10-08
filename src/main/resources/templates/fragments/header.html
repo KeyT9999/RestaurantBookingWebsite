@@ -45,6 +45,12 @@
                             </a>
                         </li>
                         <li class="nav-item" sec:authorize="hasRole('CUSTOMER')">
+                            <a class="nav-link" th:href="@{/customer/favorites}" th:classappend="${#strings.startsWith(currentPath, '/customer/favorites')} ? 'active' : ''">
+                                <i class="fas fa-heart nav-icon"></i>
+                                <span>Favorites</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('CUSTOMER')">
                             <a class="nav-link" th:href="@{/reviews/my-reviews}" th:classappend="${#strings.startsWith(currentPath, '/reviews')} ? 'active' : ''">
                                 <i class="fas fa-star nav-icon"></i>
                                 <span>My Reviews</span>
@@ -54,6 +60,12 @@
                             <a class="nav-link" th:href="@{/restaurant-owner/reviews}" th:classappend="${#strings.startsWith(currentPath, '/restaurant-owner/reviews')} ? 'active' : ''">
                                 <i class="fas fa-comments nav-icon"></i>
                                 <span>Reviews</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                            <a class="nav-link" th:href="@{/restaurant-owner/favorites}" th:classappend="${#strings.startsWith(currentPath, '/restaurant-owner/favorites')} ? 'active' : ''">
+                                <i class="fas fa-heart nav-icon"></i>
+                                <span>Thống kê yêu thích</span>
                             </a>
                         </li>
                         <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER')">
@@ -105,6 +117,12 @@
                                         Profile
                                     </a>
                                 </li>
+                                <li sec:authorize="hasRole('CUSTOMER')">
+                                    <a class="dropdown-item" th:href="@{/customer/favorites}">
+                                        <i class="fas fa-heart luxury-icon"></i>
+                                        My Favorites
+                                    </a>
+                                </li>
                                 <li sec:authorize="!hasRole('RESTAURANT_OWNER')">
                                     <a class="dropdown-item" th:href="@{/booking/my}">
                                         <i class="fas fa-calendar-alt luxury-icon"></i>
@@ -150,6 +168,13 @@
                                         Chat với khách hàng
                                     </a>
                                 </li>
+                                <li sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/favorites}">
+                                        <i class="fas fa-heart luxury-icon"></i>
+                                        Thống kê yêu thích
+                                    </a>
+                                </li>
+
                                 <li sec:authorize="hasRole('ADMIN')">
                                     <a class="dropdown-item" th:href="@{/admin/chat}">
                                         <i class="fas fa-comments luxury-icon"></i>
