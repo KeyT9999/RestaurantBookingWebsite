@@ -163,6 +163,32 @@ a:hover {
     font-size: 0.9rem;
 }
 
+/* Auth Buttons in Navbar */
+.navbar-nav .btn--outline {
+    background: var(--primary-blue) !important;
+    color: var(--background-white) !important;
+    border: 1px solid var(--primary-blue) !important;
+    padding: 8px 16px !important;
+    font-size: 0.9rem !important;
+    transition: var(--transition) !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+}
+
+.navbar-nav .btn--outline:hover {
+    background: var(--primary-blue-dark) !important;
+    border-color: var(--primary-blue-dark) !important;
+    color: var(--background-white) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-hover) !important;
+}
+
 /* Mobile Toggle */
 .navbar-toggler {
     border: none;
@@ -257,15 +283,18 @@ a:hover {
 /* Outline Button */
 .btn--outline,
 .btn-outline-luxury {
-    background: transparent;
+    background: var(--primary-blue);
     color: var(--background-white);
-    border-color: var(--primary-blue);
-    background-color: var(--primary-blue);
+    border: 1px solid var(--primary-blue);
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    transition: var(--transition);
 }
 
 .btn--outline:hover,
 .btn-outline-luxury:hover {
-    background: var(--primary-blue);
+    background: var(--primary-blue-dark);
+    border-color: var(--primary-blue-dark);
     color: var(--background-white);
     transform: translateY(-1px);
     box-shadow: var(--shadow-hover);
@@ -873,6 +902,12 @@ section {
     
     .navbar-nav .nav-link {
         margin: 5px 0;
+    }
+    
+    .navbar-nav .btn--outline {
+        margin: 5px 0;
+        width: 100%;
+        justify-content: center;
     }
     
     .hero__buttons {

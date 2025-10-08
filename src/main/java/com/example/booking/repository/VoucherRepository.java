@@ -55,6 +55,9 @@ public interface VoucherRepository extends JpaRepository<Voucher, Integer> {
     @Query("SELECT COUNT(r) FROM VoucherRedemption r WHERE r.voucher.voucherId = :voucherId AND r.customerId = :customerId")
     Long countRedemptionsByVoucherIdAndCustomerId(@Param("voucherId") Integer voucherId, 
                                                   @Param("customerId") java.util.UUID customerId);
+    
+    @Query("SELECT v FROM Voucher v LEFT JOIN FETCH v.restaurant ORDER BY v.createdAt DESC")
+    List<Voucher> findAllWithRestaurant();
 }
 
 
