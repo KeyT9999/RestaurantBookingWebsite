@@ -62,7 +62,12 @@
                             <i class="fas fa-user-shield" th:if="${room.participantRole == 'ADMIN'}"></i>
                         </div>
                         <div class="room-info">
-                            <div class="room-name" th:text="${room.participantName}">Participant Name</div>
+                            <div class="room-name">
+                                <span th:text="${room.participantName}">Participant Name</span>
+                                <span class="role-badge" th:classappend="${room.participantRole == 'ADMIN'} ? 'role-admin' : 'role-customer'">
+                                    <span th:text="${room.participantRole == 'ADMIN'} ? 'Admin' : 'Khách hàng'">Role</span>
+                                </span>
+                            </div>
                             <div class="room-restaurant" th:text="${room.restaurantName}">Restaurant Name</div>
                             <div class="room-last-message" th:text="${room.lastMessage ?: 'Chưa có tin nhắn'}">Last message</div>
                             <div class="room-meta">
@@ -118,10 +123,20 @@
                             </div>
                         </div>
                         
-                        <!-- Messages Container -->
-                        <div class="messages-container" id="messages-container">
-                            <!-- Messages will be loaded here -->
-                        </div>
+                <!-- Typing Indicator -->
+                <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="typing-text">Đang nhập...</span>
+                </div>
+                
+                <!-- Messages Container -->
+                <div class="messages-container" id="messages-container">
+                    <!-- Messages will be loaded here -->
+                </div>
                         
                         <!-- Message Input -->
                         <div class="message-input">
@@ -180,9 +195,14 @@
             <div class="admin-info">
                 <div class="admin-name"></div>
                 <div class="admin-email"></div>
+                <div class="admin-restaurant-select">
+                    <select class="form-select form-select-sm restaurant-select">
+                        <option value="">Chọn nhà hàng...</option>
+                    </select>
+                </div>
             </div>
             <div class="admin-actions">
-                <button class="btn btn-gold btn-sm start-chat-btn">
+                <button class="btn btn-gold btn-sm start-chat-btn" disabled>
                     <i class="fas fa-comments"></i>
                     Chat
                 </button>
