@@ -924,24 +924,41 @@ public class RestaurantOwnerController {
             RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
 
-            // Get first restaurant (for now, assuming one restaurant per owner)
-            Integer restaurantId = null;
-            if (owner.getRestaurants() != null && !owner.getRestaurants().isEmpty()) {
-                restaurantId = owner.getRestaurants().get(0).getRestaurantId();
-            } else {
-                // Fallback to service method
-                restaurantId = restaurantOwnerService.getRestaurantIdByOwnerId(owner.getOwnerId());
+            // Get all restaurants owned by this owner
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
+
+            if (restaurants.isEmpty()) {
+                model.addAttribute("error", "Không tìm thấy nhà hàng nào của bạn. Vui lòng tạo nhà hàng trước.");
+                return "restaurant-owner/waitlist";
             }
 
-            // Get waitlist data
-            List<Waitlist> waitingCustomers = waitlistService.getWaitlistByRestaurant(restaurantId);
-            List<Waitlist> calledCustomers = waitlistService.getCalledCustomers(restaurantId);
+            // Get waitlist data for all restaurants
+            List<Waitlist> allWaitingCustomers = new ArrayList<>();
+            List<Waitlist> allCalledCustomers = new ArrayList<>();
+            Map<Integer, String> restaurantNames = new HashMap<>();
 
-            model.addAttribute("waitingCustomers", waitingCustomers);
-            model.addAttribute("calledCustomers", calledCustomers);
-            model.addAttribute("restaurantId", restaurantId);
-            model.addAttribute("waitingCount", waitingCustomers.size());
-            model.addAttribute("calledCount", calledCustomers.size());
+            for (RestaurantProfile restaurant : restaurants) {
+                Integer restaurantId = restaurant.getRestaurantId();
+                String restaurantName = restaurant.getRestaurantName();
+
+                // Get waitlist for this restaurant
+                List<Waitlist> waitingCustomers = waitlistService.getWaitlistByRestaurant(restaurantId);
+                List<Waitlist> calledCustomers = waitlistService.getCalledCustomers(restaurantId);
+
+                // Add to combined lists
+                allWaitingCustomers.addAll(waitingCustomers);
+                allCalledCustomers.addAll(calledCustomers);
+
+                // Store restaurant names for display
+                restaurantNames.put(restaurantId, restaurantName);
+            }
+
+            model.addAttribute("waitingCustomers", allWaitingCustomers);
+            model.addAttribute("calledCustomers", allCalledCustomers);
+            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("restaurantNames", restaurantNames);
+            model.addAttribute("waitingCount", allWaitingCustomers.size());
+            model.addAttribute("calledCount", allCalledCustomers.size());
 
             return "restaurant-owner/waitlist";
 
