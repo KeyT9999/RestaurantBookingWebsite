@@ -1,53 +1,29 @@
 package com.example.booking.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.List;
 
-import com.example.booking.domain.WaitlistStatus;
-
-/**
- * DTO for detailed waitlist information
- * Used for displaying waitlist details and editing
- */
 public class WaitlistDetailDto {
-    
     private Integer waitlistId;
-    private UUID customerId;
     private String customerName;
-    private String customerPhone;
-    private String customerEmail;
-    private Integer restaurantId;
     private String restaurantName;
     private Integer partySize;
     private LocalDateTime joinTime;
-    private WaitlistStatus status;
+    private String status;
     private Integer estimatedWaitTime;
     private Integer queuePosition;
+    private String preferredBookingTime;
     private String specialRequests;
-    private String notes;
-    private LocalDateTime lastUpdated;
+
+    // Lists for related data
+    private List<WaitlistDishDto> dishes;
+    private List<WaitlistServiceDto> services;
+    private List<WaitlistTableDto> tables;
     
     // Constructors
     public WaitlistDetailDto() {}
-    
-    public WaitlistDetailDto(Integer waitlistId, UUID customerId, String customerName, 
-                            String customerPhone, String customerEmail, Integer restaurantId, 
-                            String restaurantName, Integer partySize, LocalDateTime joinTime, 
-                            WaitlistStatus status, Integer estimatedWaitTime, Integer queuePosition) {
-        this.waitlistId = waitlistId;
-        this.customerId = customerId;
-        this.customerName = customerName;
-        this.customerPhone = customerPhone;
-        this.customerEmail = customerEmail;
-        this.restaurantId = restaurantId;
-        this.restaurantName = restaurantName;
-        this.partySize = partySize;
-        this.joinTime = joinTime;
-        this.status = status;
-        this.estimatedWaitTime = estimatedWaitTime;
-        this.queuePosition = queuePosition;
-    }
-    
+
     // Getters and Setters
     public Integer getWaitlistId() {
         return waitlistId;
@@ -56,15 +32,7 @@ public class WaitlistDetailDto {
     public void setWaitlistId(Integer waitlistId) {
         this.waitlistId = waitlistId;
     }
-    
-    public UUID getCustomerId() {
-        return customerId;
-    }
-    
-    public void setCustomerId(UUID customerId) {
-        this.customerId = customerId;
-    }
-    
+
     public String getCustomerName() {
         return customerName;
     }
@@ -72,31 +40,7 @@ public class WaitlistDetailDto {
     public void setCustomerName(String customerName) {
         this.customerName = customerName;
     }
-    
-    public String getCustomerPhone() {
-        return customerPhone;
-    }
-    
-    public void setCustomerPhone(String customerPhone) {
-        this.customerPhone = customerPhone;
-    }
-    
-    public String getCustomerEmail() {
-        return customerEmail;
-    }
-    
-    public void setCustomerEmail(String customerEmail) {
-        this.customerEmail = customerEmail;
-    }
-    
-    public Integer getRestaurantId() {
-        return restaurantId;
-    }
-    
-    public void setRestaurantId(Integer restaurantId) {
-        this.restaurantId = restaurantId;
-    }
-    
+
     public String getRestaurantName() {
         return restaurantName;
     }
@@ -121,11 +65,11 @@ public class WaitlistDetailDto {
         this.joinTime = joinTime;
     }
     
-    public WaitlistStatus getStatus() {
+    public String getStatus() {
         return status;
     }
     
-    public void setStatus(WaitlistStatus status) {
+    public void setStatus(String status) {
         this.status = status;
     }
     
@@ -145,6 +89,14 @@ public class WaitlistDetailDto {
         this.queuePosition = queuePosition;
     }
     
+    public String getPreferredBookingTime() {
+        return preferredBookingTime;
+    }
+
+    public void setPreferredBookingTime(String preferredBookingTime) {
+        this.preferredBookingTime = preferredBookingTime;
+    }
+
     public String getSpecialRequests() {
         return specialRequests;
     }
@@ -153,62 +105,172 @@ public class WaitlistDetailDto {
         this.specialRequests = specialRequests;
     }
     
-    public String getNotes() {
-        return notes;
+    public List<WaitlistDishDto> getDishes() {
+        return dishes;
     }
-    
-    public void setNotes(String notes) {
-        this.notes = notes;
+
+    public void setDishes(List<WaitlistDishDto> dishes) {
+        this.dishes = dishes;
     }
-    
-    public LocalDateTime getLastUpdated() {
-        return lastUpdated;
+
+    public List<WaitlistServiceDto> getServices() {
+        return services;
     }
-    
-    public void setLastUpdated(LocalDateTime lastUpdated) {
-        this.lastUpdated = lastUpdated;
+
+    public void setServices(List<WaitlistServiceDto> services) {
+        this.services = services;
     }
-    
-    // Helper methods
-    public String getStatusDisplayName() {
-        if (status == null) return "Unknown";
+
+    public List<WaitlistTableDto> getTables() {
+        return tables;
+    }
+
+    public void setTables(List<WaitlistTableDto> tables) {
+        this.tables = tables;
+    }
+
+    // Inner DTOs
+    public static class WaitlistDishDto {
+        private String dishName;
+        private String description;
+        private Integer quantity;
+        private BigDecimal price;
+        private BigDecimal totalPrice;
+
+        // Constructors
+        public WaitlistDishDto() {
+        }
+
+        public WaitlistDishDto(String dishName, String description, Integer quantity, BigDecimal price,
+                BigDecimal totalPrice) {
+            this.dishName = dishName;
+            this.description = description;
+            this.quantity = quantity;
+            this.price = price;
+            this.totalPrice = totalPrice;
+        }
+
+        // Getters and Setters
+        public String getDishName() {
+            return dishName;
+        }
+
+        public void setDishName(String dishName) {
+            this.dishName = dishName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public Integer getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(Integer quantity) {
+            this.quantity = quantity;
+        }
+
+        public BigDecimal getPrice() {
+            return price;
+        }
+
+        public void setPrice(BigDecimal price) {
+            this.price = price;
+        }
+
+        public BigDecimal getTotalPrice() {
+            return totalPrice;
+        }
+
+        public void setTotalPrice(BigDecimal totalPrice) {
+            this.totalPrice = totalPrice;
+        }
+    }
+
+    public static class WaitlistServiceDto {
+        private String serviceName;
+        private String description;
+        private BigDecimal price;
+
+        // Constructors
+        public WaitlistServiceDto() {
+        }
+
+        public WaitlistServiceDto(String serviceName, String description, BigDecimal price) {
+            this.serviceName = serviceName;
+            this.description = description;
+            this.price = price;
+        }
+
+        // Getters and Setters
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public void setServiceName(String serviceName) {
+            this.serviceName = serviceName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public BigDecimal getPrice() {
+            return price;
+        }
         
-        switch (status) {
-            case WAITING:
-                return "Đang chờ";
-            case CALLED:
-                return "Đã gọi";
-            case SEATED:
-                return "Đã xếp chỗ";
-            case CANCELLED:
-                return "Đã hủy";
-            default:
-                return "Unknown";
+        public void setPrice(BigDecimal price) {
+            this.price = price;
         }
     }
     
-    public String getStatusColor() {
-        if (status == null) return "secondary";
-        
-        switch (status) {
-            case WAITING:
-                return "warning";
-            case CALLED:
-                return "info";
-            case SEATED:
-                return "success";
-            case CANCELLED:
-                return "danger";
-            default:
-                return "secondary";
+    public static class WaitlistTableDto {
+        private String tableName;
+        private Integer capacity;
+        private String status;
+
+        // Constructors
+        public WaitlistTableDto() {
         }
-    }
-    
-    public boolean isEditableByCustomer() {
-        return status == WaitlistStatus.WAITING;
-    }
-    
-    public boolean isEditableByRestaurant() {
-        return status == WaitlistStatus.WAITING || status == WaitlistStatus.CALLED;
+
+        public WaitlistTableDto(String tableName, Integer capacity, String status) {
+            this.tableName = tableName;
+            this.capacity = capacity;
+            this.status = status;
+        }
+        
+        // Getters and Setters
+        public String getTableName() {
+            return tableName;
+        }
+
+        public void setTableName(String tableName) {
+            this.tableName = tableName;
+        }
+
+        public Integer getCapacity() {
+            return capacity;
+        }
+
+        public void setCapacity(Integer capacity) {
+            this.capacity = capacity;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
     }
 }

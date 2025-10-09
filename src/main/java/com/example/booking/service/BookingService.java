@@ -172,10 +172,27 @@ public class BookingService {
         booking.setBookingTime(form.getBookingTime());
         booking.setNumberOfGuests(form.getGuestCount());
 
-        // Set deposit amount from table if table is selected, otherwise use form value
+        // Set deposit amount from tables if tables are selected, otherwise use form
+        // value
         BigDecimal depositAmount = BigDecimal.ZERO;
-        if (form.getTableId() != null) {
-            System.out.println("🔍 Looking for table ID: " + form.getTableId());
+        if (form.getTableIds() != null && !form.getTableIds().trim().isEmpty()) {
+            System.out.println("🔍 Calculating deposit from multiple tables: " + form.getTableIds());
+            String[] tableIdArray = form.getTableIds().split(",");
+            for (String tableIdStr : tableIdArray) {
+                try {
+                    Integer tableId = Integer.parseInt(tableIdStr.trim());
+                    RestaurantTable table = restaurantTableRepository.findById(tableId)
+                            .orElseThrow(() -> new IllegalArgumentException("Table not found: " + tableId));
+                    depositAmount = depositAmount.add(table.getDepositAmount());
+                    System.out.println("   Table " + table.getTableName() + " deposit: " + table.getDepositAmount());
+                } catch (NumberFormatException e) {
+                    System.err.println("❌ Invalid table ID format: " + tableIdStr);
+                    throw new IllegalArgumentException("Invalid table ID format: " + tableIdStr);
+                }
+            }
+            System.out.println("✅ Total deposit amount from multiple tables: " + depositAmount);
+        } else if (form.getTableId() != null) {
+            System.out.println("🔍 Looking for single table ID: " + form.getTableId());
             RestaurantTable table = restaurantTableRepository.findById(form.getTableId())
                     .orElseThrow(() -> new IllegalArgumentException("Table not found"));
             depositAmount = table.getDepositAmount();
@@ -228,9 +245,35 @@ public class BookingService {
             }
         }
 
-        // Assign table if specified
-        if (form.getTableId() != null) {
-            System.out.println("🔍 Assigning table to booking...");
+        // Assign tables if specified
+        if (form.getTableIds() != null && !form.getTableIds().trim().isEmpty()) {
+            System.out.println("🔍 Assigning multiple tables to booking...");
+            System.out.println("   Booking ID: " + booking.getBookingId());
+            System.out.println("   Table IDs: " + form.getTableIds());
+            try {
+                assignMultipleTablesToBooking(booking, form.getTableIds());
+                System.out.println("✅ Tables assigned successfully");
+
+                // Verify BookingTable was created
+                System.out.println("🔍 Verifying BookingTable creation...");
+                List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
+                System.out.println("   Found " + bookingTables.size() + " BookingTable records");
+                if (bookingTables.isEmpty()) {
+                    System.err.println("❌ CRITICAL: No BookingTable records found after assignment!");
+                } else {
+                    for (BookingTable bt : bookingTables) {
+                        System.out.println("   BookingTable ID: " + bt.getBookingTableId() +
+                                ", Table: " + bt.getTable().getTableName());
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Error assigning tables: " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            }
+        } else if (form.getTableId() != null) {
+            // Backward compatibility - single table
+            System.out.println("🔍 Assigning single table to booking...");
             System.out.println("   Booking ID: " + booking.getBookingId());
             System.out.println("   Table ID: " + form.getTableId());
             try {
@@ -519,7 +562,8 @@ public class BookingService {
     }
 
     /**
-     * Confirm booking when payment is successful
+     * Confirm booking when restaurant owner confirms the booking
+     * CONFIRMED = đã xác nhận, chờ thanh toán
      */
     @Transactional
     public Booking confirmBooking(Integer bookingId) {
@@ -544,6 +588,30 @@ public class BookingService {
         return confirmedBooking;
     }
     
+    /**
+     * Complete booking when payment is successful
+     * COMPLETED = thanh toán thành công, chờ đến
+     */
+    @Transactional
+    public Booking completeBooking(Integer bookingId) {
+        System.out.println("🔍 BookingService.completeBooking() called for booking ID: " + bookingId);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        // Validate booking can be completed
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new IllegalArgumentException("Booking cannot be completed in current status: " + booking.getStatus());
+        }
+
+        booking.setStatus(BookingStatus.COMPLETED);
+        Booking completedBooking = bookingRepository.save(booking);
+
+        System.out.println("✅ Booking completed successfully: " + completedBooking.getBookingId());
+
+        return completedBooking;
+    }
+
     /**
      * Create notification for booking confirmation
      */
@@ -685,6 +753,54 @@ public class BookingService {
         }
 
         System.out.println("✅ Booking time validation passed");
+    }
+
+    /**
+     * Assign multiple tables to booking
+     */
+    private void assignMultipleTablesToBooking(Booking booking, String tableIds) {
+        System.out.println("🔍 assignMultipleTablesToBooking called with tableIds: " + tableIds);
+        System.out.println("   Booking ID: " + booking.getBookingId());
+        System.out.println("   Booking status: " + booking.getStatus());
+
+        String[] tableIdArray = tableIds.split(",");
+        System.out.println("   Found " + tableIdArray.length + " table IDs to assign");
+
+        for (String tableIdStr : tableIdArray) {
+            try {
+                Integer tableId = Integer.parseInt(tableIdStr.trim());
+                System.out.println("🔍 Processing table ID: " + tableId);
+
+                RestaurantTable table = restaurantTableRepository.findById(tableId)
+                        .orElseThrow(() -> new IllegalArgumentException("Table not found: " + tableId));
+                System.out.println("✅ Table found: " + table.getTableName());
+                System.out.println("   Table ID: " + table.getTableId());
+                System.out.println("   Table status: " + table.getStatus());
+
+                // Create booking table assignment
+                System.out.println("🔍 Creating BookingTable assignment...");
+                BookingTable bookingTable = new BookingTable(booking, table);
+                System.out.println("   BookingTable object created");
+                System.out.println("   BookingTable.booking: " + bookingTable.getBooking().getBookingId());
+                System.out.println("   BookingTable.table: " + bookingTable.getTable().getTableName());
+                System.out.println("   BookingTable.assignedAt: " + bookingTable.getAssignedAt());
+
+                try {
+                    BookingTable savedBookingTable = bookingTableRepository.save(bookingTable);
+                    System.out.println("✅ BookingTable saved successfully");
+                    System.out.println("   Saved BookingTable ID: " + savedBookingTable.getBookingTableId());
+                } catch (Exception e) {
+                    System.err.println("❌ Error saving BookingTable for table " + tableId + ": " + e.getMessage());
+                    e.printStackTrace();
+                    throw e;
+                }
+            } catch (NumberFormatException e) {
+                System.err.println("❌ Invalid table ID format: " + tableIdStr);
+                throw new IllegalArgumentException("Invalid table ID format: " + tableIdStr);
+            }
+        }
+
+        System.out.println("✅ Multiple table assignment completed - status will be managed automatically");
     }
 
     /**

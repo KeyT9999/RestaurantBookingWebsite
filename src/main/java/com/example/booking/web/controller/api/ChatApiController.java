@@ -19,11 +19,13 @@ import com.example.booking.domain.ChatRoom;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
+import com.example.booking.dto.AdminChatDto;
 import com.example.booking.dto.ChatMessageDto;
 import com.example.booking.dto.ChatRoomDto;
 import com.example.booking.dto.RestaurantChatDto;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.RestaurantManagementService;
+import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.SimpleUserService;
 
 /**
@@ -124,14 +126,26 @@ public class ChatApiController {
             
             List<User> admins = chatService.getAvailableAdmins();
             
-            // Convert to DTO
+            // Convert to DTO with restaurants
             List<AdminChatDto> adminDtos = admins.stream()
-                .map(admin -> new AdminChatDto(
-                    admin.getId(),
-                    admin.getFullName(),
-                    admin.getEmail(),
-                    true // Default to active
-                ))
+                    .map(admin -> {
+                        // Get restaurants for this owner using the correct method
+                        List<RestaurantProfile> ownerRestaurants = restaurantOwnerService
+                                .getRestaurantsByUserId(user.getId());
+                        List<com.example.booking.dto.AdminChatDto.RestaurantInfo> restaurantInfos = ownerRestaurants
+                                .stream()
+                                .map(restaurant -> new com.example.booking.dto.AdminChatDto.RestaurantInfo(
+                                        restaurant.getRestaurantId().longValue(),
+                                        restaurant.getName()))
+                                .collect(Collectors.toList());
+
+                        return new com.example.booking.dto.AdminChatDto(
+                                admin.getId(),
+                                admin.getFullName(),
+                                admin.getEmail(),
+                                true, // Default to active
+                                restaurantInfos);
+                    })
                 .collect(Collectors.toList());
             
             return ResponseEntity.ok(adminDtos);
@@ -201,6 +215,7 @@ public class ChatApiController {
      */
     @PostMapping("/rooms/admin")
     public ResponseEntity<?> createChatRoomWithAdmin(@RequestParam UUID adminId,
+            @RequestParam(required = false) Long restaurantId,
                                                    Authentication authentication) {
         try {
             User user = getUserFromAuthentication(authentication);
@@ -211,7 +226,7 @@ public class ChatApiController {
             }
             
             // Create chat room with admin
-            ChatRoom room = chatService.createRestaurantOwnerAdminRoom(user.getId(), adminId);
+            ChatRoom room = chatService.createRestaurantOwnerAdminRoom(user.getId(), adminId, restaurantId);
             
             return ResponseEntity.ok(new CreateRoomResponse(room.getRoomId(), room.getRestaurant().getRestaurantId()));
         } catch (Exception e) {
@@ -356,26 +371,7 @@ public class ChatApiController {
         
         public long getUnreadCount() { return unreadCount; }
     }
-    
-    public static class AdminChatDto {
-        private UUID adminId;
-        private String adminName;
-        private String adminEmail;
-        private boolean isActive;
-        
-        public AdminChatDto(UUID adminId, String adminName, String adminEmail, boolean isActive) {
-            this.adminId = adminId;
-            this.adminName = adminName;
-            this.adminEmail = adminEmail;
-            this.isActive = isActive;
-        }
-        
-        public UUID getAdminId() { return adminId; }
-        public String getAdminName() { return adminName; }
-        public String getAdminEmail() { return adminEmail; }
-        public boolean isActive() { return isActive; }
-    }
-    
+
     /**
      * Create chat room between admin and restaurant
      */

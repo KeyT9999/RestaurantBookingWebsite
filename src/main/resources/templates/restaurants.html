@@ -63,6 +63,28 @@
             right: 20px;
             z-index: 1055;
         }
+        
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .sort-dropdown {
+            min-width: 150px;
+        }
+        
+        .pagination-custom .page-link {
+            border-radius: 8px;
+            margin: 0 2px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .pagination-custom .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
     </style>
 </head>
 <body>
@@ -78,10 +100,79 @@
                         <p class="section__subtitle">Khám phá các địa điểm ẩm thực đẳng cấp</p>
                     </div>
                 </div>
+
+                <!-- Filters and Sort -->
+                <div class="filter-section">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label">Tìm kiếm:</label>
+                            <input type="text" class="form-control" id="searchInput" 
+                                   th:value="${search}" placeholder="Tên nhà hàng...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Loại ẩm thực:</label>
+                            <select class="form-select" id="cuisineFilter">
+                                <option value="">Tất cả</option>
+                                <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
+                                <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
+                                <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
+                                <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
+                                <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
+                                <option value="American" th:selected="${cuisineType == 'American'}">Mỹ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Khoảng giá:</label>
+                            <select class="form-select" id="priceFilter">
+                                <option value="">Tất cả</option>
+                                <option value="under-50k" th:selected="${priceRange == 'under-50k'}">Dưới 50k</option>
+                                <option value="50k-100k" th:selected="${priceRange == '50k-100k'}">50k - 100k</option>
+                                <option value="100k-200k" th:selected="${priceRange == '100k-200k'}">100k - 200k</option>
+                                <option value="over-200k" th:selected="${priceRange == 'over-200k'}">Trên 200k</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Đánh giá:</label>
+                            <select class="form-select" id="ratingFilter">
+                                <option value="">Tất cả</option>
+                                <option value="5-star" th:selected="${ratingFilter == '5-star'}">5 sao</option>
+                                <option value="4-star" th:selected="${ratingFilter == '4-star'}">4 sao trở lên</option>
+                                <option value="3-star" th:selected="${ratingFilter == '3-star'}">3 sao trở lên</option>
+                                <option value="2-star" th:selected="${ratingFilter == '2-star'}">2 sao trở lên</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Sắp xếp:</label>
+                            <select class="form-select sort-dropdown" id="sortSelect">
+                                <option value="restaurantName-asc" th:selected="${sortBy == 'restaurantName' && sortDir == 'asc'}">Tên A-Z</option>
+                                <option value="restaurantName-desc" th:selected="${sortBy == 'restaurantName' && sortDir == 'desc'}">Tên Z-A</option>
+                                <option value="averagePrice-asc" th:selected="${sortBy == 'averagePrice' && sortDir == 'asc'}">Giá thấp</option>
+                                <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' && sortDir == 'desc'}">Giá cao</option>
+                                <option value="averageRating-desc" th:selected="${sortBy == 'averageRating' && sortDir == 'desc'}">Đánh giá cao</option>
+                                <option value="averageRating-asc" th:selected="${sortBy == 'averageRating' && sortDir == 'asc'}">Đánh giá thấp</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary" onclick="applyFilters()">
+                                    <i class="fas fa-filter me-1"></i>Lọc
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>Xóa bộ lọc
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="row">
                     <!-- Dynamic Restaurant Cards from Database -->
-                    <div class="col-lg-4 col-md-6 mb-4" th:each="restaurant : ${restaurants}">
+                    <div class="col-lg-4 col-md-6 mb-4" th:each="restaurant : ${restaurants.content}">
                         <div class="restaurant-card">
                             <div class="restaurant-card__image">
                                 <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
@@ -136,14 +227,39 @@
                     </div>
                     
                     <!-- Show message if no restaurants found -->
-                    <div class="col-12 text-center" th:if="${#lists.isEmpty(restaurants)}">
+                    <div class="col-12 text-center" th:if="${restaurants.empty}">
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
-                            <h4>Chưa có nhà hàng nào</h4>
-                            <p>Hiện tại chưa có nhà hàng nào trong hệ thống. Vui lòng quay lại sau.</p>
+                            <h4>Không tìm thấy nhà hàng</h4>
+                            <p>Không có nhà hàng nào phù hợp với bộ lọc của bạn. Hãy thử điều chỉnh các tiêu chí tìm kiếm.</p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Pagination -->
+                <nav th:if="${totalPages > 1}" aria-label="Pagination" class="mt-4">
+                    <ul class="pagination pagination-custom justify-content-center">
+                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                            <a class="page-link" th:href="@{/restaurants(page=${currentPage - 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        
+                        <li th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}" 
+                            class="page-item" 
+                            th:classappend="${pageNum == currentPage} ? 'active'">
+                            <a class="page-link" 
+                               th:href="@{/restaurants(page=${pageNum}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}"
+                               th:text="${pageNum + 1}">1</a>
+                        </li>
+                        
+                        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
+                            <a class="page-link" th:href="@{/restaurants(page=${currentPage + 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
                 
                 <div class="row">
                     <div class="col-12 text-center mt-4">
@@ -304,6 +420,59 @@
                 toastElement.classList.remove('bg-success', 'bg-danger', 'text-white');
             });
         }
+        
+        // Apply filters
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value;
+            const cuisineType = document.getElementById('cuisineFilter').value;
+            const priceRange = document.getElementById('priceFilter').value;
+            const ratingFilter = document.getElementById('ratingFilter').value;
+            const sortValue = document.getElementById('sortSelect').value;
+            const [sortBy, sortDir] = sortValue.split('-');
+            
+            const url = new URL(window.location);
+            url.searchParams.set('search', search);
+            url.searchParams.set('cuisineType', cuisineType);
+            url.searchParams.set('priceRange', priceRange);
+            url.searchParams.set('ratingFilter', ratingFilter);
+            url.searchParams.set('sortBy', sortBy);
+            url.searchParams.set('sortDir', sortDir);
+            url.searchParams.set('page', '0'); // Reset to first page when filtering
+            
+            window.location.href = url.toString();
+        }
+        
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('cuisineFilter').value = '';
+            document.getElementById('priceFilter').value = '';
+            document.getElementById('ratingFilter').value = '';
+            document.getElementById('sortSelect').value = 'restaurantName-asc';
+            
+            const url = new URL(window.location);
+            url.searchParams.delete('search');
+            url.searchParams.delete('cuisineType');
+            url.searchParams.delete('priceRange');
+            url.searchParams.delete('ratingFilter');
+            url.searchParams.set('sortBy', 'restaurantName');
+            url.searchParams.set('sortDir', 'asc');
+            url.searchParams.set('page', '0');
+            
+            window.location.href = url.toString();
+        }
+        
+        // Auto-submit on Enter key in search input
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        applyFilters();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

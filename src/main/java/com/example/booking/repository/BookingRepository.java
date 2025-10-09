@@ -60,11 +60,13 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     List<Booking> findNoShowBookings(@Param("threshold") LocalDateTime threshold);
 
     /**
-     * Find upcoming bookings (PENDING bookings within time range)
+     * Find upcoming bookings (PENDING and CONFIRMED bookings within time range)
+     * CONFIRMED bookings have higher priority
      */
     @Query("SELECT b FROM Booking b " +
-                  "WHERE b.status = 'PENDING' " +
-                  "AND b.bookingTime BETWEEN :now AND :threshold")
+                  "WHERE b.status IN ('PENDING', 'CONFIRMED') " +
+                  "AND b.bookingTime BETWEEN :now AND :threshold " +
+                  "ORDER BY CASE b.status WHEN 'CONFIRMED' THEN 1 WHEN 'PENDING' THEN 2 END, b.bookingTime ASC")
     List<Booking> findUpcomingBookings(@Param("now") LocalDateTime now,
                   @Param("threshold") LocalDateTime threshold);
 
@@ -118,4 +120,17 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      */
     List<Booking> findByRestaurantAndStatusAndBookingTimeBetween(RestaurantProfile restaurant, BookingStatus status,
                   LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * Find table conflicts in time range
+     */
+    @Query("SELECT DISTINCT b FROM Booking b " +
+                  "JOIN b.bookingTables bt " +
+                  "WHERE bt.table.tableId = :tableId " +
+                  "AND b.status IN ('PENDING', 'CONFIRMED') " +
+                  "AND b.bookingTime BETWEEN :startTime AND :endTime " +
+                  "ORDER BY b.bookingTime")
+    List<Booking> findTableConflictsInTimeRange(@Param("tableId") Integer tableId,
+                  @Param("startTime") LocalDateTime startTime,
+                  @Param("endTime") LocalDateTime endTime);
 } 

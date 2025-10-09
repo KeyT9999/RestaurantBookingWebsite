@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantMedia;
@@ -21,6 +23,7 @@ import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.dto.ReviewForm;
 import com.example.booking.service.RestaurantOwnerService;
+import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.ReviewService;
 
@@ -36,6 +39,9 @@ public class HomeController {
     
     @Autowired
     private RestaurantOwnerService restaurantOwnerService;
+    
+    @Autowired
+    private RestaurantManagementService restaurantService;
     
     @Autowired
     private CustomerService customerService;
@@ -88,17 +94,51 @@ public class HomeController {
     }
     
     /**
-     * Restaurants listing page
+     * Restaurants listing page with filtering and sorting
      */
     @GetMapping("/restaurants")
-    public String restaurants(Model model) {
-        model.addAttribute("pageTitle", "Our Restaurants - Aurelius Fine Dining");
+    public String restaurants(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @RequestParam(defaultValue = "restaurantName") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String cuisineType,
+            @RequestParam(required = false) String priceRange,
+            @RequestParam(required = false) String ratingFilter,
+            Model model) {
         
-        // Get all restaurants from database
-        List<RestaurantProfile> restaurants = restaurantOwnerService.getAllRestaurants();
-        model.addAttribute("restaurants", restaurants);
-        
-        return "restaurants";
+        try {
+            model.addAttribute("pageTitle", "Our Restaurants - Aurelius Fine Dining");
+            
+            // Create pageable
+            Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+            Pageable pageable = PageRequest.of(page, size, sort);
+            
+            // Get restaurants with filters using RestaurantManagementService
+            Page<RestaurantProfile> restaurants = restaurantService.getRestaurantsWithFilters(
+                pageable, search, cuisineType, priceRange, ratingFilter);
+            
+            // Add to model
+            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("totalElements", restaurants.getTotalElements());
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", restaurants.getTotalPages());
+            model.addAttribute("search", search);
+            model.addAttribute("cuisineType", cuisineType);
+            model.addAttribute("priceRange", priceRange);
+            model.addAttribute("ratingFilter", ratingFilter);
+            model.addAttribute("sortBy", sortBy);
+            model.addAttribute("sortDir", sortDir);
+            
+            return "restaurants";
+            
+        } catch (Exception e) {
+            System.out.println("ERROR in restaurants: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "restaurants";
+        }
     }
     
     @GetMapping("/restaurants/{id}")
