@@ -105,7 +105,7 @@ a:hover {
 .luxury-navbar {
     background: var(--background-white);
     border-bottom: 1px solid var(--border-light);
-    padding: 15px 0;
+    padding: 12px 0;
     transition: var(--transition);
     box-shadow: var(--shadow-card);
 }
@@ -118,13 +118,15 @@ a:hover {
 /* Brand */
 .navbar-brand {
     font-family: var(--font-heading);
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--primary-blue) !important;
     text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
+    margin-right: 1rem;
+    white-space: nowrap;
 }
 
 .navbar-brand:hover {
@@ -136,17 +138,26 @@ a:hover {
 }
 
 /* Navigation Links */
+.navbar-nav {
+    flex-wrap: nowrap !important;
+    overflow: visible;
+    -webkit-overflow-scrolling: touch;
+}
+
 .navbar-nav .nav-link {
     color: var(--text-dark) !important;
     font-weight: 500;
-    margin: 0 8px;
-    padding: 8px 12px !important;
+    margin: 0 1px;
+    padding: 6px 8px !important;
     position: relative;
     transition: var(--transition);
     display: flex;
     align-items: center;
-    gap: 6px;
-    border-radius: 6px;
+    gap: 3px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    flex-shrink: 0;
 }
 
 .navbar-nav .nav-link:hover,
@@ -168,17 +179,18 @@ a:hover {
     background: var(--primary-blue) !important;
     color: var(--background-white) !important;
     border: 1px solid var(--primary-blue) !important;
-    padding: 8px 16px !important;
-    font-size: 0.9rem !important;
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
     transition: var(--transition) !important;
     text-decoration: none !important;
     display: inline-flex !important;
     align-items: center !important;
-    gap: 6px !important;
-    border-radius: 6px !important;
+    gap: 3px !important;
+    border-radius: 4px !important;
     font-weight: 500 !important;
     line-height: 1.2 !important;
     white-space: nowrap !important;
+    margin: 0 1px !important;
 }
 
 .navbar-nav .btn--outline:hover {
@@ -232,6 +244,70 @@ a:hover {
 .luxury-dropdown .dropdown-divider {
     border-color: var(--border-light);
     margin: 8px 0;
+}
+
+/* User Section Layout */
+.navbar-nav:last-child {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+/* Navigation Container */
+.navbar-collapse {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: nowrap;
+}
+
+.navbar-nav.mx-auto {
+    flex: 1;
+    justify-content: center;
+    max-width: none;
+    min-width: 0;
+}
+
+/* Container spacing */
+.luxury-navbar .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 100%;
+    overflow: visible;
+}
+
+/* Notification Bell */
+.nav-item .notification-bell-container {
+    position: relative;
+    margin: 0 2px;
+    flex-shrink: 0;
+}
+
+/* User Dropdown */
+.user-dropdown {
+    margin: 0 2px !important;
+    padding: 5px 8px !important;
+    font-size: 0.85rem !important;
+}
+
+/* CTA Button */
+.btn-book-table {
+    margin-left: 6px !important;
+    padding: 6px 12px !important;
+    font-weight: 600 !important;
+    border-radius: 4px !important;
+    box-shadow: var(--shadow-button) !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap !important;
+}
+
+.btn-book-table:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-hover) !important;
 }
 
 /* ========================================
@@ -427,7 +503,7 @@ a:hover {
    ======================================== */
 
 .main-content {
-    padding-top: 80px; /* Account for fixed header */
+    padding-top: 76px; /* Account for fixed header - reduced from 80px */
 }
 
 section {
@@ -894,6 +970,25 @@ section {
     }
 }
 
+@media (max-width: 1199.98px) {
+    .navbar-nav .nav-link {
+        font-size: 0.8rem;
+        padding: 5px 6px !important;
+        margin: 0 0.5px;
+    }
+    
+    .navbar-nav .btn--outline {
+        padding: 5px 8px !important;
+        font-size: 0.75rem !important;
+        margin: 0 0.5px !important;
+    }
+    
+    .navbar-brand {
+        font-size: 1.4rem;
+        margin-right: 0.8rem;
+    }
+}
+
 @media (max-width: 991.98px) {
     .navbar-nav {
         margin-top: 1rem;
@@ -902,12 +997,28 @@ section {
     
     .navbar-nav .nav-link {
         margin: 5px 0;
+        justify-content: center;
     }
     
     .navbar-nav .btn--outline {
         margin: 5px 0;
         width: 100%;
         justify-content: center;
+    }
+    
+    /* Mobile user section */
+    .navbar-nav:last-child {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-light);
+    }
+    
+    .btn-book-table {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0 !important;
     }
     
     .hero__buttons {
