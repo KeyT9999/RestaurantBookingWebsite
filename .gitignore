@@ -74,6 +74,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
+package.json
 
 ############################
 # SECURITY / SECRETS
@@ -107,6 +109,29 @@ application-secrets.properties
 *.db
 *.sqlite
 *.sqlite3
+*.sql
+add_manual_transfer_columns.sql
+check_balance_data.sql
+check_table_structure.sql
+check_withdrawal_data.sql
+check_withdrawal_table_structure.sql
+cleanup_old_files.sql
+create_admin_user.sql
+create_more_test_data.sql
+final_test_withdrawal.sql
+fix_and_reset_withdrawal.sql
+fix_balance_trigger.sql
+fix_current_balance.sql
+quick_test_withdrawal.sql
+simple_admin_test.sql
+simple_test_withdrawal.sql
+test_manual_updates.sql
+test_trigger_update.sql
+test_withdrawal_actions.sql
+update_database_for_manual_withdrawal.sql
+database/
+docs/
+*.md
 
 ############################
 # ALLOW-LIST (giữ lại file cần thiết)
@@ -125,6 +150,12 @@ application-secrets.properties
 !src/main/resources/messages_vi.properties
 !pom.xml
 !.gitignore
+!README.md
+!Dockerfile
+!docker-compose.yml
+!Procfile
+!system.properties
+!env.example
 
 ############################
 # PAYOS & DEPLOYMENT NOTES

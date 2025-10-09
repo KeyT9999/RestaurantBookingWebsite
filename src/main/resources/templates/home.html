@@ -40,111 +40,64 @@
         
         
 
-        <!-- Featured Restaurants Section -->
-        <section class="restaurants" id="restaurants">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 text-center mb-5">
-                        <h2 class="section__title" data-aos="fade-up">Nhà hàng nổi bật</h2>
-                        <p class="section__subtitle" data-aos="fade-up" data-aos-delay="100">Khám phá những địa điểm ẩm thực đẳng cấp</p>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="restaurant-card" data-aos="fade-up" data-aos-delay="200">
-                            <div class="restaurant-card__image">
-                                <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                     alt="Aurelius Downtown" class="img-fluid">
-                                <div class="restaurant-card__overlay">
-                                    <a th:href="@{/restaurants/1}" class="btn btn--gold btn--small">Xem chi tiết</a>
+        <!-- Featured Restaurants Carousel Section -->
+        <section class="restaurants-carousel" id="restaurants">
+            <div class="container-fluid px-0">
+                <!-- Bootstrap Carousel - Image Only -->
+                <div id="restaurantBootstrapCarousel" class="carousel slide image-only-carousel" data-bs-ride="carousel" data-bs-interval="6000">
+                    <div class="carousel-inner">
+                        <!-- Restaurant Image 1 -->
+                        <div class="carousel-item active">
+                            <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+                                 class="d-block w-100 carousel-image" alt="Aurelius Downtown">
+                            <div class="carousel-caption">
+                                <div class="caption-content">
+                                    <h3 class="restaurant-name">Aurelius Downtown</h3>
+                                    <p class="restaurant-description">Không gian ẩm thực sang trọng với view đẹp và menu đa dạng</p>
                                 </div>
                             </div>
-                            <div class="restaurant-card__content">
-                                <h4 class="restaurant-card__title">Aurelius Downtown</h4>
-                                <p class="restaurant-card__location">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    Quận 1, TP. Hồ Chí Minh
-                                </p>
-                                <div class="restaurant-card__rating">
-                                    <div class="stars">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <span class="rating-text">5.0 (124 đánh giá)</span>
+                        </div>
+                        
+                        <!-- Restaurant Image 2 -->
+                        <div class="carousel-item">
+                            <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+                                 class="d-block w-100 carousel-image" alt="Aurelius Garden">
+                            <div class="carousel-caption">
+                                <div class="caption-content">
+                                    <h3 class="restaurant-name">Aurelius Garden</h3>
+                                    <p class="restaurant-description">Thiên đường ẩm thực giữa lòng thành phố với không gian xanh mát</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Restaurant Image 3 -->
+                        <div class="carousel-item">
+                            <img src="https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+                                 class="d-block w-100 carousel-image" alt="Aurelius Rooftop">
+                            <div class="carousel-caption">
+                                <div class="caption-content">
+                                    <h3 class="restaurant-name">Aurelius Rooftop</h3>
+                                    <p class="restaurant-description">Trải nghiệm ẩm thực cao cấp với tầm nhìn toàn cảnh thành phố</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="restaurant-card" data-aos="fade-up" data-aos-delay="300">
-                            <div class="restaurant-card__image">
-                                <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                     alt="Aurelius Garden" class="img-fluid">
-                                <div class="restaurant-card__overlay">
-                                    <a th:href="@{/restaurants/2}" class="btn btn--gold btn--small">Xem chi tiết</a>
-                                </div>
-                            </div>
-                            <div class="restaurant-card__content">
-                                <h4 class="restaurant-card__title">Aurelius Garden</h4>
-                                <p class="restaurant-card__location">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    Quận 3, TP. Hồ Chí Minh
-                                </p>
-                                <div class="restaurant-card__rating">
-                                    <div class="stars">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <span class="rating-text">4.9 (89 đánh giá)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Navigation Arrows -->
+                    <button class="carousel-control-prev" type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
                     
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="restaurant-card" data-aos="fade-up" data-aos-delay="400">
-                            <div class="restaurant-card__image">
-                                <img src="https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                     alt="Aurelius Rooftop" class="img-fluid">
-                                <div class="restaurant-card__overlay">
-                                    <a th:href="@{/restaurants/3}" class="btn btn--gold btn--small">Xem chi tiết</a>
-                                </div>
-                            </div>
-                            <div class="restaurant-card__content">
-                                <h4 class="restaurant-card__title">Aurelius Rooftop</h4>
-                                <p class="restaurant-card__location">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    Quận 7, TP. Hồ Chí Minh
-                                </p>
-                                <div class="restaurant-card__rating">
-                                    <div class="stars">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <span class="rating-text">4.8 (156 đánh giá)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-12 text-center mt-4">
-                        <a th:href="@{/restaurants}" class="btn btn--outline btn--large" data-aos="fade-up">
-                            <i class="fas fa-utensils"></i>
-                            <span>Xem tất cả nhà hàng</span>
-                        </a>
+                    <!-- Dots Indicator -->
+                    <div class="carousel-indicators">
+                        <button type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                        <button type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                        <button type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
                     </div>
                 </div>
             </div>
@@ -347,6 +300,27 @@
             once: true,
             offset: 100
         });
+        
+        // Bootstrap Carousel Configuration
+        const carousel = document.getElementById('restaurantBootstrapCarousel');
+        if (carousel) {
+            // Initialize Bootstrap carousel with custom settings
+            const bootstrapCarousel = new bootstrap.Carousel(carousel, {
+                interval: 6000, // 6 seconds
+                wrap: true,
+                touch: true,
+                keyboard: true
+            });
+            
+            // Optional: Add custom event listeners
+            carousel.addEventListener('slide.bs.carousel', function (event) {
+                console.log('Sliding to slide:', event.to);
+            });
+            
+            carousel.addEventListener('slid.bs.carousel', function (event) {
+                console.log('Slid to slide:', event.to);
+            });
+        }
         
         // Quick Filter Functions
         function applyQuickFilter(filterType) {
