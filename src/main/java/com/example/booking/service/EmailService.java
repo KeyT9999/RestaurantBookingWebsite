@@ -208,7 +208,7 @@ public class EmailService {
         }
     }
     
-    private void sendEmail(String toEmail, String subject, String message) {
+    public void sendEmail(String toEmail, String subject, String message) {
         logger.info("🔍 Mail debug -> profile: {}, baseUrl: {}, mailSender? {}", activeProfile, baseUrl, (mailSender != null));
 
         // Check if we have proper email configuration

@@ -85,13 +85,16 @@ public class SecurityConfig {
 				.requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", 
 						"/login", "/error", "/h2-console/**", 
 						"/actuator/**", "/oauth2/**", "/", "/about", "/contact", "/restaurants",
-						"/test/**").permitAll()
+						"/test/**", "/withdrawal/**").permitAll()
 				.requestMatchers("/payment/payos/return").permitAll()
 				.requestMatchers("/payment/api/payos/webhook").permitAll()
 				.requestMatchers("/test-vouchers/**").permitAll()
 				.requestMatchers("/admin-setup/**").permitAll()
 				.requestMatchers("/api/admin/create-admin").permitAll()
-						.requestMatchers("/api/booking/restaurants/**").permitAll()
+            .requestMatchers("/api/booking/restaurants/**").permitAll()
+            .requestMatchers("/api/restaurant/withdrawal/**").hasRole("RESTAURANT_OWNER")
+            .requestMatchers("/api/admin/withdrawal/**").hasRole("ADMIN")
+            .requestMatchers("/restaurant-owner/withdrawal/**").hasRole("RESTAURANT_OWNER")
 						.requestMatchers("/restaurant-owner/vouchers/debug").permitAll()
 				.requestMatchers("/admin/vouchers/test").permitAll()
 				.requestMatchers("/admin/vouchers").permitAll()
@@ -161,6 +164,7 @@ public class SecurityConfig {
 			)
 			.csrf(csrf -> csrf
 				.ignoringRequestMatchers("/h2-console/**")
+				.ignoringRequestMatchers("/api/**")
 				.disable())
 			.headers(headers -> headers
 				.frameOptions(frameOptions -> frameOptions.sameOrigin()));
