@@ -22,6 +22,12 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
      */
     @Query("SELECT r FROM RestaurantProfile r WHERE r.owner.user.id = :userId")
     List<RestaurantProfile> findByOwnerUserId(@Param("userId") UUID userId);
+    
+    /**
+     * Find restaurant profile by owner's username
+     */
+    @Query("SELECT r FROM RestaurantProfile r WHERE r.owner.user.username = :username")
+    List<RestaurantProfile> findByOwnerUsername(@Param("username") String username);
 
     /**
      * Check if restaurant exists and belongs to specific owner

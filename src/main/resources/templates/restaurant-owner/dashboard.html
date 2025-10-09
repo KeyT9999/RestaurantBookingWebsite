@@ -303,6 +303,7 @@
                 <a th:href="@{/restaurant-owner/bookings}" class="tab">Tất cả Booking</a>
                 <a th:href="@{/restaurant-owner/waitlist}" class="tab">Waitlist</a>
                 <a th:href="@{/restaurant-owner/media}" class="tab">Media</a>
+                <a th:href="@{/restaurant-owner/withdrawal}" class="tab" style="background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 600;">💰 Rút tiền</a>
             </div>
         </header>
 
@@ -358,6 +359,18 @@
                 <div class="stat-label">Khách Hàng Chờ</div>
             </div>
             
+            <!-- Financial Card -->
+            <div class="stat-card" style="border-left-color: #8b5cf6; background: linear-gradient(135deg, #f3f4f6, #e5e7eb);">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">💰</div>
+                <div class="stat-value" style="color: #8b5cf6; font-size: 1.5rem;">Số dư</div>
+                <div class="stat-label" style="color: #6b7280;">Tài khoản nhà hàng</div>
+                <div class="actions" style="margin-top: 1rem;">
+                    <a th:href="@{/restaurant-owner/withdrawal}" class="btn" style="background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 600; padding: 0.5rem 1rem; font-size: 0.875rem;">
+                        💸 Rút tiền ngay
+                    </a>
+                </div>
+            </div>
+            
             <div class="stat-card primary">
                 <div class="stat-icon">📞</div>
                 <div class="stat-value" th:text="${calledCustomers != null ? calledCustomers.size() : 0}">0</div>
@@ -369,6 +382,10 @@
         <div class="card">
             <h2 class="h2">⚡ Thao tác Nhanh</h2>
             <div class="quick-actions">
+                <a th:href="@{/restaurant-owner/withdrawal}" class="quick-action-btn" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+                    <div class="quick-action-icon">💰</div>
+                    <div style="font-weight: 600;">Quản lý Rút Tiền</div>
+                </a>
                 <a th:href="@{/restaurant-owner/bookings/create}" class="quick-action-btn">
                     <div class="quick-action-icon">📝</div>
                     <div>Tạo Booking Mới</div>
