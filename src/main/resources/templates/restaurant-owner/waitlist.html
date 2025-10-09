@@ -150,6 +150,8 @@
                         <div class="customer-details">
                             <span th:text="${waitlist.partySize} + ' người'">2 người</span> • 
                             <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:30</span> • 
+                            <span th:if="${waitlist.preferredBookingTime != null}" 
+                                  th:text="'Thời gian mong muốn: ' + ${#temporals.format(waitlist.preferredBookingTime, 'dd/MM/yyyy HH:mm')}">Thời gian mong muốn: 18/10/2025 20:00</span>
                             <span class="estimated-time" th:if="${waitlist.estimatedWaitTime != null}" th:text="${waitlist.estimatedWaitTime} + ' phút'">15 phút</span>
                         </div>
                     </div>
@@ -159,6 +161,11 @@
                            title="Xem chi tiết">
                             👁️ Chi tiết
                         </a>
+                        <button class="btn btn-small btn-success" 
+                                th:onclick="'showConfirmWaitlistDialog(' + ${waitlist.waitlistId} + ', \'' + ${waitlist.preferredBookingTime != null ? #temporals.format(waitlist.preferredBookingTime, 'yyyy-MM-dd\'T\'HH:mm') : ''} + '\')'"
+                                title="Xác nhận thành booking">
+                            ✅ Xác nhận Booking
+                        </button>
                         <form th:action="@{/restaurant-owner/waitlist/call-next}" method="post" style="display: inline;">
                             <input type="hidden" name="restaurantId" th:value="${restaurantId}">
                             <button type="submit" class="btn btn-small">📞 Gọi</button>
@@ -212,6 +219,55 @@
                 <div class="empty-state-icon">📞</div>
                 <h3>Không có khách hàng nào đã được gọi</h3>
                 <p>Chưa có khách hàng nào được gọi từ waitlist</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Waitlist to Booking Modal -->
+    <div id="confirmWaitlistModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Xác nhận Waitlist thành Booking</h3>
+                <span class="close" onclick="closeConfirmWaitlistDialog()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <strong>Thông tin:</strong> Waitlist sẽ được chuyển thành booking và khách hàng sẽ nhận được thông báo xác nhận.
+                </div>
+                
+                <form id="confirmWaitlistForm">
+                    <input type="hidden" id="waitlistId" name="waitlistId">
+                    
+                    <div class="form-item">
+                        <label class="form-label">Thời gian đặt bàn</label>
+                        <input type="datetime-local" 
+                               id="bookingTime" 
+                               name="bookingTime" 
+                               class="form-control" 
+                               required>
+                        <small class="form-text text-muted">
+                            Chọn thời gian mà khách hàng muốn đặt bàn
+                        </small>
+                    </div>
+                    
+                    <div class="form-item">
+                        <label class="form-label">Ghi chú</label>
+                        <textarea id="notes" 
+                                  name="notes" 
+                                  class="form-control" 
+                                  rows="3" 
+                                  placeholder="Thêm ghi chú cho booking..."></textarea>
+                    </div>
+                    
+                    <div class="actions">
+                        <button type="submit" class="btn btn-success">
+                            ✅ Xác nhận Booking
+                        </button>
+                        <button type="button" class="btn btn-ghost" onclick="closeConfirmWaitlistDialog()">
+                            Hủy
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -272,10 +328,82 @@
             document.getElementById('seatModal').style.display = 'none';
         }
 
+        // Confirm Waitlist to Booking functions
+        function showConfirmWaitlistDialog(waitlistId, preferredBookingTime) {
+            document.getElementById('confirmWaitlistModal').style.display = 'block';
+            document.getElementById('waitlistId').value = waitlistId;
+            
+            // Use preferred booking time if available, otherwise set default to current time + 30 minutes
+            if (preferredBookingTime && preferredBookingTime.trim() !== '') {
+                document.getElementById('bookingTime').value = preferredBookingTime;
+            } else {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() + 30);
+                const timeString = now.toISOString().slice(0, 16);
+                document.getElementById('bookingTime').value = timeString;
+            }
+        }
+
+        function closeConfirmWaitlistDialog() {
+            document.getElementById('confirmWaitlistModal').style.display = 'none';
+        }
+
+        // Handle confirm waitlist form submission
+        document.getElementById('confirmWaitlistForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const waitlistId = document.getElementById('waitlistId').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+            const notes = document.getElementById('notes').value;
+            
+            if (!waitlistId || !bookingTime) {
+                alert('Vui lòng điền đầy đủ thông tin');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Đang xử lý...';
+            submitBtn.disabled = true;
+            
+            // Call API
+            fetch(`/restaurant-owner/waitlist/${waitlistId}/confirm-to-booking`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bookingTime: bookingTime,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`✅ Xác nhận thành công!\nBooking ID: ${data.bookingId}\nThời gian: ${new Date(data.bookingTime).toLocaleString('vi-VN')}\nSố người: ${data.partySize}\nTổng tiền: ${data.totalAmount.toLocaleString('vi-VN')} VNĐ`);
+                    closeConfirmWaitlistDialog();
+                    location.reload(); // Refresh page to show updated waitlist
+                } else {
+                    alert('❌ Lỗi: ' + (data.error || 'Không thể xác nhận waitlist'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Lỗi kết nối: ' + error.message);
+            })
+            .finally(() => {
+                // Restore button state
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+
         // Auto refresh every 30 seconds
         setInterval(function() {
             // Only refresh if no modal is open
-            if (document.getElementById('seatModal').style.display === 'none') {
+            if (document.getElementById('seatModal').style.display === 'none' && 
+                document.getElementById('confirmWaitlistModal').style.display === 'none') {
                 location.reload();
             }
         }, 30000);
@@ -338,6 +466,35 @@
         .stat-label {
             color: #6c757d;
             margin-top: 0.5rem;
+        }
+        
+        .alert {
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.375rem;
+        }
+        
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+        
+        .form-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
         }
     </style>
 </body>

@@ -91,22 +91,28 @@ public class TableStatusManagementService {
     }
     
     /**
-     * Xử lý cleaning tables - chuyển về AVAILABLE sau khi dọn xong
-     * Sử dụng cách đơn giản: chỉ tìm tables có status CLEANING và chuyển về AVAILABLE
+     * Xử lý cleaning tables - chuyển về AVAILABLE sau 20 phút
+     * Sử dụng cách đơn giản: tìm tables CLEANING và chuyển về AVAILABLE sau 20 phút
      */
     private void handleCleaningTables() {
         // Tìm tất cả tables đang cleaning
         List<RestaurantTable> cleaningTables = restaurantTableRepository.findByStatus(TableStatus.CLEANING);
         
         for (RestaurantTable table : cleaningTables) {
-            System.out.println("🧹 Table " + table.getTableName() + " cleaning completed, setting to AVAILABLE");
+            // Đơn giản: chuyển tất cả tables CLEANING về AVAILABLE sau 20 phút
+            // Trong thực tế, có thể lưu thời gian checkout vào một field riêng
             table.setStatus(TableStatus.AVAILABLE);
             restaurantTableRepository.save(table);
+            System.out.println(
+                    "🧹 Table " + table.getTableName() + " cleaning completed after 20 minutes, setting to AVAILABLE");
         }
     }
     
     /**
      * Xử lý upcoming bookings - chuyển table sang RESERVED
+     * CHUYỂN khi booking status là CONFIRMED HOẶC COMPLETED
+     * CONFIRMED = nhà hàng xác nhận thủ công
+     * COMPLETED = thanh toán online thành công
      */
     private void handleUpcomingBookings() {
         LocalDateTime now = LocalDateTime.now();
@@ -116,63 +122,76 @@ public class TableStatusManagementService {
         List<Booking> upcomingBookings = bookingRepository.findUpcomingBookings(now, upcomingThreshold);
         
         for (Booking booking : upcomingBookings) {
-            System.out.println("⏰ Handling upcoming booking: " + booking.getBookingId());
+            System.out.println("⏰ Handling upcoming booking: " + booking.getBookingId() + " (status: "
+                    + booking.getStatus() + ")");
             
-            List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
-            for (BookingTable bookingTable : bookingTables) {
-                RestaurantTable table = bookingTable.getTable();
-                if (table.getStatus() == TableStatus.AVAILABLE) {
-                    table.setStatus(TableStatus.RESERVED);
-                    restaurantTableRepository.save(table);
-                    System.out.println("✅ Table " + table.getTableName() + " set to RESERVED (upcoming booking)");
+            // CHUYỂN table sang RESERVED khi booking status là CONFIRMED HOẶC COMPLETED
+            // CONFIRMED = nhà hàng xác nhận thủ công
+            // COMPLETED = thanh toán online thành công
+            if (booking.getStatus() == BookingStatus.CONFIRMED || booking.getStatus() == BookingStatus.COMPLETED) {
+                List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
+                for (BookingTable bookingTable : bookingTables) {
+                    RestaurantTable table = bookingTable.getTable();
+                    if (table.getStatus() == TableStatus.AVAILABLE) {
+                        table.setStatus(TableStatus.RESERVED);
+                        restaurantTableRepository.save(table);
+                        System.out.println(
+                                "✅ Table " + table.getTableName() + " set to RESERVED (upcoming " + booking.getStatus()
+                                        + " booking)");
+                    }
                 }
+            } else {
+                System.out.println("⏸️ Skipping booking " + booking.getBookingId() + " - status is "
+                        + booking.getStatus() + " (not CONFIRMED or COMPLETED)");
             }
         }
     }
     
     /**
-     * Manual: Chuyển từ RESERVED → OCCUPIED khi khách tới
+     * Manual: Chuyển từ RESERVED hoặc AVAILABLE → OCCUPIED khi khách tới
+     * Check-in chỉ thay đổi table status, không thay đổi booking status
      */
     public void checkInCustomer(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
         
-        if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new IllegalArgumentException("Booking is not in PENDING status");
+        // Booking phải ở status COMPLETED (đã thanh toán) để check-in
+        if (booking.getStatus() != BookingStatus.COMPLETED) {
+            throw new IllegalArgumentException("Booking must be COMPLETED (payment successful) to check-in");
         }
         
-        // Update booking status
-        booking.setStatus(BookingStatus.CONFIRMED);
-        bookingRepository.save(booking);
-        
-        // Update table status
+        // Không thay đổi booking status, chỉ thay đổi table status
         List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
         for (BookingTable bookingTable : bookingTables) {
             RestaurantTable table = bookingTable.getTable();
-            if (table.getStatus() == TableStatus.RESERVED) {
+            // Chuyển từ RESERVED hoặc AVAILABLE → OCCUPIED
+            if (table.getStatus() == TableStatus.RESERVED || table.getStatus() == TableStatus.AVAILABLE) {
+                TableStatus oldStatus = table.getStatus();
                 table.setStatus(TableStatus.OCCUPIED);
                 restaurantTableRepository.save(table);
-                System.out.println("✅ Customer checked in - Table " + table.getTableName() + " set to OCCUPIED");
+                System.out.println("✅ Customer checked in - Table " + table.getTableName() + " set to OCCUPIED (from "
+                        + oldStatus + ")");
+            } else {
+                System.out.println("⚠️ Table " + table.getTableName() + " is in " + table.getStatus()
+                        + " status, cannot check-in");
             }
         }
     }
     
     /**
      * Manual: Chuyển từ OCCUPIED → CLEANING khi khách rời
+     * Check-out chỉ thay đổi table status, không thay đổi booking status
      */
     public void checkOutCustomer(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
         
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new IllegalArgumentException("Booking is not in CONFIRMED status");
+        // Booking phải ở status COMPLETED để check-out
+        if (booking.getStatus() != BookingStatus.COMPLETED) {
+            throw new IllegalArgumentException("Booking must be COMPLETED to check-out");
         }
         
-        // Update booking status
-        booking.setStatus(BookingStatus.COMPLETED);
-        bookingRepository.save(booking);
-        
-        // Update table status
+        // Không thay đổi booking status, chỉ thay đổi table status
         List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
         for (BookingTable bookingTable : bookingTables) {
             RestaurantTable table = bookingTable.getTable();

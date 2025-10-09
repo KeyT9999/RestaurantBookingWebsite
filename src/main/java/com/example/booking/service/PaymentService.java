@@ -217,12 +217,13 @@ public class PaymentService {
                 
                 logger.info("Payment {} updated to COMPLETED", payment.getPaymentId());
                 
-                // Confirm booking
+                // Complete booking (thanh toán thành công)
                 try {
-                    bookingService.confirmBooking(payment.getBooking().getBookingId());
-                    logger.info("Booking {} confirmed after PayOS payment", payment.getBooking().getBookingId());
+                    bookingService.completeBooking(payment.getBooking().getBookingId());
+                    logger.info("Booking {} completed after PayOS payment", payment.getBooking().getBookingId());
                 } catch (Exception e) {
-                    logger.error("Failed to confirm booking after PayOS payment. paymentId: {}", payment.getPaymentId(), e);
+                    logger.error("Failed to complete booking after PayOS payment. paymentId: {}",
+                            payment.getPaymentId(), e);
                 }
                 
                 // Send success emails

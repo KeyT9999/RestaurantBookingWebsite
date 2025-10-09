@@ -204,12 +204,12 @@ public class PaymentController {
                             payment.setPayosPaymentLinkId(paymentInfo.getData().getId());
                             paymentRepository.save(payment);
                             
-                            // Confirm booking
+                            // Complete booking (thanh toán thành công)
                             try {
-                                bookingService.confirmBooking(payment.getBooking().getBookingId());
-                                logger.info("✅ Booking confirmed via return URL fallback");
+                                bookingService.completeBooking(payment.getBooking().getBookingId());
+                                logger.info("✅ Booking completed via return URL fallback");
                             } catch (Exception e) {
-                                logger.error("Failed to confirm booking", e);
+                                logger.error("Failed to complete booking", e);
                             }
                             
                             // Send emails (same as webhook)
@@ -1135,14 +1135,14 @@ public class PaymentController {
                 result.append("✅ Payment updated to COMPLETED\n");
                 logger.info("✅ Payment {} updated to COMPLETED", paymentId);
                 
-                // Confirm booking
+                // Complete booking (thanh toán thành công)
                 try {
-                    bookingService.confirmBooking(payment.getBooking().getBookingId());
-                    result.append("✅ Booking confirmed\n");
-                    logger.info("✅ Booking {} confirmed", payment.getBooking().getBookingId());
+                    bookingService.completeBooking(payment.getBooking().getBookingId());
+                    result.append("✅ Booking completed\n");
+                    logger.info("✅ Booking {} completed", payment.getBooking().getBookingId());
                 } catch (Exception e) {
-                    result.append("⚠️ Booking confirmation failed: ").append(e.getMessage()).append("\n");
-                    logger.error("Failed to confirm booking", e);
+                    result.append("⚠️ Booking completion failed: ").append(e.getMessage()).append("\n");
+                    logger.error("Failed to complete booking", e);
                 }
                 
                 // Send emails
