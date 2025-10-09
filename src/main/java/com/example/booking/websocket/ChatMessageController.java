@@ -24,10 +24,13 @@ import com.example.booking.repository.RestaurantOwnerRepository;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.SimpleUserService;
 
+import org.springframework.transaction.annotation.Transactional;
+
 /**
  * WebSocket controller for handling real-time chat messages
  */
 @Controller
+@Transactional
 public class ChatMessageController {
     
     @Autowired
@@ -402,9 +405,14 @@ public class ChatMessageController {
                 System.out.println("UsernamePasswordAuthenticationToken username: " + username);
                 
                 try {
+                    // Use loadUserByUsername with @Transactional to avoid lazy loading issues
                     User user = (User) userService.loadUserByUsername(username);
-                    System.out.println("Found User in database: " + user.getId());
-                    return user;
+                    if (user != null) {
+                        System.out.println("Found User in database: " + user.getId());
+                        return user;
+                    } else {
+                        throw new RuntimeException("User not found for username: " + username);
+                    }
                 } catch (Exception e) {
                     System.err.println("Error loading user by username: " + e.getMessage());
                     throw new RuntimeException("User not found for username: " + username +

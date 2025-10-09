@@ -117,6 +117,28 @@
             </div>
         </header>
 
+        <!-- Restaurant Overview -->
+        <div th:if="${restaurants != null and !restaurants.empty}" class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">📊 Tổng quan nhà hàng</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div th:each="restaurant : ${restaurants}" class="col-md-4 mb-3">
+                        <div class="restaurant-card p-3 border rounded">
+                            <h6 th:text="${restaurant.restaurantName}" class="mb-2">Nhà hàng ABC</h6>
+                            <div class="restaurant-stats">
+                                <small class="text-muted">
+                                    <span th:text="'ID: ' + ${restaurant.restaurantId}" class="badge bg-secondary me-1">ID: 1</span>
+                                    <span th:text="${restaurant.address}" class="text-truncate d-block">Địa chỉ</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Waitlist Statistics -->
         <div class="card" th:if="${error == null}">
             <h2 class="h2">Thống kê Waitlist</h2>
@@ -147,6 +169,7 @@
                 <div th:each="waitlist : ${waitingCustomers}" class="waitlist-item">
                     <div class="customer-info">
                         <div class="customer-name" th:text="${waitlist.customer != null and waitlist.customer.user != null and waitlist.customer.user.fullName != null} ? ${waitlist.customer.user.fullName} : 'Khách hàng #' + ${waitlist.waitlistId}">Nguyễn Văn A</div>
+                        <div class="restaurant-name" th:text="${restaurantNames != null and restaurantNames[waitlist.restaurant.restaurantId] != null} ? ${restaurantNames[waitlist.restaurant.restaurantId]} : ${waitlist.restaurant.restaurantName}" style="font-size: 0.9em; color: #666; font-weight: 500;">Nhà hàng ABC</div>
                         <div class="customer-details">
                             <span th:text="${waitlist.partySize} + ' người'">2 người</span> • 
                             <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:30</span> • 
@@ -162,7 +185,8 @@
                             👁️ Chi tiết
                         </a>
                         <button class="btn btn-small btn-success" 
-                                th:onclick="'showConfirmWaitlistDialog(' + ${waitlist.waitlistId} + ', \'' + ${waitlist.preferredBookingTime != null ? #temporals.format(waitlist.preferredBookingTime, 'yyyy-MM-dd\'T\'HH:mm') : ''} + '\')'"
+                                th:attr="data-waitlist-id=${waitlist.waitlistId},data-preferred-time=${waitlist.preferredBookingTime != null ? waitlist.preferredBookingTime : ''}"
+                                onclick="showConfirmWaitlistDialog(this.getAttribute('data-waitlist-id'), this.getAttribute('data-preferred-time'))"
                                 title="Xác nhận thành booking">
                             ✅ Xác nhận Booking
                         </button>
@@ -195,6 +219,7 @@
                 <div th:each="waitlist : ${calledCustomers}" class="waitlist-item">
                     <div class="customer-info">
                         <div class="customer-name" th:text="${waitlist.customer != null and waitlist.customer.user != null and waitlist.customer.user.fullName != null} ? ${waitlist.customer.user.fullName} : 'Khách hàng #' + ${waitlist.waitlistId}">Nguyễn Văn A</div>
+                        <div class="restaurant-name" th:text="${restaurantNames != null and restaurantNames[waitlist.restaurant.restaurantId] != null} ? ${restaurantNames[waitlist.restaurant.restaurantId]} : ${waitlist.restaurant.restaurantName}" style="font-size: 0.9em; color: #666; font-weight: 500;">Nhà hàng ABC</div>
                         <div class="customer-details">
                             <span th:text="${waitlist.partySize} + ' người'">2 người</span> • 
                             <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:30</span> • 
@@ -335,7 +360,19 @@
             
             // Use preferred booking time if available, otherwise set default to current time + 30 minutes
             if (preferredBookingTime && preferredBookingTime.trim() !== '') {
-                document.getElementById('bookingTime').value = preferredBookingTime;
+                // Parse the datetime string and format for datetime-local input
+                try {
+                    const date = new Date(preferredBookingTime);
+                    const timeString = date.toISOString().slice(0, 16);
+                    document.getElementById('bookingTime').value = timeString;
+                } catch (e) {
+                    console.error('Failed to parse preferred booking time:', e);
+                    // Fallback to default
+                    const now = new Date();
+                    now.setMinutes(now.getMinutes() + 30);
+                    const timeString = now.toISOString().slice(0, 16);
+                    document.getElementById('bookingTime').value = timeString;
+                }
             } else {
                 const now = new Date();
                 now.setMinutes(now.getMinutes() + 30);
