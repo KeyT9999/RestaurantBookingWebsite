@@ -161,6 +161,7 @@
                         <form th:action="${bookingId != null ? '/booking/' + bookingId + '/update' : '/booking'}" 
                               method="post" 
                               th:object="${bookingForm}"
+                              id="bookingForm"
                               onsubmit="return validateForm()">
                             
                             <!-- Restaurant Selection -->
@@ -201,8 +202,15 @@
                                 <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
                                     Click to view and select multiple tables
                                 </small>
-                                <!-- Hidden input to store selected table ID -->
-                                <input type="hidden" id="selectedTableId" name="tableId" th:field="*{tableId}" value="">
+                                <!-- Selected Tables Summary -->
+                                <div id="selectedTablesSummary" class="mt-2" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-chair"></i> Selected Tables:</h6>
+                                        <div id="selectedTablesList"></div>
+                                    </div>
+                                </div>
+                                <!-- Hidden input to store selected table IDs -->
+                                <input type="hidden" id="selectedTableIds" name="tableIds" th:field="*{tableIds}" value="">
                             </div>
                             
                             <div class="row">
@@ -260,6 +268,13 @@
                                 <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
                                     Click to view and select multiple menu items
                                 </small>
+                                <!-- Selected Menu Items Summary -->
+                                <div id="selectedDishesSummary" class="mt-2" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <h6><i class="fas fa-utensils"></i> Selected Menu Items:</h6>
+                                        <div id="selectedDishesList"></div>
+                                    </div>
+                                </div>
                                 <!-- Hidden input to store selected dish IDs -->
                                 <input type="hidden" id="selectedDishIds" name="dishIds" th:field="*{dishIds}" value="">
                             </div>
@@ -405,16 +420,6 @@
                                     <span th:text="${bookingId != null ? 'Update Reservation' : 'Confirm Reservation'}"></span>
                                 </button>
                                 
-                                <!-- Join Waitlist Button (only show when creating new reservation) -->
-                                <button type="button" 
-                                        class="btn btn-outline-warning me-3" 
-                                        id="joinWaitlistBtn"
-                                        onclick="joinWaitlist()"
-                                        th:if="${bookingId == null}"
-                                        style="display: none;">
-                                    <i class="fas fa-clock"></i> Join Waitlist
-                                </button>
-                                
                                 <a href="/booking/my" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Back to My Reservations
                                 </a>
@@ -467,6 +472,42 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="confirmMenuSelection()">Confirm Selection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Smart Waitlist Modal -->
+    <div class="modal fade" id="smartWaitlistModal" tabindex="-1" aria-labelledby="smartWaitlistModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="smartWaitlistModalLabel">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="popupTitle">Table Availability Issue</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Dynamic content based on conflict type -->
+                    <div id="conflictContent">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                    
+                    <!-- Waitlist Information -->
+                    <div class="waitlist-info bg-light p-3 rounded mt-3">
+                        <h6><i class="fas fa-clock text-warning"></i> Waitlist Information:</h6>
+                        <p><strong>Estimated Wait Time:</strong> <span id="waitTime"></span></p>
+                        <p><strong>Reason:</strong> <span id="waitReason"></span></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="joinSmartWaitlist()">
+                        <i class="fas fa-clock"></i> Join Waitlist
+                    </button>
                 </div>
             </div>
         </div>
@@ -663,6 +704,7 @@
             }
             
             updateTotalAmount();
+            saveFormState();
         }
 
         function getSelectedServices() {
@@ -674,10 +716,19 @@
         }
 
         function openTablePopup() {
+            console.log('🚀 Opening table popup...');
+            console.log('📋 Current selectedTables:', selectedTables);
+            console.log('📋 Current selectedTableIds value:', document.getElementById('selectedTableIds').value);
+            
             const tablesList = document.getElementById('tablesList');
             tablesList.innerHTML = '';
             
             availableTables.forEach(table => {
+                const statusValue = getTableStatusValue(table.status);
+                const statusClass = getStatusBadgeClass(table.status);
+                const statusText = getStatusDisplayName(table.status);
+                console.log('🎨 Table:', table.tableName, 'Original Status:', table.status, 'Processed Status:', statusValue, 'Class:', statusClass, 'Text:', statusText);
+                
                 const tableCard = document.createElement('div');
                 tableCard.className = 'col-md-4 mb-3';
                 tableCard.innerHTML = `
@@ -689,10 +740,18 @@
                                        value="${table.tableId}"
                                        id="table-${table.tableId}">
                                 <label class="form-check-label w-100" for="table-${table.tableId}">
-                                    <h6 class="card-title">${table.tableName}</h6>
-                                    <p class="card-text">
-                                        <small class="text-muted">Capacity: ${table.capacity} people</small>
-                                    </p>
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-title">${table.tableName}</h6>
+                                            <p class="card-text">
+                                                <small class="text-muted">Capacity: ${table.capacity} people</small><br>
+                                                <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span class="badge ${statusClass}">${statusText}</span>
+                                        </div>
+                                    </div>
                                 </label>
                             </div>
                         </div>
@@ -700,6 +759,61 @@
                 `;
                 tablesList.appendChild(tableCard);
             });
+            
+            // Restore previous selections from hidden input
+            const selectedTableIds = document.getElementById('selectedTableIds').value;
+            if (selectedTableIds) {
+                const tableIds = selectedTableIds.split(',');
+                console.log('🔄 Restoring table selections:', tableIds);
+                
+                setTimeout(() => {
+                    selectedTables = []; // Reset selectedTables array
+                    console.log('🔄 Starting restore process for tables:', tableIds);
+                    
+                    tableIds.forEach(tableId => {
+                        console.log('🔍 Looking for checkbox with value:', tableId);
+                        const checkbox = document.querySelector(`#tableModal input[value="${tableId}"]`);
+                        console.log('🔍 Found checkbox:', checkbox);
+                        
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            console.log('✅ Checkbox checked for table:', tableId);
+                            
+                            const tableCard = checkbox.closest('.table-card');
+                            console.log('🔍 Found tableCard:', tableCard);
+                            
+                            if (tableCard) {
+                                const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
+                                const tableName = tableCard.querySelector('.card-title').textContent;
+                                const capacityText = tableCard.querySelector('.card-text small').textContent;
+                                const capacity = parseInt(capacityText.match(/\d+/)[0]);
+                                
+                                console.log('📊 Table data:', {
+                                    id: tableId,
+                                    name: tableName,
+                                    deposit: deposit,
+                                    capacity: capacity
+                                });
+                                
+                                selectedTables.push({
+                                    id: tableId,
+                                    name: tableName,
+                                    deposit: deposit,
+                                    capacity: capacity
+                                });
+                                console.log('✅ Added to selectedTables:', tableId, tableName);
+                            } else {
+                                console.log('❌ Could not find tableCard for checkbox:', checkbox);
+                            }
+                        } else {
+                            console.log('❌ Could not find checkbox for table:', tableId);
+                        }
+                    });
+                    
+                    console.log('📋 Final selectedTables array:', selectedTables);
+                    updateTableSelectionUI(); // Update UI after restoring
+                }, 100);
+            }
             
             // Show modal
             const modal = new bootstrap.Modal(document.getElementById('tableModal'));
@@ -755,6 +869,23 @@
                 });
             }
             
+            // Restore previous selections
+            selectedDishes.forEach(selectedDish => {
+                const checkbox = document.querySelector(`input[value="${selectedDish.id}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    const quantityControl = checkbox.parentElement.querySelector('.quantity-control');
+                    const quantityInput = quantityControl.querySelector('input');
+                    if (quantityControl && quantityInput) {
+                        quantityControl.style.display = 'block';
+                        quantityInput.value = selectedDish.quantity;
+                    }
+                    console.log('✅ Restored dish selection:', selectedDish.name, 'x' + selectedDish.quantity);
+                } else {
+                    console.log('❌ Could not find checkbox for dish:', selectedDish.id);
+                }
+            });
+            
             // Show modal
             const modal = new bootstrap.Modal(document.getElementById('menuModal'));
             modal.show();
@@ -774,25 +905,46 @@
         }
 
         function confirmTableSelection() {
+            console.log('🎯 confirmTableSelection() called');
             const checkboxes = document.querySelectorAll('.table-checkbox:checked');
+            console.log('🎯 Found checked checkboxes:', checkboxes.length);
             selectedTables = [];
             
             checkboxes.forEach(checkbox => {
+                console.log('🎯 Processing checkbox:', checkbox.value);
                 const tableCard = checkbox.closest('.table-card');
+                console.log('🎯 Found tableCard:', tableCard);
+                
                 const tableId = tableCard.getAttribute('data-table-id');
                 const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
                 const tableName = tableCard.querySelector('.card-title').textContent;
+                const capacityText = tableCard.querySelector('.card-text small').textContent;
+                const capacity = parseInt(capacityText.match(/\d+/)[0]);
+                
+                console.log('🎯 Table data:', {
+                    id: tableId,
+                    name: tableName,
+                    deposit: deposit,
+                    capacity: capacity
+                });
                 
                 selectedTables.push({
                     id: tableId,
                     name: tableName,
-                    deposit: deposit
+                    deposit: deposit,
+                    capacity: capacity
                 });
+                console.log('🎯 Added to selectedTables:', tableId);
             });
+            
+            console.log('🎯 Final selectedTables in confirmTableSelection:', selectedTables);
             
             // Update UI
             updateTableSelectionUI();
             updateTotalAmount();
+            
+            // Save form state
+            saveFormState();
             
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('tableModal'));
@@ -823,6 +975,9 @@
             updateMenuSelectionUI();
             updateTotalAmount();
             
+            // Save form state
+            saveFormState();
+            
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('menuModal'));
             modal.hide();
@@ -830,31 +985,52 @@
 
         function updateTableSelectionUI() {
             const countSpan = document.getElementById('selectedTablesCount');
-            const hiddenInput = document.getElementById('selectedTableId');
+            const hiddenInput = document.getElementById('selectedTableIds');
+            const summaryDiv = document.getElementById('selectedTablesSummary');
+            const listDiv = document.getElementById('selectedTablesList');
             
             if (selectedTables.length === 0) {
                 countSpan.textContent = 'No tables selected';
                 hiddenInput.value = '';
+                summaryDiv.style.display = 'none';
             } else {
-                // Only allow one table selection
-                if (selectedTables.length > 1) {
-                    selectedTables = [selectedTables[0]]; // Keep only the first one
-                }
                 countSpan.textContent = `${selectedTables.length} table(s) selected`;
-                hiddenInput.value = selectedTables[0].id;
+                // Store multiple table IDs separated by comma
+                hiddenInput.value = selectedTables.map(t => t.id).join(',');
+                
+                // Show detailed summary
+                summaryDiv.style.display = 'block';
+                listDiv.innerHTML = selectedTables.map(table => `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span><strong>${table.name}</strong> (Capacity: ${table.capacity} people)</span>
+                        <span class="text-success">${formatCurrency(table.deposit)}</span>
+                    </div>
+                `).join('');
             }
         }
 
         function updateMenuSelectionUI() {
             const countSpan = document.getElementById('selectedDishesCount');
             const hiddenInput = document.getElementById('selectedDishIds');
+            const summaryDiv = document.getElementById('selectedDishesSummary');
+            const listDiv = document.getElementById('selectedDishesList');
             
             if (selectedDishes.length === 0) {
                 countSpan.textContent = 'No items selected';
                 hiddenInput.value = '';
+                summaryDiv.style.display = 'none';
             } else {
                 countSpan.textContent = `${selectedDishes.length} item(s) selected`;
                 hiddenInput.value = selectedDishes.map(d => `${d.id}:${d.quantity}`).join(',');
+                
+                // Show detailed summary
+                summaryDiv.style.display = 'block';
+                listDiv.innerHTML = selectedDishes.map(dish => `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span><strong>${dish.name}</strong> x${dish.quantity}</span>
+                        <span class="text-success">${formatCurrency(dish.price * dish.quantity)}</span>
+                    </div>
+                `).join('');
             }
         }
 
@@ -909,19 +1085,64 @@
         
         // Form validation before submit
         function validateForm() {
+            // Save current form state before validation
+            saveFormState();
+            
             // Check if form elements exist
             const restaurantSelect = document.getElementById('restaurantId');
             const guestCountInput = document.getElementById('guestCount');
             const bookingTimeInput = document.getElementById('bookingTime');
+            const selectedTableIdsInput = document.getElementById('selectedTableIds');
+            
             const restaurantId = restaurantSelect.value;
             const guestCount = guestCountInput.value;
             const bookingTime = bookingTimeInput.value;
+            const selectedTableIds = selectedTableIdsInput.value;
+            
+            // Basic validation
+            if (!restaurantId || !guestCount || !bookingTime) {
+                alert('Please fill in all required fields.');
+                return false;
+            }
+            
             // Check if booking time is at least 30 minutes from now and not too far in future
             const now = new Date();
             const bookingDateTime = new Date(bookingTime);
             const minTime = new Date(now.getTime() + 30 * 60000); // 30 minutes
             const maxTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
-            return true;
+            
+            if (bookingDateTime < minTime) {
+                alert('Booking time must be at least 30 minutes from now.');
+                return false;
+            }
+            
+            if (bookingDateTime > maxTime) {
+                alert('Booking time cannot be more than 30 days in the future.');
+                return false;
+            }
+            
+            // Check availability with Smart Waitlist
+            console.log('🔍 Starting Smart Waitlist availability check...');
+            checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds);
+            
+            // Prevent default form submission - we'll handle it in the callback
+            return false;
+        }
+        
+        // Save form state to hidden inputs
+        function saveFormState() {
+            // Save table selections
+            const tableIds = selectedTables.map(t => t.id).join(',');
+            document.getElementById('selectedTableIds').value = tableIds;
+            
+            // Save dish selections
+            const dishIds = selectedDishes.map(d => `${d.id}:${d.quantity}`).join(',');
+            document.getElementById('selectedDishIds').value = dishIds;
+            
+            // Save service selections
+            const selectedServices = getSelectedServices();
+            const serviceIds = selectedServices.map(s => s.id).join(',');
+            document.getElementById('selectedServiceIds').value = serviceIds;
         }
         
         // Set minimum datetime to now + 30 minutes
@@ -937,7 +1158,10 @@
             }
             
             // Add change listener for restaurant selection
-            document.getElementById('restaurantId').addEventListener('change', loadTables);
+            document.getElementById('restaurantId').addEventListener('change', function() {
+                loadTables();
+                clearFormData();
+            });
             
             // Restore form state after conflict/error
             restoreFormState();
@@ -954,10 +1178,6 @@
                     }
                 }
             });
-            
-            // Check waitlist availability when restaurant or guest count changes
-            document.getElementById('restaurantId').addEventListener('change', checkTableAvailability);
-            document.getElementById('guestCount').addEventListener('input', checkTableAvailability);
             
             // Load available vouchers
             loadAvailableVouchers();
@@ -1219,250 +1439,38 @@
             return errorMessages[reason] || 'Invalid voucher code';
         }
 
-        // Waitlist functionality
-        function joinWaitlist() {
-            const restaurantId = document.getElementById('restaurantId').value;
-            const guestCount = document.getElementById('guestCount').value;
-            
-            if (!restaurantId) {
-                alert('Please select a restaurant first');
-                return;
-            }
-            
-            if (!guestCount || guestCount < 1) {
-                alert('Please enter the number of guests');
-                return;
-            }
-            
-            const joinBtn = document.getElementById('joinWaitlistBtn');
-            const originalText = joinBtn.innerHTML;
-            
-            // Show loading state
-            joinBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Joining...';
-            joinBtn.disabled = true;
-            
-            // Prepare form data
-            const formData = {
-                restaurantId: parseInt(restaurantId),
-                guestCount: parseInt(guestCount),
-                bookingTime: document.getElementById('bookingTime').value,
-                depositAmount: document.getElementById('depositAmount').value || 0,
-                note: document.getElementById('note').value || '',
-                dishIds: document.getElementById('selectedDishIds').value || '',
-                serviceIds: document.getElementById('selectedServiceIds').value || ''
-            };
-            
-            // Send AJAX request
-            fetch('/booking/waitlist', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Successfully joined waitlist
-                    alert(`Successfully joined waitlist! Your position: ${data.queuePosition}, Estimated wait time: ${data.estimatedWaitTime} minutes`);
-                    
-                    // Redirect to booking list or show success message
-                    window.location.href = '/booking/my';
-                } else {
-                    // Show error message
-                    alert('Error joining waitlist: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error joining waitlist:', error);
-                alert('Error joining waitlist. Please try again.');
-            })
-            .finally(() => {
-                // Reset button state
-                joinBtn.innerHTML = originalText;
-                joinBtn.disabled = false;
-            });
-        }
-        
-        function showVoucherSuccess(message) {
-            hideVoucherMessages();
-            document.getElementById('voucherSuccessText').textContent = message;
-            document.getElementById('voucherSuccess').style.display = 'block';
-            document.getElementById('voucherResult').style.display = 'block';
-            
-            // Update voucher discount in Booking Summary
-            updateVoucherDiscountInSummary();
-        }
-        
-        function showVoucherError(message) {
-            hideVoucherMessages();
-            document.getElementById('voucherErrorText').textContent = message;
-            document.getElementById('voucherError').style.display = 'block';
-            document.getElementById('voucherResult').style.display = 'block';
-        }
-        
-        function hideVoucherMessages() {
-            document.getElementById('voucherSuccess').style.display = 'none';
-            document.getElementById('voucherError').style.display = 'none';
-        }
-        
-        function getVoucherErrorMessage(reason) {
-            const errorMessages = {
-                'EMPTY_CODE': 'Please enter a voucher code',
-                'NOT_FOUND': 'Voucher code not found',
-                'INACTIVE': 'This voucher is not active',
-                'NOT_STARTED': 'This voucher is not yet active',
-                'EXPIRED': 'This voucher has expired',
-                'RESTAURANT_SCOPE_MISMATCH': 'This voucher is not valid for the selected restaurant',
-                'MIN_ORDER_NOT_MET': 'Order amount does not meet minimum requirement',
-                'GLOBAL_LIMIT_REACHED': 'This voucher has reached its usage limit',
-                'PER_CUSTOMER_LIMIT_REACHED': 'You have reached the usage limit for this voucher',
-                'NOT_ASSIGNED': 'This voucher is not assigned to you',
-                'LIMIT_REACHED': 'You have used this voucher too many times',
-                'APPLICATION_ERROR': 'Error applying voucher. Please try again.'
-            };
-            return errorMessages[reason] || 'Invalid voucher code';
-        }
-        
-        function showWaitlistSuccess(data) {
-            const message = `🎉 Successfully joined waitlist!\n\n` +
-                          `📍 Restaurant: ${document.getElementById('restaurantId').selectedOptions[0].text}\n` +
-                          `👥 Party Size: ${document.getElementById('guestCount').value} guests\n` +
-                          `⏰ Queue Position: #${data.queuePosition}\n` +
-                          `⏱️ Estimated Wait Time: ${data.estimatedWaitTime} minutes\n\n` +
-                          `📱 You will be notified when a table becomes available.\n` +
-                          `💡 You can check your waitlist status in "My Reservations".`;
-            
-            alert(message);
-            
-            // Redirect to booking list to see waitlist entry
-            window.location.href = '/booking/my?filter=waitlist';
-        }
-        
-        function checkTableAvailability() {
-            const restaurantId = document.getElementById('restaurantId').value;
-            const guestCount = parseInt(document.getElementById('guestCount').value);
-            const bookingTime = document.getElementById('bookingTime').value;
-            const joinBtn = document.getElementById('joinWaitlistBtn');
-            
-            if (!restaurantId || !guestCount || !bookingTime) {
-                joinBtn.style.display = 'none';
-                return;
-            }
-            
-            // Check waitlist eligibility based on smart logic
-            const waitlistEligible = checkWaitlistEligibility(guestCount, bookingTime);
-            
-            if (!waitlistEligible.eligible) {
-                joinBtn.style.display = 'none';
-                return;
-            }
-            
-            // Check if there are available tables for the party size
-            fetch(`/api/booking/restaurants/${restaurantId}/tables`)
-                .then(response => response.json())
-                .then(tables => {
-                    const availableTables = tables.filter(table => 
-                        table.status === 'AVAILABLE' && 
-                        table.capacity >= guestCount
-                    );
-                    
-                    // Show join waitlist button if no tables available AND eligible
-                    if (availableTables.length === 0 && waitlistEligible.eligible) {
-                        joinBtn.style.display = 'inline-block';
-                        joinBtn.innerHTML = `<i class="fas fa-clock"></i> Join Waitlist ${waitlistEligible.reason ? '(' + waitlistEligible.reason + ')' : ''}`;
-                    } else {
-                        joinBtn.style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking table availability:', error);
-                });
-        }
-        
-        function checkWaitlistEligibility(guestCount, bookingTime) {
-            const now = new Date();
-            const bookingDateTime = new Date(bookingTime);
-            const bookingHour = bookingDateTime.getHours();
-            const bookingDate = bookingDateTime.toDateString();
-            const currentDate = now.toDateString();
-            
-            // Check if it's same day booking
-            const isSameDay = bookingDate === currentDate;
-            
-            // Define peak hours (18:00 - 21:00)
-            const isPeakHour = bookingHour >= 18 && bookingHour <= 21;
-            
-            // Check party size limits
-            const maxWaitlistPartySize = 6; // Can be made configurable later
-            
-            // Rule 1: Party size too large for waitlist
-            if (guestCount > maxWaitlistPartySize) {
-                return {
-                    eligible: false,
-                    reason: `Groups larger than ${maxWaitlistPartySize} cannot join waitlist`
-                };
-            }
-            
-            // Rule 2: Future bookings (not same day) - more restrictive
-            if (!isSameDay) {
-                // For future bookings, only allow waitlist during peak hours
-                if (!isPeakHour) {
-                    return {
-                        eligible: false,
-                        reason: 'Waitlist only available during peak hours (6-9 PM) for future bookings'
-                    };
-                }
-            }
-            
-            // Rule 3: Same day bookings - more flexible
-            if (isSameDay) {
-                // Allow waitlist for same day bookings, but show different message
-                if (isPeakHour) {
-                    return {
-                        eligible: true,
-                        reason: 'Peak hours - high demand expected'
-                    };
-                } else {
-                    return {
-                        eligible: true,
-                        reason: 'Same day booking'
-                    };
-                }
-            }
-            
-            // Rule 4: Very far future bookings (more than 7 days)
-            const daysDifference = Math.ceil((bookingDateTime - now) / (1000 * 60 * 60 * 24));
-            if (daysDifference > 7) {
-                return {
-                    eligible: false,
-                    reason: 'Waitlist not available for bookings more than 7 days in advance'
-                };
-            }
-            
-            return { eligible: true };
-        }
-        
-        // Override loadTables function to also check waitlist availability
-        const originalLoadTables = loadTables;
-        loadTables = function() {
-            originalLoadTables();
-            // Check waitlist availability after loading tables
-            setTimeout(checkTableAvailability, 500);
-        };
         
         // Restore form state after conflict/error
         function restoreFormState() {
             // Restore table selection if any
-            const selectedTableId = document.getElementById('selectedTableId').value;
-            if (selectedTableId) {
+            const selectedTableIds = document.getElementById('selectedTableIds').value;
+            if (selectedTableIds) {
+                const tableIds = selectedTableIds.split(',');
+                selectedTables = [];
+                
                 // Wait for tables to load, then restore selection
                 setTimeout(() => {
-                    const tableCheckbox = document.querySelector(`input[value="${selectedTableId}"]`);
-                    if (tableCheckbox) {
-                        tableCheckbox.checked = true;
-                        updateTableSelectionUI();
-                    }
+                    tableIds.forEach(tableId => {
+                        const tableCheckbox = document.querySelector(`input[value="${tableId}"]`);
+                        if (tableCheckbox) {
+                            tableCheckbox.checked = true;
+                            const tableCard = tableCheckbox.closest('.table-card');
+                            if (tableCard) {
+                                const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
+                                const tableName = tableCard.querySelector('.card-title').textContent;
+                                const capacityText = tableCard.querySelector('.card-text small').textContent;
+                                const capacity = parseInt(capacityText.match(/\d+/)[0]);
+                                
+                                selectedTables.push({
+                                    id: tableId,
+                                    name: tableName,
+                                    deposit: deposit,
+                                    capacity: capacity
+                                });
+                            }
+                        }
+                    });
+                    updateTableSelectionUI();
                 }, 1000);
             }
             
@@ -1470,6 +1478,8 @@
             const selectedDishIds = document.getElementById('selectedDishIds').value;
             if (selectedDishIds) {
                 const dishSelections = selectedDishIds.split(',');
+                selectedDishes = [];
+                
                 dishSelections.forEach(selection => {
                     const [dishId, quantity] = selection.split(':');
                     if (dishId && quantity) {
@@ -1478,15 +1488,32 @@
                             const dishCheckbox = document.querySelector(`input[value="${dishId}"]`);
                             if (dishCheckbox) {
                                 dishCheckbox.checked = true;
+                                const dishCard = dishCheckbox.closest('.dish-card');
+                                if (dishCard) {
+                                    const price = parseFloat(dishCard.getAttribute('data-price'));
+                                    const dishName = dishCard.querySelector('.card-title').textContent;
+                                    
+                                    selectedDishes.push({
+                                        id: dishId,
+                                        name: dishName,
+                                        price: price,
+                                        quantity: parseInt(quantity)
+                                    });
+                                }
+                                
                                 const quantityInput = dishCheckbox.parentElement.querySelector('.quantity-control input');
                                 if (quantityInput) {
                                     quantityInput.value = quantity;
                                 }
-                                updateMenuSelectionUI();
                             }
                         }, 1000);
                     }
                 });
+                
+                // Update UI after all dishes are processed
+                setTimeout(() => {
+                    updateMenuSelectionUI();
+                }, 1500);
             }
             
             // Restore service selections if any
@@ -1500,6 +1527,11 @@
                     }
                 });
             }
+            
+            // Update total amount after restoring all selections
+            setTimeout(() => {
+                updateTotalAmount();
+            }, 2000);
         }
         
         // Test function to debug voucher discount
@@ -1580,6 +1612,332 @@
                 updateTotalAmount();
             }
         }
+        
+        // Helper functions for table status display
+        function getStatusBadgeClass(status) {
+            const statusValue = getTableStatusValue(status);
+            switch(statusValue) {
+                case 'AVAILABLE':
+                    return 'table-status-badge table-status-available';
+                case 'OCCUPIED':
+                    return 'table-status-badge table-status-occupied';
+                case 'RESERVED':
+                    return 'table-status-badge table-status-reserved';
+                case 'CLEANING':
+                    return 'table-status-badge table-status-cleaning';
+                case 'MAINTENANCE':
+                    return 'table-status-badge table-status-maintenance';
+                default:
+                    return 'table-status-badge table-status-unknown';
+            }
+        }
+        
+        function getStatusDisplayName(status) {
+            const statusValue = getTableStatusValue(status);
+            switch(statusValue) {
+                case 'AVAILABLE':
+                    return 'Có sẵn';
+                case 'OCCUPIED':
+                    return 'Đang sử dụng';
+                case 'RESERVED':
+                    return 'Đã đặt';
+                case 'CLEANING':
+                    return 'Đang dọn dẹp';
+                case 'MAINTENANCE':
+                    return 'Bảo trì';
+                default:
+                    return statusValue;
+            }
+        }
+        
+        function getTableStatusValue(status) {
+            // Handle both string and object status
+            if (typeof status === 'string') {
+                return status.toUpperCase(); // Convert to uppercase for consistent comparison
+            } else if (status && typeof status === 'object') {
+                const value = status.value || status.name || 'UNKNOWN';
+                return value.toUpperCase();
+            }
+            return 'UNKNOWN';
+        }
+        
+        // ==================== SMART WAITLIST FUNCTIONALITY ====================
+        
+        // Global variables for Smart Waitlist
+        let currentAvailabilityData = null;
+        let selectedAlternativeTable = null;
+        
+        /**
+         * Check availability before form submission
+         */
+        function checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds) {
+            console.log('🔍 Checking availability before booking...');
+            
+            const params = new URLSearchParams({
+                restaurantId: restaurantId,
+                bookingTime: bookingTime,
+                guestCount: guestCount
+            });
+            
+            if (selectedTableIds && selectedTableIds.trim() !== '') {
+                params.append('selectedTableIds', selectedTableIds);
+            }
+            
+            fetch(`/api/booking/availability-check?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📊 Availability check response:', data);
+                    currentAvailabilityData = data;
+                    
+                    if (data.hasConflict) {
+                        console.log('⚠️ Conflict detected, showing Smart Waitlist popup');
+                        showSmartWaitlistPopup(data);
+                    } else {
+                        console.log('✅ No conflicts, proceeding with booking');
+                        submitBookingForm();
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error checking availability:', error);
+                    // Fallback to normal booking if API fails
+                    submitBookingForm();
+                });
+        }
+        
+        /**
+         * Show Smart Waitlist popup with conflict information
+         */
+        function showSmartWaitlistPopup(data) {
+            console.log('🎭 Showing Smart Waitlist popup with data:', data);
+            
+            // Update popup title based on conflict type
+            const popupTitle = document.getElementById('popupTitle');
+            if (data.conflictType === 'SPECIFIC_TABLE') {
+                popupTitle.textContent = 'Selected Tables Have Conflicts';
+            } else if (data.conflictType === 'NO_AVAILABLE_TABLES') {
+                popupTitle.textContent = 'No Tables Available for Party Size';
+            }
+            
+            // Populate conflict content
+            populateConflictContent(data);
+            
+            // Populate waitlist information
+            populateWaitlistInfo(data.waitlistInfo);
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('smartWaitlistModal'));
+            modal.show();
+        }
+        
+        /**
+         * Populate conflict content based on conflict type
+         */
+        function populateConflictContent(data) {
+            const conflictContent = document.getElementById('conflictContent');
+            
+            if (data.conflictType === 'SPECIFIC_TABLE') {
+                let html = '<div class="alert alert-warning"><h6><i class="fas fa-exclamation-triangle"></i> Table Conflicts Detected:</h6>';
+                
+                data.conflictDetails.selectedTables.forEach(table => {
+                    html += `<div class="mb-2">
+                        <strong>${table.tableName}</strong> (Capacity: ${table.capacity} people)
+                        <ul class="mb-0 mt-1">`;
+                    
+                    table.conflicts.forEach(conflict => {
+                        const bookingTime = new Date(conflict.bookingTime).toLocaleString('vi-VN');
+                        const endTime = new Date(conflict.endTime).toLocaleString('vi-VN');
+                        html += `<li>Booking ${conflict.bookingId}: ${bookingTime} - ${endTime} (${conflict.guestCount} people, ${conflict.status})</li>`;
+                    });
+                    
+                    html += '</ul></div>';
+                });
+                
+                html += '</div>';
+                conflictContent.innerHTML = html;
+                
+            } else if (data.conflictType === 'NO_AVAILABLE_TABLES') {
+                conflictContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-ban"></i> No Available Tables</h6>
+                        <p class="mb-0">All tables suitable for your party size are currently booked.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        /**
+         * Populate waitlist information
+         */
+        function populateWaitlistInfo(waitlistInfo) {
+            if (!waitlistInfo) return;
+            
+            const waitTimeElement = document.getElementById('waitTime');
+            const waitReasonElement = document.getElementById('waitReason');
+            
+            if (waitlistInfo.estimatedWaitTime) {
+                const waitTime = new Date(waitlistInfo.estimatedWaitTime).toLocaleString('vi-VN');
+                waitTimeElement.textContent = waitTime;
+            }
+            
+            if (waitlistInfo.reason) {
+                waitReasonElement.textContent = waitlistInfo.reason;
+            }
+        }
+        
+        /**
+         * Join Smart Waitlist
+         */
+        function joinSmartWaitlist() {
+            console.log('⏰ User chose to join waitlist');
+            
+            // Get form data with null checks
+            const restaurantIdElement = document.getElementById('restaurantId');
+            const guestCountElement = document.getElementById('guestCount');
+            const bookingTimeElement = document.getElementById('bookingTime');
+            
+            if (!restaurantIdElement || !guestCountElement || !bookingTimeElement) {
+                console.error('❌ Required form elements not found');
+                showNotification('Form data not found. Please refresh the page and try again.', 'error');
+                return;
+            }
+            
+            const restaurantId = restaurantIdElement.value;
+            const guestCount = parseInt(guestCountElement.value);
+            const preferredBookingTime = bookingTimeElement.value;
+            const specialRequests = ''; // No special requests field in current form
+            
+            // Get selected items
+            const dishIds = document.getElementById('selectedDishIds').value || '';
+            const serviceIds = document.getElementById('selectedServiceIds').value || '';
+            const tableIds = document.getElementById('selectedTableIds').value || '';
+            
+            console.log('🔍 Join waitlist data:', {
+                restaurantId: restaurantId,
+                guestCount: guestCount,
+                preferredBookingTime: preferredBookingTime,
+                specialRequests: specialRequests,
+                dishIds: dishIds,
+                serviceIds: serviceIds,
+                tableIds: tableIds
+            });
+            
+            // Call API to join waitlist
+            fetch('/api/booking/join-waitlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    restaurantId: parseInt(restaurantId),
+                    guestCount: guestCount,
+                    preferredBookingTime: preferredBookingTime,
+                    specialRequests: specialRequests,
+                    dishIds: dishIds,
+                    serviceIds: serviceIds,
+                    tableIds: tableIds
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('✅ Join waitlist response:', data);
+                
+                if (data.success) {
+                    // Close the popup
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('smartWaitlistModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    showNotification(`Successfully joined waitlist! Queue position: ${data.queuePosition}, Estimated wait time: ${data.estimatedWaitTime} minutes`, 'success');
+                } else {
+                    showNotification(data.error || 'Failed to join waitlist', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error joining waitlist:', error);
+                showNotification('Error joining waitlist. Please try again.', 'error');
+            });
+        }
+        
+        /**
+         * Submit booking form (original function)
+         */
+        function submitBookingForm() {
+            console.log('📝 Submitting booking form...');
+            
+            // Save form state before submission
+            saveFormState();
+            
+            // Find and submit the form
+            const form = document.getElementById('bookingForm');
+            if (!form) {
+                console.error('❌ Booking form not found');
+                showNotification('Form not found. Please refresh the page and try again.', 'error');
+                return;
+            }
+            
+            console.log('✅ Submitting form...');
+            form.submit();
+        }
+        
+        /**
+         * Show notification
+         */
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+        
+        /**
+         * Clear all form data when restaurant changes
+         */
+        function clearFormData() {
+            console.log('🔄 Clearing form data...');
+            
+            // Clear selected tables
+            selectedTables = [];
+            document.getElementById('selectedTableIds').value = '';
+            document.getElementById('selectedTablesCount').textContent = 'No tables selected';
+            document.getElementById('selectedTablesSummary').style.display = 'none';
+            document.getElementById('selectedTablesList').innerHTML = '';
+            
+            // Clear selected dishes
+            selectedDishes = [];
+            document.getElementById('selectedDishIds').value = '';
+            document.getElementById('selectedDishesCount').textContent = 'No items selected';
+            document.getElementById('selectedDishesSummary').style.display = 'none';
+            document.getElementById('selectedDishesList').innerHTML = '';
+            
+            // Clear selected services
+            document.getElementById('selectedServiceIds').value = '';
+            document.querySelectorAll('#servicesContainer input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Clear guest count
+            document.getElementById('guestCount').value = '';
+            
+            // Clear booking time
+            document.getElementById('bookingTime').value = '';
+            
+            console.log('✅ Form data cleared');
+        }
+        
+        // ==================== END SMART WAITLIST FUNCTIONALITY ====================
     </script>
 </body>
 </html> 

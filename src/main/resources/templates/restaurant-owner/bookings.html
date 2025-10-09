@@ -183,16 +183,24 @@
                                 <form th:if="${booking.status.name() == 'CONFIRMED'}" 
                                       th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
                                       method="post" style="display: inline;">
-                                    <input type="hidden" name="status" value="COMPLETED" />
-                                    <button type="submit" class="btn btn-ghost small">Hoàn thành</button>
-                                </form>
-                                
-                                <form th:if="${booking.status.name() == 'CONFIRMED'}" 
-                                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
-                                      method="post" style="display: inline;">
                                     <input type="hidden" name="status" value="NO_SHOW" />
                                     <button type="submit" class="btn btn-ghost small">No Show</button>
                                 </form>
+                                
+                                <!-- Check-in/Check-out buttons -->
+                                <button th:if="${booking.status.name() == 'COMPLETED'}" 
+                                        class="btn small" 
+                                        style="background: #28a745; color: white;"
+                                        th:onclick="'checkInCustomer(' + ${booking.bookingId} + ')'">
+                                    Check-in
+                                </button>
+                                
+                                <button th:if="${booking.status.name() == 'COMPLETED'}" 
+                                        class="btn btn-ghost small" 
+                                        style="background: #dc3545; color: white;"
+                                        th:onclick="'checkOutCustomer(' + ${booking.bookingId} + ')'">
+                                    Check-out
+                                </button>
                             </td>
                         </tr>
                         
@@ -268,6 +276,56 @@
                 });
             }
         });
+
+        // Check-in customer
+        function checkInCustomer(bookingId) {
+            if (confirm('Xác nhận check-in khách hàng?')) {
+                fetch(`/api/staff/table-status/check-in/${bookingId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Check-in thành công!');
+                        location.reload();
+                    } else {
+                        alert('Lỗi: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi check-in');
+                });
+            }
+        }
+
+        // Check-out customer
+        function checkOutCustomer(bookingId) {
+            if (confirm('Xác nhận check-out khách hàng?')) {
+                fetch(`/api/staff/table-status/check-out/${bookingId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Check-out thành công!');
+                        location.reload();
+                    } else {
+                        alert('Lỗi: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi check-out');
+                });
+            }
+        }
     </script>
 </body>
 </html>

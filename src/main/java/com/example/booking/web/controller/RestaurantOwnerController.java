@@ -23,8 +23,8 @@ import com.example.booking.service.WaitlistService;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.SimpleUserService;
-import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.Booking;
+import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Waitlist;
 import com.example.booking.domain.RestaurantOwner;
@@ -36,6 +36,7 @@ import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
 import org.springframework.security.core.Authentication;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -1134,6 +1135,53 @@ public class RestaurantOwnerController {
             response.put("success", true);
             response.put("waitlist", updated);
             response.put("message", "Waitlist updated successfully");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * API endpoint để xác nhận waitlist thành booking
+     */
+    @PostMapping("/waitlist/{waitlistId}/confirm-to-booking")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> confirmWaitlistToBooking(@PathVariable Integer waitlistId,
+            @RequestBody Map<String, Object> confirmData,
+            Authentication authentication) {
+        try {
+            // Get restaurant owner info
+            User user = (User) authentication.getPrincipal();
+            RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
+
+            // Get first restaurant
+            Integer restaurantId = null;
+            if (owner.getRestaurants() != null && !owner.getRestaurants().isEmpty()) {
+                restaurantId = owner.getRestaurants().get(0).getRestaurantId();
+            } else {
+                restaurantId = restaurantOwnerService.getRestaurantIdByOwnerId(owner.getOwnerId());
+            }
+
+            // Lấy thời gian booking từ request
+            String bookingTimeStr = confirmData.get("bookingTime").toString();
+            LocalDateTime confirmedBookingTime = LocalDateTime.parse(bookingTimeStr);
+
+            // Xác nhận waitlist thành booking
+            Booking booking = waitlistService.confirmWaitlistToBooking(waitlistId, confirmedBookingTime);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("bookingId", booking.getBookingId());
+            response.put("bookingTime", booking.getBookingTime());
+            response.put("partySize", booking.getNumberOfGuests());
+            response.put("totalAmount", booking.getDepositAmount());
+            response.put("message", "Waitlist confirmed to booking successfully");
 
             return ResponseEntity.ok(response);
 

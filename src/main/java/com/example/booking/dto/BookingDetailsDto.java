@@ -13,7 +13,8 @@ public class BookingDetailsDto {
     
     private Integer bookingId;
     private String restaurantName;
-    private String tableName;
+    private String tableName; // For backward compatibility
+    private List<String> tableNames; // For multiple tables
     private LocalDateTime bookingTime;
     private Integer guestCount;
     private BigDecimal depositAmount;
@@ -65,6 +66,14 @@ public class BookingDetailsDto {
         this.tableName = tableName;
     }
     
+    public List<String> getTableNames() {
+        return tableNames;
+    }
+
+    public void setTableNames(List<String> tableNames) {
+        this.tableNames = tableNames;
+    }
+
     public LocalDateTime getBookingTime() {
         return bookingTime;
     }

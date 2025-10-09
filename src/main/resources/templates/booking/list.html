@@ -668,9 +668,13 @@
                                 
                                 <div class="mb-3">
                                     <h6 style="color: var(--luxury-gold); font-weight: 600;">
-                                        <i class="fas fa-table"></i> Table
+                                        <i class="fas fa-table"></i> Tables
                                     </h6>
-                                    <p style="color: var(--luxury-white); margin: 0;">${data.tableName || 'No preference'}</p>
+                                    <div style="color: var(--luxury-white); margin: 0;">
+                                        ${data.tableNames && data.tableNames.length > 0 ? 
+                                            data.tableNames.map(name => `<span class="badge bg-warning text-dark me-1 mb-1">${name}</span>`).join('') : 
+                                            'No preference'}
+                                    </div>
                                 </div>
                                 
                                 <div class="mb-3">
@@ -704,6 +708,77 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <hr style="border-color: var(--luxury-gold);">
+                        
+                        ${data.dishes && data.dishes.length > 0 ? `
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                        <i class="fas fa-utensils"></i> Selected Dishes
+                                    </h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm" style="color: var(--luxury-white);">
+                                            <thead>
+                                                <tr style="border-bottom: 1px solid var(--luxury-gold);">
+                                                    <th style="color: var(--luxury-gold);">Dish</th>
+                                                    <th style="color: var(--luxury-gold);">Quantity</th>
+                                                    <th style="color: var(--luxury-gold);">Price</th>
+                                                    <th style="color: var(--luxury-gold);">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${data.dishes.map(dish => `
+                                                <tr>
+                                                    <td>
+                                                        <strong>${dish.dishName}</strong>
+                                                        ${dish.description ? `<br><small class="text-muted">${dish.description}</small>` : ''}
+                                                    </td>
+                                                    <td>${dish.quantity}</td>
+                                                    <td>${new Intl.NumberFormat('vi-VN').format(dish.price)} VNĐ</td>
+                                                    <td><strong>${new Intl.NumberFormat('vi-VN').format(dish.totalPrice)} VNĐ</strong></td>
+                                                </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        ${data.services && data.services.length > 0 ? `
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                        <i class="fas fa-concierge-bell"></i> Additional Services
+                                    </h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm" style="color: var(--luxury-white);">
+                                            <thead>
+                                                <tr style="border-bottom: 1px solid var(--luxury-gold);">
+                                                    <th style="color: var(--luxury-gold);">Service</th>
+                                                    <th style="color: var(--luxury-gold);">Description</th>
+                                                    <th style="color: var(--luxury-gold);">Price</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${data.services.map(service => `
+                                                <tr>
+                                                    <td><strong>${service.serviceName}</strong></td>
+                                                    <td>${service.description || 'N/A'}</td>
+                                                    <td><strong>${new Intl.NumberFormat('vi-VN').format(service.price)} VNĐ</strong></td>
+                                                </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
                         
                         <hr style="border-color: var(--luxury-gold);">
                         
@@ -830,20 +905,15 @@
             `;
             
             // Fetch waitlist details
-            fetch(`/booking/waitlist/${waitlistId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const waitlist = data.waitlist;
-                        displayWaitlistDetails(waitlist);
-                    } else {
-                        document.getElementById('waitlistDetailContent').innerHTML = `
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Error loading waitlist details: ${data.error}
-                            </div>
-                        `;
+            fetch(`/api/booking/waitlist/${waitlistId}/details`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch waitlist details');
                     }
+                    return response.json();
+                })
+                .then(data => {
+                    displayWaitlistDetails(data);
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -856,115 +926,193 @@
                 });
         }
         
-        function displayWaitlistDetails(waitlist) {
-            const statusBadgeClass = waitlist.status === 'WAITING' ? 'bg-warning text-dark' : 
-                                   waitlist.status === 'CALLED' ? 'bg-info' : 
-                                   waitlist.status === 'SEATED' ? 'bg-success' : 'bg-danger';
+        function displayWaitlistDetails(data) {
+            // Format join time
+            const joinTime = new Date(data.joinTime).toLocaleString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
             
-            const statusText = waitlist.status === 'WAITING' ? 'Waiting' :
-                              waitlist.status === 'CALLED' ? 'Called' :
-                              waitlist.status === 'SEATED' ? 'Seated' : 'Cancelled';
+            // Get status badge
+            let statusBadge = '';
+            switch(data.status) {
+                case 'WAITING':
+                    statusBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Waiting</span>';
+                    break;
+                case 'CALLED':
+                    statusBadge = '<span class="badge bg-info"><i class="fas fa-phone"></i> Called</span>';
+                    break;
+                case 'SEATED':
+                    statusBadge = '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Seated</span>';
+                    break;
+                case 'CANCELLED':
+                    statusBadge = '<span class="badge bg-danger"><i class="fas fa-times-circle"></i> Cancelled</span>';
+                    break;
+                default:
+                    statusBadge = '<span class="badge bg-secondary"><i class="fas fa-question-circle"></i> Unknown</span>';
+            }
             
-            const queueInfo = waitlist.status === 'WAITING' ? 
-                `<div class="alert alert-info">
-                    <i class="fas fa-sort-numeric-up"></i>
-                    <strong>Queue Position:</strong> #${waitlist.queuePosition}
-                    <br>
-                    <i class="fas fa-clock"></i>
-                    <strong>Estimated Wait Time:</strong> ${waitlist.estimatedWaitTime} minutes
-                </div>` : '';
-            
-            const editForm = waitlist.status === 'WAITING' ? `
-                <div class="mt-3">
-                    <button class="btn btn-warning btn-sm" onclick="toggleWaitlistEdit(${waitlist.waitlistId})">
-                        <i class="fas fa-edit"></i> Edit Details
-                    </button>
-                </div>
-                <div id="editForm-${waitlist.waitlistId}" class="mt-3" style="display: none;">
-                    <div class="card" style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
-                        <div class="card-body">
-                            <h6 class="luxury-title">Edit Waitlist</h6>
-                            <div class="mb-3">
-                                <label class="form-label">Party Size</label>
-                                <input type="number" id="editPartySize-${waitlist.waitlistId}" 
-                                       class="form-control" value="${waitlist.partySize}" 
-                                       min="1" max="6">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Special Requests</label>
-                                <textarea id="editSpecialRequests-${waitlist.waitlistId}" 
-                                          class="form-control" rows="3" 
-                                          placeholder="Any special requests..."></textarea>
-                            </div>
-                            <div class="btn-group">
-                                <button class="btn btn-success btn-sm" onclick="saveWaitlistChanges(${waitlist.waitlistId})">
-                                    <i class="fas fa-save"></i> Save
-                                </button>
-                                <button class="btn btn-secondary btn-sm" onclick="cancelWaitlistEdit(${waitlist.waitlistId})">
-                                    <i class="fas fa-times"></i> Cancel
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ` : '';
-            
-            document.getElementById('waitlistDetailContent').innerHTML = `
+            // Create waitlist details HTML (similar to booking details)
+            const detailsHtml = `
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="card" style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
-                            <div class="card-body">
-                                <h6 class="luxury-title">
-                                    <i class="fas fa-store" style="color: var(--luxury-gold);"></i>
-                                    Restaurant Information
-                                </h6>
-                                <p class="mb-1"><strong>Name:</strong> ${waitlist.restaurantName}</p>
-                                <p class="mb-0"><strong>Party Size:</strong> ${waitlist.partySize} guests</p>
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-building"></i> Restaurant
+                            </h6>
+                            <p style="color: var(--luxury-white); margin: 0;">${data.restaurantName || 'N/A'}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-table"></i> Preferred Tables
+                            </h6>
+                            <div style="color: var(--luxury-white); margin: 0;">
+                                ${data.tables && data.tables.length > 0 ? 
+                                    data.tables.map(table => `<span class="badge bg-warning text-dark me-1 mb-1">${table.tableName} (${table.capacity})</span>`).join('') : 
+                                    'No preference'}
                             </div>
                         </div>
+                        
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-clock"></i> Join Time
+                            </h6>
+                            <p style="color: var(--luxury-white); margin: 0;">${joinTime}</p>
+                        </div>
                     </div>
+                    
                     <div class="col-md-6">
-                        <div class="card" style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
-                            <div class="card-body">
-                                <h6 class="luxury-title">
-                                    <i class="fas fa-user" style="color: var(--luxury-gold);"></i>
-                                    Your Information
-                                </h6>
-                                <p class="mb-1"><strong>Name:</strong> ${waitlist.customerName}</p>
-                                <p class="mb-1"><strong>Phone:</strong> ${waitlist.customerPhone}</p>
-                                <p class="mb-0"><strong>Email:</strong> ${waitlist.customerEmail}</p>
-                            </div>
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-users"></i> Party Size
+                            </h6>
+                            <p style="color: var(--luxury-white); margin: 0;">${data.partySize}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-tag"></i> Status
+                            </h6>
+                            <p style="margin: 0;">${statusBadge}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-hourglass-half"></i> Queue Position
+                            </h6>
+                            <p style="color: var(--luxury-white); margin: 0;">#${data.queuePosition}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-clock"></i> Estimated Wait Time
+                            </h6>
+                            <p style="color: var(--luxury-white); margin: 0;">${data.estimatedWaitTime || 0} minutes</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="row mt-3">
+                <hr style="border-color: var(--luxury-gold);">
+                
+                ${data.dishes && data.dishes.length > 0 ? `
+                <div class="row">
                     <div class="col-12">
-                        <div class="card" style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
-                            <div class="card-body">
-                                <h6 class="luxury-title">
-                                    <i class="fas fa-info-circle" style="color: var(--luxury-gold);"></i>
-                                    Waitlist Information
-                                </h6>
-                                <p class="mb-1"><strong>Status:</strong> 
-                                    <span class="badge ${statusBadgeClass}">${statusText}</span>
-                                </p>
-                                <p class="mb-1"><strong>Join Time:</strong> ${new Date(waitlist.joinTime).toLocaleString()}</p>
-                                <p class="mb-0"><strong>Waitlist ID:</strong> <code>${waitlist.waitlistId}</code></p>
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-utensils"></i> Selected Dishes
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm" style="color: var(--luxury-white);">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid var(--luxury-gold);">
+                                            <th style="color: var(--luxury-gold);">Dish</th>
+                                            <th style="color: var(--luxury-gold);">Quantity</th>
+                                            <th style="color: var(--luxury-gold);">Price</th>
+                                            <th style="color: var(--luxury-gold);">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.dishes.map(dish => `
+                                        <tr>
+                                            <td>
+                                                <strong>${dish.dishName}</strong>
+                                                ${dish.description ? `<br><small class="text-muted">${dish.description}</small>` : ''}
+                                            </td>
+                                            <td>${dish.quantity}</td>
+                                            <td>${new Intl.NumberFormat('vi-VN').format(dish.price)} VNĐ</td>
+                                            <td><strong>${new Intl.NumberFormat('vi-VN').format(dish.totalPrice)} VNĐ</strong></td>
+                                        </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
+                ` : ''}
                 
-                ${queueInfo}
-                ${editForm}
+                ${data.services && data.services.length > 0 ? `
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-concierge-bell"></i> Additional Services
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm" style="color: var(--luxury-white);">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid var(--luxury-gold);">
+                                            <th style="color: var(--luxury-gold);">Service</th>
+                                            <th style="color: var(--luxury-gold);">Description</th>
+                                            <th style="color: var(--luxury-gold);">Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.services.map(service => `
+                                        <tr>
+                                            <td><strong>${service.serviceName}</strong></td>
+                                            <td>${service.description || 'N/A'}</td>
+                                            <td><strong>${new Intl.NumberFormat('vi-VN').format(service.price)} VNĐ</strong></td>
+                                        </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
                 
-                <div class="mt-3 text-center">
-                    <button class="btn btn-danger btn-sm" onclick="cancelWaitlistFromModal(${waitlist.waitlistId})">
-                        <i class="fas fa-times"></i> Cancel Waitlist
-                    </button>
+                <hr style="border-color: var(--luxury-gold);">
+                
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                <i class="fas fa-info-circle"></i> Additional Information
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p style="color: var(--luxury-white); margin: 0;">
+                                        <strong>Waitlist ID:</strong> #${data.waitlistId}
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p style="color: var(--luxury-white); margin: 0;">
+                                        <strong>Customer:</strong> ${data.customerName}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
+            
+            document.getElementById('waitlistDetailContent').innerHTML = detailsHtml;
         }
         
         function toggleWaitlistEdit(waitlistId) {

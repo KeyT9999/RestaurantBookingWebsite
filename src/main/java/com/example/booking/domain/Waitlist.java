@@ -1,7 +1,9 @@
 package com.example.booking.domain;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Max;
@@ -42,6 +45,9 @@ public class Waitlist {
     @Column(name = "join_time", nullable = false)
     private LocalDateTime joinTime;
     
+    @Column(name = "preferred_booking_time")
+    private LocalDateTime preferredBookingTime;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private WaitlistStatus status = WaitlistStatus.WAITING;
@@ -49,6 +55,16 @@ public class Waitlist {
     // Transient field for calculated estimated wait time
     @Transient
     private Integer estimatedWaitTime;
+
+    // Relationships
+    @OneToMany(mappedBy = "waitlist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<WaitlistDish> waitlistDishes;
+
+    @OneToMany(mappedBy = "waitlist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<WaitlistServiceItem> waitlistServices;
+
+    @OneToMany(mappedBy = "waitlist", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<WaitlistTable> waitlistTables;
 
     // Constructors
     public Waitlist() {
@@ -63,6 +79,16 @@ public class Waitlist {
         this.status = status != null ? status : WaitlistStatus.WAITING;
     }
     
+    public Waitlist(Customer customer, RestaurantProfile restaurant, Integer partySize, WaitlistStatus status,
+            LocalDateTime preferredBookingTime) {
+        this();
+        this.customer = customer;
+        this.restaurant = restaurant;
+        this.partySize = partySize;
+        this.status = status != null ? status : WaitlistStatus.WAITING;
+        this.preferredBookingTime = preferredBookingTime;
+    }
+
     // Getters and Setters
     public Integer getWaitlistId() {
         return waitlistId;
@@ -112,11 +138,44 @@ public class Waitlist {
         this.status = status;
     }
 
+    public LocalDateTime getPreferredBookingTime() {
+        return preferredBookingTime;
+    }
+
+    public void setPreferredBookingTime(LocalDateTime preferredBookingTime) {
+        this.preferredBookingTime = preferredBookingTime;
+    }
+
     public Integer getEstimatedWaitTime() {
         return estimatedWaitTime;
     }
 
     public void setEstimatedWaitTime(Integer estimatedWaitTime) {
         this.estimatedWaitTime = estimatedWaitTime;
+    }
+
+    // Relationship getters and setters
+    public List<WaitlistDish> getWaitlistDishes() {
+        return waitlistDishes;
+    }
+
+    public void setWaitlistDishes(List<WaitlistDish> waitlistDishes) {
+        this.waitlistDishes = waitlistDishes;
+    }
+
+    public List<WaitlistServiceItem> getWaitlistServices() {
+        return waitlistServices;
+    }
+
+    public void setWaitlistServices(List<WaitlistServiceItem> waitlistServices) {
+        this.waitlistServices = waitlistServices;
+    }
+
+    public List<WaitlistTable> getWaitlistTables() {
+        return waitlistTables;
+    }
+
+    public void setWaitlistTables(List<WaitlistTable> waitlistTables) {
+        this.waitlistTables = waitlistTables;
     }
 }

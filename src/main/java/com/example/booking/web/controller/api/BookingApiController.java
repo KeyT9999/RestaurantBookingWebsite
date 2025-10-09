@@ -22,6 +22,8 @@ import com.example.booking.dto.RestaurantServiceDto;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.User;
 import com.example.booking.dto.BookingDetailsDto;
+import com.example.booking.dto.BookingDishDto;
+import com.example.booking.dto.BookingServiceDto;
 import com.example.booking.dto.RestaurantTableDto;
 import com.example.booking.dto.DishDto;
 import com.example.booking.dto.RestaurantDto;
@@ -245,9 +247,51 @@ public class BookingApiController {
             detailsDto.setBookingId(booking.getBookingId());
             detailsDto.setRestaurantName(booking.getRestaurant().getRestaurantName());
 
-            // Get table name if exists
+            // Get all table names
             if (booking.getBookingTables() != null && !booking.getBookingTables().isEmpty()) {
-                detailsDto.setTableName(booking.getBookingTables().get(0).getTable().getTableName());
+                List<String> tableNames = booking.getBookingTables().stream()
+                        .map(bt -> bt.getTable().getTableName())
+                        .collect(Collectors.toList());
+                detailsDto.setTableNames(tableNames);
+
+                // Set first table name for backward compatibility
+                detailsDto.setTableName(tableNames.get(0));
+            }
+
+            // Get dishes
+            if (booking.getBookingDishes() != null && !booking.getBookingDishes().isEmpty()) {
+                List<BookingDishDto> dishDtos = booking.getBookingDishes().stream()
+                        .map(bd -> {
+                            BookingDishDto dto = new BookingDishDto();
+                            dto.setDishId(bd.getDish().getDishId());
+                            dto.setDishName(bd.getDish().getName());
+                            dto.setDescription(bd.getDish().getDescription());
+                            dto.setQuantity(bd.getQuantity());
+                            dto.setPrice(bd.getDish().getPrice());
+                            dto.setTotalPrice(bd.getDish().getPrice().multiply(BigDecimal.valueOf(bd.getQuantity())));
+                            dto.setCategory(bd.getDish().getCategory());
+                            return dto;
+                        })
+                        .collect(Collectors.toList());
+                detailsDto.setDishes(dishDtos);
+            }
+
+            // Get services
+            if (booking.getBookingServices() != null && !booking.getBookingServices().isEmpty()) {
+                List<BookingServiceDto> serviceDtos = booking.getBookingServices().stream()
+                        .map(bs -> {
+                            BookingServiceDto dto = new BookingServiceDto();
+                            dto.setServiceId(bs.getService().getServiceId());
+                            dto.setServiceName(bs.getService().getName());
+                            dto.setDescription(bs.getService().getDescription());
+                            dto.setQuantity(1); // Services typically have quantity 1
+                            dto.setPrice(bs.getService().getPrice());
+                            dto.setTotalPrice(bs.getService().getPrice());
+                            dto.setCategory(bs.getService().getCategory());
+                            return dto;
+                        })
+                        .collect(Collectors.toList());
+                detailsDto.setServices(serviceDtos);
             }
 
             detailsDto.setBookingTime(booking.getBookingTime());

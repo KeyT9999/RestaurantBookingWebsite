@@ -14,15 +14,23 @@ class RestaurantOwnerChatManager {
     this.typingTimer = null;
     this.reconnectAttempts = 0;
 
-    this.init();
+    try {
+      this.init();
+    } catch (error) {
+      console.error("Error in RestaurantOwnerChatManager constructor:", error);
+    }
   }
 
   init() {
-    this.loadUserInfo();
-    this.initWebSocket();
-    this.setupEventListeners();
-    this.setupRoomClickHandlers();
-    this.loadAvailableAdmins(); // Load admin list on page load
+    try {
+      this.loadUserInfo();
+      this.initWebSocket();
+      this.setupEventListeners();
+      this.setupRoomClickHandlers();
+      this.loadAvailableAdmins(); // Load admin list on page load
+    } catch (error) {
+      console.error("Error in init method:", error);
+    }
   }
 
   // Load user information from server
@@ -174,9 +182,10 @@ class RestaurantOwnerChatManager {
     document.querySelectorAll(".chat-room-item").forEach((item) => {
       item.classList.remove("active");
     });
-    document
-      .querySelector(`[data-room-id="${roomId}"]`)
-      .classList.add("active");
+    const activeRoom = document.querySelector(`[data-room-id="${roomId}"]`);
+    if (activeRoom) {
+      activeRoom.classList.add("active");
+    }
 
     // Hide welcome screen and show chat interface
     const welcomeScreen = document.getElementById("welcome-screen");
@@ -325,10 +334,12 @@ class RestaurantOwnerChatManager {
     if (data.userId === this.currentUserId) return;
 
     const typingIndicator = document.getElementById("typing-indicator");
-    if (data.typing) {
-      typingIndicator.style.display = "flex";
-    } else {
-      typingIndicator.style.display = "none";
+    if (typingIndicator) {
+      if (data.typing) {
+        typingIndicator.style.display = "flex";
+      } else {
+        typingIndicator.style.display = "none";
+      }
     }
   }
 
@@ -450,7 +461,20 @@ class RestaurantOwnerChatManager {
                 <i class="fas ${iconClass}"></i>
             </div>
             <div class="room-info">
-                <div class="room-name">${room.participantName}</div>
+                <div class="room-name">
+                    <span>${room.participantName}</span>
+                    <span class="role-badge ${
+                      room.participantRole === "ADMIN"
+                        ? "role-admin"
+                        : "role-customer"
+                    }">
+                        ${
+                          room.participantRole === "ADMIN"
+                            ? "Admin"
+                            : "Khách hàng"
+                        }
+                    </span>
+                </div>
                 <div class="room-restaurant">${room.restaurantName}</div>
                 <div class="room-last-message">${
                   room.lastMessage || "Chưa có tin nhắn"
@@ -480,10 +504,11 @@ class RestaurantOwnerChatManager {
     const badge = document.getElementById("total-unread-badge");
 
     if (totalUnread > 0) {
-      document.getElementById("total-unread-count").textContent = totalUnread;
-      badge.style.display = "flex";
+      const totalUnreadCount = document.getElementById("total-unread-count");
+      if (totalUnreadCount) totalUnreadCount.textContent = totalUnread;
+      if (badge) badge.style.display = "flex";
     } else {
-      badge.style.display = "none";
+      if (badge) badge.style.display = "none";
     }
   }
 
@@ -492,17 +517,37 @@ class RestaurantOwnerChatManager {
     // Find the room data from the current rooms list
     const roomElement = document.querySelector(`[data-room-id="${roomId}"]`);
     if (roomElement) {
-      const participantName =
-        roomElement.querySelector(".room-name").textContent;
-      const restaurantName =
-        roomElement.querySelector(".room-restaurant").textContent;
+      // Lấy tên participant từ span đầu tiên trong room-name
+      const participantNameSpan = roomElement.querySelector(
+        ".room-name span:first-child"
+      );
+      const participantName = participantNameSpan
+        ? participantNameSpan.textContent
+        : "Participant";
 
-      document.getElementById("participant-name").textContent = participantName;
-      document.getElementById("restaurant-name").textContent = restaurantName;
+      const restaurantElement = roomElement.querySelector(".room-restaurant");
+      const restaurantName = restaurantElement
+        ? restaurantElement.textContent
+        : "Restaurant";
+
+      const participantNameElement =
+        document.getElementById("participant-name");
+      const restaurantNameElement = document.getElementById("restaurant-name");
+
+      if (participantNameElement)
+        participantNameElement.textContent = participantName;
+      if (restaurantNameElement)
+        restaurantNameElement.textContent = restaurantName;
     } else {
       // Fallback if room element not found
-      document.getElementById("participant-name").textContent = "Participant";
-      document.getElementById("restaurant-name").textContent = "Restaurant";
+      const participantNameElement =
+        document.getElementById("participant-name");
+      const restaurantNameElement = document.getElementById("restaurant-name");
+
+      if (participantNameElement)
+        participantNameElement.textContent = "Participant";
+      if (restaurantNameElement)
+        restaurantNameElement.textContent = "Restaurant";
     }
   }
 
@@ -598,12 +643,26 @@ class RestaurantOwnerChatManager {
   // Chat with Admin functionality
   async loadAvailableAdmins() {
     try {
+      console.log("Loading available admins...");
       const response = await fetch("/api/chat/available-admins");
+      console.log("Response status:", response.status);
+
       if (response.ok) {
         const admins = await response.json();
+        console.log("Admins loaded:", admins);
         this.displayAdmins(admins);
+      } else if (response.status === 401) {
+        console.error("Authentication required");
+        this.showError("Vui lòng đăng nhập để sử dụng tính năng chat");
+        // Redirect to login page
+        window.location.href = "/login";
+      } else if (response.status === 403) {
+        console.error("Access denied");
+        this.showError("Chỉ restaurant owner mới có thể chat với admin");
       } else {
-        throw new Error("Failed to load admins");
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        this.showError("Không thể tải danh sách admin: " + errorText);
       }
     } catch (error) {
       console.error("Error loading admins:", error);
@@ -612,10 +671,15 @@ class RestaurantOwnerChatManager {
   }
 
   displayAdmins(admins) {
+    console.log("Displaying admins:", admins);
     const adminList = document.getElementById("admin-list");
-    if (!adminList) return;
+    if (!adminList) {
+      console.error("Admin list element not found");
+      return;
+    }
 
     if (admins.length === 0) {
+      console.log("No admins found");
       adminList.innerHTML = `
                 <div class="text-center text-muted">
                     <i class="fas fa-user-shield fa-2x mb-2"></i>
@@ -627,13 +691,20 @@ class RestaurantOwnerChatManager {
 
     adminList.innerHTML = "";
     admins.forEach((admin) => {
+      console.log("Creating admin item for:", admin);
       const adminItem = this.createAdminItem(admin);
       adminList.appendChild(adminItem);
     });
   }
 
   createAdminItem(admin) {
+    console.log("Creating admin item:", admin);
     const template = document.getElementById("admin-item-template");
+    if (!template) {
+      console.error("Admin item template not found");
+      return null;
+    }
+
     const adminItem = template.content.cloneNode(true);
 
     const adminDiv = adminItem.querySelector(".admin-item");
@@ -642,34 +713,88 @@ class RestaurantOwnerChatManager {
     adminDiv.querySelector(".admin-name").textContent = admin.adminName;
     adminDiv.querySelector(".admin-email").textContent = admin.adminEmail;
 
+    // Populate restaurant select for this admin
+    console.log("Admin restaurants:", admin.restaurants);
+    this.populateRestaurantSelect(adminDiv, admin.restaurants);
+
     // Add click handler for chat button
     adminDiv.querySelector(".start-chat-btn").addEventListener("click", () => {
-      this.startChatWithAdmin(admin.adminId);
+      const restaurantSelect = adminDiv.querySelector(".restaurant-select");
+      const selectedRestaurantId = restaurantSelect.value;
+      if (selectedRestaurantId) {
+        this.startChatWithAdmin(admin.adminId, selectedRestaurantId);
+      }
     });
 
     return adminDiv;
   }
 
-  async startChatWithAdmin(adminId) {
+  populateRestaurantSelect(adminDiv, restaurants) {
+    console.log("Populating restaurant select with:", restaurants);
+    const restaurantSelect = adminDiv.querySelector(".restaurant-select");
+    const startBtn = adminDiv.querySelector(".start-chat-btn");
+
+    if (!restaurantSelect || !restaurants) {
+      console.error("Restaurant select or restaurants not found");
+      return;
+    }
+
+    // Clear existing options
+    restaurantSelect.innerHTML = '<option value="">Chọn nhà hàng...</option>';
+
+    // Add restaurant options
+    restaurants.forEach((restaurant) => {
+      console.log("Adding restaurant option:", restaurant);
+      const option = document.createElement("option");
+      option.value = restaurant.restaurantId;
+      option.textContent = restaurant.restaurantName;
+      restaurantSelect.appendChild(option);
+    });
+
+    // Enable/disable chat button based on selection
+    restaurantSelect.addEventListener("change", () => {
+      startBtn.disabled = !restaurantSelect.value;
+    });
+  }
+
+  async startChatWithAdmin(adminId, restaurantId) {
     try {
+      console.log(
+        "Starting chat with admin:",
+        adminId,
+        "restaurant:",
+        restaurantId
+      );
+
       const response = await fetch("/api/chat/rooms/admin", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: `adminId=${adminId}`,
+        body: `adminId=${adminId}&restaurantId=${restaurantId}`,
       });
+
+      console.log("Response status:", response.status);
 
       if (response.ok) {
         const result = await response.json();
+        console.log("Chat room created:", result);
 
         // Open the chat room
         this.openChatRoom(result.roomId);
 
         // Note: Chat rooms list will be refreshed when user navigates back to room list
+      } else if (response.status === 401) {
+        console.error("Authentication required");
+        this.showError("Vui lòng đăng nhập để sử dụng tính năng chat");
+        window.location.href = "/login";
+      } else if (response.status === 403) {
+        console.error("Access denied");
+        this.showError("Chỉ restaurant owner mới có thể chat với admin");
       } else {
         const error = await response.text();
-        throw new Error(error);
+        console.error("Error response:", error);
+        this.showError("Không thể tạo chat room: " + error);
       }
     } catch (error) {
       console.error("Error starting chat with admin:", error);
@@ -770,9 +895,13 @@ function showNotification(roomId, unreadCount) {
 }
 
 // Initialize chat manager when page loads
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
+  try {
     chatManager = new RestaurantOwnerChatManager();
-    
+
     // Make it globally accessible
     window.chatManager = chatManager;
+  } catch (error) {
+    console.error("Error initializing chat manager:", error);
+  }
 });

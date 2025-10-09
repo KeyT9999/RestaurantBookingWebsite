@@ -10,7 +10,8 @@ public class BookingForm {
     @NotNull(message = "Vui lòng chọn nhà hàng")
     private Integer restaurantId;
     
-    private Integer tableId; // Optional
+    private Integer tableId; // Optional - for backward compatibility
+    private String tableIds; // Format: "tableId1,tableId2,tableId3" - for multiple tables
     
     @NotNull(message = "Số khách không được để trống")
     @Min(value = 1, message = "Số khách tối thiểu là 1")
@@ -67,6 +68,14 @@ public class BookingForm {
         this.tableId = tableId;
     }
     
+    public String getTableIds() {
+        return tableIds;
+    }
+
+    public void setTableIds(String tableIds) {
+        this.tableIds = tableIds;
+    }
+
     public Integer getGuestCount() {
         return guestCount;
     }

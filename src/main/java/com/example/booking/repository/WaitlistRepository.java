@@ -48,17 +48,5 @@ public interface WaitlistRepository extends JpaRepository<Waitlist, Integer> {
     /**
      * Lấy tất cả waitlist entries của customer (cho booking list)
      */
-    @Query("SELECT w FROM Waitlist w WHERE w.customer.customerId = :customerId " +
-           "AND w.status IN ('WAITING', 'CALLED') " +
-           "ORDER BY w.joinTime ASC")
-    List<Waitlist> findActiveWaitlistByCustomer(@Param("customerId") UUID customerId);
-    
-    /**
-     * Lấy waitlist entries theo restaurant với multiple status
-     */
-    @Query("SELECT w FROM Waitlist w WHERE w.restaurant.restaurantId = :restaurantId " +
-           "AND w.status IN :statuses " +
-           "ORDER BY w.joinTime ASC")
-    List<Waitlist> findByRestaurantIdAndStatusIn(@Param("restaurantId") Integer restaurantId, 
-                                               @Param("statuses") List<WaitlistStatus> statuses);
+    List<Waitlist> findByCustomerCustomerIdOrderByJoinTimeDesc(UUID customerId);
 }
