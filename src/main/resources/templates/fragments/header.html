@@ -1,10 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8">
-</head>
-<body>
-    <!-- Luxury Header Fragment -->
+<!-- Luxury Header Fragment -->
     <header th:fragment="site-header" class="luxury-header">
         <nav class="navbar navbar-expand-lg luxury-navbar fixed-top" id="luxuryNavbar">
             <div class="container">
@@ -148,6 +142,13 @@
                                         Notification Management
                                     </a>
                                 </li>
+                                <li sec:authorize="hasRole('ADMIN')">
+                                    <a class="dropdown-item" th:href="@{/admin/vouchers}">
+                                        <i class="fas fa-ticket-alt luxury-icon"></i>
+                                        Vouchers Management
+                                    </a>
+                                </li>
+
                                 
                                 <!-- Restaurant Owner Dropdown Item -->
                                 <li sec:authorize="hasRole('RESTAURANT_OWNER')">
@@ -166,6 +167,9 @@
                                     <a class="dropdown-item" th:href="@{/restaurant-owner/chat}">
                                         <i class="fas fa-comments luxury-icon"></i>
                                         Chat với khách hàng
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/vouchers}">
+                                        <i class="fas fa-ticket-alt luxury-icon"></i>
+                                        Voucher Management
                                     </a>
                                 </li>
                                 <li sec:authorize="hasRole('RESTAURANT_OWNER')">

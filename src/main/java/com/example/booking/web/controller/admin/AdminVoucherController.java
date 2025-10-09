@@ -1,7 +1,5 @@
 package com.example.booking.web.controller.admin;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,10 +7,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,7 +22,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.booking.domain.VoucherStatus;
 import com.example.booking.domain.DiscountType;
 import com.example.booking.dto.admin.VoucherCreateForm;
-import com.example.booking.dto.admin.VoucherEditForm;
 import com.example.booking.dto.admin.VoucherAssignForm;
 import com.example.booking.service.VoucherService;
 import com.example.booking.domain.Voucher;
@@ -39,7 +32,7 @@ import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("/admin/vouchers")
-// @PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminVoucherController {
     
     static {
@@ -62,19 +55,14 @@ public class AdminVoucherController {
             @RequestParam(required = false) String status,
             Model model) {
         
-        System.out.println("=== AdminVoucherController.listVouchers called ===");
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
         // Get all vouchers from database
         List<Voucher> allVouchers = voucherService.getAllVouchers();
         
-        // Calculate statistics
+        // Calculate statistics BEFORE filtering
         long globalVouchers = allVouchers.stream().filter(v -> v.getRestaurant() == null).count();
         long restaurantVouchers = allVouchers.stream().filter(v -> v.getRestaurant() != null).count();
         long activeVouchers = allVouchers.stream().filter(v -> v.getStatus() == VoucherStatus.ACTIVE).count();
+        
         
         // Apply search filter if provided
         if (search != null && !search.trim().isEmpty()) {
@@ -110,29 +98,31 @@ public class AdminVoucherController {
             });
         }
         
-        // Calculate pagination
-        int totalVouchers = allVouchers.size();
-        int totalPages = (int) Math.ceil((double) totalVouchers / size);
-        int startIndex = page * size;
-        int endIndex = Math.min(startIndex + size, totalVouchers);
-        
-        List<Voucher> pageVouchers = allVouchers.subList(startIndex, endIndex);
-        
         // Add usage statistics for each voucher
         Map<Integer, Long> voucherUsageMap = new HashMap<>();
-        for (Voucher voucher : pageVouchers) {
+        for (Voucher voucher : allVouchers) {
             Long usageCount = voucherService.countRedemptionsByVoucherId(voucher.getVoucherId());
             voucherUsageMap.put(voucher.getVoucherId(), usageCount);
         }
         
-        model.addAttribute("vouchers", pageVouchers);
+        // Calculate pagination info (for display purposes)
+        int totalVouchers = allVouchers.size();
+        int totalPages = 1; // Show all vouchers in one page
+        
+        // Recalculate statistics AFTER filtering
+        long finalGlobalVouchers = allVouchers.stream().filter(v -> v.getRestaurant() == null).count();
+        long finalRestaurantVouchers = allVouchers.stream().filter(v -> v.getRestaurant() != null).count();
+        long finalActiveVouchers = allVouchers.stream().filter(v -> v.getStatus() == VoucherStatus.ACTIVE).count();
+        
+        
+        model.addAttribute("vouchers", allVouchers);
         model.addAttribute("voucherUsageMap", voucherUsageMap);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalVouchers", totalVouchers);
-        model.addAttribute("globalVouchers", globalVouchers);
-        model.addAttribute("restaurantVouchers", restaurantVouchers);
-        model.addAttribute("activeVouchers", activeVouchers);
+        model.addAttribute("globalVouchers", finalGlobalVouchers);
+        model.addAttribute("restaurantVouchers", finalRestaurantVouchers);
+        model.addAttribute("activeVouchers", finalActiveVouchers);
         model.addAttribute("search", search);
         model.addAttribute("status", status);
         model.addAttribute("sortBy", sortBy);
@@ -140,6 +130,8 @@ public class AdminVoucherController {
         
         return "admin/vouchers/list-with-datetime";
     }
+    
+    
     
     @GetMapping("/test-edit/{id}")
     public String testEditForm(@PathVariable Integer id, Model model) {
