@@ -26,6 +26,12 @@
                                 <span>Home</span>
                             </a>
                         </li>
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                            <a class="nav-link" th:href="@{/admin/dashboard}" th:classappend="${#strings.startsWith(currentPath, '/admin')} ? 'active' : ''">
+                                <i class="fas fa-tachometer-alt nav-icon"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{/restaurants}" th:classappend="${#strings.startsWith(currentPath, '/restaurants')} ? 'active' : ''">
                                 <i class="fas fa-utensils nav-icon"></i>
