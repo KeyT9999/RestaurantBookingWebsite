@@ -150,5 +150,28 @@ public interface WithdrawalRequestRepository extends JpaRepository<WithdrawalReq
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT w FROM WithdrawalRequest w WHERE w.requestId = :id")
     Optional<WithdrawalRequest> findByIdForUpdate(@Param("id") Integer id);
+    
+    // ============== ADMIN DASHBOARD STATISTICS METHODS ==============
+    
+    /**
+     * Get monthly withdrawal statistics for chart
+     */
+    @Query(value = "SELECT TO_CHAR(created_at, 'YYYY-MM') as month, COALESCE(SUM(amount), 0) as total_amount " +
+           "FROM withdrawal_request " +
+           "WHERE created_at >= :fromDate AND status = 'SUCCEEDED' " +
+           "GROUP BY TO_CHAR(created_at, 'YYYY-MM') " +
+           "ORDER BY month", nativeQuery = true)
+    List<Object[]> getMonthlyWithdrawalStats(@Param("fromDate") java.time.LocalDateTime fromDate);
+    
+    /**
+     * Get withdrawal statistics by restaurant
+     */
+    @Query("SELECT w.restaurant.restaurantId, w.restaurant.restaurantName, " +
+           "COUNT(w) as requestCount, SUM(w.amount) as totalAmount " +
+           "FROM WithdrawalRequest w " +
+           "WHERE w.status = 'SUCCEEDED' " +
+           "GROUP BY w.restaurant.restaurantId, w.restaurant.restaurantName " +
+           "ORDER BY totalAmount DESC")
+    List<Object[]> getWithdrawalStatsByRestaurant();
 }
 

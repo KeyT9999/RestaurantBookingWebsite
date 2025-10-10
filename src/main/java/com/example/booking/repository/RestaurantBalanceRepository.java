@@ -1,6 +1,8 @@
 package com.example.booking.repository;
 
 import java.util.Optional;
+import java.util.List;
+import java.math.BigDecimal;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -62,5 +64,21 @@ public interface RestaurantBalanceRepository extends JpaRepository<RestaurantBal
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT rb FROM RestaurantBalance rb WHERE rb.restaurant.restaurantId = :restaurantId")
     Optional<RestaurantBalance> findByRestaurantIdForUpdate(@Param("restaurantId") Integer restaurantId);
+    
+    // ============== ADMIN DASHBOARD STATISTICS METHODS ==============
+    
+    /**
+     * Find top restaurants by withdrawal amount
+     */
+    @Query("SELECT rb FROM RestaurantBalance rb " +
+           "WHERE rb.totalWithdrawn > 0 " +
+           "ORDER BY rb.totalWithdrawn DESC")
+    List<RestaurantBalance> findTopRestaurantsByWithdrawal(@Param("limit") int limit);
+    
+    /**
+     * Get total commission earned across all restaurants
+     */
+    @Query("SELECT COALESCE(SUM(rb.totalCommission), 0) FROM RestaurantBalance rb")
+    BigDecimal getTotalCommissionEarned();
 }
 

@@ -1,4 +1,4 @@
--- Fix balance hiện tại dựa trên withdrawal requests thực tế
+image.png-- Fix balance hiện tại dựa trên withdrawal requests thực tế
 UPDATE restaurant_balance 
 SET 
     total_withdrawn = (
