@@ -3,7 +3,10 @@ package com.example.booking.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -307,13 +310,10 @@ public class WithdrawalService {
     @Transactional(readOnly = true)
     public WithdrawalStatsDto getWithdrawalStats() {
         Long pendingCount = withdrawalRepository.countByStatus(WithdrawalStatus.PENDING);
-        Long processingCount = withdrawalRepository.countByStatus(WithdrawalStatus.PROCESSING);
         Long succeededCount = withdrawalRepository.countByStatus(WithdrawalStatus.SUCCEEDED);
-        Long failedCount = withdrawalRepository.countByStatus(WithdrawalStatus.FAILED);
         Long rejectedCount = withdrawalRepository.countByStatus(WithdrawalStatus.REJECTED);
         
         BigDecimal pendingAmount = withdrawalRepository.sumAmountByStatus(WithdrawalStatus.PENDING);
-        BigDecimal processingAmount = withdrawalRepository.sumAmountByStatus(WithdrawalStatus.PROCESSING);
         BigDecimal succeededAmount = withdrawalRepository.sumAmountByStatus(WithdrawalStatus.SUCCEEDED);
         BigDecimal totalCommission = withdrawalRepository.sumCommissionByStatus(WithdrawalStatus.SUCCEEDED);
         
@@ -321,13 +321,13 @@ public class WithdrawalService {
         Double avgHours = withdrawalRepository.calculateAverageProcessingTimeHours();
         
         // Calculate success rate
-        Long totalCompleted = succeededCount + failedCount;
+        Long totalCompleted = succeededCount + rejectedCount;
         Double successRate = totalCompleted > 0 ? (succeededCount.doubleValue() / totalCompleted * 100) : 0.0;
         
         return new WithdrawalStatsDto(
-            pendingCount, processingCount, succeededCount, failedCount, rejectedCount,
+            pendingCount, 0L, succeededCount, 0L, rejectedCount,
             pendingAmount != null ? pendingAmount : BigDecimal.ZERO,
-            processingAmount != null ? processingAmount : BigDecimal.ZERO,
+            BigDecimal.ZERO,
             succeededAmount != null ? succeededAmount : BigDecimal.ZERO,
             totalCommission != null ? totalCommission : BigDecimal.ZERO,
             avgHours, successRate
@@ -491,6 +491,80 @@ public class WithdrawalService {
                 String.format("Số tiền rút tối thiểu là %s VNĐ", MIN_WITHDRAWAL_AMOUNT)
             );
         }
+    }
+    
+    // ============== ADMIN DASHBOARD STATISTICS METHODS ==============
+    
+    /**
+     * Get total pending withdrawal amount
+     */
+    public BigDecimal getTotalPendingAmount() {
+        return withdrawalRepository.sumAmountByStatus(WithdrawalStatus.PENDING);
+    }
+    
+    /**
+     * Get total withdrawn amount
+     */
+    public BigDecimal getTotalWithdrawnAmount() {
+        return withdrawalRepository.sumAmountByStatus(WithdrawalStatus.SUCCEEDED);
+    }
+    
+    /**
+     * Get top restaurants by withdrawal amount
+     */
+    public List<RestaurantBalanceInfoDto> getTopRestaurantsByWithdrawal(int limit) {
+        return balanceRepository.findTopRestaurantsByWithdrawal(limit)
+            .stream()
+            .map(this::convertToRestaurantBalanceInfoDto)
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get monthly withdrawal statistics for chart
+     */
+    public Map<String, Object> getMonthlyWithdrawalStats() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        // Get last 6 months data
+        LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
+        
+        // Monthly withdrawal amounts
+        List<Object[]> monthlyData = withdrawalRepository.getMonthlyWithdrawalStats(sixMonthsAgo);
+        
+        List<String> months = monthlyData.stream()
+            .map(row -> row[0].toString())
+            .collect(Collectors.toList());
+            
+        List<BigDecimal> amounts = monthlyData.stream()
+            .map(row -> (BigDecimal) row[1])
+            .collect(Collectors.toList());
+        
+        stats.put("months", months);
+        stats.put("amounts", amounts);
+        
+        return stats;
+    }
+    
+    /**
+     * Get total commission earned
+     */
+    public BigDecimal getTotalCommissionEarned() {
+        return balanceRepository.getTotalCommissionEarned();
+    }
+    
+    /**
+     * Convert RestaurantBalance to RestaurantBalanceInfoDto
+     */
+    private RestaurantBalanceInfoDto convertToRestaurantBalanceInfoDto(RestaurantBalance balance) {
+        RestaurantBalanceInfoDto dto = new RestaurantBalanceInfoDto();
+        dto.setRestaurantId(balance.getRestaurant().getRestaurantId());
+        dto.setRestaurantName(balance.getRestaurant().getRestaurantName());
+        dto.setTotalRevenue(balance.getTotalRevenue());
+        dto.setTotalWithdrawn(balance.getTotalWithdrawn());
+        dto.setPendingWithdrawal(balance.getPendingWithdrawal());
+        dto.setAvailableBalance(balance.getAvailableBalance());
+        dto.setTotalCommission(balance.getTotalCommission());
+        return dto;
     }
 }
 

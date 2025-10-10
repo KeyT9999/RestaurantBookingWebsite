@@ -46,20 +46,35 @@ public class AdminUserController {
 	}
 
 	@GetMapping
-	public String list(@RequestParam(defaultValue = "0") int page,
-					   @RequestParam(defaultValue = "10") int size,
-					   @RequestParam(defaultValue = "createdAt") String sortBy,
-					   @RequestParam(defaultValue = "desc") String dir,
-					   @RequestParam(defaultValue = "") String q,
-					   @RequestParam(required = false) UserRole role,
-					   Model model) {
+    public String list(@RequestParam(defaultValue = "0") int page,
+                       @RequestParam(defaultValue = "10") int size,
+                       @RequestParam(defaultValue = "createdAt") String sortBy,
+                       @RequestParam(defaultValue = "desc") String dir,
+                       @RequestParam(defaultValue = "") String q,
+                       @RequestParam(required = false) String role,
+                       Model model) {
 
 		Sort sort = "asc".equalsIgnoreCase(dir) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
 		Pageable pageable = PageRequest.of(page, size, sort);
 
-		Page<User> users;
-		if (role != null) {
-			users = repo.findByRole(role, pageable);
+        Page<User> users;
+        UserRole parsedRole = null;
+        if (role != null && !role.trim().isEmpty()) {
+            try {
+                // Accept both lowercase values (admin, customer, restaurant_owner) and enum names
+                String normalized = role.trim().toUpperCase();
+                if ("ADMIN".equals(normalized) || "ROLE_ADMIN".equals(normalized)) {
+                    parsedRole = UserRole.ADMIN;
+                } else if ("CUSTOMER".equals(normalized) || "ROLE_CUSTOMER".equals(normalized)) {
+                    parsedRole = UserRole.CUSTOMER;
+                } else if ("RESTAURANT_OWNER".equals(normalized) || "ROLE_RESTAURANT_OWNER".equals(normalized) || "RESTAURANT_OWNER".equals(normalized)) {
+                    parsedRole = UserRole.RESTAURANT_OWNER;
+                }
+            } catch (IllegalArgumentException ignore) { /* fallback to null */ }
+        }
+
+        if (parsedRole != null) {
+            users = repo.findByRole(parsedRole, pageable);
 		} else if (!q.isEmpty()) {
 			users = repo.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(q, q, pageable);
 		} else {
@@ -68,12 +83,13 @@ public class AdminUserController {
 
 		model.addAttribute("users", users);
 		model.addAttribute("currentPage", page);
+        model.addAttribute("size", size);
 		model.addAttribute("totalPages", users.getTotalPages());
 		model.addAttribute("totalElements", users.getTotalElements());
 		model.addAttribute("sortBy", sortBy);
 		model.addAttribute("dir", dir);
 		model.addAttribute("q", q);
-		model.addAttribute("role", role);
+        model.addAttribute("role", parsedRole);
 		model.addAttribute("roles", UserRole.values());
 
 		return "admin/users";

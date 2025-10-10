@@ -12,13 +12,13 @@
     --accent-orange: #FF6B35;
     --accent-orange-light: #FF8A5B;
     --accent-orange-dark: #E55A2B;
-    --background-light: #F8F9FA;
-    --background-white: #FFFFFF;
+    --background-light: #F7F6F0;
+    --background-white: #FFFEF7;
     --text-dark: #2C3E50;
     --text-medium: #5A6C7D;
     --text-light: #8A9BA8;
-    --border-light: #E1E8ED;
-    --border-medium: #D1D9E0;
+    --border-light: #E8E5D8;
+    --border-medium: #D8D4C8;
     --shadow-light: rgba(74, 144, 226, 0.1);
     --shadow-medium: rgba(74, 144, 226, 0.15);
     --shadow-heavy: rgba(74, 144, 226, 0.2);
@@ -104,27 +104,39 @@ a:hover {
 
 .luxury-navbar {
     background: var(--background-white);
-    border-bottom: 1px solid var(--border-light);
-    padding: 15px 0;
+    border-bottom: 2px solid var(--border-medium);
+    padding: 12px 0;
     transition: var(--transition);
     box-shadow: var(--shadow-card);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    height: 76px;
 }
 
 .luxury-navbar.scrolled {
-    padding: 10px 0;
+    padding: 8px 0;
     box-shadow: var(--shadow-hover);
+    height: 68px;
 }
 
 /* Brand */
 .navbar-brand {
     font-family: var(--font-heading);
-    font-size: 1.8rem;
+    font-size: 1.7rem;
     font-weight: 700;
     color: var(--primary-blue) !important;
     text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
+    margin-right: 1.5rem;
+    white-space: nowrap;
+    min-width: 120px;
+    height: 40px;
+    justify-content: flex-start;
 }
 
 .navbar-brand:hover {
@@ -136,17 +148,31 @@ a:hover {
 }
 
 /* Navigation Links */
+.navbar-nav {
+    flex-wrap: nowrap !important;
+    overflow: visible;
+    -webkit-overflow-scrolling: touch;
+    height: 52px;
+    display: flex;
+    align-items: center;
+}
+
 .navbar-nav .nav-link {
     color: var(--text-dark) !important;
     font-weight: 500;
-    margin: 0 8px;
-    padding: 8px 12px !important;
+    margin: 0 1px;
+    padding: 6px 8px !important;
     position: relative;
     transition: var(--transition);
     display: flex;
     align-items: center;
-    gap: 6px;
-    border-radius: 6px;
+    gap: 3px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    height: 36px;
+    min-width: fit-content;
 }
 
 .navbar-nav .nav-link:hover,
@@ -160,7 +186,7 @@ a:hover {
 }
 
 .nav-icon {
-    font-size: 0.9rem;
+    font-size: 1rem;
 }
 
 /* Auth Buttons in Navbar */
@@ -168,17 +194,20 @@ a:hover {
     background: var(--primary-blue) !important;
     color: var(--background-white) !important;
     border: 1px solid var(--primary-blue) !important;
-    padding: 8px 16px !important;
+    padding: 6px 10px !important;
     font-size: 0.9rem !important;
     transition: var(--transition) !important;
     text-decoration: none !important;
     display: inline-flex !important;
     align-items: center !important;
-    gap: 6px !important;
-    border-radius: 6px !important;
+    gap: 3px !important;
+    border-radius: 4px !important;
     font-weight: 500 !important;
     line-height: 1.2 !important;
     white-space: nowrap !important;
+    margin: 0 1px !important;
+    height: 36px;
+    min-width: fit-content;
 }
 
 .navbar-nav .btn--outline:hover {
@@ -232,6 +261,104 @@ a:hover {
 .luxury-dropdown .dropdown-divider {
     border-color: var(--border-light);
     margin: 8px 0;
+}
+
+/* User Section Layout */
+.navbar-nav:last-child {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    overflow: visible;
+    height: 52px;
+    min-width: 200px;
+    justify-content: flex-end;
+    margin-left: 0.5rem;
+}
+
+/* Navigation Container */
+.navbar-collapse {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: nowrap;
+    height: 52px;
+}
+
+.navbar-nav.mx-auto {
+    flex: 1;
+    justify-content: center;
+    max-width: none;
+    min-width: 0;
+    height: 52px;
+    display: flex;
+    align-items: center;
+}
+
+/* Container spacing */
+.luxury-navbar .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 100%;
+    overflow: visible;
+    height: 52px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+/* Notification Bell */
+.nav-item .notification-bell-container {
+    position: relative;
+    margin: 0 2px;
+    flex-shrink: 0;
+    width: 40px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Prevent layout shift */
+.nav-item {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Dropdown stability */
+.dropdown-toggle::after {
+    margin-left: 0.5em;
+    vertical-align: middle;
+}
+
+/* User Dropdown */
+.user-dropdown {
+    margin: 0 2px !important;
+    padding: 5px 8px !important;
+    font-size: 0.95rem !important;
+    height: 36px;
+    min-width: fit-content;
+}
+
+/* CTA Button */
+.btn-book-table {
+    margin-left: 6px !important;
+    padding: 6px 12px !important;
+    font-weight: 600 !important;
+    border-radius: 4px !important;
+    box-shadow: var(--shadow-button) !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap !important;
+    height: 36px;
+    min-width: fit-content;
+}
+
+.btn-book-table:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-hover) !important;
 }
 
 /* ========================================
@@ -427,7 +554,11 @@ a:hover {
    ======================================== */
 
 .main-content {
-    padding-top: 80px; /* Account for fixed header */
+    padding-top: 0; /* Remove top padding to place carousel directly under header */
+}
+
+.luxury-navbar.scrolled ~ .main-content {
+    padding-top: 0; /* Remove top padding even when scrolled */
 }
 
 section {
@@ -438,8 +569,277 @@ section {
     background: var(--background-white);
 }
 
-.restaurants {
+.restaurants-carousel {
     background: var(--background-light);
+}
+
+/* ========================================
+   IMAGE-ONLY CAROUSEL STYLES
+   ======================================== */
+
+/* Image-Only Carousel Container */
+.image-only-carousel {
+    height: 50vh;
+    min-height: 350px;
+    max-height: 500px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Carousel Images */
+.carousel-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* Carousel Caption Overlay */
+.carousel-caption {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+    right: auto;
+    top: auto;
+    text-align: left;
+    padding: 0;
+    background: none;
+    z-index: 10;
+}
+
+.caption-content {
+    background: rgba(128, 128, 128, 0.8);
+    backdrop-filter: blur(15px);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(128, 128, 128, 0.4);
+}
+
+.restaurant-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    font-family: var(--font-heading);
+    line-height: 1.2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.restaurant-description {
+    font-size: 1rem;
+    color: #f0f0f0;
+    margin-bottom: 0;
+    line-height: 1.4;
+    font-weight: 400;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Carousel Item Styling */
+.image-only-carousel .carousel-item {
+    height: 50vh;
+    min-height: 350px;
+    max-height: 500px;
+}
+
+/* Bootstrap Carousel Controls */
+.image-only-carousel .carousel-control-prev,
+.image-only-carousel .carousel-control-next {
+    width: 60px;
+    height: 60px;
+    background: var(--primary-blue);
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    box-shadow: var(--shadow-hover);
+    transition: var(--transition);
+    border: 2px solid var(--primary-blue-dark);
+}
+
+.image-only-carousel .carousel-control-prev {
+    left: 30px;
+}
+
+.image-only-carousel .carousel-control-next {
+    right: 30px;
+}
+
+.image-only-carousel .carousel-control-prev:hover,
+.image-only-carousel .carousel-control-next:hover {
+    background: var(--primary-blue-dark);
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.image-only-carousel .carousel-control-prev-icon,
+.image-only-carousel .carousel-control-next-icon {
+    width: 24px;
+    height: 24px;
+    background-size: 24px 24px;
+    filter: brightness(0) saturate(100%) invert(100%);
+}
+
+/* Carousel Indicators */
+.image-only-carousel .carousel-indicators {
+    bottom: 30px;
+    margin-bottom: 0;
+}
+
+.image-only-carousel .carousel-indicators [data-bs-target] {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    border: 2px solid var(--primary-blue);
+    margin: 0 8px;
+    transition: var(--transition);
+}
+
+.image-only-carousel .carousel-indicators [data-bs-target].active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue-dark);
+    transform: scale(1.3);
+}
+
+.image-only-carousel .carousel-indicators [data-bs-target]:hover {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue-dark);
+    transform: scale(1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .image-only-carousel {
+        height: 45vh;
+        min-height: 300px;
+        max-height: 400px;
+    }
+    
+    .image-only-carousel .carousel-item {
+        height: 45vh;
+        min-height: 300px;
+        max-height: 400px;
+    }
+    
+    /* Caption responsive for tablet */
+    .carousel-caption {
+        bottom: 30px;
+        left: 30px;
+    }
+    
+    .caption-content {
+        padding: 1.25rem 1.5rem;
+        max-width: 350px;
+    }
+    
+    .restaurant-name {
+        font-size: 1.5rem;
+    }
+    
+    .restaurant-description {
+        font-size: 0.9rem;
+    }
+    
+    .image-only-carousel .carousel-control-prev,
+    .image-only-carousel .carousel-control-next {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .image-only-carousel .carousel-control-prev {
+        left: 20px;
+    }
+    
+    .image-only-carousel .carousel-control-next {
+        right: 20px;
+    }
+    
+    .image-only-carousel .carousel-control-prev-icon,
+    .image-only-carousel .carousel-control-next-icon {
+        width: 20px;
+        height: 20px;
+        background-size: 20px 20px;
+        filter: brightness(0) saturate(100%) invert(100%);
+    }
+    
+    .image-only-carousel .carousel-indicators {
+        bottom: 20px;
+    }
+    
+    .image-only-carousel .carousel-indicators [data-bs-target] {
+        width: 12px;
+        height: 12px;
+        margin: 0 6px;
+    }
+}
+
+@media (max-width: 576px) {
+    .image-only-carousel {
+        height: 40vh;
+        min-height: 250px;
+        max-height: 350px;
+    }
+    
+    .image-only-carousel .carousel-item {
+        height: 40vh;
+        min-height: 250px;
+        max-height: 350px;
+    }
+    
+    /* Caption responsive for mobile */
+    .carousel-caption {
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+    }
+    
+    .caption-content {
+        padding: 1rem 1.25rem;
+        max-width: none;
+        width: 100%;
+    }
+    
+    .restaurant-name {
+        font-size: 1.3rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .restaurant-description {
+        font-size: 0.85rem;
+    }
+    
+    .image-only-carousel .carousel-control-prev,
+    .image-only-carousel .carousel-control-next {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .image-only-carousel .carousel-control-prev {
+        left: 15px;
+    }
+    
+    .image-only-carousel .carousel-control-next {
+        right: 15px;
+    }
+    
+    .image-only-carousel .carousel-control-prev-icon,
+    .image-only-carousel .carousel-control-next-icon {
+        width: 18px;
+        height: 18px;
+        background-size: 18px 18px;
+        filter: brightness(0) saturate(100%) invert(100%);
+    }
+    
+    .image-only-carousel .carousel-indicators {
+        bottom: 15px;
+    }
+    
+    .image-only-carousel .carousel-indicators [data-bs-target] {
+        width: 10px;
+        height: 10px;
+        margin: 0 5px;
+    }
 }
 
 .testimonials {
@@ -894,6 +1294,25 @@ section {
     }
 }
 
+@media (max-width: 1199.98px) {
+    .navbar-nav .nav-link {
+        font-size: 0.9rem;
+        padding: 5px 6px !important;
+        margin: 0 0.5px;
+    }
+    
+    .navbar-nav .btn--outline {
+        padding: 5px 8px !important;
+        font-size: 0.85rem !important;
+        margin: 0 0.5px !important;
+    }
+    
+    .navbar-brand {
+        font-size: 1.4rem;
+        margin-right: 1rem;
+    }
+}
+
 @media (max-width: 991.98px) {
     .navbar-nav {
         margin-top: 1rem;
@@ -902,12 +1321,28 @@ section {
     
     .navbar-nav .nav-link {
         margin: 5px 0;
+        justify-content: center;
     }
     
     .navbar-nav .btn--outline {
         margin: 5px 0;
         width: 100%;
         justify-content: center;
+    }
+    
+    /* Mobile user section */
+    .navbar-nav:last-child {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-light);
+    }
+    
+    .btn-book-table {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0 !important;
     }
     
     .hero__buttons {

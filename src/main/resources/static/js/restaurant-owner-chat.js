@@ -191,8 +191,17 @@ class RestaurantOwnerChatManager {
     const welcomeScreen = document.getElementById("welcome-screen");
     const chatInterface = document.getElementById("chat-interface");
 
-    if (welcomeScreen) welcomeScreen.style.display = "none";
-    if (chatInterface) chatInterface.style.display = "flex";
+    if (welcomeScreen) {
+      welcomeScreen.style.display = "none";
+    } else {
+      console.warn("Welcome screen element not found");
+    }
+
+    if (chatInterface) {
+      chatInterface.style.display = "flex";
+    } else {
+      console.warn("Chat interface element not found");
+    }
 
     // Load messages
     await this.loadMessages(roomId);
