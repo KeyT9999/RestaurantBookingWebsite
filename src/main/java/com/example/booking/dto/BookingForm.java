@@ -1,6 +1,5 @@
 package com.example.booking.dto;
 
-import com.example.booking.validation.FuturePlus;
 import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,7 +18,6 @@ public class BookingForm {
     private Integer guestCount;
     
     @NotNull(message = "Thời gian đặt bàn không được để trống")
-    @FuturePlus(minutes = 30, message = "Thời gian đặt bàn phải từ 30 phút trở lên so với hiện tại")
     private LocalDateTime bookingTime;
     
     @DecimalMin(value = "0.0", message = "Số tiền đặt cọc không được âm")

@@ -81,6 +81,35 @@ public class FileUploadService {
     }
 
     /**
+     * Upload review report evidence image
+     */
+    public String uploadReviewEvidence(MultipartFile file, Integer reviewId, UUID ownerId) throws IOException {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File không được để trống");
+        }
+
+        File uploadDirFile = new File(uploadDir);
+        if (!uploadDirFile.exists()) {
+            uploadDirFile.mkdirs();
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String extension = ".jpg";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+        }
+
+        String filename = "review_report_" + reviewId + "_" +
+                (ownerId != null ? ownerId.toString().substring(0, 8) : "unknown") + "_" +
+                UUID.randomUUID().toString().substring(0, 8) + extension;
+
+        Path filePath = Paths.get(uploadDir, filename);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        return "/uploads/" + filename;
+    }
+
+    /**
      * Delete file
      */
     public boolean deleteFile(String filePath) {

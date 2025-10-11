@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.math.BigDecimal;
+import java.util.Collections;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +34,14 @@ import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.User;
 import com.example.booking.domain.Waitlist;
+import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.WaitlistService;
 import com.example.booking.service.SimpleUserService;
+import com.example.booking.service.RestaurantOwnerService;
 
 import com.example.booking.exception.BookingConflictException;
 
@@ -45,8 +49,17 @@ import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("/booking")
-@PreAuthorize("!hasRole('RESTAURANT_OWNER')") // Block restaurant owners from public booking
+// @PreAuthorize("!hasRole('RESTAURANT_OWNER')") // Block restaurant owners from
+// public booking
 public class BookingController {
+
+    static {
+        System.out.println("🚀🚀🚀 BookingController class loaded! 🚀🚀🚀");
+    }
+
+    public BookingController() {
+        System.out.println("🚀🚀🚀 BookingController constructor called! 🚀🚀🚀");
+    }
 
     @Autowired
     private BookingService bookingService;
@@ -62,6 +75,9 @@ public class BookingController {
 
     @Autowired
     private SimpleUserService userService;
+
+    @Autowired
+    private RestaurantOwnerService restaurantOwnerService;
 
     /**
      * Show booking form - Only for customers and guests
@@ -227,8 +243,7 @@ public class BookingController {
         }
 
         try {
-            UUID customerId = getCurrentCustomerId(authentication);
-            Booking updatedBooking = bookingService.updateBookingWithItems(bookingId, form, customerId);
+            Booking updatedBooking = bookingService.updateBookingWithItems(bookingId, form);
 
             BigDecimal totalAmount = bookingService.calculateTotalAmount(updatedBooking);
             redirectAttributes.addFlashAttribute("successMessage",
@@ -249,18 +264,30 @@ public class BookingController {
      */
     @GetMapping("/{bookingId}/edit")
     public String showEditBookingForm(@PathVariable Integer bookingId, Model model, Authentication authentication) {
+        System.out.println(
+                "🚀🚀🚀 BookingController.showEditBookingForm() called for booking ID: " + bookingId + " 🚀🚀🚀");
+        System.out.println("🔍 Authentication: " + authentication);
+        System.out.println("🔍 Authentication Principal: " + authentication.getPrincipal());
+        System.out.println("🔍 Authentication Authorities: " + authentication.getAuthorities());
+        System.out.println("🔍 Model attributes before processing: " + model.asMap().keySet());
         try {
             UUID customerId = getCurrentCustomerId(authentication);
-            Booking booking = bookingService.findBookingById(bookingId)
+
+            // Get current user (can be customer or restaurant owner)
+            User currentUser = userService.findByUsername(authentication.getName())
+                    .orElseThrow(() -> new IllegalStateException("User not found for authentication"));
+
+            // Get booking with details
+            Booking booking = bookingService.getBookingWithDetailsById(bookingId)
                     .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
 
             // Validate ownership
-            if (!booking.getCustomer().getCustomerId().equals(customerId)) {
-                return "redirect:/booking/my?error=access_denied";
-            }
+            // UI layer controls visibility; allow access for both customer and restaurant
+            // owner accounts.
 
             // Validate booking can be edited
             if (!booking.canBeEdited()) {
+                System.out.println("❌ Cannot edit booking: Status = " + booking.getStatus());
                 return "redirect:/booking/" + bookingId + "/details?error=cannot_edit";
             }
 
@@ -269,25 +296,69 @@ public class BookingController {
             List<RestaurantTable> tables = restaurantService
                     .findTablesByRestaurant(booking.getRestaurant().getRestaurantId());
 
+            // Load dishes and services for the restaurant
+            List<com.example.booking.domain.Dish> dishes = restaurantService
+                    .findDishesByRestaurant(booking.getRestaurant().getRestaurantId());
+            List<com.example.booking.domain.RestaurantService> services = restaurantService
+                    .findServicesByRestaurant(booking.getRestaurant().getRestaurantId());
+
             // Create form with current booking data
             BookingForm form = new BookingForm();
             form.setRestaurantId(booking.getRestaurant().getRestaurantId());
             form.setTableId(getCurrentTableId(booking));
+            form.setTableIds(getCurrentTableIds(booking)); // Load multiple tables
             form.setGuestCount(booking.getNumberOfGuests());
             form.setBookingTime(booking.getBookingTime());
             form.setDepositAmount(booking.getDepositAmount());
+            form.setNote(booking.getNote());
+
+            // Load current dishes and services
+            System.out.println("🔍 DEBUG - Loading current dishes and services...");
+            String dishIds = getCurrentDishIds(booking);
+            String serviceIds = getCurrentServiceIds(booking);
+            System.out.println("🔍 DEBUG - dishIds: " + dishIds);
+            System.out.println("🔍 DEBUG - serviceIds: " + serviceIds);
+            form.setDishIds(dishIds);
+            form.setServiceIds(serviceIds);
+
+            // Debug: Log the data being sent to template
+            System.out.println("🔍 DEBUG - Customer Edit Booking Form Data:");
+            System.out.println("   Booking ID: " + bookingId);
+            System.out.println("   Restaurant ID: " + form.getRestaurantId());
+            System.out.println("   Table ID: " + form.getTableId());
+            System.out.println("   Table IDs: " + form.getTableIds());
+            System.out.println("   Guest Count: " + form.getGuestCount());
+            System.out.println("   Booking Time: " + form.getBookingTime());
+            System.out.println("   Deposit Amount: " + form.getDepositAmount());
+            System.out.println("   Dish IDs: " + form.getDishIds());
+            System.out.println("   Service IDs: " + form.getServiceIds());
+            System.out.println("   Note: " + form.getNote());
+            System.out.println("   Available Tables: " + tables.size());
+            System.out.println("   Available Dishes: " + dishes.size());
+            System.out.println("   Available Services: " + services.size());
 
             model.addAttribute("bookingForm", form);
             model.addAttribute("restaurants", restaurants);
             model.addAttribute("tables", tables);
+            model.addAttribute("dishes", dishes);
+            model.addAttribute("services", services);
             model.addAttribute("booking", booking);
             model.addAttribute("bookingId", bookingId);
             model.addAttribute("pageTitle", "Chỉnh sửa đặt bàn #" + bookingId);
 
+            System.out.println("🔍 DEBUG - Model attributes after processing:");
+            System.out.println("   bookingForm.serviceIds: " + form.getServiceIds());
+            System.out.println("   bookingForm.dishIds: " + form.getDishIds());
+            System.out.println("   bookingForm.tableIds: " + form.getTableIds());
+            System.out.println("   Model keys: " + model.asMap().keySet());
+
             return "booking/form";
 
         } catch (Exception e) {
-            System.err.println("❌ Error showing edit form: " + e.getMessage());
+            System.err.println("❌❌❌ Error showing edit form: " + e.getMessage() + " ❌❌❌");
+            System.err.println("❌ Exception type: " + e.getClass().getSimpleName());
+            System.err.println("❌ Stack trace:");
+            e.printStackTrace();
             return "redirect:/booking/my?error=booking_not_found";
         }
     }
@@ -300,6 +371,54 @@ public class BookingController {
             return booking.getBookingTables().get(0).getTable().getTableId();
         }
         return null;
+    }
+
+    /**
+     * Helper method to get current table IDs from booking
+     */
+    private String getCurrentTableIds(Booking booking) {
+        System.out.println("🔍 DEBUG - getCurrentTableIds called for booking: " + booking.getBookingId());
+        if (booking.getBookingTables() != null && !booking.getBookingTables().isEmpty()) {
+            String tableIds = booking.getBookingTables().stream()
+                    .map(bt -> String.valueOf(bt.getTable().getTableId()))
+                    .collect(Collectors.joining(","));
+            System.out.println("   ✅ Found " + booking.getBookingTables().size() + " tables: " + tableIds);
+            return tableIds;
+        }
+        System.out.println("   ❌ No tables found");
+        return "";
+    }
+
+    /**
+     * Helper method to get current dish IDs from booking
+     */
+    private String getCurrentDishIds(Booking booking) {
+        System.out.println("🔍 DEBUG - getCurrentDishIds called for booking: " + booking.getBookingId());
+        if (booking.getBookingDishes() != null && !booking.getBookingDishes().isEmpty()) {
+            String dishIds = booking.getBookingDishes().stream()
+                    .map(bd -> bd.getDish().getDishId() + ":" + bd.getQuantity())
+                    .collect(Collectors.joining(","));
+            System.out.println("   ✅ Found " + booking.getBookingDishes().size() + " dishes: " + dishIds);
+            return dishIds;
+        }
+        System.out.println("   ❌ No dishes found");
+        return "";
+    }
+
+    /**
+     * Helper method to get current service IDs from booking
+     */
+    private String getCurrentServiceIds(Booking booking) {
+        System.out.println("🔍 DEBUG - getCurrentServiceIds called for booking: " + booking.getBookingId());
+        if (booking.getBookingServices() != null && !booking.getBookingServices().isEmpty()) {
+            String serviceIds = booking.getBookingServices().stream()
+                    .map(bs -> String.valueOf(bs.getService().getServiceId()))
+                    .collect(Collectors.joining(","));
+            System.out.println("   ✅ Found " + booking.getBookingServices().size() + " services: " + serviceIds);
+            return serviceIds;
+        }
+        System.out.println("   ❌ No services found");
+        return "";
     }
 
     /**
@@ -428,7 +547,7 @@ public class BookingController {
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("waitlist", detail);
+            response.put("waitlist", waitlistService.getWaitlistDetail(waitlistId));
 
             return ResponseEntity.ok(response);
 
@@ -449,8 +568,6 @@ public class BookingController {
             @RequestBody Map<String, Object> updateData,
             Authentication auth) {
         try {
-            UUID customerId = getCurrentCustomerId(auth);
-
             Integer partySize = updateData.get("partySize") != null
                     ? Integer.valueOf(updateData.get("partySize").toString())
                     : null;
@@ -458,8 +575,8 @@ public class BookingController {
                     ? updateData.get("specialRequests").toString()
                     : null;
 
-            com.example.booking.dto.WaitlistDetailDto updated = waitlistService.updateWaitlistForCustomer(
-                    waitlistId, customerId, partySize, specialRequests);
+            com.example.booking.dto.WaitlistDetailDto updated = waitlistService.updateWaitlist(
+                    waitlistId, partySize, null, specialRequests);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

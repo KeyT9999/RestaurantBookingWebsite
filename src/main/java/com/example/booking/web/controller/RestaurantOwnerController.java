@@ -31,17 +31,21 @@ import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.User;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.common.enums.BookingStatus;
+import com.example.booking.dto.WaitlistDetailDto;
 
 import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
 import org.springframework.security.core.Authentication;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.ArrayList;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Controller for Restaurant Owner management features
@@ -729,6 +733,7 @@ public class RestaurantOwnerController {
     public String showEditBookingForm(@PathVariable Integer bookingId,
             Model model,
             Authentication authentication) {
+        System.out.println("🚀 RestaurantOwnerController.showEditBookingForm() called for booking ID: " + bookingId);
         try {
             // Get restaurant owner info
             User user = (User) authentication.getPrincipal();
@@ -743,18 +748,21 @@ public class RestaurantOwnerController {
                 restaurantId = restaurantOwnerService.getRestaurantIdByOwnerId(owner.getOwnerId());
             }
 
-            // Get booking
-            Booking booking = bookingService.findBookingById(bookingId)
+            // Get booking with details
+            Booking booking = bookingService.getBookingWithDetailsById(bookingId)
                     .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
 
             // Validate restaurant ownership
             if (!booking.getRestaurant().getRestaurantId().equals(restaurantId)) {
+                System.out.println("❌ Restaurant ownership mismatch. Booking restaurant: "
+                        + booking.getRestaurant().getRestaurantId() + ", Owner restaurant: " + restaurantId);
                 model.addAttribute("error", "You can only edit bookings for your own restaurant");
                 return "redirect:/restaurant-owner/bookings";
             }
 
             // Validate booking can be edited
             if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.COMPLETED) {
+                System.out.println("❌ Cannot edit booking: Status = " + booking.getStatus());
                 model.addAttribute("error", "Cannot edit cancelled or completed bookings");
                 return "redirect:/restaurant-owner/bookings";
             }
@@ -764,18 +772,52 @@ public class RestaurantOwnerController {
             List<RestaurantTable> tables = restaurantService
                     .findTablesByRestaurant(booking.getRestaurant().getRestaurantId());
 
+            // Load dishes and services for the restaurant
+            List<com.example.booking.domain.Dish> dishes = restaurantService
+                    .findDishesByRestaurant(booking.getRestaurant().getRestaurantId());
+            List<com.example.booking.domain.RestaurantService> services = restaurantService
+                    .findServicesByRestaurant(booking.getRestaurant().getRestaurantId());
+
             // Create form with current booking data
             BookingForm form = new BookingForm();
             form.setRestaurantId(booking.getRestaurant().getRestaurantId());
             form.setTableId(getCurrentTableId(booking));
+            form.setTableIds(getCurrentTableIds(booking)); // Load multiple tables
             form.setGuestCount(booking.getNumberOfGuests());
             form.setBookingTime(booking.getBookingTime());
             form.setDepositAmount(booking.getDepositAmount());
             form.setNote(booking.getNote());
 
+            // Load current dishes and services
+            System.out.println("🔍 DEBUG - Loading current dishes and services...");
+            String dishIds = getCurrentDishIds(booking);
+            String serviceIds = getCurrentServiceIds(booking);
+            System.out.println("🔍 DEBUG - dishIds: " + dishIds);
+            System.out.println("🔍 DEBUG - serviceIds: " + serviceIds);
+            form.setDishIds(dishIds);
+            form.setServiceIds(serviceIds);
+
+            // Debug: Log the data being sent to template
+            System.out.println("🔍 DEBUG - Restaurant Owner Edit Booking Form Data:");
+            System.out.println("   Booking ID: " + bookingId);
+            System.out.println("   Restaurant ID: " + form.getRestaurantId());
+            System.out.println("   Table ID: " + form.getTableId());
+            System.out.println("   Table IDs: " + form.getTableIds());
+            System.out.println("   Guest Count: " + form.getGuestCount());
+            System.out.println("   Booking Time: " + form.getBookingTime());
+            System.out.println("   Deposit Amount: " + form.getDepositAmount());
+            System.out.println("   Dish IDs: " + form.getDishIds());
+            System.out.println("   Service IDs: " + form.getServiceIds());
+            System.out.println("   Note: " + form.getNote());
+            System.out.println("   Available Tables: " + tables.size());
+            System.out.println("   Available Dishes: " + dishes.size());
+            System.out.println("   Available Services: " + services.size());
+
             model.addAttribute("bookingForm", form);
             model.addAttribute("restaurants", restaurants);
             model.addAttribute("tables", tables);
+            model.addAttribute("dishes", dishes);
+            model.addAttribute("services", services);
             model.addAttribute("booking", booking);
             model.addAttribute("bookingId", bookingId);
             model.addAttribute("pageTitle", "Chỉnh sửa đặt bàn #" + bookingId);
@@ -785,6 +827,7 @@ public class RestaurantOwnerController {
 
         } catch (Exception e) {
             System.err.println("❌ Error showing edit form: " + e.getMessage());
+            e.printStackTrace();
             model.addAttribute("error", "Error loading booking: " + e.getMessage());
             return "redirect:/restaurant-owner/bookings";
         }
@@ -811,16 +854,17 @@ public class RestaurantOwnerController {
             RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
 
-            // Get restaurant ID
-            Integer restaurantId = null;
-            if (owner.getRestaurants() != null && !owner.getRestaurants().isEmpty()) {
-                restaurantId = owner.getRestaurants().get(0).getRestaurantId();
-            } else {
-                restaurantId = restaurantOwnerService.getRestaurantIdByOwnerId(owner.getOwnerId());
+            // Get all restaurant IDs owned by this owner
+            Set<Integer> ownedRestaurantIds = new HashSet<>();
+            if (owner.getRestaurants() != null) {
+                for (RestaurantProfile restaurant : owner.getRestaurants()) {
+                    ownedRestaurantIds.add(restaurant.getRestaurantId());
+                }
             }
 
             // Update booking
-            Booking updatedBooking = bookingService.updateBookingForRestaurantOwner(bookingId, form, restaurantId);
+            Booking updatedBooking = bookingService.updateBookingForRestaurantOwner(bookingId, form,
+                    ownedRestaurantIds);
 
             BigDecimal totalAmount = bookingService.calculateTotalAmount(updatedBooking);
             redirectAttributes.addFlashAttribute("successMessage",
@@ -919,11 +963,6 @@ public class RestaurantOwnerController {
     @GetMapping("/waitlist")
     public String waitlistManagement(Authentication authentication, Model model) {
         try {
-            // Get restaurant owner info
-            User user = (User) authentication.getPrincipal();
-            RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
-                    .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
-
             // Get all restaurants owned by this owner
             List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
 
@@ -1049,25 +1088,10 @@ public class RestaurantOwnerController {
             Authentication authentication,
             Model model) {
         try {
-            // Get restaurant owner info
-            User user = (User) authentication.getPrincipal();
-            RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
-                    .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
-
-            // Get first restaurant (for now, assuming one restaurant per owner)
-            Integer restaurantId = null;
-            if (owner.getRestaurants() != null && !owner.getRestaurants().isEmpty()) {
-                restaurantId = owner.getRestaurants().get(0).getRestaurantId();
-            } else {
-                restaurantId = restaurantOwnerService.getRestaurantIdByOwnerId(owner.getOwnerId());
-            }
-
-            // Get waitlist detail
-            com.example.booking.dto.WaitlistDetailDto detail = waitlistService
-                    .getWaitlistDetailForRestaurant(waitlistId, restaurantId);
+            com.example.booking.dto.WaitlistDetailDto detail = waitlistService.getWaitlistDetail(waitlistId);
 
             model.addAttribute("waitlistDetail", detail);
-            model.addAttribute("restaurantId", restaurantId);
+            model.addAttribute("pageTitle", "Chi tiết đơn chờ #" + waitlistId);
 
             return "restaurant-owner/waitlist-detail";
 
@@ -1085,26 +1109,10 @@ public class RestaurantOwnerController {
     public ResponseEntity<Map<String, Object>> getWaitlistDetailApi(@PathVariable Integer waitlistId,
             Authentication authentication) {
         try {
-            // Get restaurant owner info
-            User user = (User) authentication.getPrincipal();
-            RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
-                    .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
-
-            // Get first restaurant
-            Integer restaurantId = null;
-            if (owner.getRestaurants() != null && !owner.getRestaurants().isEmpty()) {
-                restaurantId = owner.getRestaurants().get(0).getRestaurantId();
-            } else {
-                restaurantId = restaurantOwnerService.getRestaurantIdByOwnerId(owner.getOwnerId());
-            }
-
-            com.example.booking.dto.WaitlistDetailDto detail = waitlistService
-                    .getWaitlistDetailForRestaurant(waitlistId, restaurantId);
-
+            WaitlistDetailDto detail = waitlistService.getWaitlistDetail(waitlistId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("waitlist", detail);
-
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
@@ -1129,12 +1137,16 @@ public class RestaurantOwnerController {
             RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
 
-            // Get first restaurant
-            Integer restaurantId = null;
-            if (owner.getRestaurants() != null && !owner.getRestaurants().isEmpty()) {
-                restaurantId = owner.getRestaurants().get(0).getRestaurantId();
-            } else {
-                restaurantId = restaurantOwnerService.getRestaurantIdByOwnerId(owner.getOwnerId());
+            // Get all restaurant IDs owned by this owner
+            Set<Integer> ownedRestaurantIds = new HashSet<>();
+            if (owner.getRestaurants() != null) {
+                for (RestaurantProfile restaurant : owner.getRestaurants()) {
+                    ownedRestaurantIds.add(restaurant.getRestaurantId());
+                }
+            }
+
+            if (ownedRestaurantIds.isEmpty()) {
+                throw new IllegalArgumentException("Owner does not have any restaurants");
             }
 
             Integer partySize = updateData.get("partySize") != null
@@ -1143,10 +1155,11 @@ public class RestaurantOwnerController {
             String specialRequests = updateData.get("specialRequests") != null
                     ? updateData.get("specialRequests").toString()
                     : null;
-            String notes = updateData.get("notes") != null ? updateData.get("notes").toString() : null;
+            String status = updateData.get("status") != null
+                    ? updateData.get("status").toString()
+                    : null;
 
-            com.example.booking.dto.WaitlistDetailDto updated = waitlistService.updateWaitlistForRestaurant(
-                    waitlistId, restaurantId, partySize, specialRequests, notes);
+            WaitlistDetailDto updated = waitlistService.updateWaitlist(waitlistId, partySize, status, specialRequests);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -1177,20 +1190,29 @@ public class RestaurantOwnerController {
             RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
 
-            // Get first restaurant
-            Integer restaurantId = null;
-            if (owner.getRestaurants() != null && !owner.getRestaurants().isEmpty()) {
-                restaurantId = owner.getRestaurants().get(0).getRestaurantId();
-            } else {
-                restaurantId = restaurantOwnerService.getRestaurantIdByOwnerId(owner.getOwnerId());
-            }
-
             // Lấy thời gian booking từ request
             String bookingTimeStr = confirmData.get("bookingTime").toString();
             LocalDateTime confirmedBookingTime = LocalDateTime.parse(bookingTimeStr);
 
-            // Xác nhận waitlist thành booking
-            Booking booking = waitlistService.confirmWaitlistToBooking(waitlistId, confirmedBookingTime);
+            // Lấy waitlist để kiểm tra restaurant ownership
+            com.example.booking.domain.Waitlist waitlist = waitlistService.findById(waitlistId);
+            if (waitlist == null) {
+                throw new IllegalArgumentException("Waitlist not found");
+            }
+
+            // Validate restaurant ownership - kiểm tra xem waitlist có thuộc về owner không
+            Integer waitlistRestaurantId = waitlist.getRestaurant().getRestaurantId();
+            boolean isOwnerOfRestaurant = owner.getRestaurants() != null &&
+                    owner.getRestaurants().stream()
+                            .anyMatch(r -> r.getRestaurantId().equals(waitlistRestaurantId));
+
+            if (!isOwnerOfRestaurant) {
+                throw new IllegalArgumentException("You can only confirm waitlist entries for your own restaurants");
+            }
+
+            // Xác nhận waitlist thành booking với restaurant ID từ waitlist
+            Booking booking = waitlistService.confirmWaitlistToBooking(waitlistId, confirmedBookingTime,
+                    waitlistRestaurantId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -1287,6 +1309,54 @@ public class RestaurantOwnerController {
         }
 
         throw new RuntimeException("Unsupported authentication principal type: " + principal.getClass().getName());
+    }
+
+    /**
+     * Helper method to get current table IDs from booking
+     */
+    private String getCurrentTableIds(Booking booking) {
+        System.out.println("🔍 DEBUG - getCurrentTableIds called for booking: " + booking.getBookingId());
+        if (booking.getBookingTables() != null && !booking.getBookingTables().isEmpty()) {
+            String tableIds = booking.getBookingTables().stream()
+                    .map(bt -> String.valueOf(bt.getTable().getTableId()))
+                    .collect(Collectors.joining(","));
+            System.out.println("   ✅ Found " + booking.getBookingTables().size() + " tables: " + tableIds);
+            return tableIds;
+        }
+        System.out.println("   ❌ No tables found");
+        return "";
+    }
+
+    /**
+     * Helper method to get current dish IDs from booking
+     */
+    private String getCurrentDishIds(Booking booking) {
+        System.out.println("🔍 DEBUG - getCurrentDishIds called for booking: " + booking.getBookingId());
+        if (booking.getBookingDishes() != null && !booking.getBookingDishes().isEmpty()) {
+            String dishIds = booking.getBookingDishes().stream()
+                    .map(bd -> bd.getDish().getDishId() + ":" + bd.getQuantity())
+                    .collect(Collectors.joining(","));
+            System.out.println("   ✅ Found " + booking.getBookingDishes().size() + " dishes: " + dishIds);
+            return dishIds;
+        }
+        System.out.println("   ❌ No dishes found");
+        return "";
+    }
+
+    /**
+     * Helper method to get current service IDs from booking
+     */
+    private String getCurrentServiceIds(Booking booking) {
+        System.out.println("🔍 DEBUG - getCurrentServiceIds called for booking: " + booking.getBookingId());
+        if (booking.getBookingServices() != null && !booking.getBookingServices().isEmpty()) {
+            String serviceIds = booking.getBookingServices().stream()
+                    .map(bs -> String.valueOf(bs.getService().getServiceId()))
+                    .collect(Collectors.joining(","));
+            System.out.println("   ✅ Found " + booking.getBookingServices().size() + " services: " + serviceIds);
+            return serviceIds;
+        }
+        System.out.println("   ❌ No services found");
+        return "";
     }
 }
 

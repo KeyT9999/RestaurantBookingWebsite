@@ -26,6 +26,8 @@ import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.dto.WaitlistDetailDto;
+import com.example.booking.dto.BookingForm;
+import com.example.booking.exception.BookingConflictException;
 import com.example.booking.repository.WaitlistRepository;
 import com.example.booking.repository.WaitlistDishRepository;
 import com.example.booking.repository.WaitlistServiceRepository;
@@ -82,6 +84,9 @@ public class WaitlistService {
     
     @Autowired
     private RestaurantManagementService restaurantService;
+
+    @Autowired
+    private BookingConflictService conflictService;
 
     /**
      * Thêm customer vào waitlist với validation cải thiện
@@ -306,7 +311,9 @@ public class WaitlistService {
             throw new IllegalArgumentException("Cannot update waitlist entry that is not waiting");
         }
 
-        waitlist.setPartySize(partySize);
+        if (partySize != null) {
+            waitlist.setPartySize(partySize);
+        }
         Waitlist savedWaitlist = waitlistRepository.save(waitlist);
         return convertToWaitlistDetailDto(savedWaitlist);
     }
@@ -328,16 +335,14 @@ public class WaitlistService {
     /**
      * Update waitlist for restaurant (compatibility method)
      */
-    public WaitlistDetailDto updateWaitlistForRestaurant(Integer waitlistId, Integer restaurantId, Integer partySize,
+    public WaitlistDetailDto updateWaitlist(Integer waitlistId, Integer partySize,
             String status, String notes) {
         Waitlist waitlist = waitlistRepository.findById(waitlistId)
                 .orElseThrow(() -> new IllegalArgumentException("Waitlist entry not found"));
 
-        if (!waitlist.getRestaurant().getRestaurantId().equals(restaurantId)) {
-            throw new IllegalArgumentException("Access denied");
+        if (partySize != null) {
+            waitlist.setPartySize(partySize);
         }
-
-        waitlist.setPartySize(partySize);
         if (status != null) {
             try {
                 waitlist.setStatus(WaitlistStatus.valueOf(status));
@@ -363,6 +368,8 @@ public class WaitlistService {
         dto.setStatus(waitlist.getStatus().toString());
         dto.setEstimatedWaitTime(waitlist.getEstimatedWaitTime());
         dto.setQueuePosition(getQueuePosition(waitlist.getWaitlistId()));
+        dto.setSpecialRequests(
+                waitlist.getPreferredBookingTime() != null ? waitlist.getPreferredBookingTime().toString() : null);
 
         // Map preferredBookingTime từ LocalDateTime sang String
         if (waitlist.getPreferredBookingTime() != null) {
@@ -613,11 +620,19 @@ public class WaitlistService {
         return dto;
     }
 
+    public WaitlistDetailDto getWaitlistDetail(Integer waitlistId) {
+        Waitlist waitlist = waitlistRepository.findById(waitlistId)
+                .orElseThrow(() -> new IllegalArgumentException("Waitlist entry not found"));
+        return convertToWaitlistDetailDto(waitlist);
+    }
+
     /**
-     * Xác nhận Waitlist và tạo Booking từ thông tin Waitlist
+     * Xác nhận Waitlist và tạo Booking từ thông tin Waitlist (với validation
+     * restaurant ownership)
      */
-    public Booking confirmWaitlistToBooking(Integer waitlistId, LocalDateTime confirmedBookingTime) {
-        System.out.println("🔄 Confirming waitlist to booking: " + waitlistId);
+    public Booking confirmWaitlistToBooking(Integer waitlistId, LocalDateTime confirmedBookingTime,
+            Integer restaurantId) {
+        System.out.println("🔄 Confirming waitlist to booking: " + waitlistId + " for restaurant: " + restaurantId);
 
         // Lấy waitlist entry
         Waitlist waitlist = waitlistRepository.findById(waitlistId)
@@ -626,6 +641,35 @@ public class WaitlistService {
         // Kiểm tra status
         if (waitlist.getStatus() != WaitlistStatus.WAITING) {
             throw new IllegalArgumentException("Only WAITING waitlist entries can be confirmed to booking");
+        }
+
+        // Validate restaurant ownership - QUAN TRỌNG!
+        if (!waitlist.getRestaurant().getRestaurantId().equals(restaurantId)) {
+            throw new IllegalArgumentException("You can only confirm waitlist entries for your own restaurant");
+        }
+
+        // Validate booking time FIRST
+        if (confirmedBookingTime == null) {
+            throw new IllegalArgumentException("Confirmed booking time cannot be null");
+        }
+        if (confirmedBookingTime.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Confirmed booking time cannot be in the past");
+        }
+
+        // Validate conflicts AFTER basic validations
+        System.out.println("🔍 Validating waitlist-to-booking conflicts...");
+        try {
+            // Create a temporary BookingForm for conflict validation
+            BookingForm tempForm = new BookingForm();
+            tempForm.setRestaurantId(restaurantId);
+            tempForm.setBookingTime(confirmedBookingTime);
+            tempForm.setGuestCount(waitlist.getPartySize());
+
+            conflictService.validateBookingConflicts(tempForm, waitlist.getCustomer().getCustomerId());
+            System.out.println("✅ No conflicts found, proceeding with waitlist confirmation");
+        } catch (BookingConflictException e) {
+            System.err.println("❌ Waitlist-to-booking conflict detected: " + e.getMessage());
+            throw e; // Re-throw to be handled by controller
         }
 
         // Tạo booking từ waitlist
@@ -696,6 +740,26 @@ public class WaitlistService {
         System.out.println("   Total Amount: " + totalAmount);
 
         return savedBooking;
+    }
+
+    /**
+     * Xác nhận Waitlist và tạo Booking từ thông tin Waitlist (legacy method - không
+     * có validation)
+     * 
+     * @deprecated Sử dụng confirmWaitlistToBooking(Integer waitlistId,
+     *             LocalDateTime confirmedBookingTime, Integer restaurantId) thay
+     *             thế
+     */
+    @Deprecated
+    public Booking confirmWaitlistToBooking(Integer waitlistId, LocalDateTime confirmedBookingTime) {
+        System.out.println("⚠️ Using deprecated confirmWaitlistToBooking method without restaurant validation");
+
+        // Lấy waitlist entry để lấy restaurant ID
+        Waitlist waitlist = waitlistRepository.findById(waitlistId)
+                .orElseThrow(() -> new IllegalArgumentException("Waitlist entry not found"));
+
+        // Sử dụng method mới với restaurant ID từ waitlist
+        return confirmWaitlistToBooking(waitlistId, confirmedBookingTime, waitlist.getRestaurant().getRestaurantId());
     }
 
     /**

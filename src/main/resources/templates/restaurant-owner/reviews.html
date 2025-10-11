@@ -440,6 +440,62 @@
                     
                     <div class="review-comment" th:text="${review.comment}">Bình luận của khách hàng</div>
                     
+                    <div class="review-actions" style="justify-content: flex-end;">
+                        <div th:if="${reportStatusMap != null and reportStatusMap.containsKey(review.reviewId)}" class="badge bg-secondary align-self-center me-2">
+                            <span th:text="${reportStatusMap.get(review.reviewId).status.displayName}">Đang xử lý</span>
+                        </div>
+                        <button type="button" class="btn-outline-review btn-sm" data-bs-toggle="modal"
+                                th:attr="data-bs-target=${'#reportModal-' + review.reviewId}"
+                                th:disabled="${reportStatusMap != null and reportStatusMap.containsKey(review.reviewId) and reportStatusMap.get(review.reviewId).status.name() == 'PENDING'}">
+                            <i class="fas fa-flag me-1"></i>
+                            <span th:text="${(reportStatusMap != null and reportStatusMap.containsKey(review.reviewId) and reportStatusMap.get(review.reviewId).status.name() == 'PENDING') ? 'Đã báo cáo' : 'Báo cáo'}">Báo cáo</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Report Modal -->
+                <div th:each="review : ${reviews}" th:id="${'reportModal-' + review.reviewId}" class="modal fade" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-flag me-2"></i>
+                                    Báo cáo đánh giá từ <span th:text="${review.customerName}">Khách hàng</span>
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form th:action="@{/restaurant-owner/reviews/report}" method="post" enctype="multipart/form-data">
+                                <div class="modal-body">
+                                    <input type="hidden" name="reviewId" th:value="${review.reviewId}">
+                                    <input type="hidden" name="restaurantId" th:value="${restaurantId}">
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Lý do báo cáo <span class="text-danger">*</span></label>
+                                        <textarea name="reasonText" class="form-control" rows="4" maxlength="1000"
+                                                  placeholder="Mô tả chi tiết lý do báo cáo (ví dụ: nội dung sai sự thật, ngôn từ xúc phạm,...)" required></textarea>
+                                        <div class="form-text">Tối đa 1000 ký tự.</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Đính kèm minh chứng (tối đa 3 ảnh)</label>
+                                        <input class="form-control" type="file" name="evidenceFiles" accept="image/*" multiple>
+                                        <div class="form-text">Hỗ trợ định dạng JPG, PNG. Mỗi ảnh tối đa 5MB.</div>
+                                    </div>
+                                    
+                                    <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Vui lòng chỉ báo cáo những đánh giá vi phạm chính sách. Quản trị viên sẽ xem xét và phản hồi sớm nhất.
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane me-1"></i>Gửi báo cáo
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Pagination -->

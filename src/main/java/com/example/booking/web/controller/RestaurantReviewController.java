@@ -1,6 +1,9 @@
 package com.example.booking.web.controller;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,17 +16,24 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.Review;
 import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.User;
+import com.example.booking.domain.ReviewReportStatus;
 import com.example.booking.dto.ReviewDto;
+import com.example.booking.dto.ReviewReportForm;
+import com.example.booking.dto.ReviewReportView;
 import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.service.RestaurantOwnerService;
+import com.example.booking.service.ReviewReportService;
 import com.example.booking.service.ReviewService;
 
 @Controller
@@ -35,7 +45,9 @@ public class RestaurantReviewController {
     
     @Autowired
     private RestaurantOwnerService restaurantOwnerService;
-    
+
+    @Autowired
+    private ReviewReportService reviewReportService;
     
     /**
      * Hiển thị trang quản lý review cho restaurant owner
@@ -86,12 +98,21 @@ public class RestaurantReviewController {
             
             // Lấy thống kê review
             ReviewStatisticsDto statistics = reviewService.getRestaurantReviewStatistics(restaurantId);
-            
+
+            // Lấy trạng thái report cho từng review
+            Map<Integer, ReviewReportView> reportStatusMap = new HashMap<>();
+            for (ReviewDto reviewDto : reviews) {
+                reviewReportService.findLatestReportForReview(reviewDto.getReviewId())
+                        .filter(report -> report.getStatus() == ReviewReportStatus.PENDING)
+                        .ifPresent(report -> reportStatusMap.put(reviewDto.getReviewId(), report));
+            }
+
             model.addAttribute("restaurant", restaurant);
             model.addAttribute("restaurantId", restaurantId);
             model.addAttribute("reviews", reviews);
             model.addAttribute("statistics", statistics);
             model.addAttribute("selectedRating", rating);
+            model.addAttribute("reportStatusMap", reportStatusMap);
             model.addAttribute("pageTitle", "Quản lý đánh giá");
             
             return "restaurant-owner/reviews";
@@ -101,6 +122,82 @@ public class RestaurantReviewController {
             model.addAttribute("error", "Lỗi khi tải danh sách đánh giá: " + e.getMessage());
             return "restaurant-owner/reviews";
         }
+    }
+
+    @PostMapping("/report")
+    public String reportReview(@RequestParam Integer reviewId,
+            @RequestParam Integer restaurantId,
+            @RequestParam String reasonText,
+            @RequestParam(name = "evidenceFiles", required = false) List<MultipartFile> evidenceFiles,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return "redirect:/login";
+        }
+
+        try {
+            User user = (User) authentication.getPrincipal();
+            Optional<RestaurantOwner> ownerOpt = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId());
+
+            if (ownerOpt.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin nhà hàng của bạn");
+                return "redirect:/restaurant-owner/reviews";
+            }
+
+            RestaurantOwner owner = ownerOpt.get();
+
+            Optional<RestaurantProfile> restaurantOpt = restaurantOwnerService
+                    .getRestaurantsByOwnerId(owner.getOwnerId())
+                    .stream()
+                    .filter(r -> r.getRestaurantId().equals(restaurantId))
+                    .findFirst();
+
+            if (restaurantOpt.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Bạn không có quyền quản lý nhà hàng này");
+                return "redirect:/restaurant-owner/reviews";
+            }
+
+            Review review = reviewService.getReviewById(reviewId)
+                    .orElseThrow(() -> new IllegalArgumentException("Review không tồn tại"));
+
+            if (!review.getRestaurant().getRestaurantId().equals(restaurantId)) {
+                redirectAttributes.addFlashAttribute("error", "Review không thuộc nhà hàng của bạn");
+                return "redirect:/restaurant-owner/reviews";
+            }
+
+            String sanitizedReason = reasonText != null ? reasonText.trim() : "";
+            if (sanitizedReason.isEmpty()) {
+                throw new IllegalArgumentException("Vui lòng nhập lý do báo cáo");
+            }
+
+            List<MultipartFile> sanitizedFiles = new ArrayList<>();
+            if (evidenceFiles != null) {
+                for (MultipartFile file : evidenceFiles) {
+                    if (file != null && !file.isEmpty()) {
+                        if (file.getSize() > 5 * 1024 * 1024L) {
+                            throw new IllegalArgumentException("Mỗi minh chứng không được vượt quá 5MB");
+                        }
+                        sanitizedFiles.add(file);
+                        if (sanitizedFiles.size() == 3) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            ReviewReportForm form = new ReviewReportForm();
+            form.setReasonText(sanitizedReason);
+            form.setEvidenceFiles(sanitizedFiles);
+
+            reviewReportService.submitReport(owner, restaurantOpt.get(), review, form);
+
+            redirectAttributes.addFlashAttribute("success", "Báo cáo của bạn đã được gửi tới quản trị viên");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Không thể gửi báo cáo: " + e.getMessage());
+        }
+
+        return "redirect:/restaurant-owner/reviews";
     }
     
     /**

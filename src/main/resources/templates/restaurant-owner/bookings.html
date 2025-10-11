@@ -162,7 +162,7 @@
                                 
                                 <!-- Edit button for editable bookings -->
                                 <a th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" 
-                                   th:href="@{/restaurant-owner/bookings/{id}/edit(id=${booking.bookingId})}" 
+                                   th:href="@{/booking/{id}/edit(id=${booking.bookingId})}" 
                                    class="btn small">Chỉnh sửa</a>
                                 
                                 <!-- Status update buttons based on current status -->
