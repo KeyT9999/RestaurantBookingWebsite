@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -98,17 +99,7 @@ public class BookingService {
             System.out.println("   Guest Count: " + form.getGuestCount());
             System.out.println("   Booking Time: " + form.getBookingTime());
 
-            // Validate conflicts BEFORE creating booking
-            System.out.println("🔍 Validating booking conflicts...");
-            try {
-                conflictService.validateBookingConflicts(form, customerId);
-                System.out.println("✅ No conflicts found, proceeding with booking creation");
-            } catch (BookingConflictException e) {
-                System.err.println("❌ Booking conflict detected: " + e.getMessage());
-                throw e; // Re-throw to be handled by controller
-            }
-
-        // Validate customer
+            // Validate customer FIRST
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
         System.out.println("✅ Customer found: " + customer.getCustomerId());
@@ -129,6 +120,25 @@ public class BookingService {
         // Validate booking time
         validateBookingTime(form.getBookingTime());
         System.out.println("✅ Booking time validated");
+
+        // Validate guest count
+        validateGuestCount(form.getGuestCount());
+        System.out.println("✅ Guest count validated");
+
+        // Validate table capacity BEFORE conflict validation
+        System.out.println("🔍 VALIDATING TABLE CAPACITY BEFORE CONFLICT CHECK...");
+        validateTableCapacity(form);
+        System.out.println("✅ Table capacity validated");
+
+        // Validate conflicts AFTER basic validations
+        System.out.println("🔍 NOW VALIDATING BOOKING CONFLICTS...");
+        try {
+            conflictService.validateBookingConflicts(form, customerId);
+            System.out.println("✅ No conflicts found, proceeding with booking creation");
+        } catch (BookingConflictException e) {
+            System.err.println("❌ Booking conflict detected: " + e.getMessage());
+            throw e; // Re-throw to be handled by controller
+        }
 
         // Process voucher if provided
         BigDecimal voucherDiscount = BigDecimal.ZERO;
@@ -403,7 +413,16 @@ public class BookingService {
             throw new IllegalArgumentException("This booking cannot be edited");
         }
 
-        // Validate conflicts for update
+        // Validate booking time FIRST
+        validateBookingTime(form.getBookingTime());
+
+        // Validate guest count
+        validateGuestCount(form.getGuestCount());
+
+        // Validate table capacity BEFORE conflict validation
+        validateTableCapacity(form);
+
+        // Validate conflicts for update AFTER basic validations
         System.out.println("🔍 Validating booking update conflicts...");
         try {
             conflictService.validateBookingUpdateConflicts(bookingId, form, customerId);
@@ -412,9 +431,6 @@ public class BookingService {
             System.err.println("❌ Booking update conflict detected: " + e.getMessage());
             throw e; // Re-throw to be handled by controller
         }
-
-        // Validate booking time
-        validateBookingTime(form.getBookingTime());
 
         // Update booking fields
         booking.setBookingTime(form.getBookingTime());
@@ -554,6 +570,51 @@ public class BookingService {
                     ", Status=" + b.getStatus() +
                     ", Restaurant=" + (b.getRestaurant() != null ? b.getRestaurant().getRestaurantName() : "null") +
                     ", Customer=" + (b.getCustomer() != null ? b.getCustomer().getUser().getFullName() : "null"));
+        } else {
+            System.out.println("❌ Booking not found");
+        }
+
+        return booking;
+    }
+
+    /**
+     * Lấy booking theo ID với tất cả relationships được load (cho edit form)
+     */
+    @Transactional(readOnly = true)
+    public Optional<Booking> getBookingWithDetailsById(Integer bookingId) {
+        System.out.println("🔍 BookingService.getBookingWithDetailsById() called for booking ID: " + bookingId);
+
+        Optional<Booking> booking = bookingRepository.findById(bookingId);
+        if (booking.isPresent()) {
+            Booking b = booking.get();
+            System.out.println("✅ Booking found: ID=" + b.getBookingId() +
+                    ", Time=" + b.getBookingTime() +
+                    ", Status=" + b.getStatus() +
+                    ", Restaurant=" + (b.getRestaurant() != null ? b.getRestaurant().getRestaurantName() : "null") +
+                    ", Customer=" + (b.getCustomer() != null ? b.getCustomer().getUser().getFullName() : "null"));
+
+            // Force load relationships to avoid lazy loading issues
+            if (b.getBookingDishes() != null) {
+                System.out.println("   📋 BookingDishes loaded: " + b.getBookingDishes().size() + " items");
+                b.getBookingDishes().forEach(
+                        bd -> System.out.println("      - " + bd.getDish().getName() + " x" + bd.getQuantity()));
+            } else {
+                System.out.println("   ❌ BookingDishes is null");
+            }
+
+            if (b.getBookingServices() != null) {
+                System.out.println("   🔧 BookingServices loaded: " + b.getBookingServices().size() + " items");
+                b.getBookingServices().forEach(bs -> System.out.println("      - " + bs.getService().getName()));
+            } else {
+                System.out.println("   ❌ BookingServices is null");
+            }
+
+            if (b.getBookingTables() != null) {
+                System.out.println("   🪑 BookingTables loaded: " + b.getBookingTables().size() + " items");
+                b.getBookingTables().forEach(bt -> System.out.println("      - " + bt.getTable().getTableName()));
+            } else {
+                System.out.println("   ❌ BookingTables is null");
+            }
         } else {
             System.out.println("❌ Booking not found");
         }
@@ -755,6 +816,91 @@ public class BookingService {
         System.out.println("✅ Booking time validation passed");
     }
 
+    private void validateGuestCount(Integer guestCount) {
+        System.out.println("🔍 Validating guest count: " + guestCount);
+
+        if (guestCount == null) {
+            System.err.println("❌ Guest count is null");
+            throw new IllegalArgumentException("Guest count cannot be null");
+        }
+
+        if (guestCount < 1) {
+            System.err.println("❌ Guest count too small: " + guestCount);
+            throw new IllegalArgumentException("Guest count must be at least 1");
+        }
+
+        if (guestCount > 20) {
+            System.err.println("❌ Guest count too large: " + guestCount);
+            throw new IllegalArgumentException("Guest count cannot exceed 20 people");
+        }
+
+        System.out.println("✅ Guest count validation passed");
+    }
+
+    private void validateTableCapacity(BookingForm form) {
+        System.out.println("🔍 VALIDATING TABLE CAPACITY - STARTING...");
+        System.out.println("   Guest count: " + form.getGuestCount());
+        System.out.println("   Table ID: " + form.getTableId());
+        System.out.println("   Table IDs: " + form.getTableIds());
+
+        if (form.getTableId() != null) {
+            // Single table validation
+            System.out.println("🔍 SINGLE TABLE VALIDATION...");
+            RestaurantTable table = restaurantTableRepository.findById(form.getTableId())
+                    .orElseThrow(() -> new IllegalArgumentException("Table not found"));
+
+            System.out.println("   Table capacity: " + table.getCapacity());
+
+            if (form.getGuestCount() > table.getCapacity()) {
+                System.err.println("❌ Guest count exceeds table capacity");
+                System.err.println("   Guest count: " + form.getGuestCount());
+                System.err.println("   Table capacity: " + table.getCapacity());
+                throw new IllegalArgumentException("Số khách (" + form.getGuestCount() +
+                        ") vượt quá sức chứa của bàn " + table.getTableName() + " (" + table.getCapacity() + " người)");
+            }
+            System.out.println("✅ Single table capacity validation passed");
+
+        } else if (form.getTableIds() != null && !form.getTableIds().trim().isEmpty()) {
+            // Multiple tables validation
+            System.out.println("🔍 MULTIPLE TABLES VALIDATION...");
+            String[] tableIdArray = form.getTableIds().split(",");
+            int totalCapacity = 0;
+            List<String> tableNames = new ArrayList<>();
+
+            for (String tableIdStr : tableIdArray) {
+                try {
+                    Integer tableId = Integer.parseInt(tableIdStr.trim());
+                    RestaurantTable table = restaurantTableRepository.findById(tableId)
+                            .orElseThrow(() -> new IllegalArgumentException("Table not found: " + tableId));
+
+                    totalCapacity += table.getCapacity();
+                    tableNames.add(table.getTableName());
+
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Invalid table ID format: " + tableIdStr);
+                }
+            }
+
+            System.out.println("   Total capacity: " + totalCapacity);
+            System.out.println("   Table names: " + String.join(", ", tableNames));
+
+            if (form.getGuestCount() > totalCapacity) {
+                System.err.println("❌ Guest count exceeds total table capacity");
+                System.err.println("   Guest count: " + form.getGuestCount());
+                System.err.println("   Total capacity: " + totalCapacity);
+                throw new IllegalArgumentException("Số khách (" + form.getGuestCount() +
+                        ") vượt quá tổng sức chứa của các bàn đã chọn (" + totalCapacity + " người)");
+            }
+            System.out.println("✅ Multiple tables capacity validation passed");
+
+        } else {
+            System.err.println("❌ No table selected");
+            throw new IllegalArgumentException("Vui lòng chọn ít nhất một bàn");
+        }
+
+        System.out.println("🔍 VALIDATING TABLE CAPACITY - COMPLETED!");
+    }
+
     /**
      * Assign multiple tables to booking
      */
@@ -766,6 +912,10 @@ public class BookingService {
         String[] tableIdArray = tableIds.split(",");
         System.out.println("   Found " + tableIdArray.length + " table IDs to assign");
 
+        // Calculate total capacity of all tables
+        int totalCapacity = 0;
+        List<RestaurantTable> tables = new ArrayList<>();
+
         for (String tableIdStr : tableIdArray) {
             try {
                 Integer tableId = Integer.parseInt(tableIdStr.trim());
@@ -776,27 +926,49 @@ public class BookingService {
                 System.out.println("✅ Table found: " + table.getTableName());
                 System.out.println("   Table ID: " + table.getTableId());
                 System.out.println("   Table status: " + table.getStatus());
+                System.out.println("   Table capacity: " + table.getCapacity());
 
-                // Create booking table assignment
-                System.out.println("🔍 Creating BookingTable assignment...");
-                BookingTable bookingTable = new BookingTable(booking, table);
-                System.out.println("   BookingTable object created");
-                System.out.println("   BookingTable.booking: " + bookingTable.getBooking().getBookingId());
-                System.out.println("   BookingTable.table: " + bookingTable.getTable().getTableName());
-                System.out.println("   BookingTable.assignedAt: " + bookingTable.getAssignedAt());
+                tables.add(table);
+                totalCapacity += table.getCapacity();
 
-                try {
-                    BookingTable savedBookingTable = bookingTableRepository.save(bookingTable);
-                    System.out.println("✅ BookingTable saved successfully");
-                    System.out.println("   Saved BookingTable ID: " + savedBookingTable.getBookingTableId());
-                } catch (Exception e) {
-                    System.err.println("❌ Error saving BookingTable for table " + tableId + ": " + e.getMessage());
-                    e.printStackTrace();
-                    throw e;
-                }
             } catch (NumberFormatException e) {
                 System.err.println("❌ Invalid table ID format: " + tableIdStr);
                 throw new IllegalArgumentException("Invalid table ID format: " + tableIdStr);
+            }
+        }
+
+        System.out.println("   Total capacity of all tables: " + totalCapacity);
+        System.out.println("   Booking guest count: " + booking.getNumberOfGuests());
+
+        // Validate total capacity
+        if (booking.getNumberOfGuests() > totalCapacity) {
+            System.err.println("❌ Guest count exceeds total table capacity");
+            System.err.println("   Guest count: " + booking.getNumberOfGuests());
+            System.err.println("   Total capacity: " + totalCapacity);
+            throw new IllegalArgumentException("Số khách (" + booking.getNumberOfGuests() +
+                    ") vượt quá tổng sức chứa của các bàn đã chọn (" + totalCapacity + " người)");
+        }
+        System.out.println("✅ Total table capacity validation passed");
+
+        // Now assign all tables
+        for (RestaurantTable table : tables) {
+            // Create booking table assignment
+            System.out.println("🔍 Creating BookingTable assignment...");
+            BookingTable bookingTable = new BookingTable(booking, table);
+            System.out.println("   BookingTable object created");
+            System.out.println("   BookingTable.booking: " + bookingTable.getBooking().getBookingId());
+            System.out.println("   BookingTable.table: " + bookingTable.getTable().getTableName());
+            System.out.println("   BookingTable.assignedAt: " + bookingTable.getAssignedAt());
+
+            try {
+                BookingTable savedBookingTable = bookingTableRepository.save(bookingTable);
+                System.out.println("✅ BookingTable saved successfully");
+                System.out.println("   Saved BookingTable ID: " + savedBookingTable.getBookingTableId());
+            } catch (Exception e) {
+                System.err.println(
+                        "❌ Error saving BookingTable for table " + table.getTableName() + ": " + e.getMessage());
+                e.printStackTrace();
+                throw e;
             }
         }
 
@@ -816,6 +988,18 @@ public class BookingService {
         System.out.println("✅ Table found: " + table.getTableName());
         System.out.println("   Table ID: " + table.getTableId());
         System.out.println("   Table status: " + table.getStatus());
+        System.out.println("   Table capacity: " + table.getCapacity());
+        System.out.println("   Booking guest count: " + booking.getNumberOfGuests());
+
+        // Validate table capacity
+        if (booking.getNumberOfGuests() > table.getCapacity()) {
+            System.err.println("❌ Guest count exceeds table capacity");
+            System.err.println("   Guest count: " + booking.getNumberOfGuests());
+            System.err.println("   Table capacity: " + table.getCapacity());
+            throw new IllegalArgumentException("Số khách (" + booking.getNumberOfGuests() +
+                    ") vượt quá sức chứa của bàn " + table.getTableName() + " (" + table.getCapacity() + " người)");
+        }
+        System.out.println("✅ Table capacity validation passed");
 
         // Create booking table assignment
         System.out.println("🔍 Creating BookingTable assignment...");
@@ -1022,104 +1206,33 @@ public class BookingService {
     /**
      * Update booking with items
      */
-    public Booking updateBookingWithItems(Integer bookingId, BookingForm form, UUID customerId) {
+    public Booking updateBookingWithItems(Integer bookingId, BookingForm form) {
         System.out.println("🔍 Updating booking with items: " + bookingId);
 
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
 
-        // Validate customer ownership
-        if (!booking.getCustomer().getCustomerId().equals(customerId)) {
-            throw new IllegalArgumentException("You can only update your own bookings");
-        }
-
-        // Validate booking can be updated
         if (!booking.canBeEdited()) {
             throw new IllegalArgumentException("Booking cannot be updated in current status");
         }
 
-        // Update basic booking info
-        booking.setBookingTime(form.getBookingTime());
-        booking.setNumberOfGuests(form.getGuestCount());
-        booking.setNote(form.getNote()); // Update note
+        validateBookingTime(form.getBookingTime());
+        validateGuestCount(form.getGuestCount());
+        validateTableCapacity(form);
 
-        // Update restaurant if changed
-        if (form.getRestaurantId() != null
-                && !form.getRestaurantId().equals(booking.getRestaurant().getRestaurantId())) {
-            RestaurantProfile restaurant = restaurantProfileRepository.findById(form.getRestaurantId())
-                    .orElseThrow(() -> new IllegalArgumentException("Restaurant not found"));
-            booking.setRestaurant(restaurant);
-        }
-
-        // Update deposit amount if table changed
-        if (form.getTableId() != null && !form.getTableId().equals(getCurrentTableId(booking))) {
-            RestaurantTable table = restaurantTableRepository.findById(form.getTableId())
-                    .orElseThrow(() -> new IllegalArgumentException("Table not found"));
-            booking.setDepositAmount(table.getDepositAmount());
-
-            // Update table assignment
-            bookingTableRepository.deleteByBooking(booking);
-            assignTableToBooking(booking, form.getTableId());
-        }
-
-        // Update dishes
-        bookingDishRepository.deleteByBooking(booking);
-        if (form.getDishIds() != null && !form.getDishIds().trim().isEmpty()) {
-            assignDishesToBooking(booking, form.getDishIds());
-        }
-
-        // Update services
-        bookingServiceRepository.deleteByBooking(booking);
-        if (form.getServiceIds() != null && !form.getServiceIds().trim().isEmpty()) {
-            assignServicesToBooking(booking, form.getServiceIds());
-        }
-
-        return bookingRepository.save(booking);
-    }
-
-    /**
-     * Update booking for restaurant owner (with restaurant ownership validation)
-     */
-    public Booking updateBookingForRestaurantOwner(Integer bookingId, BookingForm form, Integer restaurantId) {
-        System.out
-                .println("🔍 Updating booking for restaurant owner: " + bookingId + " for restaurant: " + restaurantId);
-
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
-
-        // Validate restaurant ownership
-        if (!booking.getRestaurant().getRestaurantId().equals(restaurantId)) {
-            throw new IllegalArgumentException("You can only edit bookings for your own restaurant");
-        }
-
-        // Validate booking can be updated (restaurant owners have more flexibility)
-        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.COMPLETED) {
-            throw new IllegalArgumentException("Cannot edit cancelled or completed bookings");
-        }
-
-        // Validate conflicts for update (restaurant owners can override some conflicts)
-        System.out.println("🔍 Validating booking update conflicts for restaurant owner...");
+        System.out.println("🔍 Validating booking update conflicts...");
         try {
             conflictService.validateBookingUpdateConflicts(bookingId, form, booking.getCustomer().getCustomerId());
             System.out.println("✅ No conflicts found, proceeding with booking update");
         } catch (BookingConflictException e) {
-            System.err.println("⚠️ Booking update conflict detected: " + e.getMessage());
-            // Restaurant owners can override some conflicts, but not all
-            if (e.getMessage().contains("Table already booked")) {
-                throw e; // Don't allow table conflicts
-            }
-            System.out.println("⚠️ Restaurant owner overriding conflict: " + e.getMessage());
+            System.err.println("❌ Booking update conflict detected: " + e.getMessage());
+            throw e;
         }
 
-        // Validate booking time
-        validateBookingTime(form.getBookingTime());
-
-        // Update booking fields
         booking.setBookingTime(form.getBookingTime());
         booking.setNumberOfGuests(form.getGuestCount());
         booking.setNote(form.getNote());
 
-        // Update restaurant if changed (restaurant owners can change restaurant)
         if (form.getRestaurantId() != null
                 && !form.getRestaurantId().equals(booking.getRestaurant().getRestaurantId())) {
             RestaurantProfile restaurant = restaurantProfileRepository.findById(form.getRestaurantId())
@@ -1127,33 +1240,67 @@ public class BookingService {
             booking.setRestaurant(restaurant);
         }
 
-        // Update deposit amount if table changed
-        if (form.getTableId() != null && !form.getTableId().equals(getCurrentTableId(booking))) {
-            RestaurantTable table = restaurantTableRepository.findById(form.getTableId())
-                    .orElseThrow(() -> new IllegalArgumentException("Table not found"));
-            booking.setDepositAmount(table.getDepositAmount());
-
-            // Update table assignment
-            bookingTableRepository.deleteByBooking(booking);
+        bookingTableRepository.deleteByBooking(booking);
+        if (form.getTableIds() != null && !form.getTableIds().trim().isEmpty()) {
+            assignMultipleTablesToBooking(booking, form.getTableIds());
+        } else if (form.getTableId() != null) {
             assignTableToBooking(booking, form.getTableId());
         }
 
-        // Update dishes
         bookingDishRepository.deleteByBooking(booking);
         if (form.getDishIds() != null && !form.getDishIds().trim().isEmpty()) {
             assignDishesToBooking(booking, form.getDishIds());
         }
 
-        // Update services
         bookingServiceRepository.deleteByBooking(booking);
         if (form.getServiceIds() != null && !form.getServiceIds().trim().isEmpty()) {
             assignServicesToBooking(booking, form.getServiceIds());
         }
 
         Booking saved = bookingRepository.save(booking);
-        System.out.println("✅ Booking updated successfully for restaurant owner: " + saved.getBookingId());
-
+        System.out.println("✅ Booking updated successfully: " + saved.getBookingId());
         return saved;
+    }
+
+    /**
+     * Update booking for restaurant owner (with restaurant ownership validation)
+     */
+    public Booking updateBookingForRestaurantOwner(Integer bookingId, BookingForm form,
+            Set<Integer> ownerRestaurantIds) {
+        System.out.println(
+                "🔍 Updating booking for restaurant owner: " + bookingId + " with restaurants: " + ownerRestaurantIds);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        if (ownerRestaurantIds == null || ownerRestaurantIds.isEmpty()) {
+            throw new IllegalArgumentException("Owner does not have any restaurants assigned");
+        }
+
+        if (!ownerRestaurantIds.contains(booking.getRestaurant().getRestaurantId())) {
+            throw new IllegalArgumentException("You can only edit bookings for your own restaurant");
+        }
+
+        if (form.getRestaurantId() != null
+                && !ownerRestaurantIds.contains(form.getRestaurantId())) {
+            throw new IllegalArgumentException("Cannot move booking to a restaurant you do not own");
+        }
+
+        Booking updated = updateBookingWithItems(bookingId, form);
+
+        if (form.getRestaurantId() != null
+                && !form.getRestaurantId().equals(booking.getRestaurant().getRestaurantId())) {
+            System.out.println("🔍 Reassigning tables for new restaurant...");
+            bookingTableRepository.deleteByBooking(updated);
+            if (form.getTableIds() != null && !form.getTableIds().trim().isEmpty()) {
+                assignMultipleTablesToBooking(updated, form.getTableIds());
+            } else if (form.getTableId() != null) {
+                assignTableToBooking(updated, form.getTableId());
+            }
+        }
+
+        System.out.println("✅ Booking updated successfully for restaurant owner: " + updated.getBookingId());
+        return updated;
     }
 
     // Helper methods

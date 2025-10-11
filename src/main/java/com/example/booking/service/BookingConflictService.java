@@ -80,10 +80,9 @@ public class BookingConflictService {
             validateTableConflicts(form.getTableId(), form.getBookingTime(), form.getGuestCount(), conflicts);
         }
         
-        // 7. Validate capacity conflicts
-        if (form.getTableId() != null) {
-            validateCapacityConflicts(form.getTableId(), form.getGuestCount(), conflicts);
-        }
+        // 7. Capacity conflicts are now validated in
+        // BookingService.validateTableCapacity()
+        // No need to validate here to avoid duplicate validation
         
         // Throw exception if conflicts found
         if (!conflicts.isEmpty()) {
@@ -139,7 +138,9 @@ public class BookingConflictService {
             validateTableStatus(form.getTableId(), conflicts);
             validateTableConflictsExcludingBooking(form.getTableId(), form.getBookingTime(), 
                                                  form.getGuestCount(), excludeBookingId, conflicts);
-            validateCapacityConflicts(form.getTableId(), form.getGuestCount(), conflicts);
+            // Capacity conflicts are now validated in
+            // BookingService.validateTableCapacity()
+            // No need to validate here to avoid duplicate validation
         }
         
         if (!conflicts.isEmpty()) {
@@ -313,20 +314,7 @@ public class BookingConflictService {
                          bookingStart.toLocalTime() + " - " + bookingEnd.toLocalTime() + ")");
         }
     }
-    
-    /**
-     * Validate capacity conflicts
-     */
-    private void validateCapacityConflicts(Integer tableId, Integer guestCount, List<String> conflicts) {
-        RestaurantTable table = restaurantTableRepository.findById(tableId)
-                .orElseThrow(() -> new IllegalArgumentException("Table not found"));
-        
-        if (guestCount > table.getCapacity()) {
-            conflicts.add("Số khách (" + guestCount + ") vượt quá sức chứa của bàn " + 
-                        table.getTableName() + " (" + table.getCapacity() + " người)");
-        }
-    }
-    
+
     /**
      * Get available time slots for a table - chỉ check booking overlap
      */

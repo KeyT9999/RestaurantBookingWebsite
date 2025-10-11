@@ -89,6 +89,30 @@ public class NotificationServiceImpl implements NotificationService {
         return notifications.size();
     }
 
+    @Override
+    public void sendNotifications(NotificationForm form, UUID adminId) {
+        if (form == null || form.getAudience() == null) {
+            throw new IllegalArgumentException("Audience must be provided");
+        }
+
+        switch (form.getAudience()) {
+            case ALL -> sendToAll(form, adminId);
+            case ROLE -> {
+                if (form.getTargetRoles() == null || form.getTargetRoles().isEmpty()) {
+                    throw new IllegalArgumentException("Target roles must be provided when audience is ROLE");
+                }
+                sendToRoles(form, form.getTargetRoles(), adminId);
+            }
+            case USER -> {
+                if (form.getTargetUserIds() == null || form.getTargetUserIds().isEmpty()) {
+                    throw new IllegalArgumentException("Target user ids must be provided when audience is USER");
+                }
+                sendToUsers(form, form.getTargetUserIds(), adminId);
+            }
+            default -> throw new IllegalArgumentException("Unsupported audience type: " + form.getAudience());
+        }
+    }
+
     // ============= USER METHODS =============
     
     @Override

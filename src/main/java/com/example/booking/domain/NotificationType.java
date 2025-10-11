@@ -9,6 +9,9 @@ public enum NotificationType {
     WITHDRAWAL_STATUS("Trạng thái rút tiền"),
     VOUCHER_ASSIGNED("Nhận voucher"),
     REVIEW_REQUEST("Yêu cầu đánh giá"),
+    REVIEW_REPORT_SUBMITTED("Báo cáo đánh giá mới"),
+    REVIEW_REPORT_RESOLVED("Báo cáo đánh giá được chấp thuận"),
+    REVIEW_REPORT_REJECTED("Báo cáo đánh giá bị từ chối"),
     SYSTEM_ANNOUNCEMENT("Thông báo hệ thống");
 
     private final String displayName;

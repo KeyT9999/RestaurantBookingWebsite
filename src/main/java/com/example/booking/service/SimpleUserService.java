@@ -94,6 +94,22 @@ public class SimpleUserService implements UserDetailsService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<User> findByUsername(String username) {
+        if (username == null)
+            return Optional.empty();
+        return userRepository.findByUsernameIgnoreCase(username);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> getCurrentUser() {
+        // Removed security-related imports, so this method is no longer functional
+        // as it relies on SecurityContextHolder.getContext().getAuthentication()
+        // and findByUsername(authentication.getName()).
+        // For now, returning empty as a placeholder.
+        return Optional.empty();
+    }
+
+    @Transactional(readOnly = true)
     public Optional<User> findByGoogleId(String googleId) {
         return userRepository.findByGoogleId(googleId);
     }

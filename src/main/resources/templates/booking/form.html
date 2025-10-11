@@ -123,6 +123,11 @@
             font-weight: 600;
             color: #28a745;
         }
+        
+        .selected {
+            border-color: var(--primary);
+            background: rgba(255, 107, 129, 0.15);
+        }
     </style>
 </head>
 
@@ -210,7 +215,8 @@
                                     </div>
                                 </div>
                                 <!-- Hidden input to store selected table IDs -->
-                                <input type="hidden" id="selectedTableIds" name="tableIds" th:field="*{tableIds}" value="">
+                                <input type="hidden" id="selectedTableId" name="tableId" th:value="${bookingForm.tableId}" />
+                                <input type="hidden" id="selectedTableIds" name="tableIds" th:value="${bookingForm.tableIds}" />
                             </div>
                             
                             <div class="row">
@@ -241,6 +247,8 @@
                                            id="bookingTime" 
                                            name="bookingTime"
                                            th:field="*{bookingTime}"
+                                           th:value="${bookingForm.bookingTime != null ? #temporals.format(bookingForm.bookingTime, 'yyyy-MM-dd''T''HH:mm') : ''}"
+                                           th:attr="data-booking-time=${bookingForm.bookingTime}"
                                            th:classappend="${#fields.hasErrors('bookingTime')} ? 'is-invalid' : ''">
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('bookingTime')}" 
                                          th:errors="*{bookingTime}"></div>
@@ -276,7 +284,7 @@
                                     </div>
                                 </div>
                                 <!-- Hidden input to store selected dish IDs -->
-                                <input type="hidden" id="selectedDishIds" name="dishIds" th:field="*{dishIds}" value="">
+                                <input type="hidden" id="selectedDishIds" name="dishIds" th:value="${bookingForm.dishIds}" />
                             </div>
 
                             <!-- Services Selection -->
@@ -291,7 +299,27 @@
                                     Select services to enhance your dining experience
                                 </small>
                             <!-- Hidden input to store selected service IDs -->
-                            <input type="hidden" id="selectedServiceIds" name="serviceIds" th:field="*{serviceIds}" value="">
+                            <!-- Debug: Check serviceIds value -->
+                            <script th:inline="javascript">
+                                console.log('🔍 DEBUG - Thymeleaf serviceIds value:', /*[[${bookingForm.serviceIds}]]*/ 'null');
+                                console.log('🔍 DEBUG - Thymeleaf serviceIds type:', typeof /*[[${bookingForm.serviceIds}]]*/ 'null');
+                                console.log('🔍 DEBUG - Thymeleaf serviceIds is null:', /*[[${bookingForm.serviceIds == null}]]*/ 'null');
+                                console.log('🔍 DEBUG - Thymeleaf serviceIds is empty:', /*[[${bookingForm.serviceIds == ''}]]*/ 'null');
+                                console.log('🔍 DEBUG - Thymeleaf serviceIds length:', /*[[${bookingForm.serviceIds != null ? bookingForm.serviceIds.length() : 'null'}]]*/ 'null');
+                                
+                                // Check hidden input after DOM is ready
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const serviceIdsInput = document.getElementById('selectedServiceIds');
+                                    console.log('🔍 DEBUG - Hidden input selectedServiceIds value:', serviceIdsInput ? serviceIdsInput.value : 'NOT FOUND');
+                                    console.log('🔍 DEBUG - Hidden input selectedServiceIds attributes:', serviceIdsInput ? {
+                                        id: serviceIdsInput.id,
+                                        name: serviceIdsInput.name,
+                                        value: serviceIdsInput.value,
+                                        type: serviceIdsInput.type
+                                    } : 'NOT FOUND');
+                                });
+                            </script>
+                            <input type="hidden" id="selectedServiceIds" name="serviceIds" th:value="${bookingForm.serviceIds}" />
                             
                             <!-- Hidden inputs for voucher information -->
                             <input type="hidden" id="voucherDiscountAmount" name="voucherDiscountAmount" value="0">
@@ -526,20 +554,41 @@
         // Global variables to store selections
         let selectedTables = [];
         let selectedDishes = [];
+        let selectedServices = [];
         let availableTables = [];
         let availableDishes = [];
+        let availableServices = [];
         let voucherDiscount = 0; // Store voucher discount amount
         let availableVouchers = []; // Store available vouchers
+
+        // Debug function to log all selections
+        function logAllSelections() {
+            console.log('📊 === CURRENT SELECTIONS DEBUG ===');
+            console.log('🔍 selectedTables:', selectedTables);
+            console.log('🔍 selectedTables.length:', selectedTables.length);
+            console.log('🔍 selectedDishes:', selectedDishes);
+            console.log('🔍 selectedDishes.length:', selectedDishes.length);
+            console.log('🔍 selectedServices:', selectedServices);
+            console.log('🔍 selectedServices.length:', selectedServices.length);
+            console.log('🔍 availableTables:', availableTables);
+            console.log('🔍 availableTables.length:', availableTables.length);
+            console.log('🔍 availableDishes:', availableDishes);
+            console.log('🔍 availableDishes.length:', availableDishes.length);
+            console.log('🔍 availableServices:', availableServices);
+            console.log('🔍 availableServices.length:', availableServices.length);
+            console.log('📊 === END SELECTIONS DEBUG ===');
+        }
 
            function loadTables() {
                const restaurantId = document.getElementById('restaurantId').value;
                const viewTablesBtn = document.getElementById('viewTablesBtn');
                
                console.log('🔍 Loading tables for restaurant ID:', restaurantId);
+               logAllSelections();
                
                if (restaurantId) {
                    viewTablesBtn.disabled = false;
-                   fetch(`/api/booking/restaurants/${restaurantId}/tables`)
+                   return fetch(`/api/booking/restaurants/${restaurantId}/tables`)
                        .then(response => {
                            console.log('📡 API Response status:', response.status);
                            if (!response.ok) {
@@ -550,21 +599,39 @@
                        .then(tables => {
                            console.log('📋 Received tables:', tables);
                            availableTables = tables;
+                           console.log('📋 availableTables updated:', availableTables);
+                           logAllSelections();
                            
                            if (tables.length === 0) {
                                console.log('⚠️ No tables found for restaurant ID:', restaurantId);
+                           } else {
+                               // Render tables into modal immediately for edit mode
+                               renderTablesInModal(tables);
                            }
                            
                            // Load dishes and services for this restaurant
-                           loadDishes(restaurantId);
-                           loadServices(restaurantId);
+                           return Promise.all([
+                               loadDishes(restaurantId),
+                               loadServices(restaurantId)
+                           ]).then(() => {
+                               console.log('✅ All data (tables, dishes, services) loaded successfully');
+                               return tables;
+                           });
                        })
                        .catch(error => {
                            console.error('❌ Error loading tables:', error);
                            availableTables = [];
                            // Still try to load dishes and services
-                           loadDishes(restaurantId);
-                           loadServices(restaurantId);
+                           return Promise.all([
+                               loadDishes(restaurantId),
+                               loadServices(restaurantId)
+                           ]).then(() => {
+                               console.log('✅ Dishes and services loaded despite table error');
+                               return []; // Return empty array on error
+                           }).catch(() => {
+                               console.log('❌ Error loading dishes/services too');
+                               return []; // Return empty array on error
+                           });
                        });
                } else {
                    viewTablesBtn.disabled = true;
@@ -575,13 +642,58 @@
                    viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu';
                    viewMenuBtn.disabled = true;
                    updateTotalAmount();
+                   return Promise.resolve([]); // Return resolved promise with empty array
                }
            }
+
+        function renderTablesInModal(tables) {
+            const tablesList = document.getElementById('tablesList');
+            tablesList.innerHTML = '';
+            
+            tables.forEach(table => {
+                const statusValue = getTableStatusValue(table.status);
+                const statusClass = getStatusBadgeClass(table.status);
+                const statusText = getStatusDisplayName(table.status);                
+                const tableCard = document.createElement('div');
+                tableCard.className = 'col-md-4 mb-3';
+                tableCard.innerHTML = `
+                    <div class="card table-card" data-table-id="${table.tableId}" data-deposit="${table.depositAmount || 0}">
+                        <div class="card-body">
+                            <div class="form-check">
+                                <input class="form-check-input table-checkbox" 
+                                       type="checkbox" 
+                                       value="${table.tableId}"
+                                       id="table-${table.tableId}">
+                                <label class="form-check-label w-100" for="table-${table.tableId}">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-title">${table.tableName}</h6>
+                                            <p class="card-text">
+                                                <small class="text-muted">Capacity: ${table.capacity} people</small><br>
+                                                <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span class="badge ${statusClass}">${statusText}</span>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                tablesList.appendChild(tableCard);
+            });
+            
+            console.log('✅ Tables rendered in modal successfully');
+        }
 
         function loadDishes(restaurantId) {
             fetch(`/api/booking/restaurants/${restaurantId}/dishes`)
                 .then(response => response.json())
                 .then(dishes => {
+                    console.log('🔍 Raw dishes API response:', dishes);
+                    console.log('🔍 First dish structure:', dishes[0]);
                     availableDishes = dishes;
                     
                     // Update button text based on dishes availability
@@ -605,14 +717,19 @@
         function loadServices(restaurantId) {
             console.log('🔍 Loading services for restaurant ID:', restaurantId);
             
-            fetch(`/api/booking/restaurants/${restaurantId}/services`)
+            return fetch(`/api/booking/restaurants/${restaurantId}/services`)
                 .then(response => {
                     console.log('📡 Services API response status:', response.status);
                     return response.json();
                 })
                 .then(services => {
+                    console.log('🔍 Raw services API response:', services);
+                    console.log('🔍 First service structure:', services[0]);
                     console.log('📋 Services received:', services);
                     console.log('📋 Services count:', services.length);
+                    
+                    // Store services in global variable
+                    availableServices = services;
                     
                     const servicesContainer = document.getElementById('servicesContainer');
                     servicesContainer.innerHTML = '';
@@ -695,13 +812,40 @@
         }
 
         function toggleServiceSelection(card) {
+            console.log('🔍 toggleServiceSelection() called');
+            console.log('🔍 Card details:', {
+                serviceId: card.dataset.serviceId,
+                serviceName: card.querySelector('.service-name')?.textContent,
+                price: card.dataset.price,
+                isSelected: card.classList.contains('selected')
+            });
+            
             const isSelected = card.classList.contains('selected');
+            const serviceId = card.dataset.serviceId;
+            const serviceName = card.querySelector('.service-name').textContent;
+            const servicePrice = parseFloat(card.dataset.price) || 0;
+            
+            console.log('🔍 Before toggle - selectedServices.length:', selectedServices.length);
+            console.log('🔍 Before toggle - selectedServices:', selectedServices);
             
             if (isSelected) {
+                // Remove from selectedServices array
                 card.classList.remove('selected');
+                selectedServices = selectedServices.filter(s => s.id !== serviceId);
+                console.log('❌ Removed service from selectedServices:', serviceName);
             } else {
+                // Add to selectedServices array
                 card.classList.add('selected');
+                selectedServices.push({
+                    id: serviceId,
+                    name: serviceName,
+                    price: servicePrice
+                });
+                console.log('✅ Added service to selectedServices:', serviceName);
             }
+            
+            console.log('🔍 After toggle - selectedServices.length:', selectedServices.length);
+            console.log('🔍 After toggle - selectedServices:', selectedServices);
             
             updateTotalAmount();
             saveFormState();
@@ -1041,23 +1185,24 @@
 
             // Calculate table deposit
             selectedTables.forEach(table => {
-                tableDeposit += table.deposit;
+                tableDeposit += Number(table.deposit) || 0;
             });
 
             // Calculate dishes total
             selectedDishes.forEach(dish => {
-                dishesTotal += dish.price * dish.quantity;
+                dishesTotal += (Number(dish.price) || 0) * (Number(dish.quantity) || 1);
             });
 
             // Calculate services total
-            const selectedServices = getSelectedServices();
             selectedServices.forEach(service => {
-                servicesTotal += service.price;
+                servicesTotal += Number(service.price) || 0;
             });
 
-            // Update hidden input with selected service IDs
+            // Update hidden input with selected service IDs only if services exist
             const serviceIdsInput = document.getElementById('selectedServiceIds');
-            serviceIdsInput.value = selectedServices.map(s => s.id).join(',');
+            if (serviceIdsInput) {
+                serviceIdsInput.value = selectedServices.length > 0 ? selectedServices.map(s => s.id).join(',') : serviceIdsInput.value;
+            }
 
             // Calculate subtotal
             const subtotal = tableDeposit + dishesTotal + servicesTotal;
@@ -1085,6 +1230,26 @@
         
         // Form validation before submit
         function validateForm() {
+            console.log('🔍 validateForm() called - starting validation...');
+            
+            // Log current selections before validation
+            logAllSelections();
+            
+            // First, run our comprehensive validation
+            if (!validateFormBeforeSubmit()) {
+                console.log('❌ validateFormBeforeSubmit() failed, stopping form submission');
+                console.log('🔍 After validation failure - checking if selections are preserved...');
+                logAllSelections();
+                
+                // Restore form state after validation failure
+                console.log('🔄 Restoring form state after validation failure...');
+                restoreFormState();
+                
+                return false;
+            }
+            
+            console.log('✅ validateFormBeforeSubmit() passed, proceeding with Smart Waitlist check...');
+            
             // Save current form state before validation
             saveFormState();
             
@@ -1099,7 +1264,7 @@
             const bookingTime = bookingTimeInput.value;
             const selectedTableIds = selectedTableIdsInput.value;
             
-            // Basic validation
+            // Basic validation (redundant but keeping for safety)
             if (!restaurantId || !guestCount || !bookingTime) {
                 alert('Please fill in all required fields.');
                 return false;
@@ -1131,18 +1296,25 @@
         
         // Save form state to hidden inputs
         function saveFormState() {
+            console.log('💾 saveFormState() called - saving current selections...');
+            logAllSelections();
+            
             // Save table selections
             const tableIds = selectedTables.map(t => t.id).join(',');
             document.getElementById('selectedTableIds').value = tableIds;
+            console.log('💾 Saved tableIds:', tableIds);
             
             // Save dish selections
             const dishIds = selectedDishes.map(d => `${d.id}:${d.quantity}`).join(',');
             document.getElementById('selectedDishIds').value = dishIds;
+            console.log('💾 Saved dishIds:', dishIds);
             
             // Save service selections
-            const selectedServices = getSelectedServices();
             const serviceIds = selectedServices.map(s => s.id).join(',');
             document.getElementById('selectedServiceIds').value = serviceIds;
+            console.log('💾 Saved serviceIds:', serviceIds);
+            
+            console.log('💾 Form state saved successfully');
         }
         
         // Set minimum datetime to now + 30 minutes
@@ -1154,7 +1326,17 @@
             
             // Load tables if restaurant is already selected (edit mode)
             if (document.getElementById('restaurantId').value) {
-                loadTables();
+                loadTables().then(() => {
+                    console.log('✅ Tables loaded, now restoring form state...');
+                    restoreFormState();
+                }).catch((error) => {
+                    console.error('❌ Error loading tables:', error);
+                    // Still try to restore form state even if tables fail to load
+                    restoreFormState();
+                });
+            } else {
+                // Restore form state immediately if no restaurant selected
+                restoreFormState();
             }
             
             // Add change listener for restaurant selection
@@ -1163,11 +1345,7 @@
                 clearFormData();
             });
             
-            // Restore form state after conflict/error
-            restoreFormState();
-            
-            // Initialize total amount calculation
-            updateTotalAmount();
+            // Initialize total amount calculation will be handled after restore
             
             // Add event listeners for dish checkboxes to show/hide quantity controls
             document.addEventListener('change', function(e) {
@@ -1442,88 +1620,226 @@
         
         // Restore form state after conflict/error
         function restoreFormState() {
+            console.log('🔄 restoreFormState() called - restoring form state...');
+            console.log('🔍 Current URL:', window.location.href);
+            console.log('🔍 Is edit mode:', window.location.href.includes('/edit'));
+            
+            // Debug: Check hidden input values at the start of restoreFormState
+            const selectedTableIds = document.getElementById('selectedTableIds').value;
+            const selectedDishIds = document.getElementById('selectedDishIds').value;
+            const serviceIdsInput = document.getElementById('selectedServiceIds');
+            let selectedServiceIds = serviceIdsInput ? serviceIdsInput.value : '';
+
+            if (serviceIdsInput && !selectedServiceIds && serviceIdsInput.dataset.initialValue) {
+                selectedServiceIds = serviceIdsInput.dataset.initialValue;
+                serviceIdsInput.value = selectedServiceIds;
+                console.log('🔁 Restored serviceIds from initial dataset:', selectedServiceIds);
+            }
+            console.log('🔍 Hidden input values at START of restoreFormState():');
+            console.log('  - selectedTableIds:', selectedTableIds);
+            console.log('  - selectedDishIds:', selectedDishIds);
+            console.log('  - selectedServiceIds:', selectedServiceIds);
+            
+            logAllSelections();
+            
+            // Check if we need to load data first
+            const restaurantId = document.getElementById('restaurantId').value;
+            if (restaurantId && (availableTables.length === 0 || availableDishes.length === 0 || availableServices.length === 0)) {
+                console.log('🔄 Data not loaded yet, loading first...');
+                loadTables().then(() => {
+                    console.log('✅ Data loaded, now restoring form state...');
+                    performRestore();
+                }).catch((error) => {
+                    console.error('❌ Error loading data:', error);
+                    // Still try to restore with whatever data we have
+                    performRestore();
+                });
+            } else {
+                console.log('🔄 Data already loaded, proceeding with restore...');
+                performRestore();
+            }
+            
+            function performRestore() {
+                console.log('🔄 performRestore() called...');
+                console.log('🔍 Data availability check:');
+                console.log('  - availableTables.length:', availableTables.length);
+                console.log('  - availableDishes.length:', availableDishes.length);
+                console.log('  - availableServices.length:', availableServices.length);
+                logAllSelections();
+            
+            // Debug: Check booking time input value
+            const bookingTimeInput = document.getElementById('bookingTime');
+            console.log('🔍 Booking time input value:', bookingTimeInput.value);
+            console.log('🔍 Booking time input type:', bookingTimeInput.type);
+            
+            // Fix datetime format if needed
+            const dataBookingTime = bookingTimeInput.getAttribute('data-booking-time');
+            console.log('🔍 Data booking time attribute:', dataBookingTime);
+            
+            if (dataBookingTime) {
+                try {
+                    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dataBookingTime)) {
+                        bookingTimeInput.value = dataBookingTime;
+                        console.log('🔍 Set booking time to (direct):', dataBookingTime);
+                    } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dataBookingTime)) {
+                        bookingTimeInput.value = dataBookingTime.slice(0, 16);
+                        console.log('🔍 Set booking time to (trimmed seconds):', bookingTimeInput.value);
+                    } else if (/Z|[+-]\d{2}:?\d{2}$/.test(dataBookingTime)) {
+                        const asDate = new Date(dataBookingTime);
+                        const localDate = new Date(asDate.getTime() - asDate.getTimezoneOffset() * 60000);
+                        bookingTimeInput.value = localDate.toISOString().slice(0, 16);
+                        console.log('🔍 Set booking time to (timezone adjusted):', bookingTimeInput.value);
+                    } else {
+                        const normalized = dataBookingTime.replace(' ', 'T');
+                        bookingTimeInput.value = normalized.length >= 16 ? normalized.slice(0, 16) : normalized;
+                        console.log('🔍 Set booking time to (normalized):', bookingTimeInput.value);
+                    }
+                } catch (error) {
+                    console.error('❌ Error formatting booking time:', error);
+                }
+            }
+            
+            // If still no value, try to get from Thymeleaf
+            if (!bookingTimeInput.value) {
+                const thValue = bookingTimeInput.getAttribute('th:value');
+                console.log('🔍 Thymeleaf value attribute:', thValue);
+                
+                if (thValue) {
+                    bookingTimeInput.value = thValue;
+                    console.log('🔍 Set booking time from Thymeleaf:', bookingTimeInput.value);
+                }
+            }
+            
             // Restore table selection if any
             const selectedTableIds = document.getElementById('selectedTableIds').value;
+            console.log('🔍 selectedTableIds from hidden input:', selectedTableIds);
             if (selectedTableIds) {
                 const tableIds = selectedTableIds.split(',');
                 selectedTables = [];
                 
-                // Wait for tables to load, then restore selection
-                setTimeout(() => {
-                    tableIds.forEach(tableId => {
-                        const tableCheckbox = document.querySelector(`input[value="${tableId}"]`);
-                        if (tableCheckbox) {
-                            tableCheckbox.checked = true;
-                            const tableCard = tableCheckbox.closest('.table-card');
-                            if (tableCard) {
-                                const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
-                                const tableName = tableCard.querySelector('.card-title').textContent;
-                                const capacityText = tableCard.querySelector('.card-text small').textContent;
-                                const capacity = parseInt(capacityText.match(/\d+/)[0]);
-                                
-                                selectedTables.push({
-                                    id: tableId,
-                                    name: tableName,
-                                    deposit: deposit,
-                                    capacity: capacity
-                                });
-                            }
-                        }
-                    });
-                    updateTableSelectionUI();
-                }, 1000);
+                // Find tables from availableTables array and add to selectedTables
+                tableIds.forEach(tableId => {
+                    console.log('🔍 Looking for table with ID:', tableId, 'type:', typeof tableId);
+                    console.log('🔍 Available tables:', availableTables.map(t => ({ id: t.tableId, type: typeof t.tableId, name: t.tableName })));
+                    
+                    const table = availableTables.find(t => t.tableId == tableId);
+                    if (table) {
+                        selectedTables.push({
+                            id: tableId,
+                            name: table.tableName,
+                            deposit: table.depositAmount || 0,
+                            capacity: table.capacity
+                        });
+                        console.log('✅ Added table to selectedTables:', table.tableName);
+                    } else {
+                        console.log('❌ Table not found in availableTables:', tableId);
+                    }
+                });
+                
+                console.log(`✅ Restored ${selectedTables.length}/${tableIds.length} tables to selectedTables array`);
+                updateTableSelectionUI();
             }
             
             // Restore dish selections if any
             const selectedDishIds = document.getElementById('selectedDishIds').value;
+            console.log('🔍 selectedDishIds from hidden input:', selectedDishIds);
             if (selectedDishIds) {
                 const dishSelections = selectedDishIds.split(',');
                 selectedDishes = [];
                 
+                // Find dishes from availableDishes array and add to selectedDishes
                 dishSelections.forEach(selection => {
                     const [dishId, quantity] = selection.split(':');
                     if (dishId && quantity) {
-                        // Wait for dishes to load, then restore selection
-                        setTimeout(() => {
-                            const dishCheckbox = document.querySelector(`input[value="${dishId}"]`);
-                            if (dishCheckbox) {
-                                dishCheckbox.checked = true;
-                                const dishCard = dishCheckbox.closest('.dish-card');
-                                if (dishCard) {
-                                    const price = parseFloat(dishCard.getAttribute('data-price'));
-                                    const dishName = dishCard.querySelector('.card-title').textContent;
-                                    
-                                    selectedDishes.push({
-                                        id: dishId,
-                                        name: dishName,
-                                        price: price,
-                                        quantity: parseInt(quantity)
-                                    });
-                                }
-                                
-                                const quantityInput = dishCheckbox.parentElement.querySelector('.quantity-control input');
-                                if (quantityInput) {
-                                    quantityInput.value = quantity;
-                                }
-                            }
-                        }, 1000);
+                        console.log('🔍 Looking for dish with ID:', dishId, 'type:', typeof dishId);
+                    console.log('🔍 Available dishes:', availableDishes.map(d => ({ 
+                        dishId: d.dishId, 
+                        type: typeof d.dishId, 
+                        name: d.name 
+                    })));
+                        
+                    // Find dish by dishId field
+                    const dish = availableDishes.find(d => d.dishId == dishId);
+                        if (dish) {
+                            selectedDishes.push({
+                                id: dishId,
+                                name: dish.name,
+                                price: dish.price,
+                                quantity: parseInt(quantity)
+                            });
+                            console.log('✅ Added dish to selectedDishes:', dish.name, 'x' + quantity);
+                        } else {
+                            console.log('❌ Dish not found in availableDishes:', dishId);
+                        }
                     }
                 });
                 
-                // Update UI after all dishes are processed
-                setTimeout(() => {
-                    updateMenuSelectionUI();
-                }, 1500);
+                console.log(`✅ Restored ${selectedDishes.length}/${dishSelections.length} dishes to selectedDishes array`);
+                updateMenuSelectionUI();
             }
             
             // Restore service selections if any
             const selectedServiceIds = document.getElementById('selectedServiceIds').value;
+            console.log('🔍 selectedServiceIds from hidden input:', selectedServiceIds);
             if (selectedServiceIds) {
                 const serviceIds = selectedServiceIds.split(',');
-                serviceIds.forEach(serviceId => {
-                    const serviceCard = document.querySelector(`.service-card[data-service-id="${serviceId}"]`);
+                selectedServices = [];
+                
+                // Find services from availableServices array and add to selectedServices
+                console.log('🔍 Starting services restore process...');
+                console.log('🔍 serviceIds to restore:', serviceIds);
+                console.log('🔍 availableServices before restore:', availableServices.map(s => ({ 
+                    serviceId: s.serviceId, 
+                    type: typeof s.serviceId, 
+                    name: s.name 
+                })));
+                
+                serviceIds.forEach((serviceId, index) => {
+                    console.log(`🔍 Processing service ${index + 1}/${serviceIds.length}:`, serviceId, 'type:', typeof serviceId);
+                    
+                    // Find service by serviceId field
+                    const service = availableServices.find(s => s.serviceId == serviceId);
+                    console.log('🔍 Found service:', service ? service.name : 'NOT FOUND');
+                    
+                    if (service) {
+                        selectedServices.push({
+                            id: serviceId,
+                            name: service.name,
+                            price: service.price || 0
+                        });
+                        console.log('✅ Added service to selectedServices:', service.name, 'price:', service.price);
+                    } else {
+                        console.log('❌ Service not found in availableServices:', serviceId);
+                        console.log('🔍 Available serviceIds:', availableServices.map(s => s.serviceId));
+                    }
+                });
+                
+                console.log(`✅ Restored ${selectedServices.length}/${serviceIds.length} services to selectedServices array`);
+                
+                // Also mark services as selected in DOM
+                console.log('🔍 Starting DOM marking for services...');
+                serviceIds.forEach((serviceId, index) => {
+                    console.log(`🔍 Looking for service card ${index + 1}/${serviceIds.length} with ID:`, serviceId);
+                    
+                    const serviceCard = document.querySelector(`.service-card[data-service-id="${serviceId}"]`) || 
+                                      document.querySelector(`.service-card[data-id="${serviceId}"]`);
+                    
+                    console.log('🔍 Found service card:', serviceCard ? 'YES' : 'NO');
                     if (serviceCard) {
+                        console.log('🔍 Service card details:', {
+                            id: serviceCard.getAttribute('data-service-id') || serviceCard.getAttribute('data-id'),
+                            name: serviceCard.querySelector('.card-title')?.textContent || 'No title',
+                            classes: serviceCard.className
+                        });
+                        
                         serviceCard.classList.add('selected');
+                        console.log('✅ Marked service as selected in DOM:', serviceId);
+                    } else {
+                        console.log('❌ Service card not found in DOM:', serviceId);
+                        console.log('🔍 All service cards in DOM:', document.querySelectorAll('.service-card').length);
+                        console.log('🔍 Available service card IDs:', Array.from(document.querySelectorAll('.service-card')).map(card => 
+                            card.getAttribute('data-service-id') || card.getAttribute('data-id')
+                        ));
                     }
                 });
             }
@@ -1532,6 +1848,15 @@
             setTimeout(() => {
                 updateTotalAmount();
             }, 2000);
+            
+            console.log('🔄 performRestore() completed');
+            logAllSelections();
+            }
+            
+            console.log('🔄 restoreFormState() completed');
+
+            // Recalculate totals once restore is done to avoid early resets
+            setTimeout(() => updateTotalAmount(), 0);
         }
         
         // Test function to debug voucher discount
@@ -1859,10 +2184,147 @@
         }
         
         /**
+         * Validate form before submission
+         */
+        function validateFormBeforeSubmit() {
+            console.log('🔍 Validating form before submission...');
+            
+            // Get form data
+            const restaurantId = document.getElementById('restaurantId').value;
+            const guestCount = parseInt(document.getElementById('guestCount').value);
+            const bookingTime = document.getElementById('bookingTime').value;
+            const tableId = document.getElementById('tableId').value;
+            const tableIds = document.getElementById('selectedTableIds').value;
+            
+            console.log('   Restaurant ID:', restaurantId);
+            console.log('   Guest Count:', guestCount);
+            console.log('   Booking Time:', bookingTime);
+            console.log('   Table ID:', tableId);
+            console.log('   Table IDs:', tableIds);
+            
+            // 1. Validate required fields
+            if (!restaurantId) {
+                showNotification('Vui lòng chọn nhà hàng', 'error');
+                return false;
+            }
+            
+            if (!guestCount || guestCount < 1) {
+                showNotification('Số lượng khách phải ít nhất 1 người', 'error');
+                return false;
+            }
+            
+            if (guestCount > 20) {
+                showNotification('Số lượng khách không được vượt quá 20 người', 'error');
+                return false;
+            }
+            
+            if (!bookingTime) {
+                showNotification('Vui lòng chọn thời gian đặt bàn', 'error');
+                return false;
+            }
+            
+            // 2. Validate table selection
+            if (!tableId && !tableIds) {
+                showNotification('Vui lòng chọn ít nhất một bàn', 'error');
+                return false;
+            }
+            
+            // 3. Validate table capacity
+            if (!validateTableCapacityBeforeSubmit(guestCount, tableId, tableIds)) {
+                return false;
+            }
+            
+            // 4. Validate booking time
+            if (!validateBookingTimeBeforeSubmit(bookingTime)) {
+                return false;
+            }
+            
+            console.log('✅ Form validation passed');
+            return true;
+        }
+        
+        /**
+         * Validate table capacity before submission
+         */
+        function validateTableCapacityBeforeSubmit(guestCount, tableId, tableIds) {
+            console.log('🔍 Validating table capacity...');
+            
+            if (tableId) {
+                // Single table validation
+                const table = availableTables.find(t => t.tableId == tableId);
+                if (table) {
+                    console.log('   Table capacity:', table.capacity);
+                    if (guestCount > table.capacity) {
+                        showNotification(`Số khách (${guestCount}) vượt quá sức chứa của bàn ${table.tableName} (${table.capacity} người)`, 'error');
+                        return false;
+                    }
+                }
+            } else if (tableIds) {
+                // Multiple tables validation
+                const tableIdArray = tableIds.split(',');
+                let totalCapacity = 0;
+                let tableNames = [];
+                
+                for (const tableIdStr of tableIdArray) {
+                    const table = availableTables.find(t => t.tableId == tableIdStr.trim());
+                    if (table) {
+                        totalCapacity += table.capacity;
+                        tableNames.push(table.tableName);
+                    }
+                }
+                
+                console.log('   Total capacity:', totalCapacity);
+                if (guestCount > totalCapacity) {
+                    showNotification(`Số khách (${guestCount}) vượt quá tổng sức chứa của các bàn đã chọn (${totalCapacity} người)`, 'error');
+                    return false;
+                }
+            }
+            
+            console.log('✅ Table capacity validation passed');
+            return true;
+        }
+        
+        /**
+         * Validate booking time before submission
+         */
+        function validateBookingTimeBeforeSubmit(bookingTime) {
+            console.log('🔍 Validating booking time...');
+            
+            const bookingDateTime = new Date(bookingTime);
+            const now = new Date();
+            const minTime = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
+            const maxTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+            
+            console.log('   Booking time:', bookingDateTime);
+            console.log('   Current time:', now);
+            console.log('   Min time:', minTime);
+            console.log('   Max time:', maxTime);
+            
+            if (bookingDateTime < minTime) {
+                showNotification('Thời gian đặt bàn phải ít nhất 30 phút từ bây giờ', 'error');
+                return false;
+            }
+            
+            if (bookingDateTime > maxTime) {
+                showNotification('Thời gian đặt bàn không được quá 30 ngày trong tương lai', 'error');
+                return false;
+            }
+            
+            console.log('✅ Booking time validation passed');
+            return true;
+        }
+        
+        /**
          * Submit booking form (original function)
          */
         function submitBookingForm() {
             console.log('📝 Submitting booking form...');
+            
+            // Validate form before submission
+            if (!validateFormBeforeSubmit()) {
+                console.log('❌ Form validation failed, not submitting');
+                return;
+            }
             
             // Save form state before submission
             saveFormState();
@@ -1875,7 +2337,7 @@
                 return;
             }
             
-            console.log('✅ Submitting form...');
+            console.log('✅ Form validation passed, submitting form...');
             form.submit();
         }
         

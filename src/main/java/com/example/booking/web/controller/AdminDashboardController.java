@@ -1,7 +1,6 @@
 package com.example.booking.web.controller;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.example.booking.dto.admin.RestaurantBalanceInfoDto;
 import com.example.booking.dto.admin.WithdrawalStatsDto;
 import com.example.booking.service.RestaurantBalanceService;
+import com.example.booking.service.ReviewReportService;
 import com.example.booking.service.WithdrawalService;
 
 /**
@@ -34,6 +34,9 @@ public class AdminDashboardController {
     
     @Autowired
     private RestaurantBalanceService balanceService;
+
+    @Autowired
+    private ReviewReportService reviewReportService;
     
     /**
      * GET /admin/dashboard
@@ -66,6 +69,9 @@ public class AdminDashboardController {
             // Get total commission earned
             BigDecimal totalCommission = withdrawalService.getTotalCommissionEarned();
             model.addAttribute("totalCommission", totalCommission);
+
+            long pendingReviewReports = reviewReportService.countPendingReports();
+            model.addAttribute("pendingReviewReports", pendingReviewReports);
             
             logger.info("Admin dashboard loaded successfully");
             
