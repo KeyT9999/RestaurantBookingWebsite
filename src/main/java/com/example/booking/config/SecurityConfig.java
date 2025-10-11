@@ -139,7 +139,7 @@ public class SecurityConfig {
 				)
 				.successHandler((request, response, authentication) -> {
 					rememberMeServices().loginSuccess(request, response, authentication);
-					response.sendRedirect("/");
+						response.sendRedirect("/auth/oauth-account-type");
 				})
 				.permitAll()
 			);

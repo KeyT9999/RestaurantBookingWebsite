@@ -1,5 +1,9 @@
 package com.example.booking.dto;
 
+import java.math.BigDecimal;
+
+import com.example.booking.domain.UserRole;
+
 import jakarta.validation.constraints.*;
 
 public class RegisterForm {
@@ -28,6 +32,11 @@ public class RegisterForm {
     @Pattern(regexp = "^[0-9+\\-\\s()]*$", message = "Số điện thoại không hợp lệ")
     private String phoneNumber;
     
+    @Size(max = 500, message = "Địa chỉ không được quá 500 ký tự")
+    private String address;
+
+    @NotBlank(message = "Vui lòng chọn loại tài khoản")
+    private String accountType;
     // Constructors
     public RegisterForm() {}
     
@@ -92,5 +101,38 @@ public class RegisterForm {
     
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getAccountType() {
+        return accountType;
+    }
+
+    public void setAccountType(String accountType) {
+        this.accountType = accountType;
+    }
+
+    public UserRole resolveRole() {
+        if (accountType == null) {
+            return UserRole.CUSTOMER;
+        }
+        String normalized = accountType.trim().toLowerCase();
+        switch (normalized) {
+            case "restaurant_owner":
+            case "restaurant-owner":
+            case "restaurant":
+                return UserRole.RESTAURANT_OWNER;
+            case "customer":
+                return UserRole.CUSTOMER;
+            default:
+                return UserRole.CUSTOMER;
+        }
     }
 } 

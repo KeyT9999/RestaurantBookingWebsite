@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn loại tài khoản - Book Eat</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-blue: #4A90E2;
+            --primary-blue-light: #6BA3F0;
+            --primary-blue-dark: #357ABD;
+            --accent-orange: #FF6B35;
+            --background-light: #F8F9FA;
+            --background-white: #FFFFFF;
+            --text-dark: #2C3E50;
+            --text-medium: #5A6C7D;
+            --text-light: #8A9BA8;
+            --border-light: #E1E8ED;
+            --border-medium: #D1D9E0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--primary-blue) 100%);
+            min-height: 100vh;
+            color: var(--background-white);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 40px 0;
+        }
+
+        .account-type-card {
+            background: var(--background-white);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(74, 144, 226, 0.15);
+            padding: 32px 24px;
+            text-align: center;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .brand-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .brand-icon {
+            font-size: 3rem;
+            color: var(--primary-blue);
+            margin-bottom: 16px;
+        }
+
+        .brand-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .brand-subtitle {
+            color: var(--text-medium);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .welcome-message {
+            background: var(--background-light);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .welcome-message h4 {
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .welcome-message p {
+            color: var(--text-medium);
+            margin: 0;
+        }
+
+        .account-type-options {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .account-type-card-option {
+            border: 2px solid var(--border-light);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            text-align: left;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: var(--background-white);
+        }
+
+        .account-type-card-option:hover,
+        .account-type-card-option:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 12px 28px rgba(74, 144, 226, 0.18);
+            transform: translateY(-2px);
+        }
+
+        .account-type-card-option.selected {
+            border-color: var(--primary-blue);
+            background: rgba(74, 144, 226, 0.05);
+        }
+
+        .account-type-card-option i {
+            font-size: 2.5rem;
+            color: var(--primary-blue);
+        }
+
+        .account-type-card-option h5 {
+            margin: 0;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .account-type-card-option span {
+            display: block;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-top: 6px;
+        }
+
+        .btn-continue {
+            background: var(--primary-blue);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            padding: 12px 32px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn-continue:hover {
+            background: var(--primary-blue-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-continue:disabled {
+            background: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 1px solid var(--border-medium);
+            border-radius: 8px;
+            color: var(--text-medium);
+            font-weight: 500;
+            padding: 12px 32px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .btn-back:hover {
+            background: var(--background-light);
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="account-type-card">
+            <div class="brand-section">
+                <div class="brand-icon">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <h1 class="brand-title">Book Eat</h1>
+                <p class="brand-subtitle">Đặt bàn online, giữ chỗ ngay</p>
+            </div>
+
+            <div class="welcome-message">
+                <h4><i class="fas fa-check-circle text-success"></i> Đăng nhập Google thành công!</h4>
+                <p>Vui lòng chọn loại tài khoản bạn muốn sử dụng:</p>
+            </div>
+
+            <form id="accountTypeForm" method="post" action="/auth/oauth-complete">
+                <input type="hidden" id="accountType" name="accountType" value="">
+                
+                <div class="account-type-options">
+                    <div class="account-type-card-option" onclick="selectAccountType('customer')">
+                        <i class="fas fa-user"></i>
+                        <div>
+                            <h5>Khách hàng</h5>
+                            <span>Đặt bàn và trải nghiệm dịch vụ nhà hàng</span>
+                        </div>
+                    </div>
+                    
+                    <div class="account-type-card-option" onclick="selectAccountType('restaurant_owner')">
+                        <i class="fas fa-store"></i>
+                        <div>
+                            <h5>Chủ nhà hàng</h5>
+                            <span>Quản lý nhà hàng và đón tiếp khách</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-continue" id="continueBtn" disabled>
+                    <i class="fas fa-arrow-right"></i> Tiếp tục
+                </button>
+                
+                <button type="button" class="btn btn-back" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function selectAccountType(type) {
+            // Remove selected class from all options
+            document.querySelectorAll('.account-type-card-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            event.currentTarget.classList.add('selected');
+            
+            // Set hidden input value
+            document.getElementById('accountType').value = type;
+            
+            // Enable continue button
+            document.getElementById('continueBtn').disabled = false;
+        }
+
+        function goBack() {
+            window.location.href = '/login';
+        }
+
+        // Prevent form submission if no account type selected
+        document.getElementById('accountTypeForm').addEventListener('submit', function(e) {
+            if (!document.getElementById('accountType').value) {
+                e.preventDefault();
+                alert('Vui lòng chọn loại tài khoản');
+            }
+        });
+    </script>
+</body>
+</html>

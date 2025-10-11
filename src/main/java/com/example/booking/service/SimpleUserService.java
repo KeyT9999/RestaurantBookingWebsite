@@ -11,12 +11,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
+import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.dto.ProfileEditForm;
 import com.example.booking.dto.RegisterForm;
 import com.example.booking.repository.UserRepository;
+import com.example.booking.repository.RestaurantOwnerRepository;
 
 @Service("simpleUserService")
 @Transactional
@@ -25,14 +26,17 @@ public class SimpleUserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final RestaurantOwnerRepository restaurantOwnerRepository;
     
     @Autowired
     public SimpleUserService(UserRepository userRepository, 
                            PasswordEncoder passwordEncoder,
-                           EmailService emailService) {
+            EmailService emailService,
+            RestaurantOwnerRepository restaurantOwnerRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.restaurantOwnerRepository = restaurantOwnerRepository;
     }
     
     @Override
@@ -63,7 +67,9 @@ public class SimpleUserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(form.getPassword()));
         user.setFullName(form.getFullName());
         user.setPhoneNumber(form.getPhoneNumber());
-        user.setRole(UserRole.CUSTOMER);
+        user.setAddress(form.getAddress());
+        UserRole resolvedRole = form.resolveRole();
+        user.setRole(resolvedRole);
         user.setEmailVerified(false); // Require email verification
         
         // Generate email verification token
@@ -72,6 +78,13 @@ public class SimpleUserService implements UserDetailsService {
         
         User savedUser = userRepository.save(user);
         
+        // Create RestaurantOwner record if user is restaurant owner
+        if (resolvedRole.isRestaurantOwner()) {
+            RestaurantOwner restaurantOwner = new RestaurantOwner(savedUser);
+            restaurantOwnerRepository.save(restaurantOwner);
+            System.out.println("✅ RestaurantOwner created for user: " + savedUser.getUsername());
+        }
+
         // Send verification email
         emailService.sendVerificationEmail(savedUser.getEmail(), verificationToken);
         
@@ -194,6 +207,10 @@ public class SimpleUserService implements UserDetailsService {
     }
     
     public User upsertGoogleUser(String googleId, String email, String name) {
+        return upsertGoogleUser(googleId, email, name, UserRole.CUSTOMER);
+    }
+
+    public User upsertGoogleUser(String googleId, String email, String name, UserRole preferredRole) {
         // Try to find existing user by Google ID first
         Optional<User> existingUser = userRepository.findByGoogleId(googleId);
         if (existingUser.isPresent()) {
@@ -225,12 +242,40 @@ public class SimpleUserService implements UserDetailsService {
         newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         newUser.setFullName(name != null ? name : "Google User");
         newUser.setGoogleId(googleId);
-        newUser.setRole(UserRole.CUSTOMER);
+        newUser.setRole(preferredRole);
         newUser.setEmailVerified(true);
         newUser.setLastLogin(LocalDateTime.now());
         
         User savedUser = userRepository.save(newUser);
-        System.out.println("✅ New Google user created id=" + savedUser.getId() + " email=" + savedUser.getEmail());
+
+        // Create RestaurantOwner record if user is restaurant owner
+        if (preferredRole.isRestaurantOwner()) {
+            RestaurantOwner restaurantOwner = new RestaurantOwner(savedUser);
+            restaurantOwnerRepository.save(restaurantOwner);
+            System.out.println("✅ RestaurantOwner created for Google user: " + savedUser.getUsername());
+        }
+
+        System.out.println("✅ New Google user created id=" + savedUser.getId() + " email=" + savedUser.getEmail()
+                + " role=" + preferredRole);
         return savedUser;
+    }
+
+    public void updateUserRole(User user, UserRole newRole) {
+        user.setRole(newRole);
+        userRepository.save(user);
+        System.out.println("✅ User role updated to: " + newRole);
+    }
+
+    public void createRestaurantOwnerIfNeeded(User user) {
+        if (user.getRole().isRestaurantOwner()) {
+            // Check if RestaurantOwner already exists
+            if (!restaurantOwnerRepository.existsByUser(user)) {
+                RestaurantOwner restaurantOwner = new RestaurantOwner(user);
+                restaurantOwnerRepository.save(restaurantOwner);
+                System.out.println("✅ RestaurantOwner created for user: " + user.getUsername());
+            } else {
+                System.out.println("ℹ️ RestaurantOwner already exists for user: " + user.getUsername());
+            }
+        }
     }
 } 
