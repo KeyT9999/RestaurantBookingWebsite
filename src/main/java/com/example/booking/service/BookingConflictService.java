@@ -44,7 +44,7 @@ public class BookingConflictService {
     private RestaurantTableRepository restaurantTableRepository;
     
     // Constants
-    private static final int MIN_BOOKING_ADVANCE_HOURS = 1; // Tối thiểu 1 giờ trước
+    private static final int MIN_BOOKING_ADVANCE_MINUTES = 30; // Tối thiểu 30 phút trước
     private static final int MAX_BOOKING_ADVANCE_DAYS = 30; // Tối đa 30 ngày trước
     private static final int BOOKING_DURATION_HOURS = 2; // Thời gian booking mặc định
     
@@ -192,9 +192,9 @@ public class BookingConflictService {
         }
         
         // Check minimum advance booking time
-        LocalDateTime minTime = now.plusHours(MIN_BOOKING_ADVANCE_HOURS);
+        LocalDateTime minTime = now.plusMinutes(MIN_BOOKING_ADVANCE_MINUTES);
         if (bookingTime.isBefore(minTime)) {
-            conflicts.add("Phải đặt bàn trước ít nhất " + MIN_BOOKING_ADVANCE_HOURS + " giờ");
+            conflicts.add("Phải đặt bàn trước ít nhất " + MIN_BOOKING_ADVANCE_MINUTES + " phút");
         }
         
         // Check maximum advance booking time

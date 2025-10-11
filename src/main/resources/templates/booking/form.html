@@ -1270,22 +1270,6 @@
                 return false;
             }
             
-            // Check if booking time is at least 30 minutes from now and not too far in future
-            const now = new Date();
-            const bookingDateTime = new Date(bookingTime);
-            const minTime = new Date(now.getTime() + 30 * 60000); // 30 minutes
-            const maxTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
-            
-            if (bookingDateTime < minTime) {
-                alert('Booking time must be at least 30 minutes from now.');
-                return false;
-            }
-            
-            if (bookingDateTime > maxTime) {
-                alert('Booking time cannot be more than 30 days in the future.');
-                return false;
-            }
-            
             // Check availability with Smart Waitlist
             console.log('🔍 Starting Smart Waitlist availability check...');
             checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds);
@@ -2234,11 +2218,6 @@
                 return false;
             }
             
-            // 4. Validate booking time
-            if (!validateBookingTimeBeforeSubmit(bookingTime)) {
-                return false;
-            }
-            
             console.log('✅ Form validation passed');
             return true;
         }
@@ -2281,36 +2260,6 @@
             }
             
             console.log('✅ Table capacity validation passed');
-            return true;
-        }
-        
-        /**
-         * Validate booking time before submission
-         */
-        function validateBookingTimeBeforeSubmit(bookingTime) {
-            console.log('🔍 Validating booking time...');
-            
-            const bookingDateTime = new Date(bookingTime);
-            const now = new Date();
-            const minTime = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
-            const maxTime = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-            
-            console.log('   Booking time:', bookingDateTime);
-            console.log('   Current time:', now);
-            console.log('   Min time:', minTime);
-            console.log('   Max time:', maxTime);
-            
-            if (bookingDateTime < minTime) {
-                showNotification('Thời gian đặt bàn phải ít nhất 30 phút từ bây giờ', 'error');
-                return false;
-            }
-            
-            if (bookingDateTime > maxTime) {
-                showNotification('Thời gian đặt bàn không được quá 30 ngày trong tương lai', 'error');
-                return false;
-            }
-            
-            console.log('✅ Booking time validation passed');
             return true;
         }
         
