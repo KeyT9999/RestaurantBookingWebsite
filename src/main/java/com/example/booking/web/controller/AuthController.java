@@ -31,6 +31,7 @@ import com.example.booking.dto.RegisterForm;
 import com.example.booking.dto.ResetPasswordForm;
 import com.example.booking.service.SimpleUserService;
 import com.example.booking.service.RestaurantOwnerService;
+import com.example.booking.service.ImageUploadService;
 
 import jakarta.validation.Valid;
 
@@ -41,6 +42,9 @@ public class AuthController {
     private final SimpleUserService userService;
     private final RestaurantOwnerService restaurantOwnerService;
     
+    @Autowired
+    private ImageUploadService imageUploadService;
+
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
     
@@ -446,23 +450,7 @@ public class AuthController {
     }
     
     private String saveUploadedFile(MultipartFile file, String userId) throws IOException {
-        // Create upload directory if it doesn't exist
-        File uploadDirFile = new File(uploadDir);
-        if (!uploadDirFile.exists()) {
-            uploadDirFile.mkdirs();
-        }
-        
-        // Generate unique filename
-        String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename != null ? 
-            originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
-        String filename = "avatar_" + userId + "_" + System.currentTimeMillis() + extension;
-        
-        // Save file
-        Path filePath = Paths.get(uploadDir, filename);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        
-        // Return URL path
-        return "/uploads/" + filename;
+        // Use ImageUploadService for avatar uploads
+        return imageUploadService.uploadAvatar(file, Integer.parseInt(userId));
     }
 }
