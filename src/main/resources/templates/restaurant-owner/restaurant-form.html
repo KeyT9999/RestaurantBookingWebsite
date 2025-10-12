@@ -90,6 +90,30 @@
                         <input type="file" name="cover" accept="image/*" />
                         <small class="muted">PNG, JPG, WebP. Tối đa 10MB</small>
                     </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Giấy phép kinh doanh</span>
+                        <input type="file" name="businessLicense" accept=".pdf,.doc,.docx,image/*" />
+                        <small class="muted">PDF, DOC, DOCX, PNG, JPG. Tối đa 20MB</small>
+                    </label>
+                </div>
+                
+                <!-- Terms of Service -->
+                <div class="card mt-4">
+                    <h3>Điều khoản sử dụng</h3>
+                    <div class="terms-content">
+                        <p>Bằng việc đăng ký nhà hàng, bạn đồng ý với các điều khoản sau:</p>
+                        <ul>
+                            <li>Thông tin nhà hàng phải chính xác và đầy đủ</li>
+                            <li>Tuân thủ các quy định về an toàn thực phẩm</li>
+                            <li>Chịu trách nhiệm về chất lượng dịch vụ</li>
+                            <li>Thanh toán phí dịch vụ theo quy định</li>
+                        </ul>
+                    </div>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="termsAccepted" required />
+                        <span class="checkbox-label">Tôi đồng ý với <a href="#" target="_blank">Điều khoản sử dụng</a> và <a href="#" target="_blank">Chính sách bảo mật</a></span>
+                    </label>
                 </div>
                 
                 <!-- Form Actions -->

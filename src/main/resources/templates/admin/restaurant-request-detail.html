@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi tiết Nhà hàng - Book Eat Admin</title>
+    <title th:text="'Chi tiết Nhà hàng: ' + ${restaurant.restaurantName} + ' | Book Eat Admin Panel'">Chi tiết Nhà hàng - Book Eat Admin</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" th:content="'Xem chi tiết thông tin nhà hàng ' + ${restaurant.restaurantName} + ' đang chờ duyệt. Kiểm tra thông tin, giấy phép kinh doanh và đưa ra quyết định duyệt hoặc từ chối.'">
+    <meta name="keywords" content="chi tiết nhà hàng, duyệt nhà hàng, admin panel, book eat, restaurant details">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" th:content="'Chi tiết Nhà hàng: ' + ${restaurant.restaurantName} + ' | Book Eat Admin'">
+    <meta property="og:description" th:content="'Thông tin chi tiết nhà hàng ' + ${restaurant.restaurantName} + ' đang chờ duyệt'">
+    <meta property="og:type" content="website">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
