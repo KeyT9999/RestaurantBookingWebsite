@@ -29,6 +29,98 @@
             --border-medium: #D1D9E0;
         }
 
+        .account-type-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 22, 46, 0.85);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .account-type-modal {
+            background: var(--background-white);
+            border-radius: 16px;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+            padding: 32px;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        .account-type-modal h2 {
+            color: var(--text-dark);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .account-type-modal p {
+            color: var(--text-medium);
+            margin-bottom: 28px;
+        }
+
+        .account-type-options {
+            display: grid;
+            gap: 16px;
+        }
+
+        .account-type-card {
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            text-align: left;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .account-type-card i {
+            font-size: 2rem;
+            color: var(--primary-blue);
+        }
+
+        .account-type-card:hover,
+        .account-type-card:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 12px 28px rgba(74, 144, 226, 0.18);
+            transform: translateY(-2px);
+        }
+
+        .account-type-card h5 {
+            margin: 0;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .account-type-card span {
+            display: block;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-top: 6px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--primary-blue) 100%);
@@ -235,7 +327,7 @@
     </style>
 </head>
 <body>
-    <div class="register-container">
+    <div class="register-container hidden" id="registerContainer">
     <div class="container">
         <div class="row justify-content-center">
                 <div class="col-md-8 col-lg-6 col-xl-5">
@@ -256,7 +348,8 @@
                     </div>
                     
                     <!-- Register Form -->
-                    <form th:action="@{/auth/register}" method="post" th:object="${registerForm}">
+                    <form th:action="@{/auth/register}" method="post" th:object="${registerForm}" id="registerForm">
+                        <input type="hidden" id="accountType" th:field="*{accountType}">
                         
                         <!-- Username -->
                         <div class="mb-3">
@@ -322,6 +415,22 @@
                                  th:errors="*{phoneNumber}"></div>
                         </div>
                         
+                        <!-- Address -->
+                        <div class="mb-3">
+                            <label for="address" class="form-label">
+                                    <i class="fas fa-map-marker-alt luxury-icon"></i> Địa chỉ
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="address" 
+                                   name="address"
+                                   th:field="*{address}"
+                                   th:classappend="${#fields.hasErrors('address')} ? 'is-invalid' : ''"
+                                   placeholder="Nhập địa chỉ (tùy chọn)">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" 
+                                 th:errors="*{address}"></div>
+                        </div>
+                        
                         <!-- Password -->
                         <div class="mb-3">
                             <label for="password" class="form-label">
@@ -339,7 +448,7 @@
                         </div>
                         
                         <!-- Confirm Password -->
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label for="confirmPassword" class="form-label">
                                     <i class="fas fa-lock luxury-icon"></i> Xác nhận mật khẩu <span class="required">*</span>
                             </label>
@@ -389,15 +498,46 @@
         </div>
     </div>
     
+    <div id="accountTypeOverlay" class="account-type-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="accountTypeTitle" aria-hidden="true">
+        <div class="account-type-modal">
+            <h2 id="accountTypeTitle">Chọn loại tài khoản</h2>
+            <p>Bạn muốn đăng ký với vai trò nào?</p>
+            <div class="account-type-options">
+                <button type="button" class="account-type-card" data-type="customer">
+                    <i class="fas fa-user"></i>
+                    <div>
+                        <h5>Đăng ký khách hàng</h5>
+                        <span>Dùng để đặt bàn, khám phá nhà hàng và nhận ưu đãi.</span>
+                    </div>
+                </button>
+                <button type="button" class="account-type-card" data-type="restaurant_owner">
+                    <i class="fas fa-store"></i>
+                    <div>
+                        <h5>Đăng ký chủ nhà hàng</h5>
+                        <span>Quản lý nhà hàng, đặt bàn và chương trình ưu đãi dành riêng.</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Password matching validation
         document.addEventListener('DOMContentLoaded', function() {
             const password = document.getElementById('password');
             const confirmPassword = document.getElementById('confirmPassword');
-            
+            const registerForm = document.getElementById('registerForm');
+            const accountTypeOverlay = document.getElementById('accountTypeOverlay');
+            const accountTypeInput = document.getElementById('accountType');
+            const accountTypeCards = document.querySelectorAll('.account-type-card');
+            const formTitle = document.querySelector('.brand-title');
+            const formSubtitle = document.querySelector('.brand-subtitle');
+            const registerContainer = document.getElementById('registerContainer');
+            const restaurantFields = document.getElementById('restaurantFields');
+            const restaurantNameInput = document.getElementById('restaurantName');
+
             function validatePasswordMatch() {
                 if (password.value !== confirmPassword.value) {
                     confirmPassword.setCustomValidity('Mật khẩu xác nhận không khớp');
@@ -405,9 +545,109 @@
                     confirmPassword.setCustomValidity('');
                 }
             }
-            
-            password.addEventListener('input', validatePasswordMatch);
-            confirmPassword.addEventListener('input', validatePasswordMatch);
+
+            if (password && confirmPassword) {
+                password.addEventListener('input', validatePasswordMatch);
+                confirmPassword.addEventListener('input', validatePasswordMatch);
+            }
+
+            function showOverlay() {
+                if (accountTypeOverlay) {
+                    accountTypeOverlay.classList.remove('hidden');
+                    accountTypeOverlay.setAttribute('aria-hidden', 'false');
+                    const firstCard = accountTypeOverlay.querySelector('.account-type-card');
+                    if (firstCard) {
+                        firstCard.focus();
+                    }
+                    document.body.classList.add('overflow-hidden');
+                }
+            }
+
+            function hideOverlay() {
+                if (accountTypeOverlay) {
+                    accountTypeOverlay.classList.add('hidden');
+                    accountTypeOverlay.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('overflow-hidden');
+                }
+            }
+
+            function updateFormText(type) {
+                if (!formTitle || !formSubtitle) return;
+                if ('restaurant_owner' === type) {
+                    formTitle.textContent = 'Đăng ký Chủ nhà hàng';
+                    formSubtitle.textContent = 'Quản lý nhà hàng và kết nối với khách hàng';
+                } else {
+                    formTitle.textContent = 'Đăng ký Khách hàng';
+                    formSubtitle.textContent = 'Tạo tài khoản để đặt bàn dễ dàng';
+                }
+            }
+
+            function toggleRestaurantFields(type) {
+                if (!restaurantFields) return;
+                const isOwner = type === 'restaurant_owner';
+                if (isOwner) {
+                    restaurantFields.classList.remove('hidden');
+                    if (restaurantNameInput) {
+                        restaurantNameInput.required = true;
+                    }
+                } else {
+                    restaurantFields.classList.add('hidden');
+                    if (restaurantNameInput) {
+                        restaurantNameInput.required = false;
+                    }
+                }
+            }
+
+            accountTypeCards.forEach(card => {
+                card.setAttribute('tabindex', '0');
+                card.addEventListener('click', () => {
+                    const type = card.getAttribute('data-type');
+                    if (accountTypeInput) {
+                        accountTypeInput.value = type;
+                    }
+                    updateFormText(type);
+                    toggleRestaurantFields(type);
+                    hideOverlay();
+                    const usernameField = document.getElementById('username');
+                    if (usernameField) {
+                        setTimeout(() => usernameField.focus(), 150);
+                    }
+                });
+
+                card.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        card.click();
+                    }
+                });
+            });
+
+            if (registerForm) {
+                registerForm.addEventListener('submit', (event) => {
+                    if (accountTypeOverlay && !accountTypeOverlay.classList.contains('hidden')) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    if (!accountTypeInput || !accountTypeInput.value) {
+                        event.preventDefault();
+                        showOverlay();
+                        return;
+                    }
+                });
+            }
+
+            if (accountTypeInput && accountTypeInput.value) {
+                hideOverlay();
+                updateFormText(accountTypeInput.value);
+                toggleRestaurantFields(accountTypeInput.value);
+            } else {
+                showOverlay();
+            }
+
+            if (registerContainer) {
+                registerContainer.classList.remove('hidden');
+            }
         });
     </script>
 </body>

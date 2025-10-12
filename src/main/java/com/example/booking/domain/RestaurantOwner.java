@@ -31,14 +31,8 @@ public class RestaurantOwner {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @Column(name = "owner_name")
+    @Column(name = "owner_name", nullable = false, length = 255)
     private String ownerName;
-
-    @Column(name = "phone")
-    private String phone;
-
-    @Column(name = "address")
-    private String address;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -57,7 +51,7 @@ public class RestaurantOwner {
     public RestaurantOwner(User user) {
         this();
         this.user = user;
-        this.ownerName = user.getFullName(); // Set ownerName from user's full name
+        this.ownerName = user.getFullName(); // Set owner name from user's full name
     }
     
     @PrePersist
@@ -65,6 +59,11 @@ public class RestaurantOwner {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
+
+        // Ensure ownerName is set
+        if (this.ownerName == null && this.user != null) {
+            this.ownerName = this.user.getFullName();
+        }
     }
     
     @PreUpdate
@@ -95,22 +94,6 @@ public class RestaurantOwner {
 
     public void setOwnerName(String ownerName) {
         this.ownerName = ownerName;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
     }
 
     public LocalDateTime getCreatedAt() {

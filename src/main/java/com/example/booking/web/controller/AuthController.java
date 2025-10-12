@@ -379,6 +379,51 @@ public class AuthController {
         return "redirect:/auth/profile";
     }
     
+    // ============= OAUTH ACCOUNT TYPE SELECTION =============
+
+    @GetMapping("/oauth-account-type")
+    public String showOAuthAccountTypeSelection() {
+        return "auth/oauth-account-type";
+    }
+
+    @PostMapping("/oauth-complete")
+    public String completeOAuthRegistration(@RequestParam String accountType,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        try {
+            User currentUser = getCurrentUser(authentication);
+            if (currentUser == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không thể xác định người dùng");
+                return "redirect:/login";
+            }
+
+            // Update user role if needed
+            UserRole newRole = UserRole.CUSTOMER;
+            if ("restaurant_owner".equals(accountType)) {
+                newRole = UserRole.RESTAURANT_OWNER;
+            }
+
+            if (currentUser.getRole() != newRole) {
+                currentUser.setRole(newRole);
+                userService.updateUserRole(currentUser, newRole);
+
+                // Create RestaurantOwner record if needed
+                if (newRole.isRestaurantOwner()) {
+                    userService.createRestaurantOwnerIfNeeded(currentUser);
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Tài khoản Google đã được thiết lập thành công!");
+            return "redirect:/";
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/login";
+        }
+    }
+
     // ============= HELPER METHODS =============
     
     private User getCurrentUser(Authentication authentication) {
