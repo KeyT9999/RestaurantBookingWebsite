@@ -100,8 +100,9 @@ public class SecurityConfig {
 				.requestMatchers("/admin/vouchers").permitAll()
 				.requestMatchers("/admin/vouchers/**").permitAll()
 				.requestMatchers("/admin/**").hasRole("ADMIN")
-				.requestMatchers("/auth/register", "/auth/register-success", "/auth/verify-email", 
+				.requestMatchers("/auth/register", "/auth/register-restaurant", "/auth/register-success", "/auth/verify-email", 
 						"/auth/verify-result", "/auth/forgot-password", "/auth/reset-password").permitAll()
+				.requestMatchers("/restaurant-owner/restaurants/create").authenticated()  // Cho phép CUSTOMER tạo nhà hàng
 				.requestMatchers("/restaurant-owner/**").hasRole("RESTAURANT_OWNER")
 				.requestMatchers("/auth/**").authenticated()
 				.requestMatchers("/booking/**").authenticated()

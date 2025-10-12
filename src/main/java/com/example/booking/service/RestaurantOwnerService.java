@@ -1,31 +1,31 @@
     package com.example.booking.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.example.booking.domain.RestaurantProfile;
-import com.example.booking.domain.RestaurantOwner;
-import com.example.booking.domain.RestaurantTable;
-import com.example.booking.domain.Booking;
-import com.example.booking.domain.Dish;
-import com.example.booking.domain.RestaurantMedia;
-import com.example.booking.domain.User;
-import com.example.booking.repository.RestaurantRepository;
-import com.example.booking.repository.RestaurantOwnerRepository;
-import com.example.booking.repository.RestaurantProfileRepository;
-import com.example.booking.repository.BookingRepository;
-import com.example.booking.repository.DiningTableRepository;
-import com.example.booking.repository.DishRepository;
-import com.example.booking.repository.RestaurantMediaRepository;
-import com.example.booking.service.SimpleUserService;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.booking.domain.Booking;
+import com.example.booking.domain.Dish;
+import com.example.booking.domain.RestaurantMedia;
+import com.example.booking.domain.RestaurantOwner;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantTable;
+import com.example.booking.domain.User;
+import com.example.booking.repository.BookingRepository;
+import com.example.booking.repository.DiningTableRepository;
+import com.example.booking.repository.DishRepository;
+import com.example.booking.repository.RestaurantMediaRepository;
+import com.example.booking.repository.RestaurantOwnerRepository;
+import com.example.booking.repository.RestaurantProfileRepository;
+import com.example.booking.repository.RestaurantRepository;
 
 /**
  * Service for Restaurant Owner management operations
@@ -34,6 +34,8 @@ import org.springframework.security.core.Authentication;
 @Service
 @Transactional
 public class RestaurantOwnerService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(RestaurantOwnerService.class);
 
     private final RestaurantRepository restaurantRepository;
     private final RestaurantOwnerRepository restaurantOwnerRepository;
@@ -43,6 +45,7 @@ public class RestaurantOwnerService {
     private final DishRepository dishRepository;
     private final RestaurantMediaRepository restaurantMediaRepository;
     private final SimpleUserService userService;
+    private final RestaurantNotificationService restaurantNotificationService;
 
     @Autowired
     public RestaurantOwnerService(RestaurantRepository restaurantRepository,
@@ -51,8 +54,9 @@ public class RestaurantOwnerService {
                                 BookingRepository bookingRepository,
                                 DiningTableRepository diningTableRepository,
                                 DishRepository dishRepository,
-                                RestaurantMediaRepository restaurantMediaRepository,
-                                SimpleUserService userService) {
+            RestaurantMediaRepository restaurantMediaRepository,
+            SimpleUserService userService,
+            RestaurantNotificationService restaurantNotificationService) {
         this.restaurantRepository = restaurantRepository;
         this.restaurantOwnerRepository = restaurantOwnerRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
@@ -61,6 +65,7 @@ public class RestaurantOwnerService {
         this.dishRepository = dishRepository;
         this.restaurantMediaRepository = restaurantMediaRepository;
         this.userService = userService;
+        this.restaurantNotificationService = restaurantNotificationService;
     }
 
     /**
@@ -68,6 +73,31 @@ public class RestaurantOwnerService {
      */
     public Optional<RestaurantOwner> getRestaurantOwnerByUserId(UUID userId) {
         return restaurantOwnerRepository.findByUserId(userId);
+    }
+
+    /**
+     * Đảm bảo RestaurantOwner record tồn tại cho user
+     * Tạo mới nếu chưa có
+     */
+    public RestaurantOwner ensureRestaurantOwnerExists(UUID userId) {
+        Optional<RestaurantOwner> existingOwner = restaurantOwnerRepository.findByUserId(userId);
+        
+        if (existingOwner.isPresent()) {
+            return existingOwner.get();
+        }
+        
+        // Lấy User entity
+        User user;
+        try {
+            user = userService.findById(userId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("User not found with ID: " + userId);
+        }
+        
+        // Tạo mới RestaurantOwner record
+        RestaurantOwner newOwner = new RestaurantOwner(user);
+        
+        return restaurantOwnerRepository.save(newOwner);
     }
 
     /**
@@ -202,7 +232,18 @@ public class RestaurantOwnerService {
     public RestaurantProfile createRestaurantProfile(RestaurantProfile restaurantProfile) {
         // Set creation timestamp
         restaurantProfile.setCreatedAt(LocalDateTime.now());
-        return restaurantRepository.save(restaurantProfile);
+        
+        // Save restaurant
+        RestaurantProfile savedRestaurant = restaurantRepository.save(restaurantProfile);
+        
+        // Notify admin about new restaurant registration
+        try {
+            restaurantNotificationService.notifyAdminNewRegistration(savedRestaurant);
+        } catch (Exception e) {
+            logger.warn("Failed to notify admin about new restaurant registration", e);
+        }
+        
+        return savedRestaurant;
     }
 
     /**
@@ -356,6 +397,14 @@ public class RestaurantOwnerService {
      */
     public List<RestaurantMedia> getMediaByRestaurantAndType(RestaurantProfile restaurant, String type) {
         return restaurantMediaRepository.findByRestaurantAndType(restaurant, type);
+    }
+
+    /**
+     * Get restaurant by owner username
+     */
+    public Optional<RestaurantProfile> getRestaurantByOwnerUsername(String username) {
+        List<RestaurantProfile> restaurants = restaurantProfileRepository.findByOwnerUsername(username);
+        return restaurants.isEmpty() ? Optional.empty() : Optional.of(restaurants.get(0));
     }
     
     /**

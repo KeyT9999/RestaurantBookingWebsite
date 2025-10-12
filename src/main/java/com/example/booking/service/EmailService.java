@@ -250,4 +250,56 @@ public class EmailService {
             logger.info("💡 [TIP] To enable real email on localhost, set MAIL_USERNAME and MAIL_PASSWORD environment variables");
         }
     }
+    
+    /**
+     * Send restaurant approval notification to restaurant owner
+     */
+    public void sendRestaurantApprovalEmail(String toEmail, String restaurantName, String subject, String content) {
+        try {
+            sendEmail(toEmail, subject, content);
+            logger.info("✅ Restaurant approval email sent to: {} for restaurant: {}", toEmail, restaurantName);
+        } catch (Exception e) {
+            logger.error("❌ Failed to send restaurant approval email to: {} for restaurant: {}", toEmail, restaurantName, e);
+            throw new RuntimeException("Failed to send approval email", e);
+        }
+    }
+    
+    /**
+     * Send restaurant rejection notification to restaurant owner
+     */
+    public void sendRestaurantRejectionEmail(String toEmail, String restaurantName, String subject, String content) {
+        try {
+            sendEmail(toEmail, subject, content);
+            logger.info("✅ Restaurant rejection email sent to: {} for restaurant: {}", toEmail, restaurantName);
+        } catch (Exception e) {
+            logger.error("❌ Failed to send restaurant rejection email to: {} for restaurant: {}", toEmail, restaurantName, e);
+            throw new RuntimeException("Failed to send rejection email", e);
+        }
+    }
+    
+    /**
+     * Send restaurant suspension notification to restaurant owner
+     */
+    public void sendRestaurantSuspensionEmail(String toEmail, String restaurantName, String subject, String content) {
+        try {
+            sendEmail(toEmail, subject, content);
+            logger.info("✅ Restaurant suspension email sent to: {} for restaurant: {}", toEmail, restaurantName);
+        } catch (Exception e) {
+            logger.error("❌ Failed to send restaurant suspension email to: {} for restaurant: {}", toEmail, restaurantName, e);
+            throw new RuntimeException("Failed to send suspension email", e);
+        }
+    }
+    
+    /**
+     * Send restaurant activation notification to restaurant owner
+     */
+    public void sendRestaurantActivationEmail(String toEmail, String restaurantName, String subject, String content) {
+        try {
+            sendEmail(toEmail, subject, content);
+            logger.info("✅ Restaurant activation email sent to: {} for restaurant: {}", toEmail, restaurantName);
+        } catch (Exception e) {
+            logger.error("❌ Failed to send restaurant activation email to: {} for restaurant: {}", toEmail, restaurantName, e);
+            throw new RuntimeException("Failed to send activation email", e);
+        }
+    }
 } 

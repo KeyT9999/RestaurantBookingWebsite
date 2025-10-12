@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.example.booking.common.enums.RestaurantApprovalStatus;
 import com.example.booking.domain.RestaurantProfile;
 
 @Repository
@@ -34,5 +35,46 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
      */
     @Query("SELECT COUNT(r) > 0 FROM RestaurantProfile r WHERE r.restaurantId = :restaurantId AND r.owner.user.id = :ownerId")
     boolean existsByIdAndOwnerUser_Id(@Param("restaurantId") Integer restaurantId, @Param("ownerId") UUID ownerId);
+
+    // === APPROVAL WORKFLOW METHODS ===
+    
+    /**
+     * Find restaurants by approval status
+     */
+    List<RestaurantProfile> findByApprovalStatus(RestaurantApprovalStatus approvalStatus);
+    
+    /**
+     * Count restaurants by approval status
+     */
+    long countByApprovalStatus(RestaurantApprovalStatus approvalStatus);
+    
+    /**
+     * Find restaurants by approved by admin
+     */
+    List<RestaurantProfile> findByApprovedBy(String approvedBy);
+    
+    /**
+     * Find pending restaurants (for approval workflow)
+     */
+    @Query("SELECT r FROM RestaurantProfile r WHERE r.approvalStatus = 'PENDING' ORDER BY r.createdAt ASC")
+    List<RestaurantProfile> findPendingRestaurants();
+    
+    /**
+     * Find approved restaurants (active restaurants)
+     */
+    @Query("SELECT r FROM RestaurantProfile r WHERE r.approvalStatus = 'APPROVED' ORDER BY r.approvedAt DESC")
+    List<RestaurantProfile> findApprovedRestaurants();
+    
+    /**
+     * Find rejected restaurants
+     */
+    @Query("SELECT r FROM RestaurantProfile r WHERE r.approvalStatus = 'REJECTED' ORDER BY r.approvedAt DESC")
+    List<RestaurantProfile> findRejectedRestaurants();
+    
+    /**
+     * Find suspended restaurants
+     */
+    @Query("SELECT r FROM RestaurantProfile r WHERE r.approvalStatus = 'SUSPENDED' ORDER BY r.approvedAt DESC")
+    List<RestaurantProfile> findSuspendedRestaurants();
 
 }

@@ -87,6 +87,11 @@ public class RestaurantOwnerController {
      */
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model) {
+        // Kiểm tra user có thể truy cập dashboard không (có ít nhất 1 restaurant approved)
+        if (!canAccessDashboard(authentication)) {
+            // Redirect đến trang tạo restaurant nếu chưa có restaurant nào
+            return "redirect:/restaurant-owner/restaurants/create?message=no_approved_restaurant";
+        }
         model.addAttribute("pageTitle", "FOH Dashboard - Quản lý sàn");
         
         try {
@@ -193,33 +198,9 @@ public class RestaurantOwnerController {
 
     // ===== CRUD OPERATIONS FOR RESTAURANTS =====
 
-    /**
-     * Show create restaurant form
-     */
-    @GetMapping("/restaurants/create")
-    public String createRestaurantForm(Model model) {
-        model.addAttribute("pageTitle", "Tạo nhà hàng mới");
-        model.addAttribute("restaurant", new RestaurantProfile());
-        return "restaurant-owner/restaurant-form";
-    }
-
-    /**
-     * Create new restaurant
-     */
-    @PostMapping("/restaurants/create")
-    public String createRestaurant(RestaurantProfile restaurant, 
-                                 @RequestParam(value = "logo", required = false) MultipartFile logo,
-                                 @RequestParam(value = "cover", required = false) MultipartFile cover,
-                                 RedirectAttributes redirectAttributes) {
-        try {
-            restaurantOwnerService.createRestaurantProfile(restaurant);
-            redirectAttributes.addFlashAttribute("success", "Tạo nhà hàng thành công!");
-            return "redirect:/restaurant-owner/profile";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi tạo nhà hàng: " + e.getMessage());
-            return "redirect:/restaurant-owner/restaurants/create";
-        }
-    }
+    // ===== RESTAURANT CREATION MOVED TO RestaurantRegistrationController =====
+    // Các method createRestaurantForm và createRestaurant đã được chuyển sang 
+    // RestaurantRegistrationController để cho phép CUSTOMER tạo nhà hàng
 
     /**
      * Show edit restaurant form
@@ -1309,6 +1290,60 @@ public class RestaurantOwnerController {
         }
 
         throw new RuntimeException("Unsupported authentication principal type: " + principal.getClass().getName());
+    }
+    
+    /**
+     * Helper method để kiểm tra user có active và có restaurant approved không
+     */
+    private boolean isUserActiveAndApproved(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        
+        try {
+            User user = getUserFromAuthentication(authentication);
+            if (user == null || !Boolean.TRUE.equals(user.getActive())) {
+                return false;
+            }
+            
+            if (!user.getRole().isRestaurantOwner()) {
+                return false;
+            }
+            
+            // Kiểm tra có restaurant được approve không
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
+            return restaurants.stream().anyMatch(restaurant -> restaurant.isApproved());
+            
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Helper method để kiểm tra user có thể truy cập dashboard (có ít nhất 1 restaurant approved)
+     */
+    private boolean canAccessDashboard(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        
+        try {
+            User user = getUserFromAuthentication(authentication);
+            if (user == null || !Boolean.TRUE.equals(user.getActive())) {
+                return false;
+            }
+            
+            if (!user.getRole().isRestaurantOwner()) {
+                return false;
+            }
+            
+            // Kiểm tra có restaurant được approve không
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
+            return restaurants.stream().anyMatch(restaurant -> restaurant.isApproved());
+            
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

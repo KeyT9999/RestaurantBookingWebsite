@@ -47,6 +47,10 @@ public class SimpleUserService implements UserDetailsService {
     }
     
     public User registerUser(RegisterForm form) {
+        return registerUser(form, UserRole.CUSTOMER);
+    }
+    
+    public User registerUser(RegisterForm form, UserRole role) {
         // Validate form
         if (!form.isPasswordMatching()) {
             throw new IllegalArgumentException("Mật khẩu xác nhận không khớp");
@@ -71,6 +75,13 @@ public class SimpleUserService implements UserDetailsService {
         UserRole resolvedRole = form.resolveRole();
         user.setRole(resolvedRole);
         user.setEmailVerified(false); // Require email verification
+        
+        // Set active based on role
+        if (role == UserRole.RESTAURANT_OWNER) {
+            user.setActive(false); // Restaurant owners need admin approval
+        } else {
+            user.setActive(true); // Regular customers are active immediately
+        }
         
         // Generate email verification token
         String verificationToken = UUID.randomUUID().toString();
@@ -133,8 +144,15 @@ public class SimpleUserService implements UserDetailsService {
             User user = userOpt.get();
             user.setEmailVerified(true);
             user.setEmailVerificationToken(null); // Clear token after verification
+            
+            // For RESTAURANT_OWNER, set active=true after email verification
+            // so they can login and create restaurant profile
+            if (user.getRole() == UserRole.RESTAURANT_OWNER) {
+                user.setActive(true);
+            }
+            
             userRepository.save(user);
-            System.out.println("✅ Email verified for user: " + user.getEmail());
+            System.out.println("✅ Email verified for user: " + user.getEmail() + " (role: " + user.getRole() + ", active: " + user.getActive() + ")");
             return true;
         }
         System.out.println("❌ Invalid verification token: " + token);

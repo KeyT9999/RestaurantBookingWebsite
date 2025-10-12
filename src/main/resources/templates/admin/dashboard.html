@@ -234,6 +234,43 @@
                 </div>
             </div>
             
+            <!-- Restaurant Approval Statistics -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="chart-container">
+                        <h3 class="chart-title">
+                            <i class="fas fa-utensils"></i> Thống kê duyệt nhà hàng
+                        </h3>
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="stats-card">
+                                    <div class="stats-number text-warning" th:text="${pendingRestaurants}">0</div>
+                                    <div class="stats-label">Chờ duyệt</div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="stats-card">
+                                    <div class="stats-number text-success" th:text="${approvedRestaurants}">0</div>
+                                    <div class="stats-label">Đã duyệt</div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="stats-card">
+                                    <div class="stats-number text-danger" th:text="${rejectedRestaurants}">0</div>
+                                    <div class="stats-label">Bị từ chối</div>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="stats-card">
+                                    <div class="stats-number text-secondary" th:text="${suspendedRestaurants}">0</div>
+                                    <div class="stats-label">Tạm dừng</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Management Cards -->
             <div class="row">
                 <div class="col-lg-3 col-md-6 mb-4">
@@ -252,12 +289,13 @@
                 <div class="col-lg-3 col-md-6 mb-4">
                     <div class="stats-card">
                         <div class="stats-number">
-                            <i class="fas fa-store"></i>
+                            <i class="fas fa-utensils"></i>
+                            <span th:if="${pendingRestaurants > 0}" class="badge bg-warning ms-1" th:text="${pendingRestaurants}">0</span>
                         </div>
-                        <h3 style="color: #FFFFFF; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Quản lý đối tác</h3>
-                        <p style="color: #E0E0E0;">Quản lý nhà hàng đối tác</p>
-                        <a th:href="@{/admin/partners}" class="btn btn-gold w-100">
-                            <span>Quản lý đối tác</span>
+                        <h3 style="color: #FFFFFF; font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Duyệt nhà hàng</h3>
+                        <p style="color: #E0E0E0;">Quản lý yêu cầu đăng ký nhà hàng</p>
+                        <a th:href="@{/admin/restaurant/requests}" class="btn btn-gold w-100">
+                            <span>Duyệt nhà hàng</span>
                         </a>
                     </div>
                 </div>
