@@ -47,16 +47,48 @@ public class AdminRestaurantController {
         try {
             logger.info("Loading restaurant requests page with status filter: {}, search: {}", status, search);
             
-            // Get restaurant requests based on filter
+            // EXACT COPY from SimpleAdminController that works
+            List<RestaurantProfile> allRestaurants = restaurantApprovalService.getAllRestaurantsWithApprovalInfo();
+            
+            // Count by status (EXACT COPY from SimpleAdminController)
+            long pendingCount = allRestaurants.stream()
+                .filter(r -> r.getApprovalStatus() != null && r.getApprovalStatus().name().equals("PENDING"))
+                .count();
+            
+            long approvedCount = allRestaurants.stream()
+                .filter(r -> r.getApprovalStatus() != null && r.getApprovalStatus().name().equals("APPROVED"))
+                .count();
+            
+            long rejectedCount = allRestaurants.stream()
+                .filter(r -> r.getApprovalStatus() != null && r.getApprovalStatus().name().equals("REJECTED"))
+                .count();
+            
+            long suspendedCount = allRestaurants.stream()
+                .filter(r -> r.getApprovalStatus() != null && r.getApprovalStatus().name().equals("SUSPENDED"))
+                .count();
+            
+            // Filter only PENDING restaurants for display (EXACT COPY from SimpleAdminController)
+            List<RestaurantProfile> pendingRestaurants = allRestaurants.stream()
+                .filter(r -> r.getApprovalStatus() != null && r.getApprovalStatus().name().equals("PENDING"))
+                .collect(java.util.stream.Collectors.toList());
+            
+            logger.info("Found {} total restaurants, {} pending", allRestaurants.size(), pendingCount);
+            logger.info("Pending restaurants: {}", pendingRestaurants.stream()
+                .map(RestaurantProfile::getRestaurantName)
+                .collect(java.util.stream.Collectors.toList()));
+            
+            // Apply status filter if provided
             List<RestaurantProfile> restaurants;
-            if (status != null && !status.isEmpty() && !status.equals("ALL")) {
+            if (status != null && !status.isEmpty() && !status.equals("ALL") && !status.equals("PENDING")) {
                 RestaurantApprovalStatus approvalStatus = RestaurantApprovalStatus.valueOf(status);
-                restaurants = restaurantApprovalService.getRestaurantsByApprovalStatus(approvalStatus);
+                restaurants = allRestaurants.stream()
+                    .filter(r -> r.getApprovalStatus() != null && r.getApprovalStatus().equals(approvalStatus))
+                    .collect(java.util.stream.Collectors.toList());
                 model.addAttribute("filter", status);
             } else {
-                // Get all restaurants with approval info
-                restaurants = restaurantApprovalService.getAllRestaurantsWithApprovalInfo();
-                model.addAttribute("filter", "ALL");
+                // Default: Show PENDING restaurants
+                restaurants = pendingRestaurants;
+                model.addAttribute("filter", "PENDING");
             }
             
             // Apply search filter if provided
@@ -64,12 +96,6 @@ public class AdminRestaurantController {
                 restaurants = restaurantApprovalService.searchRestaurants(restaurants, search.trim());
                 model.addAttribute("search", search);
             }
-            
-            // Get statistics
-            long pendingCount = restaurantApprovalService.getPendingRestaurantCount();
-            long approvedCount = restaurantApprovalService.getApprovedRestaurantCount();
-            long rejectedCount = restaurantApprovalService.getRejectedRestaurantCount();
-            long suspendedCount = restaurantApprovalService.getSuspendedRestaurantCount();
             
             model.addAttribute("restaurants", restaurants);
             model.addAttribute("pendingCount", pendingCount);
@@ -85,7 +111,7 @@ public class AdminRestaurantController {
             logger.error("Error loading restaurant requests page", e);
             model.addAttribute("error", "Lỗi khi tải dữ liệu: " + e.getMessage());
             model.addAttribute("restaurants", java.util.Collections.emptyList());
-            model.addAttribute("filter", "ALL");
+            model.addAttribute("filter", "PENDING");
             model.addAttribute("search", "");
             model.addAttribute("pendingCount", 0L);
             model.addAttribute("approvedCount", 0L);

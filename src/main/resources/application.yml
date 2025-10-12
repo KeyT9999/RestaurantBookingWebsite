@@ -56,4 +56,39 @@ payment:
 logging:
   level:
     org.hibernate.SQL: INFO
-    org.springframework.security: INFO 
+    org.springframework.security: INFO
+
+# Rate limiting configuration
+rate:
+  limit:
+    login:
+      requests: 5
+      window: 30  
+      auto-reset: 3600  # 1 hour
+    forgot-password:
+      requests: 3
+      window: 300  # 5 minutes
+      auto-reset: 1800  # 30 minutes
+    register:
+      requests: 2
+      window: 300  # 5 minutes
+      auto-reset: 1800  # 30 minutes
+    reset-password:
+      requests: 3
+      window: 300  # 5 minutes
+      auto-reset: 1800  # 30 minutes
+    booking:
+      requests: 10
+      window: 60   # 1 minute
+      auto-reset: 300  # 5 minutes
+    chat:
+      requests: 30
+      window: 60   # 1 minute
+      auto-reset: 300  # 5 minutes
+    review:
+      requests: 3
+      window: 300  # 5 minutes
+      auto-reset: 1800  # 30 minutes
+    general:
+      requests: 100
+      window: 60   # 1 minute

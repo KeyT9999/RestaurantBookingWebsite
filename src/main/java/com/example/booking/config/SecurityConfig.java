@@ -44,14 +44,20 @@ public class SecurityConfig {
 	private final OidcUserService oidcUserService;
 	private final DataSource dataSource;
 	private final ApplicationContext applicationContext;
+	private final CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
+	private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
 	
 	@Autowired
 	public SecurityConfig(@Lazy UserDetailsService userDetailsService, 
 						 @Lazy OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService,
 						 @Lazy OidcUserService oidcUserService,
 						 @Lazy DataSource dataSource,
-						 ApplicationContext applicationContext) {
+						 ApplicationContext applicationContext,
+						 CustomAuthenticationFailureHandler customAuthenticationFailureHandler,
+						 CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler) {
 		this.userDetailsService = userDetailsService;
+		this.customAuthenticationFailureHandler = customAuthenticationFailureHandler;
+		this.customAuthenticationSuccessHandler = customAuthenticationSuccessHandler;
 		this.oAuth2UserService = oAuth2UserService;
 		this.oidcUserService = oidcUserService;
 		this.dataSource = dataSource;
@@ -99,6 +105,8 @@ public class SecurityConfig {
 				.requestMatchers("/admin/vouchers/test").permitAll()
 				.requestMatchers("/admin/vouchers").permitAll()
 				.requestMatchers("/admin/vouchers/**").permitAll()
+				.requestMatchers("/admin/rate-limiting").permitAll()
+				.requestMatchers("/admin/rate-limiting/**").hasRole("ADMIN")
 				.requestMatchers("/admin/**").hasRole("ADMIN")
 				.requestMatchers("/auth/register", "/auth/register-restaurant", "/auth/register-success", "/auth/verify-email", 
 						"/auth/verify-result", "/auth/forgot-password", "/auth/reset-password").permitAll()
@@ -114,15 +122,8 @@ public class SecurityConfig {
 				.loginPage("/login")
 				.defaultSuccessUrl("/", true)
 				.permitAll()
-				.failureHandler((request, response, exception) -> {
-					if (exception instanceof org.springframework.security.authentication.DisabledException) {
-						response.sendRedirect("/auth/verify-result?unverified=1");
-					} else if (exception instanceof org.springframework.security.authentication.LockedException) {
-						response.sendRedirect("/auth/verify-result?locked=1");
-					} else {
-						response.sendRedirect("/login?error");
-					}
-				})
+				.successHandler(customAuthenticationSuccessHandler)
+				.failureHandler(customAuthenticationFailureHandler)
 			);
 		
 		// Conditionally enable OAuth2 login only if ClientRegistrationRepository exists
@@ -140,7 +141,7 @@ public class SecurityConfig {
 				)
 				.successHandler((request, response, authentication) -> {
 					rememberMeServices().loginSuccess(request, response, authentication);
-						response.sendRedirect("/auth/oauth-account-type");
+					customAuthenticationSuccessHandler.onAuthenticationSuccess(request, response, authentication);
 				})
 				.permitAll()
 			);
