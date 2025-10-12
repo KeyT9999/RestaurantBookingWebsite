@@ -146,7 +146,7 @@ public class RestaurantApprovalService {
             logger.info("Restaurant ID: {} approved successfully by admin: {}", restaurantId, approvedBy);
             
             // Gửi thông báo email và notification cho nhà hàng
-            restaurantNotificationService.notifyRestaurantApproval(restaurant, approvedBy, approvalReason);
+            restaurantNotificationService.sendApprovalNotification(restaurant);
             
             return true;
             
@@ -192,7 +192,7 @@ public class RestaurantApprovalService {
             logger.info("Restaurant ID: {} rejected successfully by admin: {}", restaurantId, rejectedBy);
             
             // Gửi thông báo email và notification cho nhà hàng
-            restaurantNotificationService.notifyRestaurantRejection(restaurant, rejectedBy, rejectionReason);
+            restaurantNotificationService.sendRejectionNotification(restaurant, rejectionReason);
             
             return true;
             
@@ -237,7 +237,7 @@ public class RestaurantApprovalService {
             logger.info("Restaurant ID: {} suspended successfully by admin: {}", restaurantId, suspendedBy);
             
             // Gửi thông báo email và notification cho nhà hàng
-            restaurantNotificationService.notifyRestaurantSuspension(restaurant, suspendedBy, suspensionReason);
+            restaurantNotificationService.sendSuspensionNotification(restaurant, suspensionReason);
             
             return true;
             
@@ -282,7 +282,7 @@ public class RestaurantApprovalService {
             logger.info("Restaurant ID: {} activated successfully by admin: {}", restaurantId, activatedBy);
             
             // Gửi thông báo email và notification cho nhà hàng
-            restaurantNotificationService.notifyRestaurantActivation(restaurant, activatedBy, activationReason);
+            restaurantNotificationService.sendActivationNotification(restaurant, activationReason);
             
             return true;
             
@@ -345,7 +345,7 @@ public class RestaurantApprovalService {
     public void notifyNewRestaurantRegistration(RestaurantProfile restaurant) {
         try {
             logger.info("Notifying new restaurant registration: {}", restaurant.getRestaurantName());
-            restaurantNotificationService.notifyNewRestaurantRegistration(restaurant);
+            restaurantNotificationService.notifyAdminNewRegistration(restaurant);
         } catch (Exception e) {
             logger.error("Error sending new restaurant registration notification", e);
         }

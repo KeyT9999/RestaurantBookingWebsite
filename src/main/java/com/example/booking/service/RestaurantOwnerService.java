@@ -21,6 +21,8 @@ import com.example.booking.repository.RestaurantMediaRepository;
 import com.example.booking.service.SimpleUserService;
 
 import java.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +36,8 @@ import org.springframework.security.core.Authentication;
 @Service
 @Transactional
 public class RestaurantOwnerService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(RestaurantOwnerService.class);
 
     private final RestaurantRepository restaurantRepository;
     private final RestaurantOwnerRepository restaurantOwnerRepository;
@@ -43,6 +47,7 @@ public class RestaurantOwnerService {
     private final DishRepository dishRepository;
     private final RestaurantMediaRepository restaurantMediaRepository;
     private final SimpleUserService userService;
+    private final RestaurantNotificationService restaurantNotificationService;
 
     @Autowired
     public RestaurantOwnerService(RestaurantRepository restaurantRepository,
@@ -51,8 +56,9 @@ public class RestaurantOwnerService {
                                 BookingRepository bookingRepository,
                                 DiningTableRepository diningTableRepository,
                                 DishRepository dishRepository,
-                                RestaurantMediaRepository restaurantMediaRepository,
-                                SimpleUserService userService) {
+            RestaurantMediaRepository restaurantMediaRepository,
+            SimpleUserService userService,
+            RestaurantNotificationService restaurantNotificationService) {
         this.restaurantRepository = restaurantRepository;
         this.restaurantOwnerRepository = restaurantOwnerRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
@@ -61,6 +67,7 @@ public class RestaurantOwnerService {
         this.dishRepository = dishRepository;
         this.restaurantMediaRepository = restaurantMediaRepository;
         this.userService = userService;
+        this.restaurantNotificationService = restaurantNotificationService;
     }
 
     /**
@@ -202,7 +209,18 @@ public class RestaurantOwnerService {
     public RestaurantProfile createRestaurantProfile(RestaurantProfile restaurantProfile) {
         // Set creation timestamp
         restaurantProfile.setCreatedAt(LocalDateTime.now());
-        return restaurantRepository.save(restaurantProfile);
+        
+        // Save restaurant
+        RestaurantProfile savedRestaurant = restaurantRepository.save(restaurantProfile);
+        
+        // Notify admin about new restaurant registration
+        try {
+            restaurantNotificationService.notifyAdminNewRegistration(savedRestaurant);
+        } catch (Exception e) {
+            logger.warn("Failed to notify admin about new restaurant registration", e);
+        }
+        
+        return savedRestaurant;
     }
 
     /**
@@ -356,6 +374,14 @@ public class RestaurantOwnerService {
      */
     public List<RestaurantMedia> getMediaByRestaurantAndType(RestaurantProfile restaurant, String type) {
         return restaurantMediaRepository.findByRestaurantAndType(restaurant, type);
+    }
+
+    /**
+     * Get restaurant by owner username
+     */
+    public Optional<RestaurantProfile> getRestaurantByOwnerUsername(String username) {
+        List<RestaurantProfile> restaurants = restaurantProfileRepository.findByOwnerUsername(username);
+        return restaurants.isEmpty() ? Optional.empty() : Optional.of(restaurants.get(0));
     }
     
     /**

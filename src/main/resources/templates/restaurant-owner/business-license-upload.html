@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Giấy Phép Kinh Doanh - Restaurant Owner</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    
+    <style>
+        .upload-container {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 2rem 0;
+        }
+        
+        .upload-zone {
+            border: 3px dashed #007bff;
+            border-radius: 15px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: rgba(0,123,255,0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-zone:hover {
+            border-color: #0056b3;
+            background: rgba(0,123,255,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .upload-zone.dragover {
+            border-color: #28a745;
+            background: rgba(40,167,69,0.1);
+        }
+        
+        .file-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .existing-file {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .file-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .upload-progress {
+            display: none;
+            margin-top: 1rem;
+        }
+        
+        .btn-upload {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        
+        .btn-delete {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .validation-message {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .file-types {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #dee2e6;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .step.completed {
+            background: #28a745;
+            color: white;
+        }
+    </style>
+</head>
+<body class="page-bg">
+    <!-- Header -->
+    <div th:insert="fragments/header :: header"></div>
+    
+    <!-- Flash Messages -->
+    <div th:insert="fragments/flash :: flash"></div>
+    
+    <div class="container mt-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex align-items-center mb-3">
+                    <a th:href="@{/restaurant-owner/dashboard}" class="btn btn-outline-secondary me-3">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                    <div>
+                        <h2 class="mb-1">
+                            <i class="fas fa-file-upload text-primary me-2"></i>
+                            Upload Giấy Phép Kinh Doanh
+                        </h2>
+                        <p class="text-muted mb-0">Tải lên giấy phép kinh doanh để hoàn tất đăng ký nhà hàng</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step completed">1</div>
+            <div class="step completed">2</div>
+            <div class="step active">3</div>
+            <div class="step">4</div>
+        </div>
+        
+        <!-- Restaurant Info -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-building text-primary me-2"></i>
+                            Thông tin nhà hàng
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Tên nhà hàng:</strong> <span th:text="${restaurant.restaurantName}">Tên nhà hàng</span></p>
+                                <p><strong>Địa chỉ:</strong> <span th:text="${restaurant.address}">Địa chỉ</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Trạng thái:</strong> 
+                                    <span class="badge bg-warning" th:text="${restaurant.approvalStatus.displayName}">Chờ duyệt</span>
+                                </p>
+                                <p><strong>Ngày tạo:</strong> <span th:text="${#temporals.format(restaurant.createdAt, 'dd/MM/yyyy HH:mm')}">Ngày tạo</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Existing Business License -->
+        <div th:if="${existingLicense != null and !existingLicense.isEmpty()}" class="row mb-4">
+            <div class="col-12">
+                <div class="existing-file">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="mb-1">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                Giấy phép kinh doanh đã được tải lên
+                            </h6>
+                            <p class="mb-1 text-muted">
+                                <i class="fas fa-file me-1"></i>
+                                <span th:text="${fileInfo?.filename}">business_license.pdf</span>
+                                <span class="ms-2" th:text="${fileInfo?.formattedSize}">(2.5 MB)</span>
+                            </p>
+                        </div>
+                        <div>
+                            <a th:href="@{${existingLicense}}" target="_blank" class="btn btn-outline-primary btn-sm me-2">
+                                <i class="fas fa-eye"></i> Xem
+                            </a>
+                            <form th:action="@{/restaurant-owner/files/business-license/{id}/delete(id=${restaurant.restaurantId})}" 
+                                  method="post" style="display: inline;">
+                                <button type="submit" class="btn btn-delete btn-sm" 
+                                        onclick="return confirm('Bạn có chắc muốn xóa giấy phép kinh doanh?')">
+                                    <i class="fas fa-trash"></i> Xóa
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Upload Form -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="upload-container">
+                    <h4 class="mb-4">
+                        <i class="fas fa-cloud-upload-alt text-primary me-2"></i>
+                        Tải lên giấy phép kinh doanh
+                    </h4>
+                    
+                    <!-- File Types Info -->
+                    <div class="file-types">
+                        <h6 class="mb-2">
+                            <i class="fas fa-info-circle text-info me-2"></i>
+                            Định dạng file được hỗ trợ:
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Ảnh:</strong> JPG, PNG, GIF, WebP (tối đa 10MB)
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Tài liệu:</strong> PDF, DOC, DOCX (tối đa 20MB)
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form th:action="@{/restaurant-owner/files/business-license}" 
+                          method="post" 
+                          enctype="multipart/form-data" 
+                          id="uploadForm">
+                        
+                        <input type="hidden" name="restaurantId" th:value="${restaurant.restaurantId}">
+                        
+                        <!-- Upload Zone -->
+                        <div class="upload-zone" id="uploadZone">
+                            <div id="uploadContent">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                <h5>Kéo thả file vào đây hoặc click để chọn</h5>
+                                <p class="text-muted">Chọn file giấy phép kinh doanh của bạn</p>
+                                <input type="file" 
+                                       name="file" 
+                                       id="fileInput" 
+                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp"
+                                       style="display: none;">
+                                <button type="button" class="btn btn-upload" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Chọn file
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- File Info Display -->
+                        <div id="fileInfo" class="file-info" style="display: none;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="mb-1" id="fileName">Tên file</h6>
+                                    <p class="mb-0 text-muted" id="fileSize">Kích thước</p>
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="removeFile">
+                                    <i class="fas fa-times"></i> Xóa
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Upload Progress -->
+                        <div id="uploadProgress" class="upload-progress">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <p class="text-center mt-2 mb-0">Đang tải lên...</p>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-upload" id="submitBtn" disabled>
+                                <i class="fas fa-upload me-2"></i>Tải lên giấy phép kinh doanh
+                            </button>
+                        </div>
+                        
+                        <!-- Validation Message -->
+                        <div id="validationMessage" class="validation-message"></div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Instructions -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>
+                            Hướng dẫn
+                        </h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Giấy phép kinh doanh phải còn hiệu lực
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                File phải rõ nét, dễ đọc
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Chấp nhận định dạng PDF, DOC, ảnh
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Kích thước tối đa 20MB
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Admin sẽ xem xét trong 1-2 ngày
+                            </li>
+                        </ul>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Lưu ý:</strong> Sau khi upload, nhà hàng của bạn sẽ được chuyển sang trạng thái "Chờ duyệt" và admin sẽ xem xét giấy phép kinh doanh.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer"></div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInfo = document.getElementById('fileInfo');
+            const uploadForm = document.getElementById('uploadForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const validationMessage = document.getElementById('validationMessage');
+            const removeFileBtn = document.getElementById('removeFile');
+            
+            // Drag and drop functionality
+            uploadZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            
+            uploadZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+            });
+            
+            uploadZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelect(files[0]);
+                }
+            });
+            
+            // File input change
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+            
+            // Remove file
+            removeFileBtn.addEventListener('click', function() {
+                fileInput.value = '';
+                fileInfo.style.display = 'none';
+                submitBtn.disabled = true;
+                validationMessage.innerHTML = '';
+            });
+            
+            // Form submission
+            uploadForm.addEventListener('submit', function(e) {
+                if (!fileInput.files.length) {
+                    e.preventDefault();
+                    showValidationMessage('Vui lòng chọn file trước khi tải lên', 'error');
+                    return;
+                }
+                
+                // Show progress
+                document.getElementById('uploadProgress').style.display = 'block';
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang tải lên...';
+            });
+            
+            function handleFileSelect(file) {
+                // Validate file
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 
+                                    'application/pdf', 'application/msword', 
+                                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+                
+                if (!allowedTypes.includes(file.type)) {
+                    showValidationMessage('Định dạng file không được hỗ trợ. Chỉ chấp nhận: JPG, PNG, GIF, WebP, PDF, DOC, DOCX', 'error');
+                    return;
+                }
+                
+                const maxSize = file.type.startsWith('image/') ? 10 * 1024 * 1024 : 20 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    const maxSizeMB = Math.round(maxSize / 1024 / 1024);
+                    showValidationMessage(`Kích thước file quá lớn. Tối đa ${maxSizeMB}MB`, 'error');
+                    return;
+                }
+                
+                // Show file info
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                fileInfo.style.display = 'block';
+                submitBtn.disabled = false;
+                validationMessage.innerHTML = '';
+                
+                showValidationMessage('File hợp lệ, sẵn sàng tải lên', 'success');
+            }
+            
+            function showValidationMessage(message, type) {
+                validationMessage.innerHTML = `<div class="alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : 'check-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>`;
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // Show toast notifications
+            const urlParams = new URLSearchParams(window.location.search);
+            const success = urlParams.get('success');
+            const error = urlParams.get('error');
+            
+            if (success) {
+                showToast(success, 'success');
+            }
+            if (error) {
+                showToast(error, 'error');
+            }
+        });
+        
+        function showToast(message, type) {
+            const toastContainer = document.getElementById('toastContainer');
+            
+            const toastElement = document.createElement('div');
+            toastElement.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0`;
+            toastElement.setAttribute('role', 'alert');
+            toastElement.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toastElement);
+            
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+            
+            // Remove toast element after it's hidden
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                if (toastElement && toastElement.parentNode) {
+                    toastElement.remove();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
