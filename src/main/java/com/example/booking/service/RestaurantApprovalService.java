@@ -27,6 +27,9 @@ public class RestaurantApprovalService {
     @Autowired
     private RestaurantProfileRepository restaurantProfileRepository;
     
+    @Autowired
+    private RestaurantNotificationService restaurantNotificationService;
+    
     /**
      * Lấy tất cả nhà hàng với thông tin approval
      */
@@ -142,8 +145,8 @@ public class RestaurantApprovalService {
             
             logger.info("Restaurant ID: {} approved successfully by admin: {}", restaurantId, approvedBy);
             
-            // TODO: Gửi thông báo email cho nhà hàng
-            // emailService.sendRestaurantApprovalNotification(restaurant);
+            // Gửi thông báo email và notification cho nhà hàng
+            restaurantNotificationService.notifyRestaurantApproval(restaurant, approvedBy, approvalReason);
             
             return true;
             
@@ -188,8 +191,8 @@ public class RestaurantApprovalService {
             
             logger.info("Restaurant ID: {} rejected successfully by admin: {}", restaurantId, rejectedBy);
             
-            // TODO: Gửi thông báo email cho nhà hàng
-            // emailService.sendRestaurantRejectionNotification(restaurant, rejectionReason);
+            // Gửi thông báo email và notification cho nhà hàng
+            restaurantNotificationService.notifyRestaurantRejection(restaurant, rejectedBy, rejectionReason);
             
             return true;
             
@@ -233,8 +236,8 @@ public class RestaurantApprovalService {
             
             logger.info("Restaurant ID: {} suspended successfully by admin: {}", restaurantId, suspendedBy);
             
-            // TODO: Gửi thông báo email cho nhà hàng
-            // emailService.sendRestaurantSuspensionNotification(restaurant, suspensionReason);
+            // Gửi thông báo email và notification cho nhà hàng
+            restaurantNotificationService.notifyRestaurantSuspension(restaurant, suspendedBy, suspensionReason);
             
             return true;
             
@@ -278,8 +281,8 @@ public class RestaurantApprovalService {
             
             logger.info("Restaurant ID: {} activated successfully by admin: {}", restaurantId, activatedBy);
             
-            // TODO: Gửi thông báo email cho nhà hàng
-            // emailService.sendRestaurantActivationNotification(restaurant);
+            // Gửi thông báo email và notification cho nhà hàng
+            restaurantNotificationService.notifyRestaurantActivation(restaurant, activatedBy, activationReason);
             
             return true;
             
@@ -334,5 +337,17 @@ public class RestaurantApprovalService {
         }
         
         return stats;
+    }
+    
+    /**
+     * Gửi thông báo khi có nhà hàng mới đăng ký
+     */
+    public void notifyNewRestaurantRegistration(RestaurantProfile restaurant) {
+        try {
+            logger.info("Notifying new restaurant registration: {}", restaurant.getRestaurantName());
+            restaurantNotificationService.notifyNewRestaurantRegistration(restaurant);
+        } catch (Exception e) {
+            logger.error("Error sending new restaurant registration notification", e);
+        }
     }
 }

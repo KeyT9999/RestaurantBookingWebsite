@@ -1160,3 +1160,224 @@ WHERE restaurant_name = 'Test Restaurant Approval';
 -- This should fail:
 -- INSERT INTO restaurant_profile (owner_id, restaurant_name, approval_status) 
 -- VALUES ((SELECT owner_id FROM restaurant_owner LIMIT 1), 'Invalid Status Test', 'INVALID_STATUS');
+
+
+-- =====================================================
+-- Restaurant Contract System Migration
+-- =====================================================
+
+-- Tạo bảng restaurant_contract
+CREATE TABLE IF NOT EXISTS restaurant_contract (
+    contract_id SERIAL PRIMARY KEY,
+    restaurant_id INTEGER NOT NULL,
+    owner_id UUID NOT NULL,
+    contract_type VARCHAR(20) NOT NULL DEFAULT 'STANDARD',
+    commission_rate DECIMAL(5,2) NOT NULL DEFAULT 5.00,
+    minimum_guarantee DECIMAL(12,2),
+    payment_terms VARCHAR(100) DEFAULT 'Hàng tuần',
+    contract_start_date TIMESTAMP NOT NULL,
+    contract_end_date TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    signed_by_owner BOOLEAN DEFAULT FALSE,
+    signed_by_admin BOOLEAN DEFAULT FALSE,
+    owner_signature_date TIMESTAMP,
+    admin_signature_date TIMESTAMP,
+    owner_signature_ip VARCHAR(45),
+    admin_signature_ip VARCHAR(45),
+    special_terms TEXT,
+    termination_reason TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(255),
+    updated_by VARCHAR(255)
+);
+
+-- Thêm constraints
+ALTER TABLE restaurant_contract 
+ADD CONSTRAINT chk_contract_type 
+CHECK (contract_type IN ('STANDARD', 'PREMIUM', 'ENTERPRISE', 'TRIAL'));
+
+ALTER TABLE restaurant_contract 
+ADD CONSTRAINT chk_contract_status 
+CHECK (status IN ('DRAFT', 'PENDING_OWNER_SIGNATURE', 'PENDING_ADMIN_SIGNATURE', 'ACTIVE', 'EXPIRED', 'TERMINATED', 'CANCELLED'));
+
+ALTER TABLE restaurant_contract 
+ADD CONSTRAINT chk_commission_rate 
+CHECK (commission_rate >= 0 AND commission_rate <= 100);
+
+-- Thêm foreign key constraints
+ALTER TABLE restaurant_contract 
+ADD CONSTRAINT fk_contract_restaurant 
+FOREIGN KEY (restaurant_id) REFERENCES restaurant_profile(restaurant_id) ON DELETE CASCADE;
+
+ALTER TABLE restaurant_contract 
+ADD CONSTRAINT fk_contract_owner 
+FOREIGN KEY (owner_id) REFERENCES restaurant_owner(owner_id) ON DELETE CASCADE;
+
+-- Tạo indexes
+CREATE INDEX IF NOT EXISTS idx_restaurant_contract_restaurant_id ON restaurant_contract(restaurant_id);
+CREATE INDEX IF NOT EXISTS idx_restaurant_contract_owner_id ON restaurant_contract(owner_id);
+CREATE INDEX IF NOT EXISTS idx_restaurant_contract_status ON restaurant_contract(status);
+CREATE INDEX IF NOT EXISTS idx_restaurant_contract_type ON restaurant_contract(contract_type);
+CREATE INDEX IF NOT EXISTS idx_restaurant_contract_created_at ON restaurant_contract(created_at);
+CREATE INDEX IF NOT EXISTS idx_restaurant_contract_start_date ON restaurant_contract(contract_start_date);
+CREATE INDEX IF NOT EXISTS idx_restaurant_contract_end_date ON restaurant_contract(contract_end_date);
+
+-- Tạo function update updated_at
+CREATE OR REPLACE FUNCTION update_restaurant_contract_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Tạo trigger
+DROP TRIGGER IF EXISTS trg_restaurant_contract_updated_at ON restaurant_contract;
+CREATE TRIGGER trg_restaurant_contract_updated_at
+BEFORE UPDATE ON restaurant_contract
+FOR EACH ROW
+EXECUTE FUNCTION update_restaurant_contract_updated_at();
+
+-- Tạo bảng contract_terms_template (mẫu điều khoản hợp đồng)
+CREATE TABLE IF NOT EXISTS contract_terms_template (
+    template_id SERIAL PRIMARY KEY,
+    template_name VARCHAR(255) NOT NULL,
+    contract_type VARCHAR(20) NOT NULL,
+    terms_content TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(255)
+);
+
+-- Thêm constraints cho template
+ALTER TABLE contract_terms_template 
+ADD CONSTRAINT chk_template_contract_type 
+CHECK (contract_type IN ('STANDARD', 'PREMIUM', 'ENTERPRISE', 'TRIAL'));
+
+-- Index cho template
+CREATE INDEX IF NOT EXISTS idx_contract_terms_template_type ON contract_terms_template(contract_type);
+CREATE INDEX IF NOT EXISTS idx_contract_terms_template_active ON contract_terms_template(is_active);
+
+-- Tạo trigger cho template
+DROP TRIGGER IF EXISTS trg_contract_terms_template_updated_at ON contract_terms_template;
+CREATE TRIGGER trg_contract_terms_template_updated_at
+BEFORE UPDATE ON contract_terms_template
+FOR EACH ROW
+EXECUTE FUNCTION update_restaurant_contract_updated_at();
+
+-- Insert mẫu điều khoản hợp đồng
+INSERT INTO contract_terms_template (template_name, contract_type, terms_content, created_by) VALUES
+('Hợp đồng tiêu chuẩn', 'STANDARD', 
+'ĐIỀU KHOẢN HỢP ĐỒNG HỢP TÁC
+
+Bên A: Book Eat Platform
+Bên B: Nhà hàng đối tác
+
+1. ĐIỀU KHOẢN CHUNG
+- Hợp đồng có hiệu lực từ ngày ký
+- Thời hạn: 12 tháng
+- Hoa hồng: 5% doanh thu từ đặt bàn
+
+2. QUYỀN VÀ NGHĨA VỤ
+Bên A:
+- Cung cấp nền tảng đặt bàn ổn định
+- Marketing và quảng bá nhà hàng
+- Thanh toán đúng hạn
+
+Bên B:
+- Cung cấp dịch vụ chất lượng
+- Cập nhật thông tin chính xác
+- Tuân thủ quy định vệ sinh
+
+3. THANH TOÁN
+- Thanh toán hàng tuần vào thứ 2
+- Báo cáo chi tiết giao dịch
+
+4. CHẤM DỨT HỢP ĐỒNG
+- Thông báo trước 30 ngày
+- Thanh toán dư nợ trong 7 ngày', 'SYSTEM'),
+
+('Hợp đồng cao cấp', 'PREMIUM',
+'ĐIỀU KHOẢN HỢP ĐỒNG HỢP TÁC CAO CẤP
+
+Bên A: Book Eat Platform  
+Bên B: Nhà hàng đối tác
+
+1. ĐIỀU KHOẢN CHUNG
+- Hợp đồng có hiệu lực từ ngày ký
+- Thời hạn: 24 tháng
+- Hoa hồng: 4.5% doanh thu từ đặt bàn
+- Bảo đảm tối thiểu: 2,000,000 VNĐ/tháng
+
+2. QUYỀN VÀ NGHĨA VỤ
+Bên A:
+- Cung cấp nền tảng đặt bàn ổn định
+- Marketing chuyên nghiệp và quảng bá
+- Hỗ trợ kỹ thuật 24/7
+- Thanh toán đúng hạn
+
+Bên B:
+- Cung cấp dịch vụ cao cấp
+- Cập nhật thông tin chính xác
+- Tuân thủ quy định vệ sinh nghiêm ngặt
+- Cam kết chất lượng dịch vụ
+
+3. THANH TOÁN
+- Thanh toán hàng tuần vào thứ 2
+- Báo cáo chi tiết giao dịch
+- Ưu tiên thanh toán
+
+4. CHẤM DỨT HỢP ĐỒNG
+- Thông báo trước 60 ngày
+- Thanh toán dư nợ trong 5 ngày', 'SYSTEM');
+
+-- Cập nhật restaurant_profile để thêm contract_signed
+-- (Nếu chưa có trong migration trước)
+ALTER TABLE restaurant_profile 
+ADD COLUMN IF NOT EXISTS contract_signed BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE restaurant_profile 
+ADD COLUMN IF NOT EXISTS contract_signed_at TIMESTAMP;
+
+-- Tạo view để thống kê hợp đồng
+CREATE OR REPLACE VIEW v_contract_statistics AS
+SELECT 
+    status,
+    contract_type,
+    COUNT(*) as contract_count,
+    AVG(commission_rate) as avg_commission_rate,
+    SUM(CASE WHEN minimum_guarantee IS NOT NULL THEN minimum_guarantee ELSE 0 END) as total_minimum_guarantee
+FROM restaurant_contract 
+WHERE created_at >= CURRENT_DATE - INTERVAL '1 year'
+GROUP BY status, contract_type
+ORDER BY status, contract_type;
+
+-- Tạo view hợp đồng sắp hết hạn
+CREATE OR REPLACE VIEW v_contracts_expiring_soon AS
+SELECT 
+    rc.contract_id,
+    rc.restaurant_id,
+    rp.restaurant_name,
+    rc.owner_id,
+    ro.user_id,
+    rc.contract_end_date,
+    rc.contract_end_date - CURRENT_DATE as days_remaining,
+    rc.status
+FROM restaurant_contract rc
+JOIN restaurant_profile rp ON rc.restaurant_id = rp.restaurant_id
+JOIN restaurant_owner ro ON rc.owner_id = ro.owner_id
+WHERE rc.status = 'ACTIVE' 
+AND rc.contract_end_date IS NOT NULL
+AND rc.contract_end_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days'
+ORDER BY rc.contract_end_date ASC;
+
+-- Thông báo hoàn thành
+DO $$
+BEGIN
+    RAISE NOTICE 'Restaurant Contract System migration completed successfully!';
+    RAISE NOTICE 'Tables created: restaurant_contract, contract_terms_template';
+    RAISE NOTICE 'Views created: v_contract_statistics, v_contracts_expiring_soon';
+    RAISE NOTICE 'Templates inserted: 2 (STANDARD, PREMIUM)';
+END $$;
