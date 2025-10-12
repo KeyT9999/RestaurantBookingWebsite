@@ -23,12 +23,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.booking.domain.User;
+import com.example.booking.domain.UserRole;
 import com.example.booking.dto.ChangePasswordForm;
 import com.example.booking.dto.ForgotPasswordForm;
 import com.example.booking.dto.ProfileEditForm;
 import com.example.booking.dto.RegisterForm;
 import com.example.booking.dto.ResetPasswordForm;
 import com.example.booking.service.SimpleUserService;
+import com.example.booking.service.RestaurantOwnerService;
 
 import jakarta.validation.Valid;
 
@@ -37,13 +39,15 @@ import jakarta.validation.Valid;
 public class AuthController {
     
     private final SimpleUserService userService;
+    private final RestaurantOwnerService restaurantOwnerService;
     
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
     
     @Autowired
-    public AuthController(SimpleUserService userService) {
+    public AuthController(SimpleUserService userService, RestaurantOwnerService restaurantOwnerService) {
         this.userService = userService;
+        this.restaurantOwnerService = restaurantOwnerService;
     }
     
     // ============= REGISTRATION =============
@@ -85,6 +89,57 @@ public class AuthController {
         return "auth/register-success";
     }
     
+    // ============= RESTAURANT REGISTRATION =============
+    
+    @GetMapping("/register-restaurant")
+    public String showRestaurantRegisterForm(Model model) {
+        model.addAttribute("registerForm", new RegisterForm());
+        model.addAttribute("isRestaurantRegistration", true);
+        return "auth/register-restaurant";
+    }
+    
+    @PostMapping("/register-restaurant")
+    public String registerRestaurantOwner(@Valid @ModelAttribute RegisterForm registerForm,
+                                         BindingResult bindingResult,
+                                         @RequestParam(value = "termsAccepted", required = false) Boolean termsAccepted,
+                                         Model model,
+                                         RedirectAttributes redirectAttributes) {
+        
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("isRestaurantRegistration", true);
+            return "auth/register-restaurant";
+        }
+        
+        if (!registerForm.isPasswordMatching()) {
+            model.addAttribute("errorMessage", "Mật khẩu xác nhận không khớp");
+            model.addAttribute("isRestaurantRegistration", true);
+            return "auth/register-restaurant";
+        }
+        
+        // Validation: Kiểm tra ToS đã được chấp nhận
+        if (termsAccepted == null || !termsAccepted) {
+            model.addAttribute("errorMessage", "Vui lòng đồng ý với điều khoản sử dụng để tiếp tục");
+            model.addAttribute("isRestaurantRegistration", true);
+            return "auth/register-restaurant";
+        }
+        
+        try {
+            // Tạo user với role RESTAURANT_OWNER và active=false
+            User user = userService.registerUser(registerForm, UserRole.RESTAURANT_OWNER);
+            
+            // Tạo RestaurantOwner record
+            restaurantOwnerService.ensureRestaurantOwnerExists(user.getId());
+            
+            redirectAttributes.addFlashAttribute("successMessage", 
+                "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản. Sau khi xác thực, bạn có thể đăng ký nhà hàng.");
+            return "redirect:/auth/register-success";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("isRestaurantRegistration", true);
+            return "auth/register-restaurant";
+        }
+    }
+    
     // ============= EMAIL VERIFICATION =============
     
     @GetMapping("/verify-email")
@@ -92,7 +147,7 @@ public class AuthController {
                              RedirectAttributes redirectAttributes) {
         if (userService.verifyEmail(token)) {
             redirectAttributes.addFlashAttribute("successMessage", 
-                "Email đã được xác thực thành công! Bạn có thể đăng nhập ngay.");
+                "Email đã được xác thực thành công! Bạn có thể đăng nhập và tạo hồ sơ nhà hàng.");
             return "redirect:/login";
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", 
