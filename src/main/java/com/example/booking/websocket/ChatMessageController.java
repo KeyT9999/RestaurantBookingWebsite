@@ -23,6 +23,7 @@ import com.example.booking.repository.CustomerRepository;
 import com.example.booking.repository.RestaurantOwnerRepository;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.SimpleUserService;
+import com.example.booking.annotation.RateLimited;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +53,7 @@ public class ChatMessageController {
      * Handle incoming chat messages - Optimized and safe version
      */
     @MessageMapping("/chat.sendMessage")
+    @RateLimited(value = RateLimited.OperationType.CHAT, message = "Quá nhiều tin nhắn. Vui lòng thử lại sau.")
     public void sendMessage(@Payload ChatMessageRequest request, 
                            SimpMessageHeaderAccessor headerAccessor) {
         try {

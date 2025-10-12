@@ -35,6 +35,7 @@ import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.ReviewReportService;
 import com.example.booking.service.ReviewService;
+import com.example.booking.annotation.RateLimited;
 
 @Controller
 @RequestMapping("/restaurant-owner/reviews")

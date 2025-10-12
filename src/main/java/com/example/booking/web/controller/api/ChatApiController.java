@@ -26,6 +26,7 @@ import com.example.booking.dto.RestaurantChatDto;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.RestaurantOwnerService;
+import com.example.booking.annotation.RateLimited;
 import com.example.booking.service.SimpleUserService;
 
 /**
@@ -51,6 +52,7 @@ public class ChatApiController {
      * Get all restaurants available for chat
      */
     @GetMapping("/available-restaurants")
+    @RateLimited(value = RateLimited.OperationType.CHAT, message = "Quá nhiều yêu cầu chat. Vui lòng thử lại sau.")
     public ResponseEntity<?> getAvailableRestaurants(Authentication authentication) {
         try {
             User user = getUserFromAuthentication(authentication);
@@ -158,6 +160,7 @@ public class ChatApiController {
      * Get chat rooms for current user
      */
     @GetMapping("/rooms")
+    @RateLimited(value = RateLimited.OperationType.CHAT, message = "Quá nhiều yêu cầu lấy danh sách chat. Vui lòng thử lại sau.")
     public ResponseEntity<?> getUserChatRooms(Authentication authentication) {
         try {
             User user = getUserFromAuthentication(authentication);
@@ -172,6 +175,7 @@ public class ChatApiController {
      * Create or get existing chat room
      */
     @PostMapping("/rooms")
+    @RateLimited(value = RateLimited.OperationType.CHAT, message = "Quá nhiều yêu cầu tạo phòng chat. Vui lòng thử lại sau.")
     public ResponseEntity<?> createChatRoom(@RequestParam Integer restaurantId, 
                                           Authentication authentication) {
         try {
