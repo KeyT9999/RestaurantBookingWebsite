@@ -26,6 +26,7 @@ import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewForm;
 import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.service.CustomerService;
+import com.example.booking.annotation.RateLimited;
 import com.example.booking.service.ReviewService;
 
 import jakarta.validation.Valid;
@@ -158,6 +159,7 @@ public class ReviewController {
      * Handle review submission from restaurant detail page
      */
     @PostMapping
+    @RateLimited(value = RateLimited.OperationType.REVIEW, message = "Quá nhiều yêu cầu đánh giá. Vui lòng thử lại sau.")
     public String handleReviewSubmission(@Valid @ModelAttribute("reviewForm") ReviewForm form,
                                         BindingResult bindingResult,
                                         Authentication authentication,

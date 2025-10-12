@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Rate Limiting Dashboard</title>
+</head>
+<body>
+    <h1>Rate Limiting Dashboard</h1>
+    
+    <!-- Action Buttons -->
+    <div>
+        <button onclick="refreshDashboard()">🔄 Refresh</button>
+        <button onclick="clearAllBlocks()">🧹 Clear All Blocks</button>
+        <button onclick="showBlockIpForm()">🚫 Block IP</button>
+        <button onclick="showUnblockIpForm()">✅ Unblock IP</button>
+        <button onclick="exportData()">📊 Export Data</button>
+    </div>
+    
+    <h2>Statistics</h2>
+    <p>Blocked IPs: <span th:text="${blockedIps.size()}">0</span></p>
+    <p>Total IPs: <span th:text="${allStatistics.size()}">0</span></p>
+    <p>Alerts: <span th:text="${alerts.size()}">0</span></p>
+    <p>Permanently Blocked: <span th:text="${permanentlyBlockedIps.size()}">0</span></p>
+
+    <h2>Top Blocked IPs</h2>
+    <div th:if="${#lists.isEmpty(topBlockedIps)}">
+        <p>No blocked IPs found.</p>
+    </div>
+    <div th:if="${!#lists.isEmpty(topBlockedIps)}">
+        <table border="1">
+            <tr>
+                <th>IP Address</th>
+                <th>Block Count</th>
+                <th>First Blocked</th>
+                <th>Last Blocked</th>
+                <th>Actions</th>
+            </tr>
+            <tr th:each="stat : ${topBlockedIps}">
+                <td th:text="${stat.ipAddress}">192.168.1.1</td>
+                <td th:text="${stat.blockedCount}">0</td>
+                <td th:text="${stat.firstBlockedAt != null ? stat.firstBlockedAt.toString() : 'N/A'}">N/A</td>
+                <td th:text="${stat.lastBlockedAt != null ? stat.lastBlockedAt.toString() : 'N/A'}">N/A</td>
+                <td>
+                    <button onclick="viewIpDetails('[[${stat.ipAddress}]]')">👁️ View</button>
+                    <button onclick="resetIpLimit('[[${stat.ipAddress}]]')">🔄 Reset</button>
+                    <button onclick="blockIpPermanently('[[${stat.ipAddress}]]')">🚫 Block</button>
+                    <button onclick="unblockIp('[[${stat.ipAddress}]]')">✅ Unblock</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>Alerts</h2>
+    <div th:if="${!#lists.isEmpty(alerts)}">
+        <table border="1">
+            <tr>
+                <th>IP</th>
+                <th>Type</th>
+                <th>Message</th>
+                <th>Time</th>
+                <th>Actions</th>
+            </tr>
+            <tr th:each="alert : ${alerts}">
+                <td th:text="${alert.ipAddress}">127.0.0.1</td>
+                <td th:text="${alert.alertType}">HIGH_FREQUENCY</td>
+                <td th:text="${alert.alertMessage}">Blocked multiple times</td>
+                <td th:text="${alert.createdAt != null ? alert.createdAt.toString() : 'N/A'}">2024-01-01</td>
+                <td>
+                    <button onclick="viewIpDetails('[[${alert.ipAddress}]]')">👁️ View</button>
+                    <button onclick="dismissAlert('[[${alert.id}]]')">❌ Dismiss</button>
+                    <button onclick="blockIpPermanently('[[${alert.ipAddress}]]')">🚫 Block</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div th:if="${#lists.isEmpty(alerts)}">
+        <p>No alerts found.</p>
+    </div>
+
+    <h2>Permanently Blocked IPs</h2>
+    <div th:if="${!#lists.isEmpty(permanentlyBlockedIps)}">
+        <table border="1">
+            <tr>
+                <th>IP Address</th>
+                <th>Reason</th>
+                <th>Blocked By</th>
+                <th>Time</th>
+                <th>Actions</th>
+            </tr>
+            <tr th:each="blockedIp : ${permanentlyBlockedIps}">
+                <td th:text="${blockedIp.ipAddress}">192.168.1.1</td>
+                <td th:text="${blockedIp.reason}">Spam</td>
+                <td th:text="${blockedIp.blockedBy}">admin</td>
+                <td th:text="${blockedIp.blockedAt != null ? blockedIp.blockedAt.toString() : 'N/A'}">2024-01-01</td>
+                <td>
+                    <button onclick="viewIpDetails('[[${blockedIp.ipAddress}]]')">👁️ View</button>
+                    <button onclick="unblockIpPermanently('[[${blockedIp.id}]]')">✅ Unblock</button>
+                    <button onclick="editBlockReason('[[${blockedIp.id}]]')">✏️ Edit</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div th:if="${#lists.isEmpty(permanentlyBlockedIps)}">
+        <p>No permanently blocked IPs found.</p>
+    </div>
+
+    <!-- Modal Forms -->
+    <div id="blockIpModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 2px solid #333; z-index: 1000;">
+        <h3>Block IP Address</h3>
+        <form id="blockIpForm">
+            <p>IP Address: <input type="text" id="blockIpInput" placeholder="192.168.1.1" required></p>
+            <p>Reason: <input type="text" id="blockReasonInput" placeholder="Spam attacks" required></p>
+            <p>Notes: <textarea id="blockNotesInput" placeholder="Additional notes"></textarea></p>
+            <button type="button" onclick="submitBlockIp()">Block IP</button>
+            <button type="button" onclick="hideBlockIpForm()">Cancel</button>
+        </form>
+    </div>
+
+    <div id="unblockIpModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 2px solid #333; z-index: 1000;">
+        <h3>Unblock IP Address</h3>
+        <form id="unblockIpForm">
+            <p>IP Address: <input type="text" id="unblockIpInput" placeholder="192.168.1.1" required></p>
+            <button type="button" onclick="submitUnblockIp()">Unblock IP</button>
+            <button type="button" onclick="hideUnblockIpForm()">Cancel</button>
+        </form>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="statusMessage" style="display: none; position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 1001;">
+        <span id="statusText"></span>
+        <button onclick="hideStatusMessage()" style="margin-left: 10px; background: none; border: none; color: white; cursor: pointer;">×</button>
+    </div>
+
+    <script>
+        // Utility Functions
+        function showStatus(message, isError = false) {
+            const statusDiv = document.getElementById('statusMessage');
+            const statusText = document.getElementById('statusText');
+            
+            statusDiv.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
+            statusText.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                hideStatusMessage();
+            }, 5000);
+        }
+
+        function hideStatusMessage() {
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+
+        function showLoading(button) {
+            const originalText = button.textContent;
+            button.textContent = '⏳ Loading...';
+            button.disabled = true;
+            return originalText;
+        }
+
+        function hideLoading(button, originalText) {
+            button.textContent = originalText;
+            button.disabled = false;
+        }
+
+        // Dashboard Actions
+        function refreshDashboard() {
+            showStatus('Refreshing dashboard...');
+            location.reload();
+        }
+
+        function clearAllBlocks() {
+            if (confirm('⚠️ Are you sure you want to clear ALL rate limit blocks?\n\nThis will reset all IP statistics and cannot be undone!')) {
+                const button = event.target;
+                const originalText = showLoading(button);
+                
+                fetch('/admin/rate-limiting/api/clear-all-blocks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        showStatus('✅ All blocks cleared successfully!');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('❌ Error clearing blocks: ' + error.message, true);
+                    hideLoading(button, originalText);
+                });
+            }
+        }
+
+        function exportData() {
+            showStatus('📊 Exporting data...');
+            window.open('/admin/rate-limiting/api/export-data', '_blank');
+            setTimeout(() => showStatus('✅ Data exported successfully!'), 1000);
+        }
+
+        // IP Management Actions
+        function viewIpDetails(ip) {
+            const button = event.target;
+            const originalText = showLoading(button);
+            
+            fetch('/admin/rate-limiting/api/ip/' + ip)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    let details = `📊 IP Details for ${ip}:\n\n`;
+                    details += `🔢 Block Count: ${data.blockedCount || 0}\n`;
+                    details += `📅 First Blocked: ${data.firstBlockedAt || 'N/A'}\n`;
+                    details += `📅 Last Blocked: ${data.lastBlockedAt || 'N/A'}\n`;
+                    details += `📈 Recent Blocks: ${data.recentBlocks ? data.recentBlocks.length : 0}\n`;
+                    
+                    alert(details);
+                    hideLoading(button, originalText);
+                })
+                .catch(error => {
+                    showStatus('❌ Error fetching IP details: ' + error.message, true);
+                    hideLoading(button, originalText);
+                });
+        }
+
+        function resetIpLimit(ip) {
+            if (confirm(`🔄 Reset rate limit for IP ${ip}?\n\nThis will clear the block count and reset the timer.`)) {
+                const button = event.target;
+                const originalText = showLoading(button);
+                
+                fetch('/admin/rate-limiting/api/reset-ip/' + ip, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        showStatus(`✅ Rate limit reset for IP ${ip}`);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('❌ Error resetting IP: ' + error.message, true);
+                    hideLoading(button, originalText);
+                });
+            }
+        }
+
+        function blockIpPermanently(ip) {
+            document.getElementById('blockIpInput').value = ip;
+            showBlockIpForm();
+        }
+
+        function unblockIp(ip) {
+            if (confirm(`✅ Unblock IP ${ip}?\n\nThis will remove temporary rate limit blocks.`)) {
+                const button = event.target;
+                const originalText = showLoading(button);
+                
+                fetch('/admin/rate-limiting/api/unblock-ip/' + ip, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        showStatus(`✅ IP ${ip} unblocked successfully`);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('❌ Error unblocking IP: ' + error.message, true);
+                    hideLoading(button, originalText);
+                });
+            }
+        }
+
+        function unblockIpPermanently(blockId) {
+            if (confirm('✅ Remove permanent block for this IP?\n\nThis will allow the IP to access the system again.')) {
+                const button = event.target;
+                const originalText = showLoading(button);
+                
+                fetch('/admin/rate-limiting/api/unblock-permanent/' + blockId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        showStatus('✅ Permanent block removed successfully');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('❌ Error removing permanent block: ' + error.message, true);
+                    hideLoading(button, originalText);
+                });
+            }
+        }
+
+        function dismissAlert(alertId) {
+            if (confirm('❌ Dismiss this alert?\n\nThis will mark the alert as resolved.')) {
+                const button = event.target;
+                const originalText = showLoading(button);
+                
+                fetch('/admin/rate-limiting/api/dismiss-alert/' + alertId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        showStatus('✅ Alert dismissed successfully');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('❌ Error dismissing alert: ' + error.message, true);
+                    hideLoading(button, originalText);
+                });
+            }
+        }
+
+        function editBlockReason(blockId) {
+            let newReason = prompt('✏️ Enter new reason for blocking:');
+            if (newReason && newReason.trim()) {
+                const button = event.target;
+                const originalText = showLoading(button);
+                
+                fetch('/admin/rate-limiting/api/edit-block-reason/' + blockId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ reason: newReason.trim() })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        showStatus('✅ Block reason updated successfully');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('❌ Error updating block reason: ' + error.message, true);
+                    hideLoading(button, originalText);
+                });
+            }
+        }
+
+        // Modal Functions
+        function showBlockIpForm() {
+            document.getElementById('blockIpModal').style.display = 'block';
+        }
+
+        function hideBlockIpForm() {
+            document.getElementById('blockIpModal').style.display = 'none';
+            document.getElementById('blockIpForm').reset();
+        }
+
+        function showUnblockIpForm() {
+            document.getElementById('unblockIpModal').style.display = 'block';
+        }
+
+        function hideUnblockIpForm() {
+            document.getElementById('unblockIpModal').style.display = 'none';
+            document.getElementById('unblockIpForm').reset();
+        }
+
+        function submitBlockIp() {
+            let ip = document.getElementById('blockIpInput').value.trim();
+            let reason = document.getElementById('blockReasonInput').value.trim();
+            let notes = document.getElementById('blockNotesInput').value.trim();
+
+            if (!ip || !reason) {
+                showStatus('❌ Please fill in IP address and reason', true);
+                return;
+            }
+
+            // Basic IP validation
+            if (!isValidIP(ip)) {
+                showStatus('❌ Please enter a valid IP address', true);
+                return;
+            }
+
+            const button = event.target;
+            const originalText = showLoading(button);
+
+            fetch('/admin/rate-limiting/api/block-ip-permanent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ipAddress: ip,
+                    reason: reason,
+                    notes: notes
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    showStatus(`✅ IP ${ip} blocked permanently`);
+                    hideBlockIpForm();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    throw new Error(data.message || 'Unknown error');
+                }
+            })
+            .catch(error => {
+                showStatus('❌ Error blocking IP: ' + error.message, true);
+                hideLoading(button, originalText);
+            });
+        }
+
+        function submitUnblockIp() {
+            let ip = document.getElementById('unblockIpInput').value.trim();
+
+            if (!ip) {
+                showStatus('❌ Please enter IP address', true);
+                return;
+            }
+
+            if (!isValidIP(ip)) {
+                showStatus('❌ Please enter a valid IP address', true);
+                return;
+            }
+
+            const button = event.target;
+            const originalText = showLoading(button);
+
+            fetch('/admin/rate-limiting/api/unblock-ip/' + ip, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    showStatus(`✅ IP ${ip} unblocked successfully`);
+                    hideUnblockIpForm();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    throw new Error(data.message || 'Unknown error');
+                }
+            })
+            .catch(error => {
+                showStatus('❌ Error unblocking IP: ' + error.message, true);
+                hideLoading(button, originalText);
+            });
+        }
+
+        // Utility function for IP validation
+        function isValidIP(ip) {
+            const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            return ipRegex.test(ip);
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const blockModal = document.getElementById('blockIpModal');
+            const unblockModal = document.getElementById('unblockIpModal');
+            
+            if (event.target === blockModal) {
+                hideBlockIpForm();
+            }
+            if (event.target === unblockModal) {
+                hideUnblockIpForm();
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                hideBlockIpForm();
+                hideUnblockIpForm();
+            }
+        });
+    </script>
+</body>
+</html>

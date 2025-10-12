@@ -42,6 +42,7 @@ import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.WaitlistService;
 import com.example.booking.service.SimpleUserService;
 import com.example.booking.service.RestaurantOwnerService;
+import com.example.booking.annotation.RateLimited;
 
 import com.example.booking.exception.BookingConflictException;
 
@@ -109,6 +110,7 @@ public class BookingController {
      * Xử lý tạo booking mới
      */
     @PostMapping
+    @RateLimited(value = RateLimited.OperationType.BOOKING, message = "Quá nhiều yêu cầu đặt bàn. Vui lòng thử lại sau.")
     public String createBooking(@Valid @ModelAttribute("bookingForm") BookingForm form,
             BindingResult bindingResult,
             Model model,
