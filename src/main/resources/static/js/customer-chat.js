@@ -370,10 +370,10 @@ class CustomerChatManager {
       messageItem.classList.add("own-message");
     }
 
-    // Set message content
+    // Set message content - use innerHTML since content is sanitized on server
     senderElement.textContent = message.senderName || "Người dùng";
     timeElement.textContent = this.formatTime(message.sentAt);
-    textElement.textContent = message.content || "";
+    textElement.innerHTML = message.content || "";
 
     return messageElement;
   }

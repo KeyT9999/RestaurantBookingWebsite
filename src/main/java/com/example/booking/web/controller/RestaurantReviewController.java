@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -15,14 +14,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.example.booking.domain.Customer;
 import com.example.booking.domain.Review;
 import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.RestaurantProfile;
@@ -35,7 +32,7 @@ import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.ReviewReportService;
 import com.example.booking.service.ReviewService;
-import com.example.booking.annotation.RateLimited;
+import com.example.booking.util.InputSanitizer;
 
 @Controller
 @RequestMapping("/restaurant-owner/reviews")
@@ -49,6 +46,9 @@ public class RestaurantReviewController {
 
     @Autowired
     private ReviewReportService reviewReportService;
+    
+    @Autowired
+    private InputSanitizer inputSanitizer;
     
     /**
      * Hiển thị trang quản lý review cho restaurant owner
@@ -167,8 +167,9 @@ public class RestaurantReviewController {
                 return "redirect:/restaurant-owner/reviews";
             }
 
-            String sanitizedReason = reasonText != null ? reasonText.trim() : "";
-            if (sanitizedReason.isEmpty()) {
+            // Sanitize report reason to prevent XSS
+            String sanitizedReason = inputSanitizer.sanitizeReportReason(reasonText);
+            if (sanitizedReason == null || sanitizedReason.isEmpty()) {
                 throw new IllegalArgumentException("Vui lòng nhập lý do báo cáo");
             }
 
