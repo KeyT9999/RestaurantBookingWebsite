@@ -1,11 +1,5 @@
 package com.example.booking.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -15,6 +9,12 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Enhanced Service for handling file uploads
@@ -263,7 +263,9 @@ public class FileUploadService {
         }
 
         String extension = getFileExtension(originalFilename).toLowerCase();
-        if (!ALLOWED_DOCUMENT_TYPES.contains(extension) && !ALLOWED_IMAGE_TYPES.contains(extension)) {
+        // Remove dot from extension for comparison
+        String extensionWithoutDot = extension.startsWith(".") ? extension.substring(1) : extension;
+        if (!ALLOWED_DOCUMENT_TYPES.contains(extensionWithoutDot) && !ALLOWED_IMAGE_TYPES.contains(extensionWithoutDot)) {
             throw new IllegalArgumentException("Định dạng file không được hỗ trợ. Chỉ chấp nhận: " + 
                 String.join(", ", ALLOWED_DOCUMENT_TYPES) + ", " + String.join(", ", ALLOWED_IMAGE_TYPES));
         }
@@ -312,7 +314,9 @@ public class FileUploadService {
 
         String originalFilename = file.getOriginalFilename();
         String extension = getFileExtension(originalFilename).toLowerCase();
-        if (!ALLOWED_IMAGE_TYPES.contains(extension)) {
+        // Remove dot from extension for comparison
+        String extensionWithoutDot = extension.startsWith(".") ? extension.substring(1) : extension;
+        if (!ALLOWED_IMAGE_TYPES.contains(extensionWithoutDot)) {
             throw new IllegalArgumentException("Định dạng ảnh không được hỗ trợ. Chỉ chấp nhận: " + 
                 String.join(", ", ALLOWED_IMAGE_TYPES));
         }
@@ -332,7 +336,9 @@ public class FileUploadService {
 
         String originalFilename = file.getOriginalFilename();
         String extension = getFileExtension(originalFilename).toLowerCase();
-        if (!ALLOWED_DOCUMENT_TYPES.contains(extension)) {
+        // Remove dot from extension for comparison
+        String extensionWithoutDot = extension.startsWith(".") ? extension.substring(1) : extension;
+        if (!ALLOWED_DOCUMENT_TYPES.contains(extensionWithoutDot)) {
             throw new IllegalArgumentException("Định dạng tài liệu không được hỗ trợ. Chỉ chấp nhận: " + 
                 String.join(", ", ALLOWED_DOCUMENT_TYPES));
         }
@@ -366,6 +372,40 @@ public class FileUploadService {
      */
     private boolean isDocumentType(String type) {
         return Arrays.asList("business_license", "contract", "document").contains(type.toLowerCase());
+    }
+    
+    /**
+     * Rename business license file with actual restaurant ID
+     */
+    public String renameBusinessLicenseFile(String oldFileUrl, Integer restaurantId) throws IOException {
+        if (oldFileUrl == null || oldFileUrl.isEmpty()) {
+            throw new IllegalArgumentException("File URL không được để trống");
+        }
+        
+        // Extract filename from URL
+        String oldFilename = oldFileUrl.substring(oldFileUrl.lastIndexOf('/') + 1);
+        String extension = getFileExtension(oldFilename);
+        
+        // Generate new filename with actual restaurant ID
+        String newFilename = "business_license_" + restaurantId + "_" + 
+                           UUID.randomUUID().toString().substring(0, 8) + extension;
+        
+        // Build file paths
+        String businessLicenseDir = uploadDir + File.separator + "business_licenses";
+        Path oldFilePath = Paths.get(businessLicenseDir, oldFilename);
+        Path newFilePath = Paths.get(businessLicenseDir, newFilename);
+        
+        // Rename file
+        if (Files.exists(oldFilePath)) {
+            Files.move(oldFilePath, newFilePath, StandardCopyOption.REPLACE_EXISTING);
+            logger.info("Renamed business license file from {} to {}", oldFilename, newFilename);
+            
+            // Return new URL
+            return "/uploads/business_licenses/" + newFilename;
+        } else {
+            logger.warn("Old business license file not found: {}", oldFilePath);
+            return oldFileUrl; // Return original URL if file not found
+        }
     }
 
     /**

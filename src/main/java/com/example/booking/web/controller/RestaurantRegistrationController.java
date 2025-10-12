@@ -1,5 +1,9 @@
 package com.example.booking.web.controller;
 
+import java.util.ArrayList;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -11,8 +15,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.User;
+import com.example.booking.service.FileUploadService;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.SimpleUserService;
 
@@ -23,12 +29,17 @@ import com.example.booking.service.SimpleUserService;
 @Controller
 @RequestMapping("/restaurant-owner")
 public class RestaurantRegistrationController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(RestaurantRegistrationController.class);
 
     @Autowired
     private RestaurantOwnerService restaurantOwnerService;
     
     @Autowired
     private SimpleUserService userService;
+    
+    @Autowired
+    private FileUploadService fileUploadService;
 
     /**
      * Hiển thị form tạo nhà hàng cho CUSTOMER
@@ -65,6 +76,7 @@ public class RestaurantRegistrationController {
     public String createRestaurant(RestaurantProfile restaurant, 
                                  @RequestParam(value = "logo", required = false) MultipartFile logo,
                                  @RequestParam(value = "cover", required = false) MultipartFile cover,
+                                 @RequestParam(value = "businessLicense", required = false) MultipartFile businessLicense,
                                  @RequestParam(value = "termsAccepted", required = false) Boolean termsAccepted,
                                  Authentication authentication,
                                  RedirectAttributes redirectAttributes) {
@@ -103,8 +115,70 @@ public class RestaurantRegistrationController {
             // Set Terms of Service acceptance
             restaurant.acceptTerms("1.0");
             
+            // Xử lý upload logo nếu có
+            if (logo != null && !logo.isEmpty()) {
+                try {
+                    String logoUrl = fileUploadService.uploadRestaurantMedia(logo, 0, "logo");
+                    // Tạo media record cho logo
+                    RestaurantMedia logoMedia = new RestaurantMedia();
+                    logoMedia.setRestaurant(restaurant);
+                    logoMedia.setType("logo");
+                    logoMedia.setUrl(logoUrl);
+                    if (restaurant.getMedia() == null) {
+                        restaurant.setMedia(new ArrayList<>());
+                    }
+                    restaurant.getMedia().add(logoMedia);
+                } catch (Exception e) {
+                    logger.warn("Failed to upload logo: {}", e.getMessage());
+                }
+            }
+            
+            // Xử lý upload cover nếu có
+            if (cover != null && !cover.isEmpty()) {
+                try {
+                    String coverUrl = fileUploadService.uploadRestaurantMedia(cover, 0, "cover");
+                    // Tạo media record cho cover
+                    RestaurantMedia coverMedia = new RestaurantMedia();
+                    coverMedia.setRestaurant(restaurant);
+                    coverMedia.setType("cover");
+                    coverMedia.setUrl(coverUrl);
+                    if (restaurant.getMedia() == null) {
+                        restaurant.setMedia(new ArrayList<>());
+                    }
+                    restaurant.getMedia().add(coverMedia);
+                } catch (Exception e) {
+                    logger.warn("Failed to upload cover: {}", e.getMessage());
+                }
+            }
+            
+            // Xử lý upload business license nếu có
+            if (businessLicense != null && !businessLicense.isEmpty()) {
+                try {
+                    // Tạm thời sử dụng restaurant ID = 0, sẽ được cập nhật sau khi lưu
+                    String businessLicenseUrl = fileUploadService.uploadBusinessLicense(businessLicense, 0);
+                    restaurant.setBusinessLicenseFile(businessLicenseUrl);
+                } catch (Exception e) {
+                    logger.warn("Failed to upload business license: {}", e.getMessage());
+                }
+            }
+            
             // Tạo restaurant profile
-            restaurantOwnerService.createRestaurantProfile(restaurant);
+            RestaurantProfile savedRestaurant = restaurantOwnerService.createRestaurantProfile(restaurant);
+            
+            // Cập nhật business license với restaurant ID thực tế nếu cần
+            if (businessLicense != null && !businessLicense.isEmpty() && savedRestaurant.getBusinessLicenseFile() != null) {
+                // Business license đã được upload với ID = 0, cần rename file với ID thực
+                try {
+                    String newBusinessLicenseUrl = fileUploadService.renameBusinessLicenseFile(
+                        savedRestaurant.getBusinessLicenseFile(), 
+                        savedRestaurant.getRestaurantId()
+                    );
+                    savedRestaurant.setBusinessLicenseFile(newBusinessLicenseUrl);
+                    restaurantOwnerService.updateRestaurantProfile(savedRestaurant);
+                } catch (Exception e) {
+                    logger.warn("Failed to rename business license file: {}", e.getMessage());
+                }
+            }
             
             redirectAttributes.addFlashAttribute("success", "Đăng ký nhà hàng thành công! Vui lòng chờ admin duyệt.");
             return "redirect:/restaurant-owner/restaurants/create?success=1";
