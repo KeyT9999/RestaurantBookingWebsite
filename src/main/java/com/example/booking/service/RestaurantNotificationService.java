@@ -1,6 +1,7 @@
 package com.example.booking.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -9,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.booking.common.enums.RestaurantApprovalStatus;
 import com.example.booking.domain.Notification;
 import com.example.booking.domain.NotificationStatus;
 import com.example.booking.domain.NotificationType;

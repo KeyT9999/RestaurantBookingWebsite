@@ -1,33 +1,31 @@
     package com.example.booking.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.example.booking.domain.RestaurantProfile;
-import com.example.booking.domain.RestaurantOwner;
-import com.example.booking.domain.RestaurantTable;
-import com.example.booking.domain.Booking;
-import com.example.booking.domain.Dish;
-import com.example.booking.domain.RestaurantMedia;
-import com.example.booking.domain.User;
-import com.example.booking.repository.RestaurantRepository;
-import com.example.booking.repository.RestaurantOwnerRepository;
-import com.example.booking.repository.RestaurantProfileRepository;
-import com.example.booking.repository.BookingRepository;
-import com.example.booking.repository.DiningTableRepository;
-import com.example.booking.repository.DishRepository;
-import com.example.booking.repository.RestaurantMediaRepository;
-import com.example.booking.service.SimpleUserService;
-
 import java.time.LocalDateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.booking.domain.Booking;
+import com.example.booking.domain.Dish;
+import com.example.booking.domain.RestaurantMedia;
+import com.example.booking.domain.RestaurantOwner;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantTable;
+import com.example.booking.domain.User;
+import com.example.booking.repository.BookingRepository;
+import com.example.booking.repository.DiningTableRepository;
+import com.example.booking.repository.DishRepository;
+import com.example.booking.repository.RestaurantMediaRepository;
+import com.example.booking.repository.RestaurantOwnerRepository;
+import com.example.booking.repository.RestaurantProfileRepository;
+import com.example.booking.repository.RestaurantRepository;
 
 /**
  * Service for Restaurant Owner management operations
@@ -75,6 +73,31 @@ public class RestaurantOwnerService {
      */
     public Optional<RestaurantOwner> getRestaurantOwnerByUserId(UUID userId) {
         return restaurantOwnerRepository.findByUserId(userId);
+    }
+
+    /**
+     * Đảm bảo RestaurantOwner record tồn tại cho user
+     * Tạo mới nếu chưa có
+     */
+    public RestaurantOwner ensureRestaurantOwnerExists(UUID userId) {
+        Optional<RestaurantOwner> existingOwner = restaurantOwnerRepository.findByUserId(userId);
+        
+        if (existingOwner.isPresent()) {
+            return existingOwner.get();
+        }
+        
+        // Lấy User entity
+        User user;
+        try {
+            user = userService.findById(userId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("User not found with ID: " + userId);
+        }
+        
+        // Tạo mới RestaurantOwner record
+        RestaurantOwner newOwner = new RestaurantOwner(user);
+        
+        return restaurantOwnerRepository.save(newOwner);
     }
 
     /**

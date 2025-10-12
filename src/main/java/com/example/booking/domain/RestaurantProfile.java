@@ -97,6 +97,16 @@ public class RestaurantProfile {
     @Column(name = "contract_signed_at")
     private LocalDateTime contractSignedAt;
     
+    // === TERMS OF SERVICE FIELDS ===
+    @Column(name = "terms_accepted", nullable = false)
+    private Boolean termsAccepted = false;
+    
+    @Column(name = "terms_accepted_at")
+    private LocalDateTime termsAcceptedAt;
+    
+    @Column(name = "terms_version", length = 20)
+    private String termsVersion = "1.0";
+    
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
@@ -483,5 +493,44 @@ public class RestaurantProfile {
     
     public boolean hasContract() {
         return Boolean.TRUE.equals(contractSigned);
+    }
+    
+    // === TERMS OF SERVICE METHODS ===
+    
+    public Boolean getTermsAccepted() {
+        return termsAccepted;
+    }
+    
+    public void setTermsAccepted(Boolean termsAccepted) {
+        this.termsAccepted = termsAccepted;
+        if (termsAccepted && termsAcceptedAt == null) {
+            this.termsAcceptedAt = LocalDateTime.now();
+        }
+    }
+    
+    public LocalDateTime getTermsAcceptedAt() {
+        return termsAcceptedAt;
+    }
+    
+    public void setTermsAcceptedAt(LocalDateTime termsAcceptedAt) {
+        this.termsAcceptedAt = termsAcceptedAt;
+    }
+    
+    public String getTermsVersion() {
+        return termsVersion;
+    }
+    
+    public void setTermsVersion(String termsVersion) {
+        this.termsVersion = termsVersion;
+    }
+    
+    public boolean hasAcceptedTerms() {
+        return Boolean.TRUE.equals(termsAccepted) && termsAcceptedAt != null;
+    }
+    
+    public void acceptTerms(String version) {
+        this.termsAccepted = true;
+        this.termsAcceptedAt = LocalDateTime.now();
+        this.termsVersion = version != null ? version : "1.0";
     }
 }

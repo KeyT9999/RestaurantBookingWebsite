@@ -31,6 +31,15 @@ public class RestaurantOwner {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    @Column(name = "owner_name")
+    private String ownerName;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "address")
+    private String address;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     
@@ -48,6 +57,7 @@ public class RestaurantOwner {
     public RestaurantOwner(User user) {
         this();
         this.user = user;
+        this.ownerName = user.getFullName(); // Set ownerName from user's full name
     }
     
     @PrePersist
@@ -77,6 +87,30 @@ public class RestaurantOwner {
     
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public LocalDateTime getCreatedAt() {
