@@ -28,6 +28,7 @@ import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.service.CustomerService;
 import com.example.booking.annotation.RateLimited;
 import com.example.booking.service.ReviewService;
+import com.example.booking.util.InputSanitizer;
 
 import jakarta.validation.Valid;
 
@@ -40,6 +41,9 @@ public class ReviewController {
     
     @Autowired
     private CustomerService customerService;
+    
+    @Autowired
+    private InputSanitizer inputSanitizer;
     
     /**
      * Hiển thị danh sách review của restaurant
@@ -186,6 +190,12 @@ public class ReviewController {
             
             Customer customer = customerOpt.get();
             
+            // Sanitize review comment to prevent XSS
+            if (form.getComment() != null) {
+                String sanitizedComment = inputSanitizer.sanitizeReviewComment(form.getComment());
+                form.setComment(sanitizedComment);
+            }
+            
             // Create or update review
             reviewService.createOrUpdateReview(form, customer.getCustomerId());
             
@@ -276,6 +286,12 @@ public class ReviewController {
             }
             
             Customer customer = customerOpt.get();
+            
+            // Sanitize review comment to prevent XSS
+            if (form.getComment() != null) {
+                String sanitizedComment = inputSanitizer.sanitizeReviewComment(form.getComment());
+                form.setComment(sanitizedComment);
+            }
             
             // Kiểm tra quyền sở hữu
             Optional<Review> reviewOpt = reviewService.getReviewById(reviewId);

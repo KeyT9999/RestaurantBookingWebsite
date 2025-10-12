@@ -15,15 +15,13 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import com.example.booking.domain.ChatRoom;
-import com.example.booking.domain.Customer;
 import com.example.booking.domain.Message;
 import com.example.booking.domain.MessageType;
 import com.example.booking.domain.User;
-import com.example.booking.repository.CustomerRepository;
-import com.example.booking.repository.RestaurantOwnerRepository;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.SimpleUserService;
 import com.example.booking.annotation.RateLimited;
+import com.example.booking.util.InputSanitizer;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,10 +42,7 @@ public class ChatMessageController {
     private SimpleUserService userService;
     
     @Autowired
-    private CustomerRepository customerRepository;
-
-    @Autowired
-    private RestaurantOwnerRepository restaurantOwnerRepository;
+    private InputSanitizer inputSanitizer;
 
     /**
      * Handle incoming chat messages - Optimized and safe version
@@ -89,6 +84,14 @@ public class ChatMessageController {
                 return;
             }
             
+            // Sanitize message content to prevent XSS
+            String sanitizedContent = inputSanitizer.sanitizeChatMessage(trimmedContent);
+            if (sanitizedContent == null || sanitizedContent.isEmpty()) {
+                System.err.println("ERROR: Message content is empty after sanitization");
+                sendErrorToUser(principal.getName(), "Tin nhắn chứa nội dung không hợp lệ");
+                return;
+            }
+            
             // Get User object from principal (handles both User and OAuth2User)
             User user = getUserFromPrincipal(principal);
             UUID senderId = user.getId();
@@ -104,11 +107,11 @@ public class ChatMessageController {
                 return;
             }
             
-            // Send message
+            // Send message with sanitized content
             Message message = chatService.sendMessage(
                 request.getRoomId(), 
                 senderId, 
-                request.getContent(), 
+                sanitizedContent, 
                 MessageType.TEXT
             );
             

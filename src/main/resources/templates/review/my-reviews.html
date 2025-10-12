@@ -273,7 +273,7 @@
                         </span>
                     </div>
                     
-                    <div class="review-comment" th:text="${review.comment}">Bình luận của khách hàng</div>
+                    <div class="review-comment" th:utext="${review.comment}">Bình luận của khách hàng</div>
                     
                     <div class="review-actions">
                         <a th:href="@{/reviews/restaurant/{id}(id=${review.restaurantId})}" 
