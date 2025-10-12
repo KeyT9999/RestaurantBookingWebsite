@@ -27,9 +27,15 @@
                             </a>
                         </li>
                         <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                            <a class="nav-link" th:href="@{/admin/dashboard}" th:classappend="${#strings.startsWith(currentPath, '/admin')} ? 'active' : ''">
+                            <a class="nav-link" th:href="@{/admin/dashboard}" th:classappend="${#strings.startsWith(currentPath, '/admin/dashboard')} ? 'active' : ''">
                                 <i class="fas fa-tachometer-alt nav-icon"></i>
                                 <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="hasRole('ADMIN')">
+                            <a class="nav-link" th:href="@{/admin/restaurant/requests}" th:classappend="${#strings.startsWith(currentPath, '/admin/restaurant')} ? 'active' : ''">
+                                <i class="fas fa-building nav-icon"></i>
+                                <span>Quản lý Nhà hàng</span>
                             </a>
                         </li>
                         <li class="nav-item">

@@ -1045,3 +1045,118 @@ PRINT '   - Thêm unique index cho tài khoản mặc định';
 PRINT '   - Chuyển amount sang NUMERIC(18,0) cho VND';
 PRINT '   - Thêm trigger auto-update updated_at';
 PRINT '   - Cập nhật trigger cho luồng manual';
+
+
+-- =====================================================
+-- TEST RESTAURANT APPROVAL MIGRATION
+-- Test script to verify approval fields work correctly
+-- =====================================================
+
+-- Test 1: Insert a new restaurant with approval fields
+-- First, let's get a valid owner_id from restaurant_owner table
+INSERT INTO restaurant_profile (
+    owner_id, 
+    restaurant_name, 
+    address, 
+    phone, 
+    description, 
+    cuisine_type, 
+    opening_hours, 
+    average_price,
+    approval_status,
+    approval_reason,
+    business_license_file,
+    contract_signed
+) 
+SELECT 
+    (SELECT owner_id FROM restaurant_owner LIMIT 1), -- Get first available owner_id
+    'Test Restaurant Approval',
+    '123 Test Street, Test City',
+    '0123456789',
+    'Test restaurant for approval workflow',
+    'Vietnamese',
+    '09:00-22:00',
+    150000.00,
+    'PENDING',
+    'New restaurant waiting for approval',
+    '/uploads/test_license.pdf',
+    false;
+
+-- Test 2: Update approval status to APPROVED
+UPDATE restaurant_profile 
+SET 
+    approval_status = 'APPROVED',
+    approval_reason = 'All documents verified, restaurant approved',
+    approved_by = 'admin_user',
+    approved_at = NOW()
+WHERE restaurant_name = 'Test Restaurant Approval';
+
+-- Test 3: Test rejection scenario
+UPDATE restaurant_profile 
+SET 
+    approval_status = 'REJECTED',
+    rejection_reason = 'Incomplete business license documentation',
+    approved_by = 'admin_user',
+    approved_at = NOW()
+WHERE restaurant_name = 'Test Restaurant Approval';
+
+-- Test 4: Test contract signing
+UPDATE restaurant_profile 
+SET 
+    contract_signed = true,
+    contract_signed_at = NOW()
+WHERE restaurant_name = 'Test Restaurant Approval';
+
+-- Test 5: Query restaurants by approval status
+SELECT 
+    restaurant_id,
+    restaurant_name,
+    approval_status,
+    approval_reason,
+    approved_by,
+    approved_at,
+    rejection_reason,
+    business_license_file,
+    contract_signed,
+    contract_signed_at
+FROM restaurant_profile 
+WHERE approval_status = 'PENDING';
+
+-- Test 6: Query approved restaurants
+SELECT 
+    restaurant_id,
+    restaurant_name,
+    approval_status,
+    approval_reason,
+    approved_by,
+    approved_at
+FROM restaurant_profile 
+WHERE approval_status = 'APPROVED';
+
+-- Test 7: Query rejected restaurants
+SELECT 
+    restaurant_id,
+    restaurant_name,
+    approval_status,
+    rejection_reason,
+    approved_by,
+    approved_at
+FROM restaurant_profile 
+WHERE approval_status = 'REJECTED';
+
+-- Test 8: Count restaurants by status
+SELECT 
+    approval_status,
+    COUNT(*) as count
+FROM restaurant_profile 
+GROUP BY approval_status
+ORDER BY approval_status;
+
+-- Test 9: Clean up test data
+DELETE FROM restaurant_profile 
+WHERE restaurant_name = 'Test Restaurant Approval';
+
+-- Test 10: Verify constraints work
+-- This should fail:
+-- INSERT INTO restaurant_profile (owner_id, restaurant_name, approval_status) 
+-- VALUES ((SELECT owner_id FROM restaurant_owner LIMIT 1), 'Invalid Status Test', 'INVALID_STATUS');

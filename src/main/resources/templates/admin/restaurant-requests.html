@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Đăng ký Nhà hàng - Book Eat Admin</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Luxury CSS -->
+    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    
+    <style>
+        /* Admin specific styles */
+        .admin-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-dark));
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-card);
+            transition: var(--transition);
+            border-left: 4px solid var(--primary-blue);
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+        
+        .stats-label {
+            color: var(--text-medium);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .restaurant-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-card);
+            transition: var(--transition);
+            border: 1px solid var(--border-light);
+        }
+        
+        .restaurant-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #FFF3CD;
+            color: #856404;
+            border: 1px solid #FFEAA7;
+        }
+        
+        .status-approved {
+            background-color: #D4EDDA;
+            color: #155724;
+            border: 1px solid #C3E6CB;
+        }
+        
+        .status-rejected {
+            background-color: #F8D7DA;
+            color: #721C24;
+            border: 1px solid #F5C6CB;
+        }
+        
+        .status-suspended {
+            background-color: #E2E3E5;
+            color: #383D41;
+            border: 1px solid #D6D8DB;
+        }
+        
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-card);
+        }
+        
+        .btn-admin {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: var(--transition);
+            border: none;
+        }
+        
+        .btn-approve {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-approve:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .btn-reject {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-reject:hover {
+            background-color: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .btn-view {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+        
+        .btn-view:hover {
+            background-color: var(--primary-blue-dark);
+            transform: translateY(-1px);
+        }
+        
+        .restaurant-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .restaurant-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .restaurant-details h5 {
+            margin: 0;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+        
+        .restaurant-details p {
+            margin: 0.25rem 0 0 0;
+            color: var(--text-medium);
+            font-size: 0.9rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-medium);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="~{fragments/header :: site-header}"></div>
+    
+    <!-- Admin Header -->
+    <div class="admin-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">
+                        <i class="fas fa-utensils me-3"></i>
+                        Quản lý Đăng ký Nhà hàng
+                    </h1>
+                    <p class="mb-0 opacity-75">Duyệt và quản lý các yêu cầu đăng ký nhà hàng mới</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a th:href="@{/admin/dashboard}" class="btn btn-light btn-admin">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Quay lại Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Flash Messages -->
+            <div th:insert="~{fragments/flash :: flash}"></div>
+            
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-number" th:text="${pendingCount}">0</div>
+                        <div class="stats-label">
+                            <i class="fas fa-clock me-2"></i>
+                            Chờ duyệt
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-number" th:text="${approvedCount}">0</div>
+                        <div class="stats-label">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Đã duyệt
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-number" th:text="${rejectedCount}">0</div>
+                        <div class="stats-label">
+                            <i class="fas fa-times-circle me-2"></i>
+                            Bị từ chối
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="stats-number" th:text="${suspendedCount}">0</div>
+                        <div class="stats-label">
+                            <i class="fas fa-pause-circle me-2"></i>
+                            Tạm dừng
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <form method="get" th:action="@{/admin/restaurant/requests}">
+                    <div class="row align-items-end">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Lọc theo trạng thái:</label>
+                            <select name="status" class="form-select">
+                                <option value="">Tất cả</option>
+                                <option value="PENDING" th:selected="${filter == 'PENDING'}">Chờ duyệt</option>
+                                <option value="APPROVED" th:selected="${filter == 'APPROVED'}">Đã duyệt</option>
+                                <option value="REJECTED" th:selected="${filter == 'REJECTED'}">Bị từ chối</option>
+                                <option value="SUSPENDED" th:selected="${filter == 'SUSPENDED'}">Tạm dừng</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Tìm kiếm:</label>
+                            <input type="text" name="search" class="form-control" 
+                                   th:value="${search}" placeholder="Tên nhà hàng, địa chỉ, loại ẩm thực...">
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <button type="submit" class="btn btn-primary btn-admin w-100">
+                                <i class="fas fa-search me-2"></i>
+                                Lọc
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Restaurants List -->
+            <div class="row">
+                <div class="col-12">
+                    <!-- Error State -->
+                    <div th:if="${error}" class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span th:text="${error}"></span>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div th:if="${#lists.isEmpty(restaurants)}" class="empty-state">
+                        <i class="fas fa-utensils"></i>
+                        <h4>Không có nhà hàng nào</h4>
+                        <p>Hiện tại không có nhà hàng nào phù hợp với bộ lọc của bạn.</p>
+                    </div>
+                    
+                    <!-- Restaurants Grid -->
+                    <div th:unless="${#lists.isEmpty(restaurants)}">
+                        <div class="row">
+                            <div th:each="restaurant : ${restaurants}" class="col-md-6 col-lg-4 mb-4">
+                                <div class="restaurant-card">
+                                    <!-- Restaurant Info -->
+                                    <div class="restaurant-info">
+                                        <div class="restaurant-avatar">
+                                            <i class="fas fa-utensils"></i>
+                                        </div>
+                                        <div class="restaurant-details">
+                                            <h5 th:text="${restaurant.restaurantName}">Restaurant Name</h5>
+                                            <p th:text="${restaurant.cuisineType}">Cuisine Type</p>
+                                            <p th:text="${restaurant.address}">Address</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Status Badge -->
+                                    <div class="mb-3">
+                                        <span th:classappend="${restaurant.approvalStatus.name() == 'PENDING'} ? 'status-pending' : 
+                                                               ${restaurant.approvalStatus.name() == 'APPROVED'} ? 'status-approved' : 
+                                                               ${restaurant.approvalStatus.name() == 'REJECTED'} ? 'status-rejected' : 'status-suspended'"
+                                              class="status-badge"
+                                              th:text="${restaurant.approvalStatusDisplay}">
+                                            Status
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Owner Info -->
+                                    <div class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>
+                                            Chủ sở hữu: 
+                                            <span th:text="${restaurant.owner.user.username}">Owner</span>
+                                        </small>
+                                    </div>
+                                    
+                                    <!-- Created Date -->
+                                    <div class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            Đăng ký: 
+                                            <span th:text="${#temporals.format(restaurant.createdAt, 'dd/MM/yyyy HH:mm')}">Date</span>
+                                        </small>
+                                    </div>
+                                    
+                                    <!-- Approval Info (if approved/rejected) -->
+                                    <div th:if="${restaurant.approvedBy != null}" class="mb-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user-check me-1"></i>
+                                            Duyệt bởi: 
+                                            <span th:text="${restaurant.approvedBy}">Admin</span>
+                                        </small>
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Lúc: 
+                                            <span th:text="${#temporals.format(restaurant.approvedAt, 'dd/MM/yyyy HH:mm')}">Date</span>
+                                        </small>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="d-flex gap-2">
+                                        <a th:href="@{'/admin/restaurant/requests/' + ${restaurant.restaurantId}}" 
+                                           class="btn btn-view btn-admin flex-fill">
+                                            <i class="fas fa-eye me-2"></i>
+                                            Xem chi tiết
+                                        </a>
+                                        
+                                        <!-- Quick Actions for PENDING -->
+                                        <div th:if="${restaurant.approvalStatus.name() == 'PENDING'}" class="d-flex gap-1">
+                                            <form th:action="@{'/admin/restaurant/approve/' + ${restaurant.restaurantId}}" 
+                                                  method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-approve btn-admin" 
+                                                        title="Duyệt nhà hàng">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                            <form th:action="@{'/admin/restaurant/reject/' + ${restaurant.restaurantId}}" 
+                                                  method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-reject btn-admin" 
+                                                        title="Từ chối nhà hàng"
+                                                        onclick="return confirm('Bạn có chắc muốn từ chối nhà hàng này?')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        
+                                        <!-- Quick Actions for APPROVED -->
+                                        <div th:if="${restaurant.approvalStatus.name() == 'APPROVED'}" class="d-flex gap-1">
+                                            <form th:action="@{'/admin/restaurant/suspend/' + ${restaurant.restaurantId}}" 
+                                                  method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-warning btn-admin" 
+                                                        title="Tạm dừng nhà hàng"
+                                                        onclick="return confirm('Bạn có chắc muốn tạm dừng nhà hàng này?')">
+                                                    <i class="fas fa-pause"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        
+                                        <!-- Quick Actions for SUSPENDED -->
+                                        <div th:if="${restaurant.approvalStatus.name() == 'SUSPENDED'}" class="d-flex gap-1">
+                                            <form th:action="@{'/admin/restaurant/activate/' + ${restaurant.restaurantId}}" 
+                                                  method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-approve btn-admin" 
+                                                        title="Kích hoạt lại nhà hàng">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer Fragment -->
+    <div th:insert="~{fragments/footer :: site-footer}"></div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom Admin JS -->
+    <script>
+        // Auto-hide flash messages
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+        
+        // Confirmation for quick actions
+        document.addEventListener('DOMContentLoaded', function() {
+            const quickActionForms = document.querySelectorAll('form[action*="/approve/"], form[action*="/reject/"], form[action*="/suspend/"], form[action*="/activate/"]');
+            quickActionForms.forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    const action = form.action.includes('/approve/') ? 'duyệt' : 
+                                  form.action.includes('/reject/') ? 'từ chối' :
+                                  form.action.includes('/suspend/') ? 'tạm dừng' : 'kích hoạt lại';
+                    
+                    if (!confirm(`Bạn có chắc muốn ${action} nhà hàng này?`)) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
