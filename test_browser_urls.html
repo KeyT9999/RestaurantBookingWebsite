@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refund API Test - Browser</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-link { display: block; margin: 10px 0; padding: 10px; background: #f0f0f0; text-decoration: none; border-radius: 3px; }
+        .test-link:hover { background: #e0e0e0; }
+        .description { color: #666; font-size: 14px; margin-bottom: 10px; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 3px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Refund API Test - Browser</h1>
+    
+    <div class="warning">
+        <strong>⚠️ Lưu ý:</strong> Các link này chỉ hoạt động với GET requests. 
+        Để test POST requests (refund), bạn cần sử dụng cURL, Postman, hoặc PowerShell script.
+    </div>
+
+    <div class="test-section">
+        <h2>1. Check Refund Eligibility</h2>
+        <div class="description">Kiểm tra xem payment có thể hoàn tiền không</div>
+        <a href="http://localhost:8080/payment/1/refund/check" class="test-link" target="_blank">
+            GET /payment/1/refund/check
+        </a>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Get Refundable Payments</h2>
+        <div class="description">Lấy danh sách tất cả payments có thể hoàn tiền</div>
+        <a href="http://localhost:8080/payment/refundable" class="test-link" target="_blank">
+            GET /payment/refundable
+        </a>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Get Refund Info</h2>
+        <div class="description">Lấy thông tin chi tiết về refund của một payment</div>
+        <a href="http://localhost:8080/payment/1/refund/info" class="test-link" target="_blank">
+            GET /payment/1/refund/info
+        </a>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Other Endpoints</h2>
+        <div class="description">Các endpoint khác để test</div>
+        <a href="http://localhost:8080/payment/1" class="test-link" target="_blank">
+            GET /payment/1 (Payment details)
+        </a>
+        <a href="http://localhost:8080/booking/1" class="test-link" target="_blank">
+            GET /booking/1 (Booking details)
+        </a>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Manual Test Commands</h2>
+        <div class="description">Copy và paste các lệnh này vào terminal để test POST requests:</div>
+        <pre style="background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto;">
+# Test Full Refund
+curl -X POST "http://localhost:8080/payment/1/refund?reason=Test%20refund" -H "Content-Type: application/json"
+
+# Test Partial Refund  
+curl -X POST "http://localhost:8080/payment/1/refund/partial?amount=50000&reason=Partial%20refund" -H "Content-Type: application/json"
+
+# Test with different payment ID
+curl -X GET "http://localhost:8080/payment/2/refund/check" -H "Content-Type: application/json"
+        </pre>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Troubleshooting</h2>
+        <div class="description">Nếu gặp lỗi, hãy kiểm tra:</div>
+        <ul>
+            <li>✅ Server đang chạy trên port 8080</li>
+            <li>✅ Database đã được setup với test data</li>
+            <li>✅ Payment ID 1, 2, 3 tồn tại trong database</li>
+            <li>✅ Không có lỗi authentication (nếu có security)</li>
+        </ul>
+    </div>
+
+    <script>
+        // Auto-refresh page every 30 seconds to check server status
+        setTimeout(() => {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

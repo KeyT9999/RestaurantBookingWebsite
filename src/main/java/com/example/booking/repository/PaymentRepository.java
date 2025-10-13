@@ -1,6 +1,8 @@
 package com.example.booking.repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -120,5 +122,45 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
      * @return true if order code exists
      */
     boolean existsByOrderCode(Long orderCode);
+    
+    /**
+     * Find PayOS payments by date
+     * @param date The date to search for
+     * @return List of PayOS payments for the given date
+     */
+    @Query("SELECT p FROM Payment p WHERE p.paymentMethod = 'PAYOS' AND DATE(p.paidAt) = :date")
+    List<Payment> findPayOSPaymentsByDate(@Param("date") LocalDate date);
+    
+    /**
+     * Find recent PayOS payments from a specific time
+     * @param fromTime The start time
+     * @return List of recent PayOS payments
+     */
+    @Query("SELECT p FROM Payment p WHERE p.paymentMethod = 'PAYOS' AND p.paidAt >= :fromTime")
+    List<Payment> findRecentPayOSPayments(@Param("fromTime") LocalDateTime fromTime);
+    
+    /**
+     * Find payments by status and payment method
+     * @param status The payment status
+     * @param paymentMethod The payment method
+     * @return List of payments matching criteria
+     */
+    List<Payment> findByStatusAndPaymentMethod(PaymentStatus status, PaymentMethod paymentMethod);
+    
+    /**
+     * Find refunded payments
+     * @return List of refunded payments
+     */
+    @Query("SELECT p FROM Payment p WHERE p.refundedAt IS NOT NULL")
+    List<Payment> findRefundedPayments();
+    
+    /**
+     * Find payments eligible for reconciliation
+     * @param fromDate Start date
+     * @param toDate End date
+     * @return List of payments eligible for reconciliation
+     */
+    @Query("SELECT p FROM Payment p WHERE p.paymentMethod = 'PAYOS' AND p.paidAt BETWEEN :fromDate AND :toDate")
+    List<Payment> findPaymentsForReconciliation(@Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate);
     
 }

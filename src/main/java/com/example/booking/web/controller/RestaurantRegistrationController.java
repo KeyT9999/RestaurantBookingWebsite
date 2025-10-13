@@ -21,8 +21,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.User;
+
 import com.example.booking.service.FileUploadService;
 import com.example.booking.service.RestaurantNotificationService;
+
+import com.example.booking.service.ImageUploadService;
+
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.SimpleUserService;
 
@@ -43,10 +47,14 @@ public class RestaurantRegistrationController {
     private SimpleUserService userService;
     
     @Autowired
+
     private FileUploadService fileUploadService;
     
     @Autowired
     private RestaurantNotificationService restaurantNotificationService;
+
+    private ImageUploadService imageUploadService;
+
 
     /**
      * Hiển thị form tạo nhà hàng cho CUSTOMER
@@ -286,70 +294,58 @@ public class RestaurantRegistrationController {
             // Set Terms of Service acceptance
             restaurant.acceptTerms("1.0");
             
-            // Xử lý upload logo nếu có
+            // Tạo restaurant profile trước để có ID
+            RestaurantProfile savedRestaurant = restaurantOwnerService.createRestaurantProfile(restaurant);
+
+            // Xử lý upload logo nếu có (với restaurant ID thực tế)
             if (logo != null && !logo.isEmpty()) {
                 try {
-                    String logoUrl = fileUploadService.uploadRestaurantMedia(logo, 0, "logo");
-                    // Tạo media record cho logo
+                    String logoUrl = imageUploadService.uploadRestaurantImage(logo, savedRestaurant.getRestaurantId(),
+                            "logo");
                     RestaurantMedia logoMedia = new RestaurantMedia();
-                    logoMedia.setRestaurant(restaurant);
+                    logoMedia.setRestaurant(savedRestaurant);
                     logoMedia.setType("logo");
                     logoMedia.setUrl(logoUrl);
-                    if (restaurant.getMedia() == null) {
-                        restaurant.setMedia(new ArrayList<>());
+                    if (savedRestaurant.getMedia() == null) {
+                        savedRestaurant.setMedia(new ArrayList<>());
                     }
-                    restaurant.getMedia().add(logoMedia);
+                    savedRestaurant.getMedia().add(logoMedia);
                 } catch (Exception e) {
                     logger.warn("Failed to upload logo: {}", e.getMessage());
                 }
             }
             
-            // Xử lý upload cover nếu có
+            // Xử lý upload cover nếu có (với restaurant ID thực tế)
             if (cover != null && !cover.isEmpty()) {
                 try {
-                    String coverUrl = fileUploadService.uploadRestaurantMedia(cover, 0, "cover");
-                    // Tạo media record cho cover
+                    String coverUrl = imageUploadService.uploadRestaurantImage(cover, savedRestaurant.getRestaurantId(),
+                            "cover");
                     RestaurantMedia coverMedia = new RestaurantMedia();
-                    coverMedia.setRestaurant(restaurant);
+                    coverMedia.setRestaurant(savedRestaurant);
                     coverMedia.setType("cover");
                     coverMedia.setUrl(coverUrl);
-                    if (restaurant.getMedia() == null) {
-                        restaurant.setMedia(new ArrayList<>());
+                    if (savedRestaurant.getMedia() == null) {
+                        savedRestaurant.setMedia(new ArrayList<>());
                     }
-                    restaurant.getMedia().add(coverMedia);
+                    savedRestaurant.getMedia().add(coverMedia);
                 } catch (Exception e) {
                     logger.warn("Failed to upload cover: {}", e.getMessage());
                 }
             }
             
-            // Xử lý upload business license nếu có
+            // Xử lý upload business license nếu có (với restaurant ID thực tế)
             if (businessLicense != null && !businessLicense.isEmpty()) {
                 try {
-                    // Tạm thời sử dụng restaurant ID = 0, sẽ được cập nhật sau khi lưu
-                    String businessLicenseUrl = fileUploadService.uploadBusinessLicense(businessLicense, 0);
-                    restaurant.setBusinessLicenseFile(businessLicenseUrl);
+                    String businessLicenseUrl = imageUploadService.uploadBusinessLicense(businessLicense,
+                            savedRestaurant.getRestaurantId());
+                    savedRestaurant.setBusinessLicenseFile(businessLicenseUrl);
                 } catch (Exception e) {
                     logger.warn("Failed to upload business license: {}", e.getMessage());
                 }
             }
             
-            // Tạo restaurant profile
-            RestaurantProfile savedRestaurant = restaurantOwnerService.createRestaurantProfile(restaurant);
-            
-            // Cập nhật business license với restaurant ID thực tế nếu cần
-            if (businessLicense != null && !businessLicense.isEmpty() && savedRestaurant.getBusinessLicenseFile() != null) {
-                // Business license đã được upload với ID = 0, cần rename file với ID thực
-                try {
-                    String newBusinessLicenseUrl = fileUploadService.renameBusinessLicenseFile(
-                        savedRestaurant.getBusinessLicenseFile(), 
-                        savedRestaurant.getRestaurantId()
-                    );
-                    savedRestaurant.setBusinessLicenseFile(newBusinessLicenseUrl);
-                    restaurantOwnerService.updateRestaurantProfile(savedRestaurant);
-                } catch (Exception e) {
-                    logger.warn("Failed to rename business license file: {}", e.getMessage());
-                }
-            }
+            // Cập nhật restaurant với media và business license
+            restaurantOwnerService.updateRestaurantProfile(savedRestaurant);
             
             redirectAttributes.addFlashAttribute("success", "Đăng ký nhà hàng thành công! Vui lòng chờ admin duyệt.");
             return "redirect:/restaurant-owner/restaurants/create?success=1";

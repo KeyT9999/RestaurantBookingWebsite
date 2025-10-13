@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Cloudinary Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #0056b3;
+            background-color: #e9ecef;
+        }
+        .upload-area.dragover {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        .result-card {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .success-card {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .error-card {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fas fa-cloud"></i> Cloudinary Integration Test
+                </h1>
+                
+                <!-- Configuration Status -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cog"></i> Configuration Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <button id="checkConfigBtn" class="btn btn-info">
+                            <i class="fas fa-check"></i> Check Configuration
+                        </button>
+                        <div id="configResult" class="mt-2"></div>
+                    </div>
+                </div>
+
+                <!-- Restaurant Image Upload Test -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-utensils"></i> Restaurant Image Upload Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="restaurantUploadForm" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="upload-area" id="restaurantUploadArea">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                        <p>Kéo thả ảnh vào đây hoặc click để chọn</p>
+                                        <input type="file" id="restaurantFile" name="file" accept="image/*" class="d-none">
+                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('restaurantFile').click()">
+                                            <i class="fas fa-folder-open"></i> Chọn ảnh
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="restaurantId" class="form-label">Restaurant ID</label>
+                                        <input type="number" id="restaurantId" name="restaurantId" class="form-control" value="1">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="imageType" class="form-label">Image Type</label>
+                                        <select id="imageType" name="imageType" class="form-control">
+                                            <option value="main">Main Image</option>
+                                            <option value="banner">Banner</option>
+                                            <option value="gallery">Gallery</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-upload"></i> Upload Restaurant Image
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="restaurantResult"></div>
+                    </div>
+                </div>
+
+                <!-- Dish Image Upload Test -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-hamburger"></i> Dish Image Upload Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="dishUploadForm" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="upload-area" id="dishUploadArea">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                        <p>Kéo thả ảnh món ăn vào đây hoặc click để chọn</p>
+                                        <input type="file" id="dishFile" name="file" accept="image/*" class="d-none">
+                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('dishFile').click()">
+                                            <i class="fas fa-folder-open"></i> Chọn ảnh
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="dishRestaurantId" class="form-label">Restaurant ID</label>
+                                        <input type="number" id="dishRestaurantId" name="restaurantId" class="form-control" value="1">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="dishId" class="form-label">Dish ID</label>
+                                        <input type="number" id="dishId" name="dishId" class="form-control" value="1">
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-upload"></i> Upload Dish Image
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="dishResult"></div>
+                    </div>
+                </div>
+
+                <!-- Table Image Upload Test -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-table"></i> Table Image Upload Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="tableUploadForm" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="upload-area" id="tableUploadArea">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                        <p>Kéo thả ảnh bàn ăn vào đây hoặc click để chọn</p>
+                                        <input type="file" id="tableFile" name="file" accept="image/*" class="d-none">
+                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('tableFile').click()">
+                                            <i class="fas fa-folder-open"></i> Chọn ảnh
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="tableRestaurantId" class="form-label">Restaurant ID</label>
+                                        <input type="number" id="tableRestaurantId" name="restaurantId" class="form-control" value="1">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="tableId" class="form-label">Table ID</label>
+                                        <input type="number" id="tableId" name="tableId" class="form-control" value="1">
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-upload"></i> Upload Table Image
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="tableResult"></div>
+                    </div>
+                </div>
+
+                <!-- Avatar Upload Test -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-user"></i> Avatar Upload Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="avatarUploadForm" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="upload-area" id="avatarUploadArea">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                        <p>Kéo thả ảnh đại diện vào đây hoặc click để chọn</p>
+                                        <input type="file" id="avatarFile" name="file" accept="image/*" class="d-none">
+                                        <button type="button" class="btn btn-primary" onclick="document.getElementById('avatarFile').click()">
+                                            <i class="fas fa-folder-open"></i> Chọn ảnh
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="userId" class="form-label">User ID</label>
+                                        <input type="number" id="userId" name="userId" class="form-control" value="1">
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-upload"></i> Upload Avatar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="avatarResult"></div>
+                    </div>
+                </div>
+
+                <!-- Image Deletion Test -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-trash"></i> Image Deletion Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="deleteForm">
+                            <div class="mb-3">
+                                <label for="deleteUrl" class="form-label">Image URL to Delete</label>
+                                <input type="url" id="deleteUrl" name="imageUrl" class="form-control" 
+                                       placeholder="https://res.cloudinary.com/...">
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Image
+                            </button>
+                        </form>
+                        <div id="deleteResult"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuration check
+        document.getElementById('checkConfigBtn').addEventListener('click', async function() {
+            const resultDiv = document.getElementById('configResult');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Checking...';
+            
+            try {
+                const response = await fetch('/test/cloudinary/config');
+                const data = await response.json();
+                
+                if (data.cloudinaryConfigured) {
+                    resultDiv.innerHTML = '<div class="alert alert-success"><i class="fas fa-check"></i> ' + data.message + '</div>';
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times"></i> ' + data.error + '</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times"></i> Error: ' + error.message + '</div>';
+            }
+        });
+
+        // Restaurant upload
+        document.getElementById('restaurantUploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('restaurantFile').files[0]);
+            formData.append('restaurantId', document.getElementById('restaurantId').value);
+            formData.append('imageType', document.getElementById('imageType').value);
+            
+            const resultDiv = document.getElementById('restaurantResult');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Uploading...';
+            
+            try {
+                const response = await fetch('/test/cloudinary/upload/restaurant', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result-card success-card">
+                            <h6><i class="fas fa-check"></i> Upload Successful!</h6>
+                            <p><strong>Image URL:</strong> <a href="${data.imageUrl}" target="_blank">${data.imageUrl}</a></p>
+                            <p><strong>Thumbnail:</strong> <a href="${data.thumbnailUrl}" target="_blank">${data.thumbnailUrl}</a></p>
+                            <p><strong>Optimized:</strong> <a href="${data.optimizedUrl}" target="_blank">${data.optimizedUrl}</a></p>
+                            <p><strong>Is Cloudinary:</strong> ${data.isCloudinary ? 'Yes' : 'No'}</p>
+                            <div class="mt-2">
+                                <img src="${data.imageUrl}" class="image-preview" alt="Uploaded image">
+                                <img src="${data.thumbnailUrl}" class="image-preview" alt="Thumbnail">
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+            }
+        });
+
+        // Dish upload
+        document.getElementById('dishUploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('dishFile').files[0]);
+            formData.append('restaurantId', document.getElementById('dishRestaurantId').value);
+            formData.append('dishId', document.getElementById('dishId').value);
+            
+            const resultDiv = document.getElementById('dishResult');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Uploading...';
+            
+            try {
+                const response = await fetch('/test/cloudinary/upload/dish', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result-card success-card">
+                            <h6><i class="fas fa-check"></i> Upload Successful!</h6>
+                            <p><strong>Image URL:</strong> <a href="${data.imageUrl}" target="_blank">${data.imageUrl}</a></p>
+                            <p><strong>Thumbnail:</strong> <a href="${data.thumbnailUrl}" target="_blank">${data.thumbnailUrl}</a></p>
+                            <p><strong>Optimized:</strong> <a href="${data.optimizedUrl}" target="_blank">${data.optimizedUrl}</a></p>
+                            <p><strong>Is Cloudinary:</strong> ${data.isCloudinary ? 'Yes' : 'No'}</p>
+                            <div class="mt-2">
+                                <img src="${data.imageUrl}" class="image-preview" alt="Uploaded image">
+                                <img src="${data.thumbnailUrl}" class="image-preview" alt="Thumbnail">
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+            }
+        });
+
+        // Table upload
+        document.getElementById('tableUploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('tableFile').files[0]);
+            formData.append('restaurantId', document.getElementById('tableRestaurantId').value);
+            formData.append('tableId', document.getElementById('tableId').value);
+            
+            const resultDiv = document.getElementById('tableResult');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Uploading...';
+            
+            try {
+                const response = await fetch('/test/cloudinary/upload/table', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result-card success-card">
+                            <h6><i class="fas fa-check"></i> Upload Successful!</h6>
+                            <p><strong>Image URL:</strong> <a href="${data.imageUrl}" target="_blank">${data.imageUrl}</a></p>
+                            <p><strong>Thumbnail:</strong> <a href="${data.thumbnailUrl}" target="_blank">${data.thumbnailUrl}</a></p>
+                            <p><strong>Optimized:</strong> <a href="${data.optimizedUrl}" target="_blank">${data.optimizedUrl}</a></p>
+                            <p><strong>Is Cloudinary:</strong> ${data.isCloudinary ? 'Yes' : 'No'}</p>
+                            <div class="mt-2">
+                                <img src="${data.imageUrl}" class="image-preview" alt="Uploaded image">
+                                <img src="${data.thumbnailUrl}" class="image-preview" alt="Thumbnail">
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+            }
+        });
+
+        // Avatar upload
+        document.getElementById('avatarUploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('avatarFile').files[0]);
+            formData.append('userId', document.getElementById('userId').value);
+            
+            const resultDiv = document.getElementById('avatarResult');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Uploading...';
+            
+            try {
+                const response = await fetch('/test/cloudinary/upload/avatar', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result-card success-card">
+                            <h6><i class="fas fa-check"></i> Upload Successful!</h6>
+                            <p><strong>Image URL:</strong> <a href="${data.imageUrl}" target="_blank">${data.imageUrl}</a></p>
+                            <p><strong>Thumbnail:</strong> <a href="${data.thumbnailUrl}" target="_blank">${data.thumbnailUrl}</a></p>
+                            <p><strong>Is Cloudinary:</strong> ${data.isCloudinary ? 'Yes' : 'No'}</p>
+                            <div class="mt-2">
+                                <img src="${data.imageUrl}" class="image-preview" alt="Uploaded avatar">
+                                <img src="${data.thumbnailUrl}" class="image-preview" alt="Thumbnail">
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+            }
+        });
+
+        // Delete image
+        document.getElementById('deleteForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('imageUrl', document.getElementById('deleteUrl').value);
+            
+            const resultDiv = document.getElementById('deleteResult');
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Deleting...';
+            
+            try {
+                const response = await fetch('/test/cloudinary/delete', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="result-card success-card"><i class="fas fa-check"></i> ${data.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result-card error-card"><i class="fas fa-times"></i> Error: ${error.message}</div>`;
+            }
+        });
+
+        // Drag and drop functionality
+        function setupDragAndDrop(uploadArea, fileInput) {
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                }
+            });
+        }
+
+        // Setup drag and drop for all upload areas
+        setupDragAndDrop(document.getElementById('restaurantUploadArea'), document.getElementById('restaurantFile'));
+        setupDragAndDrop(document.getElementById('dishUploadArea'), document.getElementById('dishFile'));
+        setupDragAndDrop(document.getElementById('tableUploadArea'), document.getElementById('tableFile'));
+        setupDragAndDrop(document.getElementById('avatarUploadArea'), document.getElementById('avatarFile'));
+    </script>
+</body>
+</html>

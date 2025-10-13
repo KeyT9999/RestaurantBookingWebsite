@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Media - [[${restaurant.restaurantName}]]</title>
+    <link rel="stylesheet" th:href="@{/css/restaurant-media.css}">
+    <link rel="stylesheet" th:href="@{/css/luxury.css}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="icon">📤</i>
+                    Upload Media
+                </h1>
+                <p class="page-subtitle">[[${restaurant.restaurantName}]]</p>
+            </div>
+            <div class="header-actions">
+                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media'}" 
+                   class="btn btn-secondary">
+                    <i class="icon">🔙</i>
+                    Quay lại
+                </a>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="alert alert-success">
+            <i class="icon">✅</i>
+            <span th:text="${success}">Thành công!</span>
+        </div>
+        <div th:if="${error}" class="alert alert-error">
+            <i class="icon">❌</i>
+            <span th:text="${error}">Có lỗi xảy ra!</span>
+        </div>
+
+        <!-- Upload Form -->
+        <div class="upload-form-container">
+            <form th:action="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media/upload'}" 
+                  method="post" 
+                  enctype="multipart/form-data"
+                  class="upload-form">
+                
+                <!-- Media Type Selection -->
+                <div class="form-group">
+                    <label for="mediaType" class="form-label">
+                        <i class="icon">📁</i>
+                        Loại Media *
+                    </label>
+                    <select id="mediaType" name="mediaType" required class="form-select">
+                        <option value="">-- Chọn loại media --</option>
+                        <option value="gallery">🖼️ Gallery - Ảnh gallery nhà hàng</option>
+                        <option value="menu">📋 Menu - Ảnh menu</option>
+                        <option value="interior">🏠 Nội thất - Ảnh nội thất</option>
+                        <option value="exterior">🏢 Ngoại thất - Ảnh ngoại thất</option>
+                        <option value="table_layout">🗺️ Layout bàn - Ảnh layout bàn</option>
+                    </select>
+                </div>
+
+                <!-- File Upload -->
+                <div class="form-group">
+                    <label for="mediaFiles" class="form-label">
+                        <i class="icon">📁</i>
+                        Chọn Files *
+                    </label>
+                    <div class="file-upload-area" id="fileUploadArea">
+                        <input type="file" 
+                               id="mediaFiles" 
+                               name="mediaFiles" 
+                               accept="image/*" 
+                               multiple 
+                               required 
+                               class="file-input"
+                               style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
+                        <div class="upload-placeholder">
+                            <i class="icon">📤</i>
+                            <h3>Kéo thả files vào đây hoặc click để chọn</h3>
+                            <p>Hỗ trợ: JPG, PNG, WebP. Tối đa 10MB/file</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Preview -->
+                <div class="file-preview-container" id="filePreviewContainer" style="display: none;">
+                    <h4>Files đã chọn:</h4>
+                    <div class="file-preview-grid" id="filePreviewGrid"></div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="button" 
+                            class="btn btn-secondary" 
+                            onclick="window.history.back()">
+                        <i class="icon">🔙</i>
+                        Hủy
+                    </button>
+                    <button type="submit" 
+                            class="btn btn-primary"
+                            id="submitBtn"
+                            disabled>
+                        <i class="icon">📤</i>
+                        Upload Media
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Upload Guidelines -->
+        <div class="upload-guidelines">
+            <h3>Hướng dẫn Upload:</h3>
+            <ul>
+                <li><strong>Gallery:</strong> Ảnh tổng quan về nhà hàng, không gian, món ăn</li>
+                <li><strong>Menu:</strong> Ảnh menu, thực đơn của nhà hàng</li>
+                <li><strong>Nội thất:</strong> Ảnh không gian bên trong nhà hàng</li>
+                <li><strong>Ngoại thất:</strong> Ảnh mặt tiền, cửa hàng từ bên ngoài</li>
+                <li><strong>Layout bàn:</strong> Ảnh sơ đồ, layout bàn trong nhà hàng</li>
+            </ul>
+            <div class="guidelines-note">
+                <i class="icon">ℹ️</i>
+                <span>Bạn có thể chọn nhiều ảnh cùng lúc cho cùng một loại media</span>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/restaurant-media.js}"></script>
+    <script>
+        // Set restaurant ID for JavaScript
+        window.restaurantId = [[${restaurant.restaurantId}]];
+        
+        // File validation
+        function previewFiles(input) {
+            console.log('previewFiles called with files:', input.files);
+            
+            const files = input.files;
+            const previewContainer = document.getElementById('filePreviewContainer');
+            const previewGrid = document.getElementById('filePreviewGrid');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (!files || files.length === 0) {
+                previewContainer.style.display = 'none';
+                submitBtn.disabled = true;
+                return;
+            }
+            
+            // Validate files
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            
+            let validFiles = 0;
+            previewGrid.innerHTML = '';
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const isValidType = allowedTypes.includes(file.type);
+                const isValidSize = file.size <= maxSize;
+                
+                if (isValidType && isValidSize) {
+                    validFiles++;
+                    
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-preview-item';
+                    fileItem.innerHTML = `
+                        <div class="file-preview-image">
+                            <img src="${URL.createObjectURL(file)}" alt="${file.name}">
+                        </div>
+                        <div class="file-preview-info">
+                            <span class="file-name">${file.name}</span>
+                            <span class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                        </div>
+                    `;
+                    previewGrid.appendChild(fileItem);
+                } else {
+                    alert(`File "${file.name}" không hợp lệ:\n- Loại file: ${isValidType ? 'OK' : 'Chỉ chấp nhận JPG, PNG, WebP'}\n- Kích thước: ${isValidSize ? 'OK' : 'Tối đa 10MB'}`);
+                }
+            }
+            
+            if (validFiles > 0) {
+                previewContainer.style.display = 'block';
+                submitBtn.disabled = false;
+                console.log('Valid files found:', validFiles);
+            } else {
+                previewContainer.style.display = 'none';
+                submitBtn.disabled = true;
+            }
+        }
+        
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('mediaFiles');
+            
+            console.log('File input:', fileInput);
+            
+            // File input change
+            fileInput.addEventListener('change', function(e) {
+                console.log('File input changed:', e.target.files);
+                previewFiles(this);
+            });
+            
+            // Drag and drop for upload area
+            const uploadArea = document.getElementById('fileUploadArea');
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+            
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                
+                const files = e.dataTransfer.files;
+                console.log('Files dropped:', files);
+                
+                fileInput.files = files;
+                previewFiles(fileInput);
+            });
+        });
+    </script>
+</body>
+</html>

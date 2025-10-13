@@ -16,9 +16,16 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.FOHManagementService;
-import com.example.booking.service.FileUploadService;
+import com.example.booking.service.ImageUploadService;
+import com.example.booking.domain.RestaurantMedia;
+import com.example.booking.domain.Dish;
+import com.example.booking.domain.DishStatus;
+import com.example.booking.dto.DishWithImageDto;
 import com.example.booking.service.WaitlistService;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.RestaurantManagementService;
@@ -56,29 +63,31 @@ import java.util.stream.Collectors;
 @PreAuthorize("hasRole('RESTAURANT_OWNER')")
 public class RestaurantOwnerController {
 
+    private static final Logger logger = LoggerFactory.getLogger(RestaurantOwnerController.class);
+
     private final RestaurantOwnerService restaurantOwnerService;
     private final FOHManagementService fohManagementService;
-    private final FileUploadService fileUploadService;
     private final WaitlistService waitlistService;
     private final BookingService bookingService;
     private final RestaurantManagementService restaurantService;
     private final SimpleUserService userService;
+    private final ImageUploadService imageUploadService;
 
     @Autowired
     public RestaurantOwnerController(RestaurantOwnerService restaurantOwnerService,
                                    FOHManagementService fohManagementService,
-            FileUploadService fileUploadService,
             WaitlistService waitlistService,
             BookingService bookingService,
             RestaurantManagementService restaurantService,
-            SimpleUserService userService) {
+            SimpleUserService userService,
+            ImageUploadService imageUploadService) {
         this.restaurantOwnerService = restaurantOwnerService;
         this.fohManagementService = fohManagementService;
-        this.fileUploadService = fileUploadService;
         this.waitlistService = waitlistService;
         this.bookingService = bookingService;
         this.restaurantService = restaurantService;
         this.userService = userService;
+        this.imageUploadService = imageUploadService;
     }
 
     /**
@@ -137,12 +146,18 @@ public class RestaurantOwnerController {
      * Manage restaurant information, media, and settings
      */
     @GetMapping("/profile")
-    public String profile(Model model) {
+    public String profile(Model model, Authentication authentication) {
         model.addAttribute("pageTitle", "Hồ sơ Nhà hàng - Restaurant Profile");
         
-        // Get real restaurants from database
-        List<RestaurantProfile> restaurants = restaurantOwnerService.getAllRestaurants();
-        model.addAttribute("restaurants", restaurants);
+        try {
+            // Get restaurants owned by current user
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
+            model.addAttribute("restaurants", restaurants);
+        } catch (Exception e) {
+            logger.error("Error loading restaurants for profile: {}", e.getMessage(), e);
+            model.addAttribute("error", "Lỗi khi tải danh sách nhà hàng: " + e.getMessage());
+            model.addAttribute("restaurants", new ArrayList<>());
+        }
         
         return "restaurant-owner/profile";
     }
@@ -166,20 +181,8 @@ public class RestaurantOwnerController {
     // Removed booking management - not needed for restaurant owners
     // Restaurant owners focus on managing their restaurants, not customer bookings
 
-    /**
-     * Media Management
-     * Upload and manage restaurant images, logos, menus
-     */
-    @GetMapping("/media")
-    public String media(Model model) {
-        model.addAttribute("pageTitle", "Quản lý Media - Media Management");
-        
-        // Get restaurants for media management
-        List<RestaurantProfile> restaurants = restaurantOwnerService.getAllRestaurants();
-        model.addAttribute("restaurants", restaurants);
-        
-        return "restaurant-owner/media";
-    }
+    // ===== MEDIA MANAGEMENT REMOVED =====
+    // Media management has been removed as requested
 
     /**
      * Analytics & Reports
@@ -224,9 +227,94 @@ public class RestaurantOwnerController {
                                  RestaurantProfile restaurant,
                                  @RequestParam(value = "logo", required = false) MultipartFile logo,
                                  @RequestParam(value = "cover", required = false) MultipartFile cover,
+            @RequestParam(value = "businessLicense", required = false) MultipartFile businessLicense,
                                  RedirectAttributes redirectAttributes) {
         try {
             restaurant.setRestaurantId(id);
+
+            // Xử lý upload logo nếu có
+            if (logo != null && !logo.isEmpty()) {
+                try {
+                    // Lấy URL logo cũ
+                    String oldLogoUrl = null;
+                    List<RestaurantMedia> existingMedia = restaurant.getMedia();
+                    if (existingMedia != null) {
+                        for (RestaurantMedia media : existingMedia) {
+                            if ("logo".equals(media.getType()) && media.getUrl() != null && media.getUrl().startsWith("http")) {
+                                oldLogoUrl = media.getUrl();
+                                break;
+                            }
+                        }
+                        existingMedia.removeIf(media -> "logo".equals(media.getType()));
+                    }
+
+                    // Sử dụng updateRestaurantImage (tự động xóa cũ + upload mới)
+                    String logoUrl = imageUploadService.updateRestaurantImage(logo, oldLogoUrl, id, "logo");
+
+                    // Thêm logo mới
+                    RestaurantMedia logoMedia = new RestaurantMedia();
+                    logoMedia.setRestaurant(restaurant);
+                    logoMedia.setType("logo");
+                    logoMedia.setUrl(logoUrl);
+                    if (restaurant.getMedia() == null) {
+                        restaurant.setMedia(new ArrayList<>());
+                    }
+                    restaurant.getMedia().add(logoMedia);
+                } catch (Exception e) {
+                    logger.warn("Failed to upload logo: {}", e.getMessage());
+                }
+            }
+
+            // Xử lý upload cover nếu có
+            if (cover != null && !cover.isEmpty()) {
+                try {
+                    // Lấy URL cover cũ
+                    String oldCoverUrl = null;
+                    List<RestaurantMedia> existingMedia = restaurant.getMedia();
+                    if (existingMedia != null) {
+                        for (RestaurantMedia media : existingMedia) {
+                            if ("cover".equals(media.getType()) && media.getUrl() != null && media.getUrl().startsWith("http")) {
+                                oldCoverUrl = media.getUrl();
+                                break;
+                            }
+                        }
+                        existingMedia.removeIf(media -> "cover".equals(media.getType()));
+                    }
+
+                    // Sử dụng updateRestaurantImage (tự động xóa cũ + upload mới)
+                    String coverUrl = imageUploadService.updateRestaurantImage(cover, oldCoverUrl, id, "cover");
+
+                    // Thêm cover mới
+                    RestaurantMedia coverMedia = new RestaurantMedia();
+                    coverMedia.setRestaurant(restaurant);
+                    coverMedia.setType("cover");
+                    coverMedia.setUrl(coverUrl);
+                    if (restaurant.getMedia() == null) {
+                        restaurant.setMedia(new ArrayList<>());
+                    }
+                    restaurant.getMedia().add(coverMedia);
+                } catch (Exception e) {
+                    logger.warn("Failed to upload cover: {}", e.getMessage());
+                }
+            }
+
+            // Xử lý upload business license nếu có
+            if (businessLicense != null && !businessLicense.isEmpty()) {
+                try {
+                    // Xóa business license cũ nếu có
+                    String oldBusinessLicenseUrl = restaurant.getBusinessLicenseFile();
+                    if (oldBusinessLicenseUrl != null && !oldBusinessLicenseUrl.isEmpty()) {
+                        imageUploadService.deleteImage(oldBusinessLicenseUrl);
+                    }
+
+                    // Upload business license mới
+                    String businessLicenseUrl = imageUploadService.uploadBusinessLicense(businessLicense, id);
+                    restaurant.setBusinessLicenseFile(businessLicenseUrl);
+                } catch (Exception e) {
+                    logger.warn("Failed to upload business license: {}", e.getMessage());
+                }
+            }
+
             restaurantOwnerService.updateRestaurantProfile(restaurant);
             redirectAttributes.addFlashAttribute("success", "Cập nhật nhà hàng thành công!");
             return "redirect:/restaurant-owner/profile";
@@ -251,187 +339,338 @@ public class RestaurantOwnerController {
         }
     }
 
-    // ===== CRUD OPERATIONS FOR TABLES =====
+    // ===== OLD TABLE ENDPOINTS REMOVED =====
+    // Old table endpoints have been replaced with restaurant-specific endpoints
+
+    // ===== DISH MANAGEMENT =====
 
     /**
-     * Show create table form
+     * Show dish management page for specific restaurant
      */
-    @GetMapping("/tables/create")
-    public String createTableForm(Model model) {
-        model.addAttribute("pageTitle", "Tạo bàn mới");
-        model.addAttribute("restaurants", restaurantOwnerService.getAllRestaurants());
-        return "restaurant-owner/table-form";
-    }
+    @GetMapping("/restaurants/{restaurantId}/dishes")
+    public String restaurantDishes(@PathVariable Integer restaurantId, Model model) {
+        model.addAttribute("pageTitle", "Quản lý Món ăn - Dish Management");
 
-    /**
-     * Create new table
-     */
-    @PostMapping("/tables/create")
-    public String createTable(@RequestParam String tableName,
-                            @RequestParam Integer capacity,
-                            @RequestParam Integer restaurantId,
-                            RedirectAttributes redirectAttributes) {
-        try {
-            // TODO: Implement table creation logic
-            redirectAttributes.addFlashAttribute("success", "Tạo bàn thành công!");
-            return "redirect:/restaurant-owner/tables";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi tạo bàn: " + e.getMessage());
-            return "redirect:/restaurant-owner/tables/create";
+        // Get restaurant info
+        var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
         }
+
+        model.addAttribute("restaurant", restaurant.get());
+
+        // Get dishes for this restaurant
+        List<DishWithImageDto> dishes = restaurantOwnerService.getDishesByRestaurantWithImages(restaurantId);
+        model.addAttribute("dishes", dishes);
+
+        // Calculate statistics
+        long totalDishes = dishes.size();
+        long availableDishes = dishes.stream().filter(d -> d.getStatus() == DishStatus.AVAILABLE).count();
+        long outOfStockDishes = dishes.stream().filter(d -> d.getStatus() == DishStatus.OUT_OF_STOCK).count();
+        long discontinuedDishes = dishes.stream().filter(d -> d.getStatus() == DishStatus.DISCONTINUED).count();
+
+        model.addAttribute("totalDishes", totalDishes);
+        model.addAttribute("availableDishes", availableDishes);
+        model.addAttribute("outOfStockDishes", outOfStockDishes);
+        model.addAttribute("discontinuedDishes", discontinuedDishes);
+
+        return "restaurant-owner/restaurant-dishes";
     }
 
-    // ===== CRUD OPERATIONS FOR DISHES =====
-
     /**
-     * Show create dish form
+     * Show create dish form for specific restaurant
      */
-    @GetMapping("/dishes/create")
-    public String createDishForm(Model model) {
+    @GetMapping("/restaurants/{restaurantId}/dishes/create")
+    public String createDishForm(@PathVariable Integer restaurantId, Model model) {
         model.addAttribute("pageTitle", "Thêm món mới");
-        model.addAttribute("restaurants", restaurantOwnerService.getAllRestaurants());
+
+        // Get restaurant info
+        var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
+        }
+
+        model.addAttribute("restaurant", restaurant.get());
+        model.addAttribute("dish", new Dish());
+
         return "restaurant-owner/dish-form";
     }
 
     /**
      * Create new dish
      */
-    @PostMapping("/dishes/create")
-    public String createDish(@RequestParam String dishName,
-                           @RequestParam String description,
-                           @RequestParam Double price,
-                           @RequestParam String category,
-                           @RequestParam Integer restaurantId,
-                           @RequestParam(value = "image", required = false) MultipartFile image,
+    @PostMapping("/restaurants/{restaurantId}/dishes/create")
+            public String createDish(@PathVariable Integer restaurantId,
+            @ModelAttribute Dish dish,
+            @RequestParam(value = "dishImage", required = false) MultipartFile dishImage,
                            RedirectAttributes redirectAttributes) {
         try {
             // Get restaurant
             var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
             if (restaurant.isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "Không tìm thấy nhà hàng!");
-                return "redirect:/restaurant-owner/dishes/create";
+                return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/dishes";
             }
 
-            // Create dish
-            var dish = new com.example.booking.domain.Dish();
-            dish.setName(dishName);
-            dish.setDescription(description);
-            dish.setPrice(new BigDecimal(price));
-            dish.setCategory(category);
+            // Set restaurant and default status
             dish.setRestaurant(restaurant.get());
+            if (dish.getStatus() == null) {
+                dish.setStatus(com.example.booking.domain.DishStatus.AVAILABLE);
+            }
 
-            // Handle image upload (note: Dish entity doesn't have image field)
-            // TODO: Add image field to Dish entity if needed
-            // if (image != null && !image.isEmpty()) {
-            //     String imageUrl = fileUploadService.uploadDishImage(image, dish.getDishId());
-            //     dish.setImage(imageUrl);
-            // }
+            // Save dish first to get dishId
+            Dish savedDish = restaurantOwnerService.createDish(dish);
 
-            restaurantOwnerService.createDish(dish);
+            // Handle image upload
+            if (dishImage != null && !dishImage.isEmpty()) {
+                try {
+                    String imageUrl = imageUploadService.uploadDishImage(dishImage, restaurantId,
+                            savedDish.getDishId());
+                    restaurantOwnerService.saveDishImage(restaurantId, savedDish.getDishId(), imageUrl);
+                    logger.info("Dish image uploaded successfully: {}", imageUrl);
+                } catch (Exception e) {
+                    logger.error("Failed to upload dish image: {}", e.getMessage(), e);
+                    // Don't fail the dish creation if image upload fails
+                }
+            }
+
             redirectAttributes.addFlashAttribute("success", "Thêm món thành công!");
-            return "redirect:/restaurant-owner/profile";
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/dishes";
         } catch (Exception e) {
+            logger.error("Error creating dish: {}", e.getMessage(), e);
             redirectAttributes.addFlashAttribute("error", "Lỗi khi thêm món: " + e.getMessage());
-            return "redirect:/restaurant-owner/dishes/create";
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/dishes/create";
         }
-    }
-
-    // ===== MEDIA MANAGEMENT =====
-
-    /**
-     * Upload restaurant media
-     */
-    @PostMapping("/media/upload")
-    public String uploadMedia(@RequestParam("file") MultipartFile file,
-                             @RequestParam("type") String type,
-                             @RequestParam("restaurantId") Integer restaurantId,
-                             RedirectAttributes redirectAttributes) {
-        try {
-            if (file.isEmpty()) {
-                redirectAttributes.addFlashAttribute("error", "Vui lòng chọn file!");
-                return "redirect:/restaurant-owner/media";
-            }
-
-            // Get restaurant
-            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
-            if (restaurant.isEmpty()) {
-                redirectAttributes.addFlashAttribute("error", "Không tìm thấy nhà hàng!");
-                return "redirect:/restaurant-owner/media";
-            }
-
-            // Upload file
-            String fileUrl = fileUploadService.uploadRestaurantMedia(file, restaurantId, type);
-            
-            // Create media record
-            var media = new com.example.booking.domain.RestaurantMedia();
-            media.setRestaurant(restaurant.get());
-            media.setType(type);
-            media.setUrl(fileUrl);
-            
-            restaurantOwnerService.createMedia(media);
-            redirectAttributes.addFlashAttribute("success", "Upload media thành công!");
-            
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi upload: " + e.getMessage());
-        }
-        
-        return "redirect:/restaurant-owner/media";
     }
 
     /**
-     * Delete media
+     * Show edit dish form
      */
-    @PostMapping("/media/{id}/delete")
-    public String deleteMedia(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
-        try {
-            var media = restaurantOwnerService.getMediaById(id);
-            if (media.isPresent()) {
-                // Delete file from filesystem
-                fileUploadService.deleteFile(media.get().getUrl());
-                // Delete from database
-                restaurantOwnerService.deleteMedia(id);
-                redirectAttributes.addFlashAttribute("success", "Xóa media thành công!");
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Không tìm thấy media!");
-            }
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi xóa: " + e.getMessage());
+    @GetMapping("/restaurants/{restaurantId}/dishes/{dishId}/edit")
+    public String editDishForm(@PathVariable Integer restaurantId,
+            @PathVariable Integer dishId,
+            Model model) {
+        model.addAttribute("pageTitle", "Chỉnh sửa món ăn");
+
+        // Get restaurant info
+        var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
         }
-        
-        return "redirect:/restaurant-owner/media";
+
+        // Get dish info
+        var dish = restaurantOwnerService.getDishById(dishId);
+        if (dish.isEmpty()) {
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/dishes?error=dish_not_found";
+        }
+
+        model.addAttribute("restaurant", restaurant.get());
+        model.addAttribute("dish", dish.get());
+
+        // Get dish image URL
+        String imageUrl = restaurantOwnerService.getDishImageUrl(restaurantId, dishId);
+        model.addAttribute("dishImageUrl", imageUrl);
+
+        return "restaurant-owner/dish-form";
     }
+
+    /**
+     * Update dish
+     */
+    @PostMapping("/restaurants/{restaurantId}/dishes/{dishId}/edit")
+    public String updateDish(@PathVariable Integer restaurantId,
+            @PathVariable Integer dishId,
+            @ModelAttribute Dish dish,
+            @RequestParam(value = "dishImage", required = false) MultipartFile dishImage,
+            RedirectAttributes redirectAttributes) {
+        try {
+            // Get existing dish
+            var existingDish = restaurantOwnerService.getDishById(dishId);
+            if (existingDish.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy món ăn!");
+                return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/dishes";
+            }
+
+            // Update dish properties
+            Dish dishToUpdate = existingDish.get();
+            dishToUpdate.setName(dish.getName());
+            dishToUpdate.setDescription(dish.getDescription());
+            dishToUpdate.setPrice(dish.getPrice());
+            dishToUpdate.setCategory(dish.getCategory());
+            dishToUpdate.setStatus(dish.getStatus());
+
+            // Save updated dish
+            restaurantOwnerService.updateDish(dishToUpdate);
+
+            // Handle image upload/update
+            if (dishImage != null && !dishImage.isEmpty()) {
+                try {
+                    // Upload new image and save (saveDishImage will handle deletion of old image)
+                    String imageUrl = imageUploadService.uploadDishImage(dishImage, restaurantId, dishId);
+                    restaurantOwnerService.saveDishImage(restaurantId, dishId, imageUrl);
+                    logger.info("Dish image updated successfully: {}", imageUrl);
+                } catch (Exception e) {
+                    logger.error("Failed to update dish image: {}", e.getMessage(), e);
+                    // Don't fail the dish update if image upload fails
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("success", "Cập nhật món thành công!");
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/dishes";
+        } catch (Exception e) {
+            logger.error("Error updating dish: {}", e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi cập nhật món: " + e.getMessage());
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/dishes/" + dishId + "/edit";
+        }
+    }
+
+    /**
+     * Delete dish
+     */
+    @PostMapping("/restaurants/{restaurantId}/dishes/{dishId}/delete")
+    public String deleteDish(@PathVariable Integer restaurantId,
+            @PathVariable Integer dishId,
+            RedirectAttributes redirectAttributes) {
+        try {
+            // Delete dish image first
+            restaurantOwnerService.deleteDishImage(restaurantId, dishId);
+
+            // Delete dish
+            restaurantOwnerService.deleteDish(dishId);
+
+            redirectAttributes.addFlashAttribute("success", "Xóa món thành công!");
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/dishes";
+        } catch (Exception e) {
+            logger.error("Error deleting dish: {}", e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi xóa món: " + e.getMessage());
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/dishes";
+        }
+    }
+
+    // ===== MEDIA MANAGEMENT ENDPOINTS REMOVED =====
+    // All media management endpoints have been removed as requested
 
     // ===== TABLE MANAGEMENT =====
 
     /**
-     * Show table management page
+     * Show table management page for specific restaurant
      */
-    @GetMapping("/tables")
-    public String tables(Model model) {
+    @GetMapping("/restaurants/{restaurantId}/tables")
+    public String restaurantTables(@PathVariable Integer restaurantId, Model model) {
         model.addAttribute("pageTitle", "Quản lý Bàn - Table Management");
-        
-        // Get all tables
-        List<RestaurantTable> allTables = fohManagementService.getAllTables();
-        model.addAttribute("allTables", allTables);
-        
-        return "restaurant-owner/tables";
+
+        // Get restaurant info
+        var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
+        }
+
+        model.addAttribute("restaurant", restaurant.get());
+
+        // Get tables for this restaurant
+        List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(restaurantId);
+        model.addAttribute("tables", tables);
+
+        // Calculate statistics
+        int totalCapacity = tables.stream().mapToInt(RestaurantTable::getCapacity).sum();
+        long availableTables = tables.stream().filter(t -> "AVAILABLE".equals(t.getStatus())).count();
+        long occupiedTables = tables.stream().filter(t -> "OCCUPIED".equals(t.getStatus())).count();
+
+        model.addAttribute("totalCapacity", totalCapacity);
+        model.addAttribute("availableTables", availableTables);
+        model.addAttribute("occupiedTables", occupiedTables);
+
+        return "restaurant-owner/restaurant-tables";
+    }
+
+    /**
+     * Show create table form for specific restaurant
+     */
+    @GetMapping("/restaurants/{restaurantId}/tables/create")
+    public String createTableForm(@PathVariable Integer restaurantId, Model model) {
+        model.addAttribute("pageTitle", "Tạo bàn mới");
+
+        // Get restaurant info
+        var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
+        }
+
+        model.addAttribute("restaurant", restaurant.get());
+        model.addAttribute("table", new RestaurantTable());
+
+        return "restaurant-owner/table-form";
+    }
+
+    /**
+     * Create new table for specific restaurant
+     */
+    @PostMapping("/restaurants/{restaurantId}/tables/create")
+    public String createTable(@PathVariable Integer restaurantId,
+            @ModelAttribute RestaurantTable table,
+            @RequestParam(value = "tableImages", required = false) MultipartFile[] tableImages,
+            RedirectAttributes redirectAttributes) {
+        try {
+            // Get restaurant
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy nhà hàng!");
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Set restaurant for table
+            table.setRestaurant(restaurant.get());
+
+            // Create table first to get tableId
+            logger.info("DEBUG: Creating table with restaurantId: {}", restaurantId);
+            RestaurantTable savedTable = restaurantOwnerService.createTable(table);
+            logger.info("DEBUG: Table created successfully with tableId: {}", savedTable.getTableId());
+
+            // Handle table images upload after table is created
+            logger.info("DEBUG: Checking table images - tableImages: {}, length: {}", tableImages,
+                    tableImages != null ? tableImages.length : 0);
+
+            if (tableImages != null && tableImages.length > 0 && !tableImages[0].isEmpty()) {
+                try {
+                    // Upload multiple table images to restaurant_media
+                    List<RestaurantMedia> uploadedImages = restaurantOwnerService.uploadTableImages(restaurantId, savedTable.getTableId(), tableImages);
+                    logger.info("Uploaded {} table images for table {}", uploadedImages.size(), savedTable.getTableId());
+                } catch (Exception e) {
+                    logger.warn("Failed to upload table images: {}", e.getMessage());
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("success", "Tạo bàn thành công!");
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi tạo bàn: " + e.getMessage());
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables/create";
+        }
     }
 
     /**
      * Show edit table form
      */
-    @GetMapping("/tables/{id}/edit")
-    public String editTableForm(@PathVariable Integer id, Model model) {
+    @GetMapping("/restaurants/{restaurantId}/tables/{tableId}/edit")
+    public String editTableForm(@PathVariable Integer restaurantId,
+            @PathVariable Integer tableId,
+            Model model) {
         model.addAttribute("pageTitle", "Chỉnh sửa bàn");
         
-        var table = restaurantOwnerService.getTableById(id);
-        if (table.isPresent()) {
-            model.addAttribute("table", table.get());
+        // Get restaurant info
+        var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
         }
         
-        // Get restaurants for dropdown
-        List<RestaurantProfile> restaurants = restaurantOwnerService.getAllRestaurants();
-        model.addAttribute("restaurants", restaurants);
+        // Get table info
+        var table = restaurantOwnerService.getTableById(tableId);
+        if (table.isEmpty()) {
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables?error=table_not_found";
+        }
+
+        model.addAttribute("restaurant", restaurant.get());
+        model.addAttribute("table", table.get());
         
         return "restaurant-owner/table-form";
     }
@@ -439,41 +678,253 @@ public class RestaurantOwnerController {
     /**
      * Update table
      */
-    @PostMapping("/tables/{id}/edit")
-    public String updateTable(@PathVariable Integer id,
+    @PostMapping("/restaurants/{restaurantId}/tables/{tableId}/edit")
+    public String updateTable(@PathVariable Integer restaurantId,
+            @PathVariable Integer tableId,
                              @ModelAttribute RestaurantTable table,
+            @RequestParam(value = "tableImages", required = false) MultipartFile[] tableImages,
                              RedirectAttributes redirectAttributes) {
         try {
-            var existingTable = restaurantOwnerService.getTableById(id);
-            if (existingTable.isPresent()) {
-                table.setTableId(id);
-                restaurantOwnerService.updateTable(table);
-                redirectAttributes.addFlashAttribute("success", "Cập nhật bàn thành công!");
-            } else {
-                redirectAttributes.addFlashAttribute("error", "Không tìm thấy bàn!");
+            // Get restaurant
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy nhà hàng!");
+                return "redirect:/restaurant-owner/profile";
             }
+
+            // Get existing table
+            var existingTable = restaurantOwnerService.getTableById(tableId);
+            if (existingTable.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy bàn!");
+                return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables";
+            }
+
+            // Update table basic info
+            table.setTableId(tableId);
+            table.setRestaurant(restaurant.get());
+
+            // Handle table images upload - Multiple images support
+            if (tableImages != null && tableImages.length > 0 && !tableImages[0].isEmpty()) {
+                try {
+                    // Upload multiple table images to restaurant_media
+                    List<RestaurantMedia> uploadedImages = restaurantOwnerService.uploadTableImages(restaurantId, tableId, tableImages);
+                    logger.info("Uploaded {} table images for table {}", uploadedImages.size(), tableId);
+                } catch (Exception e) {
+                    logger.warn("Failed to upload table images: {}", e.getMessage());
+                }
+            }
+
+            // Update table
+            restaurantOwnerService.updateTable(table);
+
+            redirectAttributes.addFlashAttribute("success", "Cập nhật bàn thành công!");
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi cập nhật: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi cập nhật bàn: " + e.getMessage());
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables/" + tableId + "/edit";
         }
-        
-        return "redirect:/restaurant-owner/tables";
+    }
+
+    /**
+     * Delete specific table image
+     */
+    @PostMapping("/restaurants/{restaurantId}/tables/{tableId}/images/delete/{mediaId}")
+    public String deleteTableImage(@PathVariable Integer restaurantId,
+                                  @PathVariable Integer tableId,
+                                  @PathVariable Integer mediaId,
+                                  RedirectAttributes redirectAttributes) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy nhà hàng!");
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Delete the specific table image
+            restaurantOwnerService.deleteTableImage(mediaId);
+            redirectAttributes.addFlashAttribute("success", "Xóa ảnh bàn thành công!");
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi xóa ảnh bàn: " + e.getMessage());
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables";
+        }
     }
 
     /**
      * Delete table
      */
-    @PostMapping("/tables/{id}/delete")
-    public String deleteTable(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    @PostMapping("/restaurants/{restaurantId}/tables/{tableId}/delete")
+    public String deleteTable(@PathVariable Integer restaurantId,
+            @PathVariable Integer tableId,
+            RedirectAttributes redirectAttributes) {
         try {
-            restaurantOwnerService.deleteTable(id);
+            // Check if table exists
+            var table = restaurantOwnerService.getTableById(tableId);
+            if (table.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy bàn!");
+                return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables";
+            }
+
+            // Delete all table images from restaurant_media
+            List<RestaurantMedia> tableImages = restaurantOwnerService.getTableImages(restaurantId, tableId);
+            for (RestaurantMedia image : tableImages) {
+                if (image.getUrl() != null && image.getUrl().startsWith("http")) {
+                    imageUploadService.deleteImage(image.getUrl());
+                }
+            }
+
+            // Delete table
+            restaurantOwnerService.deleteTable(tableId);
             redirectAttributes.addFlashAttribute("success", "Xóa bàn thành công!");
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi xóa: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi xóa bàn: " + e.getMessage());
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/tables";
         }
-        
-        return "redirect:/restaurant-owner/tables";
     }
     
+    // ===== RESTAURANT MEDIA MANAGEMENT =====
+
+    /**
+     * Show restaurant media management page
+     */
+    @GetMapping("/restaurants/{restaurantId}/media")
+    public String showRestaurantMedia(@PathVariable Integer restaurantId, Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Get media for management
+            List<RestaurantMedia> mediaList = restaurantOwnerService.getRestaurantMediaForManagement(restaurantId);
+
+            model.addAttribute("restaurant", restaurant.get());
+            model.addAttribute("mediaList", mediaList);
+            return "restaurant-owner/restaurant-media";
+        } catch (Exception e) {
+            logger.error("Error showing restaurant media: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/profile";
+        }
+    }
+
+    /**
+     * Show media upload form
+     */
+    @GetMapping("/restaurants/{restaurantId}/media/upload")
+    public String showMediaUploadForm(@PathVariable Integer restaurantId, Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            model.addAttribute("restaurant", restaurant.get());
+            return "restaurant-owner/media-upload-form";
+        } catch (Exception e) {
+            logger.error("Error showing media upload form: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/profile";
+        }
+    }
+
+    /**
+     * Upload restaurant media
+     */
+    @PostMapping("/restaurants/{restaurantId}/media/upload")
+    public String uploadMedia(@PathVariable Integer restaurantId,
+                             @RequestParam("mediaType") String mediaType,
+                             @RequestParam("mediaFiles") MultipartFile[] mediaFiles,
+                             RedirectAttributes redirectAttributes,
+                             Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy nhà hàng!");
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                redirectAttributes.addFlashAttribute("error", "Bạn không có quyền upload media cho nhà hàng này!");
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Validate files
+            if (mediaFiles == null || mediaFiles.length == 0) {
+                redirectAttributes.addFlashAttribute("error", "Vui lòng chọn ít nhất một file!");
+                return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/media/upload";
+            }
+
+            // Upload media
+            List<RestaurantMedia> uploadedMedia = restaurantOwnerService.uploadRestaurantMedia(restaurantId, mediaType, mediaFiles);
+            
+            if (uploadedMedia.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không thể upload file nào!");
+            } else {
+                redirectAttributes.addFlashAttribute("success", "Upload thành công " + uploadedMedia.size() + " file!");
+            }
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/media";
+        } catch (Exception e) {
+            logger.error("Error uploading media: {}", e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi upload media: " + e.getMessage());
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/media/upload";
+        }
+    }
+
+    /**
+     * Delete restaurant media
+     */
+    @PostMapping("/restaurants/{restaurantId}/media/{mediaId}/delete")
+    public String deleteMedia(@PathVariable Integer restaurantId,
+                             @PathVariable Integer mediaId,
+                             RedirectAttributes redirectAttributes,
+                             Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy nhà hàng!");
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                redirectAttributes.addFlashAttribute("error", "Bạn không có quyền xóa media của nhà hàng này!");
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Delete media
+            restaurantOwnerService.deleteRestaurantMedia(mediaId);
+            redirectAttributes.addFlashAttribute("success", "Xóa media thành công!");
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/media";
+        } catch (Exception e) {
+            logger.error("Error deleting media: {}", e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi xóa media: " + e.getMessage());
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/media";
+        }
+    }
+
     // ===== INTERNAL BOOKING MANAGEMENT =====
     
     /**

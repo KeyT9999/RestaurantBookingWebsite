@@ -1,6 +1,7 @@
 package com.example.booking.domain;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -46,12 +47,7 @@ public class RestaurantTable {
     @Min(value = 1, message = "Sức chứa tối thiểu là 1")
     @Max(value = 20, message = "Sức chứa tối đa là 20")
     private Integer capacity;
-    
-    @Column(name = "table_image", nullable = false)
-    @NotBlank(message = "Hình ảnh bàn không được để trống")
-    @Size(max = 100, message = "Đường dẫn hình ảnh không được quá 100 ký tự")
-    private String tableImage;
-    
+
     @Convert(converter = TableStatusConverter.class)
     @Column(name = "status", nullable = false)
     private TableStatus status = TableStatus.AVAILABLE;
@@ -67,11 +63,10 @@ public class RestaurantTable {
     public RestaurantTable() {}
     
     public RestaurantTable(RestaurantProfile restaurant, String tableName, Integer capacity, 
-            String tableImage, TableStatus status, BigDecimal depositAmount) {
+            TableStatus status, BigDecimal depositAmount) {
         this.restaurant = restaurant;
         this.tableName = tableName;
         this.capacity = capacity;
-        this.tableImage = tableImage;
         this.status = status != null ? status : TableStatus.AVAILABLE;
         this.depositAmount = depositAmount != null ? depositAmount : BigDecimal.ZERO;
     }
@@ -108,15 +103,7 @@ public class RestaurantTable {
     public void setCapacity(Integer capacity) {
         this.capacity = capacity;
     }
-    
-    public String getTableImage() {
-        return tableImage;
-    }
-    
-    public void setTableImage(String tableImage) {
-        this.tableImage = tableImage;
-    }
-    
+
     public TableStatus getStatus() {
         return status;
     }
@@ -156,5 +143,36 @@ public class RestaurantTable {
 
     public String getId() {
         return tableId.toString();
+    }
+
+    /**
+     * Get all table images from restaurant_media
+     * This method will be used by the service layer
+     */
+    public List<RestaurantMedia> getTableImages() {
+        if (restaurant == null) {
+            return new ArrayList<>();
+        }
+        return restaurant.getMedia().stream()
+                .filter(media -> "table".equals(media.getType()) &&
+                        media.getUrl() != null &&
+                        media.getUrl().contains("/table_" + tableId + "_"))
+                .sorted((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Get main table image (first image from media)
+     */
+    public String getMainTableImage() {
+        List<RestaurantMedia> images = getTableImages();
+        return images.isEmpty() ? null : images.get(0).getUrl();
+    }
+
+    /**
+     * Check if table has images
+     */
+    public boolean hasImages() {
+        return !getTableImages().isEmpty();
     }
 }

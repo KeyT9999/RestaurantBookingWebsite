@@ -76,7 +76,7 @@
                                         <label class="form-label">Loại Giảm Giá</label>
                                         <div class="form-control-plaintext bg-light p-2 rounded">
                                             <i class="fas fa-percentage me-1"></i>
-                                            <span th:text="${voucher.discountType == T(com.example.booking.domain.DiscountType).PERCENT ? 'Phần trăm (%)' : 'Số tiền cố định (₫)'}">Percentage</span>
+                                            <span th:text="${voucher.discountType != null and voucher.discountType.name() == 'PERCENT' ? 'Phần trăm (%)' : 'Số tiền cố định (₫)'}">Percentage</span>
                                         </div>
                                     </div>
                                 </div>
@@ -128,7 +128,7 @@
                                                    step="0.01" 
                                                    min="0"
                                                    placeholder="Nhập giá trị giảm giá">
-                                            <span class="input-group-text" th:text="${voucher.discountType == T(com.example.booking.domain.DiscountType).PERCENT ? '%' : '₫'}">%</span>
+                                            <span class="input-group-text" th:text="${voucher.discountType != null and voucher.discountType.name() == 'PERCENT' ? '%' : '₫'}">%</span>
                                         </div>
                                     </div>
                                     
@@ -144,7 +144,7 @@
                                                placeholder="Nhập đơn hàng tối thiểu">
                                     </div>
                                     
-                                    <div class="col-md-6 mb-3" th:if="${voucher.discountType == T(com.example.booking.domain.DiscountType).PERCENT}">
+                                    <div class="col-md-6 mb-3" th:if="${voucher.discountType != null and voucher.discountType.name() == 'PERCENT'}">
                                         <label for="maxDiscountAmount" class="form-label">Giảm Tối Đa (₫)</label>
                                         <input type="number" 
                                                class="form-control" 
