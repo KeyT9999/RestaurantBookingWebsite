@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Limiting Dashboard - Admin Panel</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        /* CSS Variables - Giống trang home */
+        :root {
+            --primary-blue: #4A90E2;
+            --primary-blue-light: #6BA3F0;
+            --primary-blue-dark: #357ABD;
+            --accent-orange: #FF6B35;
+            --accent-orange-light: #FF8A5B;
+            --accent-orange-dark: #E55A2B;
+            --background-light: #F7F6F0;
+            --background-white: #FFFEF7;
+            --text-dark: #2C3E50;
+            --text-medium: #5A6C7D;
+            --text-light: #8A9BA8;
+            --border-light: #E8E5D8;
+            --border-medium: #D8D4C8;
+            --shadow-light: rgba(74, 144, 226, 0.1);
+            --shadow-medium: rgba(74, 144, 226, 0.15);
+            --shadow-heavy: rgba(74, 144, 226, 0.2);
+            --font-heading: 'Inter', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --transition: all 0.3s ease;
+            --shadow-card: 0 2px 12px var(--shadow-light);
+            --shadow-hover: 0 4px 20px var(--shadow-medium);
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--background-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* Header Style */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 40px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: var(--shadow-hover);
+        }
+
+        .dashboard-title {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Statistics Cards */
+        .stat-card {
+            background: var(--background-white);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow-card);
+            transition: var(--transition);
+            border: 1px solid var(--border-light);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .stat-card.primary {
+            border-left: 5px solid var(--primary-blue);
+        }
+
+        .stat-card.danger {
+            border-left: 5px solid var(--accent-orange);
+        }
+
+        .stat-card.success {
+            border-left: 5px solid #28a745;
+        }
+
+        .stat-card.warning {
+            border-left: 5px solid #ffc107;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--text-medium);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            color: var(--primary-blue);
+            margin-bottom: 15px;
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: var(--transition);
+            margin: 5px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .action-btn:hover {
+            background: var(--primary-blue-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+            color: white;
+        }
+
+        .action-btn.danger {
+            background: var(--accent-orange);
+        }
+
+        .action-btn.danger:hover {
+            background: var(--accent-orange-dark);
+        }
+
+        .action-btn.success {
+            background: #28a745;
+        }
+
+        .action-btn.success:hover {
+            background: #218838;
+        }
+
+        .action-btn.warning {
+            background: #ffc107;
+            color: var(--text-dark);
+        }
+
+        .action-btn.warning:hover {
+            background: #e0a800;
+            color: var(--text-dark);
+        }
+
+        /* Tables */
+        .data-table {
+            background: var(--background-white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-light);
+        }
+
+        .table-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .table th {
+            background: var(--background-light);
+            color: var(--text-dark);
+            font-weight: 600;
+            border: none;
+            padding: 15px;
+        }
+
+        .table td {
+            padding: 15px;
+            border-color: var(--border-light);
+            vertical-align: middle;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(74, 144, 226, 0.05);
+        }
+
+        /* Badges */
+        .badge-custom {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        .badge-danger {
+            background: var(--accent-orange);
+            color: white;
+        }
+
+        .badge-warning {
+            background: #ffc107;
+            color: var(--text-dark);
+        }
+
+        .badge-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .badge-secondary {
+            background: var(--text-light);
+            color: white;
+        }
+
+        /* Alerts */
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--text-dark);
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-danger {
+            background: rgba(255, 107, 53, 0.1);
+            color: var(--text-dark);
+            border-left: 4px solid var(--accent-orange);
+        }
+
+        /* Forms */
+        .form-control-custom {
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: var(--transition);
+        }
+
+        .form-control-custom:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+        }
+
+        /* Modal */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: var(--shadow-hover);
+        }
+
+        .modal-header {
+            background: var(--primary-blue);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-title {
+                font-size: 2rem;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .action-btn {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="~{fragments/header :: site-header}"></div>
+
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="dashboard-title">
+                        <i class="fas fa-shield-alt me-3"></i>
+                        Rate Limiting Dashboard
+                    </h1>
+                    <p class="dashboard-subtitle">Advanced Security Monitoring & Management System</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="action-btn" onclick="refreshData()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                    <button class="action-btn success" onclick="exportData()">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Statistics Cards -->
+        <div class="row mb-5">
+            <div class="col-md-3">
+                <div class="stat-card primary">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-number" th:text="${overallStats.totalRequests}">1000</div>
+                    <div class="stat-label">Total Requests</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card danger">
+                    <div class="stat-icon">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="stat-number" th:text="${overallStats.blockedRequests}">50</div>
+                    <div class="stat-label">Blocked Requests</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card success">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-number" th:text="${overallStats.successfulRequests}">950</div>
+                    <div class="stat-label">Successful Requests</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card warning">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-number" th:text="${overallStats.blockedIps}">10</div>
+                    <div class="stat-label">Blocked IPs</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <!-- Top Blocked IPs -->
+            <div class="col-md-8">
+                <div class="data-table">
+                    <div class="table-header">
+                        <i class="fas fa-list me-2"></i>Top Blocked IPs
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-globe me-2"></i>IP Address</th>
+                                    <th><i class="fas fa-chart-bar me-2"></i>Blocked Count</th>
+                                    <th><i class="fas fa-exclamation-triangle me-2"></i>Risk Score</th>
+                                    <th><i class="fas fa-tag me-2"></i>Status</th>
+                                    <th><i class="fas fa-cogs me-2"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="ip : ${topBlockedIps}">
+                                    <td>
+                                        <strong th:text="${ip.ipAddress}">192.168.1.100</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-custom badge-warning" th:text="${ip.blockedCount}">15</span>
+                                    </td>
+                                    <td>
+                                        <span th:if="${ip.riskScore > 80}" class="badge badge-custom badge-danger" th:text="${ip.riskScore}">85</span>
+                                        <span th:if="${ip.riskScore > 50 and ip.riskScore <= 80}" class="badge badge-custom badge-warning" th:text="${ip.riskScore}">65</span>
+                                        <span th:if="${ip.riskScore <= 50}" class="badge badge-custom badge-success" th:text="${ip.riskScore}">30</span>
+                                    </td>
+                                    <td>
+                                        <span th:if="${ip.isSuspicious}" class="badge badge-custom badge-danger">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Suspicious
+                                        </span>
+                                        <span th:unless="${ip.isSuspicious}" class="badge badge-custom badge-success">
+                                            <i class="fas fa-check me-1"></i>Normal
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="action-btn" onclick="viewIpDetails('${ip.ipAddress}')">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </button>
+                                        <button class="action-btn danger" onclick="blockIp('${ip.ipAddress}')">
+                                            <i class="fas fa-ban me-1"></i>Block
+                                        </button>
+                                        <button class="action-btn success" onclick="unblockIp('${ip.ipAddress}')">
+                                            <i class="fas fa-unlock me-1"></i>Unblock
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Suspicious IPs (for admin review) -->
+            <div class="col-md-6">
+                <div class="data-table">
+                    <div class="table-header">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Suspicious IPs
+                        <span class="badge badge-custom badge-warning ms-2" th:text="${#lists.size(suspiciousIps)}">0</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-globe me-1"></i>IP Address</th>
+                                    <th><i class="fas fa-chart-bar me-1"></i>Blocked Count</th>
+                                    <th><i class="fas fa-exclamation-triangle me-1"></i>Risk Score</th>
+                                    <th><i class="fas fa-clock me-1"></i>Detected At</th>
+                                    <th><i class="fas fa-cog me-1"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="suspicious : ${suspiciousIps}">
+                                    <td>
+                                        <strong th:text="${suspicious.ipAddress}">192.168.1.100</strong>
+                                        <br>
+                                        <small class="text-muted" th:text="${suspicious.reason}">Rate limit exceeded multiple times</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-custom badge-danger" th:text="${suspicious.blockedCount}">10</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-custom badge-warning" th:text="${suspicious.riskScore}">85</span>
+                                    </td>
+                                    <td>
+                                        <small th:text="${suspicious.detectedAt}">2025-10-12 15:30</small>
+                                    </td>
+                                    <td>
+                                        <button class="action-btn" onclick="viewIpDetails('${suspicious.ipAddress}')">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </button>
+                                        <button class="action-btn danger" onclick="blockSuspiciousIp('${suspicious.ipAddress}')">
+                                            <i class="fas fa-ban me-1"></i>Block
+                                        </button>
+                                        <button class="action-btn success" onclick="clearSuspiciousFlag('${suspicious.ipAddress}')">
+                                            <i class="fas fa-check me-1"></i>Clear
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(suspiciousIps)}">
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                        <p>No suspicious IPs detected</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Alerts -->
+            <div class="col-md-4">
+                <div class="data-table">
+                    <div class="table-header">
+                        <i class="fas fa-bell me-2"></i>Recent Alerts
+                    </div>
+                    <div class="p-3">
+                        <div th:each="alert : ${recentAlerts}" class="alert-custom alert-warning">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong th:text="${alert.ipAddress}">192.168.1.100</strong>
+                                    <p class="mb-1 mt-1" th:text="${alert.message}">High risk score detected</p>
+                                    <small class="text-muted" th:text="${alert.severity}">HIGH</small>
+                                </div>
+                                <small th:text="${alert.createdAt}">2025-10-12 23:00:00</small>
+                            </div>
+                        </div>
+                        <div th:if="${#lists.isEmpty(recentAlerts)}" class="text-center text-muted py-4">
+                            <i class="fas fa-check-circle fa-3x mb-3"></i>
+                            <p>No recent alerts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Permanently Blocked IPs -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="data-table">
+                    <div class="table-header">
+                        <i class="fas fa-lock me-2"></i>Permanently Blocked IPs
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-globe me-2"></i>IP Address</th>
+                                    <th><i class="fas fa-file-text me-2"></i>Reason</th>
+                                    <th><i class="fas fa-clock me-2"></i>Blocked At</th>
+                                    <th><i class="fas fa-user me-2"></i>Blocked By</th>
+                                    <th><i class="fas fa-cogs me-2"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="blocked : ${permanentlyBlocked}">
+                                    <td>
+                                        <strong th:text="${blocked.ipAddress}">192.168.1.102</strong>
+                                    </td>
+                                    <td th:text="${blocked.reason}">Multiple violations</td>
+                                    <td th:text="${blocked.blockedAt}">2025-10-12 22:00:00</td>
+                                    <td>
+                                        <span class="badge badge-custom badge-secondary">ADMIN</span>
+                                    </td>
+                                    <td>
+                                        <button class="action-btn success" onclick="unblockPermanent('${blocked.ipAddress}')">
+                                            <i class="fas fa-unlock me-1"></i>Unblock
+                                        </button>
+                                        <button class="action-btn" onclick="editBlockReason('${blocked.ipAddress}')">
+                                            <i class="fas fa-edit me-1"></i>Edit
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="data-table">
+                    <div class="table-header">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </div>
+                    <div class="p-3">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <button class="action-btn w-100" onclick="clearAllBlocks()">
+                                    <i class="fas fa-trash me-2"></i>Clear All Blocks
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="action-btn warning w-100" onclick="resetAllLimits()">
+                                    <i class="fas fa-redo me-2"></i>Reset All Limits
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="action-btn success w-100" onclick="addWhitelistIp()">
+                                    <i class="fas fa-plus me-2"></i>Add Whitelist IP
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="action-btn danger w-100" onclick="blockIpManual()">
+                                    <i class="fas fa-ban me-2"></i>Block IP Manually
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <button class="action-btn info w-100" onclick="exportData()">
+                                    <i class="fas fa-download me-2"></i>Export Data
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button class="action-btn secondary w-100" onclick="refreshData()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block IP Modal -->
+    <div class="modal fade" id="blockIpModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-ban me-2"></i>Block IP Address
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="blockIpForm">
+                        <div class="mb-3">
+                            <label class="form-label">IP Address</label>
+                            <input type="text" class="form-control form-control-custom" id="blockIpAddress" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason</label>
+                            <select class="form-select form-control-custom" id="blockReason" required>
+                                <option value="">Select a reason</option>
+                                <option value="Suspicious activity">Suspicious activity</option>
+                                <option value="Multiple violations">Multiple violations</option>
+                                <option value="Bot behavior">Bot behavior</option>
+                                <option value="Manual block">Manual block</option>
+                                <option value="DDoS attack">DDoS attack</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control form-control-custom" id="blockNotes" rows="3" placeholder="Additional notes..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="action-btn" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="action-btn danger" onclick="confirmBlockIp()">Block IP</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Whitelist IP Modal -->
+    <div class="modal fade" id="whitelistModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus me-2"></i>Add Whitelist IP
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="whitelistForm">
+                        <div class="mb-3">
+                            <label class="form-label">IP Address</label>
+                            <input type="text" class="form-control form-control-custom" id="whitelistIpAddress" placeholder="192.168.1.100" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control form-control-custom" id="whitelistDescription" placeholder="Trusted IP address">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="action-btn" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="action-btn success" onclick="confirmAddWhitelist()">Add to Whitelist</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        // Global variables
+        let currentIpAddress = '';
+        let blockModal = null;
+        let whitelistModal = null;
+
+        // Initialize modals
+        document.addEventListener('DOMContentLoaded', function() {
+            blockModal = new bootstrap.Modal(document.getElementById('blockIpModal'));
+            whitelistModal = new bootstrap.Modal(document.getElementById('whitelistModal'));
+        });
+
+        // Refresh data
+        function refreshData() {
+            showNotification('Refreshing data...', 'info');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        }
+
+        // Export data
+        function exportData() {
+            showNotification('Exporting data...', 'info');
+            // Simulate export
+            setTimeout(() => {
+                const data = {
+                    timestamp: new Date().toISOString(),
+                    statistics: {
+                        totalRequests: document.querySelector('.stat-number').textContent,
+                        blockedRequests: document.querySelectorAll('.stat-number')[1].textContent,
+                        successfulRequests: document.querySelectorAll('.stat-number')[2].textContent,
+                        blockedIps: document.querySelectorAll('.stat-number')[3].textContent
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'rate-limiting-data.json';
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showNotification('Data exported successfully!', 'success');
+            }, 1000);
+        }
+
+        // View IP details
+        function viewIpDetails(ipAddress) {
+            showNotification(`Viewing details for IP: ${ipAddress}`, 'info');
+            // In real implementation, this would open a detailed view
+            alert(`IP Details for ${ipAddress}:\n\nThis would show detailed information about the IP address including:\n- Request history\n- Risk analysis\n- Geographic location\n- Associated user agents\n- Block/unblock history`);
+        }
+
+        // Block IP
+        function blockIp(ipAddress) {
+            currentIpAddress = ipAddress;
+            document.getElementById('blockIpAddress').value = ipAddress;
+            blockModal.show();
+        }
+
+        // Confirm block IP
+        function confirmBlockIp() {
+            const reason = document.getElementById('blockReason').value;
+            const notes = document.getElementById('blockNotes').value;
+            
+            if (!reason) {
+                showNotification('Please select a reason for blocking', 'error');
+                return;
+            }
+            
+            showNotification(`Blocking IP ${currentIpAddress}...`, 'info');
+            
+            // Real API call
+            fetch('/admin/rate-limiting/api/block-ip', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ipAddress: currentIpAddress,
+                    reason: reason,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                blockModal.hide();
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 1500);
+            })
+            .catch(error => {
+                showNotification('Error blocking IP: ' + error.message, 'error');
+            });
+        }
+
+        // Unblock IP
+        function unblockIp(ipAddress) {
+            if (confirm(`Are you sure you want to unblock IP ${ipAddress}?`)) {
+                showNotification(`Unblocking IP ${ipAddress}...`, 'info');
+                
+                // Real API call
+                fetch('/admin/rate-limiting/api/unblock-ip', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ipAddress: ipAddress
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    showNotification('Error unblocking IP: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // Unblock permanent
+        function unblockPermanent(ipAddress) {
+            if (confirm(`Are you sure you want to remove permanent block for IP ${ipAddress}?`)) {
+                showNotification(`Removing permanent block for IP ${ipAddress}...`, 'info');
+                
+                // Real API call
+                fetch('/admin/rate-limiting/api/unblock-permanent', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ipAddress: ipAddress
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    showNotification('Error removing permanent block: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // Edit block reason
+        function editBlockReason(ipAddress) {
+            const newReason = prompt(`Enter new reason for blocking IP ${ipAddress}:`, 'Updated reason');
+            if (newReason) {
+                showNotification(`Updating block reason for IP ${ipAddress}...`, 'info');
+                
+                // Real API call
+                fetch('/admin/rate-limiting/api/edit-block-reason', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ipAddress: ipAddress,
+                        newReason: newReason
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, 'success');
+                })
+                .catch(error => {
+                    showNotification('Error updating block reason: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // Block suspicious IP
+        function blockSuspiciousIp(ipAddress) {
+            const reason = prompt(`Enter reason for blocking IP ${ipAddress}:`, 'Suspicious activity detected');
+            if (reason) {
+                showNotification(`Blocking suspicious IP ${ipAddress}...`, 'warning');
+                
+                fetch('/admin/rate-limiting/api/block-ip', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ipAddress: ipAddress,
+                        reason: reason
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    showNotification('Error blocking IP: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // Clear suspicious flag
+        function clearSuspiciousFlag(ipAddress) {
+            if (confirm(`Are you sure you want to clear the suspicious flag for IP ${ipAddress}?`)) {
+                showNotification(`Clearing suspicious flag for IP ${ipAddress}...`, 'info');
+                
+                fetch('/admin/rate-limiting/api/clear-suspicious-flag', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ipAddress: ipAddress
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    showNotification('Error clearing suspicious flag: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // Clear all blocks
+        function clearAllBlocks() {
+            if (confirm('Are you sure you want to clear ALL rate limit blocks? This action cannot be undone.')) {
+                showNotification('Clearing all rate limit blocks...', 'warning');
+                
+                // Real API call
+                fetch('/admin/rate-limiting/api/clear-all-blocks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    showNotification('Error clearing blocks: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // Reset all limits
+        function resetAllLimits() {
+            if (confirm('Are you sure you want to reset ALL rate limits? This will reset counters for all IPs.')) {
+                showNotification('Resetting all rate limits...', 'warning');
+                
+                // Real API call
+                fetch('/admin/rate-limiting/api/reset-all-limits', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    showNotification('Error resetting limits: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // Add whitelist IP
+        function addWhitelistIp() {
+            whitelistModal.show();
+        }
+
+        // Confirm add whitelist
+        function confirmAddWhitelist() {
+            const ipAddress = document.getElementById('whitelistIpAddress').value;
+            const description = document.getElementById('whitelistDescription').value;
+            
+            if (!ipAddress) {
+                showNotification('Please enter an IP address', 'error');
+                return;
+            }
+            
+            showNotification(`Adding IP ${ipAddress} to whitelist...`, 'info');
+            
+            // Real API call
+            fetch('/admin/rate-limiting/api/whitelist-ip', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ipAddress: ipAddress,
+                    description: description
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                whitelistModal.hide();
+                showNotification(data.message, 'success');
+                // Clear form
+                document.getElementById('whitelistIpAddress').value = '';
+                document.getElementById('whitelistDescription').value = '';
+            })
+            .catch(error => {
+                showNotification('Error adding to whitelist: ' + error.message, 'error');
+            });
+        }
+
+        // Block IP manually
+        function blockIpManual() {
+            const ipAddress = prompt('Enter IP address to block:', '192.168.1.100');
+            if (ipAddress) {
+                document.getElementById('blockIpAddress').value = ipAddress;
+                new bootstrap.Modal(document.getElementById('blockModal')).show();
+            }
+        }
+
+        // Confirm Block IP
+        function confirmBlockIp() {
+            const ipAddress = document.getElementById('blockIpAddress').value;
+            const reason = document.getElementById('blockReason').value;
+            const notes = document.getElementById('blockNotes').value;
+            
+            if (!reason) {
+                showNotification('Please select a reason for blocking', 'error');
+                return;
+            }
+            
+            showNotification(`Blocking IP ${ipAddress}...`, 'warning');
+            
+            fetch('/admin/rate-limiting/api/block-ip', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ipAddress: ipAddress,
+                    reason: reason,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showNotification(data.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('blockModal')).hide();
+                setTimeout(() => location.reload(), 1500);
+            })
+            .catch(error => {
+                showNotification('Error blocking IP: ' + error.message, 'error');
+            });
+        }
+
+        // Export data
+        function exportData() {
+            showNotification('Exporting data...', 'info');
+            
+            fetch('/admin/rate-limiting/api/export-data', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Create downloadable file
+                    const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rate_limiting_data_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    showNotification(`Data exported successfully (${data.totalRecords} records)`, 'success');
+                } else {
+                    showNotification('Error exporting data: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error exporting data: ' + error.message, 'error');
+            });
+        }
+
+        // Refresh data
+        function refreshData() {
+            showNotification('Refreshing data...', 'info');
+            location.reload();
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Auto refresh every 30 seconds
+        setInterval(function() {
+            // Refresh statistics only
+            fetch('/admin/rate-limiting/api/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    // Update statistics cards
+                    const statNumbers = document.querySelectorAll('.stat-number');
+                    if (statNumbers.length >= 4) {
+                        statNumbers[0].textContent = data.totalRequests || '1000';
+                        statNumbers[1].textContent = data.blockedRequests || '50';
+                        statNumbers[2].textContent = data.successfulRequests || '950';
+                        statNumbers[3].textContent = data.blockedIps || '10';
+                    }
+                })
+                .catch(error => console.log('Error refreshing data:', error));
+        }, 30000);
+    </script>
+</body>
+</html>
