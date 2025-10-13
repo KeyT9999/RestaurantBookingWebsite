@@ -10,8 +10,8 @@ public class ProfileEditForm {
     @Size(max = 100, message = "Họ tên không được quá 100 ký tự")
     private String fullName;
     
-    @Size(max = 20, message = "Số điện thoại không được quá 20 ký tự")
-    @Pattern(regexp = "^[0-9+\\-\\s()]*$", message = "Số điện thoại không hợp lệ")
+    @Size(max = 15, message = "Số điện thoại không được quá 15 ký tự")
+    @Pattern(regexp = "^(0[3|5|7|8|9])[0-9]{8}$|^$", message = "Số điện thoại phải là 10 số và bắt đầu bằng 03, 05, 07, 08, 09 hoặc để trống")
     private String phoneNumber;
     
     @Size(max = 200, message = "Địa chỉ không được quá 200 ký tự")

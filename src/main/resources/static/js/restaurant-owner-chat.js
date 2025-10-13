@@ -260,9 +260,9 @@ class RestaurantOwnerChatManager {
     const timeText = this.formatTime(message.sentAt);
     messageItem.querySelector(".message-time").textContent = timeText;
 
-    // Safe handling of content
+    // Safe handling of content - use innerHTML since content is sanitized on server
     const content = message.content || "";
-    messageItem.querySelector(".message-text").textContent = content;
+    messageItem.querySelector(".message-text").innerHTML = content;
 
     // Check if message is from current user
     if (message.senderId === this.currentUserId) {

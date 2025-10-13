@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Details - Rate Limiting Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .info-card.danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        .info-card.warning {
+            background: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
+        }
+        .info-card.success {
+            background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
+        }
+        .risk-high { color: #e74c3c; font-weight: bold; }
+        .risk-medium { color: #f39c12; font-weight: bold; }
+        .risk-low { color: #27ae60; font-weight: bold; }
+        .risk-minimal { color: #95a5a6; }
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding-left: 20px;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 5px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #007bff;
+        }
+        .timeline-item.danger::before {
+            background: #dc3545;
+        }
+        .timeline-item.warning::before {
+            background: #ffc107;
+        }
+        .progress-bar-animated {
+            animation: progress-bar-stripes 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1><i class="fas fa-search text-primary"></i> IP Details</h1>
+                        <h3 class="text-muted" th:text="${stats.ipAddress}">192.168.1.1</h3>
+                    </div>
+                    <div>
+                        <a href="/admin/rate-limiting" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                        <button class="btn btn-outline-warning me-2" onclick="resetRateLimit()">
+                            <i class="fas fa-undo"></i> Reset Rate Limit
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="blockIp()">
+                            <i class="fas fa-ban"></i> Block IP
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="info-card" th:class="'info-card ' + (${stats.blockedCount} > 10 ? 'danger' : (${stats.blockedCount} > 5 ? 'warning' : 'success'))">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 th:text="${stats.blockedCount}">0</h3>
+                            <p class="mb-0">Blocked Count</p>
+                        </div>
+                        <i class="fas fa-ban fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-card">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 th:text="${stats.formattedSuccessRate}">85.5%</h3>
+                            <p class="mb-0">Success Rate</p>
+                        </div>
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-card">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 th:text="${stats.riskScore}">45</h3>
+                            <p class="mb-0">Risk Score</p>
+                        </div>
+                        <i class="fas fa-shield-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="info-card">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 th:text="${stats.totalRequests}">150</h3>
+                            <p class="mb-0">Total Requests</p>
+                        </div>
+                        <i class="fas fa-globe fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <!-- IP Information -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle"></i> IP Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>IP Address:</strong></td>
+                                <td th:text="${stats.ipAddress}">192.168.1.1</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Risk Level:</strong></td>
+                                <td>
+                                    <span th:class="'risk-' + ${#strings.toLowerCase(stats.riskLevel)}" 
+                                          th:text="${stats.riskLevel}">MEDIUM</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Success Rate:</strong></td>
+                                <td th:text="${stats.formattedSuccessRate}">85.5%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Failure Rate:</strong></td>
+                                <td th:text="${stats.formattedFailureRate}">14.5%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Suspicious:</strong></td>
+                                <td>
+                                    <span th:if="${stats.isSuspicious}" class="badge bg-danger">Yes</span>
+                                    <span th:unless="${stats.isSuspicious}" class="badge bg-success">No</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span th:if="${stats.isCurrentlyBlocked()}" class="badge bg-danger">Blocked</span>
+                                    <span th:unless="${stats.isCurrentlyBlocked()}" class="badge bg-success">Active</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${stats.isCurrentlyBlocked()}">
+                                <td><strong>Time Until Unblock:</strong></td>
+                                <td th:text="${stats.timeUntilUnblock} + ' seconds'">300 seconds</td>
+                            </tr>
+                            <tr>
+                                <td><strong>User Agent:</strong></td>
+                                <td th:text="${stats.userAgent}">Mozilla/5.0...</td>
+                            </tr>
+                            <tr>
+                                <td><strong>First Blocked:</strong></td>
+                                <td th:text="${stats.firstBlockedAt}">2024-01-15 10:30</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Blocked:</strong></td>
+                                <td th:text="${stats.lastBlockedAt}">2024-01-15 11:45</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Request:</strong></td>
+                                <td th:text="${stats.lastRequestAt}">2024-01-15 12:00</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Threat Intelligence -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-brain"></i> Threat Intelligence</h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${threatIntelligence}">
+                            <div class="mb-3">
+                                <label class="form-label">Risk Score</label>
+                                <div class="progress">
+                                    <div class="progress-bar" 
+                                         th:class="'progress-bar ' + (${threatIntelligence.riskScore} > 80 ? 'bg-danger' : (${threatIntelligence.riskScore} > 50 ? 'bg-warning' : 'bg-success'))"
+                                         th:style="'width: ' + ${threatIntelligence.riskScore} + '%'"
+                                         th:text="${threatIntelligence.riskScore} + '%'">45%</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Risk Level</label>
+                                <span th:class="'risk-' + ${#strings.toLowerCase(threatIntelligence.riskLevel)}" 
+                                      th:text="${threatIntelligence.riskLevel}">MEDIUM</span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Requests in Last Minute</label>
+                                <span class="badge bg-info" th:text="${threatIntelligence.requestsInLastMinute}">15</span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Unusual Pattern</label>
+                                <span th:if="${threatIntelligence.hasUnusualPattern}" class="badge bg-warning">Yes</span>
+                                <span th:unless="${threatIntelligence.hasUnusualPattern}" class="badge bg-success">No</span>
+                            </div>
+                        </div>
+                        <div th:unless="${threatIntelligence}" class="text-center text-muted">
+                            <i class="fas fa-question-circle fa-2x mb-2"></i>
+                            <p>No threat intelligence data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blocked Requests Timeline -->
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-history"></i> Blocked Requests Timeline</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div th:each="request : ${blockedRequests}" class="timeline-item" 
+                                 th:class="'timeline-item ' + (${request.operationType} == 'login' ? 'danger' : 'warning')">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong th:text="${request.requestPath}">/login</strong>
+                                        <p class="mb-1" th:text="${request.operationType}">login</p>
+                                        <small class="text-muted" th:text="${request.userAgent}">Mozilla/5.0...</small>
+                                    </div>
+                                    <small th:text="${request.blockedAt}">2024-01-15 10:30</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div th:if="${#lists.isEmpty(blockedRequests)}" class="text-center text-muted">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <p>No blocked requests</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-bell"></i> Alerts</h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:each="alert : ${alerts}" class="alert alert-warning alert-dismissible fade show">
+                            <strong th:text="${alert.alertType}">HIGH_FREQUENCY_BLOCK</strong>
+                            <p class="mb-1" th:text="${alert.message}">High frequency blocking detected</p>
+                            <small class="text-muted" th:text="${alert.createdAt}">2024-01-15 10:30</small>
+                        </div>
+                        <div th:if="${#lists.isEmpty(alerts)}" class="text-center text-muted">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <p>No alerts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Block IP Modal -->
+    <div class="modal fade" id="blockIpModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Block IP Address</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="blockIpForm">
+                        <div class="mb-3">
+                            <label class="form-label">IP Address</label>
+                            <input type="text" class="form-control" th:value="${stats.ipAddress}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason</label>
+                            <select class="form-select" id="blockReason" required>
+                                <option value="">Select a reason</option>
+                                <option value="Suspicious activity">Suspicious activity</option>
+                                <option value="Multiple violations">Multiple violations</option>
+                                <option value="Bot behavior">Bot behavior</option>
+                                <option value="Manual block">Manual block</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea class="form-control" id="blockNotes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmBlockIp()">Block IP</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        const currentIp = /*[[${stats.ipAddress}]]*/ '192.168.1.1';
+
+        function resetRateLimit() {
+            if (confirm('Are you sure you want to reset the rate limit for ' + currentIp + '?')) {
+                fetch('/admin/rate-limiting/reset-rate-limit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'ipAddress=' + encodeURIComponent(currentIp)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Rate limit reset successfully');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error.message);
+                });
+            }
+        }
+
+        function blockIp() {
+            new bootstrap.Modal(document.getElementById('blockIpModal')).show();
+        }
+
+        function confirmBlockIp() {
+            const reason = document.getElementById('blockReason').value;
+            const notes = document.getElementById('blockNotes').value;
+
+            if (!reason) {
+                alert('Please select a reason');
+                return;
+            }
+
+            fetch('/admin/rate-limiting/block-ip', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'ipAddress=' + encodeURIComponent(currentIp) + 
+                      '&reason=' + encodeURIComponent(reason) + 
+                      '&notes=' + encodeURIComponent(notes)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('IP blocked successfully');
+                    bootstrap.Modal.getInstance(document.getElementById('blockIpModal')).hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(() => location.reload(), 30000);
+    </script>
+</body>
+</html>

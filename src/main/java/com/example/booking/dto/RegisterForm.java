@@ -1,10 +1,11 @@
 package com.example.booking.dto;
 
-import java.math.BigDecimal;
-
 import com.example.booking.domain.UserRole;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public class RegisterForm {
     
@@ -15,10 +16,14 @@ public class RegisterForm {
     
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
+    @Pattern(regexp = ".*@(gmail\\.com|outlook\\.com\\.vn|yahoo\\.com|hotmail\\.com|student\\.ctu\\.edu\\.vn|ctu\\.edu\\.vn)$", 
+             message = "Email phải thuộc một trong các domain: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn")
     private String email;
     
     @NotBlank(message = "Password không được để trống")
-    @Size(min = 6, message = "Password phải ít nhất 6 ký tự")
+    @Size(min = 8, message = "Password phải ít nhất 8 ký tự")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", 
+             message = "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt")
     private String password;
     
     @NotBlank(message = "Xác nhận password không được để trống")
@@ -28,8 +33,8 @@ public class RegisterForm {
     @Size(max = 100, message = "Họ tên không được quá 100 ký tự")
     private String fullName;
     
-    @Size(max = 20, message = "Số điện thoại không được quá 20 ký tự")
-    @Pattern(regexp = "^[0-9+\\-\\s()]*$", message = "Số điện thoại không hợp lệ")
+    @Size(max = 15, message = "Số điện thoại không được quá 15 ký tự")
+    @Pattern(regexp = "^(0[3|5|7|8|9])[0-9]{8}$|^$", message = "Số điện thoại phải là 10 số và bắt đầu bằng 03, 05, 07, 08, 09 hoặc để trống")
     private String phoneNumber;
     
     @Size(max = 500, message = "Địa chỉ không được quá 500 ký tự")

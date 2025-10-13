@@ -513,7 +513,7 @@ class AdminChatManager {
 
     messageElement.querySelector(".sender-name").textContent =
       message.senderName;
-    messageElement.querySelector(".message-text").textContent = message.content;
+    messageElement.querySelector(".message-text").innerHTML = message.content;
     messageElement.querySelector(".message-time").textContent = this.formatTime(
       message.sentAt
     );

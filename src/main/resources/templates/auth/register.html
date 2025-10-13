@@ -378,9 +378,12 @@
                                    name="email"
                                    th:field="*{email}"
                                    th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập email">
+                                   placeholder="Nhập email (VD: example@gmail.com)"
+                                   pattern=".*@(gmail\.com|outlook\.com\.vn|yahoo\.com|hotmail\.com|student\.ctu\.edu\.vn|ctu\.edu\.vn)$"
+                                   title="Email phải thuộc một trong các domain: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn">
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" 
                                  th:errors="*{email}"></div>
+                            <small class="form-text text-muted">Chỉ chấp nhận: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn</small>
                         </div>
                         
                         <!-- Full Name -->
@@ -404,15 +407,18 @@
                             <label for="phoneNumber" class="form-label">
                                     <i class="fas fa-phone luxury-icon"></i> Số điện thoại
                             </label>
-                            <input type="text" 
+                            <input type="tel" 
                                    class="form-control" 
                                    id="phoneNumber" 
                                    name="phoneNumber"
                                    th:field="*{phoneNumber}"
                                    th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập số điện thoại (tùy chọn)">
+                                   placeholder="Nhập số điện thoại (VD: 0987654321)"
+                                   pattern="^(0[3|5|7|8|9])[0-9]{8}$"
+                                   title="Số điện thoại phải là 10 số và bắt đầu bằng 03, 05, 07, 08, 09">
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('phoneNumber')}" 
                                  th:errors="*{phoneNumber}"></div>
+                            <small class="form-text text-muted">Định dạng: 0987654321 (10 số, bắt đầu bằng 03, 05, 07, 08, 09)</small>
                         </div>
                         
                         <!-- Address -->
@@ -442,9 +448,13 @@
                                    name="password"
                                    th:field="*{password}"
                                    th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập mật khẩu">
+                                   placeholder="Nhập mật khẩu"
+                                   minlength="8"
+                                   pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                                   title="Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt">
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" 
                                  th:errors="*{password}"></div>
+                            <small class="form-text text-muted">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)</small>
                         </div>
                         
                         <!-- Confirm Password -->
@@ -546,9 +556,49 @@
                 }
             }
 
+            function validatePasswordStrength() {
+                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+                if (password.value && !passwordRegex.test(password.value)) {
+                    password.setCustomValidity('Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt');
+                } else {
+                    password.setCustomValidity('');
+                }
+                validatePasswordMatch();
+            }
+
+            function validateEmail() {
+                const email = document.getElementById('email');
+                const emailRegex = /.*@(gmail\.com|outlook\.com\.vn|yahoo\.com|hotmail\.com|student\.ctu\.edu\.vn|ctu\.edu\.vn)$/;
+                if (email.value && !emailRegex.test(email.value)) {
+                    email.setCustomValidity('Email phải thuộc một trong các domain: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn');
+                } else {
+                    email.setCustomValidity('');
+                }
+            }
+
+            function validatePhone() {
+                const phone = document.getElementById('phoneNumber');
+                const phoneRegex = /^(0[3|5|7|8|9])[0-9]{8}$|^$/;
+                if (phone.value && !phoneRegex.test(phone.value)) {
+                    phone.setCustomValidity('Số điện thoại phải là 10 số và bắt đầu bằng 03, 05, 07, 08, 09 hoặc để trống');
+                } else {
+                    phone.setCustomValidity('');
+                }
+            }
+
             if (password && confirmPassword) {
-                password.addEventListener('input', validatePasswordMatch);
+                password.addEventListener('input', validatePasswordStrength);
                 confirmPassword.addEventListener('input', validatePasswordMatch);
+            }
+
+            const emailField = document.getElementById('email');
+            if (emailField) {
+                emailField.addEventListener('input', validateEmail);
+            }
+
+            const phoneField = document.getElementById('phoneNumber');
+            if (phoneField) {
+                phoneField.addEventListener('input', validatePhone);
             }
 
             function showOverlay() {

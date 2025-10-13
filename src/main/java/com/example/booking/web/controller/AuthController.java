@@ -70,6 +70,10 @@ public class AuthController {
                               RedirectAttributes redirectAttributes) {
         
         if (bindingResult.hasErrors()) {
+            System.out.println("❌ REGISTER VALIDATION ERRORS:");
+            bindingResult.getAllErrors().forEach(error -> {
+                System.out.println("   - " + error.getDefaultMessage());
+            });
             return "auth/register";
         }
         

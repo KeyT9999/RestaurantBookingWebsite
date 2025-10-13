@@ -179,6 +179,13 @@
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
         
+        <!-- Jsoup for HTML sanitization -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
+        
         <!-- Cloudinary for Image Management -->
         <dependency>
             <groupId>com.cloudinary</groupId>

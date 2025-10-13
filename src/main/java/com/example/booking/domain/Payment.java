@@ -89,6 +89,12 @@ public class Payment {
     @Column(name = "refunded_at")
     private LocalDateTime refundedAt;
     
+    @Column(name = "refund_amount", precision = 18, scale = 2)
+    private BigDecimal refundAmount;
+    
+    @Column(name = "refund_reason")
+    private String refundReason;
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_type", nullable = false)
     private PaymentType paymentType = PaymentType.DEPOSIT;
@@ -245,6 +251,22 @@ public class Payment {
     
     public void setRefundedAt(LocalDateTime refundedAt) {
         this.refundedAt = refundedAt;
+    }
+    
+    public BigDecimal getRefundAmount() {
+        return refundAmount;
+    }
+    
+    public void setRefundAmount(BigDecimal refundAmount) {
+        this.refundAmount = refundAmount;
+    }
+    
+    public String getRefundReason() {
+        return refundReason;
+    }
+    
+    public void setRefundReason(String refundReason) {
+        this.refundReason = refundReason;
     }
     
     public PaymentType getPaymentType() {

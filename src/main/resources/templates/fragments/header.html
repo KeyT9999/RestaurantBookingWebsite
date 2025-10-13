@@ -220,7 +220,7 @@
                         
                         
                         <!-- Restaurant Owner Buttons -->
-                        <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER') or hasRole('CUSTOMER')">
+                        <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER')">
                             <a th:href="@{/restaurant-owner/restaurants/create}" class="btn btn-primary ms-2" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none;">
                                 <i class="fas fa-plus-circle"></i>
                                 <span>Tạo nhà hàng</span>
