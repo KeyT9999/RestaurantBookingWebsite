@@ -20,6 +20,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -71,6 +72,10 @@ public class RestaurantProfile {
     @Size(max = 255, message = "URL website không được quá 255 ký tự")
     private String websiteUrl;
     
+    // Transient field for main image URL (not persisted to database)
+    @Transient
+    private String mainImageUrl;
+
     // === APPROVAL FIELDS ===
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status", nullable = false)
@@ -250,6 +255,14 @@ public class RestaurantProfile {
         this.websiteUrl = websiteUrl;
     }
     
+    public String getMainImageUrl() {
+        return mainImageUrl;
+    }
+
+    public void setMainImageUrl(String mainImageUrl) {
+        this.mainImageUrl = mainImageUrl;
+    }
+
     // === APPROVAL FIELDS GETTERS/SETTERS ===
     public RestaurantApprovalStatus getApprovalStatus() {
         return approvalStatus;
