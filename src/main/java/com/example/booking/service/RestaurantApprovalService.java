@@ -203,6 +203,53 @@ public class RestaurantApprovalService {
     }
     
     /**
+     * Gửi lại cho restaurant để chỉnh sửa (từ REJECTED về PENDING)
+     */
+    @Transactional
+    public boolean resubmitRestaurant(Integer restaurantId, String resubmittedBy, String resubmitReason) {
+        try {
+            logger.info("Resubmitting restaurant ID: {} by admin: {}", restaurantId, resubmittedBy);
+            
+            Optional<RestaurantProfile> restaurantOpt = restaurantProfileRepository.findById(restaurantId);
+            
+            if (!restaurantOpt.isPresent()) {
+                logger.warn("Restaurant not found with ID: {}", restaurantId);
+                return false;
+            }
+            
+            RestaurantProfile restaurant = restaurantOpt.get();
+            
+            // Chỉ có thể gửi lại từ REJECTED
+            if (restaurant.getApprovalStatus() != RestaurantApprovalStatus.REJECTED) {
+                logger.warn("Restaurant ID: {} cannot be resubmitted. Current status: {}", 
+                    restaurantId, restaurant.getApprovalStatus());
+                return false;
+            }
+            
+            // Cập nhật trạng thái: REJECTED → PENDING
+            restaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+            restaurant.setApprovedBy(null); // Reset approved_by
+            restaurant.setApprovedAt(null); // Reset approved_at
+            restaurant.setApprovalReason(null); // Reset approval_reason
+            restaurant.setRejectionReason(null); // Reset rejection_reason
+            restaurant.setUpdatedAt(LocalDateTime.now());
+            
+            restaurantProfileRepository.save(restaurant);
+            
+            logger.info("Restaurant ID: {} resubmitted successfully by admin: {}", restaurantId, resubmittedBy);
+            
+            // Gửi thông báo email và notification cho restaurant owner
+            restaurantNotificationService.sendResubmitNotification(restaurant, resubmitReason);
+            
+            return true;
+            
+        } catch (Exception e) {
+            logger.error("Error resubmitting restaurant ID: {}", restaurantId, e);
+            return false;
+        }
+    }
+    
+    /**
      * Tạm dừng nhà hàng
      */
     @Transactional

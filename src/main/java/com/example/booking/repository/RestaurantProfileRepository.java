@@ -3,6 +3,8 @@ package com.example.booking.repository;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +17,8 @@ import com.example.booking.domain.RestaurantProfile;
 public interface RestaurantProfileRepository extends JpaRepository<RestaurantProfile, Integer> {
     
     List<RestaurantProfile> findByRestaurantNameContainingIgnoreCase(String name);
+    
+    List<RestaurantProfile> findByRestaurantNameContainingIgnoreCaseAndApprovalStatus(String name, RestaurantApprovalStatus approvalStatus);
     
     List<RestaurantProfile> findByOwnerOwnerId(UUID ownerId);
     
@@ -42,6 +46,11 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
      * Find restaurants by approval status
      */
     List<RestaurantProfile> findByApprovalStatus(RestaurantApprovalStatus approvalStatus);
+    
+    /**
+     * Find restaurants by approval status with pagination
+     */
+    Page<RestaurantProfile> findByApprovalStatus(RestaurantApprovalStatus approvalStatus, Pageable pageable);
     
     /**
      * Count restaurants by approval status

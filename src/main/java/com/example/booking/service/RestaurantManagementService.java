@@ -1,8 +1,8 @@
 package com.example.booking.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -13,16 +13,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.booking.domain.RestaurantProfile;
-import com.example.booking.domain.RestaurantTable;
-import com.example.booking.domain.Dish;
-import com.example.booking.domain.RestaurantService;
-import com.example.booking.domain.DishStatus;
 import com.example.booking.common.enums.ServiceStatus;
-import com.example.booking.repository.RestaurantProfileRepository;
-import com.example.booking.repository.RestaurantTableRepository;
+import com.example.booking.domain.Dish;
+import com.example.booking.domain.DishStatus;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantService;
+import com.example.booking.domain.RestaurantTable;
 import com.example.booking.repository.DishRepository;
+import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.RestaurantServiceRepository;
+import com.example.booking.repository.RestaurantTableRepository;
 
 @Service
 @Transactional
@@ -41,11 +41,11 @@ public class RestaurantManagementService {
     private RestaurantServiceRepository restaurantServiceRepository;
 
     /**
-     * Lấy tất cả nhà hàng
+     * Lấy tất cả nhà hàng (chỉ APPROVED cho customer)
      */
     @Transactional(readOnly = true)
     public List<RestaurantProfile> findAllRestaurants() {
-        return restaurantProfileRepository.findAll();
+        return restaurantProfileRepository.findByApprovalStatus(com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED);
     }
 
     /**
@@ -57,11 +57,12 @@ public class RestaurantManagementService {
     }
 
     /**
-     * Tìm nhà hàng theo tên
+     * Tìm nhà hàng theo tên (chỉ APPROVED)
      */
     @Transactional(readOnly = true)
     public List<RestaurantProfile> findRestaurantsByName(String name) {
-        return restaurantProfileRepository.findByRestaurantNameContainingIgnoreCase(name);
+        return restaurantProfileRepository.findByRestaurantNameContainingIgnoreCaseAndApprovalStatus(
+            name, com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED);
     }
 
     /**
@@ -166,9 +167,10 @@ public class RestaurantManagementService {
         System.out.println("Rating Filter: " + ratingFilter);
         System.out.println("Sort By: " + pageable.getSort());
         
-        // Get all restaurants first (without pagination to apply filters first)
+        // Get only APPROVED restaurants first (without pagination to apply filters first)
         Pageable allPageable = PageRequest.of(0, Integer.MAX_VALUE, pageable.getSort());
-        Page<RestaurantProfile> allRestaurants = restaurantProfileRepository.findAll(allPageable);
+        Page<RestaurantProfile> allRestaurants = restaurantProfileRepository.findByApprovalStatus(
+            com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED, allPageable);
         
         List<RestaurantProfile> filteredRestaurants = new ArrayList<>();
         for (RestaurantProfile restaurant : allRestaurants.getContent()) {
@@ -249,6 +251,11 @@ public class RestaurantManagementService {
      */
     private boolean matchesFilters(RestaurantProfile restaurant, String search, String cuisineType, 
                                  String priceRange, String ratingFilter) {
+        
+        // APPROVAL STATUS FILTER - Only show APPROVED restaurants to customers
+        if (restaurant.getApprovalStatus() != com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED) {
+            return false;
+        }
         
         // Search filter
         if (search != null && !search.trim().isEmpty()) {

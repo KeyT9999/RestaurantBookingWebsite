@@ -150,6 +150,50 @@ public class RestaurantNotificationService {
     }
 
     /**
+     * Gửi thông báo khi admin gửi lại cho restaurant để chỉnh sửa
+     */
+    public void sendResubmitNotification(RestaurantProfile restaurant, String resubmitReason) {
+        try {
+            logger.info("Sending resubmit notification for restaurant: {}", restaurant.getRestaurantName());
+            
+            // Lấy thông tin owner
+            User owner = restaurant.getOwner().getUser();
+            if (owner == null || owner.getEmail() == null) {
+                logger.warn("Cannot send notification - owner email not found for restaurant: {}", 
+                    restaurant.getRestaurantId());
+                return;
+            }
+            
+            // Tạo email content
+            String subject = "📝 Yêu cầu chỉnh sửa thông tin nhà hàng - BookEat";
+            String emailContent = buildResubmitEmailContent(restaurant, resubmitReason);
+            
+            // Gửi email
+            emailService.sendRestaurantResubmitEmail(
+                owner.getEmail(),
+                restaurant.getRestaurantName(),
+                subject, 
+                emailContent
+            );
+            
+            // Tạo in-app notification
+            createInAppNotification(
+                owner.getId(),
+                NotificationType.RESTAURANT_RESUBMIT,
+                "Nhà hàng '" + restaurant.getRestaurantName() + "' cần chỉnh sửa thông tin",
+                "Lý do: " + (resubmitReason != null ? resubmitReason : "Cần cập nhật thông tin"),
+                "/restaurant-owner/restaurants/edit/" + restaurant.getRestaurantId()
+            );
+            
+            logger.info("✅ Resubmit notification sent successfully for restaurant: {}", restaurant.getRestaurantName());
+            
+        } catch (Exception e) {
+            logger.error("❌ Failed to send resubmit notification for restaurant: {}", 
+                restaurant.getRestaurantName(), e);
+        }
+    }
+
+    /**
      * Gửi thông báo khi nhà hàng bị tạm dừng
      */
     public void sendSuspensionNotification(RestaurantProfile restaurant, String suspensionReason) {
@@ -468,6 +512,54 @@ public class RestaurantNotificationService {
         content.append("<p style='color: #666; font-size: 14px;'>");
         content.append("Cảm ơn bạn đã hợp tác với BookEat!<br>");
         content.append("Chúc bạn kinh doanh thành công! 🍽️");
+        content.append("</p>");
+        content.append("</div>");
+        
+        content.append("</div></body></html>");
+        return content.toString();
+    }
+    
+    private String buildResubmitEmailContent(RestaurantProfile restaurant, String resubmitReason) {
+        StringBuilder content = new StringBuilder();
+        content.append("<html><body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>");
+        content.append("<div style='max-width: 600px; margin: 0 auto; padding: 20px;'>");
+        
+        content.append("<div style='text-align: center; margin-bottom: 30px;'>");
+        content.append("<h1 style='color: #007bff; margin-bottom: 10px;'>📝 Thông báo</h1>");
+        content.append("<h2 style='color: #333; margin-bottom: 20px;'>Cần chỉnh sửa thông tin nhà hàng</h2>");
+        content.append("</div>");
+        
+        content.append("<div style='background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;'>");
+        content.append("<h3 style='color: #333; margin-bottom: 15px;'>📋 Thông tin nhà hàng:</h3>");
+        content.append("<p><strong>Tên nhà hàng:</strong> ").append(restaurant.getRestaurantName()).append("</p>");
+        content.append("<p><strong>Địa chỉ:</strong> ").append(restaurant.getAddress()).append("</p>");
+        content.append("<p><strong>Loại ẩm thực:</strong> ").append(restaurant.getCuisineType()).append("</p>");
+        content.append("</div>");
+        
+        content.append("<div style='background: #e7f3ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;'>");
+        content.append("<h3 style='color: #0066cc; margin-bottom: 15px;'>📝 Yêu cầu chỉnh sửa:</h3>");
+        content.append("<p style='color: #333;'>").append(resubmitReason != null ? resubmitReason : "Cần cập nhật thông tin để đáp ứng yêu cầu").append("</p>");
+        content.append("</div>");
+        
+        content.append("<div style='background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px;'>");
+        content.append("<h3 style='color: #856404; margin-bottom: 15px;'>⚠️ Lưu ý:</h3>");
+        content.append("<ul style='color: #333;'>");
+        content.append("<li>Vui lòng chỉnh sửa thông tin theo yêu cầu</li>");
+        content.append("<li>Sau khi chỉnh sửa, hệ thống sẽ tự động gửi lại cho admin duyệt</li>");
+        content.append("<li>Bạn có thể chỉnh sửa thông tin bất kỳ lúc nào</li>");
+        content.append("</ul>");
+        content.append("</div>");
+        
+        content.append("<div style='text-align: center; margin: 30px 0;'>");
+        content.append("<a href='http://localhost:8080/restaurant-owner/restaurants/edit/" + restaurant.getRestaurantId() + "' ");
+        content.append("style='background: #007bff; color: white; padding: 12px 30px; text-decoration: none; ");
+        content.append("border-radius: 5px; font-weight: bold;'>Chỉnh sửa thông tin</a>");
+        content.append("</div>");
+        
+        content.append("<div style='text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;'>");
+        content.append("<p style='color: #666; font-size: 14px;'>");
+        content.append("Cảm ơn bạn đã hợp tác với BookEat!<br>");
+        content.append("Chúng tôi sẵn sàng hỗ trợ bạn! 📞");
         content.append("</p>");
         content.append("</div>");
         

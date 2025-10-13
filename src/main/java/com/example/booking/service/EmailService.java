@@ -291,6 +291,19 @@ public class EmailService {
     }
     
     /**
+     * Send restaurant resubmit notification to restaurant owner
+     */
+    public void sendRestaurantResubmitEmail(String toEmail, String restaurantName, String subject, String content) {
+        try {
+            sendEmail(toEmail, subject, content);
+            logger.info("✅ Restaurant resubmit email sent to: {} for restaurant: {}", toEmail, restaurantName);
+        } catch (Exception e) {
+            logger.error("❌ Failed to send restaurant resubmit email to: {} for restaurant: {}", toEmail, restaurantName, e);
+            throw new RuntimeException("Failed to send resubmit email", e);
+        }
+    }
+    
+    /**
      * Send restaurant activation notification to restaurant owner
      */
     public void sendRestaurantActivationEmail(String toEmail, String restaurantName, String subject, String content) {
