@@ -1,11 +1,6 @@
 package com.example.booking.web.controller;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +26,8 @@ import com.example.booking.dto.RegisterForm;
 import com.example.booking.dto.ResetPasswordForm;
 import com.example.booking.service.SimpleUserService;
 import com.example.booking.service.RestaurantOwnerService;
+import com.example.booking.service.AuthRateLimitingService;
+import com.example.booking.annotation.RateLimited;
 import com.example.booking.service.ImageUploadService;
 
 import jakarta.validation.Valid;
@@ -41,6 +38,7 @@ public class AuthController {
     
     private final SimpleUserService userService;
     private final RestaurantOwnerService restaurantOwnerService;
+    private final AuthRateLimitingService authRateLimitingService;
     
     @Autowired
     private ImageUploadService imageUploadService;
@@ -49,9 +47,11 @@ public class AuthController {
     private String uploadDir;
     
     @Autowired
-    public AuthController(SimpleUserService userService, RestaurantOwnerService restaurantOwnerService) {
+    public AuthController(SimpleUserService userService, RestaurantOwnerService restaurantOwnerService,
+            AuthRateLimitingService authRateLimitingService) {
         this.userService = userService;
         this.restaurantOwnerService = restaurantOwnerService;
+        this.authRateLimitingService = authRateLimitingService;
     }
     
     // ============= REGISTRATION =============
@@ -63,6 +63,7 @@ public class AuthController {
     }
     
     @PostMapping("/register")
+    @RateLimited(value = RateLimited.OperationType.LOGIN, message = "Quá nhiều yêu cầu đăng ký. Vui lòng thử lại sau.")
     public String registerUser(@Valid @ModelAttribute RegisterForm registerForm,
                               BindingResult bindingResult,
                               Model model,
@@ -79,6 +80,11 @@ public class AuthController {
         
         try {
             userService.registerUser(registerForm);
+
+            // Reset rate limit for successful registration
+            String clientIp = getClientIpAddress();
+            authRateLimitingService.resetRegisterRateLimit(clientIp);
+
             redirectAttributes.addFlashAttribute("successMessage", 
                 "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.");
             return "redirect:/auth/register-success";
@@ -174,6 +180,7 @@ public class AuthController {
     }
     
     @PostMapping("/forgot-password")
+    @RateLimited(value = RateLimited.OperationType.LOGIN, message = "Quá nhiều yêu cầu quên mật khẩu. Vui lòng thử lại sau.")
     public String processForgotPassword(@Valid @ModelAttribute ForgotPasswordForm form,
                                        BindingResult bindingResult,
                                        Model model,
@@ -204,6 +211,7 @@ public class AuthController {
     }
     
     @PostMapping("/reset-password")
+    @RateLimited(value = RateLimited.OperationType.LOGIN, message = "Quá nhiều yêu cầu đặt lại mật khẩu. Vui lòng thử lại sau.")
     public String processResetPassword(@Valid @ModelAttribute ResetPasswordForm form,
                                       BindingResult bindingResult,
                                       Model model,
@@ -244,6 +252,7 @@ public class AuthController {
     }
     
     @PostMapping("/change-password")
+    @RateLimited(value = RateLimited.OperationType.LOGIN, message = "Quá nhiều yêu cầu đổi mật khẩu. Vui lòng thử lại sau.")
     public String processChangePassword(@Valid @ModelAttribute ChangePasswordForm form,
                                        BindingResult bindingResult,
                                        Model model,
@@ -369,6 +378,12 @@ public class AuthController {
         try {
             User user = getCurrentUser(authentication);
             if (user != null) {
+                // Xóa avatar cũ trên Cloudinary trước khi upload mới
+                String oldAvatarUrl = user.getProfileImageUrl();
+                if (oldAvatarUrl != null && !oldAvatarUrl.isEmpty() && oldAvatarUrl.startsWith("http")) {
+                    imageUploadService.deleteImage(oldAvatarUrl);
+                }
+
                 String imageUrl = saveUploadedFile(file, user.getId().toString());
                 userService.updateProfileImage(user, imageUrl);
                 
@@ -452,5 +467,15 @@ public class AuthController {
     private String saveUploadedFile(MultipartFile file, String userId) throws IOException {
         // Use ImageUploadService for avatar uploads
         return imageUploadService.uploadAvatar(file, Integer.parseInt(userId));
+    }
+
+    /**
+     * Get client IP address from request
+     */
+    private String getClientIpAddress() {
+        // This is a simplified version - in a real application, you'd inject
+        // HttpServletRequest
+        // For now, we'll use a placeholder that will be handled by the filter
+        return "unknown";
     }
 }

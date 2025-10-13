@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Media - [[${restaurant.restaurantName}]]</title>
+    <link rel="stylesheet" th:href="@{/css/restaurant-media.css}">
+    <link rel="stylesheet" th:href="@{/css/luxury.css}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="icon">🖼️</i>
+                    Quản lý Media
+                </h1>
+                <p class="page-subtitle">[[${restaurant.restaurantName}]]</p>
+            </div>
+            <div class="header-actions">
+                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media/upload'}" 
+                   class="btn btn-primary">
+                    <i class="icon">📤</i>
+                    Upload Media
+                </a>
+                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables'}" 
+                   class="btn btn-secondary">
+                    <i class="icon">🪑</i>
+                    Quản lý Bàn
+                </a>
+                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}" 
+                   class="btn btn-secondary">
+                    <i class="icon">🍽️</i>
+                    Quản lý Món ăn
+                </a>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="alert alert-success">
+            <i class="icon">✅</i>
+            <span th:text="${success}">Thành công!</span>
+        </div>
+        <div th:if="${error}" class="alert alert-error">
+            <i class="icon">❌</i>
+            <span th:text="${error}">Có lỗi xảy ra!</span>
+        </div>
+
+        <!-- Media Filters -->
+        <div class="media-filters">
+            <div class="filter-group">
+                <span class="filter-label">Lọc theo loại:</span>
+                <button class="filter-btn active" data-type="all">
+                    <i class="icon">📁</i>
+                    Tất cả
+                </button>
+                <button class="filter-btn" data-type="gallery">
+                    <i class="icon">🖼️</i>
+                    Gallery
+                </button>
+                <button class="filter-btn" data-type="menu">
+                    <i class="icon">📋</i>
+                    Menu
+                </button>
+                <button class="filter-btn" data-type="interior">
+                    <i class="icon">🏠</i>
+                    Nội thất
+                </button>
+                <button class="filter-btn" data-type="exterior">
+                    <i class="icon">🏢</i>
+                    Ngoại thất
+                </button>
+                <button class="filter-btn" data-type="table_layout">
+                    <i class="icon">🗺️</i>
+                    Layout bàn
+                </button>
+            </div>
+        </div>
+
+        <!-- Media Grid -->
+        <div class="media-grid" id="mediaGrid">
+            <div th:each="media : ${mediaList}" 
+                 th:data-type="${media.type}"
+                 th:class="'media-card media-' + ${media.type}"
+                 class="media-card">
+                
+                <!-- Media Image -->
+                <div class="media-image">
+                    <img th:src="${media.url}" 
+                         th:alt="${media.type}"
+                         class="media-img"
+                         loading="lazy"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                    <div class="media-placeholder" style="display: none;">
+                        <i class="icon">🖼️</i>
+                        <span>Không thể tải ảnh</span>
+                    </div>
+                    
+                    <!-- Loading indicator -->
+                    <div class="media-loading" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <span>Đang tải...</span>
+                    </div>
+                </div>
+
+                <!-- Media Info -->
+                <div class="media-info">
+                    <div class="media-type">
+                        <span th:text="${media.type}" class="type-label">gallery</span>
+                    </div>
+                    <div class="media-actions">
+                        <a th:href="${media.url}" 
+                           target="_blank" 
+                           class="btn btn-sm btn-primary">
+                            <i class="icon">👁️</i>
+                            Xem
+                        </a>
+                        <button type="button"
+                                class="btn btn-sm btn-danger delete-media-btn"
+                                th:data-media-id="${media.mediaId}"
+                                th:data-media-type="${media.type}">
+                            <i class="icon">🗑️</i>
+                            Xóa
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${#lists.isEmpty(mediaList)}" class="empty-state">
+                <div class="empty-content">
+                    <i class="icon">🖼️</i>
+                    <h3>Chưa có media nào</h3>
+                    <p>Hãy upload media đầu tiên cho nhà hàng của bạn</p>
+                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media/upload'}" 
+                       class="btn btn-primary">
+                        <i class="icon">📤</i>
+                        Upload Media
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div id="deleteModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Xác nhận xóa</h3>
+                    <button type="button" class="close-btn" onclick="closeDeleteModal()">
+                        <i class="icon">✕</i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa media này không?</p>
+                    <div class="media-preview" id="mediaPreview"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                        Hủy
+                    </button>
+                    <form id="deleteForm" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="icon">🗑️</i>
+                            Xóa
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/restaurant-media.js}"></script>
+    <script>
+        // Set restaurant ID for JavaScript
+        window.restaurantId = [[${restaurant.restaurantId}]];
+    </script>
+</body>
+</html>

@@ -8,7 +8,6 @@ public class RestaurantTableDto {
     private Integer tableId;
     private String tableName;
     private Integer capacity;
-    private String tableImage;
     private TableStatus status;
     private BigDecimal depositAmount;
     private Integer restaurantId; // Thay vì toàn bộ RestaurantProfile object
@@ -17,12 +16,11 @@ public class RestaurantTableDto {
     public RestaurantTableDto() {}
 
     public RestaurantTableDto(Integer tableId, String tableName, Integer capacity, 
-                             String tableImage, TableStatus status, BigDecimal depositAmount, 
+            TableStatus status, BigDecimal depositAmount,
                              Integer restaurantId) {
         this.tableId = tableId;
         this.tableName = tableName;
         this.capacity = capacity;
-        this.tableImage = tableImage;
         this.status = status;
         this.depositAmount = depositAmount;
         this.restaurantId = restaurantId;
@@ -51,14 +49,6 @@ public class RestaurantTableDto {
 
     public void setCapacity(Integer capacity) {
         this.capacity = capacity;
-    }
-
-    public String getTableImage() {
-        return tableImage;
-    }
-
-    public void setTableImage(String tableImage) {
-        this.tableImage = tableImage;
     }
 
     public TableStatus getStatus() {

@@ -37,11 +37,20 @@ public class ImageUploadService {
     }
 
     /**
-     * Upload restaurant image to Cloudinary (default image number = 1)
+     * Upload restaurant image to Cloudinary (single image per type - convenience
+     * method)
      */
     public String uploadRestaurantImage(MultipartFile file, Integer restaurantId, String imageType) throws IOException {
         logger.info("Uploading restaurant image to Cloudinary for restaurant ID: {}, type: {}", restaurantId, imageType);
         return cloudinaryService.uploadRestaurantImage(file, restaurantId, imageType);
+    }
+
+    /**
+     * Upload business license document to Cloudinary
+     */
+    public String uploadBusinessLicense(MultipartFile file, Integer restaurantId) throws IOException {
+        logger.info("Uploading business license to Cloudinary for restaurant ID: {}", restaurantId);
+        return cloudinaryService.uploadBusinessLicense(file, restaurantId);
     }
 
     /**
@@ -147,6 +156,22 @@ public class ImageUploadService {
             logger.info("Local file deletion not implemented for: {}", imageUrl);
             return true; // Assume success for local files
         }
+    }
+
+    /**
+     * Delete entire folder from Cloudinary
+     */
+    public boolean deleteFolder(String folderPath) {
+        logger.info("Deleting folder from Cloudinary: {}", folderPath);
+        return cloudinaryService.deleteFolder(folderPath);
+    }
+
+    /**
+     * Delete all resources in a folder from Cloudinary
+     */
+    public boolean deleteFolderResources(String folderPath) {
+        logger.info("Deleting all resources in folder from Cloudinary: {}", folderPath);
+        return cloudinaryService.deleteFolderResources(folderPath);
     }
 
     /**

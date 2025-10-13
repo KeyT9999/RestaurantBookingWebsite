@@ -1,6 +1,7 @@
     package com.example.booking.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Dish;
@@ -26,6 +28,8 @@ import com.example.booking.repository.RestaurantMediaRepository;
 import com.example.booking.repository.RestaurantOwnerRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.RestaurantRepository;
+import com.example.booking.service.ImageUploadService;
+import com.example.booking.dto.DishWithImageDto;
 
 /**
  * Service for Restaurant Owner management operations
@@ -46,6 +50,7 @@ public class RestaurantOwnerService {
     private final RestaurantMediaRepository restaurantMediaRepository;
     private final SimpleUserService userService;
     private final RestaurantNotificationService restaurantNotificationService;
+    private final ImageUploadService imageUploadService;
 
     @Autowired
     public RestaurantOwnerService(RestaurantRepository restaurantRepository,
@@ -56,7 +61,8 @@ public class RestaurantOwnerService {
                                 DishRepository dishRepository,
             RestaurantMediaRepository restaurantMediaRepository,
             SimpleUserService userService,
-            RestaurantNotificationService restaurantNotificationService) {
+            RestaurantNotificationService restaurantNotificationService,
+            ImageUploadService imageUploadService) {
         this.restaurantRepository = restaurantRepository;
         this.restaurantOwnerRepository = restaurantOwnerRepository;
         this.restaurantProfileRepository = restaurantProfileRepository;
@@ -66,6 +72,7 @@ public class RestaurantOwnerService {
         this.restaurantMediaRepository = restaurantMediaRepository;
         this.userService = userService;
         this.restaurantNotificationService = restaurantNotificationService;
+        this.imageUploadService = imageUploadService;
     }
 
     /**
@@ -259,7 +266,24 @@ public class RestaurantOwnerService {
      * Delete restaurant profile
      */
     public void deleteRestaurantProfile(Integer restaurantId) {
-        restaurantRepository.deleteById(restaurantId);
+        try {
+            // Delete all images from Cloudinary first
+            String folderPath = "restaurants/" + restaurantId;
+            boolean folderDeleted = imageUploadService.deleteFolderResources(folderPath);
+            if (folderDeleted) {
+                logger.info("Successfully deleted all images from Cloudinary folder: {}", folderPath);
+            } else {
+                logger.warn("Failed to delete some images from Cloudinary folder: {}", folderPath);
+            }
+
+            // Delete restaurant from database (cascade delete will handle related entities)
+            restaurantRepository.deleteById(restaurantId);
+            logger.info("Successfully deleted restaurant profile with ID: {}", restaurantId);
+
+        } catch (Exception e) {
+            logger.error("Error deleting restaurant profile with ID: {}", restaurantId, e);
+            throw e;
+        }
     }
 
     /**
@@ -301,14 +325,37 @@ public class RestaurantOwnerService {
      * Create new table
      */
     public RestaurantTable createTable(RestaurantTable table) {
-        return diningTableRepository.save(table);
+        logger.info("DEBUG: RestaurantOwnerService.createTable called with table: {}", table);
+        logger.info("DEBUG: Table restaurant: {}", table.getRestaurant());
+        logger.info("DEBUG: Table name: {}, capacity: {}", table.getTableName(), table.getCapacity());
+
+        RestaurantTable savedTable = diningTableRepository.save(table);
+        logger.info("DEBUG: Table saved with ID: {}", savedTable.getTableId());
+
+        return savedTable;
     }
 
     /**
      * Update table
      */
     public RestaurantTable updateTable(RestaurantTable table) {
-        return diningTableRepository.save(table);
+        logger.info("DEBUG: RestaurantOwnerService.updateTable called with tableId: {}", table.getTableId());
+        logger.info("DEBUG: Table object state - hashCode: {}, toString: {}", table.hashCode(), table.toString());
+
+        RestaurantTable updatedTable = diningTableRepository.save(table);
+        logger.info("DEBUG: Table updated successfully");
+        logger.info("DEBUG: Updated table object state - hashCode: {}, toString: {}", updatedTable.hashCode(),
+                updatedTable.toString());
+
+        // Verify the save by querying the database
+        Optional<RestaurantTable> verifyTable = diningTableRepository.findById(table.getTableId());
+        if (verifyTable.isPresent()) {
+            logger.info("DEBUG: Database verification - table saved successfully");
+        } else {
+            logger.error("DEBUG: Database verification failed - table not found!");
+        }
+
+        return updatedTable;
     }
 
     /**
@@ -399,12 +446,270 @@ public class RestaurantOwnerService {
         return restaurantMediaRepository.findByRestaurantAndType(restaurant, type);
     }
 
+    // ===== DISH IMAGE MANAGEMENT =====
+
+    /**
+     * Get dish image URL by restaurant and dish ID
+     */
+    public String getDishImageUrl(Integer restaurantId, Integer dishId) {
+        Optional<RestaurantProfile> restaurant = getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            logger.warn("Restaurant not found for ID: {}", restaurantId);
+            return null;
+        }
+
+        String dishIdPattern = "/dish_" + dishId + "_";
+        RestaurantMedia dishImage = restaurantMediaRepository.findDishImageByRestaurantAndDishId(restaurant.get(),
+                dishIdPattern);
+
+        return dishImage != null ? dishImage.getUrl() : null;
+    }
+
+    // ===== TABLE IMAGE MANAGEMENT =====
+
+    /**
+     * Get all table images by restaurant and table ID
+     */
+    public List<RestaurantMedia> getTableImages(Integer restaurantId, Integer tableId) {
+        Optional<RestaurantProfile> restaurant = getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            logger.warn("Restaurant not found for ID: {}", restaurantId);
+            return new ArrayList<>();
+        }
+
+        String tableIdPattern = "/table_" + tableId + "_";
+        return restaurantMediaRepository.findTableImagesByRestaurantAndTableId(restaurant.get(), tableIdPattern);
+    }
+
+    /**
+     * Upload multiple table images
+     */
+    public List<RestaurantMedia> uploadTableImages(Integer restaurantId, Integer tableId, MultipartFile[] files) {
+        Optional<RestaurantProfile> restaurant = getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            throw new IllegalArgumentException("Restaurant not found for ID: " + restaurantId);
+        }
+
+        List<RestaurantMedia> savedImages = new ArrayList<>();
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) {
+                continue;
+            }
+            try {
+                String folder = "restaurants/" + restaurantId + "/media/table";
+                String publicId = "table_" + tableId + "_" + System.currentTimeMillis() + "_" + savedImages.size();
+                String imageUrl = imageUploadService.uploadImage(file, folder, publicId);
+
+                RestaurantMedia media = new RestaurantMedia();
+                media.setRestaurant(restaurant.get());
+                media.setType("table");
+                media.setUrl(imageUrl);
+                media.setCreatedAt(LocalDateTime.now());
+
+                RestaurantMedia savedMedia = restaurantMediaRepository.save(media);
+                savedImages.add(savedMedia);
+                logger.info("Uploaded table image for restaurant {} table {}: {}", restaurantId, tableId, imageUrl);
+            } catch (Exception e) {
+                logger.error("Failed to upload table image for restaurant {} table {}: {}", restaurantId, tableId,
+                        e.getMessage());
+            }
+        }
+        return savedImages;
+    }
+
+    /**
+     * Delete specific table image
+     */
+    public void deleteTableImage(Integer mediaId) {
+        Optional<RestaurantMedia> media = restaurantMediaRepository.findById(mediaId);
+        if (media.isEmpty()) {
+            logger.warn("Table image not found for ID: {}", mediaId);
+            return;
+        }
+
+        RestaurantMedia mediaToDelete = media.get();
+        if (mediaToDelete.getUrl() != null && mediaToDelete.getUrl().startsWith("http")) {
+            try {
+                imageUploadService.deleteImage(mediaToDelete.getUrl());
+                logger.info("Deleted table image from Cloudinary: {}", mediaToDelete.getUrl());
+            } catch (Exception e) {
+                logger.warn("Failed to delete table image from Cloudinary: {}", e.getMessage());
+            }
+        }
+        restaurantMediaRepository.delete(mediaToDelete);
+        logger.info("Deleted table image from database: {}", mediaId);
+    }
+
+    /**
+     * Save dish image to restaurant_media
+     */
+    public RestaurantMedia saveDishImage(Integer restaurantId, Integer dishId, String imageUrl) {
+        Optional<RestaurantProfile> restaurant = getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            throw new IllegalArgumentException("Restaurant not found for ID: " + restaurantId);
+        }
+
+        // Delete existing dish image if any
+        deleteDishImage(restaurantId, dishId);
+
+        // Create new dish image record
+        RestaurantMedia dishImage = new RestaurantMedia();
+        dishImage.setRestaurant(restaurant.get());
+        dishImage.setType("dish");
+        dishImage.setUrl(imageUrl);
+
+        return restaurantMediaRepository.save(dishImage);
+    }
+
+    /**
+     * Delete dish image from restaurant_media
+     */
+    public void deleteDishImage(Integer restaurantId, Integer dishId) {
+        Optional<RestaurantProfile> restaurant = getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            logger.warn("Restaurant not found for ID: {}", restaurantId);
+            return;
+        }
+
+        String dishIdPattern = "/dish_" + dishId + "_";
+        List<RestaurantMedia> dishImages = restaurantMediaRepository
+                .findDishImagesByRestaurantAndDishId(restaurant.get(), dishIdPattern);
+
+        for (RestaurantMedia image : dishImages) {
+            // Delete from Cloudinary if it's a Cloudinary URL
+            if (image.getUrl() != null && image.getUrl().startsWith("http")) {
+                try {
+                    imageUploadService.deleteImage(image.getUrl());
+                } catch (Exception e) {
+                    logger.warn("Failed to delete image from Cloudinary: {}", e.getMessage());
+                }
+            }
+            // Delete from database
+            restaurantMediaRepository.delete(image);
+        }
+    }
+
+    /**
+     * Get all dishes by restaurant with their images
+     */
+    public List<DishWithImageDto> getDishesByRestaurantWithImages(Integer restaurantId) {
+        List<Dish> dishes = dishRepository.findByRestaurantRestaurantIdOrderByNameAsc(restaurantId);
+
+        // Convert to DTO with image URLs
+        return dishes.stream()
+                .map(dish -> {
+                    String imageUrl = getDishImageUrl(restaurantId, dish.getDishId());
+                    return new DishWithImageDto(dish, imageUrl);
+                })
+                .toList();
+    }
+
     /**
      * Get restaurant by owner username
      */
     public Optional<RestaurantProfile> getRestaurantByOwnerUsername(String username) {
         List<RestaurantProfile> restaurants = restaurantProfileRepository.findByOwnerUsername(username);
         return restaurants.isEmpty() ? Optional.empty() : Optional.of(restaurants.get(0));
+    }
+
+    // ===== RESTAURANT MEDIA MANAGEMENT =====
+
+    /**
+     * Get restaurant media for management (excludes managed types)
+     */
+    public List<RestaurantMedia> getRestaurantMediaForManagement(Integer restaurantId) {
+        Optional<RestaurantProfile> restaurant = getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            logger.warn("Restaurant not found for ID: {}", restaurantId);
+            return new ArrayList<>();
+        }
+
+        // Get all media for this restaurant
+        List<RestaurantMedia> allMedia = restaurantMediaRepository.findByRestaurant(restaurant.get());
+
+        // Filter out managed types (logo, cover, business_license, dish, table)
+        List<String> managedTypes = List.of("logo", "cover", "business_license", "dish", "table");
+
+        return allMedia.stream()
+                .filter(media -> !managedTypes.contains(media.getType()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Upload restaurant media (multiple files, one type)
+     */
+    public List<RestaurantMedia> uploadRestaurantMedia(Integer restaurantId, String mediaType, MultipartFile[] files) {
+        Optional<RestaurantProfile> restaurant = getRestaurantById(restaurantId);
+        if (restaurant.isEmpty()) {
+            throw new IllegalArgumentException("Restaurant not found for ID: " + restaurantId);
+        }
+
+        // Validate media type
+        List<String> allowedTypes = List.of("gallery", "menu", "interior", "exterior", "table_layout");
+        if (!allowedTypes.contains(mediaType)) {
+            throw new IllegalArgumentException("Invalid media type: " + mediaType);
+        }
+
+        List<RestaurantMedia> savedMedia = new ArrayList<>();
+
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) {
+                continue;
+            }
+
+            try {
+                // Upload to Cloudinary
+                String folder = "restaurants/" + restaurantId + "/media/" + mediaType;
+                String publicId = mediaType + "_" + System.currentTimeMillis() + "_" + savedMedia.size();
+                String imageUrl = imageUploadService.uploadImage(file, folder, publicId);
+
+                // Save to database
+                RestaurantMedia media = new RestaurantMedia();
+                media.setRestaurant(restaurant.get());
+                media.setType(mediaType);
+                media.setUrl(imageUrl);
+                media.setCreatedAt(LocalDateTime.now());
+
+                RestaurantMedia savedMediaItem = restaurantMediaRepository.save(media);
+                savedMedia.add(savedMediaItem);
+
+                logger.info("Uploaded {} media for restaurant {}: {}", mediaType, restaurantId, imageUrl);
+
+            } catch (Exception e) {
+                logger.error("Failed to upload {} media for restaurant {}: {}", mediaType, restaurantId,
+                        e.getMessage());
+                // Continue with other files even if one fails
+            }
+        }
+
+        return savedMedia;
+    }
+
+    /**
+     * Delete restaurant media
+     */
+    public void deleteRestaurantMedia(Integer mediaId) {
+        Optional<RestaurantMedia> media = restaurantMediaRepository.findById(mediaId);
+        if (media.isEmpty()) {
+            logger.warn("Media not found for ID: {}", mediaId);
+            return;
+        }
+
+        RestaurantMedia mediaToDelete = media.get();
+
+        // Delete from Cloudinary if it's a Cloudinary URL
+        if (mediaToDelete.getUrl() != null && mediaToDelete.getUrl().startsWith("http")) {
+            try {
+                imageUploadService.deleteImage(mediaToDelete.getUrl());
+                logger.info("Deleted media from Cloudinary: {}", mediaToDelete.getUrl());
+            } catch (Exception e) {
+                logger.warn("Failed to delete media from Cloudinary: {}", e.getMessage());
+            }
+        }
+
+        // Delete from database
+        restaurantMediaRepository.delete(mediaToDelete);
+        logger.info("Deleted media from database: {}", mediaId);
     }
     
     /**

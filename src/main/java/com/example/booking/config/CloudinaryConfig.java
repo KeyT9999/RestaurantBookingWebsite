@@ -29,13 +29,20 @@ public class CloudinaryConfig {
 
     @Bean
     public Cloudinary cloudinary() {
+        System.out.println("DEBUG: CloudinaryConfig - cloudName: " + cloudName);
+        System.out.println("DEBUG: CloudinaryConfig - apiKey: " + (apiKey != null ? apiKey.substring(0, Math.min(8, apiKey.length())) + "..." : "null"));
+        System.out.println("DEBUG: CloudinaryConfig - apiSecret: " + (apiSecret != null ? apiSecret.substring(0, Math.min(8, apiSecret.length())) + "..." : "null"));
+        System.out.println("DEBUG: CloudinaryConfig - secure: " + secure);
+        
         Map<String, Object> config = new HashMap<>();
         config.put("cloud_name", cloudName);
         config.put("api_key", apiKey);
         config.put("api_secret", apiSecret);
         config.put("secure", secure);
         
-        return new Cloudinary(config);
+        Cloudinary cloudinary = new Cloudinary(config);
+        System.out.println("DEBUG: Cloudinary bean created successfully");
+        return cloudinary;
     }
 
     /**

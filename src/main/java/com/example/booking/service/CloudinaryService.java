@@ -28,16 +28,22 @@ public class CloudinaryService {
 
     // File validation constants
     private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList("jpg", "jpeg", "png", "gif", "webp");
-    private static final long MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final List<String> ALLOWED_DOCUMENT_TYPES = Arrays.asList("pdf"); // Chỉ PDF cho business license
+    private static final long MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB - đồng bộ với Spring Boot config
+    private static final long MAX_DOCUMENT_SIZE = 20 * 1024 * 1024; // 20MB - đồng bộ với Spring Boot config
 
     /**
      * Upload single image to Cloudinary - Universal method
      */
     public String uploadImage(MultipartFile file, String folder, String publicId) throws IOException {
-        logger.info("Uploading image to Cloudinary folder: {}, publicId: {}", folder, publicId);
+        logger.info("DEBUG: uploadImage called - folder: {}, publicId: {}", folder, publicId);
+        logger.info("DEBUG: File info - name: {}, size: {}, isEmpty: {}", file.getOriginalFilename(), file.getSize(),
+                file.isEmpty());
         
         validateImageFile(file);
         
+        logger.info("DEBUG: File validation passed, creating Cloudinary options...");
+
         // Create custom options
         @SuppressWarnings("unchecked")
         Map<String, Object> options = ObjectUtils.asMap(
@@ -50,10 +56,14 @@ public class CloudinaryService {
             "transformation", "c_fill,w_800,h_600,q_auto:good"
         );
 
+        logger.info("DEBUG: Options created: {}", options);
+        logger.info("DEBUG: Calling cloudinary.uploader().upload...");
+
         @SuppressWarnings("unchecked")
         Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), options);
         String imageUrl = (String) result.get("secure_url");
         
+        logger.info("DEBUG: Cloudinary upload result: {}", result);
         logger.info("Image uploaded successfully: {}", imageUrl);
         return imageUrl;
     }
@@ -68,12 +78,49 @@ public class CloudinaryService {
     }
 
     /**
-     * Upload restaurant image to Cloudinary (default image number = 1)
+     * Upload restaurant image to Cloudinary (single image per type - convenience
+     * method)
      */
     public String uploadRestaurantImage(MultipartFile file, Integer restaurantId, String imageType) throws IOException {
         return uploadRestaurantImage(file, restaurantId, imageType, 1);
     }
 
+    /**
+     * Upload business license document to Cloudinary (supports PDF and images)
+     */
+    public String uploadBusinessLicense(MultipartFile file, Integer restaurantId) throws IOException {
+        String folder = "restaurants/" + restaurantId + "/documents";
+        String publicId = "business_license_" + System.currentTimeMillis();
+
+        logger.info("Uploading business license to Cloudinary folder: {}, publicId: {}", folder, publicId);
+
+        // Validate file type (PDF or image)
+        validateBusinessLicenseFile(file);
+
+        // Determine resource type based on file extension
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new IllegalArgumentException("Tên file không hợp lệ");
+        }
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+        String resourceType = "pdf".equals(extension) ? "raw" : "image";
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> options = ObjectUtils.asMap(
+                "folder", folder,
+                "public_id", publicId,
+                "use_filename", true,
+                "unique_filename", true,
+                "overwrite", false,
+                "resource_type", resourceType);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = cloudinary.uploader().upload(file.getBytes(), options);
+        String documentUrl = (String) result.get("secure_url");
+
+        logger.info("Business license uploaded successfully: {}", documentUrl);
+        return documentUrl;
+    }
 
     /**
      * Upload dish image to Cloudinary (single image only)
@@ -97,8 +144,11 @@ public class CloudinaryService {
      * Upload table image to Cloudinary (supports multiple images per table)
      */
     public String uploadTableImage(MultipartFile file, Integer restaurantId, Integer tableId, Integer imageNumber) throws IOException {
+        logger.info("DEBUG: uploadTableImage called with restaurantId: {}, tableId: {}, imageNumber: {}", restaurantId,
+                tableId, imageNumber);
         String folder = "restaurants/" + restaurantId + "/tables";
         String publicId = "table_" + tableId + "_" + imageNumber + "_" + System.currentTimeMillis();
+        logger.info("DEBUG: Using folder: {}, publicId: {}", folder, publicId);
         return uploadImage(file, folder, publicId);
     }
 
@@ -106,6 +156,8 @@ public class CloudinaryService {
      * Upload table image to Cloudinary (default image number = 1)
      */
     public String uploadTableImage(MultipartFile file, Integer restaurantId, Integer tableId) throws IOException {
+        logger.info("DEBUG: uploadTableImage (3-param) called with restaurantId: {}, tableId: {}", restaurantId,
+                tableId);
         return uploadTableImage(file, restaurantId, tableId, 1);
     }
 
@@ -206,6 +258,49 @@ public class CloudinaryService {
     }
 
     /**
+     * Delete entire folder from Cloudinary
+     */
+    public boolean deleteFolder(String folderPath) {
+        try {
+            logger.info("Deleting folder from Cloudinary: {}", folderPath);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = cloudinary.api().deleteFolder(folderPath, ObjectUtils.emptyMap());
+            String resultStatus = (String) result.get("result");
+
+            boolean success = "ok".equals(resultStatus);
+            logger.info("Folder deletion result: {} for folder: {}", resultStatus, folderPath);
+            return success;
+
+        } catch (Exception e) {
+            logger.error("Error deleting folder from Cloudinary: {}", folderPath, e);
+            return false;
+        }
+    }
+
+    /**
+     * Delete all resources in a folder from Cloudinary
+     */
+    public boolean deleteFolderResources(String folderPath) {
+        try {
+            logger.info("Deleting all resources in folder from Cloudinary: {}", folderPath);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = cloudinary.api().deleteResourcesByPrefix(folderPath + "/",
+                    ObjectUtils.emptyMap());
+            String resultStatus = (String) result.get("result");
+
+            boolean success = "ok".equals(resultStatus);
+            logger.info("Folder resources deletion result: {} for folder: {}", resultStatus, folderPath);
+            return success;
+
+        } catch (Exception e) {
+            logger.error("Error deleting folder resources from Cloudinary: {}", folderPath, e);
+            return false;
+        }
+    }
+
+    /**
      * Get optimized image URL with transformations
      */
     public String getOptimizedImageUrl(String originalUrl, int width, int height) {
@@ -237,6 +332,37 @@ public class CloudinaryService {
     }
 
     // ============= VALIDATION METHODS =============
+
+    /**
+     * Validate business license file (PDF or image)
+     */
+    private void validateBusinessLicenseFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("File không được để trống");
+        }
+
+        if (file.getSize() > MAX_DOCUMENT_SIZE) {
+            throw new IllegalArgumentException(
+                    "File quá lớn. Kích thước tối đa là " + (MAX_DOCUMENT_SIZE / 1024 / 1024) + "MB");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new IllegalArgumentException("Tên file không hợp lệ");
+        }
+
+        String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+
+        // Combine allowed types: PDF + images
+        List<String> allowedTypes = new ArrayList<>();
+        allowedTypes.addAll(ALLOWED_DOCUMENT_TYPES); // PDF
+        allowedTypes.addAll(ALLOWED_IMAGE_TYPES); // Images
+
+        if (!allowedTypes.contains(extension)) {
+            throw new IllegalArgumentException(
+                    "Định dạng file không được hỗ trợ. Chỉ chấp nhận: " + String.join(", ", allowedTypes));
+        }
+    }
 
     /**
      * Validate image file
@@ -272,10 +398,10 @@ public class CloudinaryService {
                 return null;
             }
 
-            // Find the part after "upload" or "v" (version)
+            // Find the "upload" part
             int uploadIndex = -1;
             for (int i = 0; i < parts.length; i++) {
-                if ("upload".equals(parts[i]) || (parts[i].startsWith("v") && parts[i].length() > 1)) {
+                if ("upload".equals(parts[i])) {
                     uploadIndex = i;
                     break;
                 }
@@ -285,10 +411,17 @@ public class CloudinaryService {
                 return null;
             }
 
-            // Get the public_id (everything after upload/v)
+            // Get the public_id (everything after upload, skip version if present)
             StringBuilder publicId = new StringBuilder();
-            for (int i = uploadIndex + 1; i < parts.length; i++) {
-                if (i > uploadIndex + 1) {
+            int startIndex = uploadIndex + 1;
+
+            // Skip version number if it starts with 'v'
+            if (startIndex < parts.length && parts[startIndex].startsWith("v") && parts[startIndex].length() > 1) {
+                startIndex++;
+            }
+
+            for (int i = startIndex; i < parts.length; i++) {
+                if (i > startIndex) {
                     publicId.append("/");
                 }
                 publicId.append(parts[i]);

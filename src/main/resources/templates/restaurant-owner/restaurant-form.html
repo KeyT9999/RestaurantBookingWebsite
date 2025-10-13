@@ -31,7 +31,7 @@
 
         <!-- Restaurant Form -->
         <div class="card">
-            <form th:action="@{/restaurant-owner/restaurants/create}" 
+            <form th:action="${restaurant.restaurantId != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/edit' : '/restaurant-owner/restaurants/create'}" 
                   th:object="${restaurant}" 
                   method="post" 
                   enctype="multipart/form-data">
@@ -79,23 +79,96 @@
                     </label>
                     
                     <!-- Media Upload -->
-                    <label class="form-item">
+                    <div class="form-item full">
                         <span class="form-label">Logo nhà hàng</span>
-                        <input type="file" name="logo" accept="image/*" />
-                        <small class="muted">PNG, JPG, WebP. Tối đa 5MB</small>
-                    </label>
+                        <div class="image-upload-container">
+                            <input type="file" id="logo" name="logo" accept="image/*" onchange="previewImage(this, 'logo-preview')" />
+                            <div class="image-preview" id="logo-preview">
+                                <!-- Hiển thị logo hiện tại nếu có (edit mode) -->
+                                <div th:if="${restaurant.media != null}" th:each="media : ${restaurant.media}">
+                                    <div th:if="${media.type == 'logo'}">
+                                        <img th:src="${media.url}" alt="Current Logo" style="max-width: 100%; max-height: 200px; border-radius: 4px;">
+                                        <div class="current-image-info">
+                                            <div class="image-details">
+                                                <span class="image-name" th:data-url="${media.url}">logo.jpg</span>
+                                                <span class="image-type" th:data-url="${media.url}">jpg</span>
+                                            </div>
+                                            <div class="image-actions">
+                                                <a th:href="${media.url}" target="_blank" class="btn btn-sm btn-primary">Xem ảnh</a>
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="removeCurrentImage('logo', 'logo-preview')">Thay đổi</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Placeholder nếu không có logo -->
+                                <div th:unless="${restaurant.media != null and restaurant.media.?[type == 'logo'].size() > 0}" class="preview-placeholder">
+                                    <i class="icon">📷</i>
+                                    <span>Chọn logo nhà hàng</span>
+                                </div>
+                            </div>
+                            <small class="muted">PNG, JPG, WebP. Tối đa 20MB</small>
+                        </div>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item full">
                         <span class="form-label">Ảnh bìa</span>
-                        <input type="file" name="cover" accept="image/*" />
-                        <small class="muted">PNG, JPG, WebP. Tối đa 10MB</small>
-                    </label>
+                        <div class="image-upload-container">
+                            <input type="file" id="cover" name="cover" accept="image/*" onchange="previewImage(this, 'cover-preview')" />
+                            <div class="image-preview" id="cover-preview">
+                                <!-- Hiển thị cover hiện tại nếu có (edit mode) -->
+                                <div th:if="${restaurant.media != null}" th:each="media : ${restaurant.media}">
+                                    <div th:if="${media.type == 'cover'}">
+                                        <img th:src="${media.url}" alt="Current Cover" style="max-width: 100%; max-height: 200px; border-radius: 4px;">
+                                        <div class="current-image-info">
+                                            <div class="image-details">
+                                                <span class="image-name" th:data-url="${media.url}">cover.jpg</span>
+                                                <span class="image-type" th:data-url="${media.url}">jpg</span>
+                                            </div>
+                                            <div class="image-actions">
+                                                <a th:href="${media.url}" target="_blank" class="btn btn-sm btn-primary">Xem ảnh</a>
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="removeCurrentImage('cover', 'cover-preview')">Thay đổi</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Placeholder nếu không có cover -->
+                                <div th:unless="${restaurant.media != null and restaurant.media.?[type == 'cover'].size() > 0}" class="preview-placeholder">
+                                    <i class="icon">🖼️</i>
+                                    <span>Chọn ảnh bìa</span>
+                                </div>
+                            </div>
+                            <small class="muted">PNG, JPG, WebP. Tối đa 20MB</small>
+                        </div>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item full">
                         <span class="form-label">Giấy phép kinh doanh</span>
-                        <input type="file" name="businessLicense" accept=".pdf,.doc,.docx,image/*" />
-                        <small class="muted">PDF, DOC, DOCX, PNG, JPG. Tối đa 20MB</small>
-                    </label>
+                        <div class="file-upload-container">
+                            <input type="file" id="businessLicense" name="businessLicense" accept=".pdf,image/*" onchange="previewFile(this, 'license-preview')" />
+                            <div class="file-preview" id="license-preview">
+                                <!-- Hiển thị business license hiện tại nếu có (edit mode) -->
+                                <div th:if="${restaurant.businessLicenseFile != null and !restaurant.businessLicenseFile.isEmpty()}">
+                                    <div class="file-info">
+                                        <i class="icon">📄</i>
+                                        <div class="file-details">
+                                            <span class="file-name" th:data-url="${restaurant.businessLicenseFile}">business_license.pdf</span>
+                                            <span class="file-type" th:data-url="${restaurant.businessLicenseFile}">pdf</span>
+                                        </div>
+                                        <div class="file-actions">
+                                            <a th:href="${restaurant.businessLicenseFile}" target="_blank" class="btn btn-sm btn-primary">Xem file</a>
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="removeCurrentFile('businessLicense', 'license-preview')">Thay đổi</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Placeholder nếu không có business license -->
+                                <div th:unless="${restaurant.businessLicenseFile != null and !restaurant.businessLicenseFile.isEmpty()}" class="preview-placeholder">
+                                    <i class="icon">📄</i>
+                                    <span>Chọn giấy phép kinh doanh</span>
+                                </div>
+                            </div>
+                            <small class="muted">PDF, PNG, JPG, WebP. Tối đa 20MB</small>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Terms of Service -->
@@ -124,5 +197,516 @@
             </form>
         </div>
     </div>
+
+    <style>
+        /* Image Upload Styles */
+        .image-upload-container {
+            margin-bottom: 1rem;
+        }
+        
+        .image-upload-container input[type="file"] {
+            display: none;
+        }
+        
+        .image-preview {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-preview:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        .preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+        }
+        
+        .preview-placeholder .icon {
+            font-size: 2rem;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .file-upload-container {
+            margin-bottom: 1rem;
+        }
+        
+        .file-upload-container input[type="file"] {
+            display: none;
+        }
+        
+        .file-preview {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .file-preview:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        .file-preview .file-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+        }
+        
+        .file-preview .file-info .icon {
+            font-size: 2rem;
+        }
+        
+        /* Current file/image info styles */
+        .current-image-info, .file-info {
+            position: relative;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .image-details, .file-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .image-name, .file-name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .image-type, .file-type {
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .image-actions, .file-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-sm:hover {
+            opacity: 0.8;
+        }
+        
+        .remove-image {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-preview.has-image {
+            position: relative;
+            padding: 0;
+        }
+        
+        .image-preview.has-image img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .image-upload-container {
+            margin-bottom: 1rem;
+        }
+        
+        .image-upload-container input[type="file"] {
+            display: none;
+        }
+        
+        .image-preview {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-preview:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        .preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+        }
+        
+        .preview-placeholder .icon {
+            font-size: 2rem;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+
+    <script>
+        function previewImage(input, previewId) {
+            const preview = document.getElementById(previewId);
+            const file = input.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <button type="button" class="remove-image" onclick="removeImage('${input.id}', '${previewId}')">×</button>
+                    `;
+                    preview.classList.add('has-image');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function removeImage(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            
+            input.value = '';
+            preview.innerHTML = `
+                <div class="preview-placeholder">
+                    <i class="icon">📷</i>
+                    <span>Chọn ảnh</span>
+                </div>
+            `;
+            preview.classList.remove('has-image');
+        }
+        
+        function previewMultipleImages(input, containerId) {
+            const container = document.getElementById(containerId);
+            const files = input.files;
+            
+            // Clear existing previews
+            container.innerHTML = '';
+            
+            if (files.length > 0) {
+                // Hide placeholder
+                const uploadArea = input.parentElement.querySelector('.image-preview-container');
+                uploadArea.style.display = 'none';
+                
+                // Show previews
+                Array.from(files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewItem = document.createElement('div');
+                        previewItem.className = 'preview-item';
+                        previewItem.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview ${index + 1}">
+                            <button type="button" class="remove-btn" onclick="removeMultipleImage(${index}, '${input.id}', '${containerId}')">×</button>
+                        `;
+                        container.appendChild(previewItem);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                // Show placeholder if no files
+                const uploadArea = input.parentElement.querySelector('.image-preview-container');
+                uploadArea.style.display = 'flex';
+            }
+        }
+        
+        function removeMultipleImage(index, inputId, containerId) {
+            const input = document.getElementById(inputId);
+            const container = document.getElementById(containerId);
+            
+            // Create new FileList without the removed file
+            const dt = new DataTransfer();
+            Array.from(input.files).forEach((file, i) => {
+                if (i !== index) {
+                    dt.items.add(file);
+                }
+            });
+            input.files = dt.files;
+            
+            // Re-render previews
+            previewMultipleImages(input, containerId);
+        }
+        
+        // Extract filename from URL
+        function extractFileName(url) {
+            if (!url) return 'unknown';
+            const parts = url.split('/');
+            return parts[parts.length - 1];
+        }
+        
+        // Extract file extension from URL
+        function extractFileExtension(url) {
+            if (!url) return 'unknown';
+            const fileName = extractFileName(url);
+            const lastDot = fileName.lastIndexOf('.');
+            return lastDot > 0 ? fileName.substring(lastDot + 1).toLowerCase() : 'unknown';
+        }
+        
+        // Update file names on page load
+        function updateFileNames() {
+            // Update logo file names
+            const logoNameElements = document.querySelectorAll('.image-name[data-url]');
+            logoNameElements.forEach(element => {
+                const url = element.getAttribute('data-url');
+                element.textContent = extractFileName(url);
+            });
+            
+            const logoTypeElements = document.querySelectorAll('.image-type[data-url]');
+            logoTypeElements.forEach(element => {
+                const url = element.getAttribute('data-url');
+                element.textContent = extractFileExtension(url);
+            });
+            
+            // Update cover file names
+            const coverNameElements = document.querySelectorAll('.image-name[data-url]');
+            coverNameElements.forEach(element => {
+                const url = element.getAttribute('data-url');
+                element.textContent = extractFileName(url);
+            });
+            
+            const coverTypeElements = document.querySelectorAll('.image-type[data-url]');
+            coverTypeElements.forEach(element => {
+                const url = element.getAttribute('data-url');
+                element.textContent = extractFileExtension(url);
+            });
+            
+            // Update business license file names
+            const licenseNameElements = document.querySelectorAll('.file-name[data-url]');
+            licenseNameElements.forEach(element => {
+                const url = element.getAttribute('data-url');
+                element.textContent = extractFileName(url);
+            });
+            
+            const licenseTypeElements = document.querySelectorAll('.file-type[data-url]');
+            licenseTypeElements.forEach(element => {
+                const url = element.getAttribute('data-url');
+                element.textContent = extractFileExtension(url);
+            });
+        }
+        
+        function removeCurrentImage(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            
+            // Clear input
+            input.value = '';
+            
+            // Reset preview to placeholder
+            preview.innerHTML = `
+                <div class="preview-placeholder">
+                    <i class="icon">📷</i>
+                    <span>Chọn ảnh</span>
+                </div>
+            `;
+            preview.classList.remove('has-image');
+        }
+        
+        function removeCurrentFile(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            
+            // Clear input
+            input.value = '';
+            
+            // Reset preview to placeholder
+            preview.innerHTML = `
+                <div class="preview-placeholder">
+                    <i class="icon">📄</i>
+                    <span>Chọn file</span>
+                </div>
+            `;
+        }
+        
+        // Drag and drop functionality
+        function setupDragAndDrop(inputId, containerId) {
+            const container = document.getElementById(containerId);
+            const input = document.getElementById(inputId);
+            
+            container.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                container.classList.add('drag-over');
+            });
+            
+            container.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                container.classList.remove('drag-over');
+            });
+            
+            container.addEventListener('drop', function(e) {
+                e.preventDefault();
+                container.classList.remove('drag-over');
+                
+                const files = e.dataTransfer.files;
+                input.files = files;
+                previewMultipleImages(input, containerId);
+            });
+            
+            container.addEventListener('click', function() {
+                input.click();
+            });
+        }
+        
+        function previewFile(input, previewId) {
+            const preview = document.getElementById(previewId);
+            const file = input.files[0];
+            
+            if (file) {
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                preview.innerHTML = `
+                    <div class="file-info">
+                        <i class="icon">📄</i>
+                        <span><strong>${file.name}</strong></span>
+                        <span>${fileSize} MB</span>
+                        <button type="button" class="remove-image" onclick="removeFile('${input.id}', '${previewId}')">×</button>
+                    </div>
+                `;
+            }
+        }
+        
+        function removeImage(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            
+            input.value = '';
+            preview.innerHTML = `
+                <div class="preview-placeholder">
+                    <i class="icon">📷</i>
+                    <span>Chọn ảnh</span>
+                </div>
+            `;
+            preview.classList.remove('has-image');
+        }
+        
+        function previewFile(input, previewId) {
+            const preview = document.getElementById(previewId);
+            const file = input.files[0];
+            
+            if (file) {
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                preview.innerHTML = `
+                    <div class="file-info">
+                        <i class="icon">📄</i>
+                        <span><strong>${file.name}</strong></span>
+                        <span>${fileSize} MB</span>
+                        <button type="button" class="remove-image" onclick="removeFile('${input.id}', '${previewId}')">×</button>
+                    </div>
+                `;
+            }
+        }
+        
+        function removeFile(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            
+            input.value = '';
+            preview.innerHTML = `
+                <div class="preview-placeholder">
+                    <i class="icon">📄</i>
+                    <span>Chọn file</span>
+                </div>
+            `;
+        }
+        
+        // Click to upload
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update file names from URLs
+            updateFileNames();
+            
+            // Setup single image uploads
+            const singlePreviews = document.querySelectorAll('.image-preview:not(.image-preview-container)');
+            singlePreviews.forEach(preview => {
+                preview.addEventListener('click', function() {
+                    const input = this.parentElement.querySelector('input[type="file"]');
+                    if (input) {
+                        input.click();
+                    }
+                });
+            });
+            
+            // Setup file uploads
+            const filePreviews = document.querySelectorAll('.file-preview');
+            filePreviews.forEach(preview => {
+                preview.addEventListener('click', function() {
+                    const input = this.parentElement.querySelector('input[type="file"]');
+                    if (input) {
+                        input.click();
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>

@@ -10,9 +10,12 @@
     <!-- Breadcrumb Navigation -->
     <nav class="page-switch card">
         <div class="nav-breadcrumb">
-            <a th:href="@{/}" class="nav-link">← Trang chủ</a>
+            <a th:href="@{/restaurant-owner/dashboard}" class="nav-link">← Dashboard</a>
             <span class="nav-separator">|</span>
-            <a th:href="@{/restaurant-owner/tables}" class="nav-link">Quản lý Bàn</a>
+            <a th:href="@{/restaurant-owner/profile}" class="nav-link">Hồ sơ Nhà hàng</a>
+            <span class="nav-separator">|</span>
+            <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables'}" 
+               class="nav-link" th:text="${restaurant.restaurantName}">Tên Nhà hàng</a>
             <span class="nav-separator">|</span>
             <span class="nav-current" th:text="${pageTitle}">Tạo bàn mới</span>
         </div>
@@ -26,49 +29,368 @@
         <!-- Form Header -->
         <div class="card">
             <h1 class="h1" th:text="${pageTitle}">Tạo bàn mới</h1>
-            <p class="muted">Thêm bàn mới vào nhà hàng của bạn</p>
+            <p class="muted">Thêm bàn mới vào <strong th:text="${restaurant.restaurantName}">Tên Nhà hàng</strong></p>
         </div>
 
         <!-- Table Form -->
         <div class="card">
-            <form th:action="@{/restaurant-owner/tables/create}" method="post">
+            <form th:action="${table.tableId != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/tables/' + table.tableId + '/edit' : '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/tables/create'}" 
+                  th:object="${table}" 
+                  method="post"
+                  enctype="multipart/form-data">
                 
                 <div class="grid grid-3">
                     <label class="form-item">
                         <span class="form-label">Tên bàn *</span>
-                        <input type="text" name="tableName" placeholder="Bàn 1, T1, A1..." required />
+                        <input type="text" th:field="*{tableName}" placeholder="Bàn 1, T1, A1..." required />
                     </label>
                     
                     <label class="form-item">
                         <span class="form-label">Sức chứa *</span>
-                        <input type="number" name="capacity" placeholder="4" min="1" max="20" required />
+                        <input type="number" th:field="*{capacity}" placeholder="4" min="1" max="20" required />
                     </label>
                     
                     <label class="form-item">
-                        <span class="form-label">Nhà hàng *</span>
-                        <select name="restaurantId" required>
-                            <option value="">Chọn nhà hàng</option>
-                            <option th:each="restaurant : ${restaurants}" 
-                                    th:value="${restaurant.restaurantId}" 
-                                    th:text="${restaurant.restaurantName}">
-                                Nhà hàng A
-                            </option>
+                        <span class="form-label">Trạng thái *</span>
+                        <select th:field="*{status}" required>
+                            <option value="AVAILABLE">Có sẵn</option>
+                            <option value="OCCUPIED">Đang sử dụng</option>
+                            <option value="MAINTENANCE">Bảo trì</option>
+                            <option value="CLEANING">Đang dọn dẹp</option>
                         </select>
                     </label>
                     
+                    <label class="form-item">
+                        <span class="form-label">Số tiền đặt cọc (VNĐ) *</span>
+                        <input type="number" th:field="*{depositAmount}" placeholder="100000" min="0" step="1000" required />
+                    </label>
+                    
                     <label class="form-item full">
-                        <span class="form-label">Ghi chú</span>
-                        <textarea name="notes" rows="3" placeholder="Ghi chú về bàn (vị trí, đặc điểm...)"></textarea>
+                        <span class="form-label">Ảnh bàn (tùy chọn - có thể upload nhiều ảnh)</span>
+                        <div class="image-upload-container">
+                            <input type="file" id="tableImages" name="tableImages" accept="image/*" multiple onchange="previewMultipleImages(this, 'table-images-preview')" />
+                            <div class="image-preview" id="table-images-preview">
+                                <!-- Hiển thị ảnh hiện tại nếu có (edit mode) -->
+                                <div th:if="${table.hasImages()}">
+                                    <div class="current-images">
+                                        <h4>Ảnh hiện tại:</h4>
+                                        <div class="current-images-grid">
+                                            <div th:each="image, iterStat : ${table.getTableImages()}" class="current-image-item">
+                                                <img th:src="${image.url}" 
+                                                     th:alt="${table.tableName + ' - Ảnh ' + (iterStat.index + 1)}" 
+                                                     style="max-width: 100%; max-height: 150px; border-radius: 4px;">
+                                                <div class="current-image-info">
+                                                    <div class="image-details">
+                                                        <span class="image-name">Ảnh ${iterStat.index + 1}</span>
+                                                        <span class="image-type">jpg</span>
+                                                    </div>
+                                                    <div class="image-actions">
+                                                        <a th:href="${image.url}" target="_blank" class="btn btn-sm btn-primary">Xem</a>
+                                                        <button type="button" 
+                                                                class="btn btn-sm btn-danger" 
+                                                                th:onclick="'deleteTableImage(' + ${image.mediaId} + ')'">Xóa</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="add-more-images">
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="removeCurrentImages('tableImages', 'table-images-preview')">
+                                                Thêm ảnh mới
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Placeholder nếu không có ảnh -->
+                                <div th:unless="${table.hasImages()}" class="preview-placeholder">
+                                    <i class="icon">📷</i>
+                                    <span>Chọn ảnh bàn (có thể chọn nhiều ảnh)</span>
+                                </div>
+                            </div>
+                            <small class="muted">PNG, JPG, WebP. Tối đa 20MB mỗi ảnh. Có thể chọn nhiều ảnh cùng lúc.</small>
+                        </div>
                     </label>
                 </div>
                 
                 <!-- Form Actions -->
                 <div class="actions mt-8">
-                    <button type="submit" class="btn">Tạo bàn</button>
-                    <a th:href="@{/restaurant-owner/tables}" class="btn btn-ghost">Hủy</a>
+                    <button type="submit" class="btn">
+                        <span th:text="${table.tableId != null ? 'Cập nhật bàn' : 'Tạo bàn'}">Tạo bàn</span>
+                    </button>
+                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables'}" 
+                       class="btn btn-ghost">Hủy</a>
                 </div>
             </form>
         </div>
     </div>
+
+    <style>
+        /* Image Upload Styles */
+        .image-upload-container {
+            margin-bottom: 1rem;
+        }
+        
+        .image-upload-container input[type="file"] {
+            display: none;
+        }
+        
+        .image-preview {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .image-preview:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        .preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+        }
+        
+        .preview-placeholder .icon {
+            font-size: 2rem;
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Multiple images styles */
+        .current-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .current-image-item {
+            position: relative;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 5px;
+        }
+        
+        .current-image-info {
+            margin-top: 8px;
+        }
+        
+        .image-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .image-name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .image-type {
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .image-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        /* Current Images Grid */
+        .current-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .current-image-item {
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 1rem;
+            background: white;
+        }
+
+        .add-more-images {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-sm:hover {
+            opacity: 0.8;
+        }
+        
+        /* Multiple image preview */
+        .multiple-images-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .preview-image-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .preview-image-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        
+        .remove-preview-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+
+    <script>
+        function previewMultipleImages(input, previewId) {
+            const preview = document.getElementById(previewId);
+            const files = input.files;
+            
+            if (files.length > 0) {
+                let previewHTML = '<div class="multiple-images-preview">';
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        previewHTML += `
+                            <div class="preview-image-item">
+                                <img src="${e.target.result}" alt="Preview ${i + 1}">
+                                <button type="button" class="remove-preview-btn" onclick="removePreviewImage(${i}, '${previewId}')">×</button>
+                            </div>
+                        `;
+                        
+                        // Update preview when all images are loaded
+                        if (i === files.length - 1) {
+                            preview.innerHTML = previewHTML + '</div>';
+                        }
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            } else {
+                preview.innerHTML = `
+                    <div class="preview-placeholder">
+                        <i class="icon">📷</i>
+                        <span>Chọn ảnh bàn (có thể chọn nhiều ảnh)</span>
+                    </div>
+                `;
+            }
+        }
+        
+        function removePreviewImage(index, previewId) {
+            const input = document.getElementById('tableImages');
+            const files = Array.from(input.files);
+            files.splice(index, 1);
+            
+            // Create new FileList
+            const dt = new DataTransfer();
+            files.forEach(file => dt.items.add(file));
+            input.files = dt.files;
+            
+            // Re-preview remaining images
+            previewMultipleImages(input, previewId);
+        }
+        
+        function removeCurrentImages(inputId, previewId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            
+            input.value = '';
+            preview.innerHTML = `
+                <div class="preview-placeholder">
+                    <i class="icon">📷</i>
+                    <span>Chọn ảnh bàn (có thể chọn nhiều ảnh)</span>
+                </div>
+            `;
+        }
+
+        function deleteTableImage(mediaId) {
+            if (confirm('Bạn có chắc chắn muốn xóa ảnh này?')) {
+                // Get restaurant and table IDs from URL
+                const pathParts = window.location.pathname.split('/');
+                const restaurantId = pathParts[3];
+                const tableId = pathParts[5];
+                
+                // Create form and submit
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/restaurant-owner/restaurants/${restaurantId}/tables/${tableId}/images/delete/${mediaId}`;
+                
+                // Add CSRF token if available
+                const csrfToken = document.querySelector('meta[name="_csrf"]');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_csrf';
+                    csrfInput.value = csrfToken.getAttribute('content');
+                    form.appendChild(csrfInput);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
 </body>
 </html>
