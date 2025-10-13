@@ -1,6 +1,8 @@
 package com.example.booking.config;
 
 import com.example.booking.service.LoginRateLimitingService;
+import com.example.booking.domain.RateLimitStatistics;
+import com.example.booking.repository.RateLimitStatisticsRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 @Component
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
@@ -20,6 +23,9 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     
     @Autowired
     private LoginRateLimitingService loginRateLimitingService;
+    
+    @Autowired
+    private RateLimitStatisticsRepository statisticsRepository;
     
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, 
@@ -30,13 +36,46 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         
         logger.info("🎉 LOGIN SUCCESS - Username: {}, IP: {}", username, clientIp);
         
-        // Reset rate limit for successful login
+        // Reset rate limit for successful login (memory)
         loginRateLimitingService.resetRateLimitForSuccessfulLogin(clientIp);
+        
+        // Update database statistics for successful login
+        updateDatabaseStatistics(clientIp, request);
         
         logger.info("🔄 RATE LIMIT RESET - IP: {} after successful login", clientIp);
         
         // Redirect to home page
         response.sendRedirect("/");
+    }
+    
+    /**
+     * Update database statistics for successful login
+     */
+    private void updateDatabaseStatistics(String clientIp, HttpServletRequest request) {
+        try {
+            // Get or create statistics record
+            RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
+                    .orElse(new RateLimitStatistics(clientIp));
+            
+            // Update statistics
+            stats.incrementTotalRequests();
+            stats.incrementSuccessfulRequests();
+            stats.setLastRequestAt(LocalDateTime.now());
+            stats.setUserAgent(request.getHeader("User-Agent"));
+            
+            // Calculate risk score and suspicious flag
+            stats.calculateRiskScore();
+            stats.updateSuspiciousFlag();
+            
+            // Save to database
+            statisticsRepository.save(stats);
+            
+            logger.info("📊 DATABASE UPDATED - IP: {}, Total: {}, Success: {}, Risk: {}", 
+                    clientIp, stats.getTotalRequests(), stats.getSuccessfulRequests(), stats.getRiskScore());
+            
+        } catch (Exception e) {
+            logger.error("❌ DATABASE UPDATE FAILED - IP: {}, Error: {}", clientIp, e.getMessage());
+        }
     }
     
     /**
