@@ -119,6 +119,19 @@ public class HomeController {
             Page<RestaurantProfile> restaurants = restaurantService.getRestaurantsWithFilters(
                 pageable, search, cuisineType, priceRange, ratingFilter);
             
+            // Load cover images for each restaurant
+            for (RestaurantProfile restaurant : restaurants.getContent()) {
+                List<RestaurantMedia> coverImages = restaurantOwnerService.getMediaByRestaurant(restaurant)
+                        .stream()
+                        .filter(m -> "cover".equalsIgnoreCase(m.getType()))
+                        .toList();
+
+                // Set the first cover image as the main image
+                if (!coverImages.isEmpty()) {
+                    restaurant.setMainImageUrl(coverImages.get(0).getUrl());
+                }
+            }
+
             // Add to model
             model.addAttribute("restaurants", restaurants);
             model.addAttribute("totalElements", restaurants.getTotalElements());
