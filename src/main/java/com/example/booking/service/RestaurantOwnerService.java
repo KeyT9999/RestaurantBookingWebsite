@@ -211,9 +211,26 @@ public class RestaurantOwnerService {
     }
 
     /**
-     * Get restaurant profile by ID
+     * Get restaurant profile by ID (for customer access - only APPROVED restaurants)
      */
     public Optional<RestaurantProfile> getRestaurantById(Integer restaurantId) {
+        Optional<RestaurantProfile> restaurantOpt = restaurantRepository.findById(restaurantId);
+        
+        // Only return APPROVED restaurants for customer access
+        if (restaurantOpt.isPresent()) {
+            RestaurantProfile restaurant = restaurantOpt.get();
+            if (restaurant.getApprovalStatus() == com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED) {
+                return Optional.of(restaurant);
+            }
+        }
+        
+        return Optional.empty();
+    }
+    
+    /**
+     * Get restaurant profile by ID (for admin/owner access - all statuses)
+     */
+    public Optional<RestaurantProfile> getRestaurantByIdForAdmin(Integer restaurantId) {
         return restaurantRepository.findById(restaurantId);
     }
 

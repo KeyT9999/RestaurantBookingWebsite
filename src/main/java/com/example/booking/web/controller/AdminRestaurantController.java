@@ -212,19 +212,27 @@ public class AdminRestaurantController {
         RedirectAttributes redirectAttributes
     ) {
         try {
-            logger.info("Rejecting restaurant ID: {} by admin: {}", id, principal.getName());
+            logger.info("=== REJECT RESTAURANT DEBUG ===");
+            logger.info("Restaurant ID: {}", id);
+            logger.info("Admin: {}", principal != null ? principal.getName() : "null");
+            logger.info("Rejection reason: {}", rejectionReason);
+            logger.info("Reason length: {}", rejectionReason != null ? rejectionReason.length() : "null");
             
             if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
+                logger.warn("Rejection reason is empty or null");
                 redirectAttributes.addFlashAttribute("error", 
                     "Vui lòng nhập lý do từ chối!");
                 return "redirect:/admin/restaurant/requests/" + id;
             }
             
+            logger.info("Calling restaurantApprovalService.rejectRestaurant...");
             boolean success = restaurantApprovalService.rejectRestaurant(
                 id, 
                 principal.getName(), 
                 rejectionReason.trim()
             );
+            
+            logger.info("Service returned success: {}", success);
             
             if (success) {
                 redirectAttributes.addFlashAttribute("success", 
@@ -240,6 +248,60 @@ public class AdminRestaurantController {
             logger.error("Error rejecting restaurant ID: {}", id, e);
             redirectAttributes.addFlashAttribute("error", 
                 "Lỗi khi từ chối nhà hàng: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/restaurant/requests/" + id;
+    }
+    
+    /**
+     * GET /admin/test-reject-form
+     * Test form từ chối (chỉ để debug)
+     */
+    @GetMapping("/test-reject-form")
+    public String testRejectForm() {
+        return "test-reject-form";
+    }
+    
+    /**
+     * POST /admin/restaurant/resubmit/{id}
+     * Gửi lại cho restaurant để chỉnh sửa
+     */
+    @PostMapping("/resubmit/{id}")
+    public String resubmitRestaurant(
+        @PathVariable Integer id,
+        @RequestParam String resubmitReason,
+        Principal principal,
+        RedirectAttributes redirectAttributes
+    ) {
+        try {
+            logger.info("Resubmitting restaurant ID: {} by admin: {}", id, principal.getName());
+            
+            if (resubmitReason == null || resubmitReason.trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", 
+                    "Vui lòng nhập lý do gửi lại!");
+                return "redirect:/admin/restaurant/requests/" + id;
+            }
+            
+            boolean success = restaurantApprovalService.resubmitRestaurant(
+                id, 
+                principal.getName(), 
+                resubmitReason.trim()
+            );
+            
+            if (success) {
+                redirectAttributes.addFlashAttribute("success", 
+                    "Đã gửi lại nhà hàng cho restaurant owner thành công!");
+                logger.info("Restaurant ID: {} resubmitted successfully by admin: {}", id, principal.getName());
+            } else {
+                redirectAttributes.addFlashAttribute("error", 
+                    "Không thể gửi lại nhà hàng. Vui lòng kiểm tra lại thông tin.");
+                logger.warn("Failed to resubmit restaurant ID: {}", id);
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error resubmitting restaurant ID: {}", id, e);
+            redirectAttributes.addFlashAttribute("error", 
+                "Lỗi khi gửi lại nhà hàng: " + e.getMessage());
         }
         
         return "redirect:/admin/restaurant/requests/" + id;

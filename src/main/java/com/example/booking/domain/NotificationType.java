@@ -15,6 +15,7 @@ public enum NotificationType {
     RESTAURANT_REGISTRATION_SUBMITTED("Đăng ký nhà hàng mới"),
     RESTAURANT_APPROVED("Nhà hàng được duyệt"),
     RESTAURANT_REJECTED("Nhà hàng bị từ chối"),
+    RESTAURANT_RESUBMIT("Nhà hàng cần chỉnh sửa"),
     RESTAURANT_SUSPENDED("Nhà hàng bị tạm dừng"),
     RESTAURANT_ACTIVATED("Nhà hàng được kích hoạt"),
     SYSTEM_ANNOUNCEMENT("Thông báo hệ thống");

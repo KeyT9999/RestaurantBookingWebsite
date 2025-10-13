@@ -167,6 +167,16 @@
             transform: translateY(-1px);
         }
         
+        .btn-resubmit {
+            background-color: #6f42c1;
+            color: white;
+        }
+        
+        .btn-resubmit:hover {
+            background-color: #5a32a3;
+            transform: translateY(-1px);
+        }
+        
         .btn-secondary {
             background-color: var(--primary-blue);
             color: white;
@@ -528,14 +538,14 @@
                                     </button>
                                 </form>
                                 
-                                <form th:action="@{'/admin/restaurant/reject/' + ${restaurant.restaurantId}}" method="post">
+                                <form th:action="@{'/admin/restaurant/reject/' + ${restaurant.restaurantId}}" method="post" id="rejectForm">
                                     <div class="form-floating mb-3">
                                         <textarea class="form-control" name="rejectionReason" id="rejectionReason" 
                                                   placeholder="Lý do từ chối" style="height: 80px" required></textarea>
                                         <label for="rejectionReason">Lý do từ chối <span class="text-danger">*</span></label>
                                     </div>
                                     <button type="submit" class="btn btn-reject btn-admin w-100"
-                                            onclick="return confirm('Bạn có chắc muốn từ chối nhà hàng này?')">
+                                            onclick="return validateRejectForm()">
                                         <i class="fas fa-times me-2"></i>
                                         Từ chối Nhà hàng
                                     </button>
@@ -554,6 +564,22 @@
                                             onclick="return confirm('Bạn có chắc muốn tạm dừng nhà hàng này?')">
                                         <i class="fas fa-pause me-2"></i>
                                         Tạm dừng Nhà hàng
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- Rejected Actions -->
+                            <div th:if="${restaurant.approvalStatus.name() == 'REJECTED'}">
+                                <form th:action="@{'/admin/restaurant/resubmit/' + ${restaurant.restaurantId}}" method="post" id="resubmitForm">
+                                    <div class="form-floating mb-3">
+                                        <textarea class="form-control" name="resubmitReason" id="resubmitReason" 
+                                                  placeholder="Lý do gửi lại" style="height: 80px" required></textarea>
+                                        <label for="resubmitReason">Lý do gửi lại <span class="text-danger">*</span></label>
+                                    </div>
+                                    <button type="submit" class="btn btn-resubmit btn-admin w-100"
+                                            onclick="return validateResubmitForm()">
+                                        <i class="fas fa-redo me-2"></i>
+                                        Gửi lại cho Restaurant
                                     </button>
                                 </form>
                             </div>
@@ -670,21 +696,81 @@
         document.addEventListener('DOMContentLoaded', function() {
             const forms = document.querySelectorAll('form');
             forms.forEach(function(form) {
+                // Skip reject and resubmit forms as they have their own validation
+                if (form.id === 'rejectForm' || form.id === 'resubmitForm') return;
+                
                 form.addEventListener('submit', function(e) {
                     const textareas = form.querySelectorAll('textarea[required]');
+                    let hasError = false;
+                    
                     textareas.forEach(function(textarea) {
                         if (!textarea.value.trim()) {
-                            e.preventDefault();
+                            hasError = true;
                             textarea.classList.add('is-invalid');
-                            alert('Vui lòng nhập ' + textarea.previousElementSibling.textContent);
+                            
+                            // Lấy label text
+                            let labelText = 'thông tin';
+                            const label = textarea.previousElementSibling;
+                            if (label && label.tagName === 'LABEL') {
+                                labelText = label.textContent.trim().replace(' *', '');
+                            }
+                            
+                            alert('Vui lòng nhập ' + labelText);
                             textarea.focus();
                         } else {
                             textarea.classList.remove('is-invalid');
                         }
                     });
+                    
+                    if (hasError) {
+                        e.preventDefault();
+                        return false;
+                    }
                 });
             });
         });
+        
+        // Validation function for reject form
+        function validateRejectForm() {
+            const rejectionReason = document.getElementById('rejectionReason');
+            
+            if (!rejectionReason.value.trim()) {
+                rejectionReason.classList.add('is-invalid');
+                alert('Vui lòng nhập lý do từ chối');
+                rejectionReason.focus();
+                return false;
+            }
+            
+            rejectionReason.classList.remove('is-invalid');
+            
+            // Confirm before submit
+            if (!confirm('Bạn có chắc muốn từ chối nhà hàng này?')) {
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Validation function for resubmit form
+        function validateResubmitForm() {
+            const resubmitReason = document.getElementById('resubmitReason');
+            
+            if (!resubmitReason.value.trim()) {
+                resubmitReason.classList.add('is-invalid');
+                alert('Vui lòng nhập lý do gửi lại');
+                resubmitReason.focus();
+                return false;
+            }
+            
+            resubmitReason.classList.remove('is-invalid');
+            
+            // Confirm before submit
+            if (!confirm('Bạn có chắc muốn gửi lại nhà hàng này cho restaurant owner?')) {
+                return false;
+            }
+            
+            return true;
+        }
     </script>
 </body>
 </html>
