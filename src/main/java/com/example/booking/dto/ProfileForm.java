@@ -11,10 +11,12 @@ public class ProfileForm {
     
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
+    @Pattern(regexp = ".*@(gmail\\.com|outlook\\.com\\.vn|yahoo\\.com|hotmail\\.com|student\\.ctu\\.edu\\.vn|ctu\\.edu\\.vn)$", 
+             message = "Email phải thuộc một trong các domain: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn")
     private String email;
     
-    @Size(max = 20, message = "Số điện thoại không được quá 20 ký tự")
-    @Pattern(regexp = "^[0-9+\\-\\s()]*$", message = "Số điện thoại không hợp lệ")
+    @Size(max = 15, message = "Số điện thoại không được quá 15 ký tự")
+    @Pattern(regexp = "^(0[3|5|7|8|9])[0-9]{8}$|^$", message = "Số điện thoại phải là 10 số và bắt đầu bằng 03, 05, 07, 08, 09 hoặc để trống")
     private String phoneNumber;
     
     private MultipartFile profileImage;
