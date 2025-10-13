@@ -22,6 +22,8 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.booking.web.dto.PayOSRefundRequest;
+import com.example.booking.web.dto.PayOSRefundResponse;
 
 @Service
 public class PayOsService {
@@ -266,6 +268,57 @@ public class PayOsService {
         }
     }
 
+    /**
+     * Xử lý hoàn tiền PayOS
+     */
+    public PayOSRefundResponse processRefund(PayOSRefundRequest refundRequest) {
+        try {
+            logger.info("🔄 Processing PayOS refund for orderCode: {}, amount: {}, reason: {}", 
+                       refundRequest.getOrderCode(), refundRequest.getAmount(), refundRequest.getReason());
+            
+            // Validate refund request
+            if (refundRequest.getOrderCode() == null) {
+                throw new IllegalArgumentException("OrderCode cannot be null");
+            }
+            
+            if (refundRequest.getAmount() == null || refundRequest.getAmount() <= 0) {
+                throw new IllegalArgumentException("Refund amount must be positive");
+            }
+            
+            // Create signature for refund
+            String signature = signRefund(refundRequest.getOrderCode(), refundRequest.getAmount(), refundRequest.getReason());
+            
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("orderCode", refundRequest.getOrderCode());
+            payload.put("amount", refundRequest.getAmount());
+            payload.put("reason", refundRequest.getReason());
+            payload.put("signature", signature);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add("x-client-id", clientId);
+            headers.add("x-api-key", apiKey);
+            
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
+            String url = endpoint + "/v2/refunds";
+            
+            logger.info("📡 Calling PayOS refund API: POST {}", url);
+            ResponseEntity<PayOSRefundResponse> resp = restTemplate.exchange(
+                URI.create(url), HttpMethod.POST, entity, PayOSRefundResponse.class);
+            
+            PayOSRefundResponse response = resp.getBody();
+            if (response != null) {
+                logger.info("✅ PayOS refund response: code={}, desc={}", response.getCode(), response.getDesc());
+            }
+            
+            return response;
+            
+        } catch (Exception e) {
+            logger.error("❌ Error processing PayOS refund", e);
+            throw new RuntimeException("Failed to process PayOS refund: " + e.getMessage(), e);
+        }
+    }
+
     public boolean verifyWebhook(String body, String signature) {
         try {
             String expected = hmacSHA256(body, checksumKey);
@@ -282,6 +335,13 @@ public class PayOsService {
                 "&description=" + description +
                 "&orderCode=" + orderCode +
                 "&returnUrl=" + returnUrl;
+        return hmacSHA256(data, checksumKey);
+    }
+    
+    private String signRefund(Long orderCode, Long amount, String reason) throws Exception {
+        String data = "orderCode=" + orderCode +
+                "&amount=" + amount +
+                "&reason=" + (reason != null ? reason : "");
         return hmacSHA256(data, checksumKey);
     }
 
