@@ -1,7 +1,9 @@
 package com.example.booking.web.controller;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,6 +40,7 @@ import com.example.booking.service.EmailService;
 import com.example.booking.service.PayOsService;
 import com.example.booking.service.PayOsService.CreateLinkResponse;
 import com.example.booking.service.PaymentService;
+import com.example.booking.service.RefundService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 
@@ -74,6 +77,9 @@ public class PaymentController {
     
     @Autowired
     private EmailService emailService;
+    
+    @Autowired
+    private RefundService refundService;
     
     /**
      * Show payment form for booking
@@ -1197,6 +1203,220 @@ public class PaymentController {
         } catch (Exception e) {
             logger.error("❌ Error syncing PayOS status", e);
             return ResponseEntity.ok("Error: " + e.getMessage());
+        }
+    }
+    
+    // ==================== REFUND API ENDPOINTS ====================
+    
+    /**
+     * API endpoint để hoàn tiền toàn bộ
+     * POST /payment/{paymentId}/refund
+     */
+    @PostMapping("/{paymentId}/refund")
+    @ResponseBody
+    public ResponseEntity<?> processFullRefund(@PathVariable Integer paymentId, 
+                                             @RequestParam String reason,
+                                             Authentication authentication) {
+        try {
+            logger.info("🔄 Processing full refund for paymentId: {}, reason: {}", paymentId, reason);
+            
+            // Validate authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(new HashMap<String, Object>() {{ put("error", "Unauthorized"); }});
+            }
+            
+            // Process refund
+            Payment refundedPayment = refundService.processFullRefund(paymentId, reason);
+            
+            logger.info("✅ Full refund processed successfully for paymentId: {}", paymentId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Refund processed successfully");
+            response.put("paymentId", refundedPayment.getPaymentId());
+            response.put("refundAmount", refundedPayment.getRefundAmount());
+            response.put("refundedAt", refundedPayment.getRefundedAt());
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            logger.error("❌ Invalid refund request: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{ put("error", e.getMessage()); }});
+        } catch (Exception e) {
+            logger.error("❌ Error processing full refund for paymentId: {}", paymentId, e);
+            return ResponseEntity.status(500).body(new HashMap<String, Object>() {{ put("error", "Internal server error: " + e.getMessage()); }});
+        }
+    }
+    
+    /**
+     * API endpoint để hoàn tiền một phần
+     * POST /payment/{paymentId}/refund/partial
+     */
+    @PostMapping("/{paymentId}/refund/partial")
+    @ResponseBody
+    public ResponseEntity<?> processPartialRefund(@PathVariable Integer paymentId,
+                                                @RequestParam String amount,
+                                                @RequestParam String reason,
+                                                Authentication authentication) {
+        try {
+            logger.info("🔄 Processing partial refund for paymentId: {}, amount: {}, reason: {}", 
+                       paymentId, amount, reason);
+            
+            // Validate authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(new HashMap<String, Object>() {{ put("error", "Unauthorized"); }});
+            }
+            
+            // Parse amount
+            java.math.BigDecimal refundAmount;
+            try {
+                refundAmount = new java.math.BigDecimal(amount);
+            } catch (NumberFormatException e) {
+                return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{ put("error", "Invalid amount format"); }});
+            }
+            
+            // Process partial refund
+            Payment refundedPayment = refundService.processPartialRefund(paymentId, refundAmount, reason);
+            
+            logger.info("✅ Partial refund processed successfully for paymentId: {}", paymentId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Partial refund processed successfully",
+                "paymentId", refundedPayment.getPaymentId(),
+                "refundAmount", refundedPayment.getRefundAmount(),
+                "refundedAt", refundedPayment.getRefundedAt()
+            ));
+            
+        } catch (IllegalArgumentException e) {
+            logger.error("❌ Invalid partial refund request: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{ put("error", e.getMessage()); }});
+        } catch (Exception e) {
+            logger.error("❌ Error processing partial refund for paymentId: {}", paymentId, e);
+            return ResponseEntity.status(500).body(new HashMap<String, Object>() {{ put("error", "Internal server error: " + e.getMessage()); }});
+        }
+    }
+    
+    /**
+     * API endpoint để kiểm tra khả năng hoàn tiền
+     * GET /payment/{paymentId}/refund/check
+     */
+    @GetMapping("/{paymentId}/refund/check")
+    @ResponseBody
+    public ResponseEntity<?> checkRefundEligibility(@PathVariable Integer paymentId,
+                                                   Authentication authentication) {
+        try {
+            logger.info("🔍 Checking refund eligibility for paymentId: {}", paymentId);
+            
+            // Validate authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(new HashMap<String, Object>() {{ put("error", "Unauthorized"); }});
+            }
+            
+            // Check if payment exists
+            Optional<Payment> paymentOpt = paymentRepository.findById(paymentId);
+            if (paymentOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Payment payment = paymentOpt.get();
+            boolean canRefund = refundService.canRefund(paymentId);
+            
+            return ResponseEntity.ok(Map.of(
+                "paymentId", paymentId,
+                "canRefund", canRefund,
+                "paymentStatus", payment.getStatus(),
+                "paymentAmount", payment.getAmount(),
+                "refundedAt", payment.getRefundedAt(),
+                "paymentMethod", payment.getPaymentMethod()
+            ));
+            
+        } catch (Exception e) {
+            logger.error("❌ Error checking refund eligibility for paymentId: {}", paymentId, e);
+            return ResponseEntity.status(500).body(new HashMap<String, Object>() {{ put("error", "Internal server error: " + e.getMessage()); }});
+        }
+    }
+    
+    /**
+     * API endpoint để lấy danh sách payments có thể hoàn tiền
+     * GET /payment/refundable
+     */
+    @GetMapping("/refundable")
+    @ResponseBody
+    public ResponseEntity<?> getRefundablePayments(Authentication authentication) {
+        try {
+            logger.info("📋 Getting refundable payments");
+            
+            // Validate authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(new HashMap<String, Object>() {{ put("error", "Unauthorized"); }});
+            }
+            
+            List<Payment> refundablePayments = refundService.getRefundablePayments();
+            
+            List<Map<String, Object>> paymentList = refundablePayments.stream()
+                .map(payment -> {
+                    Map<String, Object> paymentMap = new HashMap<>();
+                    paymentMap.put("paymentId", payment.getPaymentId());
+                    paymentMap.put("bookingId", payment.getBooking().getBookingId());
+                    paymentMap.put("customerId", payment.getCustomer().getCustomerId());
+                    paymentMap.put("amount", payment.getAmount());
+                    paymentMap.put("paymentMethod", payment.getPaymentMethod());
+                    paymentMap.put("status", payment.getStatus());
+                    paymentMap.put("paidAt", payment.getPaidAt());
+                    paymentMap.put("orderCode", payment.getOrderCode());
+                    return paymentMap;
+                })
+                .toList();
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "count", refundablePayments.size(),
+                "payments", paymentList
+            ));
+            
+        } catch (Exception e) {
+            logger.error("❌ Error getting refundable payments", e);
+            return ResponseEntity.status(500).body(new HashMap<String, Object>() {{ put("error", "Internal server error: " + e.getMessage()); }});
+        }
+    }
+    
+    /**
+     * API endpoint để lấy thông tin refund của một payment
+     * GET /payment/{paymentId}/refund/info
+     */
+    @GetMapping("/{paymentId}/refund/info")
+    @ResponseBody
+    public ResponseEntity<?> getRefundInfo(@PathVariable Integer paymentId,
+                                         Authentication authentication) {
+        try {
+            logger.info("ℹ️ Getting refund info for paymentId: {}", paymentId);
+            
+            // Validate authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).body(new HashMap<String, Object>() {{ put("error", "Unauthorized"); }});
+            }
+            
+            Optional<Payment> refundInfo = refundService.getRefundInfo(paymentId);
+            
+            if (refundInfo.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            Payment payment = refundInfo.get();
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "paymentId", payment.getPaymentId(),
+                "refundAmount", payment.getRefundAmount(),
+                "refundReason", payment.getRefundReason(),
+                "refundedAt", payment.getRefundedAt(),
+                "originalAmount", payment.getAmount(),
+                "paymentMethod", payment.getPaymentMethod()
+            ));
+            
+        } catch (Exception e) {
+            logger.error("❌ Error getting refund info for paymentId: {}", paymentId, e);
+            return ResponseEntity.status(500).body(new HashMap<String, Object>() {{ put("error", "Internal server error: " + e.getMessage()); }});
         }
     }
 }
