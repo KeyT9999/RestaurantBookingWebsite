@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,7 +23,6 @@ import java.util.Optional;
  * Handles all audit-related operations including logging, querying, and cleanup
  */
 @Service
-@Transactional
 public class AuditService {
     
     private static final Logger logger = LoggerFactory.getLogger(AuditService.class);
@@ -38,6 +38,7 @@ public class AuditService {
      * @param event The audit event to log
      */
     @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAuditEvent(AuditEvent event) {
         try {
             // Prevent recursive audit logging
@@ -76,6 +77,7 @@ public class AuditService {
      * Log audit event synchronously (for critical operations)
      * @param event The audit event to log
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAuditEventSync(AuditEvent event) {
         try {
             // Prevent recursive audit logging

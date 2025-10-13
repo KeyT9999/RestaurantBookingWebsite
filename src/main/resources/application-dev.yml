@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a.singapore-postgres.render.com:5432/bookeat_db}
+    url: jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a.singapore-postgres.render.com:5432/bookeat_db
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME:bookeat_user}
-    password: ${DB_PASSWORD:58IJhzpjEobFFUmJ762dmkEdSLPPRbZX}
+    username: bookeat_user
+    password: 58IJhzpjEobFFUmJ762dmkEdSLPPRbZX
 
   jpa:
     hibernate:
@@ -42,18 +42,6 @@ spring:
         provider:
           google:
             issuer-uri: https://accounts.google.com
-
-# Cloudinary Configuration for development - Always enabled
-cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME}
-  api-key: ${CLOUDINARY_API_KEY}
-  api-secret: ${CLOUDINARY_API_SECRET}
-  secure: true  # Always use HTTPS
-
-# App configuration - Always use Cloudinary
-app:
-  upload:
-    use-cloudinary: true
 
 logging:
   level:

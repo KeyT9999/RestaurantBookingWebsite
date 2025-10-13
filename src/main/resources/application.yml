@@ -20,8 +20,8 @@ spring:
   
   servlet:
     multipart:
-      max-file-size: 20MB
-      max-request-size: 100MB  # Cho phép upload nhiều file cùng lúc
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 server:
   port: 8081
@@ -30,16 +30,8 @@ app:
   base-url: http://localhost:8081
   upload:
     dir: uploads
-    max-file-size: 20MB
-    max-request-size: 100MB  # Cho phép upload nhiều file cùng lúc
-    use-cloudinary: true  # Always use Cloudinary
-
-# Cloudinary Configuration - Always enabled
-cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME}
-  api-key: ${CLOUDINARY_API_KEY}
-  api-secret: ${CLOUDINARY_API_SECRET}
-  secure: true  # Always use HTTPS
+    max-file-size: 5MB
+    max-request-size: 5MB
 
 # Payment configuration
 payment:
@@ -56,91 +48,4 @@ payment:
 logging:
   level:
     org.hibernate.SQL: INFO
-    org.springframework.security: INFO
-
-# Rate limiting configuration
-rate:
-  limit:
-    # Authentication endpoints - Very strict
-    login:
-      requests: 5
-      window: 30  
-      auto-reset: 3600  # 1 hour
-      permanent-block-threshold: 10  # Block permanently after 10 violations
-    forgot-password:
-      requests: 3
-      window: 300  # 5 minutes
-      auto-reset: 1800  # 30 minutes
-      permanent-block-threshold: 5
-    register:
-      requests: 2
-      window: 300  # 5 minutes
-      auto-reset: 1800  # 30 minutes
-      permanent-block-threshold: 5
-    reset-password:
-      requests: 3
-      window: 300  # 5 minutes
-      auto-reset: 1800  # 30 minutes
-      permanent-block-threshold: 5
-    
-    # Business operations - Moderate
-    booking:
-      requests: 10
-      window: 60   # 1 minute
-      auto-reset: 300  # 5 minutes
-      permanent-block-threshold: 20
-    chat:
-      requests: 30
-      window: 60   # 1 minute
-      auto-reset: 300  # 5 minutes
-      permanent-block-threshold: 50
-    review:
-      requests: 3
-      window: 300  # 5 minutes
-      auto-reset: 1800  # 30 minutes
-      permanent-block-threshold: 10
-    
-    # File operations - Strict
-    file-upload:
-      requests: 5
-      window: 60   # 1 minute
-      auto-reset: 300  # 5 minutes
-      permanent-block-threshold: 15
-    
-    # Payment operations - Very strict
-    payment:
-      requests: 3
-      window: 60   # 1 minute
-      auto-reset: 1800  # 30 minutes
-      permanent-block-threshold: 5
-    
-    # API endpoints - Moderate
-    api:
-      requests: 100
-      window: 60   # 1 minute
-      auto-reset: 300  # 5 minutes
-      permanent-block-threshold: 200
-    
-    # General requests - Lenient
-    general:
-      requests: 200
-      window: 60   # 1 minute
-      permanent-block-threshold: 500
-    
-    # Advanced settings
-    advanced:
-      # Enable suspicious activity detection
-      suspicious-detection: true
-      # Risk score thresholds
-      risk-score-high: 80
-      risk-score-medium: 50
-      risk-score-low: 20
-      # Auto-block settings
-      auto-block-enabled: true
-      auto-block-threshold: 15
-      # Monitoring settings
-      monitoring-enabled: true
-      alert-threshold: 5
-      # Cleanup settings
-      cleanup-enabled: true
-      cleanup-days: 30
+    org.springframework.security: INFO 
