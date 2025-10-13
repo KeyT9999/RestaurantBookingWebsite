@@ -31,8 +31,8 @@ public class FileUploadService {
     // File validation constants
     private static final List<String> ALLOWED_IMAGE_TYPES = Arrays.asList("jpg", "jpeg", "png", "gif", "webp");
     private static final List<String> ALLOWED_DOCUMENT_TYPES = Arrays.asList("pdf", "doc", "docx");
-    private static final long MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
-    private static final long MAX_DOCUMENT_SIZE = 20 * 1024 * 1024; // 20MB
+    private static final long MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20MB - đồng bộ với Spring Boot config
+    private static final long MAX_DOCUMENT_SIZE = 20 * 1024 * 1024; // 20MB - đồng bộ với Spring Boot config
 
     /**
      * Upload restaurant media file

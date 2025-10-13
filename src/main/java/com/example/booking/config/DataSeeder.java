@@ -192,7 +192,6 @@ public class DataSeeder implements CommandLineRunner {
         table.setTableName(tableName);
         table.setCapacity(capacity);
         table.setStatus(TableStatus.fromValue(status));
-        table.setTableImage("/images/default-table.jpg"); // Default table image
         table.setDepositAmount(new BigDecimal("50000")); // Default deposit amount
         table.setRestaurant(restaurant);
         return table;

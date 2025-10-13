@@ -3,6 +3,7 @@ package com.example.booking.web.controller;
 import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.service.FileUploadService;
+import com.example.booking.service.ImageUploadService;
 import com.example.booking.service.RestaurantApprovalService;
 import com.example.booking.service.RestaurantOwnerService;
 import org.slf4j.Logger;
@@ -35,6 +36,9 @@ public class RestaurantFileUploadController {
 
     @Autowired
     private FileUploadService fileUploadService;
+
+    @Autowired
+    private ImageUploadService imageUploadService;
 
     @Autowired
     private RestaurantOwnerService restaurantOwnerService;

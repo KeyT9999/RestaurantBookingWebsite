@@ -67,7 +67,6 @@ public class BookingApiController {
                             table.getTableId(),
                             table.getTableName(),
                             table.getCapacity(),
-                            table.getTableImage(),
                             table.getStatus(),
                             table.getDepositAmount(),
                             table.getRestaurant().getRestaurantId()))

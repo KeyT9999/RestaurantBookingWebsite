@@ -1,11 +1,6 @@
 package com.example.booking.web.controller;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +28,7 @@ import com.example.booking.service.SimpleUserService;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.AuthRateLimitingService;
 import com.example.booking.annotation.RateLimited;
+import com.example.booking.service.ImageUploadService;
 
 import jakarta.validation.Valid;
 
@@ -44,11 +40,15 @@ public class AuthController {
     private final RestaurantOwnerService restaurantOwnerService;
     private final AuthRateLimitingService authRateLimitingService;
     
+    @Autowired
+    private ImageUploadService imageUploadService;
+
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
     
     @Autowired
-    public AuthController(SimpleUserService userService, RestaurantOwnerService restaurantOwnerService, AuthRateLimitingService authRateLimitingService) {
+    public AuthController(SimpleUserService userService, RestaurantOwnerService restaurantOwnerService,
+            AuthRateLimitingService authRateLimitingService) {
         this.userService = userService;
         this.restaurantOwnerService = restaurantOwnerService;
         this.authRateLimitingService = authRateLimitingService;
@@ -84,11 +84,11 @@ public class AuthController {
         
         try {
             userService.registerUser(registerForm);
-            
+
             // Reset rate limit for successful registration
             String clientIp = getClientIpAddress();
             authRateLimitingService.resetRegisterRateLimit(clientIp);
-            
+
             redirectAttributes.addFlashAttribute("successMessage", 
                 "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.");
             return "redirect:/auth/register-success";
@@ -382,6 +382,12 @@ public class AuthController {
         try {
             User user = getCurrentUser(authentication);
             if (user != null) {
+                // Xóa avatar cũ trên Cloudinary trước khi upload mới
+                String oldAvatarUrl = user.getProfileImageUrl();
+                if (oldAvatarUrl != null && !oldAvatarUrl.isEmpty() && oldAvatarUrl.startsWith("http")) {
+                    imageUploadService.deleteImage(oldAvatarUrl);
+                }
+
                 String imageUrl = saveUploadedFile(file, user.getId().toString());
                 userService.updateProfileImage(user, imageUrl);
                 
@@ -463,31 +469,16 @@ public class AuthController {
     }
     
     private String saveUploadedFile(MultipartFile file, String userId) throws IOException {
-        // Create upload directory if it doesn't exist
-        File uploadDirFile = new File(uploadDir);
-        if (!uploadDirFile.exists()) {
-            uploadDirFile.mkdirs();
-        }
-        
-        // Generate unique filename
-        String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename != null ? 
-            originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
-        String filename = "avatar_" + userId + "_" + System.currentTimeMillis() + extension;
-        
-        // Save file
-        Path filePath = Paths.get(uploadDir, filename);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        
-        // Return URL path
-        return "/uploads/" + filename;
+        // Use ImageUploadService for avatar uploads
+        return imageUploadService.uploadAvatar(file, Integer.parseInt(userId));
     }
-    
+
     /**
      * Get client IP address from request
      */
     private String getClientIpAddress() {
-        // This is a simplified version - in a real application, you'd inject HttpServletRequest
+        // This is a simplified version - in a real application, you'd inject
+        // HttpServletRequest
         // For now, we'll use a placeholder that will be handled by the filter
         return "unknown";
     }

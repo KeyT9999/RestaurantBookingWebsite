@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title th:text="${pageTitle}">Quản lý Món ăn</title>
+    <link rel="stylesheet" th:href="@{/css/restaurant-admin.css}" />
+</head>
+<body>
+    <!-- Breadcrumb Navigation -->
+    <nav class="page-switch card">
+        <div class="nav-breadcrumb">
+            <a th:href="@{/}" class="nav-link">← Trang chủ</a>
+            <span class="nav-separator">|</span>
+            <a th:href="@{/restaurant-owner/profile}" class="nav-link">Hồ sơ Nhà hàng</a>
+            <span class="nav-separator">|</span>
+            <span class="nav-current" th:text="${restaurant.restaurantName}">Tên nhà hàng</span>
+            <span class="nav-separator">|</span>
+            <span class="nav-current">Quản lý Món ăn</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+        <!-- Page Header -->
+        <div class="card">
+            <div class="flex justify-between align-center">
+                <div>
+                    <h1 class="h1" th:text="${restaurant.restaurantName}">Tên nhà hàng</h1>
+                    <p class="muted">Quản lý menu và món ăn của nhà hàng</p>
+                </div>
+                <div class="flex gap-4">
+                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes/create'}" 
+                       class="btn">
+                        <i class="icon">➕</i>
+                        Thêm món mới
+                    </a>
+                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables'}" 
+                       class="btn btn-ghost">
+                        <i class="icon">🪑</i>
+                        Quản lý Bàn
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-4 gap-4 mb-6">
+            <div class="card text-center">
+                <div class="stat-number" th:text="${totalDishes}">0</div>
+                <div class="stat-label">Tổng món</div>
+            </div>
+            <div class="card text-center">
+                <div class="stat-number text-success" th:text="${availableDishes}">0</div>
+                <div class="stat-label">Có sẵn</div>
+            </div>
+            <div class="card text-center">
+                <div class="stat-number text-warning" th:text="${outOfStockDishes}">0</div>
+                <div class="stat-label">Hết hàng</div>
+            </div>
+            <div class="card text-center">
+                <div class="stat-number text-danger" th:text="${discontinuedDishes}">0</div>
+                <div class="stat-label">Ngừng phục vụ</div>
+            </div>
+        </div>
+
+        <!-- Dishes Grid -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h2">Danh sách Món ăn</h2>
+                <div class="flex gap-2">
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">Tất cả danh mục</option>
+                        <option value="Starter">Khai vị</option>
+                        <option value="Main">Món chính</option>
+                        <option value="Dessert">Tráng miệng</option>
+                        <option value="Drink">Đồ uống</option>
+                    </select>
+                    <select id="statusFilter" class="form-select">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="AVAILABLE">Có sẵn</option>
+                        <option value="OUT_OF_STOCK">Hết hàng</option>
+                        <option value="DISCONTINUED">Ngừng phục vụ</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div th:if="${dishes.isEmpty()}" class="text-center py-8">
+                    <div class="empty-state">
+                        <i class="icon">🍽️</i>
+                        <h3>Chưa có món ăn nào</h3>
+                        <p>Bắt đầu bằng cách thêm món ăn đầu tiên cho nhà hàng của bạn</p>
+                        <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes/create'}" 
+                           class="btn">Thêm món đầu tiên</a>
+                    </div>
+                </div>
+
+                <div th:unless="${dishes.isEmpty()}" class="dishes-grid" id="dishesGrid">
+                    <div th:each="dish : ${dishes}" 
+                         class="dish-card" 
+                         th:data-category="${dish.category}"
+                         th:data-status="${dish.status}">
+                        
+                        <!-- Dish Image -->
+                        <div class="dish-image">
+                            <img th:if="${dish.imageUrl != null and !dish.imageUrl.isEmpty()}" 
+                                 th:src="${dish.imageUrl}" 
+                                 th:alt="${dish.name}"
+                                 class="dish-img"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div th:unless="${dish.imageUrl != null and !dish.imageUrl.isEmpty()}" 
+                                 class="dish-img-placeholder">
+                                <i class="icon">🍽️</i>
+                            </div>
+                            
+                            <!-- Loading indicator -->
+                            <div class="image-loading" style="display: none;">
+                                <div class="loading-spinner"></div>
+                                <span>Đang tải...</span>
+                            </div>
+                            
+                            <!-- Status Badge -->
+                            <div class="status-badge" 
+                                 th:class="'status-' + ${#strings.toLowerCase(dish.status.name())}">
+                                <span th:text="${dish.status.displayName}">Có sẵn</span>
+                            </div>
+                        </div>
+
+                        <!-- Dish Info -->
+                        <div class="dish-info">
+                            <h3 class="dish-name" th:text="${dish.name}">Tên món</h3>
+                            <p class="dish-description" th:text="${dish.description}">Mô tả món ăn...</p>
+                            
+                            <div class="dish-meta">
+                                <div class="dish-category">
+                                    <i class="icon">📂</i>
+                                    <span th:text="${dish.category}">Danh mục</span>
+                                </div>
+                                <div class="dish-price">
+                                    <i class="icon">💰</i>
+                                    <span th:text="${#numbers.formatDecimal(dish.price, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="dish-actions">
+                            <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes/' + ${dish.dishId} + '/edit'}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="icon">✏️</i>
+                                Sửa
+                            </a>
+                            <button type="button" 
+                                    class="btn btn-sm btn-danger delete-dish-btn"
+                                    th:data-dish-id="${dish.dishId}"
+                                    th:data-dish-name="${dish.name}">
+                                <i class="icon">🗑️</i>
+                                Xóa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Xác nhận xóa món ăn</h3>
+                <button type="button" class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa món ăn <strong id="dishNameToDelete"></strong>?</p>
+                <p class="text-danger">Hành động này không thể hoàn tác!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" onclick="closeDeleteModal()">Hủy</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Xóa món ăn</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Filter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const categoryFilter = document.getElementById('categoryFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const dishesGrid = document.getElementById('dishesGrid');
+
+            function filterDishes() {
+                const selectedCategory = categoryFilter.value;
+                const selectedStatus = statusFilter.value;
+                const dishCards = dishesGrid.querySelectorAll('.dish-card');
+
+                dishCards.forEach(card => {
+                    const cardCategory = card.dataset.category;
+                    const cardStatus = card.dataset.status;
+
+                    const categoryMatch = !selectedCategory || cardCategory === selectedCategory;
+                    const statusMatch = !selectedStatus || cardStatus === selectedStatus;
+
+                    if (categoryMatch && statusMatch) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+            categoryFilter.addEventListener('change', filterDishes);
+            statusFilter.addEventListener('change', filterDishes);
+        });
+
+        // Delete confirmation with event delegation
+        document.addEventListener('click', function(event) {
+            if (event.target.closest('.delete-dish-btn')) {
+                const button = event.target.closest('.delete-dish-btn');
+                const dishId = button.dataset.dishId;
+                const dishName = button.dataset.dishName;
+                confirmDeleteDish(dishId, dishName);
+            }
+        });
+
+        function confirmDeleteDish(dishId, dishName) {
+            document.getElementById('dishNameToDelete').textContent = dishName;
+            document.getElementById('deleteForm').action = 
+                `/restaurant-owner/restaurants/[[${restaurant.restaurantId}]]/dishes/${dishId}/delete`;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                closeDeleteModal();
+            }
+        }
+
+        // Image loading handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const images = document.querySelectorAll('.dish-img');
+            
+            images.forEach(img => {
+                const loadingDiv = img.parentElement.querySelector('.image-loading');
+                const placeholderDiv = img.parentElement.querySelector('.dish-img-placeholder');
+                
+                // Show loading when image starts loading
+                img.addEventListener('loadstart', function() {
+                    if (loadingDiv) loadingDiv.style.display = 'flex';
+                });
+                
+                // Hide loading when image loads successfully
+                img.addEventListener('load', function() {
+                    if (loadingDiv) loadingDiv.style.display = 'none';
+                    img.style.opacity = '1';
+                });
+                
+                // Show placeholder when image fails to load
+                img.addEventListener('error', function() {
+                    if (loadingDiv) loadingDiv.style.display = 'none';
+                    if (placeholderDiv) placeholderDiv.style.display = 'flex';
+                    img.style.display = 'none';
+                });
+            });
+        });
+    </script>
+
+    <style>
+        /* Dishes Grid Layout */
+        .dishes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .dish-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .dish-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        /* Dish Image */
+        .dish-image {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .dish-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+
+        .dish-img-placeholder {
+            width: 100%;
+            height: 100%;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #9ca3af;
+        }
+
+        /* Loading indicator */
+        .image-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .status-available {
+            background: #10b981;
+        }
+
+        .status-out_of_stock {
+            background: #f59e0b;
+        }
+
+        .status-discontinued {
+            background: #ef4444;
+        }
+
+        /* Dish Info */
+        .dish-info {
+            padding: 1rem;
+        }
+
+        .dish-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            color: #111827;
+        }
+
+        .dish-description {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin: 0 0 1rem 0;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .dish-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .dish-category,
+        .dish-price {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .dish-price {
+            font-weight: 600;
+            color: #059669;
+        }
+
+        /* Actions */
+        .dish-actions {
+            padding: 0 1rem 1rem 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .dish-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        /* Statistics */
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 3rem 1rem;
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .empty-state h3 {
+            margin: 0 0 0.5rem 0;
+            color: #374151;
+        }
+
+        .empty-state p {
+            color: #6b7280;
+            margin: 0 0 1.5rem 0;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dishes-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .flex.gap-4 {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</body>
+</html>
