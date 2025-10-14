@@ -26,20 +26,63 @@
                                 <span>Home</span>
                             </a>
                         </li>
-                        <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                            <a class="nav-link" th:href="@{/admin/dashboard}" th:classappend="${#strings.startsWith(currentPath, '/admin/dashboard')} ? 'active' : ''">
+                        <li class="nav-item dropdown" sec:authorize="hasRole('ADMIN')">
+                            <a class="nav-link dropdown-toggle" href="#" id="adminDashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" th:classappend="${#strings.startsWith(currentPath, '/admin')} ? 'active' : ''">
                                 <i class="fas fa-tachometer-alt nav-icon"></i>
                                 <span>Dashboard</span>
                             </a>
-                        </li>
-                        <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                            <a class="nav-link" th:href="@{/admin/restaurant/requests}" th:classappend="${#strings.startsWith(currentPath, '/admin/restaurant')} ? 'active' : ''">
-                                <i class="fas fa-building nav-icon"></i>
-                                <span>Quản lý Nhà hàng</span>
-                                <span th:if="${pendingRestaurants != null && pendingRestaurants > 0}" 
-                                      class="badge bg-warning ms-1" 
-                                      th:text="${pendingRestaurants}">0</span>
-                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="adminDashboardDropdown">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/dashboard}">
+                                        <i class="fas fa-tachometer-alt me-2"></i>Tổng quan
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/withdrawal}">
+                                        <i class="fas fa-credit-card me-2"></i>Quản lý Rút tiền
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/restaurant/requests}">
+                                        <i class="fas fa-utensils me-2"></i>Duyệt Nhà hàng
+                                        <span th:if="${pendingRestaurants != null && pendingRestaurants > 0}" 
+                                              class="badge bg-warning ms-1" 
+                                              th:text="${pendingRestaurants}">0</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/users}">
+                                        <i class="fas fa-users me-2"></i>Quản lý Người dùng
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/chat}">
+                                        <i class="fas fa-comments me-2"></i>Quản lý Chat
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/rate-limiting}">
+                                        <i class="fas fa-shield-alt me-2"></i>Rate Limiting
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/settings}">
+                                        <i class="fas fa-cog me-2"></i>Cài đặt Hệ thống
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/reports}">
+                                        <i class="fas fa-chart-line me-2"></i>Báo cáo
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/notifications}">
+                                        <i class="fas fa-bell me-2"></i>Thông báo
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{/restaurants}" th:classappend="${#strings.startsWith(currentPath, '/restaurants')} ? 'active' : ''">
@@ -188,6 +231,9 @@
                                     <a class="dropdown-item" th:href="@{/restaurant-owner/chat}">
                                         <i class="fas fa-comments luxury-icon"></i>
                                         Chat với khách hàng
+                                    </a>
+                                </li>
+                                <li sec:authorize="hasRole('RESTAURANT_OWNER')">
                                     <a class="dropdown-item" th:href="@{/restaurant-owner/vouchers}">
                                         <i class="fas fa-ticket-alt luxury-icon"></i>
                                         Voucher Management
@@ -240,6 +286,66 @@
         <!-- WebSocket Libraries -->
         <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+        
+        <!-- Dropdown Hover Functionality -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Admin Dashboard Dropdown Hover
+                const adminDropdownToggle = document.getElementById('adminDashboardDropdown');
+                const adminDropdownMenu = adminDropdownToggle?.nextElementSibling;
+                
+                if (adminDropdownToggle && adminDropdownMenu) {
+                    setupDropdownHover(adminDropdownToggle, adminDropdownMenu);
+                }
+                
+                // User Dropdown Hover
+                const userDropdownToggle = document.querySelector('.user-dropdown');
+                const userDropdownMenu = userDropdownToggle?.nextElementSibling;
+                
+                if (userDropdownToggle && userDropdownMenu) {
+                    setupDropdownHover(userDropdownToggle, userDropdownMenu);
+                }
+                
+                function setupDropdownHover(toggle, menu) {
+                    let hoverTimeout;
+                    
+                    // Show dropdown on mouse enter
+                    toggle.addEventListener('mouseenter', function() {
+                        clearTimeout(hoverTimeout);
+                        const bsDropdown = new bootstrap.Dropdown(toggle, {
+                            autoClose: false,
+                            display: 'dynamic'
+                        });
+                        bsDropdown.show();
+                    });
+                    
+                    // Hide dropdown on mouse leave with delay
+                    toggle.addEventListener('mouseleave', function() {
+                        hoverTimeout = setTimeout(function() {
+                            const bsDropdown = bootstrap.Dropdown.getInstance(toggle);
+                            if (bsDropdown) {
+                                bsDropdown.hide();
+                            }
+                        }, 150);
+                    });
+                    
+                    // Keep dropdown open when hovering over menu
+                    menu.addEventListener('mouseenter', function() {
+                        clearTimeout(hoverTimeout);
+                    });
+                    
+                    // Hide dropdown when leaving menu
+                    menu.addEventListener('mouseleave', function() {
+                        hoverTimeout = setTimeout(function() {
+                            const bsDropdown = bootstrap.Dropdown.getInstance(toggle);
+                            if (bsDropdown) {
+                                bsDropdown.hide();
+                            }
+                        }, 150);
+                    });
+                }
+            });
+        </script>
         
         <!-- Customer Chat Link -->
         <div sec:authorize="isAuthenticated() and hasRole('CUSTOMER') or hasRole('customer')" id="chat-button" class="customer-chat-link" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
