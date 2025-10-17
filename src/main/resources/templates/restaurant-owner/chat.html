@@ -11,6 +11,21 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link th:href="@{/css/restaurant-owner-chat.css}" rel="stylesheet">
+    <style>
+        .search-box .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        
+        .search-box .form-control {
+            border-color: #dee2e6;
+        }
+        
+        .search-box .form-control:focus {
+            border-color: #ffc107;
+            box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -54,6 +69,19 @@
                         <i class="fas fa-comments text-gold"></i>
                         Cuộc trò chuyện
                     </h6>
+                    
+                    <!-- Search Box -->
+                    <div class="search-box mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search text-gold"></i>
+                            </span>
+                            <input type="text" class="form-control form-control-sm" 
+                                   id="chat-search-input" 
+                                   placeholder="Tìm kiếm theo tên người nhắn...">
+                        </div>
+                    </div>
+                    
                     <div class="chat-rooms-list" id="chat-rooms-list">
                     <!-- Dynamic chat rooms will be loaded here -->
                     <div th:each="room : ${chatRooms}" class="chat-room-item" th:data-room-id="${room.roomId}">
@@ -215,5 +243,211 @@
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <script th:src="@{/js/restaurant-owner-chat.js}"></script>
+    
+    <!-- Debug auto-select data -->
+    <script>
+        console.log('🔍 All restaurants:', /*[[${restaurants}]]*/ null);
+        console.log('🔍 Restaurants count:', /*[[${restaurants?.size()}]]*/ null);
+        console.log('🔍 Auto-select restaurant:', /*[[${autoSelectRestaurant}]]*/ null);
+        console.log('🔍 Auto-select restaurant ID:', /*[[${autoSelectRestaurant?.restaurantId}]]*/ null);
+        console.log('🔍 Auto-select restaurant Name:', /*[[${autoSelectRestaurant?.restaurantName}]]*/ null);
+    </script>
+    
+    <!-- Global auto-select function with Promise -->
+    <script th:if="${autoSelectRestaurant != null}">
+        // Promise-based auto-select function
+        window.autoSelectRestaurantPromise = function() {
+            return new Promise((resolve, reject) => {
+                const autoSelectRestaurantId = /*[[${autoSelectRestaurant?.restaurantId}]]*/ null;
+                const autoSelectRestaurantName = /*[[${autoSelectRestaurant?.restaurantName}]]*/ null;
+                
+                console.log('🔍 Debug auto-select data:', {
+                    autoSelectRestaurantId,
+                    autoSelectRestaurantName,
+                    autoSelectRestaurant: /*[[${autoSelectRestaurant}]]*/ null
+                });
+                
+                if (!autoSelectRestaurantId || !autoSelectRestaurantName) {
+                    console.log('❌ Auto-select data missing:', {
+                        id: autoSelectRestaurantId,
+                        name: autoSelectRestaurantName
+                    });
+                    reject('Auto-select restaurant data not available');
+                    return;
+                }
+                
+                console.log('🔄 Promise-based auto-select triggered for:', autoSelectRestaurantName, 'ID:', autoSelectRestaurantId);
+                
+                // Function to check and auto-select
+                function checkAndSelect() {
+                    const restaurantSelects = document.querySelectorAll('.restaurant-select');
+                    console.log('Found', restaurantSelects.length, 'restaurant selects');
+                    
+                    if (restaurantSelects.length === 0) {
+                        console.log('⏳ No restaurant selects found yet, retrying...');
+                        return false;
+                    }
+                    
+                    let success = false;
+                    restaurantSelects.forEach((select, index) => {
+                        if (select && select.options && select.options.length > 1) {
+                            console.log('Processing select', index, 'with', select.options.length, 'options');
+                            
+                            const option = Array.from(select.options).find(opt => 
+                                opt.value == autoSelectRestaurantId
+                            );
+                            
+                            if (option) {
+                                select.value = autoSelectRestaurantId;
+                                select.dispatchEvent(new Event('change'));
+                                console.log('✅ Auto-selected restaurant in dropdown:', autoSelectRestaurantName);
+                                
+                                // Enable chat buttons
+                                const chatButtons = document.querySelectorAll('.start-chat-btn');
+                                chatButtons.forEach(btn => {
+                                    if (btn) {
+                                        btn.disabled = false;
+                                        console.log('✅ Enabled chat button');
+                                    }
+                                });
+                                success = true;
+                            } else {
+                                console.log('❌ Restaurant option not found in select', index);
+                                console.log('Available options:', Array.from(select.options).map(opt => opt.value + ':' + opt.text));
+                            }
+                        } else {
+                            console.log('⏳ Select', index, 'not ready yet (options:', select?.options?.length || 0, ')');
+                        }
+                    });
+                    
+                    return success;
+                }
+                
+                // Try immediately
+                if (checkAndSelect()) {
+                    resolve('Restaurant auto-selected successfully');
+                    return;
+                }
+                
+                // Retry with intervals
+                let attempts = 0;
+                const maxAttempts = 10;
+                const interval = 500; // 500ms
+                
+                const retryInterval = setInterval(() => {
+                    attempts++;
+                    console.log(`🔄 Auto-select attempt ${attempts}/${maxAttempts}`);
+                    
+                    if (checkAndSelect()) {
+                        clearInterval(retryInterval);
+                        resolve('Restaurant auto-selected successfully');
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(retryInterval);
+                        reject('Failed to auto-select restaurant after maximum attempts');
+                    }
+                }, interval);
+            });
+        };
+        
+        // Legacy function for backward compatibility
+        window.autoSelectRestaurant = function() {
+            window.autoSelectRestaurantPromise().catch(error => {
+                console.error('Auto-select failed:', error);
+            });
+        };
+        
+        // Hook into admin loading completion
+        window.onAdminsLoaded = function() {
+            console.log('📞 Admins loaded callback triggered, attempting auto-select...');
+            window.autoSelectRestaurantPromise()
+                .then(result => {
+                    console.log('✅ Auto-select after admin load completed:', result);
+                })
+                .catch(error => {
+                    console.error('❌ Auto-select after admin load failed:', error);
+                });
+        };
+    </script>
+    
+    <!-- Auto-select restaurant if only one available -->
+    <script th:if="${autoSelectRestaurant != null}">
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM loaded, starting Promise-based auto-select...');
+            
+            // Use Promise-based auto-select
+            window.autoSelectRestaurantPromise()
+                .then(result => {
+                    console.log('✅ Auto-select completed:', result);
+                })
+                .catch(error => {
+                    console.error('❌ Auto-select failed:', error);
+                    
+                    // Fallback: try legacy method
+                    console.log('🔄 Trying fallback auto-select method...');
+                    setTimeout(() => {
+                        window.autoSelectRestaurant();
+                    }, 2000);
+                });
+        });
+    </script>
+    
+    <!-- Chat Search Functionality -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('chat-search-input');
+            const chatRoomsList = document.getElementById('chat-rooms-list');
+            
+            if (searchInput && chatRoomsList) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase().trim();
+                    const roomItems = chatRoomsList.querySelectorAll('.chat-room-item');
+                    
+                    roomItems.forEach(roomItem => {
+                        if (roomItem && roomItem.style) {
+                            const participantNameElement = roomItem.querySelector('.room-name span');
+                            if (participantNameElement) {
+                                const participantName = participantNameElement.textContent.toLowerCase();
+                                
+                                if (searchTerm === '' || participantName.includes(searchTerm)) {
+                                    roomItem.style.display = 'flex';
+                                } else {
+                                    roomItem.style.display = 'none';
+                                }
+                            }
+                        } else {
+                            console.log('Room item is null or has no style property');
+                        }
+                    });
+                    
+                    // Show/hide empty state
+                    const visibleRooms = Array.from(roomItems).filter(item => 
+                        item.style && item.style.display !== 'none'
+                    );
+                    const emptyState = chatRoomsList.querySelector('.empty-state');
+                    
+                    if (emptyState) {
+                        if (visibleRooms.length === 0 && searchTerm !== '') {
+                            emptyState.style.display = 'block';
+                            emptyState.innerHTML = `
+                                <i class="fas fa-search text-muted"></i>
+                                <p class="text-muted">Không tìm thấy cuộc trò chuyện nào</p>
+                            `;
+                        } else if (visibleRooms.length === 0 && searchTerm === '') {
+                            emptyState.style.display = 'block';
+                            emptyState.innerHTML = `
+                                <i class="fas fa-comments text-muted"></i>
+                                <p class="text-muted">Chưa có cuộc trò chuyện nào</p>
+                            `;
+                        } else {
+                            emptyState.style.display = 'none';
+                        }
+                    } else {
+                        console.log('Empty state element not found');
+                    }
+                });
+            }
+        });
+    </script>
+    
 </body>
 </html>

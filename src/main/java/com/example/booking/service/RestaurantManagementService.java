@@ -23,6 +23,8 @@ import com.example.booking.repository.DishRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.RestaurantServiceRepository;
 import com.example.booking.repository.RestaurantTableRepository;
+import com.example.booking.repository.RestaurantMediaRepository;
+import com.example.booking.domain.RestaurantMedia;
 
 @Service
 @Transactional
@@ -39,6 +41,9 @@ public class RestaurantManagementService {
 
     @Autowired
     private RestaurantServiceRepository restaurantServiceRepository;
+
+    @Autowired
+    private RestaurantMediaRepository restaurantMediaRepository;
 
     /**
      * Lấy tất cả nhà hàng (chỉ APPROVED cho customer)
@@ -125,6 +130,28 @@ public class RestaurantManagementService {
     @Transactional(readOnly = true)
     public List<Dish> findDishesByRestaurant(Integer restaurantId) {
         return dishRepository.findByRestaurantRestaurantIdAndStatusOrderByNameAsc(restaurantId, DishStatus.AVAILABLE);
+    }
+
+    /**
+     * Lấy media theo nhà hàng và loại
+     */
+    @Transactional(readOnly = true)
+    public List<RestaurantMedia> findMediaByRestaurantAndType(Integer restaurantId, String type) {
+        try {
+            Optional<RestaurantProfile> restaurant = findRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                System.out.println("❌ Restaurant not found for ID: " + restaurantId);
+                return new ArrayList<>();
+            }
+
+            List<RestaurantMedia> media = restaurantMediaRepository.findByRestaurantAndType(restaurant.get(), type);
+            System.out.println("✅ Found " + media.size() + " " + type + " media for restaurant " + restaurantId);
+            return media;
+        } catch (Exception e) {
+            System.err.println("❌ Error finding media: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
     /**

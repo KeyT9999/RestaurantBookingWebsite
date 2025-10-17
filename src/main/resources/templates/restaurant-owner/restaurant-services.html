@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quản lý Dịch vụ - Service Management</title>
+    <link rel="stylesheet" href="/css/restaurant-admin.css" />
+</head>
+<body>
+    <nav class="page-switch card">
+        <a class="nav-btn" href="/restaurant-owner/dashboard" title="Về FOH Dashboard">← FOH Dashboard</a>
+        <a class="nav-btn" href="/restaurant-owner/restaurants/[[${restaurant.restaurantId}]]/dishes" title="Quản lý Món ăn">→ Món ăn</a>
+    </nav>
+
+    <div class="container">
+        <header class="nav card">
+            <div class="nav-left">
+                <h1 class="h1">Quản lý Dịch vụ</h1>
+                <p class="muted">Quản lý các dịch vụ của nhà hàng [[${restaurant.restaurantName}]]</p>
+            </div>
+            <div class="actions">
+                <a th:href="@{/restaurant-owner/restaurants/{id}/services/form(id=${restaurant.restaurantId})}" 
+                   class="btn">+ Thêm dịch vụ mới</a>
+            </div>
+        </header>
+
+        <!-- Success/Error Messages -->
+        <div th:if="${param.success}" class="card" style="background: #d4edda; border-color: #c3e6cb; margin-bottom: 1rem;">
+            <div th:switch="${param.success[0]}">
+                <p th:case="'created'" style="color: #155724;">✅ Dịch vụ đã được tạo thành công!</p>
+                <p th:case="'updated'" style="color: #155724;">✅ Dịch vụ đã được cập nhật thành công!</p>
+                <p th:case="'deleted'" style="color: #155724;">✅ Dịch vụ đã được xóa thành công!</p>
+                <p th:case="'status_updated'" style="color: #155724;">✅ Trạng thái dịch vụ đã được cập nhật!</p>
+            </div>
+        </div>
+
+        <div th:if="${param.error}" class="card" style="background: #f8d7da; border-color: #f5c6cb; margin-bottom: 1rem;">
+            <div th:switch="${param.error[0]}">
+                <p th:case="'create_failed'" style="color: #721c24;">❌ Lỗi khi tạo dịch vụ!</p>
+                <p th:case="'update_failed'" style="color: #721c24;">❌ Lỗi khi cập nhật dịch vụ!</p>
+                <p th:case="'delete_failed'" style="color: #721c24;">❌ Lỗi khi xóa dịch vụ!</p>
+                <p th:case="'status_update_failed'" style="color: #721c24;">❌ Lỗi khi cập nhật trạng thái!</p>
+            </div>
+        </div>
+
+        <!-- Services List -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h2">Danh sách Dịch vụ</h2>
+                <p class="muted" th:text="'Tổng cộng: ' + ${#lists.size(services)} + ' dịch vụ'">Tổng cộng: 0 dịch vụ</p>
+            </div>
+
+        <div th:if="${services != null and !services.empty}" class="services-grid">
+            <div th:each="service : ${services}" class="service-card card">
+                <div class="service-header">
+                    <h3 class="h3" th:text="${service.name}">Tên dịch vụ</h3>
+                    <div class="service-status">
+                        <span th:class="'status-badge ' + ${service.status != null ? service.status.name().toLowerCase() : 'available'}" 
+                              th:text="${service.status != null ? service.status.name() : 'AVAILABLE'}">AVAILABLE</span>
+                    </div>
+                </div>
+                
+                <!-- Service Image - Display Only -->
+                <div class="service-image-section" th:if="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) != null and !restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty()}">
+                    <img th:src="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId)}" alt="Service Image" class="service-image">
+                </div>
+                <div class="service-image-placeholder" th:if="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) == null or restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty()}">
+                    <div class="no-image">
+                        <i class="fas fa-image"></i>
+                        <span>Chưa có ảnh</span>
+                    </div>
+                </div>
+                
+                <div class="service-details">
+                    <div class="service-info">
+                        <p class="service-category" th:if="${service.category != null and !service.category.isEmpty()}" 
+                           th:text="'Danh mục: ' + ${service.category}">Danh mục: Khác</p>
+                        <p class="service-price" th:text="'Giá: ' + ${service.price != null ? #numbers.formatDecimal(service.price, 0, 'COMMA', 0, 'POINT') : '0'} + ' VNĐ'">Giá: 0 VNĐ</p>
+                        <p class="service-description" th:if="${service.description != null and !service.description.isEmpty()}" 
+                           th:text="${service.description}">Mô tả dịch vụ</p>
+                    </div>
+                </div>
+
+                    <div class="service-actions">
+                        <a th:href="@{/restaurant-owner/restaurants/{restaurantId}/services/form(restaurantId=${restaurant.restaurantId}, serviceId=${service.serviceId})}" 
+                           class="btn btn-sm">✏️ Sửa</a>
+                        
+                        
+                        <form th:action="@{/restaurant-owner/restaurants/{restaurantId}/services/{serviceId}/status(restaurantId=${restaurant.restaurantId}, serviceId=${service.serviceId})}" 
+                              method="post" style="display: inline;">
+                            <select name="status" onchange="this.form.submit()" class="form-select form-select-sm">
+                                <option value="AVAILABLE" th:selected="${service.status != null and service.status.name() == 'AVAILABLE'}">Có sẵn</option>
+                                <option value="UNAVAILABLE" th:selected="${service.status != null and service.status.name() == 'UNAVAILABLE'}">Không có sẵn</option>
+                                <option value="DISCONTINUED" th:selected="${service.status != null and service.status.name() == 'DISCONTINUED'}">Ngừng cung cấp</option>
+                            </select>
+                        </form>
+                        
+                        <form th:action="@{/restaurant-owner/restaurants/{restaurantId}/services/{serviceId}/delete(restaurantId=${restaurant.restaurantId}, serviceId=${service.serviceId})}" 
+                              method="post" style="display: inline;" 
+                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')">
+                            <button type="submit" class="btn btn-sm btn-danger">🗑️ Xóa</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${services == null or services.empty}" class="empty-state">
+                <div class="empty-icon">📋</div>
+                <h3>Chưa có dịch vụ nào</h3>
+                <p>Bắt đầu bằng cách thêm dịch vụ đầu tiên cho nhà hàng của bạn.</p>
+                <a th:href="@{/restaurant-owner/restaurants/{id}/services/form(id=${restaurant.restaurantId})}" 
+                   class="btn">+ Thêm dịch vụ đầu tiên</a>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .service-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            transition: box-shadow 0.2s ease;
+        }
+
+        .service-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .service-header .h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .service-status {
+            margin-left: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-badge.available {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.unavailable {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.discontinued {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .service-details {
+            margin-bottom: 1rem;
+        }
+
+        .service-info p {
+            margin: 0.25rem 0;
+            color: #666;
+        }
+
+        .service-price {
+            font-weight: 600;
+            color: #2c5aa0 !important;
+        }
+
+        .service-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .service-actions .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .service-actions .form-select {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #666;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+        /* Service Image Styles */
+        .service-image-section {
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .service-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            object-fit: cover;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .service-image-placeholder {
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .no-image {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            color: #6c757d;
+        }
+
+        .no-image i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+
+    </style>
+</body>
+</html>

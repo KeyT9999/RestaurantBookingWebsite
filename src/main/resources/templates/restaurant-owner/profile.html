@@ -291,6 +291,10 @@
                            class="btn btn-ghost">
                             🍽️ Quản lý Món
                         </a>
+                        <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/services'}" 
+                           class="btn btn-ghost">
+                            🔧 Quản lý Dịch vụ
+                        </a>
                         <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media'}" 
                            class="btn btn-ghost">
                             📸 Media

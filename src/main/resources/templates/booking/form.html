@@ -128,6 +128,194 @@
             border-color: var(--primary);
             background: rgba(255, 107, 129, 0.15);
         }
+        /* Carousel Styles */
+        .carousel {
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            margin-top: 2rem;
+        }
+        
+        .carousel-image {
+            height: 500px;
+            object-fit: contain;
+            width: 100%;
+        }
+        
+        .carousel-indicators {
+            margin-bottom: 1rem;
+        }
+        
+        .carousel-indicators [data-bs-target] {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            border: 2px solid white;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .carousel-indicators .active {
+            background-color: #007bff;
+            transform: scale(1.2);
+        }
+        
+        .carousel-control-prev,
+        .carousel-control-next {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: all 0.3s ease;
+        }
+        
+        .carousel-control-prev {
+            left: 20px;
+        }
+        
+        .carousel-control-next {
+            right: 20px;
+        }
+        
+        .carousel-control-prev:hover,
+        .carousel-control-next:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .carousel-caption {
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            border-radius: 0 0 1rem 1rem;
+            padding: 2rem 1rem 1rem;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+        
+        .carousel-caption h5 {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .carousel-caption p {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        /* Table Images Modal specific styles */
+        #tableImagesModal .carousel {
+            max-height: 600px;
+            margin-top: 0;
+        }
+        
+        #tableImagesModal .carousel-image {
+            height: 600px;
+            object-fit: cover;
+        }
+        
+        #tableImagesModal .carousel-indicators {
+            margin-bottom: 1rem;
+        }
+        
+        #tableImagesModal .carousel-control-prev,
+        #tableImagesModal .carousel-control-next {
+            width: 60px;
+            height: 60px;
+        }
+        
+        #tableImagesModal .carousel-control-prev {
+            left: 30px;
+        }
+        
+        #tableImagesModal .carousel-control-next {
+            right: 30px;
+        }
+        
+        /* Table Card Hover Effects */
+        .image-section:hover .image-overlay {
+            background: rgba(0,0,0,0.3) !important;
+        }
+        
+        .image-section:hover .image-overlay i {
+            opacity: 1 !important;
+        }
+        
+        .content-section:hover {
+            background-color: rgba(0,123,255,0.05);
+            transition: background-color 0.3s ease;
+        }
+        
+        /* View Toggle Button Styles */
+        .btn-group .btn {
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-group .btn.active {
+            background-color: var(--bs-btn-active-bg);
+            border-color: var(--bs-btn-active-border-color);
+            color: var(--bs-btn-active-color);
+        }
+        
+        .btn-group .btn-outline-info.active {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+            color: white;
+        }
+        
+        .btn-group .btn-outline-success.active {
+            background-color: #198754;
+            border-color: #198754;
+            color: white;
+        }
+        
+        .view-content {
+            min-height: 400px;
+        }
+        
+        /* Search Box Styles */
+        .input-group .form-control {
+            border-radius: 0.5rem 0 0 0.5rem;
+        }
+        
+        .input-group .btn {
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+        
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        /* Pagination Styles */
+        .pagination .page-link {
+            color: #007bff;
+            border-color: #007bff;
+            background: transparent;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+        
+        .pagination .page-link:hover {
+            color: white;
+            background-color: rgba(0, 123, 255, 0.1);
+            border-color: #007bff;
+        }
     </style>
 </head>
 
@@ -461,7 +649,7 @@
     
     <!-- Table Selection Modal -->
     <div class="modal fade" id="tableModal" tabindex="-1" aria-labelledby="tableModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="tableModalLabel">
@@ -470,8 +658,67 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div id="tablesList" class="row">
-                        <!-- Tables will be loaded here -->
+                    <!-- View Toggle Buttons -->
+                    <div class="row mb-4" id="tableLayoutToggle" style="display: none;">
+                        <div class="col-12">
+                            <div class="btn-group w-100" role="group" aria-label="View toggle">
+                                <button type="button" class="btn btn-outline-info btn-lg active" 
+                                        id="layoutViewBtn" onclick="switchToLayoutView()">
+                                    <i class="fas fa-map me-2"></i>
+                                    Sơ đồ bàn ăn
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-lg" 
+                                        id="tablesViewBtn" onclick="switchToTablesView()">
+                                    <i class="fas fa-chair me-2"></i>
+                                    Danh sách bàn
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Layout View -->
+                    <div id="layoutView" class="view-content" style="display: none;">
+                        <div id="tableLayoutCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-indicators" id="tableLayoutIndicators">
+                                <!-- Indicators will be generated by JavaScript -->
+                            </div>
+                            
+                            <div class="carousel-inner" id="tableLayoutInner">
+                                <!-- Carousel items will be generated by JavaScript -->
+                            </div>
+                            
+                            <button class="carousel-control-prev" type="button" data-bs-target="#tableLayoutCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#tableLayoutCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tables View -->
+                    <div id="tablesView" class="view-content">
+                        <!-- Tables Search -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="tablesSearchInput" 
+                                           placeholder="Tìm kiếm bàn ăn..." onkeyup="searchTables()">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="clearTablesSearch()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="tablesList" class="row">
+                            <!-- Tables will be loaded here -->
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -493,6 +740,31 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- Menu Search -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="menuSearchInput" 
+                                       placeholder="Tìm kiếm món ăn..." onkeyup="searchMenu()">
+                                <button class="btn btn-outline-secondary" type="button" onclick="clearMenuSearch()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Menu Pagination -->
+                    <div id="menuPagination" class="d-flex justify-content-center mb-4">
+                        <nav aria-label="Menu pagination">
+                            <ul class="pagination" id="menuPaginationList">
+                                <!-- Pagination items will be generated by JavaScript -->
+                            </ul>
+                        </nav>
+                    </div>
+                    
                     <div id="menuList" class="row">
                         <!-- Menu items will be loaded here -->
                     </div>
@@ -500,6 +772,45 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="confirmMenuSelection()">Confirm Selection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Table Images Modal -->
+    <div class="modal fade" id="tableImagesModal" tabindex="-1" aria-labelledby="tableImagesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tableImagesModalLabel">
+                        <i class="fas fa-images me-2"></i>
+                        Hình ảnh bàn
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Table Images Carousel -->
+                    <div id="tableImagesCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-indicators" id="tableImagesIndicators">
+                            <!-- Indicators will be generated by JavaScript -->
+                        </div>
+                        
+                        <div class="carousel-inner" id="tableImagesInner">
+                            <!-- Carousel items will be generated by JavaScript -->
+                        </div>
+                        
+                        <button class="carousel-control-prev" type="button" data-bs-target="#tableImagesCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#tableImagesCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                 </div>
             </div>
         </div>
@@ -560,6 +871,11 @@
         let availableServices = [];
         let voucherDiscount = 0; // Store voucher discount amount
         let availableVouchers = []; // Store available vouchers
+        let tableLayouts = []; // Store table layouts
+        let filteredTables = []; // For search functionality
+        let filteredDishes = []; // For search functionality
+        let currentMenuPage = 1;
+        const itemsPerPage = 6;
 
         // Debug function to log all selections
         function logAllSelections() {
@@ -602,6 +918,26 @@
                            console.log('📋 availableTables updated:', availableTables);
                            logAllSelections();
                            
+                           // Load table layouts
+                           return fetch(`/api/booking/restaurants/${restaurantId}/table-layouts`)
+                               .then(response => {
+                                   if (response.ok) {
+                                       return response.json();
+                                   }
+                                   return [];
+                               })
+                               .then(layouts => {
+                                   console.log('📋 Received table layouts:', layouts);
+                                   tableLayouts = layouts;
+                                   return tables;
+                               })
+                               .catch(error => {
+                                   console.log('⚠️ No table layouts found:', error);
+                                   tableLayouts = [];
+                                   return tables;
+                               });
+                       })
+                       .then(tables => {
                            if (tables.length === 0) {
                                console.log('⚠️ No tables found for restaurant ID:', restaurantId);
                            } else {
@@ -614,7 +950,7 @@
                                loadDishes(restaurantId),
                                loadServices(restaurantId)
                            ]).then(() => {
-                               console.log('✅ All data (tables, dishes, services) loaded successfully');
+                               console.log('✅ All data (tables, dishes, services, layouts) loaded successfully');
                                return tables;
                            });
                        })
@@ -646,38 +982,144 @@
                }
            }
 
+        // Toggle Table Selection
+        function toggleTableSelection(tableId) {
+            const checkbox = document.getElementById(`table-${tableId}`);
+            if (!checkbox) return;
+            
+            // Toggle checkbox
+            checkbox.checked = !checkbox.checked;
+            
+            // Update selected tables array
+            if (checkbox.checked) {
+                if (!selectedTables.find(t => t.tableId === tableId)) {
+                    const table = availableTables.find(t => t.tableId === tableId);
+                    if (table) {
+                        selectedTables.push(table);
+                    }
+                }
+            } else {
+                selectedTables = selectedTables.filter(t => t.tableId !== tableId);
+            }
+            
+            // Update hidden input
+            updateSelectedTableIds();
+            
+            // Update total amount
+            updateTotalAmount();
+            
+            console.log('✅ Table selection toggled:', tableId, 'Selected tables:', selectedTables.length);
+        }
+
+        // Show Table Images Modal
+        function showTableImages(tableId) {
+            const table = availableTables.find(t => t.tableId === tableId);
+            if (!table) return;
+            
+            const tableImages = table.images || [];
+            if (tableImages.length === 0) {
+                alert('Bàn này chưa có hình ảnh');
+                return;
+            }
+            
+            // Update modal title
+            const modalTitle = document.getElementById('tableImagesModalLabel');
+            modalTitle.innerHTML = `<i class="fas fa-images me-2"></i>Hình ảnh bàn ${table.tableName}`;
+            
+            // Render carousel indicators
+            const indicators = document.getElementById('tableImagesIndicators');
+            indicators.innerHTML = '';
+            tableImages.forEach((image, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.setAttribute('data-bs-target', '#tableImagesCarousel');
+                button.setAttribute('data-bs-slide-to', index);
+                button.setAttribute('aria-label', `Slide ${index + 1}`);
+                if (index === 0) {
+                    button.className = 'active';
+                    button.setAttribute('aria-current', 'true');
+                }
+                indicators.appendChild(button);
+            });
+            
+            // Render carousel items
+            const carouselInner = document.getElementById('tableImagesInner');
+            carouselInner.innerHTML = '';
+            tableImages.forEach((image, index) => {
+                const item = document.createElement('div');
+                item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
+                item.innerHTML = `
+                    <img src="${image.url}" class="d-block w-100 carousel-image" alt="Bàn ${table.tableName} - Ảnh ${index + 1}">
+                    <div class="carousel-caption d-none d-md-block">
+                        <h5>Bàn ${table.tableName}</h5>
+                        <p>Ảnh ${index + 1}/${tableImages.length}</p>
+                    </div>
+                `;
+                carouselInner.appendChild(item);
+            });
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('tableImagesModal'));
+            modal.show();
+        }
+
         function renderTablesInModal(tables) {
             const tablesList = document.getElementById('tablesList');
             tablesList.innerHTML = '';
             
+            // Update filtered tables
+            filteredTables = tables;
+            
             tables.forEach(table => {
                 const statusValue = getTableStatusValue(table.status);
                 const statusClass = getStatusBadgeClass(table.status);
-                const statusText = getStatusDisplayName(table.status);                
+                const statusText = getStatusDisplayName(table.status);
+                
+                // Create table image placeholder
+                const imageUrl = table.mainImage || `data:image/svg+xml;base64,${btoa(`
+                    <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="300" height="200" fill="#f8f9fa"/>
+                        <text x="150" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="#6c757d">
+                            ${table.tableName || 'Table'}
+                        </text>
+                    </svg>
+                `)}`;
+                
                 const tableCard = document.createElement('div');
                 tableCard.className = 'col-md-4 mb-3';
                 tableCard.innerHTML = `
                     <div class="card table-card" data-table-id="${table.tableId}" data-deposit="${table.depositAmount || 0}">
-                        <div class="card-body">
-                            <div class="form-check">
-                                <input class="form-check-input table-checkbox" 
-                                       type="checkbox" 
-                                       value="${table.tableId}"
-                                       id="table-${table.tableId}">
-                                <label class="form-check-label w-100" for="table-${table.tableId}">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="card-title">${table.tableName}</h6>
-                                            <p class="card-text">
-                                                <small class="text-muted">Capacity: ${table.capacity} people</small><br>
-                                                <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <span class="badge ${statusClass}">${statusText}</span>
-                                        </div>
-                                    </div>
-                                </label>
+                        <div class="card-body p-0">
+                            <!-- Image section - separate click event -->
+                            <div class="image-section" onclick="showTableImages(${table.tableId})" 
+                                 style="cursor: pointer; position: relative;" title="Click để xem tất cả ảnh của bàn">
+                                <img src="${imageUrl}" class="card-img-top" alt="${table.tableName}" 
+                                     style="height: 200px; object-fit: cover;">
+                                <div class="image-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+                                     background: rgba(0,0,0,0); transition: background 0.3s ease; display: flex; 
+                                     align-items: center; justify-content: center;">
+                                    <i class="fas fa-images text-white" style="opacity: 0; transition: opacity 0.3s ease; font-size: 2rem;"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Content section - select table event -->
+                            <div class="content-section" onclick="toggleTableSelection(${table.tableId})" 
+                                 style="cursor: pointer; padding: 1rem;">
+                                <div class="form-check d-flex align-items-center">
+                                    <input class="form-check-input table-checkbox me-2" 
+                                           type="checkbox" 
+                                           value="${table.tableId}"
+                                           id="table-${table.tableId}"
+                                           onclick="event.stopPropagation(); toggleTableSelection(${table.tableId})">
+                                    <label class="form-check-label flex-grow-1" for="table-${table.tableId}">
+                                        <h6 class="card-title mb-1">${table.tableName}</h6>
+                                        <p class="card-text mb-1">
+                                            <small class="text-muted">Capacity: ${table.capacity} people</small><br>
+                                            <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
+                                        </p>
+                                        <span class="badge ${statusClass}">${statusText}</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -694,7 +1136,24 @@
                 .then(dishes => {
                     console.log('🔍 Raw dishes API response:', dishes);
                     console.log('🔍 First dish structure:', dishes[0]);
-                    availableDishes = dishes;
+                    
+                    // Load dish images
+                    const dishesWithImages = dishes.map(dish => {
+                        return {
+                            ...dish,
+                            imageUrl: dish.imageUrl || `data:image/svg+xml;base64,${btoa(`
+                                <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+                                    <rect width="300" height="200" fill="#f8f9fa"/>
+                                    <text x="150" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="#6c757d">
+                                        ${dish.name || 'No Image'}
+                                    </text>
+                                </svg>
+                            `)}`
+                        };
+                    });
+                    
+                    availableDishes = dishesWithImages;
+                    console.log('🔍 Dishes with images:', availableDishes);
                     
                     // Update button text based on dishes availability
                     const viewMenuBtn = document.getElementById('viewMenuBtn');
@@ -859,44 +1318,252 @@
             }));
         }
 
+        // Search and Carousel Functions
+        function searchTables() {
+            const searchTerm = document.getElementById('tablesSearchInput').value.toLowerCase();
+            filteredTables = availableTables.filter(table => 
+                table.tableName.toLowerCase().includes(searchTerm) ||
+                table.capacity.toString().includes(searchTerm) ||
+                table.status.toLowerCase().includes(searchTerm)
+            );
+            renderTablesInModal(filteredTables);
+        }
+        
+        function clearTablesSearch() {
+            document.getElementById('tablesSearchInput').value = '';
+            filteredTables = availableTables;
+            renderTablesInModal(filteredTables);
+        }
+        
+        function searchMenu() {
+            const searchTerm = document.getElementById('menuSearchInput').value.toLowerCase();
+            filteredDishes = availableDishes.filter(dish => 
+                dish.name.toLowerCase().includes(searchTerm) ||
+                dish.description.toLowerCase().includes(searchTerm) ||
+                dish.category.toLowerCase().includes(searchTerm)
+            );
+            currentMenuPage = 1;
+            renderMenuPage(1);
+        }
+        
+        function clearMenuSearch() {
+            document.getElementById('menuSearchInput').value = '';
+            filteredDishes = availableDishes;
+            currentMenuPage = 1;
+            renderMenuPage(1);
+        }
+        
+        function switchToLayoutView() {
+            document.getElementById('layoutViewBtn').classList.add('active');
+            document.getElementById('tablesViewBtn').classList.remove('active');
+            document.getElementById('layoutView').style.display = 'block';
+            document.getElementById('tablesView').style.display = 'none';
+            
+            if (tableLayouts.length > 0 && document.getElementById('tableLayoutInner').children.length === 0) {
+                showTableLayout();
+            }
+        }
+        
+        function switchToTablesView() {
+            document.getElementById('layoutViewBtn').classList.remove('active');
+            document.getElementById('tablesViewBtn').classList.add('active');
+            document.getElementById('layoutView').style.display = 'none';
+            document.getElementById('tablesView').style.display = 'block';
+            
+            if (document.getElementById('tablesList').children.length === 0) {
+                renderTablesInModal(filteredTables);
+            }
+        }
+        
+        function showTableLayout() {
+            if (tableLayouts.length === 0) {
+                alert('Nhà hàng này chưa có sơ đồ bàn ăn');
+                return;
+            }
+            
+            const indicators = document.getElementById('tableLayoutIndicators');
+            indicators.innerHTML = '';
+            tableLayouts.forEach((layout, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.setAttribute('data-bs-target', '#tableLayoutCarousel');
+                button.setAttribute('data-bs-slide-to', index);
+                button.setAttribute('aria-label', `Layout ${index + 1}`);
+                if (index === 0) {
+                    button.className = 'active';
+                    button.setAttribute('aria-current', 'true');
+                }
+                indicators.appendChild(button);
+            });
+            
+            const carouselInner = document.getElementById('tableLayoutInner');
+            carouselInner.innerHTML = '';
+            tableLayouts.forEach((layout, index) => {
+                const item = document.createElement('div');
+                item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
+                item.innerHTML = `
+                    <img src="${layout.url}" class="d-block w-100 carousel-image" alt="Sơ đồ bàn ăn ${index + 1}" style="max-height: 70vh; object-fit: contain;">
+                    <div class="carousel-caption d-none d-md-block">
+                        <h5>Sơ đồ bàn ăn</h5>
+                        <p>Layout ${index + 1}/${tableLayouts.length}</p>
+                    </div>
+                `;
+                carouselInner.appendChild(item);
+            });
+        }
+        
+        function renderMenuPage(page) {
+            currentMenuPage = page;
+            const startIndex = (page - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageDishes = filteredDishes.slice(startIndex, endIndex);
+            
+            const menuList = document.getElementById('menuList');
+            if (menuList) {
+                menuList.innerHTML = '';
+                pageDishes.forEach(dish => {
+                    const dishCard = createDishCard(dish);
+                    menuList.appendChild(dishCard);
+                });
+            }
+            renderMenuPagination();
+        }
+        
+        function renderMenuPagination() {
+            const totalPages = Math.ceil(filteredDishes.length / itemsPerPage);
+            const paginationList = document.getElementById('menuPaginationList');
+            
+            if (paginationList && totalPages > 1) {
+                paginationList.innerHTML = '';
+                
+                const prevLi = document.createElement('li');
+                prevLi.className = `page-item ${currentMenuPage === 1 ? 'disabled' : ''}`;
+                prevLi.innerHTML = `<a class="page-link" href="#" onclick="renderMenuPage(${currentMenuPage - 1}); return false;">Trước</a>`;
+                paginationList.appendChild(prevLi);
+                
+                for (let i = 1; i <= totalPages; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${i === currentMenuPage ? 'active' : ''}`;
+                    li.innerHTML = `<a class="page-link" href="#" onclick="renderMenuPage(${i}); return false;">${i}</a>`;
+                    paginationList.appendChild(li);
+                }
+                
+                const nextLi = document.createElement('li');
+                nextLi.className = `page-item ${currentMenuPage === totalPages ? 'disabled' : ''}`;
+                nextLi.innerHTML = `<a class="page-link" href="#" onclick="renderMenuPage(${currentMenuPage + 1}); return false;">Sau</a>`;
+                paginationList.appendChild(nextLi);
+            }
+        }
+        
+        function createDishCard(dish) {
+            const col = document.createElement('div');
+            col.className = 'col-md-4 col-sm-6';
+            
+            const imageUrl = dish.imageUrl || `data:image/svg+xml;base64,${btoa(`
+                <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="300" height="200" fill="#f8f9fa"/>
+                    <text x="150" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="#6c757d">
+                        ${dish.name || 'No Image'}
+                    </text>
+                </svg>
+            `)}`;
+            const price = new Intl.NumberFormat('vi-VN').format(dish.price) + ' VNĐ';
+            
+            col.innerHTML = `
+                <div class="card dish-card" data-dish-id="${dish.dishId}" data-price="${dish.price}">
+                    <div class="card-body">
+                        <div class="form-check">
+                            <input class="form-check-input dish-checkbox" type="checkbox" value="${dish.dishId}" id="dish-${dish.dishId}">
+                            <label class="form-check-label w-100" for="dish-${dish.dishId}">
+                                <img src="${imageUrl}" class="card-img-top" alt="${dish.name}" style="height: 200px; object-fit: cover;">
+                                <div class="mt-2">
+                                    <h6 class="dish-name">${dish.name}</h6>
+                                    <p class="dish-description">${dish.description || 'Không có mô tả'}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="dish-price">${price}</span>
+                                        <span class="dish-category">${dish.category || 'Khác'}</span>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return col;
+        }
+
         function openTablePopup() {
             console.log('🚀 Opening table popup...');
             console.log('📋 Current selectedTables:', selectedTables);
             console.log('📋 Current selectedTableIds value:', document.getElementById('selectedTableIds').value);
             
+            // Initialize filtered tables
+            filteredTables = availableTables;
+            
+            // Check if table layouts exist
+            if (tableLayouts.length > 0) {
+                document.getElementById('tableLayoutToggle').style.display = 'block';
+                switchToLayoutView();
+            } else {
+                document.getElementById('tableLayoutToggle').style.display = 'none';
+                switchToTablesView();
+            }
+            
             const tablesList = document.getElementById('tablesList');
             tablesList.innerHTML = '';
             
-            availableTables.forEach(table => {
+            filteredTables.forEach(table => {
                 const statusValue = getTableStatusValue(table.status);
                 const statusClass = getStatusBadgeClass(table.status);
                 const statusText = getStatusDisplayName(table.status);
                 console.log('🎨 Table:', table.tableName, 'Original Status:', table.status, 'Processed Status:', statusValue, 'Class:', statusClass, 'Text:', statusText);
                 
+                // Create table image placeholder
+                const imageUrl = table.mainImage || `data:image/svg+xml;base64,${btoa(`
+                    <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="300" height="200" fill="#f8f9fa"/>
+                        <text x="150" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="#6c757d">
+                            ${table.tableName || 'Table'}
+                        </text>
+                    </svg>
+                `)}`;
+                
                 const tableCard = document.createElement('div');
                 tableCard.className = 'col-md-4 mb-3';
                 tableCard.innerHTML = `
                     <div class="card table-card" data-table-id="${table.tableId}" data-deposit="${table.depositAmount || 0}">
-                        <div class="card-body">
-                            <div class="form-check">
-                                <input class="form-check-input table-checkbox" 
-                                       type="checkbox" 
-                                       value="${table.tableId}"
-                                       id="table-${table.tableId}">
-                                <label class="form-check-label w-100" for="table-${table.tableId}">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="card-title">${table.tableName}</h6>
-                                            <p class="card-text">
-                                                <small class="text-muted">Capacity: ${table.capacity} people</small><br>
-                                                <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <span class="badge ${statusClass}">${statusText}</span>
-                                        </div>
-                                    </div>
-                                </label>
+                        <div class="card-body p-0">
+                            <!-- Image section - separate click event -->
+                            <div class="image-section" onclick="showTableImages(${table.tableId})" 
+                                 style="cursor: pointer; position: relative;" title="Click để xem tất cả ảnh của bàn">
+                                <img src="${imageUrl}" class="card-img-top" alt="${table.tableName}" 
+                                     style="height: 200px; object-fit: cover;">
+                                <div class="image-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+                                     background: rgba(0,0,0,0); transition: background 0.3s ease; display: flex; 
+                                     align-items: center; justify-content: center;">
+                                    <i class="fas fa-images text-white" style="opacity: 0; transition: opacity 0.3s ease; font-size: 2rem;"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Content section - select table event -->
+                            <div class="content-section" onclick="toggleTableSelection(${table.tableId})" 
+                                 style="cursor: pointer; padding: 1rem;">
+                                <div class="form-check d-flex align-items-center">
+                                    <input class="form-check-input table-checkbox me-2" 
+                                           type="checkbox" 
+                                           value="${table.tableId}"
+                                           id="table-${table.tableId}"
+                                           onclick="event.stopPropagation(); toggleTableSelection(${table.tableId})">
+                                    <label class="form-check-label flex-grow-1" for="table-${table.tableId}">
+                                        <h6 class="card-title mb-1">${table.tableName}</h6>
+                                        <p class="card-text mb-1">
+                                            <small class="text-muted">Capacity: ${table.capacity} people</small><br>
+                                            <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
+                                        </p>
+                                        <span class="badge ${statusClass}">${statusText}</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -965,6 +1632,9 @@
         }
 
         function openMenuPopup() {
+            // Initialize filtered dishes
+            filteredDishes = availableDishes;
+            
             const menuList = document.getElementById('menuList');
             menuList.innerHTML = '';
             
@@ -978,74 +1648,12 @@
                     </div>
                 `;
             } else {
-                availableDishes.forEach(dish => {
-                    const dishCard = document.createElement('div');
-                    dishCard.className = 'col-md-6 mb-3';
-                    dishCard.innerHTML = `
-                        <div class="card dish-card" data-dish-id="${dish.dishId}" data-price="${dish.price}">
-                            <div class="card-body">
-                                <div class="form-check">
-                                    <input class="form-check-input dish-checkbox" 
-                                           type="checkbox" 
-                                           value="${dish.dishId}"
-                                           id="dish-${dish.dishId}">
-                                    <label class="form-check-label w-100" for="dish-${dish.dishId}">
-                                        <h6 class="card-title">${dish.name}</h6>
-                                        <p class="card-text">
-                                            <small class="text-muted">${dish.description || 'No description'}</small><br>
-                                            <strong class="text-primary">${formatCurrency(dish.price)}</strong>
-                                        </p>
-                                        <div class="quantity-control" style="display: none;">
-                                            <label class="form-label small">Quantity:</label>
-                                            <input type="number" 
-                                                   class="form-control form-control-sm" 
-                                                   min="1" 
-                                                   max="10" 
-                                                   value="1" 
-                                                   style="width: 80px;">
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    menuList.appendChild(dishCard);
-                });
+                // Render first page with pagination
+                renderMenuPage(1);
             }
             
-            // Restore previous selections
-            selectedDishes.forEach(selectedDish => {
-                const checkbox = document.querySelector(`input[value="${selectedDish.id}"]`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                    const quantityControl = checkbox.parentElement.querySelector('.quantity-control');
-                    const quantityInput = quantityControl.querySelector('input');
-                    if (quantityControl && quantityInput) {
-                        quantityControl.style.display = 'block';
-                        quantityInput.value = selectedDish.quantity;
-                    }
-                    console.log('✅ Restored dish selection:', selectedDish.name, 'x' + selectedDish.quantity);
-                } else {
-                    console.log('❌ Could not find checkbox for dish:', selectedDish.id);
-                }
-            });
-            
-            // Show modal
             const modal = new bootstrap.Modal(document.getElementById('menuModal'));
             modal.show();
-            
-            // Add event listeners for dish checkboxes in modal
-            setTimeout(() => {
-                const dishCheckboxes = document.querySelectorAll('#menuModal .dish-checkbox');
-                dishCheckboxes.forEach(checkbox => {
-                    checkbox.addEventListener('change', function() {
-                        const quantityControl = this.parentElement.querySelector('.quantity-control');
-                        if (quantityControl) {
-                            quantityControl.style.display = this.checked ? 'block' : 'none';
-                        }
-                    });
-                });
-            }, 100);
         }
 
         function confirmTableSelection() {
@@ -1101,9 +1709,12 @@
             
             checkboxes.forEach(checkbox => {
                 const dishCard = checkbox.closest('.dish-card');
+                if (!dishCard) return; // Safety check
+                
                 const dishId = dishCard.getAttribute('data-dish-id');
                 const price = parseFloat(dishCard.getAttribute('data-price'));
-                const dishName = dishCard.querySelector('.card-title').textContent;
+                const dishNameElement = dishCard.querySelector('.dish-name');
+                const dishName = dishNameElement ? dishNameElement.textContent : 'Unknown Dish';
                 const quantityInput = dishCard.querySelector('.quantity-control input');
                 const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
                 

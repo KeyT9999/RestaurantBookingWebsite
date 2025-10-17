@@ -32,6 +32,7 @@ import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.SimpleUserService;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Waitlist;
 import com.example.booking.domain.RestaurantOwner;
@@ -1843,6 +1844,346 @@ public class RestaurantOwnerController {
         }
         System.out.println("   ❌ No services found");
         return "";
+    }
+
+    // ===== RESTAURANT SERVICE MANAGEMENT =====
+
+    /**
+     * Show restaurant services management page
+     */
+    @GetMapping("/restaurants/{restaurantId}/services")
+    public String showRestaurantServices(@PathVariable Integer restaurantId, Model model,
+            Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Get services for this restaurant
+            List<RestaurantService> services = restaurantOwnerService.getServicesByRestaurant(restaurantId);
+
+            // Debug: Check service media
+            restaurantOwnerService.debugServiceMedia(restaurantId);
+
+            // Clean up any duplicate service media records
+            restaurantOwnerService.cleanupDuplicateServiceMedia(restaurantId);
+
+            model.addAttribute("restaurant", restaurant.get());
+            model.addAttribute("services", services);
+            model.addAttribute("restaurantOwnerService", restaurantOwnerService);
+            return "restaurant-owner/restaurant-services";
+        } catch (Exception e) {
+            logger.error("Error showing restaurant services: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/profile";
+        }
+    }
+
+    /**
+     * Show service form (create/edit)
+     */
+    @GetMapping("/restaurants/{restaurantId}/services/form")
+    public String showServiceForm(@PathVariable Integer restaurantId,
+            @RequestParam(required = false) Integer serviceId,
+            Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            RestaurantService service = new RestaurantService();
+            if (serviceId != null) {
+                // Edit mode
+                var existingService = restaurantOwnerService.getRestaurantServiceById(serviceId);
+                if (existingService.isPresent()) {
+                    service = existingService.get();
+                }
+            }
+
+            model.addAttribute("restaurant", restaurant.get());
+            model.addAttribute("service", service);
+            model.addAttribute("isEdit", serviceId != null);
+            model.addAttribute("restaurantOwnerService", restaurantOwnerService);
+            return "restaurant-owner/service-form";
+        } catch (Exception e) {
+            logger.error("Error showing service form: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/profile";
+        }
+    }
+
+    /**
+     * Create new service
+     */
+    @PostMapping("/restaurants/{restaurantId}/services")
+    public String createService(@PathVariable Integer restaurantId,
+            @ModelAttribute RestaurantService service,
+            @RequestParam(value = "serviceImage", required = false) MultipartFile serviceImage,
+            Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Set restaurant and create service
+            service.setRestaurant(restaurant.get());
+            service.setCreatedAt(LocalDateTime.now());
+            service.setUpdatedAt(LocalDateTime.now());
+
+            RestaurantService createdService = restaurantOwnerService.createRestaurantService(service);
+
+            // Upload image if provided
+            if (serviceImage != null && !serviceImage.isEmpty()) {
+                try {
+                    restaurantOwnerService.uploadServiceImage(restaurantId, createdService.getServiceId(),
+                            serviceImage);
+                    logger.info("Service image uploaded successfully for service ID: {}",
+                            createdService.getServiceId());
+                } catch (Exception e) {
+                    logger.error("Error uploading service image: {}", e.getMessage(), e);
+                    // Continue without failing the service creation
+                }
+            }
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?success=created";
+        } catch (Exception e) {
+            logger.error("Error creating service: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=create_failed";
+        }
+    }
+
+    /**
+     * Update service
+     */
+    @PostMapping("/restaurants/{restaurantId}/services/{serviceId}")
+    public String updateService(@PathVariable Integer restaurantId,
+            @PathVariable Integer serviceId,
+            @ModelAttribute RestaurantService service,
+            @RequestParam(value = "serviceImage", required = false) MultipartFile serviceImage,
+            Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Get existing service and update
+            var existingService = restaurantOwnerService.getRestaurantServiceById(serviceId);
+            if (existingService.isPresent()) {
+                RestaurantService existing = existingService.get();
+                existing.setName(service.getName());
+                existing.setCategory(service.getCategory());
+                existing.setDescription(service.getDescription());
+                existing.setPrice(service.getPrice());
+                existing.setStatus(service.getStatus());
+                existing.setUpdatedAt(LocalDateTime.now());
+
+                restaurantOwnerService.updateRestaurantService(existing);
+
+                // Update image if provided
+                if (serviceImage != null && !serviceImage.isEmpty()) {
+                    try {
+                        restaurantOwnerService.updateServiceImage(restaurantId, serviceId, serviceImage);
+                        logger.info("Service image updated successfully for service ID: {}", serviceId);
+                    } catch (Exception e) {
+                        logger.error("Error updating service image: {}", e.getMessage(), e);
+                        // Continue without failing the service update
+                    }
+                }
+            }
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?success=updated";
+        } catch (Exception e) {
+            logger.error("Error updating service: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=update_failed";
+        }
+    }
+
+    /**
+     * Delete service
+     */
+    @PostMapping("/restaurants/{restaurantId}/services/{serviceId}/delete")
+    public String deleteService(@PathVariable Integer restaurantId,
+            @PathVariable Integer serviceId,
+            Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            restaurantOwnerService.deleteRestaurantService(serviceId);
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?success=deleted";
+        } catch (Exception e) {
+            logger.error("Error deleting service: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=delete_failed";
+        }
+    }
+
+    /**
+     * Update service status
+     */
+    @PostMapping("/restaurants/{restaurantId}/services/{serviceId}/status")
+    public String updateServiceStatus(@PathVariable Integer restaurantId,
+            @PathVariable Integer serviceId,
+            @RequestParam String status,
+            Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            com.example.booking.common.enums.ServiceStatus serviceStatus = com.example.booking.common.enums.ServiceStatus
+                    .valueOf(status.toUpperCase());
+            restaurantOwnerService.updateServiceStatus(serviceId, serviceStatus);
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?success=status_updated";
+        } catch (Exception e) {
+            logger.error("Error updating service status: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=status_update_failed";
+        }
+    }
+
+    /**
+     * Upload service image
+     */
+    @PostMapping("/restaurants/{restaurantId}/services/{serviceId}/image")
+    public String uploadServiceImage(@PathVariable Integer restaurantId,
+            @PathVariable Integer serviceId,
+            @RequestParam("image") MultipartFile imageFile,
+            Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            if (imageFile.isEmpty()) {
+                return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=no_image_selected";
+            }
+
+            restaurantOwnerService.uploadServiceImage(restaurantId, serviceId, imageFile);
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?success=image_uploaded";
+        } catch (Exception e) {
+            logger.error("Error uploading service image: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=image_upload_failed";
+        }
+    }
+
+    /**
+     * Update service image
+     */
+    @PostMapping("/restaurants/{restaurantId}/services/{serviceId}/image/update")
+    public String updateServiceImage(@PathVariable Integer restaurantId,
+            @PathVariable Integer serviceId,
+            @RequestParam("image") MultipartFile imageFile,
+            Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            if (imageFile.isEmpty()) {
+                return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=no_image_selected";
+            }
+
+            restaurantOwnerService.updateServiceImage(restaurantId, serviceId, imageFile);
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?success=image_updated";
+        } catch (Exception e) {
+            logger.error("Error updating service image: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=image_update_failed";
+        }
+    }
+
+    /**
+     * Delete service image
+     */
+    @PostMapping("/restaurants/{restaurantId}/services/{serviceId}/image/delete")
+    public String deleteServiceImage(@PathVariable Integer restaurantId,
+            @PathVariable Integer serviceId,
+            Model model, Authentication authentication) {
+        try {
+            // Verify ownership
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            // Check if user owns this restaurant
+            String username = authentication.getName();
+            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
+                return "redirect:/restaurant-owner/profile";
+            }
+
+            restaurantOwnerService.deleteServiceImage(restaurantId, serviceId);
+
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?success=image_deleted";
+        } catch (Exception e) {
+            logger.error("Error deleting service image: {}", e.getMessage(), e);
+            return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=image_delete_failed";
+        }
     }
 }
 

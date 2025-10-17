@@ -59,4 +59,12 @@ public interface RestaurantMediaRepository extends JpaRepository<RestaurantMedia
     @Query("SELECT rm FROM RestaurantMedia rm WHERE rm.restaurant = :restaurant AND rm.type = 'table' AND rm.url LIKE %:tableIdPattern% ORDER BY rm.createdAt ASC")
     List<RestaurantMedia> findTableImagesByRestaurantAndTableId(@Param("restaurant") RestaurantProfile restaurant,
                     @Param("tableIdPattern") String tableIdPattern);
+
+    /**
+     * Find service images by restaurant and service ID using naming convention
+     * Looks for URLs containing "/service_{serviceId}_"
+     */
+    @Query("SELECT rm FROM RestaurantMedia rm WHERE rm.restaurant = :restaurant AND rm.type = 'service' AND rm.url LIKE %:serviceIdPattern% ORDER BY rm.createdAt DESC")
+    List<RestaurantMedia> findServiceImagesByRestaurantAndServiceId(@Param("restaurant") RestaurantProfile restaurant,
+            @Param("serviceIdPattern") String serviceIdPattern);
 }

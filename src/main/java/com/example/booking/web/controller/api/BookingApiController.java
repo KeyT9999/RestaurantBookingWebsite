@@ -26,11 +26,14 @@ import com.example.booking.dto.BookingDishDto;
 import com.example.booking.dto.BookingServiceDto;
 import com.example.booking.dto.RestaurantTableDto;
 import com.example.booking.dto.DishDto;
-import com.example.booking.dto.RestaurantDto;
-import com.example.booking.service.BookingService;
-import com.example.booking.service.CustomerService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.SimpleUserService;
+import java.util.Map;
+import java.util.HashMap;
+import com.example.booking.service.BookingService;
+import com.example.booking.service.CustomerService;
+import com.example.booking.domain.RestaurantMedia;
+import com.example.booking.dto.RestaurantDto;
 
 @RestController
 @RequestMapping("/api/booking")
@@ -49,10 +52,46 @@ public class BookingApiController {
     private SimpleUserService userService;
     
     /**
+     * API endpoint để lấy table layouts theo nhà hàng
+     */
+    @GetMapping("/restaurants/{restaurantId}/table-layouts")
+    public ResponseEntity<List<Map<String, Object>>> getTableLayoutsByRestaurant(
+            @PathVariable("restaurantId") Integer restaurantId) {
+        try {
+            System.out.println("🔍 API: Getting table layouts for restaurant ID: " + restaurantId);
+
+            List<RestaurantMedia> layouts = restaurantService.findMediaByRestaurantAndType(restaurantId,
+                    "table_layout");
+
+            System.out.println("✅ API: Found " + layouts.size() + " table layouts");
+
+            // Convert to Map to avoid lazy loading issues
+            List<Map<String, Object>> layoutMaps = layouts.stream()
+                    .map(layout -> {
+                        Map<String, Object> layoutMap = new HashMap<>();
+                        layoutMap.put("mediaId", layout.getMediaId());
+                        layoutMap.put("url", layout.getUrl());
+                        layoutMap.put("type", layout.getType());
+                        layoutMap.put("createdAt", layout.getCreatedAt());
+                        return layoutMap;
+                    })
+                    .collect(Collectors.toList());
+
+            System.out.println("✅ API: Returning " + layoutMaps.size() + " layout maps");
+
+            return ResponseEntity.ok(layoutMaps);
+        } catch (Exception e) {
+            System.err.println("❌ API Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
      * API endpoint để lấy danh sách bàn theo nhà hàng
      */
     @GetMapping("/restaurants/{restaurantId}/tables")
-    public ResponseEntity<List<RestaurantTableDto>> getTablesByRestaurant(
+    public ResponseEntity<List<Map<String, Object>>> getTablesByRestaurant(
             @PathVariable("restaurantId") Integer restaurantId) {
         try {
             System.out.println("🔍 API: Getting tables for restaurant ID: " + restaurantId);
@@ -61,20 +100,32 @@ public class BookingApiController {
 
             System.out.println("✅ API: Found " + tables.size() + " tables");
 
-            // Convert to DTO to avoid lazy loading issues
-            List<RestaurantTableDto> tableDtos = tables.stream()
-                    .map(table -> new RestaurantTableDto(
-                            table.getTableId(),
-                            table.getTableName(),
-                            table.getCapacity(),
-                            table.getStatus(),
-                            table.getDepositAmount(),
-                            table.getRestaurant().getRestaurantId()))
+            // Convert to Map to include table images
+            List<Map<String, Object>> tableMaps = tables.stream()
+                    .map(table -> {
+                        Map<String, Object> tableMap = new HashMap<>();
+                        tableMap.put("tableId", table.getTableId());
+                        tableMap.put("tableName", table.getTableName());
+                        tableMap.put("capacity", table.getCapacity());
+                        tableMap.put("status", table.getStatus());
+                        tableMap.put("depositAmount", table.getDepositAmount());
+                        tableMap.put("restaurantId", table.getRestaurant().getRestaurantId());
+                        tableMap.put("mainImage", table.getMainTableImage());
+                        tableMap.put("images", table.getTableImages().stream()
+                                .map(img -> {
+                                    Map<String, Object> imgMap = new HashMap<>();
+                                    imgMap.put("url", img.getUrl());
+                                    imgMap.put("mediaId", img.getMediaId());
+                                    return imgMap;
+                                })
+                                .collect(Collectors.toList()));
+                        return tableMap;
+                    })
                     .collect(Collectors.toList());
 
-            System.out.println("✅ API: Returning " + tableDtos.size() + " table DTOs");
+            System.out.println("✅ API: Returning " + tableMaps.size() + " table maps");
 
-            return ResponseEntity.ok(tableDtos);
+            return ResponseEntity.ok(tableMaps);
         } catch (Exception e) {
             System.err.println("❌ API Error: " + e.getMessage());
             e.printStackTrace();

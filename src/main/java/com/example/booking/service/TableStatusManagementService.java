@@ -155,9 +155,9 @@ public class TableStatusManagementService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
         
-        // Booking phải ở status COMPLETED (đã thanh toán) để check-in
-        if (booking.getStatus() != BookingStatus.COMPLETED) {
-            throw new IllegalArgumentException("Booking must be COMPLETED (payment successful) to check-in");
+        // Booking phải ở status CONFIRMED hoặc COMPLETED để check-in
+        if (booking.getStatus() != BookingStatus.CONFIRMED && booking.getStatus() != BookingStatus.COMPLETED) {
+            throw new IllegalArgumentException("Booking must be CONFIRMED or COMPLETED to check-in");
         }
         
         // Không thay đổi booking status, chỉ thay đổi table status
@@ -186,9 +186,9 @@ public class TableStatusManagementService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
         
-        // Booking phải ở status COMPLETED để check-out
-        if (booking.getStatus() != BookingStatus.COMPLETED) {
-            throw new IllegalArgumentException("Booking must be COMPLETED to check-out");
+        // Booking phải ở status CONFIRMED hoặc COMPLETED để check-out
+        if (booking.getStatus() != BookingStatus.CONFIRMED && booking.getStatus() != BookingStatus.COMPLETED) {
+            throw new IllegalArgumentException("Booking must be CONFIRMED or COMPLETED to check-out");
         }
         
         // Không thay đổi booking status, chỉ thay đổi table status

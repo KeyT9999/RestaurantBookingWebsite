@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title th:text="${pageTitle}">Quản lý Đặt bàn - Booking Management</title>
     <link rel="stylesheet" href="/css/restaurant-admin.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         .chip-pending { background: #fff3cd; color: #856404; }
         .chip-confirmed { background: #d4edda; color: #155724; }
@@ -160,6 +161,14 @@
                                 <a th:href="@{/restaurant-owner/bookings/{id}(id=${booking.bookingId})}" 
                                    class="btn btn-ghost small">Xem</a>
                                 
+                                <!-- Chat button -->
+                                <a th:href="@{/restaurant-owner/chat?bookingId={id}(id=${booking.bookingId})}" 
+                                   class="btn small" 
+                                   style="background: #17a2b8; color: white;"
+                                   title="Chat với khách hàng">
+                                    <i class="fas fa-comments"></i> Chat
+                                </a>
+                                
                                 <!-- Edit button for editable bookings -->
                                 <a th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" 
                                    th:href="@{/booking/{id}/edit(id=${booking.bookingId})}" 
@@ -188,14 +197,14 @@
                                 </form>
                                 
                                 <!-- Check-in/Check-out buttons -->
-                                <button th:if="${booking.status.name() == 'COMPLETED'}" 
+                                <button th:if="${booking.status.name() == 'CONFIRMED' or booking.status.name() == 'COMPLETED'}" 
                                         class="btn small" 
                                         style="background: #28a745; color: white;"
                                         th:onclick="'checkInCustomer(' + ${booking.bookingId} + ')'">
                                     Check-in
                                 </button>
                                 
-                                <button th:if="${booking.status.name() == 'COMPLETED'}" 
+                                <button th:if="${booking.status.name() == 'CONFIRMED' or booking.status.name() == 'COMPLETED'}" 
                                         class="btn btn-ghost small" 
                                         style="background: #dc3545; color: white;"
                                         th:onclick="'checkOutCustomer(' + ${booking.bookingId} + ')'">
