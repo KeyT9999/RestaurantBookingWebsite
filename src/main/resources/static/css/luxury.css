@@ -157,6 +157,12 @@ a:hover {
     align-items: center;
 }
 
+/* Gooey Navigation Integration */
+.navbar-nav.gooey-nav-items {
+    position: relative;
+    z-index: 10;
+}
+
 .navbar-nav .nav-link {
     color: var(--text-dark) !important;
     font-weight: 500;

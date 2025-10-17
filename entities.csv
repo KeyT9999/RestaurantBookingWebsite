@@ -1,0 +1,132 @@
+Entity,Table_Name,Field_Name,Field_Type,Constraints,Primary_Key,Foreign_Key,Description
+User,users,id,UUID,"@GeneratedValue, @Id",TRUE,,Primary key - UUID
+User,users,username,String,"@NotBlank, @Size(min=3,max=50), unique",FALSE,,Username đăng nhập
+User,users,email,String,"@Email, @NotBlank, @Pattern, unique",FALSE,,Email người dùng
+User,users,password,String,"@NotBlank, @Size(min=8), @Pattern",FALSE,,Mật khẩu mã hóa
+User,users,full_name,String,"@NotBlank",FALSE,,Họ tên đầy đủ
+User,users,phone_number,String,"@Size(max=15), @Pattern",FALSE,,Số điện thoại
+User,users,address,String,"@Size(max=500)",FALSE,,Địa chỉ
+User,users,profile_image_url,String,,FALSE,,URL ảnh đại diện
+User,users,role,UserRole,"@Enumerated(EnumType.STRING)",FALSE,,Vai trò người dùng
+User,users,email_verified,Boolean,,FALSE,,Trạng thái xác thực email
+User,users,email_verification_token,String,,FALSE,,Token xác thực email
+User,users,password_reset_token,String,,FALSE,,Token đặt lại mật khẩu
+User,users,password_reset_token_expiry,LocalDateTime,,FALSE,,Thời hạn token đặt lại mật khẩu
+User,users,google_id,String,,FALSE,,ID Google OAuth
+User,users,created_at,LocalDateTime,"@CreatedDate",FALSE,,Thời gian tạo
+User,users,updated_at,LocalDateTime,"@LastModifiedDate",FALSE,,Thời gian cập nhật
+User,users,last_login,LocalDateTime,,FALSE,,Lần đăng nhập cuối
+User,users,active,Boolean,,FALSE,,Trạng thái hoạt động
+User,users,deleted_at,LocalDateTime,,FALSE,,Thời gian xóa mềm
+Customer,customer,customer_id,UUID,"@GeneratedValue, @Id",TRUE,,Primary key - UUID
+Customer,customer,user_id,UUID,"@JoinColumn, @OneToOne",FALSE,users.id,Liên kết với User
+Customer,customer,full_name,String,"@NotBlank",FALSE,,Họ tên khách hàng
+Customer,customer,created_at,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian tạo
+Customer,customer,updated_at,LocalDateTime,,FALSE,,Thời gian cập nhật
+RestaurantOwner,restaurant_owner,owner_id,UUID,"@GeneratedValue, @Id",TRUE,,Primary key - UUID
+RestaurantOwner,restaurant_owner,user_id,UUID,"@JoinColumn, @OneToOne",FALSE,users.id,Liên kết với User
+RestaurantOwner,restaurant_owner,owner_name,String,"@Column(nullable=false, length=255)",FALSE,,Tên chủ nhà hàng
+RestaurantOwner,restaurant_owner,created_at,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian tạo
+RestaurantOwner,restaurant_owner,updated_at,LocalDateTime,,FALSE,,Thời gian cập nhật
+RestaurantProfile,restaurant_profile,restaurant_id,Integer,"@GeneratedValue, @Id",TRUE,,Primary key - ID
+RestaurantProfile,restaurant_profile,owner_id,UUID,"@JoinColumn, @ManyToOne",FALSE,restaurant_owner.owner_id,Liên kết với RestaurantOwner
+RestaurantProfile,restaurant_profile,restaurant_name,String,"@NotBlank, @Size(max=255)",FALSE,,Tên nhà hàng
+RestaurantProfile,restaurant_profile,address,String,"@Size(max=500)",FALSE,,Địa chỉ nhà hàng
+RestaurantProfile,restaurant_profile,phone,String,"@Size(max=20)",FALSE,,Số điện thoại nhà hàng
+RestaurantProfile,restaurant_profile,description,TEXT,,FALSE,,Mô tả nhà hàng
+RestaurantProfile,restaurant_profile,cuisine_type,String,"@Size(max=100)",FALSE,,Loại ẩm thực
+RestaurantProfile,restaurant_profile,opening_hours,String,"@Size(max=100)",FALSE,,Giờ mở cửa
+RestaurantProfile,restaurant_profile,average_price,BigDecimal,"@DecimalMin(value=0.0), precision=18,scale=2",FALSE,,Giá trung bình
+RestaurantProfile,restaurant_profile,website_url,String,"@Size(max=255)",FALSE,,URL website
+RestaurantProfile,restaurant_profile,approval_status,RestaurantApprovalStatus,"@Enumerated(EnumType.STRING)",FALSE,,Trạng thái duyệt
+RestaurantProfile,restaurant_profile,approval_reason,TEXT,,FALSE,,Lý do duyệt
+RestaurantProfile,restaurant_profile,approved_by,String,,FALSE,,Người duyệt
+RestaurantProfile,restaurant_profile,approved_at,LocalDateTime,,FALSE,,Thời gian duyệt
+RestaurantProfile,restaurant_profile,rejection_reason,TEXT,,FALSE,,Lý do từ chối
+RestaurantProfile,restaurant_profile,business_license_file,String,,FALSE,,File giấy phép kinh doanh
+RestaurantProfile,restaurant_profile,contract_signed,Boolean,,FALSE,,Trạng thái ký hợp đồng
+RestaurantProfile,restaurant_profile,contract_signed_at,LocalDateTime,,FALSE,,Thời gian ký hợp đồng
+RestaurantProfile,restaurant_profile,terms_accepted,Boolean,"@Column(nullable=false)",FALSE,,Đã chấp nhận điều khoản
+RestaurantProfile,restaurant_profile,terms_accepted_at,LocalDateTime,,FALSE,,Thời gian chấp nhận điều khoản
+RestaurantProfile,restaurant_profile,terms_version,String,"length=20",FALSE,,Phiên bản điều khoản
+RestaurantProfile,restaurant_profile,created_at,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian tạo
+RestaurantProfile,restaurant_profile,updated_at,LocalDateTime,,FALSE,,Thời gian cập nhật
+RestaurantTable,restaurant_table,table_id,Integer,"@GeneratedValue, @Id",TRUE,,Primary key - ID
+RestaurantTable,restaurant_table,restaurant_id,Integer,"@JoinColumn, @ManyToOne",FALSE,restaurant_profile.restaurant_id,Liên kết với RestaurantProfile
+RestaurantTable,restaurant_table,table_name,String,"@NotBlank, @Size(max=100)",FALSE,,Tên bàn
+RestaurantTable,restaurant_table,capacity,Integer,"@Min(value=1), @Max(value=20)",FALSE,,Sức chứa bàn
+RestaurantTable,restaurant_table,status,TableStatus,"@Convert(converter=TableStatusConverter)",FALSE,,Trạng thái bàn
+RestaurantTable,restaurant_table,depositamount,BigDecimal,"@DecimalMin(value=0.0), precision=18,scale=2",FALSE,,Số tiền đặt cọc
+Booking,booking,booking_id,Integer,"@GeneratedValue, @Id",TRUE,,Primary key - ID
+Booking,booking,customer_id,UUID,"@JoinColumn, @ManyToOne",FALSE,customer.customer_id,Liên kết với Customer
+Booking,booking,restaurant_id,Integer,"@JoinColumn, @ManyToOne",FALSE,restaurant_profile.restaurant_id,Liên kết với RestaurantProfile
+Booking,booking,booking_time,LocalDateTime,"@NotNull",FALSE,,Thời gian đặt bàn
+Booking,booking,number_of_guests,Integer,"@Min(value=1), @Max(value=20)",FALSE,,Số khách
+Booking,booking,status,BookingStatus,"@Enumerated(EnumType.STRING)",FALSE,,Trạng thái booking
+Booking,booking,deposit_amount,BigDecimal,"@DecimalMin(value=0.0), precision=18,scale=2",FALSE,,Số tiền đặt cọc
+Booking,booking,note,TEXT,,FALSE,,Ghi chú
+Booking,booking,created_at,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian tạo
+Booking,booking,updated_at,LocalDateTime,,FALSE,,Thời gian cập nhật
+Payment,payment,payment_id,Integer,"@GeneratedValue, @Id",TRUE,,Primary key - ID
+Payment,payment,customer_id,UUID,"@JoinColumn, @ManyToOne",FALSE,customer.customer_id,Liên kết với Customer
+Payment,payment,booking_id,Integer,"@JoinColumn, @ManyToOne",FALSE,booking.booking_id,Liên kết với Booking
+Payment,payment,amount,BigDecimal,"@NotNull, @DecimalMin(value=0.0), precision=18,scale=2",FALSE,,Số tiền thanh toán
+Payment,payment,payment_method,PaymentMethod,"@Enumerated(EnumType.STRING)",FALSE,,Phương thức thanh toán
+Payment,payment,status,PaymentStatus,"@Enumerated(EnumType.STRING)",FALSE,,Trạng thái thanh toán
+Payment,payment,voucher_id,Integer,"@JoinColumn, @ManyToOne",FALSE,voucher.voucher_id,Liên kết với Voucher
+Payment,payment,paid_at,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian thanh toán
+Payment,payment,payos_payment_link_id,String,,FALSE,,PayOS Payment Link ID
+Payment,payment,payos_checkout_url,String,,FALSE,,PayOS Checkout URL
+Payment,payment,payos_code,String,,FALSE,,PayOS Code
+Payment,payment,payos_desc,String,,FALSE,,PayOS Description
+Payment,payment,order_code,Long,"@Column(nullable=false, unique=true)",FALSE,,Mã đơn hàng
+Payment,payment,pay_url,String,,FALSE,,URL thanh toán
+Payment,payment,ipn_raw,JSONB,"@JdbcTypeCode(SqlTypes.JSON)",FALSE,,Dữ liệu IPN thô
+Payment,payment,redirect_raw,JSONB,"@JdbcTypeCode(SqlTypes.JSON)",FALSE,,Dữ liệu redirect thô
+Payment,payment,refunded_at,LocalDateTime,,FALSE,,Thời gian hoàn tiền
+Payment,payment,refund_amount,BigDecimal,"precision=18,scale=2",FALSE,,Số tiền hoàn
+Payment,payment,refund_reason,String,,FALSE,,Lý do hoàn tiền
+Payment,payment,payment_type,PaymentType,"@Enumerated(EnumType.STRING)",FALSE,,Loại thanh toán
+Waitlist,waitlist,waitlist_id,Integer,"@GeneratedValue, @Id",TRUE,,Primary key - ID
+Waitlist,waitlist,customer_id,UUID,"@JoinColumn, @ManyToOne",FALSE,customer.customer_id,Liên kết với Customer
+Waitlist,waitlist,restaurant_id,Integer,"@JoinColumn, @ManyToOne",FALSE,restaurant_profile.restaurant_id,Liên kết với RestaurantProfile
+Waitlist,waitlist,party_size,Integer,"@Min(value=1), @Max(value=20)",FALSE,,Số người trong nhóm
+Waitlist,waitlist,join_time,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian tham gia danh sách chờ
+Waitlist,waitlist,preferred_booking_time,LocalDateTime,,FALSE,,Thời gian đặt bàn mong muốn
+Waitlist,waitlist,status,WaitlistStatus,"@Enumerated(EnumType.STRING)",FALSE,,Trạng thái danh sách chờ
+ChatRoom,chat_room,room_id,String,"@Id, length=100",TRUE,,Primary key - Room ID
+ChatRoom,chat_room,customer_id,UUID,"@JoinColumn, @ManyToOne",FALSE,customer.customer_id,Liên kết với Customer
+ChatRoom,chat_room,restaurant_id,Integer,"@JoinColumn, @ManyToOne",FALSE,restaurant_profile.restaurant_id,Liên kết với RestaurantProfile
+ChatRoom,chat_room,admin_id,UUID,"@JoinColumn, @ManyToOne",FALSE,users.id,Liên kết với Admin User
+ChatRoom,chat_room,created_at,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian tạo
+ChatRoom,chat_room,last_message_at,LocalDateTime,,FALSE,,Thời gian tin nhắn cuối
+ChatRoom,chat_room,is_active,Boolean,,FALSE,,Trạng thái hoạt động
+Message,message,message_id,Integer,"@GeneratedValue, @Id",TRUE,,Primary key - ID
+Message,message,room_id,String,"@JoinColumn, @ManyToOne",FALSE,chat_room.room_id,Liên kết với ChatRoom
+Message,message,sender_id,UUID,"@JoinColumn, @ManyToOne",FALSE,users.id,Liên kết với User gửi
+Message,message,message_type,MessageType,"@Enumerated(EnumType.STRING)",FALSE,,Loại tin nhắn
+Message,message,content,TEXT,,FALSE,,Nội dung tin nhắn
+Message,message,sent_at,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian gửi
+Message,message,is_read,Boolean,,FALSE,,Trạng thái đã đọc
+Review,review,review_id,Integer,"@GeneratedValue, @Id",TRUE,,Primary key - ID
+Review,review,customer_id,UUID,"@JoinColumn, @ManyToOne",FALSE,customer.customer_id,Liên kết với Customer
+Review,review,restaurant_id,Integer,"@JoinColumn, @ManyToOne",FALSE,restaurant_profile.restaurant_id,Liên kết với RestaurantProfile
+Review,review,rating,Integer,"@Min(value=1), @Max(value=5)",FALSE,,Điểm đánh giá (1-5)
+Review,review,comment,TEXT,,FALSE,,Bình luận đánh giá
+Review,review,created_at,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian tạo
+Review,review,updated_at,LocalDateTime,,FALSE,,Thời gian cập nhật
+Voucher,voucher,voucher_id,Integer,"@GeneratedValue, @Id",TRUE,,Primary key - ID
+Voucher,voucher,restaurant_id,Integer,"@JoinColumn, @ManyToOne",FALSE,restaurant_profile.restaurant_id,Liên kết với RestaurantProfile
+Voucher,voucher,voucher_code,String,"@NotBlank, @Size(max=50), unique",FALSE,,Mã voucher
+Voucher,voucher,description,TEXT,,FALSE,,Mô tả voucher
+Voucher,voucher,discount_type,DiscountType,"@Enumerated(EnumType.STRING)",FALSE,,Loại giảm giá
+Voucher,voucher,discount_value,BigDecimal,"precision=18,scale=2",FALSE,,Giá trị giảm giá
+Voucher,voucher,min_order_amount,BigDecimal,"precision=18,scale=2",FALSE,,Đơn hàng tối thiểu
+Voucher,voucher,max_discount_amount,BigDecimal,"precision=18,scale=2",FALSE,,Giảm giá tối đa
+Voucher,voucher,usage_limit,Integer,,FALSE,,Giới hạn sử dụng
+Voucher,voucher,used_count,Integer,,FALSE,,Số lần đã sử dụng
+Voucher,voucher,valid_from,LocalDateTime,,FALSE,,Thời gian bắt đầu hiệu lực
+Voucher,voucher,valid_until,LocalDateTime,,FALSE,,Thời gian kết thúc hiệu lực
+Voucher,voucher,status,VoucherStatus,"@Enumerated(EnumType.STRING)",FALSE,,Trạng thái voucher
+Voucher,voucher,created_at,LocalDateTime,"@Column(nullable=false)",FALSE,,Thời gian tạo
+Voucher,voucher,updated_at,LocalDateTime,,FALSE,,Thời gian cập nhật

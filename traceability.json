@@ -1,0 +1,380 @@
+{
+  "project": "Restaurant Booking Platform",
+  "version": "1.0",
+  "created_date": "2024-12-19",
+  "description": "Traceability matrix mapping RDS components to source code",
+  
+  "actors": {
+    "ACT-01_Customer": {
+      "description": "Khách hàng sử dụng hệ thống đặt bàn",
+      "source_files": [
+        "src/main/java/com/example/booking/domain/Customer.java",
+        "src/main/java/com/example/booking/service/CustomerService.java",
+        "src/main/java/com/example/booking/web/controller/customer/FavoriteController.java"
+      ],
+      "related_endpoints": [
+        "/booking/new",
+        "/booking/list",
+        "/booking/edit/{id}",
+        "/booking/cancel/{id}",
+        "/reviews",
+        "/customer/favorites"
+      ]
+    },
+    "ACT-02_RestaurantOwner": {
+      "description": "Chủ nhà hàng quản lý nhà hàng và booking",
+      "source_files": [
+        "src/main/java/com/example/booking/domain/RestaurantOwner.java",
+        "src/main/java/com/example/booking/service/RestaurantOwnerService.java",
+        "src/main/java/com/example/booking/web/controller/RestaurantOwnerController.java"
+      ],
+      "related_endpoints": [
+        "/restaurant-owner/dashboard",
+        "/restaurant-owner/bookings",
+        "/restaurant-owner/foh-floor",
+        "/restaurant-owner/waitlist"
+      ]
+    },
+    "ACT-03_Admin": {
+      "description": "Quản trị viên hệ thống",
+      "source_files": [
+        "src/main/java/com/example/booking/web/controller/AdminDashboardController.java",
+        "src/main/java/com/example/booking/web/controller/AdminRestaurantController.java",
+        "src/main/java/com/example/booking/web/controller/AdminUserController.java",
+        "src/main/java/com/example/booking/web/controller/AdminWithdrawalController.java"
+      ],
+      "related_endpoints": [
+        "/admin/dashboard",
+        "/admin/restaurant/requests",
+        "/admin/users",
+        "/admin/withdrawal/requests"
+      ]
+    },
+    "ACT-05_PayOS": {
+      "description": "Payment Gateway PayOS",
+      "source_files": [
+        "src/main/java/com/example/booking/web/controller/PaymentController.java",
+        "src/main/java/com/example/booking/util/PayOSSignatureGenerator.java"
+      ],
+      "related_endpoints": [
+        "/payment/payos/create",
+        "/payment/payos/return",
+        "/payment/payos/cancel",
+        "/payment/api/payos/webhook"
+      ]
+    },
+    "ACT-07_Cloudinary": {
+      "description": "Dịch vụ lưu trữ hình ảnh",
+      "source_files": [
+        "src/main/java/com/example/booking/config/CloudinaryConfig.java",
+        "src/main/java/com/example/booking/service/ImageUploadService.java"
+      ],
+      "related_endpoints": [
+        "/restaurant-owner/files/upload"
+      ]
+    }
+  },
+
+  "use_cases": {
+    "UC-01_Register": {
+      "description": "Đăng ký tài khoản khách hàng",
+      "source_files": [
+        "src/main/java/com/example/booking/web/controller/AuthController.java:register",
+        "src/main/java/com/example/booking/service/SimpleUserService.java:createUser",
+        "src/main/java/com/example/booking/domain/User.java"
+      ],
+      "related_endpoints": [
+        "/auth/register (GET)",
+        "/auth/register (POST)"
+      ],
+      "database_tables": ["users", "customer"]
+    },
+    "UC-02_Login": {
+      "description": "Đăng nhập hệ thống",
+      "source_files": [
+        "src/main/java/com/example/booking/web/controller/AuthController.java:login",
+        "src/main/java/com/example/booking/config/SecurityConfig.java",
+        "src/main/java/com/example/booking/config/CustomAuthenticationSuccessHandler.java"
+      ],
+      "related_endpoints": [
+        "/auth/login (GET)",
+        "/auth/login (POST)"
+      ],
+      "database_tables": ["users"]
+    },
+    "UC-07_CreateBooking": {
+      "description": "Đặt bàn và thanh toán đặt cọc",
+      "source_files": [
+        "src/main/java/com/example/booking/web/controller/BookingController.java:createBooking",
+        "src/main/java/com/example/booking/service/BookingService.java:createBooking",
+        "src/main/java/com/example/booking/service/PaymentService.java:createPayment",
+        "src/main/java/com/example/booking/domain/Booking.java",
+        "src/main/java/com/example/booking/domain/Payment.java"
+      ],
+      "related_endpoints": [
+        "/booking/new (GET)",
+        "/booking/new (POST)",
+        "/payment/payos/create"
+      ],
+      "database_tables": ["booking", "payment", "booking_table"]
+    },
+    "UC-19_ApproveBooking": {
+      "description": "Duyệt booking từ restaurant owner",
+      "source_files": [
+        "src/main/java/com/example/booking/web/controller/RestaurantOwnerController.java:confirmBooking",
+        "src/main/java/com/example/booking/service/BookingService.java:confirmBooking",
+        "src/main/java/com/example/booking/service/RestaurantBalanceService.java:updateBalance"
+      ],
+      "related_endpoints": [
+        "/restaurant-owner/bookings/{id}/confirm",
+        "/restaurant-owner/bookings/{id}/reject"
+      ],
+      "database_tables": ["booking", "restaurant_balance"]
+    },
+    "UC-16_ApproveRestaurant": {
+      "description": "Duyệt nhà hàng từ admin",
+      "source_files": [
+        "src/main/java/com/example/booking/web/controller/AdminRestaurantController.java:approveRestaurant",
+        "src/main/java/com/example/booking/service/RestaurantManagementService.java:approveRestaurant",
+        "src/main/java/com/example/booking/domain/RestaurantProfile.java"
+      ],
+      "related_endpoints": [
+        "/admin/restaurant/approve/{id}",
+        "/admin/restaurant/reject/{id}"
+      ],
+      "database_tables": ["restaurant_profile"]
+    }
+  },
+
+  "database_tables": {
+    "users": {
+      "description": "Bảng người dùng chung",
+      "source_file": "src/main/java/com/example/booking/domain/User.java",
+      "related_use_cases": ["UC-01", "UC-02", "UC-03"],
+      "api_endpoints": [
+        "/auth/register",
+        "/auth/login",
+        "/api/user/profile"
+      ]
+    },
+    "customer": {
+      "description": "Bảng thông tin khách hàng",
+      "source_file": "src/main/java/com/example/booking/domain/Customer.java",
+      "related_use_cases": ["UC-01", "UC-07", "UC-08", "UC-11"],
+      "api_endpoints": [
+        "/booking/new",
+        "/booking/list",
+        "/reviews"
+      ]
+    },
+    "restaurant_profile": {
+      "description": "Bảng thông tin nhà hàng",
+      "source_file": "src/main/java/com/example/booking/domain/RestaurantProfile.java",
+      "related_use_cases": ["UC-15", "UC-16", "UC-17", "UC-05", "UC-06"],
+      "api_endpoints": [
+        "/restaurant-owner/restaurants/create",
+        "/admin/restaurant/approve/{id}",
+        "/restaurants",
+        "/restaurants/{id}"
+      ]
+    },
+    "booking": {
+      "description": "Bảng đặt bàn",
+      "source_file": "src/main/java/com/example/booking/domain/Booking.java",
+      "related_use_cases": ["UC-07", "UC-08", "UC-09", "UC-10", "UC-19"],
+      "api_endpoints": [
+        "/booking/new",
+        "/booking/list",
+        "/booking/edit/{id}",
+        "/restaurant-owner/bookings"
+      ]
+    },
+    "payment": {
+      "description": "Bảng thanh toán",
+      "source_file": "src/main/java/com/example/booking/domain/Payment.java",
+      "related_use_cases": ["UC-07", "UC-10"],
+      "api_endpoints": [
+        "/payment/payos/create",
+        "/payment/payos/return",
+        "/payment/api/payos/webhook"
+      ]
+    },
+    "chat_room": {
+      "description": "Bảng phòng chat",
+      "source_file": "src/main/java/com/example/booking/domain/ChatRoom.java",
+      "related_use_cases": ["UC-14", "UC-26"],
+      "api_endpoints": [
+        "/api/chat/send",
+        "/api/chat/{roomId}/messages"
+      ]
+    },
+    "message": {
+      "description": "Bảng tin nhắn",
+      "source_file": "src/main/java/com/example/booking/domain/Message.java",
+      "related_use_cases": ["UC-14", "UC-26"],
+      "api_endpoints": [
+        "/api/chat/send",
+        "/api/chat/{roomId}/messages"
+      ]
+    }
+  },
+
+  "controllers": {
+    "BookingController": {
+      "file": "src/main/java/com/example/booking/web/controller/BookingController.java",
+      "related_use_cases": ["UC-07", "UC-08", "UC-09", "UC-10"],
+      "endpoints": [
+        "/booking/new",
+        "/booking/list",
+        "/booking/edit/{id}",
+        "/booking/cancel/{id}"
+      ],
+      "services": ["BookingService", "CustomerService", "RestaurantManagementService"]
+    },
+    "RestaurantOwnerController": {
+      "file": "src/main/java/com/example/booking/web/controller/RestaurantOwnerController.java",
+      "related_use_cases": ["UC-17", "UC-18", "UC-19", "UC-20", "UC-21"],
+      "endpoints": [
+        "/restaurant-owner/dashboard",
+        "/restaurant-owner/bookings",
+        "/restaurant-owner/foh-floor",
+        "/restaurant-owner/waitlist"
+      ],
+      "services": ["RestaurantOwnerService", "FOHManagementService", "BookingService"]
+    },
+    "AdminRestaurantController": {
+      "file": "src/main/java/com/example/booking/web/controller/AdminRestaurantController.java",
+      "related_use_cases": ["UC-16"],
+      "endpoints": [
+        "/admin/restaurant/requests",
+        "/admin/restaurant/approve/{id}",
+        "/admin/restaurant/reject/{id}",
+        "/admin/restaurant/suspend/{id}"
+      ],
+      "services": ["RestaurantManagementService"]
+    },
+    "PaymentController": {
+      "file": "src/main/java/com/example/booking/web/controller/PaymentController.java",
+      "related_use_cases": ["UC-07", "UC-10"],
+      "endpoints": [
+        "/payment/payos/create",
+        "/payment/payos/return",
+        "/payment/payos/cancel",
+        "/payment/api/payos/webhook"
+      ],
+      "services": ["PaymentService", "PayosPayoutService"]
+    }
+  },
+
+  "services": {
+    "BookingService": {
+      "file": "src/main/java/com/example/booking/service/BookingService.java",
+      "related_use_cases": ["UC-07", "UC-08", "UC-09", "UC-10", "UC-19"],
+      "repositories": ["BookingRepository", "CustomerRepository", "RestaurantTableRepository"],
+      "controllers": ["BookingController", "RestaurantOwnerController"]
+    },
+    "PaymentService": {
+      "file": "src/main/java/com/example/booking/service/PaymentService.java",
+      "related_use_cases": ["UC-07", "UC-10"],
+      "repositories": ["PaymentRepository", "BookingRepository"],
+      "controllers": ["PaymentController"],
+      "external_services": ["PayOS API"]
+    },
+    "RestaurantManagementService": {
+      "file": "src/main/java/com/example/booking/service/RestaurantManagementService.java",
+      "related_use_cases": ["UC-15", "UC-16", "UC-17", "UC-18"],
+      "repositories": ["RestaurantProfileRepository", "RestaurantTableRepository"],
+      "controllers": ["AdminRestaurantController", "RestaurantRegistrationController"]
+    }
+  },
+
+  "business_rules": {
+    "BR-01": {
+      "description": "Username phải từ 3-50 ký tự",
+      "source_file": "src/main/java/com/example/booking/domain/User.java:42",
+      "validation": "@Size(min = 3, max = 50, message = \"Username phải từ 3-50 ký tự\")",
+      "related_use_cases": ["UC-01"]
+    },
+    "BR-02": {
+      "description": "Password phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
+      "source_file": "src/main/java/com/example/booking/domain/User.java:55",
+      "validation": "@Pattern(regexp = \"^(?=.*[a-z])(?=.*[A-Z])(?=.*\\\\d)(?=.*[@$!%*?&])[A-Za-z\\\\d@$!%*?&]{8,}$\")",
+      "related_use_cases": ["UC-01"]
+    },
+    "BR-08": {
+      "description": "Thời gian đặt bàn phải >= hiện tại + 30 phút",
+      "source_file": "src/main/java/com/example/booking/validation/FuturePlus.java",
+      "validation": "Custom validator FuturePlusValidator",
+      "related_use_cases": ["UC-07"]
+    },
+    "BR-09": {
+      "description": "Số khách từ 1-20 người",
+      "source_file": "src/main/java/com/example/booking/domain/Booking.java:51",
+      "validation": "@Min(value = 1, message = \"Số khách tối thiểu là 1\") @Max(value = 20, message = \"Số khách tối đa là 20\")",
+      "related_use_cases": ["UC-07"]
+    },
+    "BR-10": {
+      "description": "Đặt cọc = 10% tổng tiền nếu > 500k VNĐ, ngược lại = 10k VNĐ",
+      "source_file": "src/main/java/com/example/booking/service/PaymentService.java",
+      "implementation": "calculateTotalAmount() method",
+      "related_use_cases": ["UC-07"]
+    }
+  },
+
+  "external_integrations": {
+    "PayOS": {
+      "description": "Payment Gateway integration",
+      "config_file": "src/main/resources/application.yml:payment.payos",
+      "service_file": "src/main/java/com/example/booking/service/PayosPayoutService.java",
+      "util_file": "src/main/java/com/example/booking/util/PayOSSignatureGenerator.java",
+      "related_use_cases": ["UC-07", "UC-10", "UC-22", "UC-23"]
+    },
+    "Cloudinary": {
+      "description": "Image storage and management",
+      "config_file": "src/main/java/com/example/booking/config/CloudinaryConfig.java",
+      "service_file": "src/main/java/com/example/booking/service/ImageUploadService.java",
+      "related_use_cases": ["UC-17"]
+    },
+    "Google OAuth": {
+      "description": "OAuth2 authentication",
+      "config_file": "src/main/resources/application.yml:spring.security.oauth2",
+      "related_use_cases": ["UC-03"]
+    },
+    "Email Service": {
+      "description": "Email notification service",
+      "config_file": "src/main/resources/application.yml:spring.mail",
+      "service_file": "src/main/java/com/example/booking/service/EmailService.java",
+      "related_use_cases": ["UC-01", "UC-04", "UC-07", "UC-19"]
+    }
+  },
+
+  "security": {
+    "authentication": {
+      "source_file": "src/main/java/com/example/booking/config/SecurityConfig.java",
+      "description": "Spring Security configuration",
+      "features": ["JWT", "OAuth2", "Session-based auth"]
+    },
+    "rate_limiting": {
+      "source_file": "src/main/java/com/example/booking/config/RateLimitingConfig.java",
+      "description": "Rate limiting and IP blocking",
+      "features": ["Bucket4j", "IP blocking", "Suspicious activity detection"]
+    },
+    "audit_logging": {
+      "source_file": "src/main/java/com/example/booking/aspect/AuditAspect.java",
+      "description": "Audit trail for user actions",
+      "related_entities": ["AuditLog", "Auditable"]
+    }
+  },
+
+  "file_structure": {
+    "controllers": "src/main/java/com/example/booking/web/controller/",
+    "services": "src/main/java/com/example/booking/service/",
+    "repositories": "src/main/java/com/example/booking/repository/",
+    "entities": "src/main/java/com/example/booking/domain/",
+    "dtos": "src/main/java/com/example/booking/dto/",
+    "config": "src/main/java/com/example/booking/config/",
+    "templates": "src/main/resources/templates/",
+    "static": "src/main/resources/static/",
+    "properties": "src/main/resources/"
+  }
+}

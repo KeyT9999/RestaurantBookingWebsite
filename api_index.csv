@@ -1,0 +1,72 @@
+Controller,Endpoint,Method,Path,Description,Role_Required,DTO/Entity
+HomeController,/,GET,/,"Trang chủ - hiển thị danh sách nhà hàng",PUBLIC,RestaurantDto
+HomeController,about,GET,/about,"Trang giới thiệu",PUBLIC,
+HomeController,contact,GET,/contact,"Trang liên hệ",PUBLIC,
+HomeController,restaurants,GET,/restaurants,"Danh sách nhà hàng với phân trang",PUBLIC,RestaurantDto
+HomeController,restaurantDetail,GET,/restaurants/{id},"Chi tiết nhà hàng",PUBLIC,RestaurantDto
+AuthController,login,GET,/auth/login,"Trang đăng nhập",PUBLIC,
+AuthController,login,POST,/auth/login,"Xử lý đăng nhập",PUBLIC,
+AuthController,register,GET,/auth/register,"Trang đăng ký",PUBLIC,
+AuthController,register,POST,/auth/register,"Xử lý đăng ký",PUBLIC,
+AuthController,logout,POST,/auth/logout,"Đăng xuất",AUTHENTICATED,
+AuthController,forgotPassword,GET,/auth/forgot-password,"Quên mật khẩu",PUBLIC,
+AuthController,forgotPassword,POST,/auth/forgot-password,"Xử lý quên mật khẩu",PUBLIC,
+AuthController,resetPassword,GET,/auth/reset-password,"Đặt lại mật khẩu",PUBLIC,
+AuthController,resetPassword,POST,/auth/reset-password,"Xử lý đặt lại mật khẩu",PUBLIC,
+BookingController,showBookingForm,GET,/booking/new,"Form đặt bàn",CUSTOMER,BookingForm
+BookingController,createBooking,POST,/booking/new,"Tạo booking mới",CUSTOMER,BookingForm
+BookingController,bookingList,GET,/booking/list,"Danh sách booking của customer",CUSTOMER,Booking
+BookingController,editBooking,GET,/booking/edit/{id},"Form chỉnh sửa booking",CUSTOMER,BookingForm
+BookingController,updateBooking,POST,/booking/edit/{id},"Cập nhật booking",CUSTOMER,BookingForm
+BookingController,cancelBooking,POST,/booking/cancel/{id},"Hủy booking",CUSTOMER,
+RestaurantOwnerController,dashboard,GET,/restaurant-owner/dashboard,"Dashboard chủ nhà hàng",RESTAURANT_OWNER,
+RestaurantOwnerController,profile,GET,/restaurant-owner/profile,"Hồ sơ chủ nhà hàng",RESTAURANT_OWNER,
+RestaurantOwnerController,updateProfile,POST,/restaurant-owner/profile,"Cập nhật hồ sơ",RESTAURANT_OWNER,
+RestaurantOwnerController,fohFloor,GET,/restaurant-owner/foh-floor,"Quản lý sàn nhà hàng",RESTAURANT_OWNER,
+RestaurantOwnerController,waitlist,GET,/restaurant-owner/waitlist,"Quản lý danh sách chờ",RESTAURANT_OWNER,
+RestaurantOwnerController,bookings,GET,/restaurant-owner/bookings,"Quản lý booking",RESTAURANT_OWNER,
+RestaurantOwnerController,confirmBooking,POST,/restaurant-owner/bookings/{id}/confirm,"Xác nhận booking",RESTAURANT_OWNER,
+RestaurantOwnerController,rejectBooking,POST,/restaurant-owner/bookings/{id}/reject,"Từ chối booking",RESTAURANT_OWNER,
+RestaurantRegistrationController,createRestaurantForm,GET,/restaurant-owner/restaurants/create,"Form tạo nhà hàng",RESTAURANT_OWNER,RestaurantProfile
+RestaurantRegistrationController,createRestaurant,POST,/restaurant-owner/restaurants/create,"Tạo nhà hàng mới",RESTAURANT_OWNER,RestaurantProfile
+RestaurantRegistrationController,editRestaurantForm,GET,/restaurant-owner/restaurants/edit/{id},"Form chỉnh sửa nhà hàng",RESTAURANT_OWNER,RestaurantProfile
+RestaurantRegistrationController,updateRestaurant,POST,/restaurant-owner/restaurants/edit/{id},"Cập nhật nhà hàng",RESTAURANT_OWNER,RestaurantProfile
+AdminDashboardController,dashboard,GET,/admin/dashboard,"Dashboard admin",ADMIN,
+AdminRestaurantController,restaurantRequests,GET,/admin/restaurant/requests,"Danh sách yêu cầu nhà hàng",ADMIN,
+AdminRestaurantController,restaurantRequestDetail,GET,/admin/restaurant/requests/{id},"Chi tiết yêu cầu nhà hàng",ADMIN,
+AdminRestaurantController,approveRestaurant,POST,/admin/restaurant/approve/{id},"Duyệt nhà hàng",ADMIN,
+AdminRestaurantController,rejectRestaurant,POST,/admin/restaurant/reject/{id},"Từ chối nhà hàng",ADMIN,
+AdminRestaurantController,suspendRestaurant,POST,/admin/restaurant/suspend/{id},"Tạm khóa nhà hàng",ADMIN,
+AdminRestaurantController,activateRestaurant,POST,/admin/restaurant/activate/{id},"Kích hoạt nhà hàng",ADMIN,
+AdminUserController,userList,GET,/admin/users,"Danh sách người dùng",ADMIN,
+AdminUserController,userDetail,GET,/admin/users/{id},"Chi tiết người dùng",ADMIN,
+AdminUserController,lockUser,POST,/admin/users/{id}/lock,"Khóa tài khoản",ADMIN,
+AdminUserController,unlockUser,POST,/admin/users/{id}/unlock,"Mở khóa tài khoản",ADMIN,
+AdminWithdrawalController,withdrawalRequests,GET,/admin/withdrawal/requests,"Danh sách yêu cầu rút tiền",ADMIN,
+AdminWithdrawalController,approveWithdrawal,POST,/admin/withdrawal/approve/{id},"Duyệt rút tiền",ADMIN,
+AdminWithdrawalController,rejectWithdrawal,POST,/admin/withdrawal/reject/{id},"Từ chối rút tiền",ADMIN,
+PaymentController,payosPayment,POST,/payment/payos/create,"Tạo thanh toán PayOS",AUTHENTICATED,
+PaymentController,payosReturn,GET,/payment/payos/return,"Callback trả về từ PayOS",PUBLIC,
+PaymentController,payosCancel,GET,/payment/payos/cancel,"Callback hủy từ PayOS",PUBLIC,
+PaymentController,payosWebhook,POST,/payment/api/payos/webhook,"Webhook từ PayOS",PUBLIC,
+ReviewController,createReview,POST,/reviews,"Tạo đánh giá",CUSTOMER,ReviewForm
+ReviewController,reviewList,GET,/reviews,"Danh sách đánh giá",PUBLIC,Review
+NotificationController,notificationList,GET,/notifications,"Danh sách thông báo",AUTHENTICATED,Notification
+BookingApiController,getTablesByRestaurant,GET,/api/booking/restaurants/{restaurantId}/tables,"API lấy bàn theo nhà hàng",PUBLIC,RestaurantTableDto
+BookingApiController,getRestaurant,GET,/api/booking/restaurants/{restaurantId},"API lấy thông tin nhà hàng",PUBLIC,RestaurantDto
+BookingApiController,getAllRestaurants,GET,/api/booking/restaurants,"API lấy tất cả nhà hàng",PUBLIC,RestaurantDto
+BookingApiController,getDishesByRestaurant,GET,/api/booking/restaurants/{restaurantId}/dishes,"API lấy món ăn theo nhà hàng",PUBLIC,DishDto
+BookingApiController,getServicesByRestaurant,GET,/api/booking/restaurants/{restaurantId}/services,"API lấy dịch vụ theo nhà hàng",PUBLIC,RestaurantServiceDto
+BookingApiController,getBookingDetails,GET,/api/booking/{bookingId}/details,"API lấy chi tiết booking",AUTHENTICATED,BookingDetailsDto
+SmartWaitlistApiController,checkAvailability,GET,/api/booking/availability-check,"API kiểm tra khả năng đặt bàn",PUBLIC,AvailabilityCheckResponse
+ChatApiController,sendMessage,POST,/api/chat/send,"API gửi tin nhắn",AUTHENTICATED,ChatMessageDto
+ChatApiController,getMessages,GET,/api/chat/{roomId}/messages,"API lấy tin nhắn",AUTHENTICATED,Message
+VoucherApiController,getVouchers,GET,/api/vouchers,"API lấy voucher",AUTHENTICATED,Voucher
+VoucherApiController,redeemVoucher,POST,/api/vouchers/{id}/redeem,"API sử dụng voucher",CUSTOMER,
+UserApiController,getUserProfile,GET,/api/user/profile,"API lấy hồ sơ người dùng",AUTHENTICATED,User
+RestaurantWithdrawalApiController,createWithdrawalRequest,POST,/api/restaurant/withdrawal/request,"API tạo yêu cầu rút tiền",RESTAURANT_OWNER,WithdrawalRequestDto
+RestaurantWithdrawalApiController,getWithdrawalHistory,GET,/api/restaurant/withdrawal/history,"API lịch sử rút tiền",RESTAURANT_OWNER,
+TableStatusApiController,updateTableStatus,POST,/api/staff/table-status/update,"API cập nhật trạng thái bàn",RESTAURANT_OWNER,
+RateLimitingApiController,getRateLimitStatus,GET,/api/rate-limiting/status,"API trạng thái rate limiting",ADMIN,
+AdminApiController,getSystemStats,GET,/api/admin/stats,"API thống kê hệ thống",ADMIN,
+BankDirectoryController,getBanks,GET,/api/banks,"API danh sách ngân hàng",PUBLIC,BankDirectory

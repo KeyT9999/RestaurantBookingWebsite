@@ -1,0 +1,7248 @@
+﻿Requirement & Design Specification
+JOBTRANS - PLATFORM TO SUPPORT RECRUITMENT AND SEARCH FOR ONLINE JOBS
+Version: 3.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+– Danang, November 2024–
+
+
+Record of Changes
+Version
+	Date
+	A*
+M, D
+	In charge
+	Change Description
+	V1.0
+	1/10/2024
+	A
+	All
+	Intial
+	V3.0
+	08/11/2024
+	M
+	QuangNH
+	Modify all document
+	V3.0
+	05/11/2024
+	A
+	DuyenVTM
+	Add function Create new shipment Order
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	*A - Added M - Modified D - Deleted
+________________
+
+
+Contents
+Record of Changes        2
+Contents        3
+I. Overview        6
+1. User Requirements        6
+1.1 Actors        6
+1.2 Use Cases        6
+2. Overall Functionalities        16
+2.1 Screens Flow        16
+2.2 Screen Descriptions        19
+2.3 Screen Authorization        23
+2.4 Non-UI Functions        28
+3. System High Level Design        29
+3.1 Database Design        29
+3.2 Code Packages        33
+1. Authentication        35
+1.1 UC-01_Register        35
+1.2 UC-02_Login        36
+1.3 UC-03_Logout        37
+1.4 UC-04_View profile        38
+1.5 UC-05_Edit profile        38
+1.6 UC-06_Change password        39
+1.7 UC-07_Forgot password        40
+2. Manage Admin's job posting        41
+2.1 UC-36_Refund to employer        41
+2.2 UC-37_Pay salary to seeker        41
+2.3 UC-31_Report user        42
+2.4 UC-34_View post list        43
+2.4. UC-35_Verify job post        43
+3.Online CV Management        44
+3.1 UC-8.1_Create CV        44
+3.2 UC-8.2_View CV        45
+3.3 UC-8.3_Update CV        45
+3.4 UC-8.4_Delete CV        46
+4. Wallet and Transaction        47
+4.1 UC-9_View Wallet and Transaction        47
+5.Apply for a job        48
+5.1 UC-06_Search job post        48
+5.2 UC-12_View employer’s introduction page.        48
+5.3 UC-11_View a job post        49
+5.4 UC-13_Apply for a job        49
+5.5 UC-14_View applied job list        50
+6. Recruitment for job        51
+6.1 UC-15.1_Create Job Post.        51
+6.2 UC-15.2_View a Post        51
+6.3 UC-15.3_Update a Post        52
+6.4 UC-15.4_Delete a Post        53
+6.5 UC-18_View applied seeker’s information.        53
+6.6 UC-17_View applied seeker list.        54
+6.7 UC-19_Confirm successful seeker.        55
+7. Work online through JobTrans        56
+7.1 UC-20_Prepaid for job        56
+7.2. UC-21_Deposit money for job        56
+7.3. UC-22_Chat        57
+7.4.UC-23_View Progress        58
+7.5. UC-24_Create new period of progress        59
+7.6. UC-25_Accept period submission        60
+7.7. UC-26_Reject period submission        61
+7.8. UC-27_Submit period submission        61
+7.9. UC-28_Submit final result offline        62
+7.10 UC-29_Submit final result online        63
+7.11 UC-30_Accept final result        64
+8. Manage User - Admin        65
+8.1 UC-38_View users list        65
+8.2 UC-39_Ban/Unban user        65
+8.3 UC-40_View user’s profile        66
+III. Design Specifications        67
+1.View list job - Admin:        67
+1.1 View list job - Admin:        67
+1.2. View job post        70
+2.Authentication        72
+2.1. Register        72
+2.2. Login        73
+2.3. Logout        75
+2.4. Change password        76
+2.5. Forgot password        77
+2.6. View profile        82
+2.7. Edit profile        84
+3.Online CV Management        86
+3.1.Create CV        86
+3.2.View CV        89
+3.3.Delete CV        91
+3.4.Update CV        93
+UI Design        93
+4. Wallet and transaction management        95
+4.1.View wallet        95
+4.2. Add money into wallet        97
+5. Apply for a job        99
+5.1 Search job post        99
+5.2 View employer’s information        101
+5.3 View job post        103
+5.4. Apply        104
+5.5  View applied job list        106
+6. Recruitment for job        108
+6.1 Create Job Post        108
+6.2  View a post        110
+6.3 Update job post        112
+6.4 Delete job post        114
+6.5 View job post list        114
+6.6 Update interview        116
+6.7 View applied seeker list        117
+7. Work online through JobTrans        119
+7.1. Prepaid for job        119
+7.2 Deposit for job        121
+7.3 Chat        122
+7.4 Create new period of progress - Employer        124
+7.5 View Period Submission        125
+7.6 Submit period submission        126
+7.7 View confirmed job post - Employer        128
+7.8 View job post - Seeker        130
+7.9. Submit final result online        132
+7.10. Submit final result offline        133
+7.5.Give feedback        137
+8. Manage User - Admin        138
+8.1 View user list        138
+8.2 Ban/Unban user        140
+8.3 View user’s profile        141
+IV. Appendix        142
+1. Assumptions & Dependencies        142
+2. Limitations & Exclusions        143
+3. Business Rules        143
+4. Application Messages List        146
+________________
+
+
+I. Overview
+1. User Requirements
+1.1 Actors
+#
+	Actor
+	Description
+	1
+	Admin
+	The highest priority manager, has authority to view details, create new, search, update and delete the post, user, transaction
+- Has authority to manage users, transaction, recruitment post
+- Has authority to manage profile
+	2
+	Employer
+	Employers are businesses or individuals who have recruitment needs, using the Platform to post recruitment ads and search for suitable Seekers.
+	3
+	Seeker
+	A Seeker is a job seeker who uses the Platform to find jobs, apply, and track the hiring process.
+	4
+	Guest
+	A guest is a user visit website without loging in
+	
+
+1.2 Use Cases
+a. Diagram(s)
+ A diagram of a person with a person's figure
+
+Description automatically generated 
+
+Figure 1. Authentication use case diagram
+ A diagram of a diagram
+
+Description automatically generated 
+
+Figure 2. Overview use case diagram
+ A diagram of a workflow
+
+Description automatically generated 
+
+Figure 3. Admin use case diagram
+ A diagram of a job
+
+Description automatically generated with medium confidence 
+
+Figure 4. Seeker use case diagram
+ A diagram of a person
+
+Description automatically generated 
+
+Figure 5. Employer use case diagram
+ A diagram of a job
+
+Description automatically generated 
+
+Figure 6. Pay use case diagram
+ A diagram of a process
+
+Description automatically generated 
+
+Figure 7. Progress use case diagram
+b. Descriptions
+
+
+
+
+ID
+	Feature
+	Use case
+	Description
+	UC-01
+	Authentication 
+	Register
+	Register new account to access features of the Platform
+	UC-02
+	Authentication 
+	Login
+	Any Users has account in the Platform, can access to the Platform by entering valid Username and password
+	UC-03
+	Authentication 
+	Logout
+	Log out the Platform
+	UC-04
+	Authentication 
+	View profile
+	Any Users after login successfully can view their profile on the platform.
+	UC-05
+	Authentication 
+	Edit profile
+	Users can edit their information like change name, change date of birth...
+	UC-06
+	Authentication 
+	Change Password
+	Users can change their password if they want as long as they enter a valid old password.
+	 UC-07
+	Authentication 
+	Forgot password
+	When users log in if they forgot their password, they can request a verification mail to get an OTP then set a new password.
+	UC-08
+	Online CV Management
+	CRUD CV
+	Seekers can create, view, update, delete their CV.
+	UC-09
+	Wallet and Transaction Management
+	View transaction history (Wallet)
+	Users can view balance, history of transaction progress
+	UC-10
+	Apply for job
+	Search job post
+	Users can search jobs by criteria  such as location, specialization, and job type.
+	UC-11
+	Apply for job
+	View job post
+	Users can view the information of job in detail.
+	UC-12
+	Apply for job
+	View employer’s information
+	Seekers can view employer’s information
+	UC-13
+	Apply for job
+	Apply for a job
+	Seekers apply by submitting an application form depending on Platform requirements and nature of work
+	UC-14
+	Apply for job
+	View applied job list
+	Seekers can view list of job they applied
+	UC-15
+	Recruitment for job
+	CRUD a post
+	Employers can create, view, update and delete a recruitment post.
+	UC-16
+	Recruitment for job
+	Update interview
+	Employers can update interview for candidates including time and Google meet link
+	UC-17
+	Recruitment for job
+	View applied seeker list
+	Employers can view complete Seeker’s information.
+	UC-18
+	Recruitment for job
+	View applied seeker’s information
+	Employers can view candidates' information to see their information.
+	UC-19
+	Recruitment for job
+	Confirm successful seeker
+	Employers confirm successful recruitment.
+	UC-20
+	Work online through JobTrans
+	Prepaid for job
+	The employer will transfer the project funds into the system account in advance and the funds will be held until the project is liquidated.
+	UC-21
+	Work online through JobTrans
+	Deposit money for job
+	Job seekers must deposit 10% of the project amount in advance to ensure that the work will be completed.
+	UC-22
+	Work online through JobTrans
+	Chat
+	Users contact other users on platform chat channels.
+	UC-23
+	Work online through JobTrans
+	View progress
+	Employer, Seeker can view the project’s progress including periods
+	UC-24
+	Work online through JobTrans
+	Create period
+	Employers can set a progress for the seeker to follow each period of the project.
+	UC-25
+	Work online through JobTrans
+	Accept period submission
+	Employers accept project period results after receiving results.
+	UC-26
+	Work online through JobTrans
+	Reject period submission
+	The employer may reject the result if the result does not meet the requirements set forth by the employer in the post.
+	UC-27
+	Work online through JobTrans
+	Submit period submission online
+	Seeker can send work results in the form of software projects, documents, images, mp4, mp3,... online on the system.
+	UC-28
+	Work online through JobTrans
+	Submit final result offline
+	Seekers can submit physical results by filling out the shipping information form on the system.
+	UC-29
+	Work online through JobTrans
+	Submit final result online
+	Seekers can submit final digital product on the platform
+	UC-30
+	Work online through JobTrans
+	Accept final result
+	Employers confirm project results after receiving results.
+	UC-31
+	Work online through JobTrans
+	Report user
+	can report violations of community standards on the platform.
+	UC-32
+	Work online through JobTrans
+	Report job
+	Employers and job seekers can send job complaints with issues
+	UC-33
+	Work online through JobTrans
+	Give feedback
+	Users can send a reputation assessment form after project completion.
+	UC-34
+	Manage Job-Admin
+	View post list
+	Admins view job posts on the platform.
+	UC-35
+	Manage Job-Admin
+	Verify job post
+	Admins can verify post content on the platform.
+	UC-36
+	Manage Job-Admin
+	Refund to employer
+	Admin will transfer back the amount that the employer has previously sent and the seeker's deposit to the employer if the seeker cannot complete the job.
+	UC-37
+	Manage Job-Admin
+	Pay salary to seeker
+	Admin will transfer the project completion money along with the amount that seeker transferred earlier if the project is confirmed completed.
+	UC-38
+	Manage User - Admin
+	View Users list
+	Admins can view all Users on the platform
+	UC-39
+	Manage User - Admin
+	Ban/Unban User
+	Admins can ban/unban user on the platform
+	UC-40
+	Manage User - Admin
+	View User Profile
+	Admins can view user’s basic information on the platform
+	
+
+
+
+2. Overall Functionalities
+2.1 Screens Flow
+  
+
+Figure 8. Screen flow Diagram – Guest
+  
+
+Figure 9. Screen flow Diagram – Employer
+  
+
+Figure 10. Screen flow Diagram – Seeker
+  
+
+Figure 11. Screen flow Diagram – Admin
+2.2 Screen Descriptions
+
+
+ID
+	Feature
+	Screen
+	Description
+	1
+	View list job post - Admin
+	Job management
+	Allows administrators to view a list of job postings and perform actions such as editing or deleting posts.
+	2
+	View details job post - Admin
+	Job post details
+	Allows admins to view details about a specific job posting including job information and requirements.
+	3
+	Refund money to employer - Admin
+	Job post details
+	 Allows administrators to refund employers in cases where jobs are not completed or there are problems.
+	4
+	Salary transfer to seeker - Admin
+	Job post details
+	Allows admin to transfer salary to candidate after job is completed.
+	5
+	View list user 
+	User management
+	Allows administrators to view a list of users and perform management actions such as locking accounts or editing information.
+	6
+	View user information
+	Account details
+	Allows administrators to view detailed information about a specific user, including personal information and projects worked on.
+	7
+	Register
+	Register
+	Allows users to register new accounts to use the system.
+	8
+	Login
+	Login
+	Allows users to log into the system using their registered accounts or Google account.
+	9
+	Logout
+	Logout
+	Allows users to log out of the system.
+	10
+	View Profile
+	Profile
+	Allows users to view their personal profile information in the system.
+	11
+	Edit profile
+	Edit profile
+	Allows users to edit their personal information.
+	12
+	Change Password
+	Change password
+	Allows the user to change his current password.
+	13
+	Forgot password
+	Forgot password
+	Allows users to recover their passwords through the "Forgot Password" function.
+	14
+	Create CV
+	Create CV
+	Allows seekers to create online CVs for job search.
+	15
+	View CV
+	View CV
+	Allows seekers to review the online CV they have created.
+	16
+	Update CV
+	Update CV
+	Allows seekers to update information in their online CV.
+	17
+	Delete CV
+	Manage CV
+	Allows seekers to delete the online CV they have created.
+	18
+	View wallet
+	Wallet
+	Allows users to view their balance and information related to their e-wallet in the system (transaction history).
+	19
+	View transaction history
+	Wallet
+	Allows users to view transaction history related to e-wallet.
+	20
+	Add money into wallet
+	Wallet, 3-rd party online payment page
+	Allows users to deposit money into e-wallets to use for transactions within the system.
+	21
+	Search job post
+	HomePage
+	Allows seekers to search for job postings based on keywords, location, or other criteria.
+	22
+	View employer’s information
+	Employer’s information page
+	Allows seekers to view detailed information about the employer, including company name, address, and description.
+	23
+	View job post
+	Job page
+	Allows seekers to view details of a job posting including job requirements and detailed description.
+	24
+	Apply for job 
+	Job page
+	Allows seekers to apply for a specific job through the system.
+	25
+	View applied job list
+	Applied job list
+	Allows seekers to view a list of jobs they have applied for.
+	26
+	CRUD job post
+	Manage job
+	Allows employers to create, view, update, and delete job postings.
+	27
+	View posted list
+	View posted list
+	Allows employers to view a list of jobs they have posted on the system.
+	28
+	View applied seeker list
+	Recruitment management
+	Allows employers to view a list of candidates who have applied to their jobs.
+	29
+	View applied seeker’s information
+	Applied information
+	Allows employers to view detailed information about candidates who have applied for a job.
+	30
+	Update interview
+	Post’s detail
+	Allows employers to update interview details and google meet links.
+	31
+	Confirm successful seeker
+	Recruitment management
+	Allows employers to confirm that a candidate has been successfully selected for a job.
+	32
+	Prepay for work
+	Prepaying
+	Allows employers to prepay a portion of the cost of a job through the system.
+	33
+	Deposit to accept job
+	Depositing
+	Allows seekers to deposit money into the system to accept jobs.
+	34
+	Chat
+	My Job List
+	Allows employers and seekers to exchange information and discuss jobs via online chat.
+	35
+	Manage progress
+	Job progress management
+	Allows employers and candidates to track and manage the progress of assigned work.
+	36
+	Submit period submission online
+	Submitting period’s result
+	Allow seekers to submit phased work progress reports online through the system.
+	37
+	View list confirmed job- Employer
+	My job list
+	Allows employers to view a list of confirmed jobs on the JobTrans system.
+	38
+	View list confirmed job - Seeker
+	My job list
+	Allows seekers to view a list of jobs they have been confirmed for on the JobTrans system.
+	39
+	Submit final result online
+	Submitting final result
+	Allows seekers to submit final results of their work online through the system.
+	40
+	Submit final result offline
+	Submitting final result
+	Allow seekers to submit final work results offline (in person) if the job requires it.
+	41
+	Give feedback
+	Employer Information, Applied Information
+	Allows seekers and candidates to provide feedback on the collaboration after the job is completed.
+	
+
+2.3 Screen Authorization
+Screen
+	Guest
+	Employer
+	Seeker
+	Admin
+	Home page
+	X
+	X
+	X
+	X
+	Register
+	X
+	
+
+	
+
+	
+
+	        Choose role
+	X
+	
+
+	
+
+	
+
+	        Fill in information
+	X
+	
+
+	
+
+	
+
+	Login
+	
+
+	X
+	X
+	X
+	        Log in to the platform
+	
+
+	X
+	X
+	X
+	        Fill in information
+	
+
+	X
+	X
+	X
+	        Log in with google
+	
+
+	X
+	X
+	X
+	Logout
+	
+
+	X
+	X
+	X
+	Change password
+	
+
+	X
+	X
+	X
+	        Change password confirm
+	
+
+	X
+	X
+	X
+	        Fill in information
+	
+
+	X
+	X
+	X
+	        Back to personal page
+	
+
+	X
+	X
+	X
+	Forgot password
+	
+
+	X
+	X
+	X
+	        Fill in information
+	
+
+	X
+	X
+	X
+	        Receive OTP code
+	
+
+	X
+	X
+	X
+	Verify OTP
+	
+
+	X
+	X
+	X
+	        Fill in OTP
+	
+
+	X
+	X
+	X
+	        Back to home page 
+	
+
+	X
+	X
+	X
+	Profile
+	
+
+	X
+	X
+	X
+	        Query all information
+	
+
+	X
+	X
+	X
+	        Edit profile
+	
+
+	X
+	X
+	X
+	Change password
+	
+
+	X
+	X
+	X
+	Edit profile
+	
+
+	X
+	X
+	X
+	        Fill in information
+	
+
+	X
+	X
+	X
+	        Update profile 
+	
+
+	X
+	X
+	X
+	Create CV
+	
+
+	
+
+	X
+	
+
+	        Query basic profile information
+	
+
+	
+
+	X
+	
+
+	        Fill in information
+	
+
+	
+
+	X
+	
+
+	        Save CV
+	
+
+	
+
+	X
+	
+
+	View CV
+	
+
+	X
+	X
+	
+
+	        Query all CV information
+	
+
+	
+
+	X
+	
+
+	        Edit CV
+	
+
+	
+
+	X
+	
+
+	        Delete CV
+	
+
+	
+
+	X
+	
+
+	Update CV
+	
+
+	
+
+	X
+	
+
+	        Query all CV information
+	
+
+	
+
+	X
+	
+
+	        Fill in information
+	
+
+	
+
+	X
+	
+
+	        Save CV
+	
+
+	
+
+	X
+	
+
+	Wallet
+	
+
+	X
+	X
+	X
+	        Query wallet and transaction’s data
+	
+
+	X
+	X
+	X
+	        Add money into wallet
+	
+
+	X
+	X
+	X
+	        Filter transaction by date 
+	
+
+	X
+	X
+	X
+	Job list
+	X
+	X
+	X
+	X
+	        Query data
+	X
+	X
+	X
+	X
+	Employer’s information
+	
+
+	X
+	X
+	X
+	        Query data
+	
+
+	X
+	X
+	X
+	Job page
+	X
+	X
+	X
+	X
+	        Query data
+	X
+	X
+	X
+	X
+	        Apply job
+	
+
+	
+
+	X
+	
+
+	Applied job list
+	
+
+	
+
+	X
+	
+
+	        Query data
+	
+
+	
+
+	X
+	
+
+	        View detail
+	
+
+	
+
+	X
+	
+
+	Create new post
+	
+
+	X
+	
+
+	
+
+	        Fill in information
+	
+
+	X
+	
+
+	
+
+	        Upload file
+	
+
+	X
+	
+
+	
+
+	        Post recruitment
+	
+
+	X
+	
+
+	
+
+	Post’s detail 
+	
+
+	X
+	
+
+	
+
+	        Query data
+	
+
+	X
+	
+
+	
+
+	        Update post
+	
+
+	X
+	
+
+	
+
+	        Delete post
+	
+
+	X
+	
+
+	
+
+	        Update interview
+	
+
+	X
+	
+
+	
+
+	Update post
+	
+
+	X
+	
+
+	
+
+	        Fill in information
+	
+
+	X
+	
+
+	
+
+	        Update confirm
+	
+
+	X
+	
+
+	
+
+	Delete post
+	
+
+	X
+	
+
+	
+
+	Employer’s posted list
+	
+
+	X
+	
+
+	
+
+	        Query data
+	
+
+	X
+	
+
+	
+
+	Employer’s job list
+	
+
+	X
+	
+
+	
+
+	Applied information
+	
+
+	X
+	
+
+	
+
+	        Query data
+	
+
+	X
+	
+
+	
+
+	Update interview 
+	
+
+	X
+	
+
+	
+
+	        Fill in information
+	
+
+	X
+	
+
+	
+
+	Recruitment management
+	
+
+	X
+	
+
+	
+
+	        Accept request
+	
+
+	X
+	
+
+	
+
+	        Query data
+	
+
+	X
+	
+
+	
+
+	        Send message
+	
+
+	X
+	
+
+	
+
+	My job list
+	
+
+	X
+	X
+	
+
+	        Query data
+	
+
+	X
+	X
+	
+
+	        View report
+	
+
+	X
+	X
+	
+
+	Report job
+	
+
+	X
+	X
+	
+
+	Job Progress
+	
+
+	X
+	X
+	
+
+	Requirements period
+	
+
+	X
+	X
+	
+
+	Submitting period result
+	
+
+	
+
+	X
+	
+
+	Submit final result online
+	
+
+	
+
+	X
+	
+
+	        Fill in information
+	
+
+	
+
+	X
+	
+
+	        Upload file
+	
+
+	
+
+	X
+	
+
+	        Submit result
+	
+
+	
+
+	X
+	
+
+	Submit final result offline
+	
+
+	
+
+	X
+	
+
+	        Fill in information
+	
+
+	
+
+	X
+	
+
+	        Submit result
+	
+
+	
+
+	X
+	
+
+	Give feedback
+	
+
+	X
+	X
+	
+
+	        Fill in information
+	
+
+	X
+	X
+	X
+	        Submit feedback
+	
+
+	X
+	X
+	X
+	Job management
+	
+
+	 
+	
+
+	X
+	        Verify post
+	 
+	 
+	
+
+	X
+	            Filter status
+	
+
+	
+
+	
+
+	X
+	            Query job data
+	
+
+	
+
+	
+
+	X
+	Job-post-detail
+	
+
+	 
+	
+
+	X 
+	        Refund
+	
+
+	 
+	 
+	 X
+	        Pay salary
+	 
+	 
+	
+
+	X 
+	        View report
+	 
+	 
+	
+
+	X 
+	        View applied list
+	 
+	 
+	
+
+	X
+	        View joined list
+	 
+	 
+	 
+	X
+	           Verify post
+	
+
+	
+
+	
+
+	X
+	Job report detail
+	
+
+	
+
+	
+
+	X
+	User Management
+	
+
+	
+
+	
+
+	X
+	        Query employer list
+	 
+	 
+	 
+	X
+	        Query seeker list
+	 
+	 
+	 
+	X
+	        Query basic information of user
+	 
+	 
+	 
+	X 
+	            Ban/Unban user
+	 
+	 
+	 
+	X 
+	Account detail
+	
+
+	
+
+	
+
+	X
+	        View report
+	
+
+	
+
+	
+
+	X
+	        Ban/Unban user
+	
+
+	
+
+	
+
+	X
+	        Query basic information of user
+	
+
+	
+
+	
+
+	X
+	User report detail
+	
+
+	
+
+	
+
+	X
+	Report User
+	
+
+	X
+	X
+	
+
+	
+
+2.4 Non-UI Functions
+
+
+ID
+	Feature
+	System Function
+	Description
+	1
+	<<Feature Name>>
+	<<Function Name1>>
+	<<Function Name1 Description>>
+	2
+	…
+	 
+	
+
+	
+
+3. System High Level Design
+3.1 Database Design
+a. Database Schema
+  
+
+
+
+b. Table Descriptions
+No
+	Table
+	Description
+	1
+	Users
+	 Stores information about users, including username, password, role, balance, description, date of birth, and authentication details.
+	2
+	CV
+	Contains CV information for users, such as job position, summary, creation time, and associated user_id.
+	3
+	CV_Experience
+	Stores details about work experience related to a CV, including job position, address, start and end dates, and custom company information.
+	4
+	CV_Skill
+	Links skills to a CV by storing the cv_id and skill_id.
+	5
+	CV_Certification
+	Stores information about certifications related to a CV, such as year, description, and custom certification name.
+	6
+	CV_Education
+	Stores education details related to a CV, including start and end dates, field of study, degree, and custom school name.
+	7
+	Company
+	Contains information about companies where the user gained experience, such as company name.
+	8
+	Skill
+	Stores various skills that can be linked to a CV.
+	9
+	Certification
+	Stores different certifications that can be linked to a CV.
+	10
+	School
+	Stores information about schools that can be linked to a CV.
+	11
+	Notifications
+	Stores notifications for users, including title, content, creation time, read status, and notification link.
+	12
+	UserReport
+	Contains reports filed by or against users, including reported user, report content, and status.
+	13
+	MESSAGE
+	Stores messages exchanged between users, including sender, receiver, message content, and attachment.
+	14
+	Transaction
+	Records transaction details between users, such as sender, receiver, amount, date, status, and type.
+	15
+	Job
+	Contains job listings, with details like job title, budget, description, due date, and associated user_id and category.
+	16
+	JobCategory
+	Stores categories for job listings, including category name.
+	17
+	JobGreetings
+	Stores greetings or introductions submitted by job seekers for job listings, including introduction, attachment, price, and status.
+	18
+	JobReport
+	Contains reports on job listings, including the reported job, report content, and status.
+	19
+	Shipment
+	Stores shipment details related to job listings, such as pickup and delivery addresses, contact details, and product info.
+	20
+	Process
+	Contains information about the process stages for a job, such as stage name, requirements, results, and related job_id.
+	21
+	DigitalProduct
+	Stores information on digital products related to jobs, including product URL, notes, and status.
+	3.2 Code Packages
+  
+
+Package descriptions
+
+
+No
+	Package
+	Description
+	1
+	Presentation Layer
+	Contains the User Interface components, handling the user’s interaction with the system.
+	2
+	Business Layer
+	Contains the core business logic and processing modules, managing data flow and rules.
+	3
+	Data Layer
+	Manages the data access logic, handling storage and retrieval from the database.
+	4
+	Controller
+	Acts as a bridge between the User Interface and other modules in the Business Layer.
+	5
+	Utils
+	Provides utility functions and common services used across the application.
+	6
+	Config
+	Manages configuration settings and application environment variables.
+	7
+	Filter
+	Contains filters for data validation, authentication, and request processing.
+	8
+	Models
+	Represents the data structure and entities used within the application’s domain.
+	9
+	DAL (Data Access Layer)
+	Handles database operations specifically for retrieving and saving data.
+	10
+	Data
+	Represents the underlying data and database schema definitions.
+	
+
+II. Requirement Specifications
+1. Authentication
+
+
+1.1 UC-01_Register
+a. Functionalities
+UC ID and Name:
+	UC-1_Register
+	Created By:
+	VuVN
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Guest
+	Secondary Actors:
+	None
+	Trigger:
+	Guest clicks on the button “Đăng nhập/đăng ký” pop-up form.
+	Description:
+	As a guest I want to register successfully so that I can use the system’s authenticated features.
+	Preconditions:
+	Gmail must be unique when they register for the first time.
+	Postconditions:
+	Guests can register successfully.
+	Normal Flow:
+	1.0 Register system
+1. A guest user navigates to the platform and clicks on the "Đăng nhập/Đăng ký" button located in the header.
+2. The platform opens a pop-up registration form that asks for details such as email, password, and role ( Employer, Seeker).
+3. The guest fills in the required information in the form fields (valid email, password, role selection).
+4. The guest clicks the "Đăng ký" button to submit the form for validation.
+5. System validates the register details .
+6. System tracks guest’s success register to the Activity Log.
+7. System accesses the Home Page.
+	Alternative Flows:
+	None
+	Exceptions:
+	1.0.E1 Guest entered the wrong format of the fields
+1. The Error Message screen is shown to the user.
+2. Guests did not fill in required fields.
+3. Guests fills in invalid information.
+1.0.E2 Guest’s email was available in system
+1. The Error Message screen is shown to the user.
+	Priority:
+	Must have
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-01,BR-02,BR-03,BR-08
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b.Business Rule
+ID
+	Business Rule
+	Business Rule Description
+	BR-01
+	Wrong email rule
+	System will notify guest the message MSG01 if they dont fill invalid email address
+	BR-02
+	Wrong password rule
+	System will notify User the MSG02 if they fill in invalid password ( < 8 regex)
+	BR-03
+	Used email rule
+	System will notify guest the MSG03 if they had been used gmail for register
+	BR-08
+	Wrong Re-entered Password rule
+	System will notify User the MSG11 if they fill in wrong re-entered password 
+	
+
+
+
+1.2 UC-02_Login
+a. Functionalities
+
+
+UC ID and Name:
+	UC 2_Login
+
+
+	Created By:
+	VuVN
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin, Seeker , Employer
+	Secondary Actors:
+	
+
+	Trigger:
+	-·Users click on the button “đăng nhập/đăng ký” on header. 
+- Click on the ”đăng nhập”.
+
+
+	Description:
+	As a user, I want to be able to log into the system so that I can use the system’s authenticated features and access my personalized account. 
+	Preconditions:
+	User has already has an account on the platform .
+	Postconditions:
+	Users can login successfully.
+	Normal Flow:
+	2.0 Login system
+1. User accesses the User Login screen
+2. User types in the login details or choose other login options (see 2.1)
+3. User clicks the Login button
+4. System validates the login details
+5. System allows user to access 
+6. System tracks user’s success login to the Activity Log
+7. System accesses the Home Page
+	Alternative Flows:
+	2.1 Google Login
+1. User chooses to login system using Google account
+2. System redirects the user to the Google’s Login screen
+3. User types in the Google account details and chooses to login
+4. Google validates user’s login information successfully and redirect him/her back to the system
+5. Return to step 5 of normal flow.
+	Exceptions:
+	2.0.E2 System can’t authenticate the user
+1. The Error Message screen is shown to the user
+2. User cancels the logging in => UC stops, change to Homepage
+3. User clicks “Forgot Password?” link => change to UC-5_Reset Password
+4. User clicks “Register” link => change to UC-2_Register User Account
+	Priority:
+	Must Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-01,BR-02,BR-04,BR-36,BR-37
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b.Business Rule
+ID
+	Business Rule
+	Business Rule Description
+	BR-01
+	Wrong email rule
+	System will notify guest the message MSG01 if they dont fill invalid email address
+	BR-02
+	Wrong password rule
+	System will notify User the MSG02 if they fill in invalid password ( < 8 regrex)
+	BR-04
+	Notification about login information rule
+
+
+	-System will notify User the MSG04 and redirect to the guest homepage if they fill the wrong registered email and password.
+-System will notify User the MSG05 and redirect to user homepage if they fill correct registered email and password
+	BR-36
+	Role choosing Form Rule
+	-This form only appears for gmail when logging into the system for the first time (no role yet). The recommended role is Employer/Seeker.
+-This form does not apply to Admin accounts.
+	BR-37
+
+
+	Login-gmail Rule
+
+
+	In case gmail has been successfully registered with password on the system registration form, when logging in using gmail login method, it still accesses that account.
+	
+
+1.3 UC-03_Logout
+a. Functionalities
+
+
+UC ID and Name:
+	UC-3_Logout
+	Created By:
+	VuVN
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin, Employer, Seeker
+	
+
+Secondary Actors:
+	
+
+	Trigger:
+	Admin, Employer, Seeker click on “Đăng xuất” 
+	Description:
+	As a user, I want to be able to log out of the system so that I can change other accounts.
+	Preconditions:
+	Users are logged in successfully as the actor above.
+	Postconditions:
+	- Users can log out successfully.
+- End up the user's session.
+	Normal Flow:
+	3.0 Logout
+1. User clicks on the avatar on the header.
+2. Users click on the button “Đăng xuất” on the header.
+	Alternative Flows:
+	None.
+	Exceptions:
+	None.
+	Priority:
+	Must have.
+	Frequency of Use:
+	
+
+	Business Rules:
+	None.
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+
+
+b.Business Rule
+None
+
+
+1.4 UC-04_View profile
+
+
+a. Functionalities
+
+
+UC ID and Name:
+	UC-4_View profile
+	Created By:
+	VuVN
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin, Employer, Seeker
+	
+
+Secondary Actors:
+	
+
+	Trigger:
+	Users click on the ”Thông tin” 
+	Description:
+	As a user, I want to be able to view profile so that I can know exactly my specification
+	Preconditions:
+	Users logged in successfully as the actor above.
+	Postconditions:
+	Users can view detail information of their own accounts
+	Normal Flow:
+	4.0 View profile system
+1. Users click on the avatar in the header. 
+2. Users click on the ”Thông tin” 
+	Alternative Flows:
+	None.
+	Exceptions:
+	None.
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b.Business Rule
+None
+
+
+1.5 UC-05_Edit profile
+
+
+a. Functionalities
+
+
+UC ID and Name:
+	UC-4.1_Edit profile
+	Created By:
+	VuVN
+	Date Created:
+	30/Sep/2024
+	
+
+Primary Actor:
+	Admin, Employer, Seeker
+	
+
+Secondary Actors:
+	
+
+	
+
+Trigger:
+	Users has clicked on “Thông tin tài khoản”  on the platform 
+	Description:
+	As a user, I want to be able to change my account so that I can change my avatar.
+	Preconditions:
+	Users logged in successfully as actor above.
+	Postconditions:
+	Users can update information successfully.
+	Normal Flow:
+	4.1.0 Edit profile system
+1. Users click on the avatar in the header. 
+2. Users click on the ”Thông tin” 
+3. Users click on the ”Chỉnh sửa thông tin” 
+	
+
+Alternative Flows:
+	4.1.1 Edit profile system
+1. Users click on the avatar in the header. 
+2. Users click on the ”Sửa thông tin” 
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-38
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+
+
+b.Business Rule
+ID
+	Business Rule
+	Business Rule Description
+	BR-38
+	Upload profile successfully rule
+
+
+	System will notify guest the MSG06 if they update new profile and database successfully 
+
+
+	
+
+1.6 UC-06_Change password
+a. Functionalities
+
+
+UC ID and Name:
+	UC-4.2_Change password
+	Created By:
+	VuVN
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin, Employer, Seeker
+	Secondary Actors:
+	
+
+	Trigger:
+	Users click on “Đổi mật khẩu”
+	Description:
+	As a user, I want to be able to change my password so that I can update new password
+	Preconditions:
+	Users logged in successfully as the actor above.
+	Postconditions:
+	* Users can change passwords successfully.
+* Users can use new password to login
+	Normal Flow:
+	4.2.0 Change password system
+1. Users click on the avatar in the header. 
+2. Users click on the ”Sửa thông tin” 
+	
+
+Alternative Flows:
+	4.2.1 Change password system
+1. Users click on the avatar in the header. 
+2. Users click on the ”Sửa thông tin” 
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-02,BR-05
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+
+
+b.Business Rule
+ID
+	Business Rule
+	Business Rule Description
+	BR-02
+	Wrong password rule
+	System will notify User the MSG02 if they fill in invalid password ( < 8 regex)
+	BR-05
+	Wrong old password rule
+	 System will notify users the message MSG06 if they don’t fill correct old password of account
+
+
+	BR-08
+	Wrong re-enter password
+	 System will notify users of the message MSG11 if the re-entered password is incorrect.
+	BR-40
+	Wrong new password
+	 System will notify users the message MSG22 if the re-entered password is the same as the old password.
+	
+
+1.7 UC-07_Forgot password
+a. Functionalities
+UC ID and Name:
+	UC-5_Forgot password
+	Created By:
+	VuVN
+	Date Created:
+	30/Sep/2024
+	
+
+Primary Actor:
+	Admin, Employer, Seeker
+	
+
+Secondary Actors:
+	
+
+	Trigger:
+	User click on “Quên mật khẩu” on form login  
+	Description:
+	As a user, I want to be able to reset my password so that I can update new password
+	Preconditions:
+	User have already had account
+	Postconditions:
+	User is logged in successfully with new password 
+	Normal Flow:
+	5.0 Change password system
+1. Users click on”Đăng nhập/Đăng ký”in the header
+2. Users click on the ”Quên mật khẩu” 
+	
+
+Alternative Flows:
+	None
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-06,BR-07,BR-02,BR-08
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b.Business Rule
+ID
+	Business Rule
+	Business Rule Description
+	BR-06
+	Forgotten Account’s Gmail rule
+
+
+	 If gmail has never registered before, the system will display message MSG07.
+
+
+	BR-07
+	Wrong OTP rule
+	 If OTP is wrong, the system will display message MSG09 and load the OTP form page again.
+ If OTP is correct, the system will display message MSG010 and redirect to the reset password page.
+
+
+	BR-02
+	Wrong Password rule
+	System will notify User the MSG02 if they fill in invalid password ( < 8 regex)
+
+
+	BR-08
+	Wrong Re-entered Password rule
+	System will notify User the MSG11 if they fill in wrong re-entered password
+	
+
+2. Manage Admin's job posting 
+2.1 UC-36_Refund to employer 
+
+
+a. Functionalities
+UC ID and Name:
+	UC-25.4.1_Refund to employer 
+	Created By:
+	QuangNH
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Admin
+	Secondary Actors:
+	None
+	Trigger:
+	Admin clicks the "Hoàn Tiền" button.
+	Description:
+	Admin will transfer back the amount that the employer has previously sent and the seeker's deposit to the employer if the seeker cannot complete the job.
+	Preconditions:
+	* Employers and seekers do not prepay on time.
+* The work was submitted for complaint (report job) for obvious reasons.
+	Postconditions:
+	* Job deposit deducted.
+* Employer and Seeker's Wallet, Transaction History updated.
+	Normal Flow:
+	25.4.1.0 Refund to employer 
+1. Admin logs in the platform
+2. Admin clicks on “Quản lý công việc”
+3. Admin clicks on “Chi tiết công việc” 
+4. Admin clicks on “Xác nhận chuyển số tiền hoàn trả” button 
+	Alternative Flows:
+	N/A
+	Exceptions:
+	25.4.1.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	N/A
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+None
+2.2 UC-37_Pay salary to seeker
+
+
+a. Functionalities
+UC ID and Name:
+	UC-25.4.2_Pay salary to seeker
+	Created By:
+	QuangNH
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Admin
+	Secondary Actors:
+	None
+	Trigger:
+	Admin clicks the "Trả Lương" button.
+	Description:
+	Admin will transfer the project completion money along with the amount that seeker transferred earlier if the project is confirmed completed.
+	Preconditions:
+	Status of job is “Đã hoàn thành”
+	Postconditions:
+	* Admin wallet increases 3% discount from deposit
+* Seeker wallet increases deposit amount and salary of job
+	Normal Flow:
+	25.4.2.0 Pay salary to seeker
+1. Admin logs in the platform
+2. Admin clicks on “Quản lý công việc”
+3. Admin clicks on “Chi tiết công việc”
+4. Admin clicks on “Xác nhận chuyển lương” button 
+	Alternative Flows:
+	None
+	Exceptions:
+	25.4.2.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-35
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-35
+	Deduction Rules
+
+
+	3% of the total deposit is a fee paid to the intermediary system.
+	
+
+2.3 UC-31_Report user
+
+
+a. Functionalities
+UC ID and Name:
+	UC-9_Report user
+	Created By:
+	QuangNH
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Employer, Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	* The user or employer clicks "Báo Cáo" on the my jobs page for each accepted job.
+* The user or employer clicks "Báo Cáo" on the employer page.
+	Description:
+	Seekers or employers can report violations of community standards on the platform.
+	Preconditions:
+	* The user or employer is logged into the system.
+* Have the right to view the reported person's information page.
+	Postconditions:
+	The report is successfully submitted to the admin.
+	Normal Flow:
+	9.0 Report user
+1. Seeker logs in the platform
+2. Seeker clicks on “Xem thông tin”
+3. Seeker clicks on “Công việc của tôi” on sidebar
+4. Seeker clicks on “Báo Cáo” button to report an user
+	Alternative Flows:
+	N/A
+	Exceptions:
+	9.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	N/A
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+None
+
+
+2.4 UC-34_View post list
+
+
+a. Functionalities
+UC ID and Name:
+	UC-22_View post list
+	Created By:
+	VuVN
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin
+	Secondary Actors:
+	None
+	Trigger:
+	Admin clicks on “Quản lý bài đăng” on administrative admin 
+	Description:
+	As an admin, I want to be able to view job posts so that I can view many jobs.
+	Preconditions:
+	Admin is logged in successfully as the actor above.
+	Postconditions:
+	Admin can view the job list successfully.
+	Normal Flow:
+	22.0 View post list
+1. Admin logs in the platform
+2. Admin clicks on “Xem thông tin”
+3. Admin clicks on “Quản lý bài đăng” on sidebar
+	Alternative Flows:
+	None
+	Exceptions:
+	22.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+None
+
+
+2.4. UC-35_Verify job post
+
+
+a. Functionalities
+UC ID and Name:
+	UC-22.1_Verify job post
+	Created By:
+	VuVN
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin
+	Secondary Actors:
+	None
+	Trigger:
+	Admin clicks on “Chưa duyệt” on the managed job list.
+	Description:
+	Admin can verify job posts so that it ensures the quality of the job listings on the platform.
+	Preconditions:
+	Admin is logged in successfully as the actor above.
+	Postconditions:
+	Admin can label “Đã duyệt”  job posts successfully.
+	Normal Flow:
+	22.1.0 Verify job post
+1. Admin logs in the platform
+2. Admin clicks on “Xem thông tin”
+3. Admin clicks on “Quản lý bài đăng” on sidebar
+	Alternative Flows:
+	None
+	Exceptions:
+	22.1.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+None
+
+
+3.Online CV Management
+3.1 UC-8.1_Create CV
+
+
+a. Functionalities
+UC ID and Name:
+	UC-11.1_Create CV
+	Created By:
+	CongNV
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks the “ Tạo CV ” button in CV management.
+	Description:
+	As a Seeker, I want to be able to create my CV to apply for a job about experience, ability,....
+	Preconditions:
+	User is logged in successfully
+	Postconditions:
+	New CV is created.
+	Normal Flow
+	11.1.0 Create CV
+1. Seeker logs in the platform
+2. Seeker clicks on “Xem thông tin”
+3. Seeker clicks on “Quản lí CV”
+4. Seeker click ‘’Tạo CV” in CV management
+5. Seeker fill in the CV creation form
+6. Seeker clicks “Lưu CV”.
+7. Create CV successfully
+	Alternative Flows:
+	None
+	Exceptions:
+	11.1.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	Could Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-12, BR-13
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+ID
+	Business Rule
+	Business Rule Description
+	BR-12
+	
+
+Choosing field CV rule
+
+
+	* School, Company, skill selected from the system's available list
+* These items seeker can choose more than 1 
+	BR-13
+	
+
+Fill information rule
+
+
+	If CV information is missing, click save CV and the system will send a notification MSG18.
+	3.2 UC-8.2_View CV
+
+
+a. Functionalities
+UC ID and Name:
+	UC-11.2_View CV
+	Created By:
+	CongNV
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks the “ Xem CV ” in CV management.
+	Description:
+	As a Seeker, I want to be able to see the details of my CV
+	Preconditions:
+	* User is logged in successfully
+* CV of Seeker was created 
+	Postconditions:
+	CV is displayed 
+	Normal Flow
+	11.2.0 View CV
+1. Seeker logs in the platform
+2. Seeker clicks on “Xem thông tin”
+3. Seeker clicks on “Quản lí CV”
+4. Seeker click ‘’Xem CV” in list CV page
+5. System display CV on view CV page
+	Alternative Flows:
+	None
+	Exceptions:
+	11.2.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+3.3 UC-8.3_Update CV
+
+
+a. Functionalities
+UC ID and Name:
+	UC-11.3_Update CV
+	Created By:
+	CongNV
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	User select and clicks button “ Sửa CV ” in CV management.
+	Description:
+	As a Seeker, I want to be able to update my CV
+	Preconditions:
+	* User is logged in successfully
+* Seeker has at least one CV page
+	Postconditions:
+	CV updated successfully
+	Normal Flow
+	11.3 Update CV
+1. Seeker logs in the platform
+2. Seeker clicks on “Xem thông tin”
+3. Seeker clicks on “Quản lí CV”
+4. Seeker click ‘’Sửa CV” in list CV page
+5. Seeker fill in the form CV updation 
+6. Seeker clicks “Lưu CV”.
+7. Update CV successfully
+	Alternative Flows:
+	None
+	Exceptions:
+	11.3.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-12
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+ID
+	Business Rule
+	Business Rule Description
+	BR-12
+	
+
+Choosing field CV rule
+
+
+	 School, Company, skill selected from the system's available list
+These item seekers can choose more than 1.
+	3.4 UC-8.4_Delete CV
+a. Functionalities
+UC ID and Name:
+	UC-11.4_Delete CV
+	Created By:
+	CongNV
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks the “ Xoá CV ”  button in CV management.
+	Description:
+	As a Seeker, I want to be able to delete my CV
+	Preconditions:
+	* User is logged in successfully
+* Seeker has at least one CV page
+	Postconditions:
+	CV deleted successfully
+	Normal Flow
+	11.4 Delete CV
+1. Seeker logs in the platform
+2. Seeker clicks on “Xem thông tin”
+3. Seeker clicks on “Quản lí CV”
+4. Seekerclick ‘’Xóa CV” in list CV page
+5. Cv deleted successfully
+	Alternative Flows:
+	None
+	Exceptions:
+	11.4.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+4. Wallet and Transaction 
+4.1 UC-9_View Wallet and Transaction 
+
+
+a. Functionalities
+UC ID and Name:
+	 UC-15_View Wallet and Transaction 
+	Created By:
+	QuangNH
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Employer, Seeker, Admin
+	Secondary Actors:
+	Payment Gateway
+	Trigger:
+	The user clicks the "Xem ví" button.
+	Description:
+	Users can view balance, history of transaction progress
+	Preconditions:
+	The user has logged into the system.
+	Postconditions:
+	The system displays a list of transactions performed and the details of each transaction.
+	Normal Flow:
+	15.1.0 View Wallet and Transaction
+1. Users logs in the platform
+2. Users clicks on “Xem ví”
+	Alternative Flows:
+	15.1.0 View Wallet and Transaction
+1. Users logs in the platform
+2. Users clicks on “Xem thông tin”
+3. Users clicks on “Xem ví”
+	Exceptions:
+	15.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-15
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-15
+	Transaction Display Rules
+	* Display transaction history including date, month, year, hour, minute, second, amount, transaction type and description
+* Display from newest to oldest.
+* Filter the display by the date the user wants to display(maximum 5 lines).
+* There are 2 options: "Lọc" to filter by the date you want to view and "Xem thêm" to show all listings.
+	
+
+
+
+5.Apply for a job
+5.1 UC-06_Search job post
+
+
+a. Functionalities
+UC ID and Name:
+	UC-06_Search job post
+	Created By:
+	CongNV
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Guest, Admin, Seeker, Employer
+	Secondary Actors:
+	None
+	Trigger:
+	Users click “Tìm kiếm” on the search bar in home page
+	Description:
+	As a user , I want to be able to search jobs by keywords relevant to the title of the post.
+	Preconditions:
+	User visits homepage
+	Postconditions:
+	Display a list of jobs related to the searched keyword
+	Normal Flow
+	6.0 Search job post
+1. User click “tìm kiếm” on search bar
+2. System display blank page or list result
+	Alternative Flows:
+	None
+	Exceptions:
+	6.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-08
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+ID
+	Business Rule
+	Business Rule Description
+	BR-09
+	Search Results Rule
+	Display MSG17 if no search results are found.
+	
+
+5.2 UC-12_View employer’s introduction page.
+
+
+a. Functionalities
+UC ID and Name:
+	UC-12_View employer’s introduction page
+	Created By:
+	CongNV
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Seeker, Admin
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks avatar of employer of on job post page
+	Description:
+	As a seeker or admin , I want to be able to view employer’s introduction
+	Preconditions:
+	User is logged in successfully
+The employer has posted at least 1 job posting.
+	Postconditions:
+	Employer's information is displayed
+	Normal Flow
+	12.0 View employer’s introduction
+1. User click avatar company on Job post page
+2. Display employer’s introduction page
+	Alternative Flows:
+	None
+	Exceptions:
+	12.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+5.3 UC-11_View a job post
+a. Functionalities
+UC ID and Name:
+	UC-07_View a job post 
+	Created By:
+	CongNV
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin, Guest, Seeker, Employer
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks on each post in the job list page
+	Description:
+	As a user , I want to be able to view the information in detail.
+	Preconditions:
+	Job post is available
+	Postconditions:
+	Display information of job in detail.
+	Normal Flow
+	7.0 View a job post
+1. Select and click job summary on job list page
+2. Display job detail page
+	Alternative Flows:
+	None
+	Exceptions:
+	7.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+5.4 UC-13_Apply for a job
+a. Functionalities
+UC ID and Name:
+	UC-13_Apply for a job
+	Created By:
+	CongNV
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	 User clicks on job they want to apply for on job page
+	Description:
+	As a seeker , I want to be able to apply for the job.
+	Preconditions:
+	* User is logged in successfully
+* Seeker must have at least 1 CV
+* The applied job has the status "Đang tuyển dụng"
+	Postconditions:
+	* Seeker applies and bids successfully
+* Employer receives notification of new application
+	Normal Flow
+	13.0  Apply for a job
+1. Seeker select job want to apply
+2. System display job detail page and application form
+3. Seeker fill form application
+4. Click "Ứng Tuyển"
+5. System apply successful
+	Alternative Flows:
+	None
+	Exceptions:
+	13.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-14, BR-41
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+ID
+	Business Rule
+	Business Rule Description
+	BR-14
+	Job Apply Form Rule
+	Application form includes: Offer price, Estimated completion date, Proposal, attachment 
+	BR-41
+	Notification of new application to employer
+	Send notification of new job applications as MSG23 for employer and MSG24 for seeker about applying for a job.
+	
+
+
+
+5.5 UC-14_View applied job list
+a. Functionalities
+UC ID and Name:
+	UC-14_View applied job list
+	Created By:
+	CongNV
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	Click "công việc đã ứng tuyển" in the job management section in the sidebar on the profile page
+	Description:
+	As a seeker , I want to be able to view list of job i applied 
+	Preconditions:
+	User is logged in successfully
+	Postconditions:
+	The list of jobs that the Seeker has applied for is displayed
+	Normal Flow:
+	14.0  View applied job list
+1. Seeker click “quản lý công việc”
+2. Seeker click "công việc đã ứng tuyển”
+3. System display job list be applied
+	Alternative Flows:
+	None
+	Exceptions:
+	14.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+6. Recruitment for job
+6.1 UC-15.1_Create Job Post.
+
+
+a. Functional Description
+UC ID and Name:
+	UC-16.1_Create Job Post.
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks “Đăng tin tuyển dụng” in sidebar.
+	Description:
+	As an employer, I want to be able to create a job post so that I can post my recruitment to find the human resources. 
+	Preconditions:
+	User is logged in successfully with a role as an employer.
+	Postconditions:
+	User post a job successfully.
+	Normal Flow
+	16.1.0 Create new job post
+1. User clicks on “Đăng tin tuyển dụng” button.
+2. System displays create a new job page.
+3. User fills in the content and uploads the document.
+4. System displays temporary content.
+5. User clicks “Đăng tin  tuyển dụng” button.
+6. System posts a new job and saves the database.
+	Alternative Flows:
+	None
+	Exceptions:
+	16.1.0.E1 Login session has expired
+1. User logout the platform => UC stops, change to HomePage
+	Priority:
+	Must Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules:
+None
+
+
+6.2 UC-15.2_View a Post
+
+
+a. Functional Description
+UC ID and Name:
+	UC-16.2_View a Post
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks on the job title in the posted job list page.
+	Description:
+	As an employer, I want to be able to view my posted job so that I can review this  post. 
+	Preconditions:
+	* User is logged in successfully with a role as an employer.
+* Job was posted successfully.
+	Postconditions:
+	Job post display successfully.
+	Normal Flow
+	16.2.0 View posted job
+1. User clicks on the Job title in the posted job list page .
+2. System displays job’s information.
+	Alternative Flows:
+	None
+	Exceptions:
+	
+
+	Priority:
+	Could Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+6.3 UC-15.3_Update a Post
+
+
+a. Functional Description
+UC ID and Name:
+	UC-16.3_Update a Post
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks “Cập nhật công việc” in job post.
+	Description:
+	As an employer, I want to be able to update a job post so that I can adjust the job post accordingly.. 
+	Preconditions:
+	* User is logged in successfully as an employer.
+* User post a job successfully.
+	Postconditions:
+	User update job post successfully.
+	Normal Flow
+	16.3.0 Update  job post
+1. User clicks on “Xóa Nhiệm Vụ” button.
+2. System displays delete confirmation.
+3. User changes the content of the job post.
+4. System displays temporary content.
+5. User clicks “Cập nhật công việc” button.
+6. System updates job post.
+	Alternative Flows:
+	None
+	Exceptions:
+	
+
+	Priority:
+	Could Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR-42
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+ID
+	Business Rule
+	Business Rule Description
+	BR-42
+	Update job post
+	The system will: 
+* Send MSG14 if the update is successful.
+* Send MSG15 if there is an update error.
+	
+
+6.4 UC-15.4_Delete a Post
+
+
+a. Functional Description
+UC ID and Name:
+	UC-16.4_Delete a Post
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	Employers click “Xóa” on the selected job in the posted job list or job page detail.
+	Description:
+	As an employer, I want to be able to create a job post so that I can delete inappropriate posts. 
+	Preconditions:
+	* User is logged in successfully as an employer.
+* User post a job successfully.
+	Postconditions:
+	Employers delete job posts successfully.
+	Normal Flow
+	16.4.0 Delete  job post
+1. User clicks on the “Thông tin” button.
+2. User clicks on the  “Quản lý bài đăng” button.
+3. System display posted job list page.
+4. User clicks on the  “Xóa” button.
+	Alternative Flows:
+	None
+	Exceptions:
+	
+
+	Priority:
+	Could Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+6.5 UC-18_View applied seeker’s information.
+
+
+a. Functional Description
+UC ID and Name:
+	UC-17_View applied seeker’s information.
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	Employer clicks on the user name of the seeker on applied list.
+	Description:
+	As an employer, I want to be able to update a job's interview so that I can edit information about the job’s interview.
+	Preconditions:
+	* Employer is logged in successfully with a role as an employer.
+* Job have at least 1 applied.
+	Postconditions:
+	System displays the seeker’s information successfully.
+	Normal Flow
+	17.0 View applied seeker’s information.
+1. Employer clicks on the “Thông tin” button.
+2. Employer clicks on the  “Quản lý bài đăng” button.
+3. System display posted job list page.
+4. Employer clicks on the  “Quản lý tuyển dụng” button.
+5. Employer clicks on the user name of the seeker.
+	Alternative Flows:
+	None
+	Exceptions:
+	
+
+	Priority:
+	Must Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+6.6 UC-17_View applied seeker list.
+a. Functional Description
+UC ID and Name:
+	UC-18
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	User click on "Quản lí tuyển dụng" of the selected post in posted job list page.
+	Description:
+	As an employer, I want to be able to view the applied seeker list so that I can know who is applying for my job.
+	Preconditions:
+	* User is logged in successfully as an employer.
+* User post a job successfully.
+	Postconditions:
+	The Seeker list applied for a job is displayed.
+	Normal Flow
+	18.1.0 View applied seeker list
+1. Employer clicks on the “Thông tin” button.
+2. Employer clicks on the  “Quản lý bài đăng” button.
+3. System display posted job list page.
+4. Employer clicks on the  “Quản lý tuyển dụng” button.
+	Alternative Flows:
+	None
+	Exceptions:
+	None
+	Priority:
+	Must Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+6.7 UC-19_Confirm successful seeker.
+
+
+a. Functional Description
+UC ID and Name:
+	UC-18.2
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	Employer clicks “Chấp nhận đề nghị” in manage bidder list.
+	Description:
+	As an employer, I want to be able to confirm the successful seeker so that I can recruit for my job.
+	Preconditions:
+	* User is logged in successfully as an employer.
+* User post a job successfully.
+	Postconditions:
+	* Candidate information  displays.
+	Normal Flow
+	18.2.0 Confirm successful seeker
+1. Employer clicks on the “Thông tin” button.
+2. Employer clicks on the  “Quản lý bài đăng” button.
+3. System display posted job list page.
+4. Employer clicks on the  “Quản lý tuyển dụng” button.
+5. Employer clicks on the  “Duyệt phỏng vấn” button.
+	Alternative Flows:
+	None
+	Exceptions:
+	If a Database connection error occurs, the system will display MSG10.
+	Priority:
+	Must Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules
+None
+
+
+
+
+
+
+7. Work online through JobTrans 
+7.1 UC-20_Prepaid for job
+
+
+a. Functionalities
+UC ID and Name:
+	UC-20. Prepaid for job
+	Created By:
+	DuyenVTM
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	Employer clicks button “Trả trước” on selected job in My job list page
+	Description:
+	This use case allows employers to prepay job fee after accept successful seeker
+	Preconditions:
+	* User logged in successfully
+* Employer chooses successful seeker
+	Postconditions:
+	* Job post with prepaid salary
+* Update new transaction history and deduct employer’s wallet
+	Normal Flow:
+	20. Prepaid for job
+1. Employer logs in the platform
+2. Employer clicks on “Công việc của tôi” on sidebar
+3. Employer clicks on “Trả trước” button 
+4. Employer clicks on “Trả trước”
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 31, BR-34
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-31
+	Status of Job Rules
+	Update status of job to “Nhà tuyển dụng đã đặt cọc”
+	BR-34
+	Payment notification Rule
+
+
+	* If the account balance is less than the salary of the job, the system will display MSG19.
+* If the account balance is more than the salary of the job, the system will deduct wallet balance and display MSG20.
+	
+
+7.2. UC-21_Deposit money for job
+
+
+a. Functionalities
+UC ID and Name:
+	UC-21._Deposit money for job
+	Created By:
+	DuyenVTM
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks “Đặt cọc” on selected job in My job list page
+	Description:
+	This use case allows job seekers to deposit 10% money of the project amount in advance to ensure that the work will be completed.
+	Preconditions:
+	* User is logged in successfully as a job seeker.
+* Jobseeker is confirmed hiring.
+	Postconditions:
+	*  Job post with full deposit
+* Update new transaction history and deduct seeker’s wallet
+	Normal Flow:
+	21.1.0 Deposit money for job
+1. Seeker logs in the platform
+2. Seeker click “Công việc của tôi” on the sidebar
+3. Seeker click on “Đặt cọc nhận việc” button
+4. Seeker click on “Đặt cọc”
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 31, BR-34
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-34
+	Payment notification Rule
+	* If the account balance is less than the salary of the job, the system will display MSG19.
+* If the account balance is more than the salary of the job, the system will deduct wallet balance and display MSG20.
+	BR-31
+	Status of Job Rules
+	Update status of job to “Ứng viên đã đặt cọc”
+	
+
+
+
+7.3. UC-22_Chat
+
+
+a. Functionalities
+UC ID and Name:
+	UC-22. Chat
+	Created By:
+	DuyenVTM
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	* Case 1: User clicks icon message box on header 
+* Case 2: User clicks "Tin nhắn" on sidebar in profile page
+	Description:
+	This use case allows the employer, seeker, admin to send and receive the message from another user.
+	Preconditions:
+	Seeker and Employer can chat together after jobs are fully secured by Seeker and Employer.
+	Postconditions:
+	* The system updates message status (sent, read).
+* Chat data is synchronised if multiple devices use the same account.
+* User gets notification of new messages
+	Normal Flow:
+	22. Chat
+1. User clicks on “Công việc của tôi” on the sidebar
+2. User clicks on “Chat” on specific job
+3. User enters message 
+4. User sends message
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 11, BR-39
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-11
+	Time to send message Rules
+	Message sending time under 3s
+	BR-39
+	Notification of new messages
+
+
+	System notifies users about new messages as MSG21
+	
+
+7.4.UC-23_View Progress
+
+
+a. Functionalities
+UC ID and Name:
+	UC-23. View progress
+	Created By:
+	DuyenVTM
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Seeker, Employer
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks button “Tiến trình” on selected Job post in My job list manage 
+	Description:
+	This use case allows employers, seekers to view job progress
+	Preconditions:
+	User logged in successfully
+Job status is “Đang làm việc”
+	Postconditions:
+	System displays progress board
+	Normal Flow:
+	22. View progress
+1. User logs in the system
+2. User clicks on “Công việc của tôi” on the sidebar
+3. User clicks on “Tiến trìnht” on specific job
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 22
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-22
+	Periods Displaying Rules
+	●      The period of the job progress will be displayed in a table format
+●      Each row is a period including the period name, end date, status, and action buttons
+●      Sort order of end date closest to oldest
+❖    For employer: View results of each stage, Edit, Delete
+For Seeker: View request, Submit results, View evaluation (if any)
+	7.5. UC-24_Create new period of progress
+
+
+a. Functionalities
+UC ID and Name:
+	UC-24. Create new period
+	Created By:
+	DuyenVTM
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	Employer clicks button “Tạo mới giai đoạn” in Job progress management
+	Description:
+	This use case allows employers to set progress of the job for seekers to follow and submit in each period
+	Preconditions:
+	* Employer is logged in successfully
+* Job status is “Đang làm việc”
+	Postconditions:
+	* New period is added
+* Seeker got notification about new period
+	Normal Flow:
+	24. Create new period of progress
+1. Employer logs in the system
+2. Employer clicks on “Công việc của tôi” on the sidebar
+3. Employer clicks on “Tạo mới giai đoạn” button
+4. Employer fills in the field
+5. Employer click “Tạo mới” 
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	Not often, depending on the user's needs.
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 31
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-23
+	Successful preiod Rules
+	The system will: 
+* Notify user MSG17 if create new period successfully
+* Notify user MSG18 if create new period error
+The table of period is added the new period as a row
+	
+
+7.6. UC-25_Accept period submission
+
+
+a. Functionalities
+UC ID and Name:
+	UC-25. Accept period submission
+	Created By:
+	DuyenVTM
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	Employer clicks button “Chấp nhận” in result page of each period on Job progress board
+	Description:
+	This use case allows employers to confirm period submission that is submitted by seeker
+	Preconditions:
+	*  User logged in successfully
+* Period status is “Đã nộp kết quả”
+	Postconditions:
+	* Period is marked complete
+* Seeker got completion notification
+	Normal Flow:
+	25. Accept period submission
+1. Employer logs in the system
+2. Employer clicks on “Công việc của tôi” on the sidebar
+3. Employer clicks on “Xem kết quả” button
+4. Employer fills in the feedback field
+5. Employer click “Chấp nhận” button
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	Not often, depending on the user's needs.
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 25
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-25
+	Status period Rule
+	System will: 
+* Update status of period in the progress  “Hoàn thành”
+	
+
+7.7. UC-26_Reject period submission
+
+
+a. Functionalities
+UC ID and Name:
+	UC-26. Reject period submission
+	Created By:
+	DuyenVTM
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	Employer clicks button “Từ chối” in result page of each period on Job progress board
+	Description:
+	This use case allows employers to reject period submission that is submitted by seeker
+	Preconditions:
+	*  User logged in successfully
+* Seeker submitted period submission on Job progress board
+	Postconditions:
+	* Period submission is rejected
+* Seeker got rejection notification 
+	Normal Flow:
+	26. Reject period submission
+1. Employer logs in the system
+2. Employer clicks on “Công việc của tôi” on the sidebar
+3. Employer clicks on “Xem kết quả” button
+4. Employer fills in the feedback field
+5. Employer click “Từ chối” button
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	Not often, depending on the user's needs.
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 25
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-25
+	Status period Rule
+	System will: 
+* Update status of period in the progress to “Bị từ chối”
+	
+
+7.8. UC-27_Submit period submission
+
+
+a. Functionalities
+UC ID and Name:
+	UC-27. Submit period submission
+	Created By:
+	DuyenVTM
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	Seeker clicks button “Nộp kết quả” in specific period on Job progress board for seeker
+	Description:
+	This use case allows seekers to submit period submission for each period in progress
+	Preconditions:
+	* User logged in successfully
+* Job status is ‘Đang làm việc”
+	Postconditions:
+	* Submissions are submitted for specific period
+* Employer got notification about new submissions
+	Normal Flow:
+	27. Submit period submission
+1. Seeker logs in the system
+2. Seeker clicks on “Công việc của tôi”
+3. Seeker clicks on “Tiến trình”
+4. Seeker clicks on “Nộp kết quả”
+5. Seeker fills in required field
+6. Seeker clicks on “Nộp”
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	Not often, depending on the user's needs.
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 25
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-27
+	Submission Page Rules
+	The system will display submission page included text box and file upload area
+	BR-25
+	Status period Rule
+	System will: 
+Update new status of period to “Đã nộp kết quả”
+	
+
+7.9. UC-28_Submit final result offline
+a. Functionalities
+UC ID and Name:
+	UC-28. Submit final result offline
+	Created By:
+	DuyenVTM
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	The seeker clicks "Nộp sản phẩm" button.
+The seeker clicks "Offline" button.
+	Description:
+	Seeker submits a physical result by filling out the shipping information form on the system.
+	Preconditions:
+	* The user or employer is logged into the system.
+* Job status is “Đang làm việc”
+	Postconditions:
+	* The shipping information form is submitted and recorded.
+* The system acknowledges receipt of the shipping information.
+	Normal Flow:
+	28. Submit final result offline
+7. Seeker logs in the system
+8. Seeker clicks on “Công việc của tôi”
+9. Seeker clicks on “Nộp kết quả”
+10. Seeker clicks on “Offline”
+11. Seeker fills in required field
+12. Seeker clicks on “Nộp”
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 25
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-32
+	Shipping form Rules
+	The shipping information must include all required fields.
+	BR-31
+	Status of Job Rules
+	Update status of job to “Đã nộp kết quả”
+	7.10 UC-29_Submit final result online
+a. Functionalities
+UC ID and Name:
+	UC-20-2_Submit final result online
+	Created By:
+	QuangNH
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Seeker
+	Secondary Actors:
+	None
+	Trigger:
+	The seeker clicks "Nộp sản phẩm" button.
+The seeker clicks the "Online" button.
+	Description:
+	Seekers can submit online final digital product on the platform
+	Preconditions:
+	* The user or employer is logged into the system with a role as seeker.
+* Job status is “Đang làm việc”
+* Jobs are fully prepaid by Seeker and Employer.
+* Job Greeting for a job was accepted.
+	Postconditions:
+	* The final digital product is uploaded and stored temporarily in the system.
+* The job status is updated to "Đã nộp kết quả"
+* Send notification to employer.
+	Normal Flow:
+	20.2.0 Submit final result offline
+1. Seeker logs in the platform
+2. Seeker clicks on “Xem thông tin”
+3. Seeker clicks on “Công việc của tôi” on sidebar
+4. Seeker clicks on “Nộp sản phẩm” button 
+5. Seeker clicks on “Online” button 
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	Not often, depending on the user's deposit needs.
+	Business Rules:
+	BR-30, BR-31
+	Other Information:
+	Users can receive email notifications after successful payment.
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+ID
+	Business Rule
+	Business Rule Description
+	BR-30
+	Check Format Results Rules
+	The seeker must upload the final product in a valid format (e.g., PDF, ZIP) and within the allowed file size limit.
+	BR-31
+	Status of Job Rules
+	Update status of job to “Đã nộp kết quả”
+	
+
+7.11 UC-30_Accept final result
+a. Functionalities
+UC ID and Name:
+	UC-21.1_Accept final result
+	Created By:
+	QuangNH
+	Date Created:
+	30/9/2024
+	Primary Actor:
+	Employer
+	Secondary Actors:
+	None
+	Trigger:
+	The employer clicks the button “Đã hoàn thành” on the final submission page
+	Description:
+	Employers confirm project results after receiving results.
+	Preconditions:
+	* The user or employer is logged into the system.
+* Jobs are fully prepaid by Seeker and Employer.
+* The employer has received the final result (either physically or digitally).
+	Postconditions:
+	* The job is marked as "Đã Hoàn Thành" in the system.
+* Send completion notification to both employer and seeker
+	Normal Flow:
+	21.1.0 Submit final result offline
+1. Employer logs in the platform
+2. Employer clicks on “Xem thông tin”
+3. Employer clicks on “Công việc của tôi” on sidebar
+4. Employer clicks on “Sản phẩm” button 
+5. Employer clicks on “Nhận” button 
+	Alternative Flows:
+	N/A
+	Exceptions:
+	
+
+	Priority:
+	High
+	Frequency of Use:
+	
+
+	Business Rules:
+	BR- 31
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	
+
+b. Business Rules
+
+
+ID
+	Business Rule
+	Business Rule Description
+	BR-31
+	Status of Job Rules
+	Update status of job to “Đã Hoàn thành”
+	8. Manage User - Admin
+8.1 UC-38_View users list
+
+
+a. Functional Description
+UC ID and Name:
+	UC-38_View Users List
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks “Quản lý người dùng” in sidebar.
+	Description:
+	As an admin, I want to view the list of all users so that I can manage user accounts and maintain platform security.
+	Preconditions:
+	User is logged in successfully with a role as an admin.
+	Postconditions:
+	User view user list successfully.
+	Normal Flow
+	38 View User List
+1. User clicks “Quản lý người dùng” in sidebar.
+2. System display User list.
+	Alternative Flows:
+	None
+	Exceptions:
+	38.E1 Login session has expired
+2. User logout the platform => UC stops, change to HomePage
+	Priority:
+	Must Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules:
+None
+8.2 UC-39_Ban/Unban user
+a. Functional Description
+UC ID and Name:
+	UC-39_Ban/Unban user
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks “Chặn/Bỏ Chặn” in view user list admin page.
+	Description:
+	As an admin, I want to ban or unban users based on their behavior to maintain a safe and professional environment.
+	Preconditions:
+	User is logged in successfully with a role as an admin.
+	Postconditions:
+	User ban/unban user successfully.
+	Normal Flow
+	39 Ban/Unban User
+1. User click “chặn/bỏ chặn” in view user list admin page.
+2. System change status of user successfully.
+	Alternative Flows:
+	None
+	Exceptions:
+	39.E1 Login session has expired
+3. User logout the platform => UC stops, change to HomePage
+	Priority:
+	Must Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules:
+None
+
+
+8.3 UC-40_View user’s profile
+
+
+a. Functional Description
+UC ID and Name:
+	UC-40 View user’s profile
+	Created By:
+	QuangND
+	Date Created:
+	30/Sep/2024
+	Primary Actor:
+	Admin
+	Secondary Actors:
+	None
+	Trigger:
+	User clicks on the [Xem chi tiết] button on the user he/she wants to view in the user list admin page.
+	Description:
+	As an admin, I want to view user profiles so that I can verify their information and handle any issues.
+	Preconditions:
+	User is logged in successfully with a role as an admin.
+	Postconditions:
+	Platform displays selected user’s information successfully.
+	Normal Flow
+	40 View User’s Profile
+1. User clicks on the [Xem chi tiết] button on the user he/she wants to view in the user list admin page.
+2. Platform displays selected user’s information successfully.
+	Alternative Flows:
+	None
+	Exceptions:
+	40.E1 Login session has expired
+4. User logout the platform => UC stops, change to HomePage
+	Priority:
+	Must Have
+	Frequency of Use:
+	
+
+	Business Rules:
+	None
+	Other Information:
+	
+
+	Assumptions:
+	
+
+	b. Business Rules:
+None
+
+
+III. Design Specifications
+1.View list job - Admin:
+1.1 View list job - Admin:
+Allows administrators to view a list of job postings and perform actions such as editing or deleting posts.
+UI Design
+
+
+  
+
+  
+
+
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	Display the title”Danh sách công việc” of the job posting
+	“Tình trạng” field
+	Combo box
+	Display status of job to choose to display
+	“Đang tuyển” field
+	Check mark 
+	Add to the filter “Đang tuyển” field
+	“Chờ đặt cọc” field
+	Check mark 
+	Add to the filter “Chờ đặt cọc” field
+	“Đã đặt cọc” field
+	Check mark 
+	Add to the filter “Đã đặt cọc” field
+	“Đã bàn giao” field
+	Check mark 
+	Add to the filter “Đã bàn giao” field
+	“Đã hoàn thành” field
+	Check mark 
+	Add to the filter “Đã hoàn thành” field
+
+
+	Tên công việc
+	Text
+	Display name of job posting
+	Phân loại
+	Text
+	Display category of job posting
+	Tình trạng
+	Text
+	Display status of job posting
+	Hành động
+	Text
+	Display choices whether delete or view detail
+	Xem chi tiết
+	Button
+	Button to display the detailed information of job posting.
+	Xóa
+	Button
+	Button to delete the job posting
+	Duyệt
+	Text
+	Display the confirmation of job posting
+	Xem thêm
+	Button
+	Button to display more list of jobs
+	Error Message
+	Text
+	Displays error messages"Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối Internet” when system can not connect to database
+	Database Access
+
+
+Table
+	CRUD
+	Description
+	Job
+	R
+	Select all table job
+	1.Select all table job
+SELECT * FROM [dbo].[Job]
+
+
+1.2. View job post
+UI Design
+  
+
+
+
+
+
+
+
+
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	Display the title “Thông tin chi tiết công việc”
+	Job Title
+	Text
+	Display the title of job posting
+	Duedate
+	Date
+	Display the Duedate of the job posting
+	Category job
+	Text
+	Display the category of the job posting
+	Address 
+	Text 
+	Display the address of the job posting
+	Employer name
+	Text
+	Display the employer name 
+
+
+	Budget
+	numerical
+	Display the budget of the job 
+	Status
+	Text
+	Display the status of job
+	 Danh sách ứng tuyển
+	Button 
+	Button to display candidate these project
+	Chi tiết khiếu nại 
+	Button 
+	Button to display work complaint these project
+	Trả lương
+	Button
+	Button to confirm transfer salary to seeker.
+	Hoàn tiền
+	Button
+	Button to confirm refund the deposit to the employer
+	
+
+Database Access
+
+
+Table
+	CRUD
+	Description
+	Job
+	R
+	Get job by jobId
+	1.Select all from job table
+SELECT * FROM Job WHERE job_id = ?
+
+
+
+
+2.Authentication
+2.1. Register
+Register new account to access features of the Platform
+UI Design
+
+
+  
+
+
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field display “Tạo tài khoản của bạn ngay bây giờ!”
+	Freelancer
+	Choice
+	Field to choose role seeker for account
+	Nhà tuyển dụng
+	Choice
+	Field to choose role employer for account
+	Full Name
+	Input field
+	Field to input the guest's full name.
+	Email
+	Input field
+	Field to input a valid email address. Must follow email format.
+	Password
+	Input field
+	This field to input password
+	Confirm Password 
+	Input field
+	This button allows user to prepay 
+	Đăng ký
+	Button
+	Button to submit the registration form.
+	Error Message
+	Text
+	Displays error messages”Đăng ký thất bại”  when registration is fail
+	 Success Message
+	Text
+	Displays confirmation message “Đăng ký thành công”when registration is successful.
+	
+
+Database Access
+
+
+Table
+	CRUD
+	Description
+	User
+	C
+	 Inserting required fields  into a table user in the database.
+	User
+	C
+	 Inserting required fields  into a table user in the database with registering by gmail
+	1. Inserting required fields  into a table user in the database.
+INSERT INTO Users(user_name,email,password,role,avatar_url, status) VALUES (?,?,?,?,?,?)
+2.2. Login
+Any Users has account in the Platform, can access to the Platform by entering valid Username and password
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field display “Chúng tôi rất vui được gặp lại bạn ”
+	Địa chỉ email
+	Input field
+	Field to input a valid email address. Must follow email format.
+	Mật khẩu
+	Input field
+	Field to input a valid password.Must be at least 8 regex.
+	Đăng nhập
+	Button
+	Button to submit the login form.
+	Error Message
+	Text
+	Displays an error message ”Đăng nhập thất bại” when invalid input is detected.  
+	Success Message
+	Text
+	Display confirmation message”Đăng nhập thành công” when login is successful.
+	Ghi nhớ mật khẩu
+	Check mark 
+	Allows users to stay logged until the session expires.
+	Quên mật khẩu
+	Hyperlink
+	Allows users to recover their password
+	Đăng nhập bằng Google
+	Hyperlink
+	Allows user to login with his/her Google account
+	Database Access
+Table
+	CRUD
+	Description
+	Users
+	R
+	Verify UserName & Password information
+	Users
+	R
+	Check exist email
+	Users
+	R
+	Check login
+	Users
+	U
+	Add user by login google
+	1.Verify UserName & Password information
+INSERT INTO Users(user_name, email, oauth_provider, oauth_id, avatar_url, status) VALUES (?,?,?,?,?,?);
+2.Check exist email
+SELECT * FROM Users WHERE email = ?
+3.Add user by login google
+INSERT INTO Users (user_name, email, oauth_provider, oauth_id, balance, avatar_url, status) VALUES (?, ?, ?, ?, ?, ?, ?)
+4.Add user by login google
+SELECT * FROM Users WHERE email = ? AND password = ?
+2.3. Logout
+Log out the Platform
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Đăng xuất
+	Button
+	Button to submit the logout.
+	Database Access
+None
+
+
+2.4. Change password
+Users can change their password if they want as long as they enter a valid old password.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field display “Mật khẩu & Bảo mật ”
+	Current Password
+	Input field
+	Field for the user to enter their current password.
+	New Password
+	Input field
+	Field for the user to enter their new password.
+	Repeat New Password
+	Input field
+	Field for the user to enter to repeat their new password.
+	Thay đổi
+	Button
+	Save changes new password
+	Error Message
+	Text
+	Displays error messages ”Đổi mật khẩu thất bại” when invalid input is detected.  
+	 Success Message
+	Text
+	Display confirmation message”Đổi mật khẩu thành công” when change password is successful.
+	Return to Profile page
+	Button
+	Field for the user to return to profile page
+	Database Access
+Table
+	CRUD
+	Description
+	Users
+	R
+	Update new password with valid email
+	1.Update new password with valid email
+
+
+UPDATE [dbo].[Users] SET password = ? WHERE email = ?
+
+
+2.5. Forgot password
+When users log in if they forgot their password, they can request a verification mail to get an OTP then set a new password.
+UI Design
+  
+
+  
+
+  
+
+
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field display “Nhập mã OTP”
+	Email
+	Input field
+	Field to input a valid email address. Must follow email format.
+	“Nhận OTP” button
+	Button
+	The system will send OTP to user via email
+	Error Message
+	Text
+	Displays error messages ”Email không đúng.Vui lòng thử lại” when invalid input is detected.  
+
+
+	
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field display “Xác thực mã OTP”
+	OTP input
+	Numerical
+	Enter OTP received via email
+	Error Message
+	Text
+	Displays error messages ”OTP không đúng.Vui lòng thử lại” when invalid  is detected.  
+
+
+	Verify OTP Button
+	Button
+	Verify an OTP to be sent to the email
+	
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field display “Nhập mật khẩu mới”
+	New Password
+	Password Field
+	Field for the user to enter their new password.
+	Repeat New Password
+	Password Field
+	Field for the user to enter to repeat their new password.
+	Return home page
+	Button
+	Return to home page
+	Change Password Button
+	Button
+	Change to submit the new password
+	Error Message
+	Text
+	1: Displays error messages when invalid ”Mật khẩu phải đủ 8 ký tự” input is detected.  
+2: Displays error messages when invalid ”Mật khẩu mới không trùng khớp” input is detected. 
+	 Success Message
+	Text
+	Display confirmation message”Đổi mật khẩu thành công” when changing password is successful.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	Users
+	R
+	Select user with conditional email
+	User
+	U
+	Update password with email
+	1.Select user with condition email
+SELECT * FROM [dbo].[Users] WHERE email = ?
+2.Update password with email
+UPDATE [dbo].[Users] SET password = ? WHERE email = ?
+
+
+2.6. View profile
+Any Users after login successfully can view their profile on the platform.
+  
+
+UI Design
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field display “Trang cá nhân của tôi”
+	Title
+	Heading
+	This field display “Thông tin của tôi”
+	Tên
+	Text
+	Display user name
+	Email 
+	Text
+	Display Email address
+	Vai trò
+	Text
+	Display role 
+	Số dư
+	Numerical
+	Display user’s balance
+	Chuyên môn
+	Text
+	Display user’s specification
+	Địa chỉ
+	Text
+	Display user’s address
+	“Chinh sửa Thông tin” button
+	Input field
+	Redirect to edit information.
+	“Đổi mật khẩu” button
+	Button
+	Redirect to change password.
+	Database Access
+Table
+	CRUD
+	Description
+	Users
+	R
+	Select user with conditional user_id
+	
+
+1.Select user with conditional user_id
+SELECT * FROM [dbo].[Users] WHERE user_id = ?
+2.7. Edit profile
+Users can edit their information like change name, change date of birth...
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field display “Tài khoản của tôi”
+	Name
+	Input
+	Field for the user to enter their address.
+	Address
+	Input
+	Field for the user to enter their address.
+	Specification
+	Input
+	Field for the user to enter their specification.
+	Title
+	Heading
+	This field display “Giới thiệu bản thân”
+	Cập nhật
+	Button
+	Button “Cập nhật” new information profile
+	
+
+Database Access 
+
+
+Table
+	CRUD
+	Description
+	Users
+	R
+	Select user with conditional user_id
+	Users
+	U
+	Update users with conditional gmail
+	
+
+
+
+1. Select user with conditional user_id
+
+
+SELECT * FROM [dbo].[Users] WHERE user_id = ?
+
+
+2. Update users with conditional gmail
+
+
+UPDATE Users SET user_name = ?, role = ?, description = ?, specification = ?, address = ?, avatar_url=? WHERE email = ?
+
+
+3.Online CV Management
+3.1.Create CV
+Seekers can create CVs to apply for the job.
+UI Design
+  
+
+
+
+Field  name
+	Filed type
+	Description
+	Avatar
+	Image
+	* Displays the user's profile picture.
+	Description Text
+	Text
+	* This field displays text: Họ và tên 
+	Description Text
+	Text
+	* This field displays text: Công việc muốn ứng tuyển.
+	Description Text
+	Text
+	      This field displays text: Email.
+	Description Text
+	Text
+	       This field displays text: “Mục tiêu nghề nghiệp”
+	Description input
+	Input 
+	      This field allows the seeker to fill in the information.
+	Description Text
+	Text
+	      This field displays text: “Kinh nghiệm làm việc”
+	Description Text
+	Text
+	* This field displays text: “Company name, years of experience, description, achievements”
+	Description input
+	Input
+	* This field input information of text: “Company name, years of experience, description, achievements”
+	Thêm kinh nghiệm
+	Button
+	Button for adding more forms to enter information.
+	Description Text
+	Text
+	      This field displays text: “Chứng chỉ”
+	Description Text
+	Text
+	* This field displays text: “Company specification, date”
+	Description input
+	Input
+	* This field input information of text: “Company specification, date”
+	Thêm chứng chỉ
+	Button
+	Button for adding more forms to enter information.
+	Description Text
+	Text
+	* This field displays text: "Kĩ năng”
+	Description Text
+	Text
+	* This field displays text: "Skill name , proficiency Level”
+	Description input
+	Input
+	* This field input information of text: “Skill name , proficiency Level”
+	Thêm kĩ năng
+	Button
+	Button for adding more forms to enter information.
+	Description Text
+	Text
+	* This field displays text: "Education”
+	Description Text
+	Text
+	* This field displays text: "School Name,Time study,Field of Study”
+	Description input
+	Input
+	* This field input information of text: “School Name,Time study,Field of Study”
+	Thêm học vấn
+	Button
+	Button for adding more forms to enter information.
+	Cập Nhật CV 
+	Button
+	Button for saving the entered information.
+	 Database Access
+
+
+
+
+Table
+	CRUD
+	Description
+	CV
+	C
+	insert  CV
+	CV_skill
+	C
+	insert Skill CV
+	CV_education
+	C
+	insert Education CV
+	CV_experiencen
+	C
+	insert Experience CV
+	CV
+	R
+	get Last Inserted CVId
+	SQL Commands
+
+
+ Create CV:
+INSERT INTO CV (title, summary, created_at, user_id) VALUES (?, ?, ?, ?)
+ Create Skill CV:
+INSERT INTO CV_Skill (cv_id, skill_id, proficiency) VALUES (?, ?, ?)
+ Create Education CV
+INSERT INTO CV_Education (cv_id, education_id, start_date, end_date,field_of_study, degree) VALUES (?, ?, ?, ?, ?,?)";
+ Create Experience CV
+INSERT INTO CV_Experience (cv_id, experience_id, years_of_experience, achievement) VALUES (?, ?, ?, ?)";
+ get Last Inserted CVId
+ SELECT MAX(cv_id) AS last_cv_id FROM CV
+
+
+3.2.View CV
+Seekers can view CVs created to apply for the job.
+
+
+  UI Design
+  
+
+
+
+
+
+Field  name
+	Field type
+	Description
+	Avatar
+	Image
+	* Displays the user's profile picture.
+	Description Text
+	Text
+	* This field displays username.
+	Description Text
+	Text
+	* This field displays the job title to apply.
+	Description Text
+	Text
+	      This field displays email.
+	Description Text
+	Text
+	   This field displays text: “Mục tiêu nghề nghiệp”
+	Description Text
+	Text
+	          This field displays Career Summary of CV
+	Description Text
+	Text
+	         This field displays text: “Kinh nghiệm làm việc”
+	Description Text
+	Text
+	          This field displays Career Summary of CV
+	Description Text
+	Text
+	         This field displays text: “Chứng chỉ”
+	Description Text
+	Text
+	* This field displays information of“Company specification, Date” of CV
+	Description Text
+	Text
+	* This field displays text: "Kĩ năng”
+	Description Text
+	Text
+	* This field displays information of: "Skill name , proficiency Level”
+	Description Text
+	Text
+	* This field displays text: "Học vấn”
+	Description Text
+	Text
+	* This field displays information of: "School Name,Time study,Field of Study”
+	 Database Access
+Table
+	CRUD
+	Description
+	CV
+	R
+	get  CV by cv_id
+	CV_skill
+	R
+	get CV skill by cv_id
+	CV_education
+	R
+	get CV education by cv_id
+	CV_experiencen
+	R
+	get CV experience by cv_id
+	
+
+SQL Commands;
+* Get  CV by cv_id:
+      SELECT * FROM [dbo].[CV] WHERE user_id = ?
+* Get CV skill by cv_id:
+    SELECT " +
+                 "Skill.skill_id, " +
+                 "Skill.skill_name, " +
+                 "CV_Skill.proficiency " +
+                 "FROM CV_Skill " +
+                 "JOIN Skill ON CV_Skill.skill_id = Skill.skill_id " +
+                 "WHERE CV_Skill.cv_id = ?
+   * Get CV education by cv_id:
+                 SELECT CE.cv_id, CE.education_id, CE.start_date, CE.end_date, CE.degree,        CE.field_of_study, S.school_name " +
+                 "FROM CV_Education CE " +
+                 "JOIN School S ON CE.education_id = S.education_id " +
+                 "WHERE CE.cv_id = ?  
+   * Get CV experience by cv_id
+SELECT \n" +
+"    ce.cv_id,\n" +
+"    ce.experience_id,\n" +
+"    ce.years_of_experience,\n" +
+"    ce.achievement,\n" +
+"    c.company_name,\n" +
+"    c.description\n" +
+"FROM \n" +
+"    CV_Experience ce\n" +
+"JOIN \n" +
+"    Company c ON ce.experience_id = c.experience_id\n" +
+"WHERE \n" +
+"    ce.cv_id = ? 
+
+
+3.3.Delete CV
+Seekers can delete CVs created.
+   UI Design
+  
+
+     
+Field  name
+	Field type
+	Description
+	Title
+	Heading
+	   * This field displays text: Danh sách CV đã được tạo
+	Description Text
+	Text
+	   * This field displays text: Ngày viết
+	Xem CV 
+	Button
+	Button for view the CV.
+	Sửa CV 
+	Button
+	Button for updating the CV.
+	Xoá  CV 
+	Button
+	Button to delete the CV.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	CV
+	D
+	delete  CV by cv_id
+	CV_skill
+	D
+	delete CV skill by cv_id
+	CV_education
+	D
+	delete CV education by cv_id
+	CV_experiencen
+	D
+	delete  CV experience by cv_id
+	
+
+
+
+SQL Commands;
+
+
+Delete  CV by cv_id:
+   * DELETE FROM CV 
+WHERE cv_id = ?;
+Delete CV skill by cv_id:
+    -     DELETE FROM CV_Skill WHERE cv_id = ?;
+Delete CV education by cv_id:
+   * DELETE FROM CV_Education WHERE cv_id = ?
+Delete  CV experience by cv_id:
+     -    DELETE FROM CV_Experience WHERE cv_id = ?;
+3.4.Update CV
+Seekers can update their CV to apply for the job.
+UI Design
+  
+
+
+Field  name
+	Field type
+	Description
+	Avatar
+	Image
+	   * Displays the user's profile picture.
+	Description Text
+	Text
+	   * This field displays text: Họ và tên 
+	Description Text
+	Text
+	   * This field displays text: Công việc muốn ứng tuyển.
+	Description Text
+	Text
+	      This field displays text: Email.
+	Description Text
+	Text
+	   *        This field displays text: “Mục tiêu nghề nghiệp”
+	Description input
+	Input 
+	      This field allows the seeker to fill in the information.
+	Description Text
+	Text
+	      This field displays text: “Kinh nghiệm làm việc”
+	Description Text
+	Text
+	   * This field displays text: “Company name, years of experience, description, achievements”
+	Description input
+	Input
+	   * This field input information of text: “Company name, years of experience, description, achievements”
+	Thêm kinh nghiệm
+	Button
+	Button for adding more forms to enter information.
+	Description Text
+	Text
+	      This field displays text: “Chứng chỉ”
+	Description Text
+	Text
+	   * This field displays text: “Company specification, date”
+	Description input
+	Input
+	   * This field input information of text: “Company specification, date”
+	Thêm chứng chỉ
+	Button
+	Button for adding more forms to enter information.
+	Description Text
+	Text
+	   * This field displays text: "Kĩ năng”
+	Description Text
+	Text
+	   * This field displays text: "Skill name , proficiency Level”
+	Description input
+	Input
+	   * This field input information of text: “Skill name , proficiency Level”
+	Thêm kĩ năng
+	Button
+	   * Button for adding more forms to enter information.
+	Description Text
+	Text
+	   * This field displays text: "Education”
+	Description Text
+	Text
+	   * This field displays text: "School Name,Time study,Field of Study”
+	Description input
+	Input
+	   * This field input information of text: “School Name,Time study,Field of Study”
+	Thêm học vấn
+	Button
+	   * Button for adding more forms to enter information.
+	Cập Nhật CV 
+	Button
+	Button for saving the entered information.
+	
+
+Table
+	CRUD
+	Description
+	CV
+	U
+	Update  CV by cv_id
+	CV_skill
+	U
+	Update  CV skill by cv_id
+	CV_education
+	U
+	Update CV education by cv_id
+	CV_experiencen
+	U
+	Update  CV experience by cv_id
+	  
+SQL Commands:
+     - Update  CV by cv_id
+UPDATE CV SET title = @title, summary = @summary, created_at = @created_at WHERE cv_id = ?
+     - Update  CV skill by cv_id
+UPDATE CV_Skill SET proficiency = @proficiency WHERE cv_id = ? AND skill_id = ?
+     -Update CV education by cv_id
+UPDATE CV_Education SET start_date = @start_date, end_date = @end_date, field_of_study = @field_of_study, degree = @degree WHERE cv_id = ? AND education_id = ?;
+    - Update  CV experience by cv_id
+UPDATE CV_Experience SET years_of_experience = @years_of_experience, achievement = @achievement WHEREcv_id =?  AND experience_id = ?
+4. Wallet and transaction management
+4.1.View wallet
+Users can view balance, history of transaction progress
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Ví của tôi”
+	Description
+	Text
+	   * This field displays text: “Số dư tài khoản:”
+	Balance
+	Numeric
+	   * This field displays the amount of money in their wallet.
+	Nạp tiền
+	Button 
+	This button allows the user to add money to their wallet.
+	Description
+	Text
+	   * This field displays text: “Lịch sử giao dịch:”
+	Description
+	Text
+	   * This field displays text: “Chọn ngày:”
+	Calendar
+	Icon
+	This icon will help the user to choose time to view transactions.
+	Lọc 
+	Button
+	This button allows the user to display transactions by time chosen.
+	Transaction table: Display information about Transaction .
+	Ngày
+	Text
+	   * This field displays the transaction.
+	Số tiền 
+	Text
+	Hành động
+	Text
+	Ghi chú
+	Text
+	Xem thêm
+	Button 
+	This button allows the user to display more transactions.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	Wallet
+	R
+	Get the user’s wallet balance
+	Transactions
+	R
+	Get transactions for the user, filtered by selected date.
+	SQL Commands
+-Get the user’s wallet balance:
+SELECT balance FROM Wallet WHERE user_id = ?;
+
+
+-Get transactions for the user, filtered by selected date:
+SELECT date, amount, action, note 
+FROM Transactions 
+WHERE user_id = ? AND transaction_date = ?;
+
+
+-Get all transactions:
+SELECT date, amount, action, note 
+FROM Transactions 
+WHERE user_id = ? 
+ORDER BY transaction_date DESC;
+4. Wallet and transaction management
+4.1.View wallet
+Users can view balance, history of transaction progress
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Ví của tôi”
+	Description
+	Text
+	   * This field displays text: “Số dư tài khoản:”
+	Balance
+	Numeric
+	   * This field displays the amount of money in their wallet.
+	Nạp tiền
+	Button 
+	This button allows the user to add money to their wallet.
+	Description
+	Text
+	   * This field displays text: “Lịch sử giao dịch:”
+	Description
+	Text
+	   * This field displays text: “Chọn ngày:”
+	Calendar
+	Icon
+	This icon will help the user to choose time to view transactions.
+	Lọc 
+	Button
+	This button allows the user to display transactions by time chosen.
+	Transaction table: Display information about Transaction .
+	Ngày
+	Text
+	   * This field displays the transaction.
+	Số tiền 
+	Text
+	Hành động
+	Text
+	Ghi chú
+	Text
+	Xem thêm
+	Button 
+	This button allows the user to display more transactions.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	Wallet
+	R
+	Get the user’s wallet balance
+	Transactions
+	R
+	Get transactions for the user, filtered by selected date.
+	SQL Commands
+-Get the user’s wallet balance:
+SELECT balance FROM Wallet WHERE user_id = ?;
+
+
+-Get transactions for the user, filtered by selected date:
+SELECT date, amount, action, note 
+FROM Transactions 
+WHERE user_id = ? AND transaction_date = ?;
+
+
+-Get all transactions:
+SELECT date, amount, action, note 
+FROM Transactions 
+WHERE user_id = ? 
+ORDER BY transaction_date DESC;
+4.2. Add money into wallet
+Users can add money to wallet
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Nạp tiền qua cổng thanh toán điện tử”
+	Description
+	Text
+	   * This field displays text: “Nạp thêm tiền”
+	Description
+	Text
+	   * This field displays text: “Số tiền”
+	Description-text
+	Text-area
+	This field displays input money to add.
+	Description
+	Text
+	   * This field displays text: “Chọn phương thức thanh toán”
+	Cổng thanh toán VNPAYQR
+	Choice
+	This choice allows the employer to deposit through VNPAY-QR.
+	Thanh toán qua thẻ ATM/Tài khoản nội địa
+	Choice
+	This choice allows the employer to deposit through ATM/Domestic Account.
+	Thanh toán qua thẻ quốc tế
+	Choice
+	This choice allows the employer to deposit through an international card.
+	Thanh toán
+	Button 
+	This button allows the user to deposit money to their wallet.
+	Database Access
+
+
+Table
+	CRUD
+	Description
+	Wallet
+	U
+	Update the user's wallet balance after successful payment.
+	Transactions
+	R
+	Create a new transaction record after the deposit is made.
+	SQL Commands
+-Update the user's wallet balance after successful payment:
+UPDATE Users
+SET balance = balance + ?
+WHERE user_id = ?;
+
+
+-Create a new transaction record after the deposit is made:
+INSERT INTO [Transaction] (senderId, receiverId, amount, createdDate, status, transactionType, jobId, description) 
+VALUES (?, NULL, ?, GETDATE(), 1, 'Deposit', NULL, 'Nạp tiền qua cổng thanh toán điện tử');
+5. Apply for a job
+
+
+5.1 Search job post
+This use case allows users can search jobs by keywords relevant to the title of the post.
+UI Design
+  
+
+
+
+Filed name
+	Filed type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Danh mục”
+	Description Text
+	Dropdown
+	   * Dropdown to filter search results by category. Displays "Tất cả danh mục" by default, allowing users to view all categories.
+	Title
+	Heading
+	   * This field displays text:”Kết quả tìm kiếm”
+	Title (Tiêu đề)
+	Text 
+	   * Title of the search result item.
+	Address (Địa chỉ)
+	text
+	       Displays the address for the item being searched.
+	Budget (Ngân sách)
+	text
+	       Displays the budget associated with the listing
+	Bid Now Button (Đấu giá ngay)
+	button
+	   * Button that allows the user to place a bid on the item immediately.
+	
+
+
+
+Database Access
+Table
+	CRUD
+	Description
+	Job
+	R
+	get job by category_id
+	SQL Commands: -
+Get job by category_id:
+SELECT * FROM Job WHERE category_id = ? 
+5.2 View employer’s information
+Allows seekers to view detailed information about the employer, including company name, address, and description.
+  UI Design
+  
+
+
+
+Filed name
+	Filed type
+	Description
+	Avatar
+	Image
+	   * Displays the company's logo or image.
+	Tên công ty
+	Text
+	   * Shows the name of the company.
+	Đánh Giá
+	Text
+	   * Show review of company
+	Địa chỉ 
+	Text
+	      Show address of company
+	Title 
+	Text 
+	   * This field displays text: “Trang chủ->hồ sơ công ty-> tên công ty”
+	Description Text
+	Text
+	       This field displays text: “Giới thiệu về công ty”
+	Giới thiệu về công ty
+	Input
+	   * This field input introduce about company
+	Description Text
+	Text
+	           This field displays text: “Vị trí đang mở”
+	Địa chỉ (Address)
+	Text
+	   * Displays the company’s address.
+	Mạng xã hội (Social Media)
+	Text
+	   * Displays links to the company’s social media profiles.
+	Đánh giá (Reviews)
+	Text
+	   * Section for displaying user reviews about the company.
+	
+
+Database Access
+     
+Table
+	CRUD
+	Description
+	Job
+	R
+	get job by user id
+	User
+	R
+	Get user by role = employer
+	
+
+SQL Commands:
+   * Get all  user by role = employer:
+SELECT * FROM Users WHERE role = 'employer’
+   * Get job by user id:
+SELECT * From Job where user_id=?
+
+
+
+
+5.3 View job post
+This use case allows Admin, Guest, Seeker, Employer can view the information of job in detail.
+  UI Design
+  
+
+
+
+Filed name
+	Filed type
+	Description
+	Avatar
+	Image
+	   * Displays the company's logo or image.
+	Tên công việc
+	Test
+	   * Shows the title of the job.
+	Ngân sách
+	Number
+	   * This field displays budget
+	Job description
+	Text
+	       This field displays text: “Mô tả công việc”
+	Description Text
+	Text
+	   * This field displays “Công việc tương tự”
+	Same job( Công việc tương tự)
+	Text
+	        Displays same job positions, including:name company, location, and deadline,budget..
+	Tóm tắt công việc
+	Text
+	   * Displays information of job , including:address,due time,budget..
+	Ứng tuyển
+	button
+	Display apply form
+	
+
+Database Access
+     
+Table
+	CRUD
+	Description
+	Job
+	R
+	get job by job_ id
+	Job
+	R
+	get jobs by categoryId excluding jobId
+	User
+	R
+	Get user by user_id
+	
+
+SQL Commands:
+   * Get job by job_ id:
+      SELECT * FROM Job WHERE job_id = ?
+   * Get user by user_id :
+      SELECT * FROM [dbo].[Users] WHERE user_id = ?
+   * get jobs by categoryId excluding jobId:
+      SELECT * FROM Job WHERE category_id = ? AND job_id != ?
+5.4. Apply 
+Allows seekers to apply for a specific job through the system.
+UI Design
+  
+
+
+
+Filed name
+	Filed type
+	Description
+	Avatar
+	Image
+	   * Displays the company's logo or image.
+	Tên công việc
+	Test
+	   * Shows the title of the job.
+	Ngân sách
+	Number
+	   * This field displays budget
+	Job description
+	Text
+	       This field displays text: “Mô tả công việc”
+	Description Text
+	Text
+	   * This field displays “Công việc tương tự”
+	Same job( Công việc tương tự)
+	Text
+	        Displays same job positions, including:name company, location, and deadline,budget..
+	Tóm tắt công việc
+	Text
+	   * Displays information of job , including:address,due time,budget..
+	Description Text
+	Text
+	   *   This field displays text: “Thông tin chào giá”     
+	Description Text
+	Text
+	   *        This field displays text: “Đề xuất chào giá 
+   *  This field displays text: “Bạn muốn nhận mức giá nào cho dự á ”
+	Nhập số tiền
+	Input
+	      Input field where the user enters the bid amount (in VND).
+	VND
+	Label
+	Displays the currency for the bid amount.
+	Description Text
+	Text
+	   *   This field displays text: “Dự kiến hoàn thành trong ”
+	Estimated time input
+	input
+	      Input field where the user enters the time complete.
+	Description Text
+	Text
+	     This field displays text: “Đề xuất thuyết phục nhà tuyển dụng ”
+	Convin input
+	input
+	      Input the method of convincing the employer
+	Description Text
+	Text
+	    This field displays text: “Bạn sẽ thực hiện dự án như thế nào?”
+	Enter how to do
+	input
+	      Input how you will do the project
+	file
+	File
+	   * This field displays text:Tệp đính kèm liên quan đến hệ thống.
+	Gửi đề xuất
+	button
+	      Proposal sent to employer
+	5.5  View applied job list
+Allows seekers to view a list of jobs they have applied for.
+UI Design
+  
+
+
+
+Filed name
+	Filed type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Quản lý công việc”
+	Title
+	Text
+	   * This field displays text: “Danh sách công việc đã ứng tuyển”
+
+
+	Tên job
+	Text
+	   * Displays the job title the user applied for.
+	Hạn nộp job 
+	Text
+	Displays the due time  for the job application.
+	Mô tả job
+	Text
+	   * Description of the job applied for.
+	Xem chi tiết
+	button
+	A button to view detailed information of job.
+	Trạng thái 
+	Status Label
+	Displays the current application:
+	Được chấp nhận
+	Status Label
+	   * Green label indicating that the job application has been accepted.
+	Không chấp nhận
+	Status Label
+	   * Red label indicating that the job application has been rejected.
+	Chờ trả lời 
+	Status Label
+	Yellow label indicating that the job application is still awaiting a response.
+	
+
+Database Access
+
+
+6. Recruitment for job
+6.1 Create Job Post
+Allows employers to create jobs for recruitment seekers.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field displays text: “Đăng Nhiệm Vụ”
+	Description
+	Text
+	This field displays text: “Tên Dự Án”
+	Description-Text
+	Text-area
+	This field displays the input title of job.
+	Description
+	Text
+	This field displays text: “Danh Mục”
+	Description-Text
+	Text-area
+	This field displays the input category of job.
+	Description
+	Text
+	This field displays text: “Địa Điểm”
+	Description-Text
+	Text-area
+	This field displays the input address of the job.
+	Description
+	Text
+	This field displays text: “Ngân Sách Dự Kiến Của Bạn Là Gì?”
+	Description-Text
+	Text-area
+	This field displays the input balance of the job.
+	Description
+	Text
+	This field displays text: “Ngày Hết Hạn”
+	Description-Text
+	Date
+	This field displays the input due date of job.
+	Description
+	Text
+	This field displays text: “Mô tả dự án của bạn”
+	Description-Text
+	Text-area
+	This field displays the input description of the job.
+	Tải tệp tin lên
+	Button
+	This button allows the employer to upload documents related to the job. 
+	Đăng Tin Tuyển Dụng
+	Button
+	This button allows the employer to create a new job on the platform.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	Job
+	C
+	Add new job 
+	JobCategory
+	R
+	Get category list
+	User
+	R
+	Get user by email
+	
+
+SQL Commands:
+1/ Add new job
+INSERT INTO Job(user_id, job_title, budget, description, due_date, status, category_id, doc_URL, address)  VALUES (?,?,?,?,?,?,?,?,?)
+
+
+2/ Get category list
+SELECT * FROM JobCategory
+
+
+3/Get user by email
+SELECT * FROM [dbo].[Users] WHERE email = ?
+
+
+6.2  View a post
+Allows user to view job detail.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	User avatar
+	Image
+	This field displays the user's avatar.
+	Description Text
+	Text
+	   * This field displays text: Name of Employer.
+	Description Text
+	Text
+	   * This field displays text:”Về nhà tuyển dụng”.
+	Description Text
+	Text
+	   * This field displays text:”Ngân sách dự án”.
+	Description Text
+	Text
+	   * This field displays text:”Mô tả dự án”.
+	Description Text
+	Text
+	   * This field displays text:Description of job.
+	Description Text
+	Text
+	   * This field displays text:”Tệp đính kèm”.
+	Description File
+	File
+	   * This field displays text:Tệp đính kèm liên quan đến hệ thống.
+	Title
+	Heading
+	   * This field displays text: “Danh sách chào giá”.
+	User avatar
+	Image
+	This field displays the useeker's avatar.
+	Description Text
+	Text
+	This field displays text: Name of seeker.
+	Description Text
+	Text
+	This field displays text: Role of user.
+	Description Text
+	Text
+	This field displays text: Greeting price.
+	Description Text
+	Text
+	This field displays text: due date of this job.
+	Cập nhật công việc
+	Button
+	This button allows the employer to navigate to update the job post page.
+	Xóa công việc
+	Button
+	This button allows the employer to delete job post.
+	Cập nhật phỏng vấn
+	Button
+	This button allows the employer to navigate to update the interview page.
+	Description Text
+	Text
+	This field displays text: information about this job.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	Job
+	R
+	Get job information by job ID
+	JobCategory
+	R
+	Get category name by ID
+	User
+	R
+	Get user by id
+	
+
+SQL Commands:
+1/ Get job information by job ID
+select * from Job where job_id = ?
+
+
+2/ Get category name by ID
+SELECT * FROM JobCategory WHERE category_id = ?
+
+
+3/ Get user by user id
+SELECT * FROM [dbo].[Users] WHERE user_id = ?
+
+
+6.3 Update job post
+Allows employers to update their job details posted.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field displays text: “Cập Nhật Nhiệm Vụ”
+	Description
+	Text
+	This field displays text: “Tên Dự Án”
+	Description-Text
+	Text-area
+	This field displays the input title of job.
+	Description
+	Text
+	This field displays text: “Danh Mục”
+	Description-Text
+	Text-area
+	This field displays the input category of job.
+	Description
+	Text
+	This field displays text: “Địa Điểm”
+	Description-Text
+	Text-area
+	This field displays the input address of the job.
+	Description
+	Text
+	This field displays text: “Ngân Sách Dự Kiến Của Bạn Là Gì?”
+	Description-Text
+	Text-area
+	This field displays the input balance of the job.
+	Description
+	Text
+	This field displays text: “Ngày Hết Hạn”
+	Description-Text
+	Date
+	This field displays the input due date of job.
+	Description
+	Text
+	This field displays text: “Mô tả dự án của bạn”
+	Description-Text
+	Text-area
+	This field displays the input description of the job.
+	Tải tệp tin lên
+	Button
+	This button allows the employer to upload documents related to the job. 
+	Cập nhật công việc.
+	Button
+	This button allows the employer to update job posts on the platform.
+	Quay Lại Bài Đăng Của Tôi
+	Button
+	This button allows the employer to navigate back to the job post list page.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	Job
+	U
+	Update a job 
+	Job
+	R
+	Get job by job id
+	JobCategory
+	R
+	Get category list
+	User
+	R
+	Get user by email
+	
+
+SQL Commands:
+1/ Update a job
+UPDATE Job SET job_title = ?, description = ?, due_date = ?, budget = ?, address = ?, category_id = ? 
+WHERE job_id = ?
+
+
+2/ Get job by job ID
+select * from Job where job_id = ?
+
+
+3/ Get category list
+SELECT * FROM JobCategory
+
+
+4/Get user by email
+SELECT * FROM [dbo].[Users] WHERE email = ?
+
+
+6.4 Delete job post
+Allows employers to delete their job details posted.
+UI Design
+ Pop-up-Delete 
+
+
+
+Database Access
+Table
+	CRUD
+	Description
+	Job
+	D
+	Delete a job by job id
+	
+
+SQL Commands:
+1/ Delete a job
+DELETE FROM Job WHERE job_id = ?
+
+
+6.5 View job post list
+Allows employers to view their posted job list.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title name
+	Heading
+	This field displays text: “Quản lý nhiệm vụ”
+	Description Text
+	Text
+	This field displays text: “Công việc của tôi ”.
+	Description Text
+	Text
+	This field displays text: Tên công việc.
+	Description Text
+	Text
+	This field displays text: Trạng thái công việc.
+	Description Text
+	Text
+	This field displays text: Ngày hết hạn của công việc.
+	Description Text
+	Text
+	This field displays text: Lượt đấu thầu.
+	Description Text
+	Text
+	This field displays text: Giá Thầu Trung Bình.
+	Quản Lý Tuyển Dụng
+	Button
+	This button allows the employer to navigate to manage the bidder page.
+	Trash
+	Icon
+	This icon allows the  employer to delete a job post.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	Job
+	R
+	Get job post list by user id
+	JobGreeting
+	R
+	Get job greeting list by job id
+	User
+	R
+	Get user id by email
+	
+
+SQL Commands:
+1/ Get job post list by user id
+select * from Job where user_id = ?
+
+
+2/ Get job greeting list by job id
+SELECT * FROM JobGreetings WHERE job_id=?
+
+
+3/ Get user by email
+SELECT * FROM [dbo].[Users] WHERE email = ?
+
+
+6.6 Update interview
+Allows employers to update links to interviews of seekers.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field displays text: “Phỏng Vấn”
+	Description Text
+	Text
+	This field displays text: “Đường Dẫn Liên Kết Phòng Họp Trực Tuyến”
+	Description-Text
+	Text-area
+	This field allows employer to fill the link of the interview.
+	Description
+	Text
+	This field displays text: “Ngày Phỏng Vấn”
+	Description-Text
+	Date
+	This field displays the input due date of interview.
+	Cập nhật phỏng vấn.
+	Button
+	This button allows the employer to update job’s interview on the platform.
+	Quay Lại Danh Sách Công Việc
+	Button
+	This button allows the employer to navigate back to the job post list page.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	Job
+	U
+	Update interview link and date
+	Job
+	R
+	Get job by job id
+	
+
+SQL Commands:
+1/ Get job by id
+select * from Job where job_id = ?
+
+
+2/ Update interview link and date
+UPDATE Job SET interview_URL = ?, interview_Date = ? WHERE job_id = ?
+
+
+6.7 View applied seeker list
+Allows employers to view applications for a job.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	This field displays text: “Quản Lý Người Chào Giá”
+	Description Text
+	Text
+	This field displays text: “Lượt Chào Giá Cho Công Việc A”
+	Avatar
+	Image
+	This field displays avatar of seeker was applied
+	Description Text
+	Text
+	This field displays username of seeker was applied
+	Description Text
+	Text
+	This field displays email of seeker was applied
+	Description Text
+	Text
+	This field displays bidder price of seeker was applied
+	Chấp Nhận Đề Nghị
+	Button
+	This button allows the employer to confirm a seeker to do this job.
+	Gửi Tin Nhắn
+	Button
+	This button allows the employer to chat with this seeker.
+	Trash 2
+	Icon
+	This icon allows the employer to remove a seeker from the applied seeker list.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	Job
+	U
+	Update interview link and date
+	Job
+	R
+	Get job by job id
+	
+
+SQL Commands:
+1/ Get job by id
+select * from Job where job_id = ?
+
+
+2/ Update interview link and date
+UPDATE Job SET interview_URL = ?, interview_Date = ? WHERE job_id = ?
+
+
+7. Work online through JobTrans
+7.1. Prepaid for job
+Allows employers to prepay job fee after accept successful seeker
+
+
+UI Design:
+  
+
+
+
+#
+	Component
+	Comp. Type
+	Description
+	1
+	Title
+	Heading
+	This field displays text: “Trả trước cho bài đăng”
+	2
+	Description Text
+	Text
+	This field displays text: “Để đăng tuyển …. ”
+	3
+	Số tiền cần trả
+	Numeric
+	This field displays the amount to be prepaid
+	4
+	Trả trước
+	Button
+	This button allows user to prepay 
+	5
+	System information
+	Text (Green/Red)
+	Information about the hold and refund process (if any).
+	
+
+Database Access
+
+
+Table
+	CRUD
+	Description
+	Transaction
+	R, C
+	Get/Check Transaction exists, create new transaction (transaction type: prepay)
+	Job
+	R, U
+	Get Job that needs to prepay for job, update Job status
+	User
+	R, U
+	Get user who need to prepay for job, update new balance
+	JobGreeting
+	R
+	Get JobGreeting where valid status, jobId
+	
+
+SQL Commands
+
+
+   * Check Transaction Exists:
+SELECT COUNT(1) FROM [dbo].[Transaction] WHERE description = "Trả trước" AND jobId = ?"
+
+
+   * Add new Transaction
+INSERT INTO [dbo].[Transaction] (senderId, amount, createdDate, status, transactionType, description, jobId) VALUES (?, ?, ?, ?, ?, ?, ?)
+
+
+   * Update Job Status:
+UPDATE Job SET status = ? WHERE job_id = ?
+
+
+   * Update Balance:
+UPDATE Users SET balance = ? WHERE email = ?
+7.2 Deposit for job
+Allows job seekers to deposit 10% money of the project amount in advance to ensure that the work will be completed.
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Trả trước cho bài đăng”
+	Description Text
+	Text
+	   * This field displays text: “Để chính thức tham gia công việc …. ”
+	Số tiền cần trả
+	Numeric
+	   * This field displays the amount to be prepaid
+	Đặt cọc
+	Button
+	   * This button allows user to deposit
+	System information
+	Text (Green/Red)
+	   * Information about the hold and refund process (if any).
+	Database Access
+
+
+Table
+	CRUD
+	Description
+	Transaction
+	C, R
+	Get Transation exists, create new transaction (type: Deposit)
+	Job
+	R, U
+	Get Job that needs to deposit for money
+	User
+	R, U
+	Get User who needs to deposit, and Update new balance
+	JobGreeting
+	R
+	Get JobGreeting where valid status and jobId 
+	
+
+SQL Commands
+
+
+   * Check Transaction Exists:
+SELECT COUNT(1) FROM [dbo].[Transaction] WHERE description = "Đặt cọc" AND jobId = ?"
+
+
+   * Add new Transaction
+INSERT INTO [dbo].[Transaction] (senderId, amount, createdDate, status, transactionType, description, jobId) VALUES (?, ?, ?, ?, ?, ?, ?)
+
+
+   * Update Job Status:
+UPDATE Job SET status = ? WHERE job_id = ?
+
+
+   * Update Balance:
+UPDATE Users SET balance = ? WHERE email = ?
+
+
+7.3 Chat
+Allows the employer, seeker, admin to send and receive the message from another user.
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Conversation name
+	Heading
+	   * This field displays text: “Hội thoại + “Job name””
+	Sender
+	Image
+	   * This field displays avatar of sender
+	Receiver 
+	Image
+	This field displays avatar of receiver
+	Message
+	Text
+	   *  This field displays message content
+	Database Access
+
+
+Table
+	CRUD
+	Description
+	Message
+	C, R
+	Get Message and add new message when sending new chat
+	
+
+   * Get message by JobId:
+SELECT * FROM dMESSAGE WHERE job_id = ? ORDER BY sent_time ASC
+   * Add new message:
+INSERT INTO dMESSAGE (sender_id, receiver_id, attachment, content, sent_time, job_id, isRead) VALUES (?, ?, ?, ?, ?, ?, ?)
+
+
+7.4 Create new period of progress - Employer
+Allows employers to set progress of the job for seekers to follow and submit in each period
+
+
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Tiến trình công việc + “Job name””
+	Description
+	Text-area
+	   *  This field displays input to record descriptive information about the period including requirements from the employer
+	Due date
+	Date
+	   * This field displays date picker for due date
+	Attachment
+	Button
+	   * This field displays upload button
+	Database Access
+
+
+Table
+	CRUD
+	Description
+	JobProcess
+	C
+	Add new process when you want to create new period
+	
+
+   * Create New Period:
+INSERT INTO Process (job_id, stage_name, requirements, end_date, requirement_url, status)
+VALUES (?, ?, ?, ?, ?, ?)
+
+
+7.5 View Period Submission
+Allowsemployers to confirm period submission that is submitted by seeker
+
+
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Xem kết quả””
+	Description
+	Text
+	   * This field displays submission description/ content
+	Attachment 
+	File
+	   * This field displays attachment submitted
+	Feedback
+	Input
+	   * This field displays input for employer enter feedback content about submission
+	Reject
+	Button
+	 This field displays button for employer to reject if it doesn’t meet the requirement
+	Accept
+	Button
+	This field displays button for employer to accept if it meets the requirement
+	Database Access
+
+
+Table
+	CRUD
+	Description
+	JobProcess
+	R
+	Get created period to show for employer and seeker 
+	
+
+   * Get process by Job Id:
+SELECT * FROM process WHERE job_id = ?
+7.6 Submit period submission
+Allows seekers to submit period submission for each period in progress
+
+
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Tiến trình công việc + “Job name””
+	Description
+	Text-area
+	   * This field displays input to record descriptive information about the period result
+	Attachment
+	Button
+	   * This field displays upload button
+	Submit button
+	Button
+	   * When this button is executed, the result is submitted.
+	Database Access
+
+
+Table
+	CRUD
+	Description
+	JobProcess
+	R, U
+	Get process needs to submit and update period result for specific process
+	
+
+   * Update Process:
+UPDATE process SET description_result = ? WHERE process_id = ?
+UPDATE process SET status = N'Đã nộp' WHERE process_id = ?
+7.7 View confirmed job post - Employer
+Allows employers to view a list of approved jobs for seekers.
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Công việc của tôi”
+	Title
+	Content
+	   * This field displays text: “Công việc của tôi”
+	Deposit information
+	Text(Red/Green)
+	   * Information about project payments of employers.
+	Products table: Display information about Products.
+	Tên Job
+	Text
+	   * This field displays job title of job
+	Trạng thái
+	Text
+	   * This field displays status of job
+	Hạn nộp
+	Date
+	   * This field displays due date of job
+	Bạn chưa trả trước cho công việc này
+	Text(Red)
+	Display notification to the employer to pay for the project to start(if not already paid).
+	Thanh toán đã hoàn tất
+	Text(Green)
+	Display notification to the employer to paid for the project .
+	Quản lý tiến trình
+	Button
+	This button allows the employer to view the progress of the project.
+	Chat
+	Button 
+	This button allows the employer to send a message to the seeker of the project.
+	Sản Phẩm
+	Button 
+	This button allows the employer to view the result of the job.
+	Khiếu nại
+	Button 
+	This button allows the employer to report the seeker.
+	Chưa trả trước
+	Button(Red)
+	This button allows the employer to pay for the project to start(if not already paid).
+	Đã trả trước
+	(Green)
+	This button notification to the employer to paid for the project .
+	Database Access
+
+
+Table
+	CRUD
+	Description
+	Job
+	R,U
+	Get job details, check payment status, and update payment status.
+	Transactions
+	C,R
+	Create a new transaction when the employer pays for the project, read status.
+	
+
+SQL Commands
+-Get job details:
+SELECT job_title, status, due_date, budget, description, secure_wallet 
+FROM Job 
+WHERE user_id = ? AND job_id = ?;
+
+
+-Insert New Payment Transaction:
+INSERT INTO [Transaction] (senderId, receiverId, amount, createdDate, status, transactionType, jobId, description) 
+VALUES (?, NULL, ?, GETDATE(), 1, 'Project Payment', ?, 'Trả trước cho công việc');
+
+
+-Check Payment Status:
+SELECT * 
+FROM [Transaction] 
+WHERE jobId = ? AND senderId = ? AND transactionType = 'Project Payment';
+
+
+-Update Job Payment Status:
+UPDATE Job 
+SET secure_wallet = 1 
+WHERE job_id = ? AND user_id = ?;
+7.8 View job post - Seeker
+Allows seekers to view a list of confirmed jobs by employer.
+
+
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Công việc của tôi”
+	Title
+	Content
+	   * This field displays text: “Công việc của tôi”
+	Deposit information
+	Text(Red/Green)
+	   * Information about project payments of seekers.
+	Products table: Display information about Products.
+	Tên Job
+	Text
+	   * This field displays job title of job
+	Trạng thái
+	Text
+	   * This field displays status of job
+	Hạn nộp
+	Date
+	   * This field displays due date of job
+	Bạn chưa trả trước cho công việc này
+	Text(Red)
+	Display notification to the seeker to deposit for the project to start(if not already paid).
+	Thanh toán đã hoàn tất
+	Text(Green)
+	Display notification to the seeker to deposited for the project .
+	Tiến trình
+	Button
+	This button allows the seeker to set the progress of the project.
+	Chat
+	Button 
+	This button allows the seeker to send a message to the employer of the project.
+	Sản Phẩm
+	Button 
+	This button allows the seeker to submit the result of the job to the employer.
+	Báo Cáo
+	Button 
+	This button allows the seeker to report the employer.
+	Chưa trả trước
+	Button(Red)
+	This button allows the seeker to deposit for the project to start(if not already paid).
+	Đã trả trước
+	(Green)
+	This button notification to the seeker to deposited for the project .
+	
+
+Database Access
+
+
+
+
+Table
+	CRUD
+	Description
+	Job
+	R,U
+	Get job details, check payment status, and update deposit status.
+	Transactions
+	C,R
+	Create a new transaction when the seeker makes the deposit, read deposit status.
+	
+
+SQL Commands
+
+
+-Get Job Details:
+SELECT job_title, status, due_date, budget, description, secure_wallet 
+FROM Job 
+WHERE job_id = ? AND user_id = ?;
+
+
+-Insert New Deposit Transaction:
+INSERT INTO [Transaction] (senderId, receiverId, amount, createdDate, status, transactionType, jobId, description) 
+VALUES (?, NULL, ?, GETDATE(), 1, 'Deposit', ?, 'Deposit for the job');
+
+
+-Check Deposit Status:
+SELECT * 
+FROM [Transaction] 
+WHERE jobId = ? AND senderId = ? AND transactionType = 'Deposit';
+
+
+-Update Job Deposit Status:
+UPDATE Job 
+SET secure_wallet = 1 
+WHERE job_id = ? AND user_id = ?;
+
+
+
+
+7.9. Submit final result online
+Allows seekers to submit online final results for the project.
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Text
+	   * This field displays text: “Nộp Dự Án Online”
+	Description 
+	Text
+	   * This field displays text: “Upload file ”
+	Upload
+	Button
+	This button allows the seeker to upload files.
+	Description-Text
+	Text-area
+	   * This field displays text: “Ghi chú”
+	Note
+	Text
+	   * This field displays note contents
+	Hủy bỏ
+	Button
+	This button allows the seeker to exit the function.
+	Nộp
+	Button
+	This button allows the seeker to submit online results to the employer.
+	
+
+Database Access
+
+
+Table
+	CRUD
+	Description
+	Job
+	R,U
+	Get job details and update submission status.
+	Submission
+	C,R
+	Create a new submission record when the seeker uploads a file, read submission status.
+	
+
+SQL Commands
+
+
+-Retrieve Job Details
+SELECT job_title, status 
+FROM Job 
+WHERE job_id = ? AND user_id = ?;
+
+
+-Insert New Submission Record
+INSERT INTO Submission (jobId, seekerId, note, filePath, submittedDate) 
+VALUES (?, ?, ?, ?, GETDATE());
+
+
+-Check Submission Status
+SELECT * 
+FROM Submission 
+WHERE jobId = ? AND seekerId = ?;
+
+
+-Update Job Status
+UPDATE Job 
+SET status = 'Submitted' 
+WHERE job_id = ? AND user_id = ?;
+
+
+
+
+7.10. Submit final result offline
+Allows seekers to submit offline final results for the project.
+UI Design
+  
+
+Field Name
+	Field Type
+	Description
+	Title
+	Heading
+	   * This field displays text: “Nộp Dự Án Offline”
+	Shipment table: Enter information about Shipment.
+	Description-text
+	Text
+	   * This field displays text: “Địa chỉ người gửi”
+	Description-text
+	Text
+	   * This field displays text: “Tỉnh”
+	Description
+	Combo-box Single-choice
+	   * This field is to select the sender's city.
+	Description-text
+	Text
+	   * This field displays text: “Quận/Huyện”
+	Description
+	Combo-box Single-choice
+	   * This field is to select the sender's district.
+	Description-text
+	Text
+	   * This field displays text: “Phường xã”
+	Description
+	Combo-box Single-choice
+	   * This field is to select the sender's ward.
+	Description-text
+	Text
+	   * This field displays text: “Địa chỉ cụ thể”
+	Description
+	Text-area
+	   * This field is to input the sender's specific address.
+	Description-text
+	Text
+	   * This field displays text: “Số điện thoại”
+	Description
+	Text-area
+	   * This field is to input the sender's phone number.
+	Description-text
+	Text
+	   * This field displays text: “Họ và tên người gửi”
+	Description
+	Text-area
+	   * This field is to input the sender's full name.
+	Description-text
+	Text
+	   * This field displays text: “Địa chỉ người nhận”
+	Description-text
+	Text
+	   * This field displays text: “Tỉnh”
+	Description
+	Combo-box Single-choice
+	   * This field is to select the receiver’s city.
+	Description-text
+	Text
+	   * This field displays text: “Quận/Huyện”
+	Description
+	Combo-box Single-choice
+	   * This field is to select the sender's district.
+	Description-text
+	Text
+	   * This field displays text: “Phường xã”
+	Description
+	Combo-box Single-choice
+	   * This field is to select the receiver’s ward.
+	Description-text
+	Text-area
+	   * This field displays text: “Địa chỉ cụ thể”
+	Description
+	Combo-box Single-choice
+	   * This field is to input the receiver’s specific address.
+	Description-text
+	Text-area
+	   * This field displays text: “Số điện thoại”
+	Description
+	Combo-box Single-choice
+	   * This field is to input the receiver’s phone number.
+	Description-text
+	Text
+	   * This field displays text: “Họ và tên người gửi”
+	Description
+	Text-area
+	   * This field is to input the receiver’s full name.
+	Description-text
+	Text
+	   * This field displays text: “Thông tin sản phẩm”
+	Description-text
+	Text
+	   * This field displays text: “Tên sản phẩm”
+	Description
+	Text-area
+	   * This field is to input the product’s name.
+	Description-text
+	Text
+	   * This field displays text: “Số lượng”
+	Description
+	Text-area
+	   * This field is to input the number of product.
+	Description-text
+	Text
+	   * This field displays text: “Khối lượng”
+	Description
+	Text-area
+	   * This field is to input the product’s weight.
+	Gửi thông tin giao hàng
+	Button 
+	This button allows the seeker to submit offline results to the employer.
+	
+
+
+
+
+
+Database Access
+
+
+Table
+	CRUD
+	Description
+	Shipment
+	C,R,U
+	Create a new shipment record, retrieve shipment details, and update shipment information.
+	
+
+SQL Commands
+
+
+-Retrieve Shipment Information
+SELECT sender_name, receiver_name, sender_phone, receiver_phone, sender_address, receiver_address, notes 
+FROM Shipment 
+WHERE shipmentId = ?;
+
+
+ -Insert New Shipment Record
+INSERT INTO Shipment (jobId, senderId, receiverId, sender_name, receiver_name, sender_phone, receiver_phone, sender_address, receiver_address, notes, shipmentDate) 
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE());
+
+
+-Check Shipment Status
+SELECT * 
+FROM Shipment 
+WHERE jobId = ? AND senderId = ?;
+
+
+-Update Shipment Information
+UPDATE Shipment 
+SET sender_name = ?, receiver_name = ?, sender_phone = ?, receiver_phone = ?, sender_address = ?, receiver_address = ?, notes = ? 
+WHERE shipmentId = ?;
+
+
+8. Manage User - Admin
+8.1 View user list
+Allows admin to view user list.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title name
+	Heading
+	This field displays text: “Danh sách người dùng hệ thống.”
+	Avatar
+	Image
+	This field displays the avatar of the user.
+	Description Text
+	Text
+	This field displays text: Tên người dùng.
+	Description Text
+	Text
+	This field displays text: “Vai trò của người dùng”.
+	[Xem chi tiết]
+	Button
+	This button allows the admin to navigate to the user information page of the selected user.
+	[Chặn/Bỏ chặn]
+	Button
+	This button allows the admin to ban/unban the selected user.
+	[Xem thêm]
+	Button
+	This button allows the admin to display more users.
+	[Nhà tuyển dụng]
+	Button
+	This button allows the admin to view users as role employer.
+	[Người tìm việc]
+	Button
+	This button allows the admin to view users as role seeker.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	User
+	R
+	Get all user
+	
+
+SQL Commands:
+
+
+/ Get all user
+SELECT * FROM [dbo].[Users] 
+
+
+8.2 Ban/Unban user
+Allows admin to ban/unban user.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Title name
+	Heading
+	This field displays text: “Danh sách người dùng hệ thống.”
+	Avatar
+	Image
+	This field displays the avatar of the user.
+	Description Text
+	Text
+	This field displays text: Tên người dùng.
+	Description Text
+	Text
+	This field displays text: “Vai trò của người dùng”.
+	[Xem chi tiết]
+	Button
+	This button allows the admin to navigate to the user information page of the selected user.
+	[Chặn/Bỏ chặn]
+	Button
+	This button allows the admin to ban/unban the selected user.
+	[Xem thêm]
+	Button
+	This button allows the admin to display more users.
+	[Nhà tuyển dụng]
+	Button
+	This button allows the admin to view users as role employer.
+	[Người tìm việc]
+	Button
+	This button allows the admin to view users as role seeker.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	User
+	U
+	Update status of selected user
+	
+
+SQL Commands:
+
+
+/ Update status of selected user
+UPDATE Users SET status = ? WHERE user_id = ?
+
+
+8.3 View user’s profile
+Allows admin to view the user's profile.
+UI Design
+  
+
+
+
+Field Name
+	Field Type
+	Description
+	Avatar
+	Image
+	This field displays the avatar of the user.
+	Description Text
+	Text
+	This field displays text: Tên người dùng.
+	[Xem chi tiết khiếu nại]
+	Button
+	This button allows the admin to navigate to the user report page of the selected user.
+	[Chặn/Bỏ chặn]
+	Button
+	This button allows the admin to ban/unban the selected user.
+	Description Text
+	Text
+	This field displays text: email người dùng.
+	Description Text
+	Text
+	This field displays text: số dư ví.
+	Description Text
+	Text
+	This field displays text: Địa chỉ.
+	Description Text
+	Text
+	This field displays text: Mô tả.
+	
+
+Database Access
+Table
+	CRUD
+	Description
+	User
+	R
+	Get user by user id
+	
+
+SQL Commands:
+
+
+/ Get user by user id
+SELECT * FROM Users WHERE user_id = ?
+
+
+
+
+IV. Appendix
+1. Assumptions & Dependencies
+Assumptions:
+   * AS-1: Users will have stable internet access to utilize the JobTrans platform.
+   * AS-2: Users possess basic technological knowledge to navigate and use the platform's features effectively.
+   * AS-3: Employers and job seekers will actively participate and cooperate in the recruitment and application processes.
+   * AS-4: The information and data provided by users will be accurate and valid.
+   * AS-5: The approval and verification processes by the admin will be carried out promptly to maintain the platform's performance.
+Dependencies:
+   * DE-1: The project relies on modern web technologies (HTML, CSS, JavaScript, and another technology) for developing the user interface.
+   * DE-2: The platform will utilize a database management system (such as MySQL) to store user information and job data.
+   * DE-3: Support from online payment service providers is required to facilitate financial transactions between users and the platform.
+   * DE-4: Need to cooperate with third-party services (such as GHTK) to transport the products that need to be submitted directly to customers.
+   * DE-5: The project will depend on software development partners to ensure that technical requirements are implemented correctly and according to the expected timeline.
+
+
+
+
+2. Limitations & Exclusions
+LI-1: Mobile Application: The initial release will not include a dedicated mobile application; the platform will be accessible only via web browsers.
+LI-2: Multi-Language Support: The platform will initially support only one language (Vietnamese), with plans for additional languages in future releases.
+LI-3: Advanced Analytics and Reporting: Comprehensive analytics and reporting features for both employers and job seekers will not be included in the initial releases.
+LI-4: Integration with External Job Boards: The product will not support integration with third-party job boards or recruitment systems during the initial rollout.
+LI-5: Social Media Sharing Features: Users will not be able to share job postings or applications on social media platforms in the initial release.
+LI-6: Performance Metrics and Benchmarking: The platform will not offer built-in performance metrics or benchmarking tools for evaluating job applications or recruitment efficiency in the initial release.
+3. Business Rules
+
+
+ID
+	Category
+	Rule Definition
+	BR-01
+	Validation
+	Notify Guests with MSG01 if they don't provide a valid email address.
+	BR-02
+	Validation
+	Notify Users with MSG02 if they provide an invalid password (less than 8 characters).
+	BR-03
+	Integrity
+	Notify Guest with MSG03 if the provided email has already been used to register.
+	BR-04
+	Authorization
+	Notify User with MSG04 if incorrect login credentials are provided, redirect to guest homepage; notify with MSG05 if correct credentials are provided, redirect to user homepage.
+	BR-05
+	Validation
+	Notify Users with MSG06 if they provide an invalid old password.
+	BR-06
+	Validation
+	Notify with MSG07 if the email is not registered, notify with MSG08 if it is registered.
+	BR-07
+	Validation
+	Notify with MSG09 if OTP is incorrect, reload OTP form; if OTP is correct, notify with MSG010 and redirect to reset password.
+	BR-08
+	Validation
+	Notify User with MSG11 if the re-entered password is incorrect.
+	BR-09
+	Action-Enabler
+	Display MSG17 if no search results are found.
+	BR-10
+	Structural
+	Display old sent/received messages in a conversation.
+	BR-11
+	Performance
+	Ensure message sending time is under 3 seconds.
+	BR-12
+	Integrity
+	School, company, and skill must be selected from available lists, and seekers can choose more than one.
+	BR-13
+	Validation
+	Notify with MSG18 if CV information is incomplete when trying to save.
+	BR-14
+	Integrity
+	Job application form must include offer price, estimated completion date, proposal, and attachment.
+	BR-15
+	Action-Enabler
+	Display transaction history (including details like amount, date, etc.), filter by date, max 5 lines, with "Lọc" (Filter) and "Xem thêm" (View More) options.
+	BR-16
+	Notification
+	Notify with MSG16 if a job update is successful.
+	BR-17
+	Action-Enabler
+	Display delete confirmation pop-up for job deletion.
+	BR-18
+	Action-Enabler
+	Display "Hiện tại chưa có ứng cử viên ứng tuyển." if no candidate has applied.
+	BR-19
+	Integrity
+	Notify with MSG10 if there is a database connection error when displaying candidate information.
+	BR-20
+	Action-Enabler
+	Display a confirmation pop-up for commitment.
+	BR-21
+	Notification
+	Notify seeker with MSG15 if successfully added to the commitment list.
+	BR-22
+	Structural
+	Display job progress periods in a table format, sorted by end date; employers can view, edit, delete, and seekers can view, submit, and view evaluations.
+	BR-23
+	Notification
+	Notify users with MSG17 if creating a new period is successful, or with MSG18 if there is an error.
+	BR-24
+	Action-Enabler
+	Display confirmation pop-up for accepting a period.
+	BR-25
+	Structural
+	Update period status as "Đã nộp"/"Bị từ chối"/"Được chấp nhận".
+	BR-26
+	Action-Enabler
+	Display confirmation pop-up for rejecting a period.
+	BR-27
+	Structural
+	Display submission page including a text box and file upload area.
+	BR-28
+	Action-Enabler
+	Update submission for each period of a job and change the period status to "Đã nộp kết quả".
+	BR-30
+	Validation
+	Ensure the final product is uploaded in a valid format (PDF, ZIP) within file size limits.
+	BR-31
+	Status
+	Update job status to “Đang tuyển”/”Đang chờ đặt cọc”/”Đang làm việc”/ "Đã nộp kết quả"/" Đã hoàn thành".
+	BR-32
+	Validation
+	Ensure all required fields are filled in the shipping form.
+	BR-33
+	Validation
+	Users can only enter amounts greater than 50,000 VND in the VNPAY form.
+	BR-34
+	Integrity
+	Notify with MSG19 if account balance is less than job salary; deduct wallet balance and display MSG20 if sufficient.
+	BR-35
+	Computation
+	Deduct 3% of the total deposit as a fee for the intermediary system.
+	BR-36
+	Authorization
+	Role selection form appears for first-time login (Employer/Seeker); does not apply to Admin accounts.
+	BR-37
+	Integrity
+	If a Gmail account is registered with a password, the same account is accessed when using Gmail login.
+	BR-38
+	Notification
+	Notify guests with MSG06 if profile update and database save is successful.
+	BR-39
+	Notification
+	Notify Users of new messages.
+	BR-40
+	Validation
+	Notify the user with MSG22 if the re-entered password is the same as the old password.
+	BR-41
+	Notification
+	Send notification of new job applications as MSG23 for employer and MSG24 for seeker about applying for a job.
+	BR-42
+	Notification
+	Notify with MSG14 if updated successfully a job or with MSG15 if updated failed a job.
+	
+
+4. Application Messages List
+#
+	Message Code
+	Message Type
+	Context
+	Content
+	1
+	MSG01
+	In line
+	Invalid email format when user fills out the email field
+	Sai định dạng email
+	2
+	MSG02
+	In line
+	Password does not meet the minimum length of 8 characters
+	Mật khẩu phải 8 kí tự trở lên
+	3
+	MSG03
+	Toast message
+	Email is already used when attempting to register
+	Email này đã được dùng để đăng kí
+	4
+	MSG04
+	Toast message
+	Login failed due to incorrect credentials
+	Đăng nhập thất bại
+	5
+	MSG05
+	Toast message
+	Login succeeded with correct credentials
+	Đăng nhập thành công
+	6
+	MSG06
+	Toast message
+	Password change failed
+	Đổi mật khẩu thất bại
+	7
+	MSG07
+	Toast message
+	Gmail has not been registered when attempting to retrieve account
+	Gmail chưa được đăng kí tài khoản
+	8
+	MSG08
+	Toast message
+	OTP sent successfully for account verification
+	Đã gửi mã OTP thành công
+	9
+	MSG09
+	Toast message
+	OTP verified successfully during account recovery
+	Xác thực OTP thành công
+	10
+	MSG10
+	Toast message
+	OTP verification failed during account recovery
+	Xác thực OTP thất bại
+	11
+	MSG11
+	In line
+	Re-entered password does not match the original password
+	Mật khẩu nhập lại không đúng
+	12
+	MSG12
+	Toast message
+	No search results found
+	404 - Không tìm thấy kết quả nào
+	13
+	MSG13
+	In line
+	CV information is incomplete
+	Hãy điền đầy đủ thông tin
+	14
+	MSG14
+	Toast message
+	Job post updated successfully
+	Cập nhật bài đăng thành công
+	15
+	MSG15
+	Toast message
+	Job post update failed
+	Cập nhật bài đăng thất bại
+	16
+	MSG16
+	Toast message
+	Database connection error when performing an action
+	Lỗi kết nối cơ sở dữ liệu
+	17
+	MSG17
+	Toast message
+	New job period created successfully
+	Tạo mới giai đoạn thành công
+	18
+	MSG18
+	Toast message
+	Failed to create a new job period
+	Tạo mới giai đoạn thất bại
+	19
+	MSG19
+	Toast message
+	Insufficient account balance for payment
+	Số dư tài khoản không đủ
+	20
+	MSG20
+	Toast message
+	Payment completed successfully
+	Đã thanh toán thành công
+	21
+	MSG21
+	Pop up message
+	Notification of a new message related to a job post
+	<Tên job> - Bạn có tin nhắn mới
+	22
+	MSG22
+	In line
+	The re-entered password is the same as the old password.
+	Mật khẩu mới trùng với mật khẩu cũ.
+	23
+	MSG23
+	Pop up message
+	Send notification of new job applications for employer 
+	Công việc bạn đăng có chào giá mới
+	24
+	MSG24
+	Pop up message
+	Send notification of new job applications for seeker.
+	Bạn có một chào giá mới cho công việc
+	JobTrans-RDS_v3.0                Page  / 141
