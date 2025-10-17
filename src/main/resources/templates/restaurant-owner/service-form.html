@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title th:text="${isEdit ? 'Sửa Dịch vụ' : 'Thêm Dịch vụ Mới'}">Thêm Dịch vụ Mới</title>
+    <link rel="stylesheet" href="/css/restaurant-admin.css" />
+</head>
+<body>
+    <nav class="page-switch card">
+        <a class="nav-btn" th:href="@{/restaurant-owner/restaurants/{id}/services(id=${restaurant.restaurantId})}" 
+           title="Về danh sách dịch vụ">← Danh sách Dịch vụ</a>
+    </nav>
+
+    <div class="container">
+        <header class="nav card">
+            <div class="nav-left">
+                <h1 class="h1" th:text="${isEdit ? 'Sửa Dịch vụ' : 'Thêm Dịch vụ Mới'}">Thêm Dịch vụ Mới</h1>
+                <p class="muted" th:text="'Nhà hàng: ' + ${restaurant.restaurantName}">Nhà hàng: ABC Restaurant</p>
+            </div>
+        </header>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h2" th:text="${isEdit ? 'Chỉnh sửa thông tin dịch vụ' : 'Thông tin dịch vụ mới'}">Thông tin dịch vụ mới</h2>
+            </div>
+
+            <form th:action="${isEdit ? 
+                '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/services/' + service.serviceId : 
+                '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/services'}" 
+                  method="post" enctype="multipart/form-data" class="service-form">
+                
+                <div class="form-group">
+                    <label for="name" class="form-label">Tên dịch vụ *</label>
+                    <input type="text" id="name" name="name" class="form-control" 
+                           th:value="${service.name}" 
+                           placeholder="Ví dụ: Dịch vụ phục vụ tận bàn, Dịch vụ giao hàng..."
+                           required>
+                    <small class="form-text">Tên dịch vụ sẽ hiển thị cho khách hàng</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="category" class="form-label">Danh mục</label>
+                    <select id="category" name="category" class="form-control">
+                        <option value="">Chọn danh mục</option>
+                        <option value="Phục vụ" th:selected="${service.category == 'Phục vụ'}">Phục vụ</option>
+                        <option value="Giao hàng" th:selected="${service.category == 'Giao hàng'}">Giao hàng</option>
+                        <option value="Đặt bàn" th:selected="${service.category == 'Đặt bàn'}">Đặt bàn</option>
+                        <option value="Sự kiện" th:selected="${service.category == 'Sự kiện'}">Sự kiện</option>
+                        <option value="Khác" th:selected="${service.category == 'Khác'}">Khác</option>
+                    </select>
+                    <small class="form-text">Phân loại dịch vụ để dễ quản lý</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">Mô tả</label>
+                    <textarea id="description" name="description" class="form-control" rows="3" 
+                              placeholder="Mô tả chi tiết về dịch vụ...">[[${service.description}]]</textarea>
+                    <small class="form-text">Mô tả chi tiết về dịch vụ (không bắt buộc)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="price" class="form-label">Giá dịch vụ (VNĐ) *</label>
+                    <input type="number" id="price" name="price" class="form-control" 
+                           th:value="${service.price != null ? service.price : ''}" 
+                           placeholder="0" 
+                           min="0" 
+                           step="1000"
+                           required>
+                    <small class="form-text">Giá dịch vụ tính bằng VNĐ (0 nếu miễn phí)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="status" class="form-label">Trạng thái</label>
+                    <select id="status" name="status" class="form-control">
+                        <option value="AVAILABLE" th:selected="${service.status != null and service.status.name() == 'AVAILABLE'}">Có sẵn</option>
+                        <option value="UNAVAILABLE" th:selected="${service.status != null and service.status.name() == 'UNAVAILABLE'}">Không có sẵn</option>
+                        <option value="DISCONTINUED" th:selected="${service.status != null and service.status.name() == 'DISCONTINUED'}">Ngừng cung cấp</option>
+                    </select>
+                    <small class="form-text">Trạng thái hiện tại của dịch vụ</small>
+                </div>
+
+                <!-- Service Image Upload - For Create Mode -->
+                <div class="form-group" th:if="${!isEdit}">
+                    <label for="serviceImage" class="form-label">Ảnh dịch vụ</label>
+                    <input type="file" id="serviceImage" name="serviceImage" accept="image/*" class="form-control">
+                    <small class="form-text">Chọn ảnh cho dịch vụ (không bắt buộc)</small>
+                    <div id="imagePreview" class="image-preview" style="display: none;">
+                        <img id="previewImg" src="" alt="Preview" class="preview-image">
+                    </div>
+                </div>
+
+                <!-- Service Image Upload - For Edit Mode -->
+                <div class="form-group" th:if="${isEdit}">
+                    <label for="serviceImage" class="form-label">Ảnh dịch vụ</label>
+                    
+                    <!-- Current Image Display -->
+                    <div th:if="${service.serviceId != null and restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) != null and !restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty()}" class="current-image">
+                        <img th:src="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId)}" alt="Current Service Image" class="current-image-preview">
+                        <p class="form-text text-muted">Ảnh hiện tại của dịch vụ</p>
+                    </div>
+                    
+                    <!-- No Image State -->
+                    <div th:if="${service.serviceId != null and (restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) == null or restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty())}" class="no-image-state">
+                        <div class="no-image">
+                            <i class="fas fa-image"></i>
+                            <span>Chưa có ảnh</span>
+                        </div>
+                    </div>
+                    
+                    <!-- File Input for Edit Mode -->
+                    <input type="file" id="serviceImage" name="serviceImage" accept="image/*" class="form-control">
+                    <small class="form-text">Chọn ảnh mới để thay thế (không bắt buộc)</small>
+                    <div id="imagePreview" class="image-preview" style="display: none;">
+                        <img id="previewImg" src="" alt="Preview" class="preview-image">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" 
+                            th:text="${isEdit ? 'Cập nhật Dịch vụ' : 'Tạo Dịch vụ'}">Tạo Dịch vụ</button>
+                    <a th:href="@{/restaurant-owner/restaurants/{id}/services(id=${restaurant.restaurantId})}" 
+                       class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .service-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
+        }
+
+        .form-text {
+            display: block;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #2c5aa0;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3d6f;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input[type="number"].form-control {
+            text-align: right;
+        }
+
+        /* Service Image Styles */
+        .current-image {
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .current-image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 1rem;
+        }
+
+        .image-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .no-image-state {
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .no-image {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+
+        .no-image i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn-image {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+        }
+
+        .btn-image:hover {
+            background-color: #138496;
+        }
+
+        .btn-image:active {
+            background-color: #117a8b;
+        }
+
+        /* Image Preview Styles */
+        .image-preview {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+
+    <script>
+        // Format price input
+        document.getElementById('price').addEventListener('input', function(e) {
+            let value = e.target.value;
+            if (value && !isNaN(value)) {
+                // Remove any non-numeric characters except decimal point
+                value = value.replace(/[^0-9.]/g, '');
+                e.target.value = value;
+            }
+        });
+
+        // Image preview for both create and edit mode
+        const serviceImageInput = document.getElementById('serviceImage');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+
+        if (serviceImageInput) {
+            serviceImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImg.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+            });
+        }
+
+        // Auto-save form data to localStorage (only for create mode)
+        const form = document.querySelector('.service-form');
+        const isEditMode = /*[[${isEdit}]]*/ false;
+        
+        // Load saved data (only for create mode)
+        if (!isEditMode) {
+            const savedData = localStorage.getItem('serviceFormData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                Object.keys(data).forEach(key => {
+                    const element = form.querySelector(`[name="${key}"]`);
+                    if (element && element.type !== 'file') { // Don't restore file inputs
+                        element.value = data[key];
+                    }
+                });
+            }
+        }
+
+        // Save form data on change (only for create mode)
+        form.addEventListener('input', function(e) {
+            if (!isEditMode && e.target.type !== 'file') { // Don't save file inputs
+                const formData = new FormData(form);
+                const data = {};
+                for (let [key, value] of formData.entries()) {
+                    if (key !== 'serviceImage') { // Don't save file data
+                        data[key] = value;
+                    }
+                }
+                localStorage.setItem('serviceFormData', JSON.stringify(data));
+            }
+        });
+
+        // Clear saved data on successful submit
+        form.addEventListener('submit', function() {
+            if (!isEditMode) {
+                localStorage.removeItem('serviceFormData');
+            }
+        });
+    </script>
+</body>
+</html>

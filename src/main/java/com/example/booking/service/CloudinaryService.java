@@ -172,6 +172,15 @@ public class CloudinaryService {
     }
 
     /**
+     * Upload service image to Cloudinary
+     */
+    public String uploadServiceImage(MultipartFile file, Integer restaurantId, Integer serviceId) throws IOException {
+        String folder = "restaurants/" + restaurantId + "/services";
+        String publicId = "service_" + serviceId + "_" + System.currentTimeMillis();
+        return uploadImage(file, folder, publicId);
+    }
+
+    /**
      * Update image in Cloudinary (delete old and upload new)
      */
     public String updateImage(MultipartFile newFile, String oldImageUrl, String folder, String publicId) throws IOException {
@@ -228,6 +237,16 @@ public class CloudinaryService {
     public String updateReviewEvidence(MultipartFile newFile, String oldImageUrl, Integer reviewId) throws IOException {
         String folder = "reviews/" + reviewId;
         String publicId = "evidence_" + System.currentTimeMillis();
+        return updateImage(newFile, oldImageUrl, folder, publicId);
+    }
+
+    /**
+     * Update service image
+     */
+    public String updateServiceImage(MultipartFile newFile, String oldImageUrl, Integer restaurantId, Integer serviceId)
+            throws IOException {
+        String folder = "restaurants/" + restaurantId + "/services";
+        String publicId = "service_" + serviceId + "_" + System.currentTimeMillis();
         return updateImage(newFile, oldImageUrl, folder, publicId);
     }
 

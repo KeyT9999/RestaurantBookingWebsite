@@ -93,6 +93,14 @@ public class ImageUploadService {
         return cloudinaryService.uploadReviewEvidence(file, reviewId);
     }
 
+    /**
+     * Upload service image to Cloudinary only
+     */
+    public String uploadServiceImage(MultipartFile file, Integer restaurantId, Integer serviceId) throws IOException {
+        logger.info("Uploading service image to Cloudinary for restaurant ID: {}, service ID: {}", restaurantId,
+                serviceId);
+        return cloudinaryService.uploadServiceImage(file, restaurantId, serviceId);
+    }
 
     // ============= UPDATE METHODS =============
 
@@ -142,6 +150,15 @@ public class ImageUploadService {
     public String updateReviewEvidence(MultipartFile newFile, String oldImageUrl, Integer reviewId) throws IOException {
         logger.info("Updating review evidence for review ID: {}", reviewId);
         return cloudinaryService.updateReviewEvidence(newFile, oldImageUrl, reviewId);
+    }
+
+    /**
+     * Update service image
+     */
+    public String updateServiceImage(MultipartFile newFile, String oldImageUrl, Integer restaurantId, Integer serviceId)
+            throws IOException {
+        logger.info("Updating service image for restaurant ID: {}, service ID: {}", restaurantId, serviceId);
+        return cloudinaryService.updateServiceImage(newFile, oldImageUrl, restaurantId, serviceId);
     }
 
     /**

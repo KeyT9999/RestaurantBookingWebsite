@@ -19,6 +19,7 @@ import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.User;
+import com.example.booking.dto.DishWithImageDto;
 import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.dto.ReviewForm;
@@ -179,14 +180,28 @@ public class HomeController {
             List<RestaurantMedia> gallery = allMedia.stream()
                 .filter(m -> "gallery".equalsIgnoreCase(m.getType()))
                 .toList();
+            List<RestaurantMedia> exterior = allMedia.stream()
+                    .filter(m -> "exterior".equalsIgnoreCase(m.getType()))
+                    .toList();
+            List<RestaurantMedia> interior = allMedia.stream()
+                    .filter(m -> "interior".equalsIgnoreCase(m.getType()))
+                    .toList();
             List<RestaurantMedia> menus = allMedia.stream()
                 .filter(m -> "menu".equalsIgnoreCase(m.getType()))
                 .toList();
+            List<RestaurantMedia> tableLayouts = allMedia.stream()
+                    .filter(m -> "table_layout".equalsIgnoreCase(m.getType()))
+                    .toList();
             
-            // Get dishes
+            // Get dishes with images
+            List<DishWithImageDto> dishesWithImages = new ArrayList<>();
             List<Dish> dishes = restaurant.getDishes() != null ? restaurant.getDishes() : new ArrayList<>();
+            for (Dish dish : dishes) {
+                String dishImageUrl = restaurantOwnerService.getDishImageUrl(id, dish.getDishId());
+                dishesWithImages.add(new DishWithImageDto(dish, dishImageUrl));
+            }
             
-            // Get tables
+            // Get tables (images will be loaded via getTableImages() method)
             List<RestaurantTable> tables = restaurant.getTables() != null ? restaurant.getTables() : new ArrayList<>();
             
             // Review-related data
@@ -238,8 +253,11 @@ public class HomeController {
             model.addAttribute("logo", logos.isEmpty() ? null : logos.get(0));
             model.addAttribute("cover", covers.isEmpty() ? null : covers.get(0));
             model.addAttribute("gallery", gallery);
+            model.addAttribute("exterior", exterior);
+            model.addAttribute("interior", interior);
             model.addAttribute("menus", menus);
-            model.addAttribute("dishes", dishes);
+            model.addAttribute("tableLayouts", tableLayouts);
+            model.addAttribute("dishes", dishesWithImages);
             model.addAttribute("tables", tables);
             
             // Review data

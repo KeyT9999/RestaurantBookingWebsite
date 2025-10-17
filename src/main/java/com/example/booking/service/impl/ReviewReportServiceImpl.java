@@ -30,7 +30,7 @@ import com.example.booking.dto.ReviewReportView;
 import com.example.booking.dto.notification.NotificationForm;
 import com.example.booking.repository.ReviewReportRepository;
 import com.example.booking.repository.ReviewRepository;
-import com.example.booking.service.FileUploadService;
+import com.example.booking.service.CloudinaryService;
 import com.example.booking.service.NotificationService;
 import com.example.booking.service.ReviewReportService;
 import com.example.booking.service.ReviewService;
@@ -42,19 +42,19 @@ public class ReviewReportServiceImpl implements ReviewReportService {
     private final ReviewReportRepository reviewReportRepository;
     private final ReviewRepository reviewRepository;
     private final ReviewService reviewService;
-    private final FileUploadService fileUploadService;
+    private final CloudinaryService cloudinaryService;
     private final NotificationService notificationService;
 
     @Autowired
     public ReviewReportServiceImpl(ReviewReportRepository reviewReportRepository,
             ReviewRepository reviewRepository,
             ReviewService reviewService,
-            FileUploadService fileUploadService,
+            CloudinaryService cloudinaryService,
             NotificationService notificationService) {
         this.reviewReportRepository = reviewReportRepository;
         this.reviewRepository = reviewRepository;
         this.reviewService = reviewService;
-        this.fileUploadService = fileUploadService;
+        this.cloudinaryService = cloudinaryService;
         this.notificationService = notificationService;
     }
 
@@ -91,7 +91,7 @@ public class ReviewReportServiceImpl implements ReviewReportService {
             for (var file : form.getEvidenceFiles()) {
                 if (file != null && !file.isEmpty()) {
                     try {
-                        String fileUrl = fileUploadService.uploadReviewEvidence(file, review.getReviewId(), owner.getOwnerId());
+                        String fileUrl = cloudinaryService.uploadReviewEvidence(file, review.getReviewId());
                         ReviewReportEvidence evidence = new ReviewReportEvidence();
                         evidence.setFileUrl(fileUrl);
                         evidence.setContentType(file.getContentType());

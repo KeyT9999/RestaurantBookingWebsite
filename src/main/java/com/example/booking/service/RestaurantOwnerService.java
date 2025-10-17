@@ -1,8 +1,11 @@
     package com.example.booking.service;
 
+    import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +22,7 @@ import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.User;
 import com.example.booking.repository.BookingRepository;
@@ -28,7 +32,7 @@ import com.example.booking.repository.RestaurantMediaRepository;
 import com.example.booking.repository.RestaurantOwnerRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.RestaurantRepository;
-import com.example.booking.service.ImageUploadService;
+import com.example.booking.repository.RestaurantServiceRepository;
 import com.example.booking.dto.DishWithImageDto;
 
 /**
@@ -48,6 +52,7 @@ public class RestaurantOwnerService {
     private final DiningTableRepository diningTableRepository;
     private final DishRepository dishRepository;
     private final RestaurantMediaRepository restaurantMediaRepository;
+    private final RestaurantServiceRepository restaurantServiceRepository;
     private final SimpleUserService userService;
     private final RestaurantNotificationService restaurantNotificationService;
     private final ImageUploadService imageUploadService;
@@ -60,6 +65,7 @@ public class RestaurantOwnerService {
                                 DiningTableRepository diningTableRepository,
                                 DishRepository dishRepository,
             RestaurantMediaRepository restaurantMediaRepository,
+            RestaurantServiceRepository restaurantServiceRepository,
             SimpleUserService userService,
             RestaurantNotificationService restaurantNotificationService,
             ImageUploadService imageUploadService) {
@@ -70,6 +76,7 @@ public class RestaurantOwnerService {
         this.diningTableRepository = diningTableRepository;
         this.dishRepository = dishRepository;
         this.restaurantMediaRepository = restaurantMediaRepository;
+        this.restaurantServiceRepository = restaurantServiceRepository;
         this.userService = userService;
         this.restaurantNotificationService = restaurantNotificationService;
         this.imageUploadService = imageUploadService;
@@ -461,6 +468,350 @@ public class RestaurantOwnerService {
      */
     public List<RestaurantMedia> getMediaByRestaurantAndType(RestaurantProfile restaurant, String type) {
         return restaurantMediaRepository.findByRestaurantAndType(restaurant, type);
+    }
+
+    // ===== RESTAURANT SERVICE MANAGEMENT =====
+
+    /**
+     * Create new restaurant service
+     */
+    public RestaurantService createRestaurantService(RestaurantService service) {
+        logger.info("Creating new restaurant service: {}", service.getName());
+        return restaurantServiceRepository.save(service);
+    }
+
+    /**
+     * Update restaurant service
+     */
+    public RestaurantService updateRestaurantService(RestaurantService service) {
+        logger.info("Updating restaurant service: {}", service.getName());
+        service.setUpdatedAt(LocalDateTime.now());
+        return restaurantServiceRepository.save(service);
+    }
+
+    /**
+     * Delete restaurant service
+     */
+    public void deleteRestaurantService(Integer serviceId) {
+        logger.info("Deleting restaurant service with ID: {}", serviceId);
+        restaurantServiceRepository.deleteById(serviceId);
+    }
+
+    /**
+     * Get restaurant service by ID
+     */
+    public Optional<RestaurantService> getRestaurantServiceById(Integer serviceId) {
+        return restaurantServiceRepository.findById(serviceId);
+    }
+
+    /**
+     * Get all services by restaurant
+     */
+    public List<RestaurantService> getServicesByRestaurant(Integer restaurantId) {
+        logger.info("Getting services for restaurant ID: {}", restaurantId);
+        return restaurantServiceRepository.findByRestaurantRestaurantIdOrderByNameAsc(restaurantId);
+    }
+
+    /**
+     * Get available services by restaurant
+     */
+    public List<RestaurantService> getAvailableServicesByRestaurant(Integer restaurantId) {
+        logger.info("Getting available services for restaurant ID: {}", restaurantId);
+        return restaurantServiceRepository.findByRestaurantRestaurantIdAndStatusOrderByNameAsc(
+                restaurantId, com.example.booking.common.enums.ServiceStatus.AVAILABLE);
+    }
+
+    /**
+     * Get services by restaurant and category
+     */
+    public List<RestaurantService> getServicesByRestaurantAndCategory(Integer restaurantId, String category) {
+        logger.info("Getting services for restaurant ID: {} and category: {}", restaurantId, category);
+        return restaurantServiceRepository.findByRestaurantRestaurantIdAndCategoryOrderByNameAsc(restaurantId,
+                category);
+    }
+
+    /**
+     * Update service status
+     */
+    public RestaurantService updateServiceStatus(Integer serviceId,
+            com.example.booking.common.enums.ServiceStatus status) {
+        logger.info("Updating service status for service ID: {} to {}", serviceId, status);
+        Optional<RestaurantService> serviceOpt = restaurantServiceRepository.findById(serviceId);
+        if (serviceOpt.isPresent()) {
+            RestaurantService service = serviceOpt.get();
+            service.setStatus(status);
+            service.setUpdatedAt(LocalDateTime.now());
+            return restaurantServiceRepository.save(service);
+        }
+        throw new RuntimeException("Service not found with ID: " + serviceId);
+    }
+
+    /**
+     * Upload service image using restaurant_media
+     */
+    public String uploadServiceImage(Integer restaurantId, Integer serviceId, MultipartFile imageFile)
+            throws IOException {
+        logger.info("Uploading service image for restaurant ID: {}, service ID: {}", restaurantId, serviceId);
+
+        // Get restaurant
+        Optional<RestaurantProfile> restaurantOpt = restaurantProfileRepository.findById(restaurantId);
+        if (restaurantOpt.isEmpty()) {
+            throw new RuntimeException("Restaurant not found with ID: " + restaurantId);
+        }
+
+        // Check if service already has an image
+        String serviceIdPattern = "/service_" + serviceId + "_";
+        List<RestaurantMedia> existingMediaList = restaurantMediaRepository
+                .findServiceImagesByRestaurantAndServiceId(restaurantOpt.get(), serviceIdPattern);
+
+        String imageUrl;
+        if (!existingMediaList.isEmpty()) {
+            // Update existing record instead of creating new one
+            RestaurantMedia existingMedia = existingMediaList.get(0);
+            logger.info("Service already has image, updating existing record ID: {}", existingMedia.getMediaId());
+
+            // Delete old image from Cloudinary
+            try {
+                imageUploadService.deleteImage(existingMedia.getUrl());
+            } catch (Exception e) {
+                logger.warn("Could not delete old image from Cloudinary: {}", e.getMessage());
+            }
+
+            // Upload new image
+            imageUrl = imageUploadService.uploadServiceImage(imageFile, restaurantId, serviceId);
+
+            // Update existing record
+            existingMedia.setUrl(imageUrl);
+            restaurantMediaRepository.save(existingMedia);
+
+            // Clean up any duplicate records
+            if (existingMediaList.size() > 1) {
+                logger.warn("Found {} duplicate records, cleaning up...", existingMediaList.size());
+                for (int i = 1; i < existingMediaList.size(); i++) {
+                    RestaurantMedia duplicate = existingMediaList.get(i);
+                    try {
+                        imageUploadService.deleteImage(duplicate.getUrl());
+                        restaurantMediaRepository.delete(duplicate);
+                        logger.info("Deleted duplicate record ID: {}", duplicate.getMediaId());
+                    } catch (Exception e) {
+                        logger.error("Error deleting duplicate: {}", e.getMessage());
+                    }
+                }
+            }
+        } else {
+            // Create new record
+            logger.info("No existing image found, creating new record");
+            imageUrl = imageUploadService.uploadServiceImage(imageFile, restaurantId, serviceId);
+
+            RestaurantMedia media = new RestaurantMedia();
+            media.setRestaurant(restaurantOpt.get());
+            media.setType("service");
+            media.setUrl(imageUrl);
+            restaurantMediaRepository.save(media);
+        }
+
+        return imageUrl;
+    }
+
+    /**
+     * Update service image using restaurant_media
+     */
+    public String updateServiceImage(Integer restaurantId, Integer serviceId, MultipartFile newImageFile)
+            throws IOException {
+        logger.info("Updating service image for restaurant ID: {}, service ID: {}", restaurantId, serviceId);
+
+        // Get restaurant
+        Optional<RestaurantProfile> restaurantOpt = restaurantProfileRepository.findById(restaurantId);
+        if (restaurantOpt.isEmpty()) {
+            throw new RuntimeException("Restaurant not found with ID: " + restaurantId);
+        }
+
+        // Find existing service media using repository query
+        String serviceIdPattern = "/service_" + serviceId + "_";
+        List<RestaurantMedia> serviceMediaList = restaurantMediaRepository
+                .findServiceImagesByRestaurantAndServiceId(restaurantOpt.get(), serviceIdPattern);
+
+        String newImageUrl;
+        if (!serviceMediaList.isEmpty()) {
+            // Update existing media - use the most recent one
+            RestaurantMedia serviceMedia = serviceMediaList.get(0);
+            String oldImageUrl = serviceMedia.getUrl();
+
+            logger.info("Updating existing service media record ID: {}", serviceMedia.getMediaId());
+            newImageUrl = imageUploadService.updateServiceImage(newImageFile, oldImageUrl, restaurantId, serviceId);
+            serviceMedia.setUrl(newImageUrl);
+            restaurantMediaRepository.save(serviceMedia);
+
+            // Clean up any duplicate records
+            if (serviceMediaList.size() > 1) {
+                logger.warn("Found {} duplicate records, cleaning up...", serviceMediaList.size());
+                for (int i = 1; i < serviceMediaList.size(); i++) {
+                    RestaurantMedia duplicate = serviceMediaList.get(i);
+                    try {
+                        imageUploadService.deleteImage(duplicate.getUrl());
+                        restaurantMediaRepository.delete(duplicate);
+                        logger.info("Deleted duplicate record ID: {}", duplicate.getMediaId());
+                    } catch (Exception e) {
+                        logger.error("Error deleting duplicate: {}", e.getMessage());
+                    }
+                }
+            }
+        } else {
+            // Create new media if not found
+            logger.info("No existing image found, creating new record");
+            newImageUrl = imageUploadService.uploadServiceImage(newImageFile, restaurantId, serviceId);
+            RestaurantMedia media = new RestaurantMedia();
+            media.setRestaurant(restaurantOpt.get());
+            media.setType("service");
+            media.setUrl(newImageUrl);
+            restaurantMediaRepository.save(media);
+        }
+
+        return newImageUrl;
+    }
+
+    /**
+     * Delete service image using restaurant_media
+     */
+    public void deleteServiceImage(Integer restaurantId, Integer serviceId) {
+        logger.info("Deleting service image for restaurant ID: {}, service ID: {}", restaurantId, serviceId);
+
+        // Get restaurant
+        Optional<RestaurantProfile> restaurantOpt = restaurantProfileRepository.findById(restaurantId);
+        if (restaurantOpt.isEmpty()) {
+            throw new RuntimeException("Restaurant not found with ID: " + restaurantId);
+        }
+
+        // Find and delete service media using repository query
+        String serviceIdPattern = "/service_" + serviceId + "_";
+        List<RestaurantMedia> serviceMediaList = restaurantMediaRepository
+                .findServiceImagesByRestaurantAndServiceId(restaurantOpt.get(), serviceIdPattern);
+
+        if (!serviceMediaList.isEmpty()) {
+            // Delete all service media records (including duplicates)
+            for (RestaurantMedia serviceMedia : serviceMediaList) {
+                try {
+                    // Delete from Cloudinary
+                    imageUploadService.deleteImage(serviceMedia.getUrl());
+                    // Delete from database
+                    restaurantMediaRepository.delete(serviceMedia);
+                    logger.info("Deleted service media record ID: {}", serviceMedia.getMediaId());
+                } catch (Exception e) {
+                    logger.error("Error deleting service media record ID {}: {}",
+                            serviceMedia.getMediaId(), e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Get service image URL from restaurant_media
+     */
+    public String getServiceImageUrl(Integer restaurantId, Integer serviceId) {
+        logger.info("Getting service image URL for restaurant ID: {}, service ID: {}", restaurantId, serviceId);
+
+        Optional<RestaurantProfile> restaurantOpt = restaurantProfileRepository.findById(restaurantId);
+        if (restaurantOpt.isEmpty()) {
+            logger.warn("Restaurant not found for ID: {}", restaurantId);
+            return null;
+        }
+
+        String serviceIdPattern = "/service_" + serviceId + "_";
+        logger.info("Searching for service image with pattern: {}", serviceIdPattern);
+
+        List<RestaurantMedia> serviceMediaList = restaurantMediaRepository
+                .findServiceImagesByRestaurantAndServiceId(restaurantOpt.get(), serviceIdPattern);
+
+        if (!serviceMediaList.isEmpty()) {
+            RestaurantMedia serviceMedia = serviceMediaList.get(0); // Get the most recent
+            logger.info("Found service image: {}", serviceMedia.getUrl());
+
+            // If there are duplicates, log warning
+            if (serviceMediaList.size() > 1) {
+                logger.warn("Found {} duplicate service media records for service ID: {}. Using the most recent one.",
+                        serviceMediaList.size(), serviceId);
+            }
+
+            return serviceMedia.getUrl();
+        } else {
+            logger.warn("No service image found for pattern: {}", serviceIdPattern);
+        }
+
+        return null;
+    }
+
+    /**
+     * Clean up duplicate service media records
+     */
+    public void cleanupDuplicateServiceMedia(Integer restaurantId) {
+        logger.info("=== CLEANUP: Removing duplicate service media for restaurant ID: {} ===", restaurantId);
+
+        Optional<RestaurantProfile> restaurantOpt = restaurantProfileRepository.findById(restaurantId);
+        if (restaurantOpt.isEmpty()) {
+            logger.warn("Restaurant not found for ID: {}", restaurantId);
+            return;
+        }
+
+        // Get all service media for this restaurant
+        List<RestaurantMedia> allServiceMedia = restaurantMediaRepository.findByRestaurantAndType(restaurantOpt.get(),
+                "service");
+
+        // Group by service ID pattern
+        Map<String, List<RestaurantMedia>> mediaByService = new HashMap<>();
+        for (RestaurantMedia media : allServiceMedia) {
+            String url = media.getUrl();
+            if (url.contains("/service_")) {
+                // Extract service ID from URL pattern
+                String[] parts = url.split("/service_");
+                if (parts.length > 1) {
+                    String servicePart = parts[1].split("_")[0];
+                    String key = "service_" + servicePart;
+                    mediaByService.computeIfAbsent(key, k -> new ArrayList<>()).add(media);
+                }
+            }
+        }
+
+        // Clean up duplicates
+        for (Map.Entry<String, List<RestaurantMedia>> entry : mediaByService.entrySet()) {
+            List<RestaurantMedia> mediaList = entry.getValue();
+            if (mediaList.size() > 1) {
+                logger.warn("Found {} duplicate records for service pattern: {}", mediaList.size(), entry.getKey());
+
+                // Keep the most recent one, delete the rest
+                mediaList.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+                for (int i = 1; i < mediaList.size(); i++) {
+                    RestaurantMedia duplicate = mediaList.get(i);
+                    try {
+                        imageUploadService.deleteImage(duplicate.getUrl());
+                        restaurantMediaRepository.delete(duplicate);
+                        logger.info("Deleted duplicate service media record ID: {}", duplicate.getMediaId());
+                    } catch (Exception e) {
+                        logger.error("Error deleting duplicate service media: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Debug method to check all service media for a restaurant
+     */
+    public void debugServiceMedia(Integer restaurantId) {
+        logger.info("=== DEBUG: Checking all service media for restaurant ID: {} ===", restaurantId);
+
+        Optional<RestaurantProfile> restaurantOpt = restaurantProfileRepository.findById(restaurantId);
+        if (restaurantOpt.isEmpty()) {
+            logger.warn("Restaurant not found for ID: {}", restaurantId);
+            return;
+        }
+
+        List<RestaurantMedia> allServiceMedia = restaurantMediaRepository.findByRestaurantAndType(restaurantOpt.get(),
+                "service");
+        logger.info("Found {} service media records:", allServiceMedia.size());
+
+        for (RestaurantMedia media : allServiceMedia) {
+            logger.info("Media ID: {}, Type: {}, URL: {}", media.getMediaId(), media.getType(), media.getUrl());
+        }
     }
 
     // ===== DISH IMAGE MANAGEMENT =====

@@ -62,4 +62,22 @@ public interface RestaurantServiceRepository extends JpaRepository<RestaurantSer
      */
     List<RestaurantService> findByRestaurantRestaurantIdAndStatusOrderByNameAsc(Integer restaurantId,
             ServiceStatus status);
+
+    /**
+     * Find all services by restaurant ID ordered by name
+     * 
+     * @param restaurantId The restaurant ID
+     * @return List of RestaurantService entities
+     */
+    List<RestaurantService> findByRestaurantRestaurantIdOrderByNameAsc(Integer restaurantId);
+
+    /**
+     * Find services by restaurant ID and category ordered by name
+     * 
+     * @param restaurantId The restaurant ID
+     * @param category     The service category
+     * @return List of RestaurantService entities
+     */
+    List<RestaurantService> findByRestaurantRestaurantIdAndCategoryOrderByNameAsc(Integer restaurantId,
+            String category);
 }
