@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Showcase - Restaurant Booking</title>
+    
+    <!-- Bootstrap 5 (Optional - for grid system) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Main CSS - Component-Based Architecture -->
+    <link th:href="@{/css/main.css}" rel="stylesheet">
+    
+    <style>
+        /* Demo-specific styles */
+        .demo-section {
+            padding: var(--space-12) 0;
+            border-bottom: 2px solid var(--border-light);
+        }
+        
+        .demo-section:last-child {
+            border-bottom: none;
+        }
+        
+        .demo-title {
+            font-size: var(--font-size-3xl);
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-2);
+            color: var(--color-primary);
+        }
+        
+        .demo-description {
+            font-size: var(--font-size-lg);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-8);
+        }
+        
+        .demo-group {
+            margin-bottom: var(--space-8);
+        }
+        
+        .demo-group-title {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-4);
+            color: var(--text-primary);
+        }
+        
+        .demo-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="site-header__container">
+            <a href="/" class="site-header__brand">
+                <i class="fas fa-utensils"></i>
+                BookEat
+            </a>
+            
+            <nav class="site-header__nav">
+                <ul class="site-header__nav-list">
+                    <li class="site-header__nav-item">
+                        <a href="/" class="site-header__nav-link is-active">
+                            <i class="fas fa-home"></i>
+                            Trang chủ
+                        </a>
+                    </li>
+                    <li class="site-header__nav-item">
+                        <a href="/restaurants" class="site-header__nav-link">
+                            <i class="fas fa-store"></i>
+                            Nhà hàng
+                        </a>
+                    </li>
+                    <li class="site-header__nav-item">
+                        <a href="/about" class="site-header__nav-link">
+                            <i class="fas fa-info-circle"></i>
+                            Về chúng tôi
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="site-header__actions">
+                <button class="notification-bell">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-bell__badge">3</span>
+                </button>
+                
+                <button class="btn btn--primary btn--sm">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Đăng nhập
+                </button>
+                
+                <button class="site-header__toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <main style="margin-top: var(--header-height); padding: var(--space-8) 0;">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="text-center mb-8">
+                <h1 class="section-title">Component Showcase</h1>
+                <p class="section-subtitle">
+                    Minh họa các component trong hệ thống CSS mới
+                </p>
+            </section>
+            
+            <!-- Buttons Section -->
+            <section class="demo-section">
+                <h2 class="demo-title">Buttons</h2>
+                <p class="demo-description">Các loại button với nhiều variant và size khác nhau</p>
+                
+                <div class="demo-group">
+                    <h3 class="demo-group-title">Button Variants</h3>
+                    <div class="demo-items">
+                        <button class="btn btn--primary">Primary</button>
+                        <button class="btn btn--secondary">Secondary</button>
+                        <button class="btn btn--outline">Outline</button>
+                        <button class="btn btn--ghost">Ghost</button>
+                        <button class="btn btn--success">Success</button>
+                        <button class="btn btn--warning">Warning</button>
+                        <button class="btn btn--error">Error</button>
+                    </div>
+                </div>
+                
+                <div class="demo-group">
+                    <h3 class="demo-group-title">Button Sizes</h3>
+                    <div class="demo-items">
+                        <button class="btn btn--primary btn--xs">Extra Small</button>
+                        <button class="btn btn--primary btn--sm">Small</button>
+                        <button class="btn btn--primary btn--md">Medium</button>
+                        <button class="btn btn--primary btn--lg">Large</button>
+                        <button class="btn btn--primary btn--xl">Extra Large</button>
+                    </div>
+                </div>
+                
+                <div class="demo-group">
+                    <h3 class="demo-group-title">Buttons with Icons</h3>
+                    <div class="demo-items">
+                        <button class="btn btn--primary">
+                            <i class="fas fa-check btn__icon--left"></i>
+                            Save
+                        </button>
+                        <button class="btn btn--secondary">
+                            <i class="fas fa-times btn__icon--left"></i>
+                            Cancel
+                        </button>
+                        <button class="btn btn--success">
+                            Upload
+                            <i class="fas fa-upload btn__icon--right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="demo-group">
+                    <h3 class="demo-group-title">Button States</h3>
+                    <div class="demo-items">
+                        <button class="btn btn--primary btn--loading">Loading...</button>
+                        <button class="btn btn--primary" disabled>Disabled</button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Forms Section -->
+            <section class="demo-section">
+                <h2 class="demo-title">Form Elements</h2>
+                <p class="demo-description">Các form element với validation states</p>
+                
+                <div class="grid grid--2">
+                    <div class="demo-group">
+                        <h3 class="demo-group-title">Text Input</h3>
+                        <div class="form-group">
+                            <label class="form-label form-label--required">Email</label>
+                            <input type="email" class="input" placeholder="your@email.com">
+                            <span class="form-help">We'll never share your email.</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Success State</label>
+                            <input type="text" class="input input--success" value="Valid input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Error State</label>
+                            <input type="text" class="input input--error" placeholder="Invalid">
+                            <span class="form-error">This field is required</span>
+                        </div>
+                    </div>
+                    
+                    <div class="demo-group">
+                        <h3 class="demo-group-title">Input with Icons</h3>
+                        <div class="form-group">
+                            <label class="form-label">Search</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-search input-wrapper__icon input-wrapper__icon--left"></i>
+                                <input type="text" class="input input--with-icon-left" placeholder="Search...">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Select</label>
+                            <select class="select">
+                                <option>Select an option</option>
+                                <option>Option 1</option>
+                                <option>Option 2</option>
+                                <option>Option 3</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Textarea</label>
+                            <textarea class="textarea" rows="3" placeholder="Enter your message..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="demo-group">
+                    <h3 class="demo-group-title">Checkboxes & Radios</h3>
+                    <div class="flex flex--gap-6">
+                        <label class="checkbox">
+                            <input type="checkbox" class="checkbox__input" checked>
+                            <span class="checkbox__label">Remember me</span>
+                        </label>
+                        
+                        <label class="checkbox">
+                            <input type="checkbox" class="checkbox__input">
+                            <span class="checkbox__label">Send newsletter</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Cards Section -->
+            <section class="demo-section">
+                <h2 class="demo-title">Cards</h2>
+                <p class="demo-description">Card components với các variant khác nhau</p>
+                
+                <div class="grid grid--3">
+                    <div class="card">
+                        <div class="card__image">
+                            <img src="https://via.placeholder.com/400x250" alt="Restaurant">
+                            <span class="card__badge">New</span>
+                        </div>
+                        <div class="card__body">
+                            <h3 class="card__title">Nhà hàng Luxury</h3>
+                            <p class="card__subtitle">123 Nguyễn Huệ, Q1, TP.HCM</p>
+                            <div class="card__actions">
+                                <button class="btn btn--primary btn--sm">Đặt bàn</button>
+                                <button class="btn btn--outline btn--sm">Chi tiết</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card card--elevated">
+                        <div class="card__header">
+                            <h3 class="card__title">Elevated Card</h3>
+                            <p class="card__subtitle">With shadow effect</p>
+                        </div>
+                        <div class="card__body">
+                            <p>This card has elevated shadow for more prominence.</p>
+                        </div>
+                        <div class="card__footer">
+                            <button class="btn btn--sm btn--primary">Action</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card card--bordered">
+                        <div class="card__header">
+                            <h3 class="card__title">Bordered Card</h3>
+                        </div>
+                        <div class="card__body">
+                            <p>This card uses border instead of shadow.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Grid Layout Section -->
+            <section class="demo-section">
+                <h2 class="demo-title">Grid Layout</h2>
+                <p class="demo-description">Flexible grid system</p>
+                
+                <div class="demo-group">
+                    <h3 class="demo-group-title">4-Column Grid</h3>
+                    <div class="grid grid--4">
+                        <div class="card card--flat bg-gray">
+                            <div class="card__body text-center">
+                                <h4>Column 1</h4>
+                            </div>
+                        </div>
+                        <div class="card card--flat bg-gray">
+                            <div class="card__body text-center">
+                                <h4>Column 2</h4>
+                            </div>
+                        </div>
+                        <div class="card card--flat bg-gray">
+                            <div class="card__body text-center">
+                                <h4>Column 3</h4>
+                            </div>
+                        </div>
+                        <div class="card card--flat bg-gray">
+                            <div class="card__body text-center">
+                                <h4>Column 4</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Utility Classes Section -->
+            <section class="demo-section">
+                <h2 class="demo-title">Utility Classes</h2>
+                <p class="demo-description">Các utility class thường dùng</p>
+                
+                <div class="grid grid--2">
+                    <div class="demo-group">
+                        <h3 class="demo-group-title">Spacing</h3>
+                        <div class="bg-gray p-4 mb-4">padding: var(--space-4)</div>
+                        <div class="bg-gray p-6 mb-4">padding: var(--space-6)</div>
+                        <div class="bg-gray mt-4">margin-top: var(--space-4)</div>
+                    </div>
+                    
+                    <div class="demo-group">
+                        <h3 class="demo-group-title">Text Alignment</h3>
+                        <p class="text-left mb-2">Text Left</p>
+                        <p class="text-center mb-2">Text Center</p>
+                        <p class="text-right mb-2">Text Right</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    
+    <!-- Bootstrap JS (Optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Mobile menu toggle
+        document.querySelector('.site-header__toggle')?.addEventListener('click', function() {
+            document.querySelector('.site-header__nav').classList.toggle('is-open');
+        });
+    </script>
+</body>
+</html>
+

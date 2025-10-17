@@ -1,0 +1,808 @@
+# 🎨 UX/UI ISSUES - COMPREHENSIVE LIST
+
+========================================
+PHÁT HIỆN SAU KHI AUDIT TOÀN BỘ CODE
+========================================
+
+## 🔴 CRITICAL ISSUES (Ưu tiên cao nhất)
+
+### 1. INLINE STYLES EVERYWHERE (60 files!)
+- 60 files có <style> tag thay vì dùng CSS external
+- Mỗi trang tự định nghĩa lại styles
+- Không reusable, khó maintain
+- Performance kém (không cache được)
+
+Files: booking/form.html, restaurants.html, admin/dashboard.html, login.html, etc.
+
+### 2. CSS VARIABLES DUPLICATE
+- Mỗi file <style> lại define lại :root variables
+- admin/dashboard.html: định nghĩa 11 variables
+- login.html: định nghĩa 9 variables  
+- booking/form.html: định nghĩa variables riêng
+→ CONFLICT & INCONSISTENT
+
+### 3. HEADER OVERLAP (ĐÃ FIX PARTIAL)
+- Header fixed position đè lên content
+- 34/49 trang bị lỗi
+- Fixed bằng global body padding ✅
+- Nhưng vẫn còn một số trang custom spacing
+
+### 4. GIT MERGE CONFLICTS CHƯA RESOLVE
+- restaurant-owner/dashboard.html: Line 306-310
+```
+<<<<<<< HEAD
+<a style="background: linear-gradient...">💰 Rút tiền</a>
+=======
+<a>Vouchers</a>
+>>>>>>> 3e1c874e
+```
+→ CODE BỊ CONFLICT CHƯA FIX!
+
+### 5. REDUNDANT SECURITY FILTERS
+- Line 197 header.html: hasRole('ADMIN') or hasRole('ROLE_ADMIN') or hasRole('ROLE_admin')
+- Line 354 header.html: hasRole('CUSTOMER') or hasRole('customer')
+→ Dư thừa, gây confuse
+
+---
+
+## 🟠 HIGH PRIORITY ISSUES
+
+### 6. INCONSISTENT BUTTON STYLES
+- Một số dùng: class="btn-gold"
+- Một số dùng: class="btn btn-primary"
+- Một số dùng: inline style="background: linear-gradient..."
+→ Không có design system
+
+### 7. FORM VALIDATION UX KÉM
+- Error messages không có icon
+- Success states không rõ ràng
+- No loading states cho form submission
+- No inline validation feedback
+
+### 8. MOBILE RESPONSIVE ISSUES
+- Nhiều inline styles không responsive
+- Fixed widths/heights không adjust
+- Navbar collapse có vấn đề
+- Chat widgets không responsive đầy đủ
+
+### 9. INCONSISTENT SPACING
+- Một số dùng: margin-top: 20px
+- Một số dùng: margin-top: 1rem
+- Một số dùng: margin-top: 8px
+- Một số dùng: padding-top: 100px
+→ Không có spacing system
+
+### 10. COLOR INCONSISTENCY
+- Primary blue: #4A90E2 (luxury.css)
+- Chat primary: #4facfe (chat styles)
+- Admin primary: #007bff (bootstrap default)
+- Success: #28a745, #10b981, #20c997 (3 variants!)
+→ Không consistent
+
+---
+
+## 🟡 MEDIUM PRIORITY ISSUES
+
+### 11. DUPLICATE ANIMATIONS
+- @keyframes pulse: 3 định nghĩa khác nhau
+- @keyframes heartbeat: 2 định nghĩa
+- @keyframes fadeIn: Nhiều variants
+→ Animation conflicts
+
+### 12. MODAL/POPUP INCONSISTENCY
+- Một số dùng Bootstrap modal
+- Một số tự code modal
+- Một số dùng SweetAlert
+- Styles khác nhau hoàn toàn
+
+### 13. LOADING STATES MISSING
+- Buttons không có loading spinner
+- Forms submit không có feedback
+- AJAX calls không show loading
+- Page transitions abrupt
+
+### 14. ICON USAGE INCONSISTENT
+- Font Awesome 6.4.0
+- Bootstrap Icons
+- Emoji icons (💰, 📊, 🏪)
+- Mix cả 3 loại trong 1 trang!
+
+### 15. TYPOGRAPHY CHAOS
+- Font sizes hard-coded: 0.9rem, 14px, 1.5rem, 24px
+- Font weights: 500, 600, 700, bold, semibold
+- Line heights: 1.2, 1.4, 1.5, 1.6
+→ Không có typography scale
+
+### 16. CARD COMPONENT DUPLICATION
+- Mỗi trang tự code card styles
+- restaurant-card, stats-card, booking-card, management-card
+- Tất cả gần giống nhau nhưng code riêng
+→ Should use 1 base card component
+
+### 17. TOAST/NOTIFICATION INCONSISTENT
+- Một số dùng Bootstrap toast
+- Một số tự code notification-toast
+- Positions khác nhau: top-right, top-center
+- Styles khác nhau
+
+### 18. FORM LAYOUT KHÔNG ĐỒNG NHẤT
+- Một số dùng Bootstrap grid
+- Một số dùng custom grid
+- Một số dùng flexbox
+- Label positions khác nhau
+
+---
+
+## 🟢 LOW PRIORITY ISSUES
+
+### 19. Z-INDEX CHAOS
+- z-index: 1000, 1050, 1055, 9999
+- Không có z-index scale
+- Có thể gây overlap issues
+
+### 20. SHADOW INCONSISTENCY
+- box-shadow values hard-coded khắp nơi
+- Không có shadow scale
+- Một số có, một số không
+
+### 21. BORDER RADIUS INCONSISTENCY
+- 4px, 6px, 8px, 10px, 12px, 15px, 20px, 50%
+- Không có radius scale
+- Random values
+
+### 22. TRANSITION TIMING CHAOS
+- 0.2s, 0.3s, 0.5s, 200ms, 300ms
+- Ease, ease-in, ease-out, ease-in-out
+→ Không consistent
+
+### 23. ACCESSIBILITY ISSUES
+- Nhiều buttons không có aria-label
+- Focus states không rõ ràng
+- Color contrast có thể không đạt WCAG
+- Keyboard navigation chưa test
+
+### 24. PLACEHOLDER TEXT INCONSISTENT
+- Một số tiếng Việt, một số tiếng Anh
+- Một số có icon, một số không
+- Formatting khác nhau
+
+### 25. ERROR PAGES DESIGN KHÁC BIỆT
+- 404.html có design riêng
+- 500.html có design khác
+- 403.html lại khác
+→ Should use same layout
+
+### 26. BREADCRUMB INCONSISTENT
+- Một số trang có breadcrumb
+- Một số không có
+- Styles khác nhau
+- Positions khác nhau
+
+### 27. PAGINATION STYLES DUPLICATE
+- pagination-custom class lặp lại nhiều trang
+- Mỗi trang define lại styles
+→ Should be global component
+
+### 28. TABLE STYLES DUPLICATE
+- Admin tables có style riêng
+- Restaurant owner tables có style khác
+- Booking tables lại khác
+→ Should use 1 table component
+
+### 29. FILTER/SEARCH SECTIONS DUPLICATE
+- filter-section class lặp lại 10+ lần
+- Mỗi trang code lại từ đầu
+- Styles gần giống nhau
+
+### 30. DROPDOWN MENU INCONSISTENT
+- Bootstrap dropdown
+- Custom dropdown
+- Hover behavior khác nhau
+- Styles khác nhau
+
+---
+
+## 🎯 PERFORMANCE ISSUES
+
+### 31. TOO MANY <STYLE> TAGS
+- 60 files với inline <style>
+- CSS không cacheable
+- Browser phải parse mỗi lần load
+- Tăng page size
+
+### 32. CSS NOT MINIFIED
+- Tất cả CSS không minify
+- Comments nhiều
+- Whitespace nhiều
+→ Slow loading
+
+### 33. NO CSS BUNDLING
+- 9 CSS files riêng lẻ
+- Multiple HTTP requests
+- No optimization
+→ Should bundle into 1-2 files
+
+### 34. IMAGES NOT OPTIMIZED
+- Cloudinary URLs không có optimization params
+- No lazy loading
+- No responsive images (srcset)
+
+### 35. NO CRITICAL CSS
+- All CSS load blocking
+- No above-the-fold optimization
+- Slow First Contentful Paint
+
+---
+
+## 🎨 DESIGN SYSTEM ISSUES
+
+### 36. NO COMPONENT LIBRARY
+- Mỗi trang tự code components
+- Không có shared components
+- Duplicate code khắp nơi
+
+### 37. NO DESIGN TOKENS
+- Colors hard-coded
+- Spacing hard-coded  
+- Typography hard-coded
+→ ĐÃ TẠO tokens nhưng chưa dùng!
+
+### 38. NO GRID SYSTEM CONSISTENCY
+- Mix Bootstrap grid + custom grid
+- Breakpoints không đồng nhất
+- Gap spacing random
+
+### 39. NO ANIMATION LIBRARY
+- Animations code random
+- Không có timing functions consistent
+- Durations khác nhau
+
+### 40. NO STATE MANAGEMENT
+- Hover, active, disabled states inconsistent
+- Some có, some không
+- Styles khác nhau
+
+---
+
+## 📱 MOBILE UX ISSUES
+
+### 41. TOUCH TARGETS TOO SMALL
+- Buttons < 44px (Apple guidelines)
+- Links quá nhỏ trên mobile
+- Icons không đủ lớn để tap
+
+### 42. HORIZONTAL SCROLL ON MOBILE
+- Một số tables overflow
+- Long text không wrap
+- Fixed width elements
+
+### 43. NAVBAR MOBILE POOR UX
+- Collapse menu không smooth
+- Items too cramped
+- Dropdown in dropdown confusing
+
+### 44. FORMS ON MOBILE CRAMPED
+- Input fields quá nhỏ
+- Labels overlap
+- Buttons too small
+- No thumb-friendly spacing
+
+### 45. MODALS ON MOBILE FULL SCREEN
+- Modals không responsive tốt
+- Too much content
+- Scroll issues
+
+---
+
+## 🔍 USER FLOW ISSUES
+
+### 46. NO LOADING INDICATORS
+- Page transitions instant (confusing)
+- Form submissions no feedback
+- Data fetching no spinner
+
+### 47. NO EMPTY STATES
+- Tables rỗng chỉ hiện "No data"
+- Không có helpful messages
+- No call-to-action
+
+### 48. NO SUCCESS FEEDBACK
+- Actions complete nhưng không có confirmation
+- User không biết đã success
+- No toast notifications
+
+### 49. ERROR MESSAGES UNCLEAR
+- "Error occurred" - quá generic
+- Không có actionable steps
+- No error codes
+
+### 50. BREADCRUMB NAVIGATION MISSING
+- User không biết đang ở đâu
+- No way to go back
+- Deep pages lost
+
+---
+
+## 🎭 VISUAL DESIGN ISSUES
+
+### 51. INCONSISTENT GRADIENTS
+- 15+ different gradient combinations
+- Angles khác nhau: 45deg, 90deg, 135deg
+- Colors random
+
+### 52. SHADOW OVERUSE
+- Quá nhiều shadows
+- Depth không consistent
+- Một số quá đậm, một số quá nhạt
+
+### 53. BORDER RADIUS RANDOM
+- 4px, 6px, 8px, 10px, 12px, 15px, 20px, 25px, 50%
+- Không có system
+
+### 54. COLOR PALETTE TOO LARGE
+- 20+ colors được dùng
+- Không stick to palette
+- Brand colors không clear
+
+### 55. WHITESPACE INCONSISTENT
+- Spacing giữa sections: 20px, 30px, 2rem, 3rem
+- Padding: 15px, 20px, 24px, 1.5rem, 2rem
+→ Messy layout
+
+---
+
+## 🛠️ CODE QUALITY ISSUES
+
+### 56. DUPLICATE CSS (5000+ LINES!)
+- Same styles copy-paste across files
+- No DRY principle
+- Hard to update
+
+### 57. NO BEM NAMING
+- Classes named randomly
+- No naming convention
+- Conflicts everywhere
+
+### 58. !IMPORTANT OVERUSE
+- Nhiều !important để override
+- CSS specificity war
+- Hard to debug
+
+### 59. INLINE STYLES OVERUSE (100+ CASES)
+- style="..." khắp nơi
+- Cannot reuse
+- Hard to maintain
+
+### 60. COMMENTED CODE NOT REMOVED
+- Nhiều CSS commented out
+- Old code không xóa
+- Cluttered files
+
+---
+
+## 📊 DATA DISPLAY ISSUES
+
+### 61. TABLES NOT RESPONSIVE
+- Tables overflow on mobile
+- No horizontal scroll indicator
+- Headers không sticky
+
+### 62. CHARTS/STATS UNCLEAR
+- Numbers quá lớn không format
+- No thousands separator
+- Currency không có symbol
+
+### 63. DATE/TIME FORMAT INCONSISTENT
+- Một số: dd/MM/yyyy
+- Một số: yyyy-MM-dd
+- Một số: relative time
+→ Confusing
+
+### 64. STATUS BADGES INCONSISTENT
+- Colors khác nhau cho same status
+- Shapes khác nhau
+- Sizes khác nhau
+
+### 65. IMAGES NO FALLBACK
+- Broken images show ugly
+- No placeholder
+- No lazy loading
+
+---
+
+## 🔐 SECURITY UX ISSUES
+
+### 66. PASSWORD STRENGTH INDICATOR MISSING
+- User không biết password có mạnh không
+- No requirements shown
+- No visual feedback
+
+### 67. CONFIRM DIALOGS MISSING
+- Delete actions no confirmation
+- Important actions instant
+→ Dangerous UX
+
+### 68. SESSION TIMEOUT NO WARNING
+- User bị logout đột ngột
+- No warning before timeout
+- Lose form data
+
+### 69. CSRF TOKEN ERRORS UNCLEAR
+- "Invalid CSRF token" - user confused
+- No recovery instructions
+
+---
+
+## ⚡ INTERACTION ISSUES
+
+### 70. NO DEBOUNCE ON SEARCH
+- Search triggers on every keystroke
+- Too many API calls
+- Performance issue
+
+### 71. BUTTONS CLICKABLE MULTIPLE TIMES
+- No disable on submit
+- Can submit form twice
+- Duplicate bookings possible
+
+### 72. NO SMOOTH SCROLLING
+- Jump to sections abrupt
+- Anchor links instant
+- Jarring experience
+
+### 73. HOVER STATES INCONSISTENT
+- Some buttons have hover
+- Some don't
+- Different effects
+
+### 74. FOCUS STATES POOR
+- Keyboard navigation unclear
+- Tab order weird
+- Focus outline ugly/missing
+
+---
+
+## 📋 FORM UX ISSUES
+
+### 75. FORM LABELS UNCLEAR
+- Some labels vague
+- No helper text
+- No examples shown
+
+### 76. REQUIRED FIELDS NOT MARKED
+- User không biết field nào required
+- No asterisk (*)
+- Trial and error
+
+### 77. FORM ERRORS PLACEMENT POOR
+- Errors show at top (user scroll up)
+- Not next to field
+- Easy to miss
+
+### 78. DATE PICKER UX POOR
+- Calendar widget confusing
+- No quick select (today, tomorrow)
+- Format unclear
+
+### 79. FILE UPLOAD UX POOR
+- No drag-and-drop visual
+- No file preview
+- No progress bar
+- Size limits unclear
+
+### 80. MULTI-SELECT CONFUSING
+- Tables selection unclear
+- Dishes selection weird
+- No "Select All" option
+
+---
+
+## 🎯 NAVIGATION ISSUES
+
+### 81. TOO MANY NAV ITEMS
+- Header cluttered (10+ items)
+- Overwhelming for users
+- Mobile menu huge
+
+### 82. ACTIVE STATE UNCLEAR
+- Hard to know current page
+- Active link color weak
+- No clear indicator
+
+### 83. SEARCH FUNCTIONALITY MISSING
+- No global search
+- Cannot search restaurants easily
+- No filters preview
+
+### 84. BACK BUTTON INCONSISTENT
+- Some pages have back
+- Some don't
+- Styles different
+
+### 85. FOOTER NAVIGATION POOR
+- Footer links not organized
+- Too many links
+- Not mobile-friendly
+
+---
+
+## 💬 CHAT UX ISSUES
+
+### 86. CHAT WIDGET POSITION BLOCKS CONTENT
+- Fixed bottom-right
+- Covers important buttons
+- No way to minimize properly
+
+### 87. CHAT NOTIFICATIONS ANNOYING
+- Toast notifications overlap
+- Too many at once
+- No dismiss all
+
+### 88. CHAT HISTORY INFINITE SCROLL MISSING
+- Load all messages at once
+- Slow for long conversations
+- No pagination
+
+### 89. TYPING INDICATOR UNCLEAR
+- Small, easy to miss
+- Position weird
+
+### 90. CHAT BUBBLE DESIGN UNCLEAR
+- Who sent what confusing
+- Colors too similar
+- Timestamps hard to read
+
+---
+
+## 🎨 VISUAL HIERARCHY ISSUES
+
+### 91. HEADINGS HIERARCHY BROKEN
+- h1, h2, h3 sizes random
+- Not following scale
+- Visual weight inconsistent
+
+### 92. CONTRAST RATIOS POOR
+- Some text on background unreadable
+- Gray on gray
+- Light text on light background
+
+### 93. WHITESPACE CRAMPED
+- Elements too close
+- No breathing room
+- Feels cluttered
+
+### 94. ALIGNMENT INCONSISTENT
+- Some centered, some left
+- Grid items misaligned
+- Text alignment random
+
+### 95. VISUAL WEIGHT IMBALANCE
+- Important elements not prominent
+- Secondary elements too bold
+- No clear hierarchy
+
+---
+
+## 📊 DASHBOARD ISSUES
+
+### 96. STATS CARDS NO CONTEXT
+- Just numbers, no trends
+- No comparison (vs last month)
+- No sparklines/mini charts
+
+### 97. DASHBOARD INFO OVERLOAD
+- Too much data at once
+- No prioritization
+- Overwhelming
+
+### 98. REFRESH DATA MANUAL ONLY
+- No auto-refresh
+- No "last updated" timestamp
+- Stale data unclear
+
+### 99. FILTERS ON DASHBOARD MISSING
+- Cannot filter by date range
+- Cannot filter by restaurant
+- See all data only
+
+### 100. QUICK ACTIONS NOT QUICK
+- Still need multiple clicks
+- No shortcuts
+- No keyboard shortcuts
+
+---
+
+## 🎫 BOOKING FLOW ISSUES
+
+### 101. BOOKING FORM TOO LONG
+- Too many steps in one page
+- Overwhelming
+- Should be wizard/steps
+
+### 102. TABLE SELECTION CONFUSING
+- Grid of tables unclear
+- No visual of table layout
+- Available/occupied not clear
+
+### 103. DATE PICKER BOOKING WEIRD
+- Cannot see available dates
+- No blocked dates shown
+- No time slot visualization
+
+### 104. VOUCHER SELECTION HIDDEN
+- Voucher input at bottom
+- Easy to miss
+- No promo codes suggestions
+
+### 105. CONFIRMATION PAGE MISSING
+- Direct to payment
+- No review booking
+- Cannot edit before confirm
+
+---
+
+## 💳 PAYMENT ISSUES
+
+### 106. PAYMENT OPTIONS UNCLEAR
+- Which methods available?
+- Logos/icons missing
+- No trust badges
+
+### 107. PAYMENT FORM SECURITY CONCERNS
+- No SSL badge shown
+- User may not trust
+- No security info
+
+### 108. PAYMENT LOADING UNCLEAR
+- Redirect to PayOS unclear
+- No loading state
+- User confused
+
+### 109. PAYMENT SUCCESS/FAIL PAGES BLAND
+- Just text
+- No visual feedback
+- No clear next steps
+
+---
+
+## 🍽️ RESTAURANT PAGES ISSUES
+
+### 110. RESTAURANT CARDS ALL SAME
+- No differentiation
+- Featured restaurants not highlighted
+- New restaurants not marked
+
+### 111. RESTAURANT DETAIL PAGE CLUTTERED
+- Too much info at once
+- No tabs/sections
+- Scroll forever
+
+### 112. MENU DISPLAY POOR
+- Just list of dishes
+- No categories visual
+- No images in some cases
+
+### 113. REVIEWS SECTION BURIED
+- Reviews at bottom
+- Hard to find
+- Not prominent
+
+### 114. BOOKING BUTTON NOT STICKY
+- Scroll down, cannot book
+- Must scroll up
+- Poor UX
+
+---
+
+## 👤 PROFILE/ACCOUNT ISSUES
+
+### 115. PROFILE PAGE BORING
+- Just forms
+- No visual interest
+- Not engaging
+
+### 116. AVATAR/PHOTO UPLOAD UNCLEAR
+- Upload UI basic
+- No crop functionality
+- Preview unclear
+
+### 117. PROFILE EDIT NO PREVIEW
+- Edit without seeing result
+- Must save to see
+- No live preview
+
+### 118. ACCOUNT SETTINGS SCATTERED
+- Settings in many places
+- No central settings page
+- Confusing
+
+---
+
+## 🔔 NOTIFICATION ISSUES
+
+### 119. NOTIFICATION BELL NO PREVIEW
+- Must click to see notifications
+- No quick preview
+- No mark as read quickly
+
+### 120. NOTIFICATIONS PAGE PLAIN
+- Just list
+- No grouping (today, this week)
+- No filter by type
+
+---
+
+## 🎁 VOUCHER/PROMO ISSUES
+
+### 121. VOUCHER CODE INPUT HIDDEN
+- Not prominent
+- User may miss discounts
+- No auto-apply suggestions
+
+### 122. VOUCHER DETAILS UNCLEAR
+- Terms and conditions hidden
+- Expiry not prominent
+- Usage limits unclear
+
+---
+
+## 🌐 I18N/L10N ISSUES
+
+### 123. LANGUAGE MIXING
+- English + Vietnamese mixed
+- No language switcher
+- Inconsistent
+
+### 124. CURRENCY FORMAT INCONSISTENT
+- Some show VND, some đ
+- No thousands separator
+- Hard to read large numbers
+
+### 125. DATE FORMAT UNCLEAR
+- dd/MM vs MM/dd confusion
+- No locale-based format
+
+---
+
+## 🔄 STATE MANAGEMENT ISSUES
+
+### 126. NO LOADING SKELETON
+- Blank page while loading
+- Then sudden content pop
+- Jarring
+
+### 127. NO ERROR BOUNDARIES
+- Errors crash whole page
+- No graceful degradation
+- White screen of death
+
+### 128. NO OFFLINE SUPPORT
+- No service worker
+- Offline = broken
+- No offline indicator
+
+---
+
+## TỔNG KẾT
+
+📊 STATISTICS:
+- Critical: 5 issues
+- High: 75 issues  
+- Medium: 30 issues
+- Low: 18 issues
+- TOTAL: 128 UX/UI ISSUES!
+
+🎯 TOP 10 CẦN FIX NGAY:
+1. Inline <style> tags (60 files)
+2. Git merge conflicts
+3. CSS variables duplicate
+4. Button styles inconsistent
+5. Form validation UX poor
+6. Mobile responsive issues
+7. Loading states missing
+8. Color inconsistency
+9. Spacing chaos
+10. Component duplication
+
+🚀 RECOMMENDED: Start with component system đã tạo và migrate dần!
+

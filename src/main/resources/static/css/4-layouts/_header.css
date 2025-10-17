@@ -1,0 +1,321 @@
+/**
+ * ============================================
+ * HEADER LAYOUT
+ * ============================================
+ * Main navigation header component
+ */
+
+/* ========== BASE HEADER ========== */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-fixed);
+  
+  background-color: var(--bg-primary);
+  border-bottom: 2px solid var(--border-medium);
+  box-shadow: var(--shadow-base);
+  
+  height: var(--header-height);
+  
+  transition: var(--transition-all);
+}
+
+.site-header.is-scrolled {
+  height: var(--header-height-scrolled);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========== HEADER CONTAINER ========== */
+.site-header__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  max-width: var(--container-2xl);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+/* ========== BRAND / LOGO ========== */
+.site-header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  
+  font-family: var(--font-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  text-decoration: none;
+  
+  white-space: nowrap;
+  min-width: 120px;
+  height: 40px;
+  
+  transition: var(--transition-colors);
+}
+
+.site-header__brand:hover {
+  color: var(--color-primary-dark);
+}
+
+/* ========== NAVIGATION ========== */
+.site-header__nav {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 var(--space-6);
+}
+
+.site-header__nav-list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  height: 52px;
+}
+
+.site-header__nav-item {
+  height: 36px;
+  display: flex;
+  align-items: center;
+}
+
+.site-header__nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  
+  padding: var(--space-2) var(--space-3);
+  height: 100%;
+  
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  text-decoration: none;
+  white-space: nowrap;
+  
+  border-radius: var(--radius-md);
+  
+  transition: var(--transition-all);
+}
+
+.site-header__nav-link:hover,
+.site-header__nav-link.is-active {
+  color: var(--color-primary);
+  background-color: var(--bg-secondary);
+}
+
+/* ========== ACTIONS (Right side) ========== */
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 52px;
+  min-width: 200px;
+  justify-content: flex-end;
+}
+
+/* ========== MOBILE TOGGLE ========== */
+.site-header__toggle {
+  display: none;
+  padding: var(--space-2);
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: var(--font-size-xl);
+}
+
+/* ========== DROPDOWN ========== */
+.site-header__dropdown {
+  position: relative;
+}
+
+.site-header__dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  
+  border-radius: var(--radius-md);
+  transition: var(--transition-all);
+}
+
+.site-header__dropdown-toggle:hover {
+  background-color: var(--bg-secondary);
+  color: var(--color-primary);
+}
+
+.site-header__dropdown-menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 220px;
+  
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  
+  padding: var(--space-2) 0;
+  
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: var(--transition-all);
+  
+  z-index: var(--z-dropdown);
+}
+
+.site-header__dropdown:hover .site-header__dropdown-menu,
+.site-header__dropdown-menu:hover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.site-header__dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  
+  padding: var(--space-3) var(--space-4);
+  
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  text-decoration: none;
+  
+  transition: var(--transition-colors);
+}
+
+.site-header__dropdown-item:hover {
+  background-color: var(--bg-secondary);
+  color: var(--color-primary);
+}
+
+.site-header__dropdown-divider {
+  height: 1px;
+  background-color: var(--border-light);
+  margin: var(--space-2) 0;
+}
+
+/* ========== NOTIFICATION BELL ========== */
+.notification-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  
+  border-radius: var(--radius-md);
+  transition: var(--transition-all);
+}
+
+.notification-bell:hover {
+  background-color: var(--bg-secondary);
+  color: var(--color-primary);
+}
+
+.notification-bell__badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  
+  width: 18px;
+  height: 18px;
+  
+  background-color: var(--color-error);
+  color: var(--color-white);
+  
+  border-radius: var(--radius-full);
+  
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 991px) {
+  .site-header__toggle {
+    display: block;
+  }
+  
+  .site-header__nav {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    
+    background-color: var(--bg-primary);
+    box-shadow: var(--shadow-xl);
+    
+    padding: var(--space-6);
+    
+    transform: translateX(-100%);
+    transition: transform var(--transition-slow);
+  }
+  
+  .site-header__nav.is-open {
+    transform: translateX(0);
+  }
+  
+  .site-header__nav-list {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    gap: var(--space-1);
+  }
+  
+  .site-header__nav-item {
+    height: auto;
+  }
+  
+  .site-header__nav-link {
+    width: 100%;
+    padding: var(--space-4) var(--space-6);
+    justify-content: center;
+  }
+  
+  .site-header__actions {
+    flex-direction: column;
+    width: 100%;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-light);
+  }
+}
+
+@media (max-width: 575px) {
+  .site-header__brand {
+    font-size: var(--font-size-xl);
+  }
+}
+

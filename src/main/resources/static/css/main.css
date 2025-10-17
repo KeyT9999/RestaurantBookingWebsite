@@ -1,0 +1,176 @@
+/**
+ * ============================================
+ * MAIN CSS ENTRY POINT
+ * ============================================
+ * Import all CSS modules in the correct order
+ * 
+ * STRUCTURE:
+ * 1. Design Tokens (Variables)
+ * 2. Base Styles (Reset, Typography)
+ * 3. Components (Buttons, Cards, Forms, etc.)
+ * 4. Layouts (Header, Footer, Grid)
+ * 5. Pages (Page-specific styles)
+ * 
+ * USAGE IN HTML:
+ * <link th:href="@{/css/main.css}" rel="stylesheet">
+ */
+
+/* ========================================
+   1. DESIGN TOKENS
+   ======================================== */
+@import url('1-tokens/_variables.css');
+
+/* ========================================
+   2. BASE STYLES
+   ======================================== */
+@import url('2-base/_reset.css');
+@import url('2-base/_typography.css');
+@import url('2-base/_accessibility.css');
+
+/* ========================================
+   3. COMPONENTS
+   ======================================== */
+
+/* Buttons */
+@import url('3-components/buttons/_button.css');
+@import url('3-components/buttons/_button-gradients.css');
+
+/* Forms */
+@import url('3-components/forms/_input.css');
+@import url('3-components/forms/_form-helper.css');
+@import url('3-components/forms/_form-validation.css');
+
+/* Cards */
+@import url('3-components/cards/_card.css');
+
+/* Favorites */
+@import url('3-components/favorites/_heart-toggle.css');
+
+/* Filters */
+@import url('3-components/filters/_filter-section.css');
+
+/* Loading */
+@import url('3-components/loading/_spinner.css');
+
+/* Chat Components (if needed) */
+/* @import url('3-components/chat/_chat-widget.css'); */
+/* @import url('3-components/chat/_chat-message.css'); */
+
+/* ========================================
+   4. LAYOUTS
+   ======================================== */
+@import url('4-layouts/_header.css');
+@import url('4-layouts/_grid.css');
+@import url('4-layouts/_restaurants.css');
+/* @import url('4-layouts/_footer.css'); */
+
+/* ========================================
+   5. PAGE-SPECIFIC STYLES
+   ======================================== */
+/* @import url('5-pages/_home.css'); */
+/* @import url('5-pages/_restaurant.css'); */
+/* @import url('5-pages/_admin.css'); */
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Display */
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-inline { display: inline !important; }
+.d-inline-block { display: inline-block !important; }
+.d-flex { display: flex !important; }
+.d-grid { display: grid !important; }
+
+/* Visibility */
+.visible { visibility: visible !important; }
+.invisible { visibility: hidden !important; }
+
+/* Overflow */
+.overflow-hidden { overflow: hidden !important; }
+.overflow-auto { overflow: auto !important; }
+.overflow-scroll { overflow: scroll !important; }
+
+/* Position */
+.position-relative { position: relative !important; }
+.position-absolute { position: absolute !important; }
+.position-fixed { position: fixed !important; }
+.position-sticky { position: sticky !important; }
+
+/* Width & Height */
+.w-100 { width: 100% !important; }
+.w-auto { width: auto !important; }
+.h-100 { height: 100% !important; }
+.h-auto { height: auto !important; }
+
+/* Cursor */
+.cursor-pointer { cursor: pointer !important; }
+.cursor-not-allowed { cursor: not-allowed !important; }
+
+/* User Select */
+.user-select-none { user-select: none !important; }
+.user-select-all { user-select: all !important; }
+
+/* Border Radius */
+.rounded { border-radius: var(--radius-md) !important; }
+.rounded-sm { border-radius: var(--radius-sm) !important; }
+.rounded-lg { border-radius: var(--radius-lg) !important; }
+.rounded-full { border-radius: var(--radius-full) !important; }
+.rounded-none { border-radius: 0 !important; }
+
+/* Shadow */
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow { box-shadow: var(--shadow-base) !important; }
+.shadow-md { box-shadow: var(--shadow-md) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+.shadow-none { box-shadow: none !important; }
+
+/* Opacity */
+.opacity-0 { opacity: 0 !important; }
+.opacity-50 { opacity: 0.5 !important; }
+.opacity-75 { opacity: 0.75 !important; }
+.opacity-100 { opacity: 1 !important; }
+
+/* Z-Index */
+.z-0 { z-index: var(--z-base) !important; }
+.z-10 { z-index: var(--z-dropdown) !important; }
+.z-20 { z-index: var(--z-sticky) !important; }
+.z-30 { z-index: var(--z-fixed) !important; }
+.z-40 { z-index: var(--z-modal) !important; }
+.z-50 { z-index: var(--z-notification) !important; }
+
+/* Background Colors */
+.bg-primary { background-color: var(--color-primary) !important; }
+.bg-secondary { background-color: var(--color-secondary) !important; }
+.bg-success { background-color: var(--color-success) !important; }
+.bg-warning { background-color: var(--color-warning) !important; }
+.bg-error { background-color: var(--color-error) !important; }
+.bg-white { background-color: var(--color-white) !important; }
+.bg-gray { background-color: var(--color-gray-100) !important; }
+
+/* Responsive Display */
+@media (max-width: 575px) {
+  .d-sm-none { display: none !important; }
+  .d-sm-block { display: block !important; }
+  .d-sm-flex { display: flex !important; }
+}
+
+@media (max-width: 767px) {
+  .d-md-none { display: none !important; }
+  .d-md-block { display: block !important; }
+  .d-md-flex { display: flex !important; }
+}
+
+@media (max-width: 991px) {
+  .d-lg-none { display: none !important; }
+  .d-lg-block { display: block !important; }
+  .d-lg-flex { display: flex !important; }
+}
+
+@media (max-width: 1199px) {
+  .d-xl-none { display: none !important; }
+  .d-xl-block { display: block !important; }
+  .d-xl-flex { display: flex !important; }
+}
+

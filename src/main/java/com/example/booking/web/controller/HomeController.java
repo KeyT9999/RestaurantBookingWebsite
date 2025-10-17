@@ -72,7 +72,7 @@ public class HomeController {
             }
         }
         
-        return "home";
+        return "public/home";
     }
     
     /**
@@ -81,7 +81,7 @@ public class HomeController {
     @GetMapping("/about")
     public String about(Model model) {
         model.addAttribute("pageTitle", "About Us - Aurelius Fine Dining");
-        return "about";
+        return "public/about";
     }
     
     /**
@@ -90,7 +90,7 @@ public class HomeController {
     @GetMapping("/contact")
     public String contact(Model model) {
         model.addAttribute("pageTitle", "Contact Us - Aurelius Fine Dining");
-        return "contact";
+        return "public/contact";
     }
     
     /**
@@ -119,16 +119,22 @@ public class HomeController {
             Page<RestaurantProfile> restaurants = restaurantService.getRestaurantsWithFilters(
                 pageable, search, cuisineType, priceRange, ratingFilter);
             
-            // Load cover images for each restaurant
+            // Load cover images for each restaurant (optimized)
             for (RestaurantProfile restaurant : restaurants.getContent()) {
-                List<RestaurantMedia> coverImages = restaurantOwnerService.getMediaByRestaurant(restaurant)
-                        .stream()
-                        .filter(m -> "cover".equalsIgnoreCase(m.getType()))
-                        .toList();
+                try {
+                    List<RestaurantMedia> coverImages = restaurantOwnerService.getMediaByRestaurant(restaurant)
+                            .stream()
+                            .filter(m -> "cover".equalsIgnoreCase(m.getType()))
+                            .limit(1) // Only get first cover image
+                            .toList();
 
-                // Set the first cover image as the main image
-                if (!coverImages.isEmpty()) {
-                    restaurant.setMainImageUrl(coverImages.get(0).getUrl());
+                    // Set the first cover image as the main image
+                    if (!coverImages.isEmpty()) {
+                        restaurant.setMainImageUrl(coverImages.get(0).getUrl());
+                    }
+                } catch (Exception e) {
+                    // Skip media loading if error occurs
+                    System.out.println("Warning: Could not load media for restaurant " + restaurant.getRestaurantId());
                 }
             }
 
@@ -144,13 +150,13 @@ public class HomeController {
             model.addAttribute("sortBy", sortBy);
             model.addAttribute("sortDir", sortDir);
             
-            return "restaurants";
+            return "public/restaurants";
             
         } catch (Exception e) {
             System.out.println("ERROR in restaurants: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
-            return "restaurants";
+            return "public/restaurants";
         }
     }
     
@@ -254,7 +260,7 @@ public class HomeController {
             reviewForm.setRestaurantId(id);
             model.addAttribute("reviewForm", reviewForm);
 
-            return "restaurant-detail";
+            return "public/restaurant-detail";
             
         } catch (Exception e) {
             return "redirect:/restaurants?error=" + e.getMessage();

@@ -3,6 +3,7 @@ package com.example.booking.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -154,48 +155,35 @@ public class RestaurantManagementService {
     }
 
     /**
-     * Lấy danh sách nhà hàng với bộ lọc và phân trang
+     * Lấy danh sách nhà hàng với bộ lọc và phân trang (OPTIMIZED)
      */
     @Transactional(readOnly = true)
     public Page<RestaurantProfile> getRestaurantsWithFilters(Pageable pageable, 
             String search, String cuisineType, String priceRange, String ratingFilter) {
         
-        System.out.println("=== DEBUG RESTAURANT FILTERS ===");
+        System.out.println("=== OPTIMIZED RESTAURANT FILTERS ===");
         System.out.println("Search: " + search);
         System.out.println("Cuisine Type: " + cuisineType);
         System.out.println("Price Range: " + priceRange);
         System.out.println("Rating Filter: " + ratingFilter);
         System.out.println("Sort By: " + pageable.getSort());
         
-        // Get only APPROVED restaurants first (without pagination to apply filters first)
-        Pageable allPageable = PageRequest.of(0, Integer.MAX_VALUE, pageable.getSort());
-        Page<RestaurantProfile> allRestaurants = restaurantProfileRepository.findByApprovalStatus(
-            com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED, allPageable);
+        // Use optimized database query with search
+        Page<RestaurantProfile> restaurants = restaurantProfileRepository.findByApprovalStatusWithSearch(
+            com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED, 
+            search, 
+            pageable);
         
-        List<RestaurantProfile> filteredRestaurants = new ArrayList<>();
-        for (RestaurantProfile restaurant : allRestaurants.getContent()) {
-            // Apply filters
-            if (matchesFilters(restaurant, search, cuisineType, priceRange, ratingFilter)) {
-                filteredRestaurants.add(restaurant);
-                System.out.println("✅ Matched: " + restaurant.getRestaurantName());
-            } else {
-                System.out.println("❌ Filtered out: " + restaurant.getRestaurantName());
-            }
-        }
+        // Apply additional filters in memory (only for current page)
+        List<RestaurantProfile> filteredContent = restaurants.getContent().stream()
+            .filter(restaurant -> matchesFilters(restaurant, search, cuisineType, priceRange, ratingFilter))
+            .collect(Collectors.toList());
         
-        // Apply sorting to filtered results
-        filteredRestaurants = applySorting(filteredRestaurants, pageable.getSort());
-        
-        // Apply pagination to sorted results
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), filteredRestaurants.size());
-        List<RestaurantProfile> paginatedRestaurants = filteredRestaurants.subList(start, end);
-        
-        System.out.println("Filtered results: " + filteredRestaurants.size() + " out of " + allRestaurants.getContent().size());
-        System.out.println("Paginated results: " + paginatedRestaurants.size());
+        System.out.println("Database results: " + restaurants.getContent().size());
+        System.out.println("Filtered results: " + filteredContent.size());
         System.out.println("===============================");
         
-        return new PageImpl<>(paginatedRestaurants, pageable, filteredRestaurants.size());
+        return new PageImpl<>(filteredContent, pageable, restaurants.getTotalElements());
     }
     
     /**

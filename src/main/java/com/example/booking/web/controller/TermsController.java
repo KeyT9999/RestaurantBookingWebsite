@@ -14,7 +14,7 @@ public class TermsController {
      */
     @GetMapping("/terms-of-service")
     public String termsOfService() {
-        return "terms-of-service";
+        return "public/terms-of-service";
     }
 
     /**

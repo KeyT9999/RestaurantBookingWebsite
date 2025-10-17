@@ -1,0 +1,258 @@
+/**
+ * ============================================
+ * ACCESSIBILITY & MOBILE UX
+ * ============================================
+ * Touch targets, focus states, keyboard navigation
+ */
+
+/* ========== TOUCH TARGETS (Apple/Android Guidelines) ========== */
+
+/* Minimum 44x44px touch target */
+button,
+.btn,
+a.btn,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.clickable {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Exception for small buttons (but still accessible) */
+.btn--xs,
+.btn--sm {
+  min-height: 36px;
+  min-width: 36px;
+}
+
+/* Links should have enough padding */
+a {
+  padding: var(--space-1);
+  margin: calc(var(--space-1) * -1);
+}
+
+/* Icon-only buttons need proper size */
+.btn--icon-only {
+  min-width: 44px;
+  min-height: 44px;
+  padding: var(--space-3);
+}
+
+/* ========== FOCUS STATES ========== */
+
+/* Remove default outline */
+*:focus {
+  outline: none;
+}
+
+/* Custom focus ring for keyboard navigation */
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Specific focus styles */
+.btn:focus-visible,
+a.btn:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+}
+
+/* ========== SKIP TO CONTENT ========== */
+
+.skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: var(--space-4);
+  z-index: var(--z-tooltip);
+  
+  padding: var(--space-3) var(--space-4);
+  
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  
+  border-radius: var(--radius-md);
+  
+  font-weight: var(--font-weight-semibold);
+  text-decoration: none;
+  
+  transition: top var(--transition-fast);
+}
+
+.skip-to-content:focus {
+  top: var(--space-4);
+}
+
+/* ========== SCREEN READER ONLY ========== */
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* ========== MOBILE OPTIMIZATIONS ========== */
+
+@media (max-width: 768px) {
+  /* Larger touch targets on mobile */
+  button,
+  .btn,
+  a.btn {
+    min-height: 48px;
+    padding: var(--space-3) var(--space-5);
+  }
+  
+  /* Inputs easier to tap */
+  .input,
+  .select,
+  .textarea {
+    min-height: 48px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  /* Form labels more prominent */
+  .form-label {
+    font-size: var(--font-size-base);
+    margin-bottom: var(--space-3);
+  }
+  
+  /* More spacing between form elements */
+  .form-group {
+    margin-bottom: var(--space-8);
+  }
+  
+  /* Links easier to tap */
+  a {
+    padding: var(--space-2);
+    margin: calc(var(--space-2) * -1);
+  }
+  
+  /* Checkboxes and radios larger */
+  .checkbox__input,
+  .radio__input {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ========== TABLET LANDSCAPE ========== */
+
+@media (max-width: 1024px) and (orientation: landscape) {
+  /* Adjust for landscape tablets */
+  .input,
+  .select,
+  .textarea {
+    font-size: 16px;
+  }
+}
+
+/* ========== HIGH CONTRAST MODE ========== */
+
+@media (prefers-contrast: high) {
+  .btn {
+    border-width: 3px;
+  }
+  
+  .input,
+  .select,
+  .textarea {
+    border-width: 2px;
+  }
+  
+  :focus-visible {
+    outline-width: 4px;
+  }
+}
+
+/* ========== REDUCED MOTION ========== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========== DARK MODE SUPPORT ========== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1A202C;
+    --bg-secondary: #2D3748;
+    --bg-tertiary: #4A5568;
+    
+    --text-primary: #F7FAFC;
+    --text-secondary: #E2E8F0;
+    --text-tertiary: #CBD5E0;
+    
+    --border-light: #4A5568;
+    --border-medium: #718096;
+  }
+}
+
+/* ========== KEYBOARD NAVIGATION HELPERS ========== */
+
+/* Highlight interactive elements on tab */
+body.user-is-tabbing *:focus {
+  outline: 3px solid var(--color-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Disable for mouse users */
+body:not(.user-is-tabbing) *:focus {
+  outline: none !important;
+}
+
+/* ========== TOUCH DEVICE OPTIMIZATIONS ========== */
+
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .btn:hover {
+    transform: none;
+  }
+  
+  .card:hover {
+    transform: none;
+  }
+  
+  /* But keep active states */
+  .btn:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ========== ARIA LIVE REGIONS ========== */
+
+.aria-live-polite {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+[aria-live="polite"],
+[aria-live="assertive"] {
+  /* Ensure screen readers can access */
+}
+

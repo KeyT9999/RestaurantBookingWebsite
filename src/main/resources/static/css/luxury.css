@@ -677,12 +677,41 @@ a:hover {
    SECTIONS
    ======================================== */
 
+/* ========================================
+   HEADER SPACING FIX
+   ======================================== */
+
+/* Global body spacing for fixed header */
+body {
+    padding-top: var(--header-height);
+    transition: padding-top var(--transition);
+    background-color: var(--color-background);
+    color: var(--text-primary);
+}
+
+body.header-scrolled {
+    padding-top: var(--header-height-scrolled);
+}
+
+/* Exception: Home page with carousel at top */
+body.home-page,
+body.no-header-spacing {
+    padding-top: 0;
+}
+
+body.home-page .main-content > :first-child:not(.hero):not(.carousel) {
+    margin-top: var(--header-height);
+}
+
+/* Legacy support */
 .main-content {
-    padding-top: 0; /* Remove top padding to place carousel directly under header */
+    /* Removed: padding-top: 0 */
+    /* Now controlled by body padding */
 }
 
 .luxury-navbar.scrolled ~ .main-content {
-    padding-top: 0; /* Remove top padding even when scrolled */
+    /* Removed: padding-top: 0 */
+    /* Now controlled by body padding */
 }
 
 section {

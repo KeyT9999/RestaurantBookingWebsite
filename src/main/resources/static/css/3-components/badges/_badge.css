@@ -1,0 +1,210 @@
+/**
+ * ============================================
+ * BADGE COMPONENT
+ * ============================================
+ * Status badges and count indicators
+ */
+
+/* ========== BASE BADGE ========== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  
+  padding: var(--space-1) var(--space-3);
+  
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  
+  border-radius: var(--radius-full);
+  
+  white-space: nowrap;
+}
+
+/* ========== BADGE VARIANTS ========== */
+
+.badge--primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.badge--secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+.badge--success {
+  background-color: var(--color-success);
+  color: var(--color-white);
+}
+
+.badge--warning {
+  background-color: var(--color-warning);
+  color: var(--color-white);
+}
+
+.badge--error {
+  background-color: var(--color-error);
+  color: var(--color-white);
+}
+
+.badge--info {
+  background-color: var(--color-info);
+  color: var(--color-white);
+}
+
+.badge--light {
+  background-color: var(--color-gray-200);
+  color: var(--text-primary);
+}
+
+.badge--dark {
+  background-color: var(--color-gray-800);
+  color: var(--color-white);
+}
+
+/* ========== BADGE GRADIENTS ========== */
+
+.badge--gradient-red {
+  background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+  color: var(--color-white);
+}
+
+.badge--gradient-yellow {
+  background: linear-gradient(45deg, #ffc107, #ffb300);
+  color: var(--color-white);
+}
+
+.badge--gradient-cyan {
+  background: linear-gradient(45deg, #17a2b8, #138496);
+  color: var(--color-white);
+}
+
+.badge--gradient-primary {
+  background: linear-gradient(45deg, var(--color-primary), var(--color-primary-dark));
+  color: var(--color-white);
+}
+
+/* ========== BADGE SIZES ========== */
+
+.badge--sm {
+  padding: 2px var(--space-2);
+  font-size: 10px;
+}
+
+.badge--md {
+  /* Default size */
+}
+
+.badge--lg {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+/* ========== BADGE SHAPES ========== */
+
+.badge--pill {
+  border-radius: var(--radius-full);
+}
+
+.badge--rounded {
+  border-radius: var(--radius-md);
+}
+
+.badge--square {
+  border-radius: var(--radius-sm);
+}
+
+/* ========== BADGE WITH DOT ========== */
+
+.badge--with-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background-color: currentColor;
+  border-radius: var(--radius-full);
+  margin-right: var(--space-1);
+}
+
+/* ========== COUNT BADGE (Notification) ========== */
+
+.badge--count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--space-1);
+  
+  background-color: var(--color-error);
+  color: var(--color-white);
+  
+  border-radius: var(--radius-full);
+  
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge--count-pulse {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+/* ========== STATUS BADGES ========== */
+
+.badge--status {
+  padding: var(--space-2) var(--space-3);
+  font-weight: var(--font-weight-medium);
+  text-transform: capitalize;
+}
+
+.badge--status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge--status-confirmed {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.badge--status-completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge--status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 768px) {
+  .badge {
+    font-size: 10px;
+    padding: 2px var(--space-2);
+  }
+  
+  .badge--lg {
+    font-size: var(--font-size-xs);
+    padding: var(--space-1) var(--space-3);
+  }
+}
+

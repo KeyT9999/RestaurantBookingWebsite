@@ -1,0 +1,104 @@
+/**
+ * ============================================
+ * FORM HELPER COMPONENT
+ * ============================================
+ * Helper text, hints, and form guidance
+ */
+
+/* ========== FORM HELPER TEXT ========== */
+.form-helper {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+.form-helper--light {
+  color: var(--text-light);
+}
+
+.form-helper--dark {
+  color: var(--text-primary);
+}
+
+/* ========== FORM HINT WITH ICON ========== */
+.form-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-info);
+}
+
+.form-hint__icon {
+  color: var(--color-info);
+  font-size: var(--font-size-base);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.form-hint__text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+/* ========== FORM HINT VARIANTS ========== */
+.form-hint--success {
+  border-left-color: var(--color-success);
+  background-color: rgba(16, 185, 129, 0.05);
+}
+
+.form-hint--success .form-hint__icon {
+  color: var(--color-success);
+}
+
+.form-hint--warning {
+  border-left-color: var(--color-warning);
+  background-color: rgba(245, 158, 11, 0.05);
+}
+
+.form-hint--warning .form-hint__icon {
+  color: var(--color-warning);
+}
+
+.form-hint--error {
+  border-left-color: var(--color-error);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.form-hint--error .form-hint__icon {
+  color: var(--color-error);
+}
+
+/* ========== CHARACTER COUNTER ========== */
+.form-counter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.form-counter.is-limit {
+  color: var(--color-warning);
+}
+
+.form-counter.is-over {
+  color: var(--color-error);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ========== LEGACY COMPATIBILITY ========== */
+small[style*="color"][style*="margin-top"] {
+  /* Override inline styles */
+  color: var(--text-secondary) !important;
+  font-size: var(--font-size-sm) !important;
+  margin-top: var(--space-2) !important;
+  display: block !important;
+}
+

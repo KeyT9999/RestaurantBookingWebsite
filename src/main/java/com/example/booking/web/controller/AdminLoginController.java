@@ -15,6 +15,6 @@ public class AdminLoginController {
      */
     @GetMapping("/admin-login")
     public String adminLogin() {
-        return "admin-login";
+        return "admin/admin-login";
     }
 }

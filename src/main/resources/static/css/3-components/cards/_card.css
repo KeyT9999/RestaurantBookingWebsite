@@ -1,0 +1,279 @@
+/**
+ * ============================================
+ * CARD COMPONENT
+ * ============================================
+ * Reusable card component with variants
+ * BEM naming: .card, .card--variant, .card__element
+ */
+
+/* ========== BASE CARD ========== */
+.card {
+  /* Display & Box Model */
+  display: flex;
+  flex-direction: column;
+  
+  /* Visual */
+  background-color: var(--color-white);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-base);
+  
+  /* Spacing */
+  overflow: hidden;
+  
+  /* Interaction */
+  transition: var(--transition-all);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========== CARD HEADER ========== */
+.card__header {
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.card__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.card__subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+}
+
+/* ========== CARD BODY ========== */
+.card__body {
+  padding: var(--space-6);
+  flex: 1;
+}
+
+/* ========== CARD FOOTER ========== */
+.card__footer {
+  padding: var(--space-6);
+  border-top: 1px solid var(--border-light);
+  background-color: var(--bg-secondary);
+}
+
+/* ========== CARD IMAGE ========== */
+.card__image {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.card:hover .card__image img {
+  transform: scale(1.05);
+}
+
+/* ========== CARD VARIANTS ========== */
+
+/* Elevated Card */
+.card--elevated {
+  box-shadow: var(--shadow-lg);
+}
+
+.card--elevated:hover {
+  box-shadow: var(--shadow-xl);
+}
+
+/* Bordered Card */
+.card--bordered {
+  border: 2px solid var(--border-medium);
+  box-shadow: none;
+}
+
+.card--bordered:hover {
+  border-color: var(--color-primary);
+}
+
+/* Outline Card */
+.card--outline {
+  background-color: transparent;
+  border: 2px solid var(--border-medium);
+  box-shadow: none;
+}
+
+/* Flat Card */
+.card--flat {
+  box-shadow: none;
+  border: none;
+}
+
+/* Horizontal Card */
+.card--horizontal {
+  flex-direction: row;
+}
+
+.card--horizontal .card__image {
+  width: 40%;
+  flex-shrink: 0;
+}
+
+.card--horizontal .card__body {
+  width: 60%;
+}
+
+/* ========== CARD SIZES ========== */
+.card--sm {
+  font-size: var(--font-size-sm);
+}
+
+.card--sm .card__header,
+.card--sm .card__body,
+.card--sm .card__footer {
+  padding: var(--space-4);
+}
+
+.card--lg {
+  font-size: var(--font-size-lg);
+}
+
+.card--lg .card__header,
+.card--lg .card__body,
+.card--lg .card__footer {
+  padding: var(--space-8);
+}
+
+/* ========== CARD COLORS ========== */
+.card--primary {
+  border-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
+  color: var(--color-white);
+}
+
+.card--primary .card__title,
+.card--primary .card__subtitle {
+  color: var(--color-white);
+}
+
+.card--secondary {
+  border-color: var(--color-secondary);
+  background: linear-gradient(135deg, var(--color-secondary-light), var(--color-secondary));
+  color: var(--color-white);
+}
+
+.card--secondary .card__title,
+.card--secondary .card__subtitle {
+  color: var(--color-white);
+}
+
+/* ========== INTERACTIVE CARDS ========== */
+.card--clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.card--clickable:active {
+  transform: translateY(0);
+}
+
+.card--selectable {
+  cursor: pointer;
+  border: 2px solid var(--border-medium);
+}
+
+.card--selectable.is-selected {
+  border-color: var(--color-primary);
+  background-color: rgba(74, 144, 226, 0.05);
+}
+
+/* ========== CARD BADGE ========== */
+.card__badge {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  z-index: 1;
+}
+
+/* ========== CARD OVERLAY ========== */
+.card__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--transition-opacity);
+}
+
+.card:hover .card__overlay {
+  opacity: 1;
+}
+
+/* ========== CARD ACTIONS ========== */
+.card__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.card__actions--end {
+  justify-content: flex-end;
+}
+
+.card__actions--center {
+  justify-content: center;
+}
+
+/* ========== RESTAURANT CARD (Specific) ========== */
+.restaurant-card {
+  composes: card;
+  border-left: 4px solid var(--color-primary);
+}
+
+.restaurant-card__image {
+  height: 250px;
+}
+
+.restaurant-card__location {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+}
+
+.restaurant-card__rating {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.restaurant-card__stars {
+  color: var(--color-secondary);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .card--horizontal {
+    flex-direction: column;
+  }
+  
+  .card--horizontal .card__image,
+  .card--horizontal .card__body {
+    width: 100%;
+  }
+}
+

@@ -1,0 +1,359 @@
+/**
+ * ============================================
+ * RESTAURANTS PAGE LAYOUT
+ * ============================================
+ * Specific styling for restaurants listing page
+ */
+
+/* ========== PAGE LAYOUT ========== */
+.restaurants-page {
+  background: var(--color-background);
+  min-height: 100vh;
+}
+
+.restaurants-page .main-content {
+  padding-top: 0; /* Remove default padding for full-width hero */
+}
+
+/* ========== HERO SECTION ========== */
+.hero-section {
+  background: linear-gradient(135deg, 
+    var(--color-primary-dark) 0%, 
+    var(--color-primary) 50%, 
+    var(--color-primary-light) 100%);
+  padding: var(--space-8) 0;
+  margin-bottom: var(--space-6);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="10" cy="50" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="90" cy="30" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
+
+.hero__title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-white);
+  margin-bottom: var(--space-3);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
+}
+
+.hero__subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--color-white);
+  opacity: 0.9;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* ========== RESTAURANTS SECTION ========== */
+.restaurants {
+  padding: var(--space-6) 0;
+  background: var(--color-background);
+  min-height: 60vh;
+}
+
+/* ========== FILTER SECTION ========== */
+.filter-section {
+  background: var(--color-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+}
+
+.filter-section .form-label {
+  font-weight: var(--font-weight-semibold);
+  color: #000000;
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-section .form-control,
+.filter-section .form-select {
+  border: 2px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  font-size: var(--font-size-base);
+  transition: var(--transition-fast);
+  background: var(--color-white);
+  color: #000000;
+}
+
+.filter-section .form-control:focus,
+.filter-section .form-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+  outline: none;
+}
+
+/* ========== RESTAURANT CARDS ========== */
+.restaurant-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-all);
+  border: 1px solid var(--border-light);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.restaurant-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--color-primary-light);
+}
+
+.restaurant-card__image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.restaurant-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition-all);
+}
+
+.restaurant-card:hover .restaurant-card__image img {
+  transform: scale(1.05);
+}
+
+.restaurant-card__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(0,0,0,0.7), rgba(0,0,0,0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--transition-all);
+}
+
+.restaurant-card:hover .restaurant-card__overlay {
+  opacity: 1;
+}
+
+.restaurant-card__content {
+  padding: var(--space-5);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.restaurant-card__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+  line-height: 1.3;
+}
+
+.restaurant-card__location,
+.restaurant-card__cuisine,
+.restaurant-card__price {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.restaurant-card__location i,
+.restaurant-card__cuisine i,
+.restaurant-card__price i {
+  margin-right: var(--space-2);
+  color: var(--color-primary);
+  width: 16px;
+}
+
+.restaurant-card__rating {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-light);
+}
+
+.restaurant-card__rating .stars {
+  margin-bottom: var(--space-2);
+}
+
+.restaurant-card__rating .stars i {
+  color: var(--color-warning);
+  margin-right: 2px;
+}
+
+.restaurant-card__rating .rating-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ========== HEART TOGGLE ========== */
+.heart-toggle {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 2;
+}
+
+.heart-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-all);
+  color: var(--text-secondary);
+  font-size: var(--font-size-lg);
+  border: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.heart-icon:hover {
+  background: var(--color-white);
+  transform: scale(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.heart-icon.favorited {
+  color: var(--color-danger);
+  background: var(--color-white);
+}
+
+.heart-icon.favorited:hover {
+  color: var(--color-danger-dark);
+}
+
+/* ========== PAGINATION ========== */
+.pagination-custom {
+  margin-top: var(--space-6);
+}
+
+.pagination-custom .page-link {
+  border: 2px solid var(--border-medium);
+  color: var(--text-primary);
+  padding: var(--space-3) var(--space-4);
+  margin: 0 var(--space-1);
+  border-radius: var(--radius-md);
+  transition: var(--transition-fast);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-white);
+}
+
+.pagination-custom .page-link:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+  transform: translateY(-1px);
+}
+
+.pagination-custom .page-item.active .page-link {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.pagination-custom .page-item.disabled .page-link {
+  background: var(--color-surface);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+/* ========== EMPTY STATE ========== */
+.alert-info {
+  background: linear-gradient(135deg, var(--color-info-light), var(--color-info));
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.alert-info i {
+  font-size: var(--font-size-3xl);
+  color: var(--color-info);
+  margin-bottom: var(--space-3);
+}
+
+.alert-info h4 {
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+  font-weight: var(--font-weight-semibold);
+}
+
+.alert-info p {
+  color: var(--text-secondary);
+  margin-bottom: 0;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .hero__title {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .hero__subtitle {
+    font-size: var(--font-size-base);
+  }
+  
+  .filter-section {
+    padding: var(--space-4);
+  }
+  
+  .filter-section .row > div {
+    margin-bottom: var(--space-4);
+  }
+  
+  .restaurant-card__content {
+    padding: var(--space-4);
+  }
+  
+  .restaurant-card__title {
+    font-size: var(--font-size-lg);
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-section {
+    padding: var(--space-6) 0;
+  }
+  
+  .hero__title {
+    font-size: var(--font-size-2xl);
+  }
+  
+  .filter-section {
+    padding: var(--space-3);
+  }
+  
+  .restaurant-card__image {
+    height: 150px;
+  }
+}

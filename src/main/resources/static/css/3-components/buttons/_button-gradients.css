@@ -1,0 +1,180 @@
+/**
+ * ============================================
+ * BUTTON GRADIENT VARIANTS
+ * ============================================
+ * Gradient button styles for special actions
+ */
+
+/* ========== SUCCESS GRADIENT (Create Restaurant) ========== */
+.btn--success-gradient {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border: none;
+  color: var(--color-white);
+  font-weight: var(--font-weight-semibold);
+  transition: var(--transition-all);
+}
+
+.btn--success-gradient:hover {
+  background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  color: var(--color-white);
+}
+
+/* ========== PURPLE GRADIENT (Dashboard) ========== */
+.btn--purple-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: var(--color-white);
+  font-weight: var(--font-weight-semibold);
+  transition: var(--transition-all);
+}
+
+.btn--purple-gradient:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  color: var(--color-white);
+}
+
+/* ========== TEAL GRADIENT (Withdrawal) ========== */
+.btn--teal-gradient {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  color: var(--color-white);
+  font-weight: var(--font-weight-semibold);
+  transition: var(--transition-all);
+}
+
+.btn--teal-gradient:hover {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  color: var(--color-white);
+}
+
+/* ========== CHAT FLOAT BUTTON ========== */
+.btn--chat-float {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  
+  width: 60px;
+  height: 60px;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  background: linear-gradient(135deg, #4facfe, #4facfe);
+  color: var(--color-white);
+  
+  border: none;
+  border-radius: var(--radius-full);
+  
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+  
+  text-decoration: none;
+  transition: var(--transition-all);
+  
+  cursor: pointer;
+}
+
+.btn--chat-float:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+  color: var(--color-white);
+}
+
+.btn--chat-float i {
+  font-size: 24px;
+  color: var(--color-white);
+}
+
+/* ========== GRADIENT VARIATIONS ========== */
+
+/* Red to Pink */
+.btn--gradient-red {
+  background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+}
+
+/* Yellow to Orange */
+.btn--gradient-yellow {
+  background: linear-gradient(45deg, #ffc107, #ffb300);
+}
+
+/* Cyan to Blue */
+.btn--gradient-cyan {
+  background: linear-gradient(45deg, #17a2b8, #138496);
+}
+
+/* Primary Blue */
+.btn--gradient-primary {
+  background: linear-gradient(45deg, var(--color-primary), var(--color-primary-dark));
+}
+
+/* ========== RESTAURANTS PAGE BUTTONS ========== */
+
+/* Primary Gradient for Filter Button */
+.btn--primary-gradient {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  border: none;
+  color: var(--color-white);
+  font-weight: var(--font-weight-semibold);
+  transition: var(--transition-all);
+}
+
+.btn--primary-gradient:hover {
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+  color: var(--color-white);
+}
+
+/* Gold Gradient for Booking Button */
+.btn--gold-gradient {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: var(--color-white);
+  font-weight: var(--font-weight-semibold);
+  transition: var(--transition-all);
+}
+
+.btn--gold-gradient:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  color: var(--color-white);
+}
+
+/* Outline Secondary for Clear Filters */
+.btn--outline-secondary {
+  background: transparent;
+  border: 2px solid var(--color-secondary);
+  color: var(--color-secondary);
+  font-weight: var(--font-weight-medium);
+  transition: var(--transition-all);
+}
+
+.btn--outline-secondary:hover {
+  background: var(--color-secondary);
+  color: var(--color-white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .btn--chat-float {
+    width: 50px;
+    height: 50px;
+    bottom: 15px;
+    right: 15px;
+  }
+  
+  .btn--chat-float i {
+    font-size: 20px;
+  }
+}
+

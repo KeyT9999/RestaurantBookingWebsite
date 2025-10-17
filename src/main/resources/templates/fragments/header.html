@@ -267,13 +267,13 @@
                         
                         <!-- Restaurant Owner Buttons -->
                         <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER')">
-                            <a th:href="@{/restaurant-owner/restaurants/create}" class="btn btn-primary ms-2" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none;">
+                            <a th:href="@{/restaurant-owner/restaurants/create}" class="btn btn--success-gradient ms-2">
                                 <i class="fas fa-plus-circle"></i>
                                 <span>Tạo nhà hàng</span>
                             </a>
                         </li>
                         <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER')">
-                            <a th:href="@{/restaurant-owner/dashboard}" class="btn btn-book-table ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <a th:href="@{/restaurant-owner/dashboard}" class="btn btn--purple-gradient ms-2">
                                 <i class="fas fa-tachometer-alt"></i>
                                 <span>Dashboard</span>
                             </a>
@@ -351,9 +351,9 @@
         </script>
         
         <!-- Customer Chat Link -->
-        <div sec:authorize="isAuthenticated() and hasRole('CUSTOMER') or hasRole('customer')" id="chat-button" class="customer-chat-link" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-            <a th:href="@{/customer/chat}" style="width: 60px; height: 60px; background: linear-gradient(135deg, #4facfe, #4facfe); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3); text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                <i class="fas fa-comments" style="color: white; font-size: 24px;"></i>
+        <div sec:authorize="isAuthenticated() and hasRole('CUSTOMER')" id="chat-button">
+            <a th:href="@{/customer/chat}" class="btn--chat-float">
+                <i class="fas fa-comments"></i>
             </a>
         </div>
 
@@ -366,8 +366,49 @@
             if (path.includes('/customer/chat') ||
                 path.includes('/restaurant-owner/chat') ||
                 path.includes('/admin/chat')) {
-                document.getElementById('chat-button').style.display = 'none';
+                const chatButton = document.getElementById('chat-button');
+                if (chatButton) {
+                    chatButton.style.display = 'none';
+                }
             }
+        </script>
+        
+        <!-- Header Spacing Fix Script -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const navbar = document.querySelector('.luxury-navbar');
+                const body = document.body;
+                
+                if (!navbar) return;
+                
+                // Update body class on scroll for smooth transition
+                function updateHeaderSpacing() {
+                    if (window.scrollY > 50) {
+                        navbar.classList.add('scrolled');
+                        body.classList.add('header-scrolled');
+                    } else {
+                        navbar.classList.remove('scrolled');
+                        body.classList.remove('header-scrolled');
+                    }
+                }
+                
+                // Initial check
+                updateHeaderSpacing();
+                
+                // Update on scroll with throttle
+                let scrollTimeout;
+                window.addEventListener('scroll', function() {
+                    if (scrollTimeout) {
+                        clearTimeout(scrollTimeout);
+                    }
+                    scrollTimeout = setTimeout(updateHeaderSpacing, 10);
+                });
+                
+                // Update on resize
+                window.addEventListener('resize', function() {
+                    updateHeaderSpacing();
+                });
+            });
         </script>
         
     </header>

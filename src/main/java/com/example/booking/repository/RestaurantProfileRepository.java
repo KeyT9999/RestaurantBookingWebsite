@@ -53,6 +53,16 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
     Page<RestaurantProfile> findByApprovalStatus(RestaurantApprovalStatus approvalStatus, Pageable pageable);
     
     /**
+     * Find restaurants by approval status with search and pagination (OPTIMIZED)
+     */
+    @Query("SELECT r FROM RestaurantProfile r WHERE r.approvalStatus = :status " +
+           "AND (:search IS NULL OR LOWER(r.restaurantName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "ORDER BY r.restaurantName ASC")
+    Page<RestaurantProfile> findByApprovalStatusWithSearch(@Param("status") RestaurantApprovalStatus status, 
+                                                           @Param("search") String search, 
+                                                           Pageable pageable);
+    
+    /**
      * Count restaurants by approval status
      */
     long countByApprovalStatus(RestaurantApprovalStatus approvalStatus);
