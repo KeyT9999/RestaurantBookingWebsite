@@ -45,5 +45,5 @@ EXPOSE $PORT
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:$PORT/api/health || exit 1
 
-# Run application với port động từ Render
-CMD ["sh", "-c", "java -Dspring.profiles.active=prod -Dserver.port=$PORT -jar app.jar"] 
+# Run application - Spring Boot sẽ tự động đọc PORT từ environment
+CMD ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"] 

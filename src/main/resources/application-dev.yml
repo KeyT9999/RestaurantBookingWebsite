@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: jdbc:postgresql://dpg-d37uh8ruibrs739c7sf0-a.singapore-postgres.render.com:5432/bookeat_db
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/bookeat_db}
     driver-class-name: org.postgresql.Driver
-    username: bookeat_user
-    password: 58IJhzpjEobFFUmJ762dmkEdSLPPRbZX
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
 
   jpa:
     hibernate:

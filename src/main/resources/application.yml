@@ -2,9 +2,10 @@ spring:
   profiles:
     active: dev
   datasource:
-    url: ${JDBC_DATABASE_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/bookeat_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
   
   thymeleaf:
     cache: false
