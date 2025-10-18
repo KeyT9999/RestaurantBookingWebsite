@@ -1,9 +1,10 @@
 spring:
   datasource:
-    url: ${DATABASE_URL}
+    # Luôn bind vào DATABASE_URL, fallback JDBC_DATABASE_URL khi chạy local
+    url: ${DATABASE_URL:${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/bookeat_db}}
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:password}
 
   jpa:
     hibernate:
@@ -52,7 +53,7 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
-# Server configuration
+# Server configuration - Luôn bind vào cổng do Render cấp, fallback 8080 khi chạy local
 server:
   port: ${PORT:8080}
   error:
