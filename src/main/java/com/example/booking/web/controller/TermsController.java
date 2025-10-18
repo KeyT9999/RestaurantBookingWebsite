@@ -14,7 +14,7 @@ public class TermsController {
      */
     @GetMapping("/terms-of-service")
     public String termsOfService() {
-        return "terms-of-service";
+        return "public/terms-of-service";
     }
 
     /**
@@ -22,7 +22,7 @@ public class TermsController {
      */
     @GetMapping("/privacy-policy")
     public String privacyPolicy() {
-        return "privacy-policy";
+        return "public/privacy-policy";
     }
 
     /**
@@ -30,6 +30,6 @@ public class TermsController {
      */
     @GetMapping("/cookie-policy")
     public String cookiePolicy() {
-        return "cookie-policy";
+        return "public/cookie-policy";
     }
 }
