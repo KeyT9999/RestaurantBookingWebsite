@@ -1,14 +1,19 @@
 package com.example.booking.web.controller;
 
+import java.sql.Connection;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.sql.DataSource;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.ResponseEntity;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Test controller for rate limiting
@@ -16,6 +21,45 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class TestController {
+    
+    @Autowired
+    private DataSource dataSource;
+    
+    @GetMapping("/db-check")
+    public ResponseEntity<Map<String, Object>> databaseCheck() {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            Connection connection = dataSource.getConnection();
+            boolean isValid = connection.isValid(5);
+            connection.close();
+            
+            response.put("status", isValid ? "UP" : "DOWN");
+            response.put("database", "connected");
+            response.put("timestamp", LocalDateTime.now());
+            response.put("message", isValid ? "Database connection successful" : "Database connection failed");
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "DOWN");
+            response.put("database", "error");
+            response.put("timestamp", LocalDateTime.now());
+            response.put("message", "Database connection error: " + e.getMessage());
+            
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> healthCheck() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "UP");
+        response.put("timestamp", LocalDateTime.now());
+        response.put("message", "Application is running");
+        response.put("version", "1.0.0");
+        
+        return ResponseEntity.ok(response);
+    }
     
     @GetMapping("/test")
     public ResponseEntity<Map<String, Object>> testEndpoint(HttpServletRequest request) {
