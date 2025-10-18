@@ -69,7 +69,7 @@ if %ERRORLEVEL% equ 0 (
     echo 📋 Bước tiếp theo:
     echo 1. Kiểm tra database có các bảng mới không
     echo 2. Restart ứng dụng Spring Boot
-    echo 3. Truy cập dashboard: http://localhost:8081/admin/rate-limiting
+    echo 3. Truy cập dashboard: http://localhost:8080/admin/rate-limiting
 ) else (
     echo.
     echo ❌ Có lỗi khi chạy script

@@ -76,7 +76,7 @@ Cập nhật: restaurant_balance (total_withdrawn += amount, pending_withdrawal 
 
 ### **Bước 3: Truy cập Admin Panel**
 ```
-http://localhost:8081/admin/withdrawal
+http://localhost:8080/admin/withdrawal
 ```
 
 ### **Bước 4: Test luồng**

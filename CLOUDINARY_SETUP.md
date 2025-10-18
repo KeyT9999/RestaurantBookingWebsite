@@ -95,7 +95,7 @@ boolean deleted = imageUploadService.deleteImage(imageUrl);
 
 ### 1. Truy cập trang test
 ```
-http://localhost:8081/test/cloudinary
+http://localhost:8080/test/cloudinary
 ```
 
 ### 2. Các chức năng test có sẵn

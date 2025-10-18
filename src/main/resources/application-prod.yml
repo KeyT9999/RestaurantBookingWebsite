@@ -54,7 +54,7 @@ logging:
 
 # Server configuration
 server:
-  port: ${PORT:8081}
+  port: ${PORT:8080}
   error:
     include-message: never
     include-binding-errors: never 

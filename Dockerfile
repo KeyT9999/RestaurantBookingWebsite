@@ -39,11 +39,11 @@ RUN mkdir -p /tmp/uploads && chown -R appuser:appgroup /tmp/uploads
 USER appuser
 
 # Expose port (Render sẽ tự động map)
-EXPOSE 8081
+EXPOSE 8080
 
 # Health check sử dụng port mặc định 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8081/actuator/health || exit 1
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # Run application - KHÔNG ép server.port, để Spring đọc ${PORT} từ application-prod.yml
 CMD ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"] 

@@ -97,8 +97,8 @@ public class PayOSSignatureGenerator {
         long orderCode = 20251007001L;
         long amount = 20000L;
         String description = "Test PayOS 20k - BookEat";
-        String cancelUrl = "http://localhost:8081/payment/payos/cancel";
-        String returnUrl = "http://localhost:8081/payment/payos/return";
+        String cancelUrl = "http://localhost:8080/payment/payos/cancel";
+        String returnUrl = "http://localhost:8080/payment/payos/return";
         String checksumKey = "eb7485ce4c656e02cae0629fcce02b2933d5b2a9b0a10447c9aa0662125835cf";
         
         String signature = generateSignature(orderCode, amount, description, cancelUrl, returnUrl, checksumKey);
