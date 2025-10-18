@@ -73,7 +73,7 @@ public class HomeController {
             }
         }
         
-        return "home";
+        return "public/home";
     }
     
     /**
@@ -82,7 +82,7 @@ public class HomeController {
     @GetMapping("/about")
     public String about(Model model) {
         model.addAttribute("pageTitle", "About Us - Aurelius Fine Dining");
-        return "about";
+        return "public/about";
     }
     
     /**
@@ -91,7 +91,7 @@ public class HomeController {
     @GetMapping("/contact")
     public String contact(Model model) {
         model.addAttribute("pageTitle", "Contact Us - Aurelius Fine Dining");
-        return "contact";
+        return "public/contact";
     }
     
     /**
@@ -145,13 +145,13 @@ public class HomeController {
             model.addAttribute("sortBy", sortBy);
             model.addAttribute("sortDir", sortDir);
             
-            return "restaurants";
+            return "public/restaurants";
             
         } catch (Exception e) {
             System.out.println("ERROR in restaurants: " + e.getMessage());
             e.printStackTrace();
             model.addAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
-            return "restaurants";
+            return "public/restaurants";
         }
     }
     
@@ -272,7 +272,7 @@ public class HomeController {
             reviewForm.setRestaurantId(id);
             model.addAttribute("reviewForm", reviewForm);
 
-            return "restaurant-detail";
+            return "public/restaurant-detail";
             
         } catch (Exception e) {
             return "redirect:/restaurants?error=" + e.getMessage();

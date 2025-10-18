@@ -259,7 +259,7 @@ public class AdminRestaurantController {
      */
     @GetMapping("/test-reject-form")
     public String testRejectForm() {
-        return "test-reject-form";
+        return "test/test-reject-form";
     }
     
     /**

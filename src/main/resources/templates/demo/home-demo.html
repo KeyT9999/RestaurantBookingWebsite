@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page Design Demo - Book Eat</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --secondary: #357ABD;
+            --accent: #FF6B35;
+            --dark: #2C3E50;
+            --light: #F8F9FA;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+        }
+        
+        /* Demo Navigation */
+        .demo-nav {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .demo-nav h4 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        /* Demo Sections */
+        .demo-section {
+            margin: 2rem 0;
+            padding: 3rem 0;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        
+        .demo-title {
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .demo-description {
+            color: #666;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        /* Mẫu 1: Hero Section */
+        .hero-demo {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 4rem 0;
+            border-radius: 15px;
+            margin: 1rem 0;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .search-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .search-input-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .search-input-group input,
+        .search-input-group select {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 15px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .btn-search {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+        
+        /* Mẫu 2: Features */
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 2rem;
+        }
+        
+        .feature-card h3 {
+            color: var(--dark);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        /* Mẫu 3: Restaurant Grid */
+        .restaurant-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .restaurant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        
+        .restaurant-image {
+            height: 200px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .restaurant-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--accent);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .restaurant-info {
+            padding: 1.5rem;
+        }
+        
+        .restaurant-rating {
+            color: #ffc107;
+            margin: 0.5rem 0;
+        }
+        
+        .restaurant-price {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        /* Mẫu 4: Stats */
+        .stat-item {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        /* Mẫu 5: CTA */
+        .cta-section {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 4rem 0;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        
+        .btn-download {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-download:hover {
+            background: white;
+            color: var(--primary);
+        }
+        
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            background: white;
+            border: 2px solid #eee;
+            padding: 10px 20px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .search-input-group {
+                flex-direction: column;
+            }
+            
+            .search-input-group input,
+            .search-input-group select {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Demo Navigation -->
+    <nav class="demo-nav">
+        <div class="container">
+            <h4><i class="fas fa-palette"></i> Home Page Design Demo - Book Eat</h4>
+        </div>
+    </nav>
+    
+    <div style="margin-top: 80px;">
+        <div class="container">
+            
+            <!-- Mẫu 1: Hero Section -->
+            <div class="demo-section">
+                <h2 class="demo-title">🎯 Mẫu 1: Hero Section với Search</h2>
+                <p class="demo-description">Landing page tập trung vào tìm kiếm nhà hàng</p>
+                
+                <div class="hero-demo">
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <div class="col-lg-6">
+                                <h1 class="hero-title">Tìm Nhà Hàng Hoàn Hảo</h1>
+                                <p class="hero-subtitle">Đặt bàn dễ dàng, trải nghiệm tuyệt vời</p>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="search-form">
+                                    <div class="search-input-group">
+                                        <input type="text" placeholder="Tìm nhà hàng, món ăn...">
+                                        <input type="date">
+                                        <input type="time">
+                                        <select>
+                                            <option>Số khách</option>
+                                            <option>1 người</option>
+                                            <option>2 người</option>
+                                            <option>4 người</option>
+                                        </select>
+                                        <button class="btn-search">
+                                            <i class="fas fa-search"></i> Tìm kiếm
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mẫu 2: Features -->
+            <div class="demo-section">
+                <h2 class="demo-title">✨ Mẫu 2: Features Showcase</h2>
+                <p class="demo-description">Showcase lợi ích của app</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <h3>Đặt bàn nhanh chóng</h3>
+                            <p>Chỉ cần vài cú click để đặt bàn tại nhà hàng yêu thích</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <h3>Nhà hàng chất lượng</h3>
+                            <p>Curated selection của những nhà hàng tốt nhất</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h3>An toàn & Bảo mật</h3>
+                            <p>Thanh toán an toàn, thông tin được bảo mật</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mẫu 3: Restaurant Grid -->
+            <div class="demo-section">
+                <h2 class="demo-title">🍽️ Mẫu 3: Restaurant Showcase</h2>
+                <p class="demo-description">Grid nhà hàng với filter và rating</p>
+                
+                <div class="filter-tabs">
+                    <button class="filter-btn active">Tất cả</button>
+                    <button class="filter-btn">Fine Dining</button>
+                    <button class="filter-btn">Casual</button>
+                    <button class="filter-btn">Rooftop</button>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="restaurant-card">
+                            <div class="restaurant-image">
+                                <div class="restaurant-badge">Premium</div>
+                            </div>
+                            <div class="restaurant-info">
+                                <h3>Le Bistrot</h3>
+                                <div class="restaurant-rating">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <span>4.8</span>
+                                    <span class="text-muted">(124 reviews)</span>
+                                </div>
+                                <p class="text-muted">French • Fine Dining</p>
+                                <div class="restaurant-price">$$$$</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="restaurant-card">
+                            <div class="restaurant-image" style="background: linear-gradient(45deg, #a8e6cf, #88d8c0);">
+                                <div class="restaurant-badge">Popular</div>
+                            </div>
+                            <div class="restaurant-info">
+                                <h3>Garden Terrace</h3>
+                                <div class="restaurant-rating">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <span>4.6</span>
+                                    <span class="text-muted">(89 reviews)</span>
+                                </div>
+                                <p class="text-muted">Asian • Casual</p>
+                                <div class="restaurant-price">$$$</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="restaurant-card">
+                            <div class="restaurant-image" style="background: linear-gradient(45deg, #ff9a9e, #fecfef);">
+                                <div class="restaurant-badge">New</div>
+                            </div>
+                            <div class="restaurant-info">
+                                <h3>Sky Lounge</h3>
+                                <div class="restaurant-rating">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <span>4.9</span>
+                                    <span class="text-muted">(67 reviews)</span>
+                                </div>
+                                <p class="text-muted">International • Rooftop</p>
+                                <div class="restaurant-price">$$$$</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mẫu 4: Statistics -->
+            <div class="demo-section">
+                <h2 class="demo-title">📊 Mẫu 4: Statistics & Social Proof</h2>
+                <p class="demo-description">Show numbers và testimonials</p>
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number">50,000+</div>
+                            <div class="stat-label">Khách hàng tin tưởng</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number">1,200+</div>
+                            <div class="stat-label">Nhà hàng đối tác</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number">98%</div>
+                            <div class="stat-label">Tỷ lệ hài lòng</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">Hỗ trợ khách hàng</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mẫu 5: CTA Section -->
+            <div class="demo-section">
+                <h2 class="demo-title">📱 Mẫu 5: CTA Section</h2>
+                <p class="demo-description">Drive conversions với clear CTAs</p>
+                
+                <div class="cta-section">
+                    <h2>Sẵn sàng trải nghiệm?</h2>
+                    <p>Tải app Book Eat ngay để đặt bàn mọi lúc, mọi nơi</p>
+                    
+                    <div class="cta-buttons">
+                        <a href="#" class="btn-download">
+                            <i class="fab fa-apple"></i> App Store
+                        </a>
+                        <a href="#" class="btn-download">
+                            <i class="fab fa-google-play"></i> Google Play
+                        </a>
+                    </div>
+                    
+                    <div style="margin-top: 2rem;">
+                        <p>Hoặc</p>
+                        <a href="#" class="btn btn-light btn-lg">Đặt bàn ngay</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center" style="padding: 3rem 0; color: #666;">
+                <h4>🎨 Home Page Design Demo</h4>
+                <p>Chọn mẫu bạn thích nhất để implement!</p>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Demo interactions
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

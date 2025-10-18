@@ -20,7 +20,7 @@ public class AdminSetupController {
     
     @GetMapping
     public String setupPage(Model model) {
-        return "admin-setup";
+        return "admin/setup";
     }
     
     @PostMapping("/create-admin")
@@ -45,6 +45,6 @@ public class AdminSetupController {
             e.printStackTrace();
         }
         
-        return "admin-setup";
+        return "admin/setup";
     }
 }

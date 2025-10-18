@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resy Style Demo - Book Eat</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --resy-black: #1A1A1A;
+            --resy-gray: #6B7280;
+            --resy-light-gray: #F3F4F6;
+            --resy-red: #DC2626;
+            --resy-green: #059669;
+            --resy-blue: #2563EB;
+            --resy-white: #FFFFFF;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.5;
+            color: var(--resy-black);
+            background: var(--resy-white);
+        }
+        
+        /* Header - Resy Style */
+        .header {
+            background: var(--resy-white);
+            border-bottom: 1px solid #E5E7EB;
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--resy-black);
+            text-decoration: none;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            margin: 0;
+        }
+        
+        .nav-menu a {
+            color: var(--resy-gray);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+        
+        .nav-menu a:hover {
+            color: var(--resy-black);
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .btn-resy {
+            background: var(--resy-black);
+            color: var(--resy-white);
+            padding: 8px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-resy:hover {
+            background: #333;
+            color: var(--resy-white);
+        }
+        
+        .btn-resy-outline {
+            background: transparent;
+            color: var(--resy-black);
+            border: 1px solid #E5E7EB;
+            padding: 8px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-resy-outline:hover {
+            background: var(--resy-light-gray);
+            color: var(--resy-black);
+        }
+        
+        /* Hero Section - Resy Style */
+        .hero {
+            background: var(--resy-white);
+            padding: 120px 0 60px;
+            text-align: center;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--resy-black);
+            margin-bottom: 1rem;
+            line-height: 1.1;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--resy-gray);
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Search Section - Resy Style */
+        .search-section {
+            background: var(--resy-light-gray);
+            padding: 2rem 0;
+        }
+        
+        .search-container {
+            background: var(--resy-white);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #E5E7EB;
+        }
+        
+        .search-form {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 1rem;
+            align-items: end;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--resy-black);
+            font-size: 14px;
+        }
+        
+        .form-control {
+            padding: 12px 16px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            background: var(--resy-white);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--resy-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .search-btn {
+            background: var(--resy-black);
+            color: var(--resy-white);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .search-btn:hover {
+            background: #333;
+        }
+        
+        /* Popular Section - Resy Style */
+        .popular-section {
+            padding: 4rem 0;
+            background: var(--resy-white);
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--resy-black);
+            margin-bottom: 0.5rem;
+        }
+        
+        .section-subtitle {
+            color: var(--resy-gray);
+            font-size: 1.1rem;
+        }
+        
+        .restaurant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .restaurant-card {
+            background: var(--resy-white);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #E5E7EB;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .restaurant-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .restaurant-image {
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .restaurant-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--resy-white);
+            color: var(--resy-black);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .restaurant-info {
+            padding: 1.5rem;
+        }
+        
+        .restaurant-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--resy-black);
+            margin-bottom: 0.5rem;
+        }
+        
+        .restaurant-cuisine {
+            color: var(--resy-gray);
+            font-size: 14px;
+            margin-bottom: 0.75rem;
+        }
+        
+        .restaurant-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stars {
+            color: #F59E0B;
+            font-size: 14px;
+        }
+        
+        .rating-text {
+            color: var(--resy-gray);
+            font-size: 14px;
+        }
+        
+        .restaurant-price {
+            color: var(--resy-black);
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .book-btn {
+            background: var(--resy-black);
+            color: var(--resy-white);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        
+        .book-btn:hover {
+            background: #333;
+        }
+        
+        /* Categories Section */
+        .categories-section {
+            background: var(--resy-light-gray);
+            padding: 4rem 0;
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .category-card {
+            background: var(--resy-white);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid #E5E7EB;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .category-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .category-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--resy-light-gray);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: var(--resy-black);
+            font-size: 1.5rem;
+        }
+        
+        .category-name {
+            font-weight: 600;
+            color: var(--resy-black);
+            margin-bottom: 0.5rem;
+        }
+        
+        .category-count {
+            color: var(--resy-gray);
+            font-size: 14px;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            background: var(--resy-black);
+            color: var(--resy-white);
+            padding: 4rem 0;
+            text-align: center;
+        }
+        
+        .cta-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .cta-subtitle {
+            font-size: 1.2rem;
+            color: #9CA3AF;
+            margin-bottom: 2rem;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-cta {
+            background: var(--resy-white);
+            color: var(--resy-black);
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-cta:hover {
+            background: #F3F4F6;
+            color: var(--resy-black);
+        }
+        
+        .btn-cta-outline {
+            background: transparent;
+            color: var(--resy-white);
+            border: 1px solid #374151;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-cta-outline:hover {
+            background: #374151;
+            color: var(--resy-white);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--resy-white);
+            border-top: 1px solid #E5E7EB;
+            padding: 3rem 0 1rem;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-section h4 {
+            font-weight: 600;
+            color: var(--resy-black);
+            margin-bottom: 1rem;
+        }
+        
+        .footer-section ul {
+            list-style: none;
+        }
+        
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .footer-section ul li a {
+            color: var(--resy-gray);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s ease;
+        }
+        
+        .footer-section ul li a:hover {
+            color: var(--resy-black);
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid #E5E7EB;
+            padding-top: 1rem;
+            text-align: center;
+            color: var(--resy-gray);
+            font-size: 14px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-menu {
+                display: none;
+            }
+            
+            .restaurant-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <a href="#" class="logo">Book Eat</a>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#home">Trang chủ</a></li>
+                    <li><a href="#restaurants">Nhà hàng</a></li>
+                    <li><a href="#about">Về chúng tôi</a></li>
+                    <li><a href="#contact">Liên hệ</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <a href="#" class="btn-resy-outline">Đăng nhập</a>
+                <a href="#" class="btn-resy">Đăng ký</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <h1 class="hero-title">Tìm nhà hàng hoàn hảo cho bạn</h1>
+            <p class="hero-subtitle">
+                Khám phá và đặt bàn tại những nhà hàng tốt nhất thành phố. 
+                Trải nghiệm ẩm thực tuyệt vời chỉ với vài cú click.
+            </p>
+        </div>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section">
+        <div class="container">
+            <div class="search-container">
+                <form class="search-form">
+                    <div class="form-group">
+                        <label for="location">Địa điểm</label>
+                        <input type="text" id="location" class="form-control" placeholder="Thành phố, quận, hoặc địa chỉ">
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Ngày</label>
+                        <input type="date" id="date" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="time">Giờ</label>
+                        <input type="time" id="time" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="guests">Số khách</label>
+                        <select id="guests" class="form-control">
+                            <option>2 người</option>
+                            <option>4 người</option>
+                            <option>6 người</option>
+                            <option>8+ người</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i>
+                        Tìm kiếm
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Popular Restaurants -->
+    <section class="popular-section" id="restaurants">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Nhà hàng phổ biến</h2>
+                <p class="section-subtitle">Những nhà hàng được yêu thích nhất</p>
+            </div>
+            
+            <div class="restaurant-grid">
+                <div class="restaurant-card">
+                    <div class="restaurant-image">
+                        <div class="restaurant-badge">Premium</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h3 class="restaurant-name">Le Bistrot</h3>
+                        <p class="restaurant-cuisine">French • Fine Dining</p>
+                        <div class="restaurant-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span class="rating-text">4.8 (124 đánh giá)</span>
+                        </div>
+                        <div class="restaurant-price">$$$$</div>
+                        <button class="book-btn">Đặt bàn</button>
+                    </div>
+                </div>
+                
+                <div class="restaurant-card">
+                    <div class="restaurant-image" style="background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 100%);">
+                        <div class="restaurant-badge">Popular</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h3 class="restaurant-name">Garden Terrace</h3>
+                        <p class="restaurant-cuisine">Asian • Casual</p>
+                        <div class="restaurant-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span class="rating-text">4.6 (89 đánh giá)</span>
+                        </div>
+                        <div class="restaurant-price">$$$</div>
+                        <button class="book-btn">Đặt bàn</button>
+                    </div>
+                </div>
+                
+                <div class="restaurant-card">
+                    <div class="restaurant-image" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+                        <div class="restaurant-badge">New</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h3 class="restaurant-name">Sky Lounge</h3>
+                        <p class="restaurant-cuisine">International • Rooftop</p>
+                        <div class="restaurant-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span class="rating-text">4.9 (67 đánh giá)</span>
+                        </div>
+                        <div class="restaurant-price">$$$$</div>
+                        <button class="book-btn">Đặt bàn</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Khám phá theo loại hình</h2>
+                <p class="section-subtitle">Tìm nhà hàng phù hợp với sở thích của bạn</p>
+            </div>
+            
+            <div class="category-grid">
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <h3 class="category-name">Fine Dining</h3>
+                    <p class="category-count">45 nhà hàng</p>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-pizza-slice"></i>
+                    </div>
+                    <h3 class="category-name">Casual Dining</h3>
+                    <p class="category-count">128 nhà hàng</p>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-coffee"></i>
+                    </div>
+                    <h3 class="category-name">Café & Bistro</h3>
+                    <p class="category-count">67 nhà hàng</p>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3 class="category-name">Rooftop</h3>
+                    <p class="category-count">23 nhà hàng</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Sẵn sàng đặt bàn?</h2>
+            <p class="cta-subtitle">Tải app Book Eat để đặt bàn mọi lúc, mọi nơi</p>
+            <div class="cta-buttons">
+                <a href="#" class="btn-cta">
+                    <i class="fab fa-apple"></i>
+                    Tải trên App Store
+                </a>
+                <a href="#" class="btn-cta-outline">
+                    <i class="fab fa-google-play"></i>
+                    Tải trên Google Play
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Book Eat</h4>
+                    <p style="color: var(--resy-gray); font-size: 14px; margin-bottom: 1rem;">
+                        Nền tảng đặt bàn nhà hàng hàng đầu Việt Nam. 
+                        Kết nối khách hàng với những nhà hàng tốt nhất.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4>Khám phá</h4>
+                    <ul>
+                        <li><a href="#">Nhà hàng gần đây</a></li>
+                        <li><a href="#">Nhà hàng phổ biến</a></li>
+                        <li><a href="#">Nhà hàng mới</a></li>
+                        <li><a href="#">Ưu đãi đặc biệt</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Hỗ trợ</h4>
+                    <ul>
+                        <li><a href="#">Trung tâm trợ giúp</a></li>
+                        <li><a href="#">Liên hệ</a></li>
+                        <li><a href="#">Điều khoản sử dụng</a></li>
+                        <li><a href="#">Chính sách bảo mật</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Liên hệ</h4>
+                    <ul>
+                        <li><a href="#">📞 1900 1234</a></li>
+                        <li><a href="#">✉️ support@bookeat.vn</a></li>
+                        <li><a href="#">📍 Hà Nội, Việt Nam</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Book Eat. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Form validation
+        document.querySelector('.search-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Tính năng tìm kiếm đang được phát triển!');
+        });
+
+        // Book button interactions
+        document.querySelectorAll('.book-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                alert('Chức năng đặt bàn đang được phát triển!');
+            });
+        });
+
+        // Category card interactions
+        document.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const categoryName = this.querySelector('.category-name').textContent;
+                alert(`Đang tìm kiếm nhà hàng loại: ${categoryName}`);
+            });
+        });
+    </script>
+</body>
+</html>
+
