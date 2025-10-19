@@ -1,0 +1,490 @@
+<!-- AI Search Hero Section -->
+<!-- File: src/main/resources/templates/fragments/ai-hero-search.html -->
+
+<div th:fragment="ai-hero-search" class="ai-hero-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <!-- AI Search Title -->
+                <div class="ai-hero-content text-center mb-5">
+                    <h1 class="ai-hero-title">
+                        <i class="fas fa-robot me-3"></i>
+                        Tìm nhà hàng với AI
+                    </h1>
+                    <p class="ai-hero-subtitle">
+                        Chỉ cần mô tả những gì bạn muốn, AI sẽ tìm nhà hàng phù hợp nhất cho bạn
+                    </p>
+                </div>
+
+                <!-- AI Search Box -->
+                <div class="ai-search-container">
+                    <form id="aiSearchForm" class="ai-search-form" onsubmit="return false;">
+                        <div class="ai-search-input-group">
+                            <div class="ai-search-input-wrapper">
+                                <input 
+                                    type="text" 
+                                    id="aiSearchQuery" 
+                                    name="query"
+                                    class="ai-search-input" 
+                                    placeholder="Mô tả những gì bạn muốn... Ví dụ: Tôi muốn ăn sushi gần đây, nhà hàng lãng mạn cho buổi hẹn hò, đồ ăn Việt Nam giá rẻ, quán cafe đẹp để làm việc..."
+                                    autocomplete="off"
+                                    maxlength="500"
+                                >
+                                <div class="ai-search-suggestions" id="aiSearchSuggestions">
+                                    <!-- Suggestions will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="ai-search-btn" id="aiSearchBtn">
+                                <i class="fas fa-search me-2"></i>
+                                <span class="btn-text">Tìm kiếm</span>
+                                <div class="ai-loading-spinner" style="display: none;">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+
+                <!-- AI Search Results Container -->
+                <div id="aiSearchResults" class="ai-search-results" style="display: none;">
+                    <!-- Results will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Hero Section Styles -->
+<style>
+.ai-hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    padding: 100px 0;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+}
+
+.ai-hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.ai-hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.ai-hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, #ffffff, #f0f0f0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+}
+
+.ai-hero-subtitle {
+    font-size: 1.4rem;
+    opacity: 0.95;
+    margin-bottom: 0;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.ai-search-container {
+    position: relative;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px);
+    border-radius: 30px;
+    padding: 50px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.1);
+    max-width: 1000px;
+    margin: 0 auto;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+    animation: slideUpFade 0.8s ease-out;
+}
+
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ai-search-input-group {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 0;
+    align-items: stretch;
+    position: relative;
+}
+
+.ai-search-input-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.ai-search-input {
+    width: 100%;
+    padding: 25px 30px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 1.3rem;
+    font-weight: 400;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 70px;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+}
+
+.ai-search-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2), 0 10px 30px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
+}
+
+.ai-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.ai-search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+}
+
+.ai-suggestion-item {
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+    transition: background-color 0.2s ease;
+}
+
+.ai-suggestion-item:hover {
+    background-color: #f8f9fa;
+}
+
+.ai-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.ai-search-btn {
+    padding: 25px 40px;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e, #ffa8a8);
+    border: none;
+    border-radius: 25px;
+    color: white;
+    font-weight: 700;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    min-width: 200px;
+    height: 70px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+    backdrop-filter: blur(10px);
+}
+
+.ai-search-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(255, 107, 107, 0.6);
+    background: linear-gradient(135deg, #ff5252, #ff7979, #ff9f9f);
+}
+
+.ai-search-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.ai-loading-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+
+.ai-search-results {
+    margin-top: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+    .ai-hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .ai-hero-subtitle {
+        font-size: 1.2rem;
+    }
+    
+    .ai-search-container {
+        padding: 35px;
+        margin: 0 20px;
+        border-radius: 25px;
+    }
+    
+    .ai-search-input-group {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .ai-search-input {
+        height: 60px;
+        font-size: 1.2rem;
+        padding: 20px 25px;
+        border-radius: 20px;
+    }
+    
+    .ai-search-btn {
+        width: 100%;
+        height: 60px;
+        font-size: 1.2rem;
+        padding: 20px 30px;
+        border-radius: 20px;
+        min-width: auto;
+    }
+}
+</style>
+
+<!-- AI Hero Section JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const aiSearchForm = document.getElementById('aiSearchForm');
+    const aiSearchInput = document.getElementById('aiSearchQuery');
+    const aiSearchBtn = document.getElementById('aiSearchBtn');
+    const aiSearchSuggestions = document.getElementById('aiSearchSuggestions');
+    const aiSearchResults = document.getElementById('aiSearchResults');
+
+    // AI Search form submission
+    aiSearchForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        performAISearch();
+    });
+    
+    // AI Search button click
+    aiSearchBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('🔘 Button clicked!');
+        performAISearch();
+    });
+    
+    // Test if JavaScript is working
+    console.log('✅ AI Search JavaScript loaded successfully');
+    console.log('🔍 Elements found:', {
+        form: !!aiSearchForm,
+        input: !!aiSearchInput,
+        button: !!aiSearchBtn,
+        results: !!aiSearchResults
+    });
+    
+    // Perform AI search function
+    function performAISearch() {
+        console.log('🔍 AI Search started');
+        const query = aiSearchInput.value.trim();
+        console.log('Query:', query);
+        if (!query) {
+            console.log('❌ Empty query, returning');
+            return;
+        }
+
+        console.log('✅ Starting AI search for:', query);
+        
+        // Show loading state
+        aiSearchBtn.disabled = true;
+        aiSearchBtn.querySelector('.btn-text').style.display = 'none';
+        aiSearchBtn.querySelector('.ai-loading-spinner').style.display = 'block';
+
+        // Hide suggestions
+        aiSearchSuggestions.style.display = 'none';
+
+        console.log('📡 Making request to /ai/restaurants/search');
+        
+        // Make AI search request
+        fetch('/ai/restaurants/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                query: query,
+                source: 'web',
+                maxResults: 5
+            })
+        })
+        .then(response => {
+            console.log('📥 Response received:', response.status, response.statusText);
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 AI Search Response:', data);
+            displayAIResults(data);
+        })
+        .catch(error => {
+            console.error('❌ AI Search Error:', error);
+            showAIError('Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại.');
+        })
+        .finally(() => {
+            console.log('🏁 AI Search completed');
+            // Hide loading state
+            aiSearchBtn.disabled = false;
+            aiSearchBtn.querySelector('.btn-text').style.display = 'inline';
+            aiSearchBtn.querySelector('.ai-loading-spinner').style.display = 'none';
+        });
+    }
+
+    // Display AI search results
+    function displayAIResults(data) {
+        console.log('🎨 Displaying AI results:', data);
+        
+        if (!data.recommendations || data.recommendations.length === 0) {
+            console.log('❌ No recommendations found');
+            aiSearchResults.innerHTML = `
+                <div class="text-center text-white">
+                    <i class="fas fa-search fa-3x mb-3 opacity-50"></i>
+                    <h4>Không tìm thấy nhà hàng phù hợp</h4>
+                    <p>Hãy thử tìm kiếm với từ khóa khác hoặc mô tả cụ thể hơn.</p>
+                    <p><small>Debug: Total found = ${data.totalFound}, Explanation = ${data.explanation}</small></p>
+                </div>
+            `;
+        } else {
+            console.log('✅ Found', data.recommendations.length, 'recommendations');
+            let resultsHTML = `
+                <div class="ai-results-header mb-4">
+                    <h3 class="text-white mb-2">
+                        <i class="fas fa-robot me-2"></i>
+                        AI đã tìm thấy ${data.totalFound} nhà hàng phù hợp
+                    </h3>
+                    <p class="text-white-50 mb-0">${data.explanation}</p>
+                </div>
+                <div class="row">
+            `;
+
+            data.recommendations.forEach(restaurant => {
+                resultsHTML += `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="ai-restaurant-card">
+                            <div class="restaurant-image">
+                                <img src="${restaurant.imageUrl || '/images/default-restaurant.jpg'}" 
+                                     alt="${restaurant.restaurantName}" 
+                                     class="img-fluid">
+                                <div class="restaurant-badge">
+                                    <i class="fas fa-star"></i>
+                                    ${restaurant.rating || 'N/A'}
+                                </div>
+                            </div>
+                            <div class="restaurant-content">
+                                <h5 class="restaurant-name">${restaurant.restaurantName}</h5>
+                                <p class="restaurant-cuisine">
+                                    <i class="fas fa-utensils me-2"></i>
+                                    ${restaurant.cuisineType || 'Đa dạng'}
+                                </p>
+                                <p class="restaurant-price">
+                                    <i class="fas fa-tag me-2"></i>
+                                    ${restaurant.priceRange || 'Liên hệ'}
+                                </p>
+                                <p class="restaurant-distance">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    ${restaurant.distanceKm ? restaurant.distanceKm.toFixed(1) + 'km' : 'Gần đây'}
+                                </p>
+                                <div class="restaurant-actions">
+                                    <a href="${restaurant.bookingUrl || '#'}" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fas fa-calendar-plus me-2"></i>
+                                        Đặt bàn
+                                    </a>
+                                    <a href="${restaurant.viewDetailsUrl || '#'}" 
+                                       class="btn btn-outline-light btn-sm">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Chi tiết
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            resultsHTML += '</div>';
+            aiSearchResults.innerHTML = resultsHTML;
+        }
+
+        aiSearchResults.style.display = 'block';
+        aiSearchResults.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Show AI error message
+    function showAIError(message) {
+        aiSearchResults.innerHTML = `
+            <div class="text-center text-white">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+                <h4>Lỗi tìm kiếm AI</h4>
+                <p>${message}</p>
+            </div>
+        `;
+        aiSearchResults.style.display = 'block';
+    }
+
+    // Input suggestions (optional)
+    aiSearchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        if (query.length > 2) {
+            // You can implement suggestion logic here
+            // For now, we'll hide suggestions
+            aiSearchSuggestions.style.display = 'none';
+        }
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!aiSearchInput.contains(e.target) && !aiSearchSuggestions.contains(e.target)) {
+            aiSearchSuggestions.style.display = 'none';
+        }
+    });
+});
+</script>

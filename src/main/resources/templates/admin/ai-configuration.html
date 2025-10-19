@@ -1,0 +1,706 @@
+<!-- AI Configuration Dashboard -->
+<!-- File: src/main/resources/templates/admin/ai-configuration.html -->
+
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Configuration - Book Eat Admin</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Custom Admin CSS -->
+    <style>
+        .ai-config-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .ai-config-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+        
+        .ai-config-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .ai-config-body {
+            padding: 25px;
+        }
+        
+        .ai-status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .ai-status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .ai-status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .ai-metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .ai-metric-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+        }
+        
+        .ai-metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .ai-metric-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+        
+        .ai-metric-change {
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        
+        .ai-metric-change.positive {
+            color: #28a745;
+        }
+        
+        .ai-metric-change.negative {
+            color: #dc3545;
+        }
+        
+        .ai-config-form {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .ai-config-section {
+            margin-bottom: 30px;
+        }
+        
+        .ai-config-section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .ai-toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .ai-toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .ai-toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .ai-toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .ai-toggle-slider {
+            background-color: #667eea;
+        }
+        
+        input:checked + .ai-toggle-slider:before {
+            transform: translateX(26px);
+        }
+        
+        .ai-chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .ai-alert {
+            border-radius: 12px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        
+        .ai-alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .ai-alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .ai-alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header Fragment -->
+    <div th:insert="~{fragments/header :: site-header}"></div>
+    
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#overview">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Tổng quan
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#configuration">
+                                <i class="fas fa-cog me-2"></i>
+                                Cấu hình
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#analytics">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Phân tích
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#monitoring">
+                                <i class="fas fa-monitor me-2"></i>
+                                Giám sát
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-robot me-2"></i>
+                        AI Configuration Dashboard
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
+                                <i class="fas fa-sync-alt me-1"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Status Overview -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card ai-config-card">
+                            <div class="ai-config-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    AI System Status
+                                </h5>
+                            </div>
+                            <div class="ai-config-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="ai-status-indicator ai-status-active">
+                                            <i class="fas fa-check-circle"></i>
+                                            AI Enabled
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="ai-status-indicator ai-status-active">
+                                            <i class="fas fa-brain"></i>
+                                            Learning Active
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="ai-status-indicator ai-status-active">
+                                            <i class="fas fa-chart-line"></i>
+                                            Analytics On
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="ai-status-indicator ai-status-active">
+                                            <i class="fas fa-shield-alt"></i>
+                                            Rate Limiting
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Metrics -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="ai-metric-card">
+                            <div class="ai-metric-value" id="totalQueries">1,234</div>
+                            <div class="ai-metric-label">Total Queries</div>
+                            <div class="ai-metric-change positive">
+                                <i class="fas fa-arrow-up"></i> +12% this week
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="ai-metric-card">
+                            <div class="ai-metric-value" id="avgResponseTime">850ms</div>
+                            <div class="ai-metric-label">Avg Response Time</div>
+                            <div class="ai-metric-change negative">
+                                <i class="fas fa-arrow-down"></i> -5% this week
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="ai-metric-card">
+                            <div class="ai-metric-value" id="successRate">94.2%</div>
+                            <div class="ai-metric-label">Success Rate</div>
+                            <div class="ai-metric-change positive">
+                                <i class="fas fa-arrow-up"></i> +2% this week
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="ai-metric-card">
+                            <div class="ai-metric-value" id="totalCost">$45.67</div>
+                            <div class="ai-metric-label">Total Cost (USD)</div>
+                            <div class="ai-metric-change positive">
+                                <i class="fas fa-arrow-up"></i> +8% this week
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Configuration Form -->
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card ai-config-card">
+                            <div class="ai-config-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-cog me-2"></i>
+                                    AI Configuration Settings
+                                </h5>
+                            </div>
+                            <div class="ai-config-body">
+                                <form id="aiConfigForm">
+                                    <!-- Model Configuration -->
+                                    <div class="ai-config-section">
+                                        <h6 class="ai-config-section-title">Model Configuration</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">OpenAI Model</label>
+                                                <select class="form-select" name="openai_model">
+                                                    <option value="gpt-4">GPT-4</option>
+                                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Max Tokens</label>
+                                                <input type="number" class="form-control" name="max_tokens" value="1000" min="100" max="4000">
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Temperature</label>
+                                                <input type="range" class="form-range" name="temperature" min="0" max="1" step="0.1" value="0.7">
+                                                <div class="text-center">
+                                                    <span id="temperatureValue">0.7</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Max Recommendations</label>
+                                                <input type="number" class="form-control" name="max_recommendations" value="5" min="1" max="20">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Feature Toggles -->
+                                    <div class="ai-config-section">
+                                        <h6 class="ai-config-section-title">Feature Toggles</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="aiEnabled" checked>
+                                                    <label class="form-check-label" for="aiEnabled">
+                                                        AI Search Enabled
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="aiChatEnabled" checked>
+                                                    <label class="form-check-label" for="aiChatEnabled">
+                                                        AI Chat Enabled
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="aiLearningEnabled" checked>
+                                                    <label class="form-check-label" for="aiLearningEnabled">
+                                                        Learning Enabled
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="aiAnalyticsEnabled" checked>
+                                                    <label class="form-check-label" for="aiAnalyticsEnabled">
+                                                        Analytics Enabled
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Rate Limiting -->
+                                    <div class="ai-config-section">
+                                        <h6 class="ai-config-section-title">Rate Limiting</h6>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Per User (per hour)</label>
+                                                <input type="number" class="form-control" name="rate_limit_per_user" value="50" min="1" max="1000">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Per Hour (global)</label>
+                                                <input type="number" class="form-control" name="rate_limit_per_hour" value="1000" min="100" max="10000">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Per Day (global)</label>
+                                                <input type="number" class="form-control" name="rate_limit_per_day" value="10000" min="1000" max="100000">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Quality Control -->
+                                    <div class="ai-config-section">
+                                        <h6 class="ai-config-section-title">Quality Control</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Min Confidence Threshold</label>
+                                                <input type="range" class="form-range" name="min_confidence_threshold" min="0" max="1" step="0.1" value="0.6">
+                                                <div class="text-center">
+                                                    <span id="confidenceValue">0.6</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Diversity Threshold</label>
+                                                <input type="range" class="form-range" name="diversity_threshold" min="0" max="1" step="0.1" value="0.7">
+                                                <div class="text-center">
+                                                    <span id="diversityValue">0.7</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Save Button -->
+                                    <div class="text-end">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-2"></i>
+                                            Save Configuration
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AI Analytics Chart -->
+                    <div class="col-md-4">
+                        <div class="card ai-config-card">
+                            <div class="ai-config-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-line me-2"></i>
+                                    AI Usage Trends
+                                </h5>
+                            </div>
+                            <div class="ai-config-body">
+                                <div class="ai-chart-container">
+                                    <canvas id="aiUsageChart" width="400" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- AI Alerts -->
+                        <div class="mt-4">
+                            <div class="ai-alert ai-alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>High API Usage:</strong> 95% of daily limit reached
+                            </div>
+                            <div class="ai-alert ai-alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Model Update:</strong> GPT-4 Turbo available
+                            </div>
+                            <div class="ai-alert ai-alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>System Healthy:</strong> All services running normally
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- AI Configuration JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize range sliders
+            initializeRangeSliders();
+            
+            // Initialize chart
+            initializeChart();
+            
+            // Load current configuration
+            loadCurrentConfiguration();
+            
+            // Handle form submission
+            document.getElementById('aiConfigForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveConfiguration();
+            });
+        });
+        
+        function initializeRangeSliders() {
+            // Temperature slider
+            const temperatureSlider = document.querySelector('input[name="temperature"]');
+            const temperatureValue = document.getElementById('temperatureValue');
+            
+            temperatureSlider.addEventListener('input', function() {
+                temperatureValue.textContent = this.value;
+            });
+            
+            // Confidence threshold slider
+            const confidenceSlider = document.querySelector('input[name="min_confidence_threshold"]');
+            const confidenceValue = document.getElementById('confidenceValue');
+            
+            confidenceSlider.addEventListener('input', function() {
+                confidenceValue.textContent = this.value;
+            });
+            
+            // Diversity threshold slider
+            const diversitySlider = document.querySelector('input[name="diversity_threshold"]');
+            const diversityValue = document.getElementById('diversityValue');
+            
+            diversitySlider.addEventListener('input', function() {
+                diversityValue.textContent = this.value;
+            });
+        }
+        
+        function initializeChart() {
+            const ctx = document.getElementById('aiUsageChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'AI Queries',
+                        data: [120, 150, 180, 200, 220, 190, 160],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Success Rate (%)',
+                        data: [92, 94, 96, 95, 97, 94, 93],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+        }
+        
+        function loadCurrentConfiguration() {
+            // Load current AI configuration from server
+            fetch('/admin/ai/configuration')
+                .then(response => response.json())
+                .then(data => {
+                    // Populate form with current values
+                    Object.keys(data).forEach(key => {
+                        const element = document.querySelector(`[name="${key}"]`);
+                        if (element) {
+                            if (element.type === 'checkbox') {
+                                element.checked = data[key];
+                            } else {
+                                element.value = data[key];
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Failed to load configuration:', error);
+                });
+        }
+        
+        function saveConfiguration() {
+            const formData = new FormData(document.getElementById('aiConfigForm'));
+            const config = {};
+            
+            for (let [key, value] of formData.entries()) {
+                config[key] = value;
+            }
+            
+            // Add checkbox values
+            config.ai_enabled = document.getElementById('aiEnabled').checked;
+            config.ai_chat_enabled = document.getElementById('aiChatEnabled').checked;
+            config.ai_learning_enabled = document.getElementById('aiLearningEnabled').checked;
+            config.ai_analytics_enabled = document.getElementById('aiAnalyticsEnabled').checked;
+            
+            fetch('/admin/ai/configuration', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(config)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Configuration saved successfully!', 'success');
+                } else {
+                    showNotification('Failed to save configuration', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Failed to save configuration:', error);
+                showNotification('Failed to save configuration', 'error');
+            });
+        }
+        
+        function refreshData() {
+            // Refresh metrics and charts
+            fetch('/admin/ai/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalQueries').textContent = data.totalQueries.toLocaleString();
+                    document.getElementById('avgResponseTime').textContent = data.avgResponseTime + 'ms';
+                    document.getElementById('successRate').textContent = data.successRate + '%';
+                    document.getElementById('totalCost').textContent = '$' + data.totalCost.toFixed(2);
+                })
+                .catch(error => {
+                    console.error('Failed to refresh data:', error);
+                });
+        }
+        
+        function showNotification(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const alert = document.createElement('div');
+            alert.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            alert.style.cssText = `
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                min-width: 300px;
+            `;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
