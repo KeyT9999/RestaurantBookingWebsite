@@ -73,6 +73,16 @@ body {
     z-index: 1000;
 }
 
+/* When mini-header is hidden (customer logged in), add top margin to main header */
+body:not(:has(.mini-header)) .header {
+    margin-top: 0;
+}
+
+/* Alternative: When mini-header is present, ensure proper spacing */
+.mini-header + .header {
+    margin-top: 0;
+}
+
 .header .container {
     display: flex;
     justify-content: space-between;
@@ -102,6 +112,20 @@ body {
 
 .nav-menu a:hover {
     color: var(--resy-black);
+}
+
+/* Active navigation item */
+.nav-menu a.active {
+    background: var(--resy-black);
+    color: var(--resy-white);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
+}
+
+.nav-menu a.active:hover {
+    background: var(--resy-black);
+    color: var(--resy-white);
 }
 
 .header-actions {
@@ -141,6 +165,20 @@ body {
 .btn-resy-outline:hover {
     background: var(--resy-light-gray);
     color: var(--resy-black);
+}
+
+/* Icon-only button (like favorites heart) */
+.btn-resy-outline.icon-only {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-resy-outline i:only-child {
+    margin: 0;
 }
 
 /* User Actions */
@@ -1036,6 +1074,17 @@ body {
     
     .user-dropdown .dropdown-menu {
         min-width: 180px;
+    }
+    
+    .btn-resy-outline.icon-only {
+        width: 36px;
+        height: 36px;
+    }
+    
+    /* Mobile active navigation */
+    .nav-menu a.active {
+        padding: 6px 12px;
+        font-size: 14px;
     }
 }
 
