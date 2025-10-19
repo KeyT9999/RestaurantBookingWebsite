@@ -1,10 +1,9 @@
 spring:
   datasource:
-    # Luôn bind vào DATABASE_URL, fallback JDBC_DATABASE_URL khi chạy local
-    url: ${DATABASE_URL:${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/bookeat_db}}
+    url: ${DATABASE_URL}
     driver-class-name: org.postgresql.Driver
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:password}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
@@ -14,8 +13,6 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
     show-sql: false
-    # Tối ưu hiệu năng production
-    open-in-view: false
 
   # Email configuration for production
   mail:
@@ -45,73 +42,19 @@ app:
     max-file-size: 5MB
     max-request-size: 5MB
 
-# Payment configuration
-payment:
-  payos:
-    client-id: ${PAYOS_CLIENT_ID}
-    api-key: ${PAYOS_API_KEY}
-    checksum-key: ${PAYOS_CHECKSUM_KEY}
-    endpoint: ${PAYOS_ENDPOINT:https://api-merchant.payos.vn}
-    return-url: ${APP_BASE_URL}/payment/payos/return
-    cancel-url: ${APP_BASE_URL}/payment/payos/cancel
-    webhook-url: ${APP_BASE_URL}/payment/api/payos/webhook
-
-# Cloudinary Configuration - với fallback để tránh lỗi khi không có config
-cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
-  api-key: ${CLOUDINARY_API_KEY:}
-  api-secret: ${CLOUDINARY_API_SECRET:}
-  secure: ${CLOUDINARY_SECURE:true}
-  # Tắt Cloudinary nếu không có config
-  enabled: ${CLOUDINARY_ENABLED:false}
-
-# Logging for production - tối ưu startup time
+# Logging for production
 logging:
   level:
     org.hibernate.SQL: WARN
-    org.springframework.security: WARN
+    org.springframework.security: INFO
     com.example.booking: INFO
     org.springframework.web: WARN
-    org.springframework.boot: WARN
-    org.springframework.context: WARN
-    # Giảm log noise
-    org.springframework.boot.autoconfigure: ERROR
-    org.springframework.boot.context: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-  # Tắt file logging để tăng tốc
-  file:
-    enabled: false
 
-# Server configuration - Luôn bind vào cổng do Render cấp, fallback 8080 khi chạy local
+# Server configuration
 server:
-  port: ${PORT:8080}
+  port: ${PORT:8081}
   error:
     include-message: never
-    include-binding-errors: never
-  # Tối ưu startup time
-  tomcat:
-    threads:
-      max: 200
-      min-spare: 10
-    connection-timeout: 20000
-
-# Management endpoints for health check - chỉ expose health và info
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-      base-path: /actuator
-  endpoint:
-    health:
-      show-details: never
-      show-components: never
-    info:
-      enabled: true
-  # Tối ưu startup
-  health:
-    defaults:
-      enabled: true
-    diskspace:
-      enabled: false 
+    include-binding-errors: never 

@@ -2,10 +2,9 @@ spring:
   profiles:
     active: dev
   datasource:
-    url: ${JDBC_DATABASE_URL:jdbc:postgresql://localhost:5432/bookeat_db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:password}
-    driver-class-name: org.postgresql.Driver
+    url: ${JDBC_DATABASE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   
   thymeleaf:
     cache: false
@@ -21,26 +20,18 @@ spring:
   
   servlet:
     multipart:
-      max-file-size: 20MB
-      max-request-size: 2020MB
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 server:
-  port: 8080
+  port: 8081
   
 app:
-  base-url: http://localhost:8080
+  base-url: http://localhost:8081
   upload:
     dir: uploads
-    max-file-size: 20MB
-    max-request-size: 2020MB
-    use-cloudinary: true  # Set to true when Cloudinary is configured
-
-# Cloudinary Configuration
-cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
-  api-key: ${CLOUDINARY_API_KEY:}
-  api-secret: ${CLOUDINARY_API_SECRET:}
-  secure: ${CLOUDINARY_SECURE:true}
+    max-file-size: 5MB
+    max-request-size: 5MB
 
 # Payment configuration
 payment:

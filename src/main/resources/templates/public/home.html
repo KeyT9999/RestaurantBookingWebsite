@@ -1,490 +1,534 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Eat – Đặt bàn online, giữ chỗ ngay</title>
-    <meta name="description" content="Book Eat – Đặt bàn online, giữ chỗ ngay. Tìm nhà hàng, chọn bàn, xác nhận trong vài giây.">
-    <meta name="keywords" content="dat ban, restaurant booking, giu cho, dat ban online, book eat">
-    
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="Book Eat – Đặt bàn online, giữ chỗ ngay">
-    <meta property="og:description" content="Book Eat – Đặt bàn online, giữ chỗ ngay. Tìm nhà hàng, chọn bàn, xác nhận trong vài giây.">
-    <meta property="og:image" content="https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80">
-    <meta property="og:url" content="https://bookeat.example">
-    <meta property="og:type" content="website">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Custom Luxury CSS -->
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    <!-- Home Resy Style CSS -->
+    <link th:href="@{/css/home-resy.css}" rel="stylesheet">
     
-    <!-- Gooey Navigation CSS -->
-    <link th:href="@{/css/gooey-nav.css}" rel="stylesheet">
 </head>
-
 <body>
-    <!-- Header Fragment -->
-    <div th:insert="~{fragments/header :: site-header}"></div>
-    
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Flash Messages -->
+    <!-- Header -->
+    <!-- Mini Header -->
+    <div class="mini-header">
         <div class="container">
-            <div th:insert="~{fragments/flash :: flash}"></div>
+            <div class="mini-header-content">
+                <div class="mini-header-left">
+                    <!-- Có thể thêm thông tin khác ở đây -->
+                </div>
+                <div class="mini-header-right">
+                    <a th:href="@{/restaurant-owner/dashboard}" class="for-restaurants" sec:authorize="hasRole('RESTAURANT_OWNER')">For Restaurants</a>
+                    <a th:href="@{/auth/register}" class="for-restaurants" sec:authorize="!isAuthenticated()">For Restaurants</a>
+                </div>
+            </div>
         </div>
-        
-        
-
-        <!-- Featured Restaurants Carousel Section -->
-        <section class="restaurants-carousel" id="restaurants">
-            <div class="container-fluid px-0">
-                <!-- Bootstrap Carousel - Image Only -->
-                <div id="restaurantBootstrapCarousel" class="carousel slide image-only-carousel" data-bs-ride="carousel" data-bs-interval="6000">
-                    <div class="carousel-inner">
-                        <!-- Restaurant Image 1 -->
-                        <div class="carousel-item active">
-                            <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
-                                 class="d-block w-100 carousel-image" alt="Aurelius Downtown">
-                            <div class="carousel-caption">
-                                <div class="caption-content">
-                                    <h3 class="restaurant-name">Aurelius Downtown</h3>
-                                    <p class="restaurant-description">Không gian ẩm thực sang trọng với view đẹp và menu đa dạng</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Restaurant Image 2 -->
-                        <div class="carousel-item">
-                            <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
-                                 class="d-block w-100 carousel-image" alt="Aurelius Garden">
-                            <div class="carousel-caption">
-                                <div class="caption-content">
-                                    <h3 class="restaurant-name">Aurelius Garden</h3>
-                                    <p class="restaurant-description">Thiên đường ẩm thực giữa lòng thành phố với không gian xanh mát</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Restaurant Image 3 -->
-                        <div class="carousel-item">
-                            <img src="https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
-                                 class="d-block w-100 carousel-image" alt="Aurelius Rooftop">
-                            <div class="carousel-caption">
-                                <div class="caption-content">
-                                    <h3 class="restaurant-name">Aurelius Rooftop</h3>
-                                    <p class="restaurant-description">Trải nghiệm ẩm thực cao cấp với tầm nhìn toàn cảnh thành phố</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    </div>
+    <!-- main header -->
+    <header class="header">
+        <div class="container">
+            <a th:href="@{/}" class="logo">Book Eat</a>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#home">Trang chủ</a></li>
+                    <li><a th:href="@{/restaurants}">Nhà hàng</a></li>
+                    <li><a th:href="@{/about}">Về chúng tôi</a></li>
+                    <li><a th:href="@{/contact}">Liên hệ</a></li>
+                </ul>
+            </nav>
+            <div class="header-actions">
+                <!-- Guest User Actions -->
+                <a th:href="@{/login}" class="btn-resy-outline" sec:authorize="!isAuthenticated()">Đăng nhập</a>
+                <a th:href="@{/auth/register}" class="btn-resy" sec:authorize="!isAuthenticated()">Đăng ký</a>
+                
+                <!-- Authenticated User Actions -->
+                <div sec:authorize="isAuthenticated()" class="user-actions">
+                    <!-- Customer Actions -->
+                    <a th:href="@{/customer/favorites}" class="btn-resy-outline" sec:authorize="hasRole('CUSTOMER')">
+                        <i class="fas fa-heart"></i>
+                    </a>
                     
-                    <!-- Navigation Arrows -->
-                    <button class="carousel-control-prev" type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Previous</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Next</span>
-                    </button>
+                    <!-- Restaurant Owner Dashboard -->
+                    <a th:href="@{/restaurant-owner/dashboard}" class="btn-resy" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
                     
-                    <!-- Dots Indicator -->
-                    <div class="carousel-indicators">
-                        <button type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                        <button type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                        <button type="button" data-bs-target="#restaurantBootstrapCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                    <!-- Admin Dashboard -->
+                    <a th:href="@{/admin/dashboard}" class="btn-resy" sec:authorize="hasRole('ADMIN')">
+                        <i class="fas fa-cog"></i>
+                        Admin
+                    </a>
+                    
+                    <!-- User Profile Dropdown -->
+                    <div class="user-dropdown">
+                        <button class="btn-resy-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i>
+                            <span sec:authentication="name">User</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/auth/profile}">
+                                    <i class="fas fa-user me-2"></i>
+                                    Profile
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('CUSTOMER')">
+                                <a class="dropdown-item" th:href="@{/customer/favorites}">
+                                    <i class="fas fa-heart me-2"></i>
+                                    Favorites
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                <a class="dropdown-item" th:href="@{/restaurant-owner/dashboard}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    Restaurant Dashboard
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('ADMIN')">
+                                <a class="dropdown-item" th:href="@{/admin/dashboard}">
+                                    <i class="fas fa-cog me-2"></i>
+                                    Admin Dashboard
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/logout}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    Đăng xuất
+                                </a>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </header>
 
-        <!-- Testimonials Section -->
-        <section class="testimonials" id="testimonials">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 text-center mb-5">
-                        <h2 class="section__title" data-aos="fade-up">Khách hàng nói gì</h2>
-                        <p class="section__subtitle" data-aos="fade-up" data-aos-delay="100">Trải nghiệm từ những thực khách đã ghé thăm</p>
+    <!-- Video Hero Section -->
+    <section class="video-hero" id="home">
+        <div class="video-background">
+            <!-- YouTube Video Embed -->
+            <iframe 
+                src="https://www.youtube.com/embed/xPPLbEFbCAo?autoplay=1&mute=1&loop=1&playlist=xPPLbEFbCAo&controls=0&showinfo=0&rel=0&modestbranding=1"
+                frameborder="0"
+                allow="autoplay; encrypted-media"
+                allowfullscreen>
+            </iframe>
+        </div>
+        <div class="video-overlay">
+            <div class="video-content">
+                <h1 class="video-title">Khám phá ẩm thực tại BootEat</h1>
+                <p class="video-subtitle">Đặt bàn tại những nhà hàng tốt nhất với Book Eat</p>
+                
+                <div class="video-buttons">
+                    <a th:href="@{/restaurants}" class="btn-video">
+                        <i class="fas fa-utensils"></i>
+                        Khám phá ngay
+                    </a>
+                    <a href="#intro" class="btn-video-outline">
+                        <i class="fas fa-play"></i>
+                        Xem thêm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Intro Section -->
+    <section class="intro-section" id="intro">
+        <div class="container">
+            <div class="intro-container">
+                <div class="intro-content">
+                    <h2>Nền tảng đặt bàn nhà hàng hàng đầu Việt Nam</h2>
+                    <p>
+                        Book Eat là giải pháp đặt bàn thông minh, kết nối bạn với hàng ngàn nhà hàng chất lượng cao 
+                        trên toàn quốc. Chúng tôi cam kết mang đến trải nghiệm ẩm thực tuyệt vời nhất cho mọi thực khách.
+                    </p>
+                    <p>
+                        Với công nghệ hiện đại và dịch vụ chuyên nghiệp, việc đặt bàn chưa bao giờ dễ dàng đến thế. 
+                        Chỉ vài cú click, bạn đã có thể đảm bảo chỗ ngồi tại nhà hàng yêu thích.
+                    </p>
+                    
+                    <div class="intro-features">
+                        <div class="intro-feature">
+                            <div class="intro-feature-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <div class="intro-feature-text">
+                                <h4>Đặt bàn nhanh chóng</h4>
+                                <p>Xác nhận tức thì trong vài giây</p>
+                            </div>
+                        </div>
+                        
+                        <div class="intro-feature">
+                            <div class="intro-feature-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="intro-feature-text">
+                                <h4>An toàn & Bảo mật</h4>
+                                <p>Thông tin được mã hóa bảo mật</p>
+                            </div>
+                        </div>
+                        
+                        <div class="intro-feature">
+                            <div class="intro-feature-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="intro-feature-text">
+                                <h4>Chất lượng đảm bảo</h4>
+                                <p>Nhà hàng được chọn lọc kỹ càng</p>
+                            </div>
+                        </div>
+                        
+                        <div class="intro-feature">
+                            <div class="intro-feature-icon">
+                                <i class="fas fa-headset"></i>
+                            </div>
+                            <div class="intro-feature-text">
+                                <h4>Hỗ trợ 24/7</h4>
+                                <p>Luôn sẵn sàng hỗ trợ bạn</p>
+                            </div>
+                        </div>
+                     </div>
+                 </div>
+                 
+                 <div class="intro-image">
+                     <!-- YouTube Video Embed -->
+                     <iframe 
+                         src="https://www.youtube.com/embed/lcU3pruVyUw?autoplay=1&mute=1&loop=1&playlist=lcU3pruVyUw&controls=0&showinfo=0&rel=0&modestbranding=1"
+                         frameborder="0"
+                         allow="autoplay; encrypted-media"
+                         allowfullscreen>
+                     </iframe>
+                     <div class="intro-video-overlay"></div>
+                     <div class="intro-stats">
+                         <div class="intro-stat">
+                             <span class="intro-stat-number">1,200+</span>
+                             <span class="intro-stat-label">Nhà hàng</span>
+                         </div>
+                         <div class="intro-stat">
+                             <span class="intro-stat-number">50K+</span>
+                             <span class="intro-stat-label">Khách hàng</span>
+                         </div>
+                         <div class="intro-stat">
+                             <span class="intro-stat-number">4.8</span>
+                             <span class="intro-stat-label">Đánh giá</span>
+                         </div>
+                     </div>
+                 </div>
+ 
+             </div>
+         </div>
+     </section>
+
+    <!-- Popular Restaurants -->
+    <section class="popular-section" id="restaurants">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Nhà hàng phổ biến</h2>
+                <p class="section-subtitle">Những nhà hàng được yêu thích nhất</p>
+            </div>
+            
+            <div class="restaurant-grid">
+                <div class="restaurant-card">
+                    <div class="restaurant-image">
+                        <div class="restaurant-badge">Premium</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h3 class="restaurant-name">Le Bistrot</h3>
+                        <p class="restaurant-cuisine">French • Fine Dining</p>
+                        <div class="restaurant-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <span class="rating-text">4.8 (124 đánh giá)</span>
+                        </div>
+                        <div class="restaurant-price">$$$$</div>
+                        <button class="book-btn">Đặt bàn</button>
                     </div>
                 </div>
                 
-                <div class="row">
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="testimonial-card" data-aos="fade-up" data-aos-delay="200">
-                            <div class="testimonial-card__quote">
-                                <i class="fas fa-quote-left"></i>
+                <div class="restaurant-card">
+                    <div class="restaurant-image" style="background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 100%);">
+                        <div class="restaurant-badge">Popular</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h3 class="restaurant-name">Garden Terrace</h3>
+                        <p class="restaurant-cuisine">Asian • Casual</p>
+                        <div class="restaurant-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
                             </div>
-                            <blockquote class="testimonial-card__text">
-                                "Trải nghiệm ẩm thực tuyệt vời nhất mà tôi từng có. Mỗi món ăn đều là một tác phẩm nghệ thuật, 
-                                từ hương vị đến cách trình bày."
-                            </blockquote>
-                            <div class="testimonial-card__author">
-                                <div class="author-avatar">
-                                    <i class="fas fa-user-circle"></i>
-                                </div>
-                                <div class="author-info">
-                                    <h6 class="author-name">Nguyễn Minh Anh</h6>
-                                    <span class="author-title">Food Blogger</span>
-                                </div>
+                            <span class="rating-text">4.6 (89 đánh giá)</span>
+                        </div>
+                        <div class="restaurant-price">$$$</div>
+                        <button class="book-btn">Đặt bàn</button>
+                    </div>
+                </div>
+                
+                <div class="restaurant-card">
+                    <div class="restaurant-image" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
+                        <div class="restaurant-badge">New</div>
+                    </div>
+                    <div class="restaurant-info">
+                        <h3 class="restaurant-name">Sky Lounge</h3>
+                        <p class="restaurant-cuisine">International • Rooftop</p>
+                        <div class="restaurant-rating">
+                            <div class="stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
                             </div>
+                            <span class="rating-text">4.9 (67 đánh giá)</span>
+                        </div>
+                        <div class="restaurant-price">$$$$</div>
+                        <button class="book-btn">Đặt bàn</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories-section" id="categories">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Khám phá theo loại hình</h2>
+                <p class="section-subtitle">Tìm nhà hàng phù hợp với sở thích của bạn</p>
+            </div>
+            
+            <div class="category-grid">
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <h3 class="category-name">Fine Dining</h3>
+                    <p class="category-count">45 nhà hàng</p>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-pizza-slice"></i>
+                    </div>
+                    <h3 class="category-name">Casual Dining</h3>
+                    <p class="category-count">128 nhà hàng</p>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-coffee"></i>
+                    </div>
+                    <h3 class="category-name">Café & Bistro</h3>
+                    <p class="category-count">67 nhà hàng</p>
+                </div>
+                
+                <div class="category-card">
+                    <div class="category-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h3 class="category-name">Rooftop</h3>
+                    <p class="category-count">23 nhà hàng</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Restaurant Partners Section -->
+    <section class="partners-section">
+        <div class="container">
+            <div class="partners-intro">
+                <h2>Đối tác nhà hàng của chúng tôi</h2>
+                <p>Hợp tác với những thương hiệu ẩm thực hàng đầu để mang đến trải nghiệm tuyệt vời nhất</p>
+            </div>
+            
+            <div class="partners-grid">
+                <!-- Partner 1 -->
+                <div class="partner-card">
+                    <div class="partner-logo" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="partner-name">Le Cordon Bleu</h3>
+                    <p class="partner-type">Fine Dining • French Cuisine</p>
+                    <div class="partner-stats">
+                        <div class="partner-stat">
+                            <div class="partner-stat-number">4.9</div>
+                            <div class="partner-stat-label">Rating</div>
+                        </div>
+                        <div class="partner-stat">
+                            <div class="partner-stat-number">350+</div>
+                            <div class="partner-stat-label">Reviews</div>
                         </div>
                     </div>
-                    
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="testimonial-card" data-aos="fade-up" data-aos-delay="300">
-                            <div class="testimonial-card__quote">
-                                <i class="fas fa-quote-left"></i>
-                            </div>
-                            <blockquote class="testimonial-card__text">
-                                "Dịch vụ hoàn hảo và không gian sang trọng. Book Eat đã tạo nên một kỷ niệm đáng nhớ 
-                                cho buổi tối kỷ niệm của chúng tôi."
-                            </blockquote>
-                            <div class="testimonial-card__author">
-                                <div class="author-avatar">
-                                    <i class="fas fa-user-circle"></i>
-                                </div>
-                                <div class="author-info">
-                                    <h6 class="author-name">Trần Hoàng Nam</h6>
-                                    <span class="author-title">Doanh nhân</span>
-                                </div>
-                            </div>
+                </div>
+                
+                <!-- Partner 2 -->
+                <div class="partner-card">
+                    <div class="partner-logo" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <h3 class="partner-name">Sushi Master</h3>
+                    <p class="partner-type">Japanese • Premium</p>
+                    <div class="partner-stats">
+                        <div class="partner-stat">
+                            <div class="partner-stat-number">4.8</div>
+                            <div class="partner-stat-label">Rating</div>
+                        </div>
+                        <div class="partner-stat">
+                            <div class="partner-stat-number">280+</div>
+                            <div class="partner-stat-label">Reviews</div>
                         </div>
                     </div>
-                    
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="testimonial-card" data-aos="fade-up" data-aos-delay="400">
-                            <div class="testimonial-card__quote">
-                                <i class="fas fa-quote-left"></i>
-                            </div>
-                            <blockquote class="testimonial-card__text">
-                                "Chất lượng món ăn xuất sắc và đội ngũ phục vụ chuyên nghiệp. 
-                                Tôi sẽ quay lại và giới thiệu cho bạn bè."
-                            </blockquote>
-                            <div class="testimonial-card__author">
-                                <div class="author-avatar">
-                                    <i class="fas fa-user-circle"></i>
-                                </div>
-                                <div class="author-info">
-                                    <h6 class="author-name">Lê Thu Hương</h6>
-                                    <span class="author-title">Kiến trúc sư</span>
-                                </div>
-                            </div>
+                </div>
+                
+                <!-- Partner 3 -->
+                <div class="partner-card">
+                    <div class="partner-logo" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-leaf"></i>
+                    </div>
+                    <h3 class="partner-name">Green Garden</h3>
+                    <p class="partner-type">Vegetarian • Organic</p>
+                    <div class="partner-stats">
+                        <div class="partner-stat">
+                            <div class="partner-stat-number">4.7</div>
+                            <div class="partner-stat-label">Rating</div>
+                        </div>
+                        <div class="partner-stat">
+                            <div class="partner-stat-number">195+</div>
+                            <div class="partner-stat-label">Reviews</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Partner 4 -->
+                <div class="partner-card">
+                    <div class="partner-logo" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fas fa-pizza-slice"></i>
+                    </div>
+                    <h3 class="partner-name">Bella Italia</h3>
+                    <p class="partner-type">Italian • Family Style</p>
+                    <div class="partner-stats">
+                        <div class="partner-stat">
+                            <div class="partner-stat-number">4.6</div>
+                            <div class="partner-stat-label">Rating</div>
+                        </div>
+                        <div class="partner-stat">
+                            <div class="partner-stat-number">420+</div>
+                            <div class="partner-stat-label">Reviews</div>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+            
+                <!-- Partners CTA -->
+                <div class="partners-cta">
+                    <h3>Bạn là chủ nhà hàng?</h3>
+                    <p>Hợp tác với Book Eat để tiếp cận hàng ngàn khách hàng tiềm năng mỗi ngày</p>
+                    <a th:href="@{/auth/register}" class="btn-partner">
+                        <i class="fas fa-handshake"></i>
+                        Trở thành đối tác
+                    </a>
+                </div>
+        </div>
+    </section>
 
-    </main>
+    <!-- Footer Video CTA -->
+    <section class="footer-video-cta">
+        <div class="footer-video-background">
+            <!-- YouTube Video Embed -->
+            <iframe 
+                src="https://www.youtube.com/embed/lcU3pruVyUw?autoplay=1&mute=1&loop=1&playlist=lcU3pruVyUw&controls=0&showinfo=0&rel=0&modestbranding=1"
+                frameborder="0"
+                allow="autoplay; encrypted-media"
+                allowfullscreen>
+            </iframe>
+        </div>
+        <div class="footer-video-overlay">
+            <div class="footer-video-content">
+                <h2 class="footer-video-title">Bắt đầu trải nghiệm ngay hôm nay</h2>
+                <p class="footer-video-subtitle">Đặt bàn nhanh chóng, dễ dàng và miễn phí</p>
+                <div class="footer-video-buttons">
+                    <a th:href="@{/restaurants}" class="btn-footer-video">
+                        <i class="fas fa-calendar-check"></i>
+                        Đặt bàn ngay
+                    </a>
+                    <a th:href="@{/auth/register}" class="btn-footer-video-outline">
+                        <i class="fas fa-store"></i>
+                        Dành cho nhà hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <!-- Footer Fragment -->
-    <div th:insert="~{fragments/footer :: site-footer}"></div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Book Eat</h4>
+                    <p style="color: var(--resy-gray); font-size: 14px; margin-bottom: 1rem;">
+                        Nền tảng đặt bàn nhà hàng hàng đầu Việt Nam. 
+                        Kết nối khách hàng với những nhà hàng tốt nhất.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4>Khám phá</h4>
+                    <ul>
+                        <li><a th:href="@{/restaurants}">Nhà hàng gần đây</a></li>
+                        <li><a th:href="@{/restaurants}">Nhà hàng phổ biến</a></li>
+                        <li><a th:href="@{/restaurants}">Nhà hàng mới</a></li>
+                        <li><a th:href="@{/restaurants}">Ưu đãi đặc biệt</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Hỗ trợ</h4>
+                    <ul>
+                        <li><a th:href="@{/contact}">Trung tâm trợ giúp</a></li>
+                        <li><a th:href="@{/contact}">Liên hệ</a></li>
+                        <li><a th:href="@{/terms-of-service}">Điều khoản sử dụng</a></li>
+                        <li><a th:href="@{/terms-of-service}">Chính sách bảo mật</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Liên hệ</h4>
+                    <ul>
+                        <li><a href="tel:19001234">📞 1900 1234</a></li>
+                        <li><a href="mailto:support@bookeat.vn">✉️ support@bookeat.vn</a></li>
+                        <li><a href="#contact">📍 Đà Nẵng, Việt Nam</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Book Eat. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </footer>
 
-    <!-- Bootstrap 5 JS -->
-    <!-- Enhanced Search Filter Styles -->
-    <style>
-        .quick-filters {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .quick-filter-btn {
-            border-radius: 20px !important;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        
-        .quick-filter-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        .quick-filter-btn.active {
-            background: var(--gold-color) !important;
-            border-color: var(--gold-color) !important;
-            color: white !important;
-        }
-        
-        .advanced-filters {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            animation: slideDown 0.3s ease-out;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .form-control, .form-select {
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: var(--gold-color);
-            box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.25);
-            background: rgba(255, 255, 255, 0.15);
-        }
-        
-        .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-        
-        .form-label {
-            color: white;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        
-        .btn--gold {
-            background: linear-gradient(135deg, #ffd700, #ffed4e);
-            border: none;
-            color: #333;
-            font-weight: 600;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn--gold:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-        }
-        
-        .btn--outline {
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            background: transparent;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn--outline:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.5);
-            color: white;
-        }
-    </style>
-
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- AOS Animation Library -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    
-    <!-- Custom JS -->
-    <script th:src="@{/js/main.js}" defer></script>
-    
-    <script>
-        // Initialize AOS
-        AOS.init({
-            duration: 800,
-            easing: 'ease-in-out',
-            once: true,
-            offset: 100
-        });
-        
-        // Bootstrap Carousel Configuration
-        const carousel = document.getElementById('restaurantBootstrapCarousel');
-        if (carousel) {
-            // Initialize Bootstrap carousel with custom settings
-            const bootstrapCarousel = new bootstrap.Carousel(carousel, {
-                interval: 6000, // 6 seconds
-                wrap: true,
-                touch: true,
-                keyboard: true
-            });
-            
-            // Optional: Add custom event listeners
-            carousel.addEventListener('slide.bs.carousel', function (event) {
-                console.log('Sliding to slide:', event.to);
-            });
-            
-            carousel.addEventListener('slid.bs.carousel', function (event) {
-                console.log('Slid to slide:', event.to);
-            });
-        }
-        
-        // Quick Filter Functions
-        function applyQuickFilter(filterType) {
-            // Remove active class from all buttons
-            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Add active class to clicked button
-            event.target.classList.add('active');
-            
-            // Apply filter based on type
-            switch(filterType) {
-                case 'nearby':
-                    document.getElementById('distanceFilter').value = '1km';
-                    document.getElementById('sortBy').value = 'createdAt-desc';
-                    break;
-                case 'high-rating':
-                    document.getElementById('ratingFilter').value = '4.5+';
-                    document.getElementById('sortBy').value = 'averageRating-desc';
-                    break;
-                case 'cheap':
-                    document.getElementById('priceRange').value = '0-100000';
-                    document.getElementById('sortBy').value = 'averagePrice-asc';
-                    break;
-                case 'popular':
-                    document.getElementById('popularityFilter').value = 'trending';
-                    document.getElementById('sortBy').value = 'averageRating-desc';
-                    break;
-                case 'new':
-                    document.getElementById('sortBy').value = 'createdAt-desc';
-                    break;
-                case 'open-now':
-                    document.getElementById('hoursFilter').value = 'open-now';
-                    break;
-            }
-            
-            // Show toast notification
-            showFilterToast(`Đã áp dụng bộ lọc: ${event.target.textContent.trim()}`);
-        }
-        
-        // Toggle Advanced Filters
-        function toggleAdvancedFilters() {
-            const advancedFilters = document.getElementById('advancedFilters');
-            const toggleText = document.getElementById('advancedToggleText');
-            const toggleIcon = document.getElementById('advancedToggleIcon');
-            
-            if (advancedFilters.style.display === 'none') {
-                advancedFilters.style.display = 'block';
-                toggleText.textContent = 'Ẩn bộ lọc nâng cao';
-                toggleIcon.className = 'fas fa-chevron-up ms-1';
-            } else {
-                advancedFilters.style.display = 'none';
-                toggleText.textContent = 'Bộ lọc nâng cao';
-                toggleIcon.className = 'fas fa-chevron-down ms-1';
-            }
-        }
-        
-        // Clear all filters
-        function clearFilters() {
-            // Clear all form inputs
-            document.getElementById('searchQuery').value = '';
-            document.getElementById('cuisineType').value = '';
-            document.getElementById('priceRange').value = '';
-            document.getElementById('ratingFilter').value = '';
-            document.getElementById('sortBy').value = 'createdAt-desc';
-            document.getElementById('distanceFilter').value = '';
-            document.getElementById('hoursFilter').value = '';
-            document.getElementById('popularityFilter').value = '';
-            document.getElementById('features').value = '';
-            
-            // Remove active class from quick filter buttons
-            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            // Hide advanced filters
-            document.getElementById('advancedFilters').style.display = 'none';
-            document.getElementById('advancedToggleText').textContent = 'Bộ lọc nâng cao';
-            document.getElementById('advancedToggleIcon').className = 'fas fa-chevron-down ms-1';
-            
-            showFilterToast('Đã xóa tất cả bộ lọc');
-        }
-        
-        // Show filter toast notification
-        function showFilterToast(message) {
-            // Create toast element
-            const toast = document.createElement('div');
-            toast.className = 'toast-notification';
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: linear-gradient(135deg, #ffd700, #ffed4e);
-                color: #333;
-                padding: 12px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 9999;
-                font-weight: 600;
-                animation: slideInRight 0.3s ease-out;
-            `;
-            toast.textContent = message;
-            
-            // Add animation keyframes
-            if (!document.getElementById('toast-styles')) {
-                const style = document.createElement('style');
-                style.id = 'toast-styles';
-                style.textContent = `
-                    @keyframes slideInRight {
-                        from {
-                            transform: translateX(100%);
-                            opacity: 0;
-                        }
-                        to {
-                            transform: translateX(0);
-                            opacity: 1;
-                        }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
-            document.body.appendChild(toast);
-            
-            // Remove toast after 3 seconds
-            setTimeout(() => {
-                toast.style.animation = 'slideInRight 0.3s ease-out reverse';
-                setTimeout(() => {
-                    if (toast.parentNode) {
-                        toast.parentNode.removeChild(toast);
-                    }
-                }, 300);
-            }, 3000);
-        }
-        
-        // Auto-submit form when important filters change
-        document.addEventListener('DOMContentLoaded', function() {
-            const autoSubmitSelects = document.querySelectorAll('#cuisineType, #priceRange, #ratingFilter, #sortBy');
-            autoSubmitSelects.forEach(select => {
-                select.addEventListener('change', function() {
-                    // Optional: Auto-submit when important filters change
-                    // Uncomment the line below if you want auto-submit
-                    // this.form.submit();
-                });
-            });
-            
-            // Add smooth scrolling for anchor links
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const target = document.querySelector(this.getAttribute('href'));
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    }
-                });
-            });
-        });
-    </script>
+    <!-- Home Resy JavaScript -->
+    <script th:src="@{/js/home-resy.js}"></script>
 </body>
 </html>
+
