@@ -1,0 +1,550 @@
+<!-- AI Restaurant Results Component -->
+<!-- File: src/main/resources/templates/fragments/ai-restaurant-results.html -->
+
+<div th:fragment="ai-restaurant-results" class="ai-restaurant-results" id="aiRestaurantResults">
+    <!-- Results will be populated by JavaScript -->
+</div>
+
+<!-- AI Restaurant Results Styles -->
+<style>
+.ai-restaurant-results {
+    margin-top: 30px;
+}
+
+.ai-results-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.ai-results-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.ai-results-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.ai-results-stats {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.ai-stat-item {
+    text-align: center;
+}
+
+.ai-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: block;
+}
+
+.ai-stat-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.ai-restaurant-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    height: 100%;
+}
+
+.ai-restaurant-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+
+.restaurant-image {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+}
+
+.restaurant-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.ai-restaurant-card:hover .restaurant-image img {
+    transform: scale(1.05);
+}
+
+.restaurant-badges {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.restaurant-badge {
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.restaurant-badge.ai-confidence {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.restaurant-badge.ai-confidence.high {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.restaurant-badge.ai-confidence.medium {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+}
+
+.restaurant-badge.ai-confidence.low {
+    background: linear-gradient(135deg, #dc3545, #e83e8c);
+}
+
+.restaurant-content {
+    padding: 25px;
+}
+
+.restaurant-name {
+    color: #495057;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    line-height: 1.3;
+}
+
+.restaurant-description {
+    color: #6c757d;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+.restaurant-details {
+    margin-bottom: 20px;
+}
+
+.restaurant-detail-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.restaurant-detail-item i {
+    color: #667eea;
+    width: 18px;
+    margin-right: 10px;
+    text-align: center;
+}
+
+.restaurant-ai-explanation {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.restaurant-ai-explanation-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.restaurant-ai-explanation-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    line-height: 1.4;
+    margin-bottom: 0;
+}
+
+.restaurant-matching-factors {
+    margin-bottom: 20px;
+}
+
+.matching-factors-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 10px;
+}
+
+.matching-factors-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.matching-factor {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.restaurant-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.restaurant-actions .btn {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+    border: 2px solid #6c757d;
+    color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.ai-no-results {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.ai-no-results i {
+    font-size: 4rem;
+    color: #adb5bd;
+    margin-bottom: 20px;
+}
+
+.ai-no-results h4 {
+    color: #6c757d;
+    margin-bottom: 15px;
+}
+
+.ai-no-results p {
+    color: #adb5bd;
+    margin-bottom: 25px;
+}
+
+.ai-suggestions {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.ai-suggestions-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 15px;
+}
+
+.ai-suggestions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ai-suggestion-btn {
+    background: white;
+    border: 1px solid #e9ecef;
+    color: #495057;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ai-suggestion-btn:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .ai-results-title {
+        font-size: 1.4rem;
+    }
+    
+    .ai-results-stats {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .restaurant-badges {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .restaurant-actions {
+        flex-direction: column;
+    }
+    
+    .matching-factors-list {
+        justify-content: center;
+    }
+}
+</style>
+
+<!-- AI Restaurant Results JavaScript -->
+<script>
+function displayAIResults(data) {
+    const resultsContainer = document.getElementById('aiRestaurantResults');
+    
+    if (!data.recommendations || data.recommendations.length === 0) {
+        resultsContainer.innerHTML = `
+            <div class="ai-no-results">
+                <i class="fas fa-search"></i>
+                <h4>Không tìm thấy nhà hàng phù hợp</h4>
+                <p>AI không thể tìm thấy nhà hàng nào phù hợp với yêu cầu của bạn.</p>
+                <div class="ai-suggestions">
+                    <div class="ai-suggestions-title">Thử các gợi ý này:</div>
+                    <div class="ai-suggestions-list">
+                        <button class="ai-suggestion-btn" onclick="searchAI('Nhà hàng sushi gần đây')">Sushi</button>
+                        <button class="ai-suggestion-btn" onclick="searchAI('Nhà hàng lãng mạn')">Lãng mạn</button>
+                        <button class="ai-suggestion-btn" onclick="searchAI('Đồ ăn Việt Nam')">Việt Nam</button>
+                        <button class="ai-suggestion-btn" onclick="searchAI('Nhà hàng gia đình')">Gia đình</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    let resultsHTML = `
+        <div class="ai-results-header">
+            <h2 class="ai-results-title">
+                <i class="fas fa-robot me-2"></i>
+                AI đã tìm thấy ${data.totalFound} nhà hàng phù hợp
+            </h2>
+            <p class="ai-results-subtitle">${data.explanation}</p>
+            <div class="ai-results-stats">
+                <div class="ai-stat-item">
+                    <span class="ai-stat-value">${data.confidenceScore ? (data.confidenceScore * 100).toFixed(0) + '%' : 'N/A'}</span>
+                    <span class="ai-stat-label">Độ tin cậy</span>
+                </div>
+                <div class="ai-stat-item">
+                    <span class="ai-stat-value">${data.responseTimeMs || 'N/A'}</span>
+                    <span class="ai-stat-label">Thời gian (ms)</span>
+                </div>
+                <div class="ai-stat-item">
+                    <span class="ai-stat-value">${data.modelUsed || 'GPT-4'}</span>
+                    <span class="ai-stat-label">AI Model</span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+    `;
+
+    data.recommendations.forEach((restaurant, index) => {
+        const confidenceClass = getConfidenceClass(restaurant.confidenceScore);
+        const confidenceText = getConfidenceText(restaurant.confidenceScore);
+        
+        resultsHTML += `
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="ai-restaurant-card" data-restaurant-id="${restaurant.restaurantId}">
+                    <div class="restaurant-image">
+                        <img src="${restaurant.imageUrl || '/images/default-restaurant.jpg'}" 
+                             alt="${restaurant.restaurantName}" 
+                             class="img-fluid"
+                             onerror="this.src='/images/default-restaurant.jpg'">
+                        <div class="restaurant-badges">
+                            <div class="restaurant-badge ai-confidence ${confidenceClass}">
+                                <i class="fas fa-brain"></i>
+                                ${confidenceText}
+                            </div>
+                            <div class="restaurant-badge">
+                                <i class="fas fa-star"></i>
+                                ${restaurant.rating || 'N/A'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="restaurant-content">
+                        <h5 class="restaurant-name">${restaurant.restaurantName}</h5>
+                        <p class="restaurant-description">${restaurant.description || 'Nhà hàng chất lượng cao với không gian đẹp và món ăn ngon.'}</p>
+                        
+                        <div class="restaurant-details">
+                            <div class="restaurant-detail-item">
+                                <i class="fas fa-utensils"></i>
+                                <span>${restaurant.cuisineType || 'Đa dạng'}</span>
+                            </div>
+                            <div class="restaurant-detail-item">
+                                <i class="fas fa-tag"></i>
+                                <span>${restaurant.priceRange || 'Liên hệ'}</span>
+                            </div>
+                            <div class="restaurant-detail-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>${restaurant.distanceKm ? restaurant.distanceKm.toFixed(1) + 'km' : 'Gần đây'}</span>
+                            </div>
+                            <div class="restaurant-detail-item">
+                                <i class="fas fa-clock"></i>
+                                <span>${restaurant.openingHours || 'Liên hệ'}</span>
+                            </div>
+                        </div>
+
+                        ${restaurant.aiExplanation ? `
+                            <div class="restaurant-ai-explanation">
+                                <div class="restaurant-ai-explanation-title">
+                                    <i class="fas fa-lightbulb"></i>
+                                    Tại sao AI recommend?
+                                </div>
+                                <p class="restaurant-ai-explanation-text">${restaurant.aiExplanation}</p>
+                            </div>
+                        ` : ''}
+
+                        ${restaurant.matchingFactors && restaurant.matchingFactors.length > 0 ? `
+                            <div class="restaurant-matching-factors">
+                                <div class="matching-factors-title">Phù hợp vì:</div>
+                                <div class="matching-factors-list">
+                                    ${restaurant.matchingFactors.map(factor => 
+                                        `<span class="matching-factor">${factor}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="restaurant-actions">
+                            <a href="${restaurant.bookingUrl || '#'}" 
+                               class="btn btn-primary"
+                               onclick="trackAIInteraction('${restaurant.restaurantId}', 'booking_clicked')">
+                                <i class="fas fa-calendar-plus me-2"></i>
+                                Đặt bàn
+                            </a>
+                            <a href="${restaurant.viewDetailsUrl || '#'}" 
+                               class="btn btn-outline-secondary"
+                               onclick="trackAIInteraction('${restaurant.restaurantId}', 'details_clicked')">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    resultsHTML += '</div>';
+    resultsContainer.innerHTML = resultsHTML;
+    
+    // Show results with animation
+    resultsContainer.style.display = 'block';
+    resultsContainer.scrollIntoView({ behavior: 'smooth' });
+    
+    // Track AI search completion
+    trackAISearchCompletion(data);
+}
+
+function getConfidenceClass(score) {
+    if (score >= 0.8) return 'high';
+    if (score >= 0.6) return 'medium';
+    return 'low';
+}
+
+function getConfidenceText(score) {
+    if (score >= 0.8) return 'Rất phù hợp';
+    if (score >= 0.6) return 'Khá phù hợp';
+    return 'Có thể phù hợp';
+}
+
+function searchAI(query) {
+    // Trigger AI search with the suggested query
+    const searchInput = document.getElementById('aiSearchQuery') || document.getElementById('aiRestaurantSearchQuery');
+    if (searchInput) {
+        searchInput.value = query;
+        searchInput.focus();
+        
+        // Trigger search if there's a form
+        const searchForm = searchInput.closest('form');
+        if (searchForm) {
+            searchForm.dispatchEvent(new Event('submit'));
+        }
+    }
+}
+
+function trackAIInteraction(restaurantId, action) {
+    // Track user interaction with AI recommendations
+    fetch('/ai/interaction', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            restaurantId: restaurantId,
+            action: action,
+            source: 'ai_results'
+        })
+    }).catch(error => {
+        console.error('Failed to track AI interaction:', error);
+    });
+}
+
+function trackAISearchCompletion(data) {
+    // Track AI search completion for analytics
+    fetch('/ai/analytics/search-completed', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            query: data.originalQuery,
+            resultsCount: data.recommendations ? data.recommendations.length : 0,
+            confidenceScore: data.confidenceScore,
+            responseTime: data.responseTimeMs,
+            modelUsed: data.modelUsed
+        })
+    }).catch(error => {
+        console.error('Failed to track AI search completion:', error);
+    });
+}
+</script>
