@@ -1,433 +1,29 @@
 ﻿<!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hồ sơ cá nhân - Book Eat</title>
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Resy Style CSS -->
+    <link th:href="@{/css/home-resy.css}" rel="stylesheet">
     <!-- Custom Luxury CSS -->
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
-
-    <style>
-        body.page-bg {
-            background: var(--background-light);
-            font-family: var(--font-body);
-        }
-
-        .profile-content {
-            padding-top: 100px;
-            padding-bottom: 60px;
-        }
-
-        .section-title {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 0.5rem;
-            font-family: var(--font-heading);
-        }
-
-        .section__subtitle {
-            font-size: 1.1rem;
-            color: var(--text-medium);
-            margin-bottom: 3rem;
-        }
-
-        .profile-avatar {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .profile-avatar img {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            border: 4px solid var(--primary-blue);
-            box-shadow: var(--shadow-card);
-            object-fit: cover;
-        }
-
-        .upload-area {
-            border: 2px dashed var(--primary-blue);
-            border-radius: 12px;
-            padding: 24px;
-            text-align: center;
-            background: var(--background-white);
-            transition: var(--transition);
-        }
-
-        .upload-area:hover {
-            background: rgba(74, 144, 226, 0.05);
-            border-color: var(--primary-blue-dark);
-        }
-
-        .upload-area input[type="file"] {
-            margin: 10px 0;
-        }
-
-        .upload-area input[type="file"]::file-selector-button {
-            background: var(--primary-blue);
-            color: var(--background-white);
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 600;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-
-        .upload-area input[type="file"]::file-selector-button:hover {
-            background: var(--primary-blue-dark);
-        }
-
-        .booking-card {
-            background: var(--background-white);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            padding: var(--card-padding);
-            box-shadow: var(--shadow-card);
-            transition: var(--transition);
-            margin-bottom: 20px;
-        }
-
-        .booking-card:hover {
-            box-shadow: var(--shadow-hover);
-        }
-
-        .booking-card h4 {
-            color: var(--text-dark);
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            font-family: var(--font-heading);
-        }
-
-        .booking-card h4 i {
-            color: var(--primary-blue);
-            margin-right: 10px;
-            font-size: 1.2em;
-        }
-
-        .profile-info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .profile-info-row:last-child {
-            border-bottom: none;
-        }
-
-        .profile-label {
-            color: var(--text-medium);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-        }
-
-        .profile-label i {
-            color: var(--primary-blue);
-            margin-right: 8px;
-            width: 20px;
-        }
-
-        .profile-value {
-            color: var(--text-dark);
-            font-weight: 600;
-        }
-
-        .badge-verified {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            margin-left: 10px;
-        }
-
-        .badge-unverified {
-            background: linear-gradient(135deg, #ffc107, #fd7e14);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            margin-left: 10px;
-        }
-
-        .stats-card {
-            background: var(--background-white);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow-card);
-            transition: var(--transition);
-        }
-
-        .stats-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        .stats-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary-blue);
-            font-family: var(--font-heading);
-        }
-
-        .stats-label {
-            color: var(--text-medium);
-            font-size: 0.9rem;
-            margin-top: 8px;
-        }
-
-        .stats-label i {
-            color: var(--primary-blue);
-            margin-right: 6px;
-        }
-
-        .security-indicator {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            color: var(--text-dark);
-        }
-
-        .security-indicator i {
-            margin-right: 10px;
-            width: 20px;
-        }
-
-        .security-indicator.verified i {
-            color: #28a745;
-        }
-
-        .security-indicator.unverified i {
-            color: #ffc107;
-        }
-
-        .btn--gold,
-        .btn-luxury {
-            background: var(--primary-blue);
-            color: var(--background-white);
-            border-color: var(--primary-blue);
-            box-shadow: var(--shadow-button);
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin: 5px;
-            transition: var(--transition);
-        }
-
-        .btn--gold:hover,
-        .btn-luxury:hover {
-            background: var(--primary-blue-dark);
-            border-color: var(--primary-blue-dark);
-            color: var(--background-white);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-hover);
-        }
-
-        .btn-outline-luxury {
-            background: transparent;
-            color: var(--primary-blue);
-            border: 1px solid var(--primary-blue);
-            padding: 10px 23px;
-            border-radius: 8px;
-            font-weight: 500;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin: 5px;
-            transition: var(--transition);
-        }
-
-        .btn-outline-luxury:hover {
-            background: var(--primary-blue);
-            color: var(--background-white);
-            transform: translateY(-1px);
-        }
-
-        /* New Content Styles */
-        .activity-timeline {
-            position: relative;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary-blue);
-        }
-
-        .activity-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--primary-blue);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-
-        .activity-content {
-            flex: 1;
-        }
-
-        .activity-content h6 {
-            margin-bottom: 5px;
-            color: var(--text-dark);
-        }
-
-        .favorite-restaurants .restaurant-item {
-            margin-bottom: 15px;
-        }
-
-        .restaurant-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .restaurant-item:hover {
-            background: #e9ecef;
-            transform: translateY(-2px);
-        }
-
-        .restaurant-thumb {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
-            object-fit: cover;
-            margin-right: 15px;
-        }
-
-        .restaurant-info {
-            flex: 1;
-        }
-
-        .restaurant-info h6 {
-            margin-bottom: 5px;
-            color: var(--text-dark);
-        }
-
-        .rating {
-            margin-top: 5px;
-        }
-
-        .achievement-card {
-            text-align: center;
-            padding: 20px;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border-radius: 12px;
-            border: 2px solid #dee2e6;
-            transition: all 0.3s ease;
-        }
-
-        .achievement-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        .achievement-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--primary-blue), var(--accent-orange));
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 24px;
-        }
-
-        .achievement-card h5 {
-            color: var(--text-dark);
-            margin-bottom: 10px;
-        }
-
-        .achievement-card p {
-            color: var(--text-medium);
-            margin-bottom: 15px;
-        }
-
-        .progress {
-            height: 8px;
-            background: #e9ecef;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-
-        .progress-bar {
-            background: linear-gradient(135deg, var(--primary-blue), var(--accent-orange));
-            border-radius: 4px;
-        }
-
-        @media (max-width: 768px) {
-            .profile-content {
-                padding-top: 80px;
-            }
-
-            .section-title {
-                font-size: 2rem;
-            }
-
-            .booking-card {
-                padding: 20px;
-            }
-
-            .activity-item {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .activity-icon {
-                margin: 0 auto 10px;
-            }
-
-            .restaurant-item {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .restaurant-thumb {
-                margin: 0 auto 10px;
-            }
-        }
-    </style>
+    <!-- Profile CSS -->
+    <link th:href="@{/css/profile.css}" rel="stylesheet">
 </head>
 
-<body class="page-bg">
-    <!-- Header Fragment -->
-    <div th:replace="~{fragments/header :: site-header}"></div>
+<body>
+    <!-- Resy Style Header -->
+    <div th:replace="~{fragments/resy-header :: resy-header}"></div>
 
     <!-- Main Content -->
     <main class="profile-content">
@@ -443,25 +39,16 @@
                 <p class="section__subtitle">Quản lý thông tin tài khoản của bạn</p>
 
                 <!-- Top Action Bar -->
-                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 10px;">
-                    <a th:href="@{/auth/profile/edit}"
-                       style="background: #000000; color: #ffffff; border: 2px solid #000000; padding: 8px 16px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;"
-                       onmouseover="this.style.background='#333333'; this.style.borderColor='#333333'"
-                       onmouseout="this.style.background='#000000'; this.style.borderColor='#000000'">
+                <div class="action-buttons">
+                    <a th:href="@{/auth/profile/edit}" class="btn-resy">
                         <i class="fas fa-edit"></i> Chỉnh sửa thông tin
                     </a>
 
-                    <a th:href="@{/auth/change-password}"
-                       style="background: #000000; color: #ffffff; border: 2px solid #000000; padding: 8px 16px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;"
-                       onmouseover="this.style.background='#333333'; this.style.borderColor='#333333'"
-                       onmouseout="this.style.background='#000000'; this.style.borderColor='#000000'">
+                    <a th:href="@{/auth/change-password}" class="btn-resy">
                         <i class="fas fa-key"></i> Đổi mật khẩu
                     </a>
 
-                    <a th:href="@{/auth/forgot-password}"
-                       style="background: #000000; color: #ffffff; border: 2px solid #000000; padding: 8px 16px; border-radius: 6px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;"
-                       onmouseover="this.style.background='#333333'; this.style.borderColor='#333333'"
-                       onmouseout="this.style.background='#000000'; this.style.borderColor='#000000'">
+                    <a th:href="@{/auth/forgot-password}" class="btn-resy-outline">
                         <i class="fas fa-question-circle"></i> Quên mật khẩu
                     </a>
                 </div>
@@ -480,11 +67,10 @@
                         <!-- Upload Avatar Form -->
                         <div class="upload-area">
                             <i class="fas fa-camera fa-2x mb-2 luxury-icon"></i>
-                            <h6 style="color: var(--text-dark); font-weight: 600;">Đổi ảnh đại diện</h6>
+                            <h6>Đổi ảnh đại diện</h6>
                             <form th:action="@{/auth/profile/avatar}" method="post" enctype="multipart/form-data">
-                                <input type="file" class="form-control" name="profileImage" accept="image/*" required
-                                    style="background: var(--background-white); border: 1px solid var(--border-medium); color: var(--text-dark);">
-                                <button type="submit" class="btn btn--gold mt-2">
+                                <input type="file" class="form-control" name="profileImage" accept="image/*" required>
+                                <button type="submit" class="btn-resy mt-2">
                                     <i class="fas fa-upload"></i> Tải lên
                                 </button>
                             </form>
@@ -545,9 +131,7 @@
                                 <i class="fas fa-shield-alt"></i> Vai trò
                             </div>
                             <div class="profile-value">
-                                <span class="badge"
-                                    style="background: var(--primary-blue); color: var(--background-white);"
-                                    th:text="${user.role.name()}"></span>
+                                <span class="badge badge-role" th:text="${user.role.name()}"></span>
                             </div>
                         </div>
 
@@ -564,39 +148,21 @@
                                 <i class="fas fa-clock"></i> Đăng nhập cuối
                             </div>
                             <div class="profile-value"
-                                th:text="${#temporals.format(user.lastLogin, ''dd/MM/yyyy HH:mm'')}"></div>
+                                th:text="${#temporals.format(user.lastLogin, 'dd/MM/yyyy HH:mm')}"></div>
                         </div>
                     </div>
-
                 </div>
             </div>
-
         </div>
     </main>
 
-    <!-- Footer -->
-    <div th:replace="~{fragments/footer :: site-footer}"></div>
+    <!-- Resy Footer -->
+    <div th:replace="~{fragments/resy-footer :: resy-footer}"></div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        // Add some interactive effects
-        document.addEventListener('DOMContentLoaded', function () {
-            // Animate stats on page load
-            const statsNumbers = document.querySelectorAll('.stats-number');
-            statsNumbers.forEach(stat => {
-                stat.style.opacity = '0';
-                stat.style.transform = 'translateY(20px)';
-
-                setTimeout(() => {
-                    stat.style.transition = 'all 0.6s ease';
-                    stat.style.opacity = '1';
-                    stat.style.transform = 'translateY(0)';
-                }, Math.random() * 500);
-            });
-        });
-    </script>
+    <!-- Resy Scripts -->
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+    
+    <!-- Profile-specific JavaScript -->
+    <script th:src="@{/js/profile.js}"></script>
 </body>
-
 </html>

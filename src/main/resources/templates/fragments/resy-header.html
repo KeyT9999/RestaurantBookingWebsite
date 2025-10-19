@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <!-- This fragment is for inclusion only -->
+</head>
+<body>
+    <!-- Resy Style Header Fragment -->
+    <div th:fragment="resy-header">
+        <!-- Mini Header - Only show for non-customer users -->
+        <div class="mini-header" sec:authorize="!hasRole('CUSTOMER')">
+            <div class="container">
+                <div class="mini-header-content">
+                    <div class="mini-header-left">
+                        <!-- Có thể thêm thông tin khác ở đây -->
+                    </div>
+                    <div class="mini-header-right">
+                        <a th:href="@{/restaurant-owner/dashboard}" class="for-restaurants" sec:authorize="hasRole('RESTAURANT_OWNER')">For Restaurants</a>
+                        <a th:href="@{/auth/register}" class="for-restaurants" sec:authorize="!isAuthenticated()">For Restaurants</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Header -->
+        <header class="header">
+            <div class="container">
+                <a th:href="@{/}" class="logo">Book Eat</a>
+                <nav>
+                    <ul class="nav-menu">
+                        <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
+                        <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
+                        <li><a th:href="@{/about}" th:classappend="${activeNav == 'about' ? 'active' : ''}">Về chúng tôi</a></li>
+                        <li><a th:href="@{/contact}" th:classappend="${activeNav == 'contact' ? 'active' : ''}">Liên hệ</a></li>
+                    </ul>
+                </nav>
+                <div class="header-actions">
+                    <!-- Guest User Actions -->
+                    <a th:href="@{/login}" class="btn-resy-outline" sec:authorize="!isAuthenticated()">Đăng nhập</a>
+                    <a th:href="@{/auth/register}" class="btn-resy" sec:authorize="!isAuthenticated()">Đăng ký</a>
+                    
+                    <!-- Authenticated User Actions -->
+                    <div sec:authorize="isAuthenticated()" class="user-actions">
+                    <!-- Customer Actions -->
+                    <a th:href="@{/customer/favorites}" class="btn-resy-outline icon-only" sec:authorize="hasRole('CUSTOMER')" title="Favorites">
+                        <i class="fas fa-heart"></i>
+                    </a>
+                        
+                        <!-- Restaurant Owner Dashboard -->
+                        <a th:href="@{/restaurant-owner/dashboard}" class="btn-resy" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                        
+                        <!-- Admin Dashboard -->
+                        <a th:href="@{/admin/dashboard}" class="btn-resy" sec:authorize="hasRole('ADMIN')">
+                            <i class="fas fa-cog"></i>
+                            Admin
+                        </a>
+                        
+                        <!-- User Profile Dropdown -->
+                        <div class="user-dropdown">
+                            <button class="btn-resy-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle"></i>
+                                <span sec:authentication="name">User</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/auth/profile}">
+                                        <i class="fas fa-user me-2"></i>
+                                        Profile
+                                    </a>
+                                </li>
+                                <li sec:authorize="hasRole('CUSTOMER')">
+                                    <a class="dropdown-item" th:href="@{/customer/favorites}">
+                                        <i class="fas fa-heart me-2"></i>
+                                        Favorites
+                                    </a>
+                                </li>
+                                <li sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/dashboard}">
+                                        <i class="fas fa-tachometer-alt me-2"></i>
+                                        Restaurant Dashboard
+                                    </a>
+                                </li>
+                                <li sec:authorize="hasRole('ADMIN')">
+                                    <a class="dropdown-item" th:href="@{/admin/dashboard}">
+                                        <i class="fas fa-cog me-2"></i>
+                                        Admin Dashboard
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/logout}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>
+                                        Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </div>
+</body>
+</html>
+

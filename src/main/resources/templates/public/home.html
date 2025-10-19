@@ -18,8 +18,8 @@
     
 </head>
 <body>
-    <!-- Mini Header -->
-    <div class="mini-header">
+    <!-- Mini Header - Only show for non-customer users -->
+    <div class="mini-header" sec:authorize="!hasRole('CUSTOMER')">
         <div class="container">
             <div class="mini-header-content">
                 <div class="mini-header-left">
@@ -39,10 +39,10 @@
             <a th:href="@{/}" class="logo">Book Eat</a>
             <nav>
                 <ul class="nav-menu">
-                    <li><a href="#home">Trang chủ</a></li>
-                    <li><a th:href="@{/restaurants}">Nhà hàng</a></li>
-                    <li><a th:href="@{/about}">Về chúng tôi</a></li>
-                    <li><a th:href="@{/contact}">Liên hệ</a></li>
+                    <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
+                    <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
+                    <li><a th:href="@{/about}" th:classappend="${activeNav == 'about' ? 'active' : ''}">Về chúng tôi</a></li>
+                    <li><a th:href="@{/contact}" th:classappend="${activeNav == 'contact' ? 'active' : ''}">Liên hệ</a></li>
                 </ul>
             </nav>
             <div class="header-actions">
@@ -53,7 +53,7 @@
                 <!-- Authenticated User Actions -->
                 <div sec:authorize="isAuthenticated()" class="user-actions">
                     <!-- Customer Actions -->
-                    <a th:href="@{/customer/favorites}" class="btn-resy-outline" sec:authorize="hasRole('CUSTOMER')">
+                    <a th:href="@{/customer/favorites}" class="btn-resy-outline icon-only" sec:authorize="hasRole('CUSTOMER')" title="Favorites">
                         <i class="fas fa-heart"></i>
                     </a>
                     
@@ -173,7 +173,7 @@
                         <div class="intro-feature">
                             <div class="intro-feature-icon">
                                 <i class="fas fa-shield-alt"></i>
-                            </div>
+                                </div>
                             <div class="intro-feature-text">
                                 <h4>An toàn & Bảo mật</h4>
                                 <p>Thông tin được mã hóa bảo mật</p>
@@ -183,7 +183,7 @@
                         <div class="intro-feature">
                             <div class="intro-feature-icon">
                                 <i class="fas fa-star"></i>
-                            </div>
+                                </div>
                             <div class="intro-feature-text">
                                 <h4>Chất lượng đảm bảo</h4>
                                 <p>Nhà hàng được chọn lọc kỹ càng</p>
@@ -197,11 +197,11 @@
                             <div class="intro-feature-text">
                                 <h4>Hỗ trợ 24/7</h4>
                                 <p>Luôn sẵn sàng hỗ trợ bạn</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
+                    
                 <div class="intro-image">
                     <!-- YouTube Video Embed -->
                     <iframe 
@@ -225,14 +225,14 @@
                             <span class="intro-stat-label">Đánh giá</span>
                         </div>
                     </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
     <!-- Popular Restaurants -->
     <section class="popular-section" id="restaurants">
-        <div class="container">
+            <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Nhà hàng phổ biến</h2>
                 <p class="section-subtitle">Những nhà hàng được yêu thích nhất</p>
@@ -281,12 +281,12 @@
                         <div class="restaurant-price">$$$</div>
                         <button class="book-btn">Đặt bàn</button>
                     </div>
-                </div>
+                                </div>
                 
                 <div class="restaurant-card">
                     <div class="restaurant-image" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
                         <div class="restaurant-badge">New</div>
-                    </div>
+                                </div>
                     <div class="restaurant-info">
                         <h3 class="restaurant-name">Sky Lounge</h3>
                         <p class="restaurant-cuisine">International • Rooftop</p>
@@ -358,8 +358,8 @@
             <div class="partners-intro">
                 <h2>Đối tác nhà hàng của chúng tôi</h2>
                 <p>Hợp tác với những thương hiệu ẩm thực hàng đầu để mang đến trải nghiệm tuyệt vời nhất</p>
-            </div>
-            
+                    </div>
+                    
             <div class="partners-grid">
                 <!-- Partner 1 -->
                 <div class="partner-card">
@@ -372,12 +372,12 @@
                         <div class="partner-stat">
                             <div class="partner-stat-number">4.9</div>
                             <div class="partner-stat-label">Rating</div>
-                        </div>
+                            </div>
                         <div class="partner-stat">
                             <div class="partner-stat-number">350+</div>
                             <div class="partner-stat-label">Reviews</div>
-                        </div>
-                    </div>
+                                </div>
+                                </div>
                 </div>
                 
                 <!-- Partner 2 -->
@@ -395,10 +395,10 @@
                         <div class="partner-stat">
                             <div class="partner-stat-number">280+</div>
                             <div class="partner-stat-label">Reviews</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
+                    
                 <!-- Partner 3 -->
                 <div class="partner-card">
                     <div class="partner-logo" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
@@ -410,13 +410,13 @@
                         <div class="partner-stat">
                             <div class="partner-stat-number">4.7</div>
                             <div class="partner-stat-label">Rating</div>
-                        </div>
+                            </div>
                         <div class="partner-stat">
                             <div class="partner-stat-number">195+</div>
                             <div class="partner-stat-label">Reviews</div>
-                        </div>
-                    </div>
-                </div>
+                                </div>
+                                </div>
+                            </div>
                 
                 <!-- Partner 4 -->
                 <div class="partner-card">
@@ -446,9 +446,9 @@
                     <i class="fas fa-handshake"></i>
                     Trở thành đối tác
                 </a>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
     <!-- Footer Video CTA -->
     <section class="footer-video-cta">
@@ -479,54 +479,10 @@
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Book Eat</h4>
-                    <p style="color: var(--resy-gray); font-size: 14px; margin-bottom: 1rem;">
-                        Nền tảng đặt bàn nhà hàng hàng đầu Việt Nam. 
-                        Kết nối khách hàng với những nhà hàng tốt nhất.
-                    </p>
-                </div>
-                <div class="footer-section">
-                    <h4>Khám phá</h4>
-                    <ul>
-                        <li><a th:href="@{/restaurants}">Nhà hàng gần đây</a></li>
-                        <li><a th:href="@{/restaurants}">Nhà hàng phổ biến</a></li>
-                        <li><a th:href="@{/restaurants}">Nhà hàng mới</a></li>
-                        <li><a th:href="@{/restaurants}">Ưu đãi đặc biệt</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Hỗ trợ</h4>
-                    <ul>
-                        <li><a th:href="@{/contact}">Trung tâm trợ giúp</a></li>
-                        <li><a th:href="@{/contact}">Liên hệ</a></li>
-                        <li><a th:href="@{/terms-of-service}">Điều khoản sử dụng</a></li>
-                        <li><a th:href="@{/terms-of-service}">Chính sách bảo mật</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Liên hệ</h4>
-                    <ul>
-                        <li><a href="tel:19001234">📞 1900 1234</a></li>
-                        <li><a href="mailto:support@bookeat.vn">✉️ support@bookeat.vn</a></li>
-                        <li><a href="#contact">📍 Đà Nẵng, Việt Nam</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 Book Eat. Tất cả quyền được bảo lưu.</p>
-            </div>
-        </div>
-    </footer>
+    <!-- Resy Footer -->
+    <div th:replace="~{fragments/resy-footer :: resy-footer}"></div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Home Resy JavaScript -->
-    <script th:src="@{/js/home-resy.js}"></script>
+    <!-- Resy Scripts -->
+    <div th:replace="~{fragments/resy-scripts :: resy-scripts}"></div>
 </body>
 </html>

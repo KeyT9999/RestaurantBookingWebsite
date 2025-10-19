@@ -57,7 +57,10 @@ public class HomeController {
     @GetMapping("/")
     public String home(Model model, Authentication authentication) {
         // Add any model attributes needed for home page
-        model.addAttribute("pageTitle", "Aurelius Fine Dining - Experience Culinary Excellence");
+        model.addAttribute("pageTitle", "Book Eat - Đặt bàn online, giữ chỗ ngay");
+        
+        // Set active navigation
+        model.addAttribute("activeNav", "home");
         
         // Add user role information for conditional display
         if (authentication != null && authentication.isAuthenticated()) {
@@ -81,7 +84,8 @@ public class HomeController {
      */
     @GetMapping("/about")
     public String about(Model model) {
-        model.addAttribute("pageTitle", "About Us - Aurelius Fine Dining");
+        model.addAttribute("pageTitle", "Về chúng tôi - Book Eat");
+        model.addAttribute("activeNav", "about");
         return "public/about";
     }
     
@@ -90,7 +94,8 @@ public class HomeController {
      */
     @GetMapping("/contact")
     public String contact(Model model) {
-        model.addAttribute("pageTitle", "Contact Us - Aurelius Fine Dining");
+        model.addAttribute("pageTitle", "Liên hệ - Book Eat");
+        model.addAttribute("activeNav", "contact");
         return "public/contact";
     }
     
@@ -110,7 +115,8 @@ public class HomeController {
             Model model) {
         
         try {
-            model.addAttribute("pageTitle", "Our Restaurants - Aurelius Fine Dining");
+            model.addAttribute("pageTitle", "Nhà hàng - Book Eat");
+            model.addAttribute("activeNav", "restaurants");
             
             // Create pageable
             Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
