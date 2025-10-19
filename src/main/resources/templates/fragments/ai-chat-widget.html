@@ -1,0 +1,706 @@
+<!-- AI Chat Widget -->
+<!-- File: src/main/resources/templates/fragments/ai-chat-widget.html -->
+
+<div th:fragment="ai-chat-widget" class="ai-chat-widget" id="aiChatWidget">
+    <!-- Chat Toggle Button -->
+    <div class="ai-chat-toggle" id="aiChatToggle">
+        <div class="ai-chat-icon">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="ai-chat-badge" id="aiChatBadge" style="display: none;">
+            <span id="aiChatBadgeCount">1</span>
+        </div>
+        <div class="ai-chat-pulse"></div>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="ai-chat-window" id="aiChatWindow" style="display: none;">
+        <!-- Chat Header -->
+        <div class="ai-chat-header">
+            <div class="ai-chat-title">
+                <div class="ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-info">
+                    <h6 class="ai-name">AI Assistant</h6>
+                    <span class="ai-status" id="aiStatus">Đang online</span>
+                </div>
+            </div>
+            <div class="ai-chat-controls">
+                <button class="ai-chat-minimize" id="aiChatMinimize">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="ai-chat-close" id="aiChatClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="ai-chat-messages" id="aiChatMessages">
+            <!-- Welcome Message -->
+            <div class="ai-message ai-message-welcome">
+                <div class="ai-avatar-small">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-message-content">
+                    <div class="ai-message-bubble">
+                        <p>Xin chào! Tôi là AI Assistant của Book Eat. Tôi có thể giúp bạn:</p>
+                        <ul class="ai-help-list">
+                            <li><i class="fas fa-search"></i> Tìm nhà hàng phù hợp</li>
+                            <li><i class="fas fa-calendar"></i> Đặt bàn nhanh chóng</li>
+                            <li><i class="fas fa-question-circle"></i> Trả lời câu hỏi</li>
+                            <li><i class="fas fa-lightbulb"></i> Đưa ra gợi ý</li>
+                        </ul>
+                        <p>Bạn muốn hỏi gì?</p>
+                    </div>
+                    <div class="ai-message-time">Vừa xong</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="ai-chat-input-container">
+            <div class="ai-chat-input-wrapper">
+                <input type="text" 
+                       id="aiChatInput" 
+                       class="ai-chat-input" 
+                       placeholder="Nhập câu hỏi của bạn..."
+                       maxlength="500">
+                <button class="ai-chat-send" id="aiChatSend">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="ai-chat-quick-actions">
+                <button class="ai-quick-action" data-action="find-restaurant">
+                    <i class="fas fa-search"></i>
+                    <span>Tìm nhà hàng</span>
+                </button>
+                <button class="ai-quick-action" data-action="make-booking">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span>Đặt bàn</span>
+                </button>
+                <button class="ai-quick-action" data-action="get-help">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Trợ giúp</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Chat Widget Styles -->
+<style>
+.ai-chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    font-family: 'Inter', sans-serif;
+}
+
+.ai-chat-toggle {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.ai-chat-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+}
+
+.ai-chat-icon {
+    color: white;
+    font-size: 24px;
+}
+
+.ai-chat-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ff4757;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.ai-chat-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: rgba(102, 126, 234, 0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.4);
+        opacity: 0;
+    }
+}
+
+.ai-chat-window {
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 350px;
+    height: 500px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ai-chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ai-chat-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ai-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.ai-info h6 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.ai-status {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.ai-chat-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.ai-chat-minimize,
+.ai-chat-close {
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.ai-chat-minimize:hover,
+.ai-chat-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.ai-chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+.ai-message {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.ai-message.user {
+    flex-direction: row-reverse;
+}
+
+.ai-message-welcome {
+    margin-bottom: 20px;
+}
+
+.ai-avatar-small {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.ai-message-content {
+    flex: 1;
+}
+
+.ai-message-bubble {
+    background: white;
+    padding: 12px 16px;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 5px;
+}
+
+.ai-message.user .ai-message-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.ai-message-bubble p {
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+}
+
+.ai-message-bubble p:last-child {
+    margin-bottom: 0;
+}
+
+.ai-help-list {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+}
+
+.ai-help-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.ai-help-list i {
+    color: #667eea;
+    width: 16px;
+}
+
+.ai-message-time {
+    font-size: 11px;
+    color: #6c757d;
+    text-align: right;
+}
+
+.ai-message.user .ai-message-time {
+    text-align: left;
+}
+
+.ai-chat-input-container {
+    padding: 15px 20px;
+    background: white;
+    border-top: 1px solid #e9ecef;
+}
+
+.ai-chat-input-wrapper {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.ai-chat-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #e9ecef;
+    border-radius: 25px;
+    outline: none;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+}
+
+.ai-chat-input:focus {
+    border-color: #667eea;
+}
+
+.ai-chat-send {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.ai-chat-send:hover {
+    transform: scale(1.1);
+}
+
+.ai-chat-quick-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.ai-quick-action {
+    padding: 6px 12px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 15px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ai-quick-action:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.ai-typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.ai-typing-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.ai-typing-dot {
+    width: 6px;
+    height: 6px;
+    background: #667eea;
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+}
+
+.ai-typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.ai-typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .ai-chat-widget {
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    .ai-chat-window {
+        width: calc(100vw - 30px);
+        height: calc(100vh - 100px);
+        bottom: 90px;
+        right: 0;
+        border-radius: 15px;
+    }
+    
+    .ai-chat-toggle {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .ai-chat-icon {
+        font-size: 20px;
+    }
+}
+</style>
+
+<!-- AI Chat Widget JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const aiChatWidget = document.getElementById('aiChatWidget');
+    const aiChatToggle = document.getElementById('aiChatToggle');
+    const aiChatWindow = document.getElementById('aiChatWindow');
+    const aiChatMinimize = document.getElementById('aiChatMinimize');
+    const aiChatClose = document.getElementById('aiChatClose');
+    const aiChatInput = document.getElementById('aiChatInput');
+    const aiChatSend = document.getElementById('aiChatSend');
+    const aiChatMessages = document.getElementById('aiChatMessages');
+    const aiChatBadge = document.getElementById('aiChatBadge');
+    const aiChatBadgeCount = document.getElementById('aiChatBadgeCount');
+    const aiStatus = document.getElementById('aiStatus');
+    const quickActions = document.querySelectorAll('.ai-quick-action');
+
+    let isChatOpen = false;
+    let isTyping = false;
+    let messageCount = 0;
+
+    // Toggle chat window
+    aiChatToggle.addEventListener('click', function() {
+        if (isChatOpen) {
+            closeChat();
+        } else {
+            openChat();
+        }
+    });
+
+    // Minimize chat
+    aiChatMinimize.addEventListener('click', function() {
+        closeChat();
+    });
+
+    // Close chat
+    aiChatClose.addEventListener('click', function() {
+        closeChat();
+    });
+
+    // Send message
+    aiChatSend.addEventListener('click', function() {
+        sendMessage();
+    });
+
+    // Send message on Enter key
+    aiChatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Quick actions
+    quickActions.forEach(action => {
+        action.addEventListener('click', function() {
+            const actionType = this.getAttribute('data-action');
+            handleQuickAction(actionType);
+        });
+    });
+
+    function openChat() {
+        aiChatWindow.style.display = 'flex';
+        aiChatToggle.style.display = 'none';
+        isChatOpen = true;
+        aiChatInput.focus();
+        
+        // Hide badge
+        aiChatBadge.style.display = 'none';
+        messageCount = 0;
+    }
+
+    function closeChat() {
+        aiChatWindow.style.display = 'none';
+        aiChatToggle.style.display = 'flex';
+        isChatOpen = false;
+    }
+
+    function sendMessage() {
+        const message = aiChatInput.value.trim();
+        if (!message || isTyping) return;
+
+        // Add user message
+        addMessage(message, 'user');
+        aiChatInput.value = '';
+
+        // Show typing indicator
+        showTypingIndicator();
+
+        // Send to AI
+        sendToAI(message);
+    }
+
+    function addMessage(content, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `ai-message ${sender}`;
+
+        if (sender === 'user') {
+            messageDiv.innerHTML = `
+                <div class="ai-message-content">
+                    <div class="ai-message-bubble">
+                        <p>${content}</p>
+                    </div>
+                    <div class="ai-message-time">Vừa xong</div>
+                </div>
+            `;
+        } else {
+            messageDiv.innerHTML = `
+                <div class="ai-avatar-small">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-message-content">
+                    <div class="ai-message-bubble">
+                        <p>${content}</p>
+                    </div>
+                    <div class="ai-message-time">Vừa xong</div>
+                </div>
+            `;
+        }
+
+        aiChatMessages.appendChild(messageDiv);
+        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+
+        // Show badge if chat is closed
+        if (!isChatOpen && sender === 'ai') {
+            messageCount++;
+            aiChatBadgeCount.textContent = messageCount;
+            aiChatBadge.style.display = 'flex';
+        }
+    }
+
+    function showTypingIndicator() {
+        if (isTyping) return;
+        
+        isTyping = true;
+        aiStatus.textContent = 'Đang nhập...';
+
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'ai-message ai-typing';
+        typingDiv.innerHTML = `
+            <div class="ai-avatar-small">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="ai-message-content">
+                <div class="ai-typing-indicator">
+                    <span>AI đang suy nghĩ</span>
+                    <div class="ai-typing-dots">
+                        <div class="ai-typing-dot"></div>
+                        <div class="ai-typing-dot"></div>
+                        <div class="ai-typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        aiChatMessages.appendChild(typingDiv);
+        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+    }
+
+    function hideTypingIndicator() {
+        const typingMessage = aiChatMessages.querySelector('.ai-typing');
+        if (typingMessage) {
+            typingMessage.remove();
+        }
+        isTyping = false;
+        aiStatus.textContent = 'Đang online';
+    }
+
+    function sendToAI(message) {
+        fetch('/ai/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                message: message,
+                context: 'chat_widget'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideTypingIndicator();
+            
+            if (data.response) {
+                addMessage(data.response, 'ai');
+            } else {
+                addMessage('Xin lỗi, tôi không thể trả lời câu hỏi này. Vui lòng thử lại.', 'ai');
+            }
+        })
+        .catch(error => {
+            console.error('AI Chat Error:', error);
+            hideTypingIndicator();
+            addMessage('Có lỗi xảy ra. Vui lòng thử lại sau.', 'ai');
+        });
+    }
+
+    function handleQuickAction(actionType) {
+        let message = '';
+        
+        switch(actionType) {
+            case 'find-restaurant':
+                message = 'Tôi muốn tìm nhà hàng phù hợp';
+                break;
+            case 'make-booking':
+                message = 'Tôi muốn đặt bàn';
+                break;
+            case 'get-help':
+                message = 'Tôi cần trợ giúp';
+                break;
+        }
+        
+        if (message) {
+            aiChatInput.value = message;
+            sendMessage();
+        }
+    }
+
+    // Auto-open chat on first visit (optional)
+    const hasVisited = localStorage.getItem('ai-chat-visited');
+    if (!hasVisited) {
+        setTimeout(() => {
+            if (!isChatOpen) {
+                messageCount = 1;
+                aiChatBadgeCount.textContent = '1';
+                aiChatBadge.style.display = 'flex';
+            }
+        }, 5000);
+        localStorage.setItem('ai-chat-visited', 'true');
+    }
+});
+</script>

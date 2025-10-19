@@ -18,7 +18,6 @@
     
 </head>
 <body>
-    <!-- Header -->
     <!-- Mini Header -->
     <div class="mini-header">
         <div class="container">
@@ -33,7 +32,8 @@
             </div>
         </div>
     </div>
-    <!-- main header -->
+    
+    <!-- Main Header -->
     <header class="header">
         <div class="container">
             <a th:href="@{/}" class="logo">Book Eat</a>
@@ -127,7 +127,7 @@
         </div>
         <div class="video-overlay">
             <div class="video-content">
-                <h1 class="video-title">Khám phá ẩm thực tại BootEat</h1>
+                <h1 class="video-title">Khám phá ẩm thực tại Book Eat</h1>
                 <p class="video-subtitle">Đặt bàn tại những nhà hàng tốt nhất với Book Eat</p>
                 
                 <div class="video-buttons">
@@ -199,37 +199,36 @@
                                 <p>Luôn sẵn sàng hỗ trợ bạn</p>
                             </div>
                         </div>
-                     </div>
-                 </div>
-                 
-                 <div class="intro-image">
-                     <!-- YouTube Video Embed -->
-                     <iframe 
-                         src="https://www.youtube.com/embed/lcU3pruVyUw?autoplay=1&mute=1&loop=1&playlist=lcU3pruVyUw&controls=0&showinfo=0&rel=0&modestbranding=1"
-                         frameborder="0"
-                         allow="autoplay; encrypted-media"
-                         allowfullscreen>
-                     </iframe>
-                     <div class="intro-video-overlay"></div>
-                     <div class="intro-stats">
-                         <div class="intro-stat">
-                             <span class="intro-stat-number">1,200+</span>
-                             <span class="intro-stat-label">Nhà hàng</span>
-                         </div>
-                         <div class="intro-stat">
-                             <span class="intro-stat-number">50K+</span>
-                             <span class="intro-stat-label">Khách hàng</span>
-                         </div>
-                         <div class="intro-stat">
-                             <span class="intro-stat-number">4.8</span>
-                             <span class="intro-stat-label">Đánh giá</span>
-                         </div>
-                     </div>
-                 </div>
- 
-             </div>
-         </div>
-     </section>
+                    </div>
+                </div>
+                
+                <div class="intro-image">
+                    <!-- YouTube Video Embed -->
+                    <iframe 
+                        src="https://www.youtube.com/embed/lcU3pruVyUw?autoplay=1&mute=1&loop=1&playlist=lcU3pruVyUw&controls=0&showinfo=0&rel=0&modestbranding=1"
+                        frameborder="0"
+                        allow="autoplay; encrypted-media"
+                        allowfullscreen>
+                    </iframe>
+                    <div class="intro-video-overlay"></div>
+                    <div class="intro-stats">
+                        <div class="intro-stat">
+                            <span class="intro-stat-number">1,200+</span>
+                            <span class="intro-stat-label">Nhà hàng</span>
+                        </div>
+                        <div class="intro-stat">
+                            <span class="intro-stat-number">50K+</span>
+                            <span class="intro-stat-label">Khách hàng</span>
+                        </div>
+                        <div class="intro-stat">
+                            <span class="intro-stat-number">4.8</span>
+                            <span class="intro-stat-label">Đánh giá</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Popular Restaurants -->
     <section class="popular-section" id="restaurants">
@@ -439,15 +438,15 @@
                 </div>
             </div>
             
-                <!-- Partners CTA -->
-                <div class="partners-cta">
-                    <h3>Bạn là chủ nhà hàng?</h3>
-                    <p>Hợp tác với Book Eat để tiếp cận hàng ngàn khách hàng tiềm năng mỗi ngày</p>
-                    <a th:href="@{/auth/register}" class="btn-partner">
-                        <i class="fas fa-handshake"></i>
-                        Trở thành đối tác
-                    </a>
-                </div>
+            <!-- Partners CTA -->
+            <div class="partners-cta">
+                <h3>Bạn là chủ nhà hàng?</h3>
+                <p>Hợp tác với Book Eat để tiếp cận hàng ngàn khách hàng tiềm năng mỗi ngày</p>
+                <a th:href="@{/auth/register}" class="btn-partner">
+                    <i class="fas fa-handshake"></i>
+                    Trở thành đối tác
+                </a>
+            </div>
         </div>
     </section>
 
@@ -531,4 +530,3 @@
     <script th:src="@{/js/home-resy.js}"></script>
 </body>
 </html>
-

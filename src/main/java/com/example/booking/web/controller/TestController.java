@@ -1,111 +1,121 @@
 package com.example.booking.web.controller;
 
-import java.sql.Connection;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.HttpServletRequest;
+import com.example.booking.test.OpenAITest;
 
 /**
- * Test controller for rate limiting
+ * Test Controller for OpenAI API
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/test")
 public class TestController {
     
     @Autowired
-    private DataSource dataSource;
+    private OpenAITest openAITest;
     
-    @GetMapping("/db-check")
-    public ResponseEntity<Map<String, Object>> databaseCheck() {
-        Map<String, Object> response = new HashMap<>();
+    /**
+     * Test OpenAI API key
+     */
+    @GetMapping("/openai")
+    public ResponseEntity<Map<String, Object>> testOpenAI() {
+        Map<String, Object> result = new HashMap<>();
         
         try {
-            Connection connection = dataSource.getConnection();
-            boolean isValid = connection.isValid(5);
-            connection.close();
+            System.out.println("🧪 Starting OpenAI API test...");
+            openAITest.testOpenAIKey();
             
-            response.put("status", isValid ? "UP" : "DOWN");
-            response.put("database", "connected");
-            response.put("timestamp", LocalDateTime.now());
-            response.put("message", isValid ? "Database connection successful" : "Database connection failed");
+            result.put("status", "success");
+            result.put("message", "OpenAI API key is working");
             
-            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            response.put("status", "DOWN");
-            response.put("database", "error");
-            response.put("timestamp", LocalDateTime.now());
-            response.put("message", "Database connection error: " + e.getMessage());
+            result.put("status", "error");
+            result.put("message", "OpenAI API key test failed: " + e.getMessage());
+        }
+        
+        return ResponseEntity.ok(result);
+    }
+    
+    /**
+     * Test restaurant intent parsing
+     */
+    @GetMapping("/openai/intent")
+    public ResponseEntity<Map<String, Object>> testIntentParsing() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            System.out.println("🧪 Starting intent parsing test...");
+            openAITest.testRestaurantIntentParsing();
             
-            return ResponseEntity.status(500).body(response);
-        }
-    }
-    
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, Object>> healthCheck() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "UP");
-        response.put("timestamp", LocalDateTime.now());
-        response.put("message", "Application is running");
-        response.put("version", "1.0.0");
-        
-        return ResponseEntity.ok(response);
-    }
-    
-    @GetMapping("/test")
-    public ResponseEntity<Map<String, Object>> testEndpoint(HttpServletRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Rate limiting test endpoint");
-        response.put("timestamp", LocalDateTime.now());
-        response.put("clientIp", getClientIpAddress(request));
-        response.put("userAgent", request.getHeader("User-Agent"));
-        response.put("status", "success");
-        
-        return ResponseEntity.ok(response);
-    }
-    
-    @GetMapping("/test/login")
-    public ResponseEntity<Map<String, Object>> testLoginEndpoint(HttpServletRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Login rate limiting test endpoint");
-        response.put("timestamp", LocalDateTime.now());
-        response.put("clientIp", getClientIpAddress(request));
-        response.put("status", "success");
-        
-        return ResponseEntity.ok(response);
-    }
-    
-    @GetMapping("/test/booking")
-    public ResponseEntity<Map<String, Object>> testBookingEndpoint(HttpServletRequest request) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Booking rate limiting test endpoint");
-        response.put("timestamp", LocalDateTime.now());
-        response.put("clientIp", getClientIpAddress(request));
-        response.put("status", "success");
-        
-        return ResponseEntity.ok(response);
-    }
-    
-    private String getClientIpAddress(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+            result.put("status", "success");
+            result.put("message", "Intent parsing test completed");
+            
+        } catch (Exception e) {
+            result.put("status", "error");
+            result.put("message", "Intent parsing test failed: " + e.getMessage());
         }
         
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
+        return ResponseEntity.ok(result);
+    }
+    
+    /**
+     * Test with custom query
+     */
+    @PostMapping("/openai/query")
+    public ResponseEntity<Map<String, Object>> testCustomQuery(@RequestBody Map<String, String> request) {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            String query = request.get("query");
+            if (query == null || query.trim().isEmpty()) {
+                result.put("status", "error");
+                result.put("message", "Query is required");
+                return ResponseEntity.badRequest().body(result);
+            }
+            
+            System.out.println("🧪 Testing custom query: " + query);
+            
+            // Test the query with OpenAI
+            com.theokanning.openai.service.OpenAiService service = 
+                new com.theokanning.openai.service.OpenAiService(
+                    System.getenv("OPENAI_API_KEY"), 
+                    java.time.Duration.ofSeconds(30)
+                );
+            
+            com.theokanning.openai.completion.chat.ChatCompletionRequest chatRequest = 
+                com.theokanning.openai.completion.chat.ChatCompletionRequest.builder()
+                    .model("gpt-4o-mini")
+                    .messages(java.util.List.of(
+                        new com.theokanning.openai.completion.chat.ChatMessage(
+                            com.theokanning.openai.completion.chat.ChatMessageRole.USER.value(), 
+                            query
+                        )
+                    ))
+                    .maxTokens(100)
+                    .temperature(0.3)
+                    .build();
+            
+            String response = service.createChatCompletion(chatRequest)
+                .getChoices().get(0).getMessage().getContent();
+            
+            result.put("status", "success");
+            result.put("query", query);
+            result.put("response", response);
+            
+        } catch (Exception e) {
+            result.put("status", "error");
+            result.put("message", "Custom query test failed: " + e.getMessage());
         }
         
-        return request.getRemoteAddr();
+        return ResponseEntity.ok(result);
     }
 }
