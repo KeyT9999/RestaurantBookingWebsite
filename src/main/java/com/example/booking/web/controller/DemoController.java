@@ -4,32 +4,32 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
- * Demo controller để xem các mẫu thiết kế
+ * Demo controller để xem các mẫu thiết kế (backup)
  */
 @Controller
 public class DemoController {
     
     /**
-     * Demo trang home designs
+     * Demo trang home designs (backup)
      */
     @GetMapping("/demo/home-demo")
     public String homeDemo() {
-        return "demo/home-demo";
+        return "backup/home-demo";
     }
     
     /**
-     * Demo trang home theo mẫu chonweb.vn
+     * Demo trang home theo mẫu chonweb.vn (backup)
      */
     @GetMapping("/demo/restaurant-home-demo")
     public String restaurantHomeDemo() {
-        return "demo/restaurant-home-demo";
+        return "backup/restaurant-home-demo";
     }
     
     /**
-     * Demo trang home theo phong cách Resy.com
+     * Demo trang home theo phong cách Resy.com (backup)
      */
     @GetMapping("/demo/resy-style-demo")
     public String resyStyleDemo() {
-        return "demo/resy-style-demo";
+        return "backup/resy-style-demo";
     }
 }
