@@ -3,596 +3,328 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${bookingId != null ? 'Edit Reservation - Aurelius' : 'New Reservation - Aurelius'}">Booking Form</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500&display=swap" rel="stylesheet">
-    
+    <title th:text="${bookingId != null ? 'Chỉnh sửa đặt bàn - Book Eat' : 'Đặt bàn mới - Book Eat'}">Book Eat – Đặt bàn</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Custom Luxury CSS -->
+
+    <!-- Shared styles -->
+    <link th:href="@{/css/home-resy.css}" rel="stylesheet">
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
-    
-    <style>
-        .table-card, .dish-card {
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .table-card:hover, .dish-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        
-        .table-card.selected, .dish-card.selected {
-            border-color: #007bff;
-            background-color: #f8f9fa;
-        }
-        
-        .form-check-input:checked + .form-check-label .card {
-            border-color: #007bff;
-            background-color: #e3f2fd;
-        }
-        
-        .quantity-control {
-            margin-top: 10px;
-        }
-        
-        .modal-xl {
-            max-width: 90%;
-        }
-        
-        /* Service Cards Styling */
-        .services-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 10px;
-        }
-        
-        .service-card {
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
-            position: relative;
-        }
-        
-        .service-card:hover {
-            border-color: #007bff;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,123,255,0.15);
-        }
-        
-        .service-card.selected {
-            border-color: #28a745;
-            background-color: #f8fff9;
-            box-shadow: 0 4px 12px rgba(40,167,69,0.15);
-        }
-        
-        .service-card.selected::before {
-            content: '✓';
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: #28a745;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
-        .service-icon {
-            font-size: 24px;
-            color: #007bff;
-            margin-bottom: 8px;
-        }
-        
-        .service-card.selected .service-icon {
-            color: #28a745;
-        }
-        
-        .service-name {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
-            color: #333;
-        }
-        
-        .service-description {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 8px;
-            line-height: 1.3;
-        }
-        
-        .service-price {
-            font-size: 13px;
-            font-weight: 600;
-            color: #28a745;
-        }
-        
-        .selected {
-            border-color: var(--primary);
-            background: rgba(255, 107, 129, 0.15);
-        }
-        /* Carousel Styles */
-        .carousel {
-            border-radius: 1rem;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            margin-top: 2rem;
-        }
-        
-        .carousel-image {
-            height: 500px;
-            object-fit: contain;
-            width: 100%;
-        }
-        
-        .carousel-indicators {
-            margin-bottom: 1rem;
-        }
-        
-        .carousel-indicators [data-bs-target] {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.5);
-            border: 2px solid white;
-            margin: 0 5px;
-            transition: all 0.3s ease;
-        }
-        
-        .carousel-indicators .active {
-            background-color: #007bff;
-            transform: scale(1.2);
-        }
-        
-        .carousel-control-prev,
-        .carousel-control-next {
-            width: 50px;
-            height: 50px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
-            top: 50%;
-            transform: translateY(-50%);
-            transition: all 0.3s ease;
-        }
-        
-        .carousel-control-prev {
-            left: 20px;
-        }
-        
-        .carousel-control-next {
-            right: 20px;
-        }
-        
-        .carousel-control-prev:hover,
-        .carousel-control-next:hover {
-            background-color: rgba(0, 0, 0, 0.7);
-            transform: translateY(-50%) scale(1.1);
-        }
-        
-        .carousel-caption {
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            border-radius: 0 0 1rem 1rem;
-            padding: 2rem 1rem 1rem;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
-        
-        .carousel-caption h5 {
-            color: white;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        .carousel-caption p {
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 0;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-        }
-        
-        /* Table Images Modal specific styles */
-        #tableImagesModal .carousel {
-            max-height: 600px;
-            margin-top: 0;
-        }
-        
-        #tableImagesModal .carousel-image {
-            height: 600px;
-            object-fit: cover;
-        }
-        
-        #tableImagesModal .carousel-indicators {
-            margin-bottom: 1rem;
-        }
-        
-        #tableImagesModal .carousel-control-prev,
-        #tableImagesModal .carousel-control-next {
-            width: 60px;
-            height: 60px;
-        }
-        
-        #tableImagesModal .carousel-control-prev {
-            left: 30px;
-        }
-        
-        #tableImagesModal .carousel-control-next {
-            right: 30px;
-        }
-        
-        /* Table Card Hover Effects */
-        .image-section:hover .image-overlay {
-            background: rgba(0,0,0,0.3) !important;
-        }
-        
-        .image-section:hover .image-overlay i {
-            opacity: 1 !important;
-        }
-        
-        .content-section:hover {
-            background-color: rgba(0,123,255,0.05);
-            transition: background-color 0.3s ease;
-        }
-        
-        /* View Toggle Button Styles */
-        .btn-group .btn {
-            flex: 1;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-group .btn.active {
-            background-color: var(--bs-btn-active-bg);
-            border-color: var(--bs-btn-active-border-color);
-            color: var(--bs-btn-active-color);
-        }
-        
-        .btn-group .btn-outline-info.active {
-            background-color: #17a2b8;
-            border-color: #17a2b8;
-            color: white;
-        }
-        
-        .btn-group .btn-outline-success.active {
-            background-color: #198754;
-            border-color: #198754;
-            color: white;
-        }
-        
-        .view-content {
-            min-height: 400px;
-        }
-        
-        /* Search Box Styles */
-        .input-group .form-control {
-            border-radius: 0.5rem 0 0 0.5rem;
-        }
-        
-        .input-group .btn {
-            border-radius: 0 0.5rem 0.5rem 0;
-        }
-        
-        .input-group-text {
-            background-color: #f8f9fa;
-            border-color: #dee2e6;
-        }
-        
-        .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-        
-        /* Pagination Styles */
-        .pagination .page-link {
-            color: #007bff;
-            border-color: #007bff;
-            background: transparent;
-        }
-        
-        .pagination .page-item.active .page-link {
-            background-color: #007bff;
-            border-color: #007bff;
-            color: white;
-        }
-        
-        .pagination .page-link:hover {
-            color: white;
-            background-color: rgba(0, 123, 255, 0.1);
-            border-color: #007bff;
-        }
-    </style>
+    <link th:href="@{/css/booking-resy.css}" rel="stylesheet">
 </head>
 
-<body>
-    <!-- Header Fragment -->
-    <div th:insert="~{fragments/header :: site-header}"></div>
+<body class="booking-page" th:with="activeNav='restaurants'">
+    <div th:replace="~{fragments/resy-header :: resy-header}"></div>
     
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="container mt-4">
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="luxury-card">
-                        <div class="text-center mb-4">
-                            <h2 class="luxury-title">
-                                <i class="fas fa-calendar-plus luxury-icon"></i>
-                                <span th:text="${bookingId != null ? 'Edit Reservation' : 'New Reservation'}"></span>
-                            </h2>
-                            <p class="text-muted">Create your perfect dining experience</p>
-                        </div>
-                        
-                        <!-- Error Messages -->
-                        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-triangle luxury-icon"></i>
-                            <span th:text="${errorMessage}"></span>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-                        </div>
-                        
-                        <!-- Success Messages -->
-                        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle luxury-icon"></i>
-                            <span th:text="${successMessage}"></span>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-                        </div>
-                        
-                        <form th:action="${bookingId != null ? '/booking/' + bookingId + '/update' : '/booking'}" 
-                              method="post" 
-                              th:object="${bookingForm}"
-                              id="bookingForm"
-                              onsubmit="return validateForm()">
-                            
+    <section class="booking-hero">
+        <div class="container">
+            <div class="booking-hero__content">
+                <span class="booking-hero__badge">Book Eat Experience</span>
+                <h1 th:text="${bookingId != null ? 'Chỉnh sửa đặt bàn' : 'Đặt bàn mới'}"></h1>
+                <p>Đặt bàn trực quan và đồng bộ với trải nghiệm trang chủ Book Eat.</p>
+                <div class="booking-hero__meta">
+                    <div class="booking-hero__meta-item">
+                        <i class="fas fa-utensils"></i>
+                        <span>Chọn nhà hàng &amp; bàn yêu thích</span>
+                    </div>
+                    <div class="booking-hero__meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Giữ chỗ chỉ trong vài bước</span>
+                    </div>
+                    <div class="booking-hero__meta-item">
+                        <i class="fas fa-ticket-alt"></i>
+                        <span>Áp dụng voucher tức thì</span>
+                    </div>
+                </div>
+                <div class="booking-hero__actions">
+                    <a href="#section-basic" class="btn-resy anchor-link">
+                        <i class="fas fa-calendar-plus me-2"></i> Bắt đầu đặt bàn
+                    </a>
+                    <a href="#section-tables" class="btn-resy-outline anchor-link">
+                        <i class="fas fa-chair me-2"></i> Xem lựa chọn bàn
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <main class="booking-main">
+        <div class="container booking-shell">
+            <div class="booking-panel">
+                <div class="booking-alert-stack">
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle luxury-icon"></i>
+                        <span th:text="${errorMessage}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle luxury-icon"></i>
+                        <span th:text="${successMessage}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <nav class="booking-steps-nav" aria-label="Điều hướng nhanh">
+                    <a href="#section-basic">
+                        <span>1.</span> Thông tin chính
+                    </a>
+                    <a href="#section-tables">
+                        <span>2.</span> Bàn &amp; món
+                    </a>
+                    <a href="#section-services">
+                        <span>3.</span> Dịch vụ &amp; ưu đãi
+                    </a>
+                    <a href="#section-notes">
+                        <span>4.</span> Ghi chú &amp; xác nhận
+                    </a>
+                </nav>
+
+                <form th:action="${bookingId != null ? '/booking/' + bookingId + '/update' : '/booking'}"
+                      method="post"
+                      th:object="${bookingForm}"
+                      id="bookingForm"
+                      onsubmit="return validateForm()">
+
+                    <div class="booking-form-grid">
+                        <div class="booking-fields">
                             <!-- Restaurant Selection -->
-                            <div class="mb-4">
+                            <div class="mb-4 booking-section" id="section-basic">
                                 <label for="restaurantId" class="form-label">
-                                    <i class="fas fa-utensils luxury-icon"></i> Restaurant <span style="color: #ff6b6b;">*</span>
+                                    <i class="fas fa-utensils luxury-icon"></i>
+                                    Nhà hàng
+                                    <span class="required-asterisk">*</span>
                                 </label>
-                                <select class="form-control" 
-                                        id="restaurantId" 
-                                        name="restaurantId" 
+                                <select class="form-control"
+                                        id="restaurantId"
+                                        name="restaurantId"
                                         th:field="*{restaurantId}"
                                         th:classappend="${#fields.hasErrors('restaurantId')} ? 'is-invalid' : ''"
                                         onchange="loadTables()">
-                                    <option value="">-- Select Restaurant --</option>
-                                    <option th:each="restaurant : ${restaurants}" 
-                                            th:value="${restaurant.restaurantId}" 
+                                    <option value="">Chọn nhà hàng</option>
+                                    <option th:each="restaurant : ${restaurants}"
+                                            th:value="${restaurant.restaurantId}"
                                             th:text="${restaurant.restaurantName}"></option>
                                 </select>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('restaurantId')}" 
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('restaurantId')}"
                                      th:errors="*{restaurantId}"></div>
+                                <small class="booking-hint">
+                                    Chọn nhà hàng để hiển thị bàn, thực đơn và dịch vụ phù hợp.
+                                </small>
+
+                                <div class="row g-4 mt-3">
+                                    <div class="col-md-6">
+                                        <label for="guestCount" class="form-label">
+                                            <i class="fas fa-users luxury-icon"></i>
+                                            Số lượng khách
+                                            <span class="required-asterisk">*</span>
+                                        </label>
+                                        <input type="number"
+                                               class="form-control"
+                                               id="guestCount"
+                                               name="guestCount"
+                                               th:field="*{guestCount}"
+                                               th:classappend="${#fields.hasErrors('guestCount')} ? 'is-invalid' : ''"
+                                               min="1"
+                                               max="12"
+                                               placeholder="Ví dụ: 4">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('guestCount')}"
+                                             th:errors="*{guestCount}"></div>
+                                        <small class="booking-hint">
+                                            Dành cho tối đa 12 khách mỗi lần đặt. Chọn thêm bàn nếu cần nhiều hơn.
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="bookingTime" class="form-label">
+                                            <i class="fas fa-clock luxury-icon"></i>
+                                            Khung giờ
+                                            <span class="required-asterisk">*</span>
+                                        </label>
+                                        <input type="datetime-local"
+                                               class="form-control"
+                                               id="bookingTime"
+                                               name="bookingTime"
+                                               th:field="*{bookingTime}"
+                                               th:classappend="${#fields.hasErrors('bookingTime')} ? 'is-invalid' : ''">
+                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('bookingTime')}"
+                                             th:errors="*{bookingTime}"></div>
+                                        <small class="booking-hint">
+                                            Nên đặt trước ít nhất 2 giờ để đảm bảo nhà hàng chuẩn bị chu đáo.
+                                        </small>
+                                    </div>
+                                </div>
                             </div>
-                            
+
                             <!-- Table Selection -->
-                            <div class="mb-4">
-                                <label class="form-label">
-                                    <i class="fas fa-chair luxury-icon"></i> Tables (Optional)
+                            <div class="mb-4 booking-section" id="section-tables">
+                                <label class="form-label d-flex align-items-center gap-2 mb-2">
+                                    <i class="fas fa-chair luxury-icon"></i>
+                                    Chọn bàn
+                                    <span class="optional-label">(không bắt buộc)</span>
                                 </label>
-                                <div class="d-flex gap-2">
-                                    <button type="button" 
-                                            class="btn btn-outline-primary" 
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <button type="button"
+                                            class="btn btn-outline-primary"
                                             id="viewTablesBtn"
                                             onclick="openTablePopup()"
                                             disabled>
-                                        <i class="fas fa-eye"></i> View Tables
+                                        <i class="fas fa-eye"></i> Xem sơ đồ bàn
                                     </button>
-                                    <span id="selectedTablesCount" class="text-muted small align-self-center">No tables selected</span>
+                                    <span id="selectedTablesCount" class="text-muted small">Chưa chọn bàn</span>
                                 </div>
-                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Click to view and select multiple tables
+                                <small class="booking-hint">
+                                    Xem sơ đồ để chọn nhiều bàn phù hợp với nhóm của bạn.
                                 </small>
-                                <!-- Selected Tables Summary -->
-                                <div id="selectedTablesSummary" class="mt-2" style="display: none;">
+                                <div id="selectedTablesSummary" class="mt-3" style="display: none;">
                                     <div class="alert alert-info">
-                                        <h6><i class="fas fa-chair"></i> Selected Tables:</h6>
+                                        <h6><i class="fas fa-chair"></i> Bàn đã chọn</h6>
                                         <div id="selectedTablesList"></div>
                                     </div>
                                 </div>
-                                <!-- Hidden input to store selected table IDs -->
                                 <input type="hidden" id="selectedTableId" name="tableId" th:value="${bookingForm.tableId}" />
                                 <input type="hidden" id="selectedTableIds" name="tableIds" th:value="${bookingForm.tableIds}" />
                             </div>
-                            
-                            <div class="row">
-                                <!-- Guest Count -->
-                                <div class="col-md-6 mb-4">
-                                    <label for="guestCount" class="form-label">
-                                        <i class="fas fa-users luxury-icon"></i> Number of Guests <span style="color: #ff6b6b;">*</span>
-                                    </label>
-                                    <input type="number" 
-                                           class="form-control" 
-                                           id="guestCount" 
-                                           name="guestCount"
-                                           th:field="*{guestCount}"
-                                           th:classappend="${#fields.hasErrors('guestCount')} ? 'is-invalid' : ''"
-                                           min="1" max="20" 
-                                           placeholder="Enter number of guests">
-                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('guestCount')}" 
-                                         th:errors="*{guestCount}"></div>
-                                </div>
-                                
-                                <!-- Booking Time -->
-                                <div class="col-md-6 mb-4">
-                                    <label for="bookingTime" class="form-label">
-                                        <i class="fas fa-clock luxury-icon"></i> Reservation Time <span style="color: #ff6b6b;">*</span>
-                                    </label>
-                                    <input type="datetime-local" 
-                                           class="form-control" 
-                                           id="bookingTime" 
-                                           name="bookingTime"
-                                           th:field="*{bookingTime}"
-                                           th:value="${bookingForm.bookingTime != null ? #temporals.format(bookingForm.bookingTime, 'yyyy-MM-dd''T''HH:mm') : ''}"
-                                           th:attr="data-booking-time=${bookingForm.bookingTime}"
-                                           th:classappend="${#fields.hasErrors('bookingTime')} ? 'is-invalid' : ''">
-                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('bookingTime')}" 
-                                         th:errors="*{bookingTime}"></div>
-                                    <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                        Reservation must be at least 30 minutes from now
-                                    </small>
-                                </div>
-                            </div>
-                            
-                            <!-- Dishes Selection -->
-                            <div class="mb-4" id="dishesSection">
-                                <label class="form-label">
-                                    <i class="fas fa-utensils luxury-icon"></i> Menu Items
+
+                            <!-- Menu Selection -->
+                            <div class="mb-4 booking-section" id="section-menu">
+                                <label class="form-label d-flex align-items-center gap-2">
+                                    <i class="fas fa-utensils luxury-icon"></i>
+                                    Thực đơn gọi trước
+                                    <span class="optional-label">(không bắt buộc)</span>
                                 </label>
-                                <div class="d-flex gap-2">
-                                    <button type="button" 
-                                            class="btn btn-outline-primary" 
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <button type="button"
+                                            class="btn btn-outline-primary"
                                             id="viewMenuBtn"
                                             onclick="openMenuPopup()"
                                             disabled>
-                                        <i class="fas fa-eye"></i> View Menu
+                                        <i class="fas fa-eye"></i> Xem menu
                                     </button>
-                                    <span id="selectedDishesCount" class="text-muted small align-self-center">No items selected</span>
+                                    <span id="selectedDishesCount" class="text-muted small">Chưa chọn món</span>
                                 </div>
-                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Click to view and select multiple menu items
+                                <small class="booking-hint">
+                                    Đặt món trước để giữ mức giá và giúp nhà hàng chuẩn bị nhanh chóng.
                                 </small>
-                                <!-- Selected Menu Items Summary -->
-                                <div id="selectedDishesSummary" class="mt-2" style="display: none;">
+                                <div id="selectedDishesSummary" class="mt-3" style="display: none;">
                                     <div class="alert alert-info">
-                                        <h6><i class="fas fa-utensils"></i> Selected Menu Items:</h6>
+                                        <h6><i class="fas fa-utensils"></i> Món đã chọn</h6>
                                         <div id="selectedDishesList"></div>
                                     </div>
                                 </div>
-                                <!-- Hidden input to store selected dish IDs -->
                                 <input type="hidden" id="selectedDishIds" name="dishIds" th:value="${bookingForm.dishIds}" />
                             </div>
 
                             <!-- Services Selection -->
-                            <div class="mb-4" id="servicesSection" style="display: block;">
-                                <label class="form-label">
-                                    <i class="fas fa-concierge-bell luxury-icon"></i> Additional Services
+                            <div class="mb-4 booking-section" id="section-services">
+                                <label class="form-label d-flex align-items-center gap-2">
+                                    <i class="fas fa-concierge-bell luxury-icon"></i>
+                                    Dịch vụ bổ sung
+                                    <span class="optional-label">(không bắt buộc)</span>
                                 </label>
                                 <div class="services-container" id="servicesContainer">
-                                    <!-- Services will be loaded here as cards -->
+                                    <!-- Services will be injected bằng JavaScript -->
                                 </div>
-                                <small style="color: var(--text-light); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Select services to enhance your dining experience
+                                <small class="booking-hint">
+                                    Thêm các dịch vụ như trang trí, hoa hoặc yêu cầu hỗ trợ để nâng tầm trải nghiệm.
                                 </small>
-                            <!-- Hidden input to store selected service IDs -->
-                            <!-- Debug: Check serviceIds value -->
-                            <script th:inline="javascript">
-                                console.log('🔍 DEBUG - Thymeleaf serviceIds value:', /*[[${bookingForm.serviceIds}]]*/ 'null');
-                                console.log('🔍 DEBUG - Thymeleaf serviceIds type:', typeof /*[[${bookingForm.serviceIds}]]*/ 'null');
-                                console.log('🔍 DEBUG - Thymeleaf serviceIds is null:', /*[[${bookingForm.serviceIds == null}]]*/ 'null');
-                                console.log('🔍 DEBUG - Thymeleaf serviceIds is empty:', /*[[${bookingForm.serviceIds == ''}]]*/ 'null');
-                                console.log('🔍 DEBUG - Thymeleaf serviceIds length:', /*[[${bookingForm.serviceIds != null ? bookingForm.serviceIds.length() : 'null'}]]*/ 'null');
-                                
-                                // Check hidden input after DOM is ready
-                                document.addEventListener('DOMContentLoaded', function() {
-                                    const serviceIdsInput = document.getElementById('selectedServiceIds');
-                                    console.log('🔍 DEBUG - Hidden input selectedServiceIds value:', serviceIdsInput ? serviceIdsInput.value : 'NOT FOUND');
-                                    console.log('🔍 DEBUG - Hidden input selectedServiceIds attributes:', serviceIdsInput ? {
-                                        id: serviceIdsInput.id,
-                                        name: serviceIdsInput.name,
-                                        value: serviceIdsInput.value,
-                                        type: serviceIdsInput.type
-                                    } : 'NOT FOUND');
-                                });
-                            </script>
-                            <input type="hidden" id="selectedServiceIds" name="serviceIds" th:value="${bookingForm.serviceIds}" />
-                            
-                            <!-- Hidden inputs for voucher information -->
-                            <input type="hidden" id="voucherDiscountAmount" name="voucherDiscountAmount" value="0">
-                            <input type="hidden" id="voucherCodeApplied" name="voucherCodeApplied" value="">
+                                <input type="hidden" id="selectedServiceIds" name="serviceIds" th:value="${bookingForm.serviceIds}" />
                             </div>
 
-                            <!-- Total Amount Display -->
-                            <div class="mb-4">
-                                <div class="luxury-card bg-light">
-                                    <div class="row">
-                                        <div class="col-md-1212">
-                                            <h6 class="mb-2">
-                                                <i class="fas fa-calculator luxury-icon"></i> Booking Summary
-                                            </h6>
-                                            <div class="d-flex justify-content-between mb-1">
-                                                <span>Table Deposit:</span>
-                                                <span id="tableDepositAmount">0 VNĐ</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mb-1">
-                                                <span>Dishes Total:</span>
-                                                <span id="dishesTotalAmount">0 VNĐ</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mb-1">
-                                                <span>Services Total:</span>
-                                                <span id="servicesTotalAmount">0 VNĐ</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between mb-1" id="subtotalRow">
-                                                <span>Subtotal:</span>
-                                                <span id="subtotalAmount">0 VNĐ</span>
-                                            </div>
-                                            <!-- Voucher Discount Row (initially hidden) -->
-                                            <div class="d-flex justify-content-between mb-1" id="voucherDiscountRow" style="display: none;">
-                                                <span class="text-success">
-                                                    <i class="fas fa-ticket-alt"></i> Voucher Discount:
-                                                </span>
-                                                <span class="text-success" id="voucherDiscountDisplay">-0 VNĐ</span>
-                                            </div>
-                                            <hr>
-                                            <div class="d-flex justify-content-between">
-                                                <strong>Total Deposit:</strong>
-                                                <strong id="totalDepositAmount" style="color: var(--luxury-gold);">0 VNĐ</strong>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-1212">
-                                            <div class="text-center">
-                                                <i class="fas fa-info-circle luxury-icon text-info"></i>
-                                                <p class="small text-muted mb-0 mt-2">
-                                                    This amount will be charged as deposit for your reservation
-                                                </p>
-                                            </div>
-                                        </div>
+                            <!-- Special Requests -->
+                            <div class="mb-4 booking-section" id="section-notes">
+                                <label for="note" class="form-label">
+                                    <i class="fas fa-comment-dots luxury-icon"></i>
+                                    Ghi chú đặc biệt
+                                    <span class="optional-label">(tùy chọn)</span>
+                                </label>
+                                <textarea class="form-control"
+                                          id="note"
+                                          name="note"
+                                          th:field="*{note}"
+                                          th:classappend="${#fields.hasErrors('note')} ? 'is-invalid' : ''"
+                                          rows="4"
+                                          maxlength="500"
+                                          placeholder="Ví dụ: Sinh nhật, không ăn hải sản, cần set up nến..."></textarea>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('note')}"
+                                     th:errors="*{note}"></div>
+                                <small class="booking-hint">
+                                    Tối đa 500 ký tự. Thông tin của bạn sẽ được gửi trực tiếp đến nhà hàng.
+                                </small>
+                            </div>
+                        </div>
+
+                        <aside class="booking-sidebar">
+                            <!-- Summary -->
+                            <div class="booking-card booking-summary-card">
+                                <span class="booking-summary-card__badge">
+                                    <i class="fas fa-calculator"></i> Tổng quan
+                                </span>
+                                <h3>Chi phí đặt cọc</h3>
+                                <div class="booking-summary-rows">
+                                    <div class="booking-summary-row">
+                                        <span>Đặt cọc bàn</span>
+                                        <span id="tableDepositAmount">0 VNĐ</span>
+                                    </div>
+                                    <div class="booking-summary-row">
+                                        <span>Món đã chọn</span>
+                                        <span id="dishesTotalAmount">0 VNĐ</span>
+                                    </div>
+                                    <div class="booking-summary-row">
+                                        <span>Dịch vụ bổ sung</span>
+                                        <span id="servicesTotalAmount">0 VNĐ</span>
+                                    </div>
+                                    <div class="booking-summary-row" id="subtotalRow">
+                                        <span>Tạm tính</span>
+                                        <span id="subtotalAmount">0 VNĐ</span>
+                                    </div>
+                                    <div class="booking-summary-row" id="voucherDiscountRow" style="display: none;">
+                                        <span><i class="fas fa-ticket-alt"></i> Ưu đãi voucher</span>
+                                        <span id="voucherDiscountDisplay">-0 VNĐ</span>
                                     </div>
                                 </div>
-                                <!-- Hidden input to store the calculated deposit amount -->
-                                <input type="hidden" 
-                                       id="depositAmount" 
+                                <div class="booking-summary-card__total">
+                                    <span>Tổng đặt cọc</span>
+                                    <span id="totalDepositAmount">0 VNĐ</span>
+                                </div>
+                                <p class="booking-summary-card__note">
+                                    <i class="fas fa-info-circle"></i>
+                                    Số tiền này sẽ được tạm giữ để đảm bảo chỗ ngồi của bạn.
+                                </p>
+                                <input type="hidden"
+                                       id="depositAmount"
                                        name="depositAmount"
                                        th:field="*{depositAmount}">
                             </div>
-                            
-                            <!-- Voucher Code -->
-                            <div class="mb-4">
-                                <label for="voucherSelect" class="form-label">
-                                    <i class="fas fa-ticket-alt luxury-icon"></i> Voucher Code (Optional)
-                                </label>
+
+                            <!-- Voucher -->
+                            <div class="booking-card booking-voucher-card">
+                                <h4 class="h6 d-flex align-items-center gap-2 mb-3">
+                                    <i class="fas fa-ticket-alt luxury-icon"></i>
+                                    Voucher
+                                    <span class="optional-label">(không bắt buộc)</span>
+                                </h4>
                                 <div class="input-group">
                                     <select class="form-control" id="voucherSelect" name="voucherCode">
-                                        <option value="">-- Select a voucher --</option>
+                                        <option value="">Chọn voucher của bạn</option>
                                     </select>
-                                    <button type="button" 
-                                            class="btn btn-outline-primary" 
+                                    <button type="button"
+                                            class="btn btn-outline-primary"
                                             id="validateVoucherBtn"
                                             onclick="validateSelectedVoucher()">
-                                        <i class="fas fa-check"></i> Apply
-                                    </button>
-                                    <button type="button" 
-                                            class="btn btn-outline-secondary ms-2" 
-                                            onclick="testVoucherDiscount()">
-                                        <i class="fas fa-bug"></i> Test
+                                        <i class="fas fa-check"></i> Áp dụng
                                     </button>
                                 </div>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('voucherCode')}" 
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('voucherCode')}"
                                      th:errors="*{voucherCode}"></div>
-                                
-                                <!-- Voucher validation result -->
                                 <div id="voucherResult" class="mt-2" style="display: none;">
                                     <div id="voucherSuccess" class="alert alert-success" style="display: none;">
                                         <i class="fas fa-check-circle"></i>
@@ -603,46 +335,36 @@
                                         <span id="voucherErrorText"></span>
                                     </div>
                                 </div>
-                                
-                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Select a voucher from your available vouchers to get discount on your reservation
+                                <small class="booking-hint">
+                                    Áp dụng voucher để được trừ trực tiếp vào số tiền đặt cọc.
                                 </small>
+                                <input type="hidden" id="voucherDiscountAmount" name="voucherDiscountAmount" value="0">
+                                <input type="hidden" id="voucherCodeApplied" name="voucherCodeApplied" value="">
                             </div>
-                            
-                            <!-- Special Requests -->
-                            <div class="mb-4">
-                                <label for="note" class="form-label">
-                                    <i class="fas fa-comment-dots luxury-icon"></i> Special Requests
-                                </label>
-                                <textarea class="form-control" 
-                                          id="note" 
-                                          name="note"
-                                          th:field="*{note}"
-                                          th:classappend="${#fields.hasErrors('note')} ? 'is-invalid' : ''"
-                                          rows="4" 
-                                          maxlength="500" 
-                                          placeholder="Dietary restrictions, celebration details, special arrangements, etc."></textarea>
-                                <div class="invalid-feedback" th:if="${#fields.hasErrors('note')}" 
-                                     th:errors="*{note}"></div>
-                                <small style="color: var(--luxury-gray-dark); font-size: 0.9rem; margin-top: 8px; display: block;">
-                                    Maximum 500 characters
-                                </small>
+
+                            <!-- Tips -->
+                            <div class="booking-tip-card">
+                                <h6><i class="fas fa-lightbulb"></i> Gợi ý nhanh</h6>
+                                <ul>
+                                    <li>Chọn nhiều bàn để ghép nhóm lớn hoặc không gian riêng tư.</li>
+                                    <li>Đặt trước món signature để giữ mức giá ưu đãi.</li>
+                                    <li>Nhập ghi chú chi tiết để nhà hàng chuẩn bị chính xác.</li>
+                                </ul>
                             </div>
-                            
-                            <!-- Action Buttons -->
-                            <div class="text-center">
-                                <button type="submit" class="btn btn--gold me-3">
-                                    <i class="fas fa-check-circle"></i>
-                                    <span th:text="${bookingId != null ? 'Update Reservation' : 'Confirm Reservation'}"></span>
-                                </button>
-                                
-                                <a href="/booking/my" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left"></i> Back to My Reservations
-                                </a>
-                            </div>
-                        </form>
+                        </aside>
                     </div>
-                </div>
+
+                    <div class="booking-submit">
+                        <button type="submit" class="btn-resy">
+                            <i class="fas fa-check-circle"></i>
+                            <span th:text="${bookingId != null ? 'Cập nhật đặt bàn' : 'Xác nhận đặt bàn'}"></span>
+                        </button>
+                        <a th:href="@{/booking/my}" class="btn-resy-outline">
+                            <i class="fas fa-arrow-left"></i>
+                            Quay lại đặt bàn của tôi
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
     </main>
@@ -653,7 +375,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="tableModalLabel">
-                        <i class="fas fa-chair"></i> Select Tables
+                        <i class="fas fa-chair"></i> Chọn bàn
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -689,11 +411,11 @@
                             
                             <button class="carousel-control-prev" type="button" data-bs-target="#tableLayoutCarousel" data-bs-slide="prev">
                                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
+                                <span class="visually-hidden">Trước</span>
                             </button>
                             <button class="carousel-control-next" type="button" data-bs-target="#tableLayoutCarousel" data-bs-slide="next">
                                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
+                                <span class="visually-hidden">Sau</span>
                             </button>
                         </div>
                     </div>
@@ -722,8 +444,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="confirmTableSelection()">Confirm Selection</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmTableSelection()">Xác nhận</button>
                 </div>
             </div>
         </div>
@@ -735,7 +457,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="menuModalLabel">
-                        <i class="fas fa-utensils"></i> Select Menu Items
+                        <i class="fas fa-utensils"></i> Chọn món ăn
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -770,8 +492,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="confirmMenuSelection()">Confirm Selection</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmMenuSelection()">Xác nhận</button>
                 </div>
             </div>
         </div>
@@ -801,11 +523,11 @@
                         
                         <button class="carousel-control-prev" type="button" data-bs-target="#tableImagesCarousel" data-bs-slide="prev">
                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
+                            <span class="visually-hidden">Trước</span>
                         </button>
                         <button class="carousel-control-next" type="button" data-bs-target="#tableImagesCarousel" data-bs-slide="next">
                             <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
+                            <span class="visually-hidden">Sau</span>
                         </button>
                     </div>
                 </div>
@@ -823,7 +545,7 @@
                 <div class="modal-header bg-warning text-dark">
                     <h5 class="modal-title" id="smartWaitlistModalLabel">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <span id="popupTitle">Table Availability Issue</span>
+                        <span id="popupTitle">Không thể giữ bàn ngay</span>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -835,30 +557,25 @@
                     
                     <!-- Waitlist Information -->
                     <div class="waitlist-info bg-light p-3 rounded mt-3">
-                        <h6><i class="fas fa-clock text-warning"></i> Waitlist Information:</h6>
-                        <p><strong>Estimated Wait Time:</strong> <span id="waitTime"></span></p>
-                        <p><strong>Reason:</strong> <span id="waitReason"></span></p>
+                        <h6><i class="fas fa-clock text-warning"></i> Thông tin danh sách chờ:</h6>
+                        <p><strong>Thời gian chờ ước tính:</strong> <span id="waitTime"></span></p>
+                        <p><strong>Nguyên nhân:</strong> <span id="waitReason"></span></p>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancel
+                        Huỷ
                     </button>
                     <button type="button" class="btn btn-warning" onclick="joinSmartWaitlist()">
-                        <i class="fas fa-clock"></i> Join Waitlist
+                        <i class="fas fa-clock"></i> Tham gia danh sách chờ
                     </button>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Footer Fragment -->
-    <div th:insert="~{fragments/footer :: site-footer}"></div>
-    
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Custom JS -->
+    <div th:replace="~{fragments/resy-footer :: resy-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: resy-scripts}"></div>
     <script th:src="@{/js/main.js}" defer></script>
     
     <script>
@@ -975,7 +692,7 @@
                    // document.getElementById('servicesSection').style.display = 'none';
                    // Reset menu button when no restaurant selected
                    const viewMenuBtn = document.getElementById('viewMenuBtn');
-                   viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu';
+                   viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu';
                    viewMenuBtn.disabled = true;
                    updateTotalAmount();
                    return Promise.resolve([]); // Return resolved promise with empty array
@@ -1114,7 +831,7 @@
                                     <label class="form-check-label flex-grow-1" for="table-${table.tableId}">
                                         <h6 class="card-title mb-1">${table.tableName}</h6>
                                         <p class="card-text mb-1">
-                                            <small class="text-muted">Capacity: ${table.capacity} people</small><br>
+                                            <small class="text-muted">Sức chứa: ${table.capacity} khách</small><br>
                                             <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
                                         </p>
                                         <span class="badge ${statusClass}">${statusText}</span>
@@ -1158,17 +875,17 @@
                     // Update button text based on dishes availability
                     const viewMenuBtn = document.getElementById('viewMenuBtn');
                     if (dishes.length === 0) {
-                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu (No items available)';
+                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu (chưa có món nào phù hợp)';
                         viewMenuBtn.disabled = true;
                     } else {
-                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu';
+                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu';
                         viewMenuBtn.disabled = false;
                     }
                 })
                 .catch(error => {
                     console.error('Error loading dishes:', error);
                     const viewMenuBtn = document.getElementById('viewMenuBtn');
-                    viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> View Menu (Error loading)';
+                    viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu (lỗi tải dữ liệu)';
                     viewMenuBtn.disabled = true;
                 });
         }
@@ -1223,7 +940,7 @@
                     servicesContainer.innerHTML = `
                         <div class="text-center text-danger py-4">
                             <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                            <p>Error loading services. Please try again.</p>
+                        <p>Không thể tải dịch vụ, vui lòng thử lại.</p>
                         </div>
                     `;
                 });
@@ -1558,7 +1275,7 @@
                                     <label class="form-check-label flex-grow-1" for="table-${table.tableId}">
                                         <h6 class="card-title mb-1">${table.tableName}</h6>
                                         <p class="card-text mb-1">
-                                            <small class="text-muted">Capacity: ${table.capacity} people</small><br>
+                                            <small class="text-muted">Sức chứa: ${table.capacity} khách</small><br>
                                             <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
                                         </p>
                                         <span class="badge ${statusClass}">${statusText}</span>
@@ -1745,7 +1462,7 @@
             const listDiv = document.getElementById('selectedTablesList');
             
             if (selectedTables.length === 0) {
-                countSpan.textContent = 'No tables selected';
+                countSpan.textContent = 'Chưa chọn bàn';
                 hiddenInput.value = '';
                 summaryDiv.style.display = 'none';
             } else {
@@ -1757,7 +1474,7 @@
                 summaryDiv.style.display = 'block';
                 listDiv.innerHTML = selectedTables.map(table => `
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span><strong>${table.name}</strong> (Capacity: ${table.capacity} people)</span>
+                        <span><strong>${table.name}</strong> (Sức chứa: ${table.capacity} khách)</span>
                         <span class="text-success">${formatCurrency(table.deposit)}</span>
                     </div>
                 `).join('');
@@ -1771,7 +1488,7 @@
             const listDiv = document.getElementById('selectedDishesList');
             
             if (selectedDishes.length === 0) {
-                countSpan.textContent = 'No items selected';
+                countSpan.textContent = 'Chưa chọn món';
                 hiddenInput.value = '';
                 summaryDiv.style.display = 'none';
             } else {
@@ -1877,7 +1594,7 @@
             
             // Basic validation (redundant but keeping for safety)
             if (!restaurantId || !guestCount || !bookingTime) {
-                alert('Please fill in all required fields.');
+                alert('Vui lòng điền đầy đủ các trường bắt buộc.');
                 return false;
             }
             
@@ -2000,7 +1717,7 @@
         // Populate voucher dropdown
         function populateVoucherDropdown() {
             const voucherSelect = document.getElementById('voucherSelect');
-            voucherSelect.innerHTML = '<option value="">-- Select a voucher --</option>';
+            voucherSelect.innerHTML = '<option value="">Chọn voucher của bạn</option>';
             
             availableVouchers.forEach(voucher => {
                 const option = document.createElement('option');
@@ -2020,7 +1737,7 @@
             const selectedOption = voucherSelect.options[voucherSelect.selectedIndex];
             
             if (!selectedOption.value) {
-                showVoucherError('Please select a voucher');
+                showVoucherError('Vui lòng chọn voucher');
                 return;
             }
             
@@ -2029,17 +1746,17 @@
             const guestCount = document.getElementById('guestCount').value;
             
             if (!restaurantId) {
-                showVoucherError('Please select a restaurant first');
+                showVoucherError('Vui lòng chọn nhà hàng trước');
                 return;
             }
             
             if (!bookingTime) {
-                showVoucherError('Please select booking time first');
+                showVoucherError('Vui lòng chọn thời gian đặt bàn trước');
                 return;
             }
             
             if (!guestCount) {
-                showVoucherError('Please enter number of guests first');
+                showVoucherError('Vui lòng nhập số lượng khách trước');
                 return;
             }
             
@@ -2073,8 +1790,8 @@
                     voucherDiscount = data.calculatedDiscount ? parseFloat(data.calculatedDiscount) : 0;
                     
                     const discountText = data.calculatedDiscount ? 
-                        `Discount: ${formatCurrency(data.calculatedDiscount)}` : 
-                        'Voucher is valid';
+                        `Giảm: ${formatCurrency(data.calculatedDiscount)}` : 
+                        'Voucher hợp lệ';
                     showVoucherSuccess(discountText);
                 } else {
                     // Reset voucher discount on error
@@ -2085,7 +1802,7 @@
             })
             .catch(error => {
                 console.error('Error validating voucher:', error);
-                showVoucherError('Error validating voucher. Please try again.');
+                showVoucherError('Không thể kiểm tra voucher, vui lòng thử lại.');
             })
             .finally(() => {
                 // Reset button state
@@ -2102,29 +1819,29 @@
             const guestCount = document.getElementById('guestCount').value;
             
             if (!voucherCode) {
-                showVoucherError('Please enter a voucher code');
+                showVoucherError('Vui lòng nhập mã voucher');
                 return;
             }
             
             if (!restaurantId) {
-                showVoucherError('Please select a restaurant first');
+                showVoucherError('Vui lòng chọn nhà hàng trước');
                 return;
             }
             
             if (!bookingTime) {
-                showVoucherError('Please select booking time first');
+                showVoucherError('Vui lòng chọn thời gian đặt bàn trước');
                 return;
             }
             
             if (!guestCount) {
-                showVoucherError('Please enter number of guests first');
+                showVoucherError('Vui lòng nhập số lượng khách trước');
                 return;
             }
             
             // Show loading state
             const validateBtn = document.getElementById('validateVoucherBtn');
             const originalText = validateBtn.innerHTML;
-            validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            validateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra...';
             validateBtn.disabled = true;
             
             // Prepare request data
@@ -2151,8 +1868,8 @@
                     voucherDiscount = data.calculatedDiscount ? parseFloat(data.calculatedDiscount) : 0;
                     
                     const discountText = data.calculatedDiscount ? 
-                        `Discount: ${formatCurrency(data.calculatedDiscount)}` : 
-                        'Voucher is valid';
+                        `Giảm: ${formatCurrency(data.calculatedDiscount)}` : 
+                        'Voucher hợp lệ';
                     showVoucherSuccess(discountText);
                 } else {
                     // Reset voucher discount on error
@@ -2163,7 +1880,7 @@
             })
             .catch(error => {
                 console.error('Error validating voucher:', error);
-                showVoucherError('Error validating voucher. Please try again.');
+                showVoucherError('Không thể kiểm tra voucher, vui lòng thử lại.');
             })
             .finally(() => {
                 // Reset button state
@@ -2196,20 +1913,20 @@
         
         function getVoucherErrorMessage(reason) {
             const errorMessages = {
-                'EMPTY_CODE': 'Please enter a voucher code',
-                'NOT_FOUND': 'Voucher code not found',
-                'INACTIVE': 'This voucher is not active',
-                'NOT_STARTED': 'This voucher is not yet active',
-                'EXPIRED': 'This voucher has expired',
-                'RESTAURANT_SCOPE_MISMATCH': 'This voucher is not valid for the selected restaurant',
-                'MIN_ORDER_NOT_MET': 'Order amount does not meet minimum requirement',
-                'GLOBAL_LIMIT_REACHED': 'This voucher has reached its usage limit',
-                'PER_CUSTOMER_LIMIT_REACHED': 'You have reached the usage limit for this voucher',
-                'NOT_ASSIGNED': 'This voucher is not assigned to you',
-                'LIMIT_REACHED': 'You have used this voucher too many times',
-                'APPLICATION_ERROR': 'Error applying voucher. Please try again.'
+                'EMPTY_CODE': 'Vui lòng nhập mã voucher',
+                'NOT_FOUND': 'Không tìm thấy voucher phù hợp',
+                'INACTIVE': 'Voucher này hiện không hoạt động',
+                'NOT_STARTED': 'Voucher này chưa bắt đầu áp dụng',
+                'EXPIRED': 'Voucher này đã hết hạn',
+                'RESTAURANT_SCOPE_MISMATCH': 'Voucher không áp dụng cho nhà hàng đã chọn',
+                'MIN_ORDER_NOT_MET': 'Giá trị đặt bàn chưa đạt mức tối thiểu',
+                'GLOBAL_LIMIT_REACHED': 'Voucher đã đạt số lượng sử dụng tối đa',
+                'PER_CUSTOMER_LIMIT_REACHED': 'Bạn đã sử dụng voucher này đủ số lần cho phép',
+                'NOT_ASSIGNED': 'Voucher này không thuộc về tài khoản của bạn',
+                'LIMIT_REACHED': 'Bạn đã dùng voucher quá số lần quy định',
+                'APPLICATION_ERROR': 'Có lỗi khi áp dụng voucher, vui lòng thử lại.'
             };
-            return errorMessages[reason] || 'Invalid voucher code';
+            return errorMessages[reason] || 'Mã voucher không hợp lệ';
         }
 
         
@@ -2454,28 +2171,6 @@
             setTimeout(() => updateTotalAmount(), 0);
         }
         
-        // Test function to debug voucher discount
-        function testVoucherDiscount() {
-            console.log('Testing voucher discount...');
-            voucherDiscount = 50000; // Set test discount
-            console.log('voucherDiscount set to:', voucherDiscount);
-            
-            // Force update the display
-            const voucherDiscountRow = document.getElementById('voucherDiscountRow');
-            const voucherDiscountDisplay = document.getElementById('voucherDiscountDisplay');
-            
-            if (voucherDiscountRow && voucherDiscountDisplay) {
-                voucherDiscountRow.style.display = 'flex';
-                voucherDiscountDisplay.textContent = '-' + formatCurrency(voucherDiscount);
-                console.log('Voucher discount row updated:', voucherDiscountRow.style.display);
-                console.log('Voucher discount amount updated:', voucherDiscountDisplay.textContent);
-            } else {
-                console.error('Voucher discount elements not found!');
-            }
-            
-            updateTotalAmount();
-        }
-        
         function updateVoucherDiscountInSummary() {
             console.log('updateVoucherDiscountInSummary called, voucherDiscount:', voucherDiscount);
             const voucherDiscountRow = document.getElementById('voucherDiscountRow');
@@ -2633,9 +2328,9 @@
             // Update popup title based on conflict type
             const popupTitle = document.getElementById('popupTitle');
             if (data.conflictType === 'SPECIFIC_TABLE') {
-                popupTitle.textContent = 'Selected Tables Have Conflicts';
+                popupTitle.textContent = 'Bàn bạn chọn đang trùng lịch';
             } else if (data.conflictType === 'NO_AVAILABLE_TABLES') {
-                popupTitle.textContent = 'No Tables Available for Party Size';
+                popupTitle.textContent = 'Không còn bàn phù hợp với số khách';
             }
             
             // Populate conflict content
@@ -2656,17 +2351,17 @@
             const conflictContent = document.getElementById('conflictContent');
             
             if (data.conflictType === 'SPECIFIC_TABLE') {
-                let html = '<div class="alert alert-warning"><h6><i class="fas fa-exclamation-triangle"></i> Table Conflicts Detected:</h6>';
+                let html = '<div class="alert alert-warning"><h6><i class="fas fa-exclamation-triangle"></i> Bàn đang được giữ bởi người khác:</h6>';
                 
                 data.conflictDetails.selectedTables.forEach(table => {
                     html += `<div class="mb-2">
-                        <strong>${table.tableName}</strong> (Capacity: ${table.capacity} people)
+                        <strong>${table.tableName}</strong> (Sức chứa: ${table.capacity} khách)
                         <ul class="mb-0 mt-1">`;
                     
                     table.conflicts.forEach(conflict => {
                         const bookingTime = new Date(conflict.bookingTime).toLocaleString('vi-VN');
                         const endTime = new Date(conflict.endTime).toLocaleString('vi-VN');
-                        html += `<li>Booking ${conflict.bookingId}: ${bookingTime} - ${endTime} (${conflict.guestCount} people, ${conflict.status})</li>`;
+                        html += `<li>Đặt bàn #${conflict.bookingId}: ${bookingTime} - ${endTime} (${conflict.guestCount} khách, ${conflict.status})</li>`;
                     });
                     
                     html += '</ul></div>';
@@ -2717,7 +2412,7 @@
             
             if (!restaurantIdElement || !guestCountElement || !bookingTimeElement) {
                 console.error('❌ Required form elements not found');
-                showNotification('Form data not found. Please refresh the page and try again.', 'error');
+                showNotification('Không tìm thấy dữ liệu biểu mẫu, vui lòng tải lại trang và thử lại.', 'error');
                 return;
             }
             
@@ -2767,14 +2462,14 @@
                     modal.hide();
                     
                     // Show success message
-                    showNotification(`Successfully joined waitlist! Queue position: ${data.queuePosition}, Estimated wait time: ${data.estimatedWaitTime} minutes`, 'success');
+                    showNotification(`Đã tham gia danh sách chờ! Vị trí của bạn: ${data.queuePosition}, thời gian chờ ước tính: ${data.estimatedWaitTime} phút`, 'success');
                 } else {
-                    showNotification(data.error || 'Failed to join waitlist', 'error');
+                    showNotification(data.error || 'Không thể tham gia danh sách chờ', 'error');
                 }
             })
             .catch(error => {
                 console.error('❌ Error joining waitlist:', error);
-                showNotification('Error joining waitlist. Please try again.', 'error');
+                showNotification('Không thể tham gia danh sách chờ, vui lòng thử lại.', 'error');
             });
         }
         
@@ -2893,7 +2588,7 @@
             const form = document.getElementById('bookingForm');
             if (!form) {
                 console.error('❌ Booking form not found');
-                showNotification('Form not found. Please refresh the page and try again.', 'error');
+                showNotification('Không tìm thấy biểu mẫu, vui lòng tải lại trang và thử lại.', 'error');
                 return;
             }
             
@@ -2933,14 +2628,14 @@
             // Clear selected tables
             selectedTables = [];
             document.getElementById('selectedTableIds').value = '';
-            document.getElementById('selectedTablesCount').textContent = 'No tables selected';
+            document.getElementById('selectedTablesCount').textContent = 'Chưa chọn bàn';
             document.getElementById('selectedTablesSummary').style.display = 'none';
             document.getElementById('selectedTablesList').innerHTML = '';
             
             // Clear selected dishes
             selectedDishes = [];
             document.getElementById('selectedDishIds').value = '';
-            document.getElementById('selectedDishesCount').textContent = 'No items selected';
+            document.getElementById('selectedDishesCount').textContent = 'Chưa chọn món';
             document.getElementById('selectedDishesSummary').style.display = 'none';
             document.getElementById('selectedDishesList').innerHTML = '';
             
@@ -2963,3 +2658,4 @@
     </script>
 </body>
 </html> 
+

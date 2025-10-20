@@ -181,177 +181,71 @@ public class RestaurantManagementService {
     }
 
     /**
+     * ===== PERFORMANCE OPTIMIZATION: Push filters to database =====
      * Lấy danh sách nhà hàng với bộ lọc và phân trang
+     * BEFORE: Load Integer.MAX_VALUE restaurants, filter in Java, paginate in Java
+     * AFTER: Push all filters to database query, let database handle filtering + pagination
      */
     @Transactional(readOnly = true)
     public Page<RestaurantProfile> getRestaurantsWithFilters(Pageable pageable, 
             String search, String cuisineType, String priceRange, String ratingFilter) {
         
-        System.out.println("=== DEBUG RESTAURANT FILTERS ===");
+        System.out.println("=== OPTIMIZED RESTAURANT FILTERS (DB-Level) ===");
         System.out.println("Search: " + search);
         System.out.println("Cuisine Type: " + cuisineType);
         System.out.println("Price Range: " + priceRange);
         System.out.println("Rating Filter: " + ratingFilter);
         System.out.println("Sort By: " + pageable.getSort());
         
-        // Get only APPROVED restaurants first (without pagination to apply filters first)
-        Pageable allPageable = PageRequest.of(0, Integer.MAX_VALUE, pageable.getSort());
-        Page<RestaurantProfile> allRestaurants = restaurantProfileRepository.findByApprovalStatus(
-            com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED, allPageable);
-        
-        List<RestaurantProfile> filteredRestaurants = new ArrayList<>();
-        for (RestaurantProfile restaurant : allRestaurants.getContent()) {
-            // Apply filters
-            if (matchesFilters(restaurant, search, cuisineType, priceRange, ratingFilter)) {
-                filteredRestaurants.add(restaurant);
-                System.out.println("✅ Matched: " + restaurant.getRestaurantName());
-            } else {
-                System.out.println("❌ Filtered out: " + restaurant.getRestaurantName());
-            }
-        }
-        
-        // Apply sorting to filtered results
-        filteredRestaurants = applySorting(filteredRestaurants, pageable.getSort());
-        
-        // Apply pagination to sorted results
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), filteredRestaurants.size());
-        List<RestaurantProfile> paginatedRestaurants = filteredRestaurants.subList(start, end);
-        
-        System.out.println("Filtered results: " + filteredRestaurants.size() + " out of " + allRestaurants.getContent().size());
-        System.out.println("Paginated results: " + paginatedRestaurants.size());
-        System.out.println("===============================");
-        
-        return new PageImpl<>(paginatedRestaurants, pageable, filteredRestaurants.size());
-    }
-    
-    /**
-     * Apply sorting to the filtered results
-     */
-    private List<RestaurantProfile> applySorting(List<RestaurantProfile> restaurants, Sort sort) {
-        if (sort.isUnsorted()) {
-            return restaurants;
-        }
-        
-        return restaurants.stream()
-            .sorted((r1, r2) -> {
-                for (Sort.Order order : sort) {
-                    int comparison = compareByField(r1, r2, order.getProperty());
-                    if (comparison != 0) {
-                        return order.getDirection() == Sort.Direction.ASC ? comparison : -comparison;
-                    }
-                }
-                return 0;
-            })
-            .collect(java.util.stream.Collectors.toList());
-    }
-    
-    /**
-     * Compare two restaurants by field
-     */
-    private int compareByField(RestaurantProfile r1, RestaurantProfile r2, String field) {
-        switch (field) {
-            case "restaurantName":
-                return String.CASE_INSENSITIVE_ORDER.compare(
-                    r1.getRestaurantName() != null ? r1.getRestaurantName() : "",
-                    r2.getRestaurantName() != null ? r2.getRestaurantName() : ""
-                );
-            case "averagePrice":
-                return Double.compare(
-                    r1.getAveragePrice() != null ? r1.getAveragePrice().doubleValue() : 0.0,
-                    r2.getAveragePrice() != null ? r2.getAveragePrice().doubleValue() : 0.0
-                );
-            case "averageRating":
-                return Double.compare(
-                    r1.getAverageRating(),
-                    r2.getAverageRating()
-                );
-            case "createdAt":
-                return r1.getCreatedAt().compareTo(r2.getCreatedAt());
-            default:
-                return 0;
-        }
-    }
-    
-    /**
-     * Check if restaurant matches the applied filters
-     */
-    private boolean matchesFilters(RestaurantProfile restaurant, String search, String cuisineType, 
-                                 String priceRange, String ratingFilter) {
-        
-        // APPROVAL STATUS FILTER - Only show APPROVED restaurants to customers
-        if (restaurant.getApprovalStatus() != com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED) {
-            return false;
-        }
-        
-        // Search filter
-        if (search != null && !search.trim().isEmpty()) {
-            String searchLower = search.toLowerCase();
-            boolean matchesSearch = (restaurant.getRestaurantName() != null && restaurant.getRestaurantName().toLowerCase().contains(searchLower)) ||
-                                  (restaurant.getAddress() != null && restaurant.getAddress().toLowerCase().contains(searchLower)) ||
-                                  (restaurant.getCuisineType() != null && restaurant.getCuisineType().toLowerCase().contains(searchLower));
-            if (!matchesSearch) {
-                return false;
-            }
-        }
-        
-        // Cuisine type filter
-        if (cuisineType != null && !cuisineType.trim().isEmpty()) {
-            if (restaurant.getCuisineType() == null || !restaurant.getCuisineType().equals(cuisineType)) {
-                return false;
-            }
-        }
-        
-        // Price range filter
-        if (priceRange != null && !priceRange.trim().isEmpty() && restaurant.getAveragePrice() != null) {
-            double price = restaurant.getAveragePrice().doubleValue();
-            boolean matchesPrice = false;
-            
+        // Convert UI filter strings to database query parameters
+        java.math.BigDecimal minPrice = null;
+        java.math.BigDecimal maxPrice = null;
+        if (priceRange != null && !priceRange.trim().isEmpty()) {
             switch (priceRange) {
                 case "under-50k":
-                    matchesPrice = price < 50000;
+                    maxPrice = new java.math.BigDecimal("50000");
                     break;
                 case "50k-100k":
-                    matchesPrice = price >= 50000 && price <= 100000;
+                    minPrice = new java.math.BigDecimal("50000");
+                    maxPrice = new java.math.BigDecimal("100000");
                     break;
                 case "100k-200k":
-                    matchesPrice = price >= 100000 && price <= 200000;
+                    minPrice = new java.math.BigDecimal("100000");
+                    maxPrice = new java.math.BigDecimal("200000");
                     break;
                 case "over-200k":
-                    matchesPrice = price > 200000;
+                    minPrice = new java.math.BigDecimal("200000");
                     break;
-            }
-            
-            if (!matchesPrice) {
-                return false;
             }
         }
         
-        // Rating filter
+        Double minRating = null;
         if (ratingFilter != null && !ratingFilter.trim().isEmpty()) {
-            double rating = restaurant.getAverageRating();
-            boolean matchesRating = false;
-            
             switch (ratingFilter) {
                 case "5-star":
-                    matchesRating = rating >= 5.0;
+                    minRating = 5.0;
                     break;
                 case "4-star":
-                    matchesRating = rating >= 4.0;
+                    minRating = 4.0;
                     break;
                 case "3-star":
-                    matchesRating = rating >= 3.0;
+                    minRating = 3.0;
                     break;
                 case "2-star":
-                    matchesRating = rating >= 2.0;
+                    minRating = 2.0;
                     break;
-            }
-            
-            if (!matchesRating) {
-                return false;
             }
         }
         
-        return true;
+        // Single database query with all filters and pagination
+        Page<RestaurantProfile> result = restaurantProfileRepository.findApprovedWithFilters(
+            search, cuisineType, minPrice, maxPrice, minRating, pageable);
+        
+        System.out.println("✅ DB returned " + result.getContent().size() + " restaurants (page " + 
+                          result.getNumber() + " of " + result.getTotalPages() + ", total: " + 
+                          result.getTotalElements() + ")");
+        System.out.println("===============================");
+        
+        return result;
     }
 }
