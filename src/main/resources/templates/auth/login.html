@@ -3,594 +3,453 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập - Book Eat – Đặt bàn online, giữ chỗ ngay</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap 5 CSS -->
+    <title>Đăng nhập - Book Eat</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Font Awesome for luxury icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+
     <style>
-        :root {
-            --primary-blue: #4A90E2;
-            --primary-blue-light: #6BA3F0;
-            --primary-blue-dark: #357ABD;
-            --accent-orange: #FF6B35;
-            --background-light: #F8F9FA;
-            --background-white: #FFFFFF;
-            --text-dark: #2C3E50;
-            --text-medium: #5A6C7D;
-            --text-light: #8A9BA8;
-            --border-light: #E1E8ED;
-        }
-
-        html, body {
-            height: 100%;
-            overflow: hidden;
-        }
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--primary-blue) 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.92), rgba(26, 26, 26, 0.75)), url('https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
             min-height: 100vh;
-            color: var(--background-white);
-            position: relative;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        /* Background Pattern */
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80') center/cover no-repeat;
-            opacity: 0.1;
-            z-index: -1;
-        }
-
-        .login-container {
-            position: relative;
-            z-index: 1;
-            height: 100vh;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            color: var(--ds-primary-white);
         }
 
-        .login-card {
-            background: var(--background-white);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(74, 144, 226, 0.15);
-            padding: 32px 24px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-card::before {
-            display: none;
-        }
-
-        .brand-section {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .brand-icon {
-            font-size: 3rem;
-            color: var(--primary-blue);
-            margin-bottom: 16px;
-        }
-
-        .brand-title {
-            font-family: 'Inter', sans-serif;
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 8px;
-        }
-
-        .brand-subtitle {
-            color: var(--text-medium);
-            font-size: 1rem;
-            font-weight: 400;
-        }
-
-        .form-control {
-            background: var(--background-white);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            color: var(--text-dark);
-            padding: 12px 16px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            margin-bottom: 8px;
-        }
-
-        .form-control:focus {
-            background: var(--background-white);
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.15);
-            color: var(--text-dark);
-        }
-
-        .form-control::placeholder {
-            color: var(--text-light);
-        }
-
-        .form-label {
-            color: var(--text-dark);
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .luxury-icon {
-            color: var(--primary-blue);
-            margin-right: 8px;
-        }
-
-        .btn-login {
-            background: var(--primary-blue);
-            border: none;
-            color: var(--background-white);
-            font-weight: 600;
-            padding: 12px 24px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
-            font-size: 1rem;
-        }
-
-        .btn-login:hover {
-            background: var(--primary-blue-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-        }
-
-        .btn-google {
-            background: transparent;
-            border: 2px solid #dc3545;
-            color: #dc3545;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 18px 30px;
-            border-radius: 50px;
-            transition: all 0.3s ease;
-            font-size: 1.1rem;
-        }
-
-        .btn-google:hover {
-            background: #dc3545;
-            color: var(--luxury-white);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-        }
-
-        .divider {
-            position: relative;
-            text-align: center;
-            margin: 16px 0;
-        }
-
-        .divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--luxury-gold), transparent);
-        }
-
-        .divider span {
-            background: var(--luxury-dark);
-            padding: 0 20px;
-            color: var(--luxury-gray);
-            font-style: italic;
-        }
-
-        .alert {
-            border: none;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 25px;
-            backdrop-filter: blur(10px);
-            border-left: 4px solid var(--luxury-gold);
-        }
-
-        .alert-danger {
-            background: linear-gradient(135deg, rgba(220, 53, 69, 0.9), rgba(187, 45, 59, 0.9));
-            color: var(--luxury-white);
-        }
-
-        .alert-success {
-            background: linear-gradient(135deg, rgba(40, 167, 69, 0.9), rgba(34, 139, 58, 0.9));
-            color: var(--luxury-white);
-        }
-
-
-
-        .link-luxury {
-            color: var(--primary-blue);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .footer-text {
-            text-align: center;
-            margin-top: 16px;
-            color: var(--luxury-gray-dark);
-            font-size: 0.85rem;
-        }
-
-        /* Rate Limit UI Styles */
-        .rate-limit-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 9999;
-            display: none;
+        .auth-wrapper {
+            display: flex;
             justify-content: center;
             align-items: center;
+            padding: var(--ds-space-16) var(--ds-space-4);
+            position: relative;
+            flex: 1;
+        }
+
+        .auth-card {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            background: var(--ds-primary-white);
+            color: var(--ds-neutral-900);
+            border-radius: var(--ds-radius-2xl);
+            box-shadow: var(--ds-shadow-2xl);
+            overflow: hidden;
+            max-width: 960px;
+            width: 100%;
+        }
+
+        .auth-hero {
+            background: linear-gradient(180deg, rgba(26, 26, 26, 0.95), rgba(26, 26, 26, 0.85)), url('https://images.unsplash.com/photo-1604908176997-12518821dd89?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+            padding: var(--ds-space-10);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: var(--ds-primary-white);
+        }
+
+        .auth-hero h2 {
+            font-size: var(--ds-font-size-4xl);
+            font-weight: var(--ds-font-weight-bold);
+            margin-bottom: var(--ds-space-4);
+        }
+
+        .auth-hero ul {
+            list-style: none;
+            padding: 0;
+            margin: var(--ds-space-6) 0 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-3);
+        }
+
+        .auth-hero li {
+            display: flex;
+            gap: var(--ds-space-3);
+            align-items: center;
+            font-size: var(--ds-font-size-base);
+        }
+
+        .auth-form {
+            padding: var(--ds-space-10);
+            background: var(--ds-primary-white);
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-6);
+        }
+
+        .auth-brand {
+            text-align: center;
+        }
+
+        .auth-brand .icon {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--ds-radius-full);
+            background: var(--ds-neutral-900);
+            color: var(--ds-primary-white);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--ds-font-size-2xl);
+            margin-bottom: var(--ds-space-3);
+        }
+
+        .auth-brand h1 {
+            font-size: var(--ds-font-size-3xl);
+            font-weight: var(--ds-font-weight-semibold);
+            margin-bottom: var(--ds-space-2);
+        }
+
+        .auth-brand p {
+            color: var(--ds-neutral-500);
+            margin: 0;
+        }
+
+        .auth-fields .form-label {
+            font-weight: var(--ds-font-weight-medium);
+            color: var(--ds-neutral-700);
+        }
+
+        .auth-fields .form-control {
+            border-radius: var(--ds-radius-lg);
+            border: 1px solid var(--ds-neutral-300);
+            padding: var(--ds-space-3) var(--ds-space-4);
+        }
+
+        .auth-fields .form-control:focus {
+            border-color: var(--ds-neutral-900);
+            box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+        }
+
+        .auth-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--ds-space-3);
+        }
+
+        .auth-actions .form-check-label {
+            color: var(--ds-neutral-600);
+        }
+
+        .auth-actions a {
+            font-weight: var(--ds-font-weight-medium);
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: var(--ds-space-4);
+            text-transform: uppercase;
+            font-size: var(--ds-font-size-xs);
+            color: var(--ds-neutral-400);
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--ds-neutral-200);
+        }
+
+        .auth-footer {
+            display: flex;
+            justify-content: center;
+            gap: var(--ds-space-3);
+            font-size: var(--ds-font-size-sm);
+            color: var(--ds-neutral-500);
+        }
+
+        .auth-footer a {
+            color: var(--ds-neutral-700);
+            font-weight: var(--ds-font-weight-medium);
+        }
+
+        .rate-limit-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+            padding: var(--ds-space-6);
         }
 
         .rate-limit-modal {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            max-width: 400px;
-            width: 90%;
+            background: var(--ds-primary-white);
+            border-radius: var(--ds-radius-2xl);
+            padding: var(--ds-space-10);
+            max-width: 460px;
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            box-shadow: var(--ds-shadow-2xl);
         }
 
         .rate-limit-icon {
-            font-size: 4rem;
-            color: #ff6b35;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            width: 72px;
+            height: 72px;
+            border-radius: var(--ds-radius-full);
+            background: rgba(220, 38, 38, 0.12);
+            color: var(--ds-error);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--ds-font-size-3xl);
+            margin-bottom: var(--ds-space-4);
         }
 
         .rate-limit-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 15px;
+            font-size: var(--ds-font-size-2xl);
+            font-weight: var(--ds-font-weight-semibold);
+            margin-bottom: var(--ds-space-2);
         }
 
         .rate-limit-message {
-            font-size: 1rem;
-            color: #5a6c7d;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-
-        .rate-limit-timer {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #ff6b35;
-            margin-bottom: 20px;
+            color: var(--ds-neutral-600);
+            margin-bottom: var(--ds-space-4);
         }
 
         .rate-limit-countdown {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #ff6b35;
-            margin: 10px 0;
-        }
-
-        .form-disabled {
-            opacity: 0.5;
-            pointer-events: none;
-            filter: blur(1px);
-            transition: all 0.3s ease;
+            font-size: var(--ds-font-size-4xl);
+            font-weight: var(--ds-font-weight-bold);
+            letter-spacing: 0.35em;
+            color: var(--ds-neutral-900);
         }
 
         .rate-limit-alert {
-            background: linear-gradient(135deg, #ff6b35, #ff8c42);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
             display: none;
-            animation: fadeIn 0.5s ease-in;
+            border-radius: var(--ds-radius-lg);
+            padding: var(--ds-space-3);
+            background: rgba(220, 38, 38, 0.08);
+            color: var(--ds-error);
+            font-size: var(--ds-font-size-sm);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .form-disabled {
+            pointer-events: none;
+            opacity: 0.6;
         }
 
-        .rate-limit-alert i {
-            margin-right: 10px;
-            font-size: 1.2rem;
-        }
-
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .login-card {
-                padding: 30px 25px;
+        @media (max-width: 992px) {
+            body {
+                background: var(--ds-neutral-900);
             }
 
-            .brand-title {
-                font-size: 2rem;
+            .auth-card {
+                grid-template-columns: 1fr;
             }
 
-            .brand-icon {
-                font-size: 3rem;
+            .auth-hero {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-    <div class="container">
-        <div class="row justify-content-center">
-                <div class="col-md-6 col-lg-5 col-xl-4">
-                    <div class="login-card">
-                        <div class="brand-section">
-                            <div class="brand-icon">
-                                <i class="fas fa-utensils"></i>
-                            </div>
-                            <h1 class="brand-title">Book Eat</h1>
-                            <p class="brand-subtitle">Đặt bàn online, giữ chỗ ngay</p>
+    <div th:with="activeNav='login'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <aside class="auth-hero">
+                <div>
+                    <h2>Khởi đầu trải nghiệm ẩm thực tinh tế</h2>
+                    <p class="ds-text-secondary">
+                        Đăng nhập để quản lý đặt bàn, yêu thích và ưu đãi cá nhân hóa dành riêng cho bạn.
+                    </p>
+                </div>
+                <ul>
+                    <li>
+                        <i class="fas fa-calendar-check"></i>
+                        Đặt bàn trong vài giây với xác nhận tức thì.
+                    </li>
+                    <li>
+                        <i class="fas fa-heart"></i>
+                        Lưu trữ và theo dõi những nhà hàng yêu thích.
+                    </li>
+                    <li>
+                        <i class="fas fa-gift"></i>
+                        Nhận ưu đãi độc quyền và gợi ý theo khẩu vị.
+                    </li>
+                </ul>
+            </aside>
+
+            <section class="auth-form">
+                <div class="auth-brand">
+                    <div class="icon">
+                        <i class="fas fa-utensils"></i>
                     </div>
-                    
-                    <!-- Login Form -->
-                    <form th:action="@{/login}" method="post">
-                        <!-- Error Message -->
-                        <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show">
-                                <i class="fas fa-exclamation-triangle luxury-icon"></i>
-                            Tên đăng nhập hoặc mật khẩu không đúng!
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-                        </div>
-                        
-                        <!-- Logout Success -->
-                        <div th:if="${param.logout}" class="alert alert-success alert-dismissible fade show">
-                                <i class="fas fa-check-circle luxury-icon"></i>
-                            Bạn đã đăng xuất thành công!
-                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
-                        </div>
-                        
-                        <!-- Username -->
-                            <div class="mb-4">
-                            <label for="username" class="form-label">
-                                    <i class="fas fa-user luxury-icon"></i> Tên đăng nhập
-                            </label>
-                            <input type="text" 
-                                       class="form-control" 
-                                   id="username" 
-                                   name="username" 
-                                   required 
-                                   autofocus
-                                   placeholder="Nhập tên đăng nhập">
-                        </div>
-                        
-                        <!-- Password -->
-                        <div class="mb-4">
-                            <label for="password" class="form-label">
-                                    <i class="fas fa-lock luxury-icon"></i> Mật khẩu
-                            </label>
-                            <input type="password" 
-                                       class="form-control" 
-                                   id="password" 
-                                   name="password" 
-                                   required
-                                   placeholder="Nhập mật khẩu">
-                        </div>
-                        
-                        <!-- Remember Me -->
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" name="remember-me" id="rememberMe">
-                            <label class="form-check-label" for="rememberMe" style="color: black;">
-                                <i class="fas fa-clock luxury-icon"></i> Ghi nhớ tôi
-                            </label>
-                        </div>
-                        
-                        <!-- Login Button -->
-                            <div class="d-grid mb-4">
-                                <button type="submit" class="btn btn-login">
-                                    <i class="fas fa-sign-in-alt"></i> Đăng nhập
-                            </button>
-                        </div>
-                    </form>
-                    
-                    <!-- Divider -->
-                        <div class="divider">
-                            <span>hoặc</span>
-                    </div>
-                    
-                    <!-- Google Login -->
-                        <div class="d-grid mb-4">
-                            <a href="/oauth2/authorization/google" class="btn btn-google">
-                                <i class="fab fa-google"></i> Đăng nhập với Google
-                        </a>
-                    </div>
-                    
-                    <!-- Register Link -->
-                    <div class="text-center mb-3">
-                            <p class="mb-0" style="color: #007bff;">
-                            Chưa có tài khoản? 
-                                <a href="/auth/register" class="link-luxury">
-                                    <i class="fas fa-user-plus"></i> Đăng ký ngay
-                            </a>
-                        </p>
-                    </div>
-                    
-                    <!-- Forgot Password Link -->
-                        <div class="text-center mb-4">
-                            <a href="/auth/forgot-password" class="link-luxury">
-                                <i class="fas fa-question-circle"></i> Quên mật khẩu?
-                        </a>
-                    </div>
-                    
-                    <!-- Rate Limit Alert -->
-                    <div class="rate-limit-alert" id="rateLimitAlert">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Quá nhiều lần thử đăng nhập!</strong><br>
-                        Vui lòng chờ <span id="alertCountdown">5</span> phút trước khi thử lại.
+                    <h1>Book Eat</h1>
+                    <p>Đăng nhập để tiếp tục hành trình ẩm thực của bạn</p>
+                </div>
+
+                <form th:action="@{/login}" method="post" class="ds-flex ds-flex-col ds-gap-4">
+                    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Tên đăng nhập hoặc mật khẩu không đúng!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
 
-                </div>
-                
-                <!-- Footer -->
-                    <div class="footer-text">
-                        <p>
-                            &copy; 2024 Book Eat – Đặt bàn online, giữ chỗ ngay.
-                        </p>
+                    <div th:if="${param.logout}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Bạn đã đăng xuất thành công!
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
+
+                    <div class="auth-fields">
+                        <label for="username" class="form-label">
+                            <i class="fas fa-user me-2"></i>
+                            Tên đăng nhập
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               id="username"
+                               name="username"
+                               required
+                               autofocus
+                               placeholder="Nhập tên đăng nhập">
+                    </div>
+
+                    <div class="auth-fields">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock me-2"></i>
+                            Mật khẩu
+                        </label>
+                        <input type="password"
+                               class="form-control"
+                               id="password"
+                               name="password"
+                               required
+                               placeholder="Nhập mật khẩu">
+                    </div>
+
+                    <div class="auth-actions">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="remember-me" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">
+                                Ghi nhớ tôi
+                            </label>
+                        </div>
+                        <a th:href="@{/auth/forgot-password}" class="ds-text-secondary">
+                            Quên mật khẩu?
+                        </a>
+                    </div>
+
+                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-lg w-100">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Đăng nhập
+                    </button>
+
+                    <div class="auth-divider">hoặc</div>
+
+                    <a th:href="@{/oauth2/authorization/google}" class="ds-btn ds-btn-secondary w-100">
+                        <i class="fab fa-google"></i>
+                        Đăng nhập với Google
+                    </a>
+                </form>
+
+                <div class="auth-footer">
+                    <span>Chưa có tài khoản?</span>
+                    <a th:href="@{/auth/register}">Đăng ký ngay</a>
                 </div>
-            </div>
+
+                <div class="rate-limit-alert" id="rateLimitAlert">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Quá nhiều lần thử đăng nhập. Vui lòng chờ <span id="alertCountdown">5</span> phút trước khi thử lại.
+                </div>
+            </section>
         </div>
     </div>
-    
-    <!-- Rate Limit Modal -->
+
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+
     <div class="rate-limit-overlay" id="rateLimitOverlay">
         <div class="rate-limit-modal">
             <div class="rate-limit-icon">
-                <i class="fas fa-shield-alt"></i>
+                <i class="fas fa-hourglass-half"></i>
             </div>
-            <div class="rate-limit-title">🚫 Bị chặn tạm thời</div>
+            <div class="rate-limit-title">Tạm khóa đăng nhập</div>
             <div class="rate-limit-message">
                 Bạn đã thử đăng nhập quá nhiều lần trong thời gian ngắn.<br>
                 Vui lòng chờ một chút trước khi thử lại.
             </div>
-            <div class="rate-limit-timer">Thời gian chờ còn lại:</div>
-            <div class="rate-limit-countdown" id="rateLimitCountdown">00:30</div>
+            <div class="rate-limit-message fw-medium">
+                Thời gian chờ còn lại:
+            </div>
+            <div class="rate-limit-countdown" id="rateLimitCountdown">05:00</div>
             <div class="rate-limit-message">
-                <small>Đừng lo lắng, có tôi đợi cùng bạn tại đây. Yêu <3 </small>
+                <small>Đừng lo, Book Eat vẫn luôn chờ bạn quay lại ❤️</small>
             </div>
         </div>
     </div>
-    
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Rate Limit JavaScript -->
+
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
     <script>
         let rateLimitTimer = null;
-        let remainingTime = 30; // 5 minutes in seconds
-        
-        // Function to show rate limit UI
+        let remainingTime = 300;
+
         function showRateLimitUI() {
             const overlay = document.getElementById('rateLimitOverlay');
             const alert = document.getElementById('rateLimitAlert');
-            const loginForm = document.querySelector('.login-card');
-            
-            // Show overlay modal
+            const loginForm = document.querySelector('.auth-form');
+
             overlay.style.display = 'flex';
-            
-            // Show alert in form
             alert.style.display = 'block';
-            
-            // Disable form
             loginForm.classList.add('form-disabled');
-            
-            // Start countdown
             startCountdown();
         }
-        
-        // Function to hide rate limit UI
+
         function hideRateLimitUI() {
             const overlay = document.getElementById('rateLimitOverlay');
             const alert = document.getElementById('rateLimitAlert');
-            const loginForm = document.querySelector('.login-card');
-            
-            // Hide overlay modal
+            const loginForm = document.querySelector('.auth-form');
+
             overlay.style.display = 'none';
-            
-            // Hide alert
             alert.style.display = 'none';
-            
-            // Enable form
             loginForm.classList.remove('form-disabled');
-            
-            // Clear timer
+
             if (rateLimitTimer) {
                 clearInterval(rateLimitTimer);
                 rateLimitTimer = null;
             }
         }
-        
-        // Function to start countdown
+
         function startCountdown() {
-            remainingTime = 30; // Reset to 5 minutes
-            
+            remainingTime = 300;
+
             rateLimitTimer = setInterval(() => {
                 remainingTime--;
-                
+
                 const minutes = Math.floor(remainingTime / 60);
                 const seconds = remainingTime % 60;
-                
                 const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                
-                // Update countdown displays
-                document.getElementById('rateLimitCountdown').textContent = timeString;
-                document.getElementById('alertCountdown').textContent = minutes;
-                
+
+                const countdownElement = document.getElementById('rateLimitCountdown');
+                const alertCountdownElement = document.getElementById('alertCountdown');
+                if (countdownElement) {
+                    countdownElement.textContent = timeString;
+                }
+                if (alertCountdownElement) {
+                    alertCountdownElement.textContent = minutes;
+                }
+
                 if (remainingTime <= 0) {
                     hideRateLimitUI();
                 }
             }, 1000);
         }
-        
-        // Function to handle login form submission
-        function handleLoginSubmit(event) {
-            // Let the form submit normally - don't intercept with JavaScript
-            // The server will handle rate limiting and redirect appropriately
-            return true;
-        }
-        
-        // Add event listener to login form
-        document.addEventListener('DOMContentLoaded', function() {
-            const loginForm = document.querySelector('form');
-            if (loginForm) {
-                loginForm.addEventListener('submit', function(event) {
-                    // Don't prevent default - let form submit normally
-                    // Server will handle rate limiting and redirects
-                });
-            }
-        });
-        
-        // Check URL parameters and show appropriate messages
-        document.addEventListener('DOMContentLoaded', function() {
+
+        document.addEventListener('DOMContentLoaded', function () {
             const urlParams = new URLSearchParams(window.location.search);
-            
             if (urlParams.get('ratelimit') === '1') {
                 showRateLimitUI();
             }
         });
     </script>
 </body>
-</html> 
+</html>
