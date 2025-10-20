@@ -100,16 +100,32 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
      * @param pageable - Pagination and sorting
      * @return Page of matching restaurants
      */
-    @Query("SELECT r FROM RestaurantProfile r " +
-           "WHERE r.approvalStatus = 'APPROVED' " +
-           "AND (:search IS NULL OR :search = '' OR " +
-           "     LOWER(r.restaurantName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "     LOWER(r.address) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "     LOWER(r.cuisineType) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-           "AND (:cuisineType IS NULL OR :cuisineType = '' OR r.cuisineType = :cuisineType) " +
-           "AND (:minPrice IS NULL OR r.averagePrice >= :minPrice) " +
-           "AND (:maxPrice IS NULL OR r.averagePrice <= :maxPrice) " +
-           "AND (:minRating IS NULL OR r.averageRating >= :minRating)")
+    @Query(
+        value = "SELECT r FROM RestaurantProfile r " +
+                "LEFT JOIN r.reviews rv " +
+                "WHERE r.approvalStatus = 'APPROVED' " +
+                "AND (:search IS NULL OR :search = '' OR " +
+                "     LOWER(r.restaurantName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                "     LOWER(r.address) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                "     LOWER(r.cuisineType) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                "AND (:cuisineType IS NULL OR :cuisineType = '' OR r.cuisineType = :cuisineType) " +
+                "AND (:minPrice IS NULL OR r.averagePrice >= :minPrice) " +
+                "AND (:maxPrice IS NULL OR r.averagePrice <= :maxPrice) " +
+                "GROUP BY r " +
+                "HAVING (:minRating IS NULL OR AVG(rv.rating) >= :minRating)",
+        countQuery = "SELECT COUNT(DISTINCT r) FROM RestaurantProfile r " +
+                     "LEFT JOIN r.reviews rv " +
+                     "WHERE r.approvalStatus = 'APPROVED' " +
+                     "AND (:search IS NULL OR :search = '' OR " +
+                     "     LOWER(r.restaurantName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                     "     LOWER(r.address) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                     "     LOWER(r.cuisineType) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                     "AND (:cuisineType IS NULL OR :cuisineType = '' OR r.cuisineType = :cuisineType) " +
+                     "AND (:minPrice IS NULL OR r.averagePrice >= :minPrice) " +
+                     "AND (:maxPrice IS NULL OR r.averagePrice <= :maxPrice) " +
+                     "GROUP BY r " +
+                     "HAVING (:minRating IS NULL OR AVG(rv.rating) >= :minRating)"
+    )
     Page<RestaurantProfile> findApprovedWithFilters(
             @Param("search") String search,
             @Param("cuisineType") String cuisineType,

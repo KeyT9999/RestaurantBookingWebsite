@@ -594,6 +594,35 @@
         let currentMenuPage = 1;
         const itemsPerPage = 6;
 
+        function extractTableId(table) {
+            if (!table) {
+                return '';
+            }
+            if (table.id !== undefined && table.id !== null && table.id !== '') {
+                return String(table.id);
+            }
+            if (table.tableId !== undefined && table.tableId !== null && table.tableId !== '') {
+                return String(table.tableId);
+            }
+            return '';
+        }
+
+        function updateSelectedTableIds() {
+            const multipleTablesInput = document.getElementById('selectedTableIds');
+            const singleTableInput = document.getElementById('selectedTableId');
+            const ids = selectedTables
+                .map(extractTableId)
+                .filter(id => id !== '');
+
+            if (multipleTablesInput) {
+                multipleTablesInput.value = ids.join(',');
+            }
+
+            if (singleTableInput) {
+                singleTableInput.value = ids.length === 1 ? ids[0] : '';
+            }
+        }
+
         // Debug function to log all selections
         function logAllSelections() {
             console.log('📊 === CURRENT SELECTIONS DEBUG ===');
@@ -1457,28 +1486,38 @@
 
         function updateTableSelectionUI() {
             const countSpan = document.getElementById('selectedTablesCount');
-            const hiddenInput = document.getElementById('selectedTableIds');
             const summaryDiv = document.getElementById('selectedTablesSummary');
             const listDiv = document.getElementById('selectedTablesList');
-            
+
+            updateSelectedTableIds();
+
+            if (!countSpan || !summaryDiv || !listDiv) {
+                return;
+            }
+
             if (selectedTables.length === 0) {
                 countSpan.textContent = 'Chưa chọn bàn';
-                hiddenInput.value = '';
                 summaryDiv.style.display = 'none';
-            } else {
-                countSpan.textContent = `${selectedTables.length} table(s) selected`;
-                // Store multiple table IDs separated by comma
-                hiddenInput.value = selectedTables.map(t => t.id).join(',');
-                
-                // Show detailed summary
-                summaryDiv.style.display = 'block';
-                listDiv.innerHTML = selectedTables.map(table => `
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span><strong>${table.name}</strong> (Sức chứa: ${table.capacity} khách)</span>
-                        <span class="text-success">${formatCurrency(table.deposit)}</span>
-                    </div>
-                `).join('');
+                listDiv.innerHTML = '';
+                return;
             }
+
+            countSpan.textContent = `${selectedTables.length} table(s) selected`;
+            summaryDiv.style.display = 'block';
+            listDiv.innerHTML = selectedTables.map(table => {
+                const tableName = table.name || table.tableName || 'Bàn';
+                const capacityValue = table.capacity ?? table.tableCapacity ?? table.maxCapacity;
+                const capacity = capacityValue !== undefined && capacityValue !== null ? capacityValue : '?';
+                const depositValue = table.deposit ?? table.depositAmount ?? 0;
+                const normalizedDeposit = Number(depositValue) || 0;
+
+                return `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span><strong>${tableName}</strong> (Sức chứa: ${capacity} khách)</span>
+                        <span class="text-success">${formatCurrency(normalizedDeposit)}</span>
+                    </div>
+                `;
+            }).join('');
         }
 
         function updateMenuSelectionUI() {
@@ -1612,7 +1651,10 @@
             logAllSelections();
             
             // Save table selections
-            const tableIds = selectedTables.map(t => t.id).join(',');
+            const tableIds = selectedTables
+                .map(extractTableId)
+                .filter(id => id !== '')
+                .join(',');
             document.getElementById('selectedTableIds').value = tableIds;
             console.log('💾 Saved tableIds:', tableIds);
             
