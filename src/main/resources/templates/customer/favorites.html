@@ -4,391 +4,414 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nhà hàng yêu thích - BookEat</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+
     <style>
-        .favorite-card {
-            transition: all 0.3s ease;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .favorite-heart {
+            position: absolute;
+            top: var(--ds-space-3);
+            right: var(--ds-space-3);
+            z-index: 5;
         }
-        
-        .favorite-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        
-        .restaurant-image {
-            height: 200px;
-            object-fit: cover;
-            border-radius: 8px 8px 0 0;
-        }
-        
+
         .heart-icon {
-            color: #e74c3c;
+            color: var(--ds-error);
             font-size: 1.5rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform var(--ds-transition-base);
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: var(--ds-radius-full);
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--ds-shadow-md);
         }
-        
+
         .heart-icon:hover {
-            transform: scale(1.2);
+            transform: scale(1.08);
         }
-        
+
         .heart-icon.favorited {
             animation: heartbeat 0.6s ease-in-out;
         }
-        
+
         @keyframes heartbeat {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.3); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.25);
+            }
+            100% {
+                transform: scale(1);
+            }
         }
-        
-        .rating-stars {
-            color: #ffc107;
+
+        .ds-favorite-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
-        
+
+        .ds-favorite-card .ds-restaurant-image {
+            height: 220px;
+        }
+
+        .ds-favorite-card .ds-restaurant-info {
+            flex: 1;
+        }
+
+        .ds-restaurant-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            border-radius: var(--ds-radius-lg) var(--ds-radius-lg) 0 0;
+        }
+
         .cuisine-badge {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            background: var(--ds-primary-black);
+            color: var(--ds-primary-white);
+            padding: var(--ds-space-1) var(--ds-space-3);
+            border-radius: var(--ds-radius-full);
+            font-size: var(--ds-font-size-xs);
+            font-weight: var(--ds-font-weight-medium);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
-        
-        .price-range {
-            color: #27ae60;
-            font-weight: bold;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
-        }
-        
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            color: #dee2e6;
-        }
-        
-        .filter-section {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .sort-dropdown {
-            min-width: 150px;
-        }
-        
-        .pagination-custom .page-link {
-            border-radius: 8px;
-            margin: 0 2px;
-            border: 1px solid #dee2e6;
-        }
-        
-        .pagination-custom .page-item.active .page-link {
-            background-color: #007bff;
-            border-color: #007bff;
-        }
-        
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 40px;
-        }
-        
+
         .toast-container {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 1055;
+            z-index: var(--ds-z-toast);
+        }
+
+        .filter-item {
+            min-width: 200px;
         }
     </style>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-utensils me-2"></i>BookEat
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/customer/restaurants">
-                    <i class="fas fa-search me-1"></i>Tìm nhà hàng
-                </a>
-                <a class="nav-link active" href="/customer/favorites">
-                    <i class="fas fa-heart me-1"></i>Yêu thích
-                </a>
-                <a class="nav-link" href="/customer/bookings">
-                    <i class="fas fa-calendar me-1"></i>Đặt bàn
-                </a>
-            </div>
-        </div>
-    </nav>
+<body class="ds-bg-white">
+    <div th:with="activeNav='favorites'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
-    <div class="container mt-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h2 class="mb-3">
-                    <i class="fas fa-heart text-danger me-2"></i>
-                    Nhà hàng yêu thích
-                </h2>
-                <p class="text-muted">
-                    <span th:text="${totalElements}">0</span> nhà hàng đã được thêm vào danh sách yêu thích
-                </p>
-            </div>
-        </div>
+    <main>
+        <section class="ds-bg-gray-50" style="padding: var(--ds-space-16) 0;">
+            <div class="ds-container">
+                <nav class="ds-breadcrumb" aria-label="breadcrumb">
+                    <ol class="ds-breadcrumb-list">
+                        <li class="ds-breadcrumb-item">
+                            <a th:href="@{/}">Trang chủ</a>
+                        </li>
+                        <li class="ds-breadcrumb-item">
+                            <a th:href="@{/customer/restaurants}">Nhà hàng</a>
+                        </li>
+                        <li class="ds-breadcrumb-item active">
+                            <span>Yêu thích của tôi</span>
+                        </li>
+                    </ol>
+                </nav>
 
-        <!-- Filters and Sort -->
-        <div class="filter-section">
-            <div class="row align-items-center">
-                <div class="col-md-3">
-                    <label class="form-label">Tìm kiếm:</label>
-                    <input type="text" class="form-control" id="searchInput" 
-                           th:value="${search}" placeholder="Tên nhà hàng...">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Loại ẩm thực:</label>
-                    <select class="form-select" id="cuisineFilter">
-                        <option value="">Tất cả</option>
-                        <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
-                        <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
-                        <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
-                        <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
-                        <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
-                        <option value="American" th:selected="${cuisineType == 'American'}">Mỹ</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Khoảng giá:</label>
-                    <select class="form-select" id="priceFilter">
-                        <option value="">Tất cả</option>
-                        <option value="under-50k" th:selected="${priceRange == 'under-50k'}">Dưới 50k</option>
-                        <option value="50k-100k" th:selected="${priceRange == '50k-100k'}">50k - 100k</option>
-                        <option value="100k-200k" th:selected="${priceRange == '100k-200k'}">100k - 200k</option>
-                        <option value="over-200k" th:selected="${priceRange == 'over-200k'}">Trên 200k</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Đánh giá:</label>
-                    <select class="form-select" id="ratingFilter">
-                        <option value="">Tất cả</option>
-                        <option value="5-star" th:selected="${ratingFilter == '5-star'}">5 sao</option>
-                        <option value="4-star" th:selected="${ratingFilter == '4-star'}">4 sao trở lên</option>
-                        <option value="3-star" th:selected="${ratingFilter == '3-star'}">3 sao trở lên</option>
-                        <option value="2-star" th:selected="${ratingFilter == '2-star'}">2 sao trở lên</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Sắp xếp:</label>
-                    <select class="form-select sort-dropdown" id="sortSelect">
-                        <option value="createdAt-desc" th:selected="${sortBy == 'createdAt' && sortDir == 'desc'}">Mới nhất</option>
-                        <option value="createdAt-asc" th:selected="${sortBy == 'createdAt' && sortDir == 'asc'}">Cũ nhất</option>
-                        <option value="restaurantName-asc" th:selected="${sortBy == 'restaurantName' && sortDir == 'asc'}">Tên A-Z</option>
-                        <option value="restaurantName-desc" th:selected="${sortBy == 'restaurantName' && sortDir == 'desc'}">Tên Z-A</option>
-                        <option value="averagePrice-asc" th:selected="${sortBy == 'averagePrice' && sortDir == 'asc'}">Giá thấp</option>
-                        <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' && sortDir == 'desc'}">Giá cao</option>
-                        <option value="averageRating-desc" th:selected="${sortBy == 'averageRating' && sortDir == 'desc'}">Đánh giá cao</option>
-                        <option value="averageRating-asc" th:selected="${sortBy == 'averageRating' && sortDir == 'asc'}">Đánh giá thấp</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">&nbsp;</label>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary" onclick="applyFilters()">
-                            <i class="fas fa-filter me-1"></i>Lọc
-                        </button>
-                        <button class="btn btn-outline-secondary" onclick="clearFilters()">
-                            <i class="fas fa-times me-1"></i>Xóa
-                        </button>
-                    </div>
+                <div class="ds-flex ds-flex-col ds-items-center ds-text-center ds-gap-4">
+                    <h1 class="ds-heading-2">Nhà hàng yêu thích</h1>
+                    <p class="ds-text-large ds-text-secondary" style="max-width: 720px;">
+                        Theo dõi và quản lý những nhà hàng bạn yêu thích, sẵn sàng đặt bàn bất cứ khi nào bạn muốn trải nghiệm ẩm thực đỉnh cao.
+                    </p>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Loading Spinner -->
-        <div class="loading-spinner" id="loadingSpinner">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Đang tải...</span>
-            </div>
-        </div>
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container">
+                <article class="ds-card ds-mb-8">
+                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-6">
+                        <div class="ds-grid ds-grid-auto ds-gap-6 ds-items-end">
+                            <div class="ds-form-group filter-item">
+                                <label class="ds-form-label" for="searchInput">Tìm kiếm</label>
+                                <input type="text"
+                                       id="searchInput"
+                                       class="ds-form-input"
+                                       th:value="${search}"
+                                       placeholder="Tên nhà hàng...">
+                            </div>
 
-        <!-- Favorites Grid -->
-        <div id="favoritesGrid">
-            <div th:if="${favorites.empty}" class="empty-state">
-                <i class="fas fa-heart-broken"></i>
-                <h4>Chưa có nhà hàng yêu thích</h4>
-                <p>Hãy khám phá và thêm những nhà hàng bạn yêu thích vào danh sách!</p>
-                <a href="/customer/restaurants" class="btn btn-primary">
-                    <i class="fas fa-search me-1"></i>Tìm nhà hàng
-                </a>
-            </div>
+                            <div class="ds-form-group filter-item">
+                                <label class="ds-form-label" for="cuisineFilter">Loại ẩm thực</label>
+                                <select id="cuisineFilter" class="ds-form-select">
+                                    <option value="">Tất cả</option>
+                                    <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
+                                    <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
+                                    <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
+                                    <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
+                                    <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
+                                    <option value="American" th:selected="${cuisineType == 'American'}">Mỹ</option>
+                                </select>
+                            </div>
 
-            <div th:unless="${favorites.empty}" class="row">
-                <div th:each="favorite : ${favorites}" class="col-lg-4 col-md-6 mb-4">
-                    <div class="card favorite-card h-100">
-                        <div class="position-relative">
-                            <img th:src="${favorite.imageUrl != null ? favorite.imageUrl : '/images/restaurant-placeholder.jpg'}" 
-                                 class="card-img-top restaurant-image" 
-                                 th:alt="${favorite.restaurantName}">
-                            <div class="position-absolute top-0 end-0 p-2">
-                                <i class="fas fa-heart heart-icon favorited" 
-                                   th:data-restaurant-id="${favorite.restaurantId}"
-                                   onclick="toggleFavorite(this)"></i>
+                            <div class="ds-form-group filter-item">
+                                <label class="ds-form-label" for="priceFilter">Khoảng giá</label>
+                                <select id="priceFilter" class="ds-form-select">
+                                    <option value="">Tất cả</option>
+                                    <option value="under-50k" th:selected="${priceRange == 'under-50k'}">Dưới 50k</option>
+                                    <option value="50k-100k" th:selected="${priceRange == '50k-100k'}">50k - 100k</option>
+                                    <option value="100k-200k" th:selected="${priceRange == '100k-200k'}">100k - 200k</option>
+                                    <option value="over-200k" th:selected="${priceRange == 'over-200k'}">Trên 200k</option>
+                                </select>
                             </div>
-                        </div>
-                        
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title mb-2" th:text="${favorite.restaurantName}">Tên nhà hàng</h5>
-                            
-                            <div class="mb-2">
-                                <span class="cuisine-badge" th:text="${favorite.cuisineType}">Loại ẩm thực</span>
+
+                            <div class="ds-form-group filter-item">
+                                <label class="ds-form-label" for="ratingFilter">Đánh giá</label>
+                                <select id="ratingFilter" class="ds-form-select">
+                                    <option value="">Tất cả</option>
+                                    <option value="5-star" th:selected="${ratingFilter == '5-star'}">5 sao</option>
+                                    <option value="4-star" th:selected="${ratingFilter == '4-star'}">4 sao trở lên</option>
+                                    <option value="3-star" th:selected="${ratingFilter == '3-star'}">3 sao trở lên</option>
+                                    <option value="2-star" th:selected="${ratingFilter == '2-star'}">2 sao trở lên</option>
+                                </select>
                             </div>
-                            
-                            <p class="card-text text-muted small mb-2" th:text="${favorite.description}">Mô tả nhà hàng</p>
-                            
-                            <div class="mb-2">
-                                <div class="rating-stars">
-                                    <i class="fas fa-star" th:each="i : ${#numbers.sequence(1, 5)}" 
-                                       th:classappend="${i <= favorite.averageRating ? '' : 'text-muted'}"></i>
-                                    <span class="ms-1 small text-muted" th:text="${favorite.averageRating}">4.5</span>
-                                    <span class="small text-muted" th:text="'(' + ${favorite.reviewCount} + ' đánh giá)'">(123 đánh giá)</span>
-                                </div>
+
+                            <div class="ds-form-group filter-item">
+                                <label class="ds-form-label" for="sortSelect">Sắp xếp</label>
+                                <select id="sortSelect" class="ds-form-select">
+                                    <option value="createdAt-desc" th:selected="${sortBy == 'createdAt' && sortDir == 'desc'}">Mới nhất</option>
+                                    <option value="createdAt-asc" th:selected="${sortBy == 'createdAt' && sortDir == 'asc'}">Cũ nhất</option>
+                                    <option value="restaurantName-asc" th:selected="${sortBy == 'restaurantName' && sortDir == 'asc'}">Tên A-Z</option>
+                                    <option value="restaurantName-desc" th:selected="${sortBy == 'restaurantName' && sortDir == 'desc'}">Tên Z-A</option>
+                                    <option value="averagePrice-asc" th:selected="${sortBy == 'averagePrice' && sortDir == 'asc'}">Giá thấp</option>
+                                    <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' && sortDir == 'desc'}">Giá cao</option>
+                                    <option value="averageRating-desc" th:selected="${sortBy == 'averageRating' && sortDir == 'desc'}">Đánh giá cao</option>
+                                    <option value="averageRating-asc" th:selected="${sortBy == 'averageRating' && sortDir == 'asc'}">Đánh giá thấp</option>
+                                </select>
                             </div>
-                            
-                            <div class="mb-2">
-                                <i class="fas fa-map-marker-alt text-muted me-1"></i>
-                                <span class="small text-muted" th:text="${favorite.address}">Địa chỉ</span>
-                            </div>
-                            
-                            <div class="mb-2">
-                                <i class="fas fa-clock text-muted me-1"></i>
-                                <span class="small text-muted" th:text="${favorite.openingHours}">Giờ mở cửa</span>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <span class="price-range" th:text="${favorite.averagePrice != null ? #numbers.formatDecimal(favorite.averagePrice, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : 'Liên hệ'}">Giá trung bình</span>
-                            </div>
-                            
-                            <div class="mt-auto">
-                                <div class="d-flex gap-2">
-                                    <a th:href="@{/customer/restaurants/{id}(id=${favorite.restaurantId})}" 
-                                       class="btn btn-outline-primary btn-sm flex-fill">
-                                        <i class="fas fa-eye me-1"></i>Xem chi tiết
-                                    </a>
-                                    <a th:href="@{/customer/booking/create/{id}(id=${favorite.restaurantId})}" 
-                                       class="btn btn-primary btn-sm flex-fill">
-                                        <i class="fas fa-calendar-plus me-1"></i>Đặt bàn
-                                    </a>
+
+                            <div class="filter-item">
+                                <label class="ds-form-label" for="filterActions">&nbsp;</label>
+                                <div class="ds-flex ds-gap-3 ds-flex-wrap">
+                                    <button type="button"
+                                            id="filterActions"
+                                            class="ds-btn ds-btn-primary"
+                                            onclick="applyFilters()">
+                                        <i class="fas fa-filter"></i>
+                                        Lọc
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="card-footer text-muted small">
-                            <i class="fas fa-heart text-danger me-1"></i>
-                            Đã thêm vào <span th:text="${#temporals.format(favorite.favoritedAt, 'dd/MM/yyyy')}">01/01/2024</span>
+
+                        <div class="ds-flex ds-justify-end">
+                            <button type="button"
+                                    class="ds-btn ds-btn-secondary ds-btn-sm"
+                                    onclick="clearFilters()">
+                                <i class="fas fa-times"></i>
+                                Xóa bộ lọc
+                            </button>
                         </div>
                     </div>
+                </article>
+
+                <div id="favoritesGrid" class="ds-flex ds-flex-col ds-gap-6">
+                    <div th:if="${favorites.empty}" class="ds-card ds-bg-gray-50 ds-text-center ds-p-8">
+                        <div class="ds-flex ds-flex-col ds-items-center ds-gap-4">
+                            <i class="fas fa-heart-broken ds-text-secondary" style="font-size: 3rem;"></i>
+                            <h3 class="ds-heading-4 ds-m-0">Chưa có nhà hàng yêu thích</h3>
+                            <p class="ds-text-base ds-text-secondary ds-m-0">
+                                Hãy khám phá và thêm những nhà hàng bạn yêu thích vào danh sách!
+                            </p>
+                            <a th:href="@{/customer/restaurants}" class="ds-btn ds-btn-primary ds-btn-lg">
+                                <i class="fas fa-search"></i>
+                                Tìm nhà hàng
+                            </a>
+                        </div>
+                    </div>
+
+                    <div th:unless="${favorites.empty}" class="ds-grid ds-grid-auto ds-gap-8">
+                        <article class="ds-card ds-favorite-card"
+                                 th:each="favorite : ${favorites}"
+                                 data-favorite-card>
+                            <div class="ds-restaurant-image ds-bg-gray-100">
+                                <img th:src="${favorite.imageUrl != null ? favorite.imageUrl : '/images/restaurant-placeholder.jpg'}"
+                                     th:alt="${favorite.restaurantName}"
+                                     class="ds-restaurant-photo"
+                                     loading="lazy">
+                                <div class="favorite-heart">
+                                    <i class="fas fa-heart heart-icon favorited"
+                                       th:data-restaurant-id="${favorite.restaurantId}"
+                                       onclick="toggleFavorite(this)"></i>
+                                </div>
+                            </div>
+
+                            <div class="ds-restaurant-info ds-flex ds-flex-col ds-gap-3 ds-p-6">
+                                <div class="ds-flex ds-justify-between ds-items-start ds-gap-3">
+                                    <h3 class="ds-heading-4 ds-m-0" th:text="${favorite.restaurantName}">Tên nhà hàng</h3>
+                                    <span class="cuisine-badge" th:text="${favorite.cuisineType}">Ẩm thực</span>
+                                </div>
+
+                                <p class="ds-text-base ds-text-secondary"
+                                   th:text="${favorite.description}">Mô tả nhà hàng</p>
+
+                                <div class="ds-flex ds-flex-col ds-gap-2 ds-text-secondary ds-text-small">
+                                    <div class="ds-flex ds-gap-2 ds-items-center">
+                                        <div class="ds-flex ds-gap-1">
+                                            <i class="fas fa-star"
+                                               th:each="i : ${#numbers.sequence(1, 5)}"
+                                               th:classappend="${i <= favorite.averageRating ? ' ds-text-warning' : ' ds-text-tertiary'}"></i>
+                                        </div>
+                                        <span th:text="${favorite.averageRating}">4.5</span>
+                                        <span th:text="'(' + ${favorite.reviewCount} + ' đánh giá)'">(123 đánh giá)</span>
+                                    </div>
+                                    <div class="ds-flex ds-gap-2 ds-items-center">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <span th:text="${favorite.address}">Địa chỉ</span>
+                                    </div>
+                                    <div class="ds-flex ds-gap-2 ds-items-center">
+                                        <i class="fas fa-clock"></i>
+                                        <span th:text="${favorite.openingHours}">Giờ mở cửa</span>
+                                    </div>
+                                </div>
+
+                                <div class="ds-text-base ds-text-secondary">
+                                    <strong th:text="${favorite.averagePrice != null ? #numbers.formatDecimal(favorite.averagePrice, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : 'Liên hệ'}">Giá trung bình</strong>
+                                </div>
+
+                                <div class="ds-flex ds-gap-3 ds-mt-3">
+                                    <a th:href="@{/customer/restaurants/{id}(id=${favorite.restaurantId})}"
+                                       class="ds-btn ds-btn-secondary ds-btn-sm"
+                                       style="flex: 1;">
+                                        <i class="fas fa-eye"></i>
+                                        Xem chi tiết
+                                    </a>
+                                    <a th:href="@{/customer/booking/create/{id}(id=${favorite.restaurantId})}"
+                                       class="ds-btn ds-btn-primary ds-btn-sm"
+                                       style="flex: 1;">
+                                        <i class="fas fa-calendar-plus"></i>
+                                        Đặt bàn
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="ds-card-footer ds-text-small ds-text-secondary ds-flex ds-gap-2 ds-items-center">
+                                <i class="fas fa-heart ds-text-error"></i>
+                                <span>Đã thêm vào</span>
+                                <span th:text="${#temporals.format(favorite.favoritedAt, 'dd/MM/yyyy')}">01/01/2024</span>
+                            </div>
+                        </article>
+                    </div>
                 </div>
+
+                <nav th:if="${totalPages > 1}"
+                     aria-label="Favorites pagination"
+                     class="ds-mt-8">
+                    <div class="ds-pagination">
+                        <ul class="ds-pagination-list">
+                            <li class="ds-pagination-item"
+                                th:classappend="${currentPage == 0} ? ' disabled'">
+                                <a class="ds-pagination-link"
+                                   th:href="@{/customer/favorites(page=${currentPage - 1}, size=${favorites.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            <li th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}"
+                                class="ds-pagination-item"
+                                th:classappend="${pageNum == currentPage} ? ' active'">
+                                <a class="ds-pagination-link"
+                                   th:href="@{/customer/favorites(page=${pageNum}, size=${favorites.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}"
+                                   th:text="${pageNum + 1}">1</a>
+                            </li>
+
+                            <li class="ds-pagination-item"
+                                th:classappend="${currentPage == totalPages - 1} ? ' disabled'">
+                                <a class="ds-pagination-link"
+                                   th:href="@{/customer/favorites(page=${currentPage + 1}, size=${favorites.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
             </div>
-        </div>
+        </section>
+    </main>
 
-        <!-- Pagination -->
-        <nav th:if="${totalPages > 1}" aria-label="Pagination">
-            <ul class="pagination pagination-custom justify-content-center">
-                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-                    <a class="page-link" th:href="@{/customer/favorites(page=${currentPage - 1}, size=${favorites.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                </li>
-                
-                <li th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}" 
-                    class="page-item" 
-                    th:classappend="${pageNum == currentPage} ? 'active'">
-                    <a class="page-link" 
-                       th:href="@{/customer/favorites(page=${pageNum}, size=${favorites.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}"
-                       th:text="${pageNum + 1}">1</a>
-                </li>
-                
-                <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-                    <a class="page-link" th:href="@{/customer/favorites(page=${currentPage + 1}, size=${favorites.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </div>
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
 
-    <!-- Toast Container -->
     <div class="toast-container">
         <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
                 <i class="fas fa-heart text-danger me-2"></i>
                 <strong class="me-auto">Thông báo</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Đóng"></button>
             </div>
-            <div class="toast-body" id="toastMessage">
-                <!-- Message will be inserted here -->
-            </div>
+            <div class="toast-body" id="toastMessage"></div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
     <script>
-        // Toggle favorite function
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function (event) {
+                    if (event.key === 'Enter') {
+                        applyFilters();
+                    }
+                });
+            }
+        });
+
         function toggleFavorite(heartIcon) {
             const restaurantId = heartIcon.dataset.restaurantId;
             const isCurrentlyFavorited = heartIcon.classList.contains('favorited');
-            
-            // Add animation
+
             heartIcon.classList.add('favorited');
-            
-            // Prepare request
+
             const request = {
-                restaurantId: parseInt(restaurantId),
+                restaurantId: parseInt(restaurantId, 10),
                 isFavorited: !isCurrentlyFavorited
             };
-            
-            // Send AJAX request
+
             fetch('/customer/favorites/toggle', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(request)
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.isFavorited) {
-                        heartIcon.classList.add('favorited');
-                        showToast(data.message, 'success');
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (data.isFavorited) {
+                            heartIcon.classList.add('favorited');
+                            showToast(data.message, 'success');
+                        } else {
+                            heartIcon.classList.remove('favorited');
+                            showToast(data.message, 'success');
+                            const cardWrapper = heartIcon.closest('[data-favorite-card]');
+                            if (cardWrapper) {
+                                cardWrapper.remove();
+                            }
+                        }
                     } else {
+                        showToast(data.message, 'error');
                         heartIcon.classList.remove('favorited');
-                        showToast(data.message, 'success');
-                        // Remove card from DOM
-                        heartIcon.closest('.col-lg-4').remove();
                     }
-                } else {
-                    showToast(data.message, 'error');
-                    // Revert animation
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
                     heartIcon.classList.remove('favorited');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
-                heartIcon.classList.remove('favorited');
-            });
+                });
         }
-        
-        // Apply filters
+
         function applyFilters() {
             const search = document.getElementById('searchInput').value;
             const cuisineType = document.getElementById('cuisineFilter').value;
@@ -396,7 +419,7 @@
             const ratingFilter = document.getElementById('ratingFilter').value;
             const sortValue = document.getElementById('sortSelect').value;
             const [sortBy, sortDir] = sortValue.split('-');
-            
+
             const url = new URL(window.location);
             url.searchParams.set('search', search);
             url.searchParams.set('cuisineType', cuisineType);
@@ -405,18 +428,17 @@
             url.searchParams.set('sortBy', sortBy);
             url.searchParams.set('sortDir', sortDir);
             url.searchParams.set('page', '0');
-            
+
             window.location.href = url.toString();
         }
-        
-        // Clear filters
+
         function clearFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('cuisineFilter').value = '';
             document.getElementById('priceFilter').value = '';
             document.getElementById('ratingFilter').value = '';
             document.getElementById('sortSelect').value = 'createdAt-desc';
-            
+
             const url = new URL(window.location);
             url.searchParams.delete('search');
             url.searchParams.delete('cuisineType');
@@ -425,38 +447,29 @@
             url.searchParams.set('sortBy', 'createdAt');
             url.searchParams.set('sortDir', 'desc');
             url.searchParams.set('page', '0');
-            
+
             window.location.href = url.toString();
         }
-        
-        // Show toast notification
+
         function showToast(message, type) {
             const toastElement = document.getElementById('toast');
             const toastMessage = document.getElementById('toastMessage');
-            
+
             toastMessage.textContent = message;
-            
+
             if (type === 'success') {
                 toastElement.classList.add('bg-success', 'text-white');
             } else if (type === 'error') {
                 toastElement.classList.add('bg-danger', 'text-white');
             }
-            
+
             const toast = new bootstrap.Toast(toastElement);
             toast.show();
-            
-            // Remove classes after toast is hidden
-            toastElement.addEventListener('hidden.bs.toast', function() {
+
+            toastElement.addEventListener('hidden.bs.toast', function () {
                 toastElement.classList.remove('bg-success', 'bg-danger', 'text-white');
-            });
+            }, { once: true });
         }
-        
-        // Auto-submit on Enter key in search input
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                applyFilters();
-            }
-        });
     </script>
 </body>
 </html>
