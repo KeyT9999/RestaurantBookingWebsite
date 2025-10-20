@@ -593,6 +593,9 @@
         let filteredDishes = []; // For search functionality
         let currentMenuPage = 1;
         const itemsPerPage = 6;
+        let tablesLoaded = false;
+        let tablesLoading = false;
+        
 
         function extractTableId(table) {
             if (!table) {
@@ -641,92 +644,96 @@
             console.log('📊 === END SELECTIONS DEBUG ===');
         }
 
-           function loadTables() {
-               const restaurantId = document.getElementById('restaurantId').value;
-               const viewTablesBtn = document.getElementById('viewTablesBtn');
-               
-               console.log('🔍 Loading tables for restaurant ID:', restaurantId);
-               logAllSelections();
-               
-               if (restaurantId) {
-                   viewTablesBtn.disabled = false;
-                   return fetch(`/api/booking/restaurants/${restaurantId}/tables`)
-                       .then(response => {
-                           console.log('📡 API Response status:', response.status);
-                           if (!response.ok) {
-                               throw new Error(`HTTP error! status: ${response.status}`);
-                           }
-                           return response.json();
-                       })
-                       .then(tables => {
-                           console.log('📋 Received tables:', tables);
-                           availableTables = tables;
-                           console.log('📋 availableTables updated:', availableTables);
-                           logAllSelections();
-                           
-                           // Load table layouts
-                           return fetch(`/api/booking/restaurants/${restaurantId}/table-layouts`)
-                               .then(response => {
-                                   if (response.ok) {
-                                       return response.json();
-                                   }
-                                   return [];
-                               })
-                               .then(layouts => {
-                                   console.log('📋 Received table layouts:', layouts);
-                                   tableLayouts = layouts;
-                                   return tables;
-                               })
-                               .catch(error => {
-                                   console.log('⚠️ No table layouts found:', error);
-                                   tableLayouts = [];
-                                   return tables;
-                               });
-                       })
-                       .then(tables => {
-                           if (tables.length === 0) {
-                               console.log('⚠️ No tables found for restaurant ID:', restaurantId);
-                           } else {
-                               // Render tables into modal immediately for edit mode
-                               renderTablesInModal(tables);
-                           }
-                           
-                           // Load dishes and services for this restaurant
-                           return Promise.all([
-                               loadDishes(restaurantId),
-                               loadServices(restaurantId)
-                           ]).then(() => {
-                               console.log('✅ All data (tables, dishes, services, layouts) loaded successfully');
-                               return tables;
-                           });
-                       })
-                       .catch(error => {
-                           console.error('❌ Error loading tables:', error);
-                           availableTables = [];
-                           // Still try to load dishes and services
-                           return Promise.all([
-                               loadDishes(restaurantId),
-                               loadServices(restaurantId)
-                           ]).then(() => {
-                               console.log('✅ Dishes and services loaded despite table error');
-                               return []; // Return empty array on error
-                           }).catch(() => {
-                               console.log('❌ Error loading dishes/services too');
-                               return []; // Return empty array on error
-                           });
-                       });
-               } else {
-                   viewTablesBtn.disabled = true;
-                   // Keep services section visible for debugging
-                   // document.getElementById('servicesSection').style.display = 'none';
-                   // Reset menu button when no restaurant selected
-                   const viewMenuBtn = document.getElementById('viewMenuBtn');
-                   viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu';
-                   viewMenuBtn.disabled = true;
-                   updateTotalAmount();
-                   return Promise.resolve([]); // Return resolved promise with empty array
-               }
-           }
+        function loadTables() {
+            tablesLoading = true;
+            tablesLoaded = false;
+            const restaurantId = document.getElementById('restaurantId').value;
+            const viewTablesBtn = document.getElementById('viewTablesBtn');
+            
+            console.log('🔍 Loading tables for restaurant ID:', restaurantId);
+            logAllSelections();
+            
+            if (restaurantId) {
+                viewTablesBtn.disabled = false;
+                return fetch(`/api/booking/restaurants/${restaurantId}/tables`)
+                    .then(response => {
+                        console.log('📡 API Response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(tables => {
+                        console.log('📋 Received tables:', tables);
+                        availableTables = tables;
+                        console.log('📋 availableTables updated:', availableTables);
+                        logAllSelections();
+                        
+                        // Load table layouts
+                        return fetch(`/api/booking/restaurants/${restaurantId}/table-layouts`)
+                            .then(response => {
+                                if (response.ok) {
+                                    return response.json();
+                                }
+                                return [];
+                            })
+                            .then(layouts => {
+                                console.log('📋 Received table layouts:', layouts);
+                                tableLayouts = layouts;
+                                return tables;
+                            })
+                            .catch(error => {
+                                console.log('⚠️ No table layouts found:', error);
+                                tableLayouts = [];
+                                return tables;
+                            });
+                    })
+                    .then(tables => {
+                        tablesLoaded = true;
+                        tablesLoading = false;
+                        if (tables.length === 0) {
+                            console.log('⚠️ No tables found for restaurant ID:', restaurantId);
+                        } else {
+                            renderTablesInModal(tables);
+                        }
+                        
+                        return Promise.all([
+                            loadDishes(restaurantId),
+                            loadServices(restaurantId)
+                        ]).then(() => {
+                            console.log('✅ All data (tables, dishes, services, layouts) loaded successfully');
+                            return tables;
+                        });
+                    })
+                    .catch(error => {
+                        console.error('❌ Error loading tables:', error);
+                        availableTables = [];
+                        tablesLoaded = true;
+                        tablesLoading = false;
+                        return Promise.all([
+                            loadDishes(restaurantId),
+                            loadServices(restaurantId)
+                        ]).then(() => {
+                            console.log('✅ Dishes and services loaded despite table error');
+                            return []; // Return empty array on error
+                        }).catch(() => {
+                            console.log('❌ Error loading dishes/services too');
+                            return []; // Return empty array on error
+                        });
+                    });
+            } else {
+                viewTablesBtn.disabled = true;
+                tablesLoaded = false;
+                availableTables = [];
+                filteredTables = [];
+                tablesLoading = false;
+                const viewMenuBtn = document.getElementById('viewMenuBtn');
+                viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu';
+                viewMenuBtn.disabled = true;
+                updateTotalAmount();
+                return Promise.resolve([]); // Return resolved promise with empty array
+            }
+        }
 
         // Toggle Table Selection
         function toggleTableSelection(tableId) {
@@ -1239,14 +1246,19 @@
             return col;
         }
 
-        function openTablePopup() {
-            console.log('🚀 Opening table popup...');
+        function renderTablePopupContent() {
+            console.log('🚀 Rendering table popup content...');
             console.log('📋 Current selectedTables:', selectedTables);
             console.log('📋 Current selectedTableIds value:', document.getElementById('selectedTableIds').value);
             
-            // Initialize filtered tables
-            filteredTables = availableTables;
-            
+            // Reset search box and filtered data
+            const tableSearchInput = document.getElementById('tablesSearchInput');
+            if (tableSearchInput) {
+                tableSearchInput.value = '';
+            }
+
+            filteredTables = Array.isArray(availableTables) ? [...availableTables] : [];
+
             // Check if table layouts exist
             if (tableLayouts.length > 0) {
                 document.getElementById('tableLayoutToggle').style.display = 'block';
@@ -1258,8 +1270,27 @@
             
             const tablesList = document.getElementById('tablesList');
             tablesList.innerHTML = '';
-            
-            filteredTables.forEach(table => {
+
+            if (!filteredTables || filteredTables.length === 0) {
+                if (tablesLoading && !tablesLoaded) {
+                    tablesList.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-info text-center mb-0">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Đang tải danh sách bàn...
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    tablesList.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-info text-center mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Chưa có bàn khả dụng cho nhà hàng này.
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                filteredTables.forEach(table => {
                 const statusValue = getTableStatusValue(table.status);
                 const statusClass = getStatusBadgeClass(table.status);
                 const statusText = getStatusDisplayName(table.status);
@@ -1316,6 +1347,7 @@
                 `;
                 tablesList.appendChild(tableCard);
             });
+            }
             
             // Restore previous selections from hidden input
             const selectedTableIds = document.getElementById('selectedTableIds').value;
@@ -1371,10 +1403,44 @@
                     updateTableSelectionUI(); // Update UI after restoring
                 }, 100);
             }
-            
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('tableModal'));
-            modal.show();
+        }
+
+        function openTablePopup(forceReload = false) {
+            console.log('🚀 openTablePopup called - forceReload:', forceReload);
+
+            const restaurantId = document.getElementById('restaurantId').value;
+            if (!restaurantId) {
+                alert('Vui lòng chọn nhà hàng trước khi xem sơ đồ bàn.');
+                return;
+            }
+
+            const showModalWithContent = () => {
+                renderTablePopupContent();
+                const modal = new bootstrap.Modal(document.getElementById('tableModal'));
+                modal.show();
+            };
+
+            if (forceReload || !availableTables || availableTables.length === 0) {
+                console.log('🔄 Reloading tables before showing popup...');
+                loadTables().then(tables => {
+                    if (tables && tables.length) {
+                        showModalWithContent();
+                    } else {
+                        renderTablePopupContent();
+                        const warningMsg = 'Không tìm thấy bàn khả dụng cho nhà hàng này.';
+                        console.warn(warningMsg);
+                        const modal = new bootstrap.Modal(document.getElementById('tableModal'));
+                        modal.show();
+                    }
+                }).catch(error => {
+                    console.error('❌ Error reloading tables before popup:', error);
+                    renderTablePopupContent();
+                    const modal = new bootstrap.Modal(document.getElementById('tableModal'));
+                    modal.show();
+                });
+            } else {
+                showModalWithContent();
+            }
         }
 
         function openMenuPopup() {
@@ -2665,6 +2731,10 @@
          * Clear all form data when restaurant changes
          */
         function clearFormData() {
+            tablesLoaded = false;
+            tablesLoading = false;
+            availableTables = [];
+            filteredTables = [];
             console.log('🔄 Clearing form data...');
             
             // Clear selected tables

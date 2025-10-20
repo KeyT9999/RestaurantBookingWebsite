@@ -1,6 +1,7 @@
 package com.example.booking.web.controller.api;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -105,28 +106,38 @@ public class BookingApiController {
 
             System.out.println("✅ API: Found " + tables.size() + " tables");
 
-            // Convert to Map to include table images
-            List<Map<String, Object>> tableMaps = tables.stream()
-                    .map(table -> {
-                        Map<String, Object> tableMap = new HashMap<>();
-                        tableMap.put("tableId", table.getTableId());
-                        tableMap.put("tableName", table.getTableName());
-                        tableMap.put("capacity", table.getCapacity());
-                        tableMap.put("status", table.getStatus());
-                        tableMap.put("depositAmount", table.getDepositAmount());
-                        tableMap.put("restaurantId", table.getRestaurant().getRestaurantId());
-                        tableMap.put("mainImage", table.getMainTableImage());
-                        tableMap.put("images", table.getTableImages().stream()
-                                .map(img -> {
-                                    Map<String, Object> imgMap = new HashMap<>();
-                                    imgMap.put("url", img.getUrl());
-                                    imgMap.put("mediaId", img.getMediaId());
-                                    return imgMap;
-                                })
-                                .collect(Collectors.toList()));
-                        return tableMap;
-                    })
-                    .collect(Collectors.toList());
+            List<Map<String, Object>> tableMaps = new ArrayList<>();
+            for (RestaurantTable table : tables) {
+                Map<String, Object> tableMap = new HashMap<>();
+                tableMap.put("tableId", table.getTableId());
+                tableMap.put("tableName", table.getTableName());
+                tableMap.put("capacity", table.getCapacity());
+                tableMap.put("status", table.getStatus());
+                tableMap.put("depositAmount", table.getDepositAmount());
+                tableMap.put("restaurantId", table.getRestaurant().getRestaurantId());
+
+                try {
+                    String mainImage = table.getMainTableImage();
+                    List<Map<String, Object>> images = table.getTableImages().stream()
+                            .map(img -> {
+                                Map<String, Object> imgMap = new HashMap<>();
+                                imgMap.put("url", img.getUrl());
+                                imgMap.put("mediaId", img.getMediaId());
+                                return imgMap;
+                            })
+                            .collect(Collectors.toList());
+
+                    tableMap.put("mainImage", mainImage);
+                    tableMap.put("images", images);
+                } catch (Exception mediaEx) {
+                    System.err.println("⚠️ Unable to load images for table ID "
+                            + table.getTableId() + ": " + mediaEx.getMessage());
+                    tableMap.put("mainImage", null);
+                    tableMap.put("images", java.util.Collections.emptyList());
+                }
+
+                tableMaps.add(tableMap);
+            }
 
             System.out.println("✅ API: Returning " + tableMaps.size() + " table maps");
 

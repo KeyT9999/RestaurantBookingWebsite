@@ -98,9 +98,22 @@ public class BookingController {
             System.out.println("❌ NO RESTAURANTS FOUND! This could be the problem.");
         }
 
+        BookingForm bookingForm;
+        if (model.containsAttribute("bookingForm")) {
+            bookingForm = (BookingForm) model.asMap().get("bookingForm");
+        } else {
+            bookingForm = new BookingForm();
+        }
+
         model.addAttribute("restaurants", restaurants);
-        model.addAttribute("bookingForm", new BookingForm());
-        model.addAttribute("tables", List.of()); // Empty initially
+        model.addAttribute("bookingForm", bookingForm);
+
+        if (bookingForm.getRestaurantId() != null) {
+            List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(bookingForm.getRestaurantId());
+            model.addAttribute("tables", tables);
+        } else {
+            model.addAttribute("tables", List.of()); // Empty initially
+        }
         model.addAttribute("pageTitle", "Đặt bàn - Book Table");
 
         return "booking/form";
@@ -135,19 +148,10 @@ public class BookingController {
                 System.out.println("   - " + error.getDefaultMessage());
             });
 
-            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
-            model.addAttribute("restaurants", restaurants);
-            model.addAttribute("bookingForm", form); // Keep the form data
-
-            // Load tables if restaurant is selected
-            if (form.getRestaurantId() != null) {
-                List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
-                model.addAttribute("tables", tables);
-            } else {
-                model.addAttribute("tables", List.of());
-            }
-
-            return "booking/form";
+            redirectAttributes.addFlashAttribute("bookingForm", form);
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.bookingForm", bindingResult);
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng kiểm tra lại thông tin đặt bàn.");
+            return "redirect:/booking/new";
         }
 
         try {
@@ -182,20 +186,9 @@ public class BookingController {
             System.err.println("❌ Conflict type: " + e.getConflictType());
 
             // Keep form data and reload form with error message
-            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
-            model.addAttribute("restaurants", restaurants);
-            model.addAttribute("bookingForm", form); // Keep the form data
-
-            // Load tables if restaurant is selected
-            if (form.getRestaurantId() != null) {
-                List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
-                model.addAttribute("tables", tables);
-            } else {
-                model.addAttribute("tables", List.of());
-            }
-
-            model.addAttribute("errorMessage", "Booking conflict: " + e.getMessage());
-            return "booking/form";
+            redirectAttributes.addFlashAttribute("bookingForm", form);
+            redirectAttributes.addFlashAttribute("errorMessage", "Booking conflict: " + e.getMessage());
+            return "redirect:/booking/new";
 
         } catch (Exception e) {
             System.err.println("❌ Error creating booking: " + e.getMessage());
@@ -203,20 +196,9 @@ public class BookingController {
             e.printStackTrace();
 
             // Keep form data and reload form with error message
-            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
-            model.addAttribute("restaurants", restaurants);
-            model.addAttribute("bookingForm", form); // Keep the form data
-
-            // Load tables if restaurant is selected
-            if (form.getRestaurantId() != null) {
-                List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
-                model.addAttribute("tables", tables);
-            } else {
-                model.addAttribute("tables", List.of());
-            }
-
-            model.addAttribute("errorMessage", "Error creating booking: " + e.getMessage());
-            return "booking/form";
+            redirectAttributes.addFlashAttribute("bookingForm", form);
+            redirectAttributes.addFlashAttribute("errorMessage", "Error creating booking: " + e.getMessage());
+            return "redirect:/booking/new";
         }
     }
 
