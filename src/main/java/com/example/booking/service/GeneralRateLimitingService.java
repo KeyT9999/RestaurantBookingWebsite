@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,6 +77,12 @@ public class GeneralRateLimitingService {
             bookingAttempts.put(clientIp, attemptInfo);
         }
         
+        // Check if window has expired
+        if (attemptInfo.isWindowExpired(bookingWindowSeconds)) {
+            logger.info("⏱️ BOOKING WINDOW RESET - IP: {}, window: {}s", clientIp, bookingWindowSeconds);
+            attemptInfo.reset();
+        }
+
         // Check if auto-reset time has expired
         if (attemptInfo.isAutoResetExpired(bookingAutoResetSeconds)) {
             logger.info("🔄 AUTO RESET EXPIRED - Resetting booking attempts for IP: {} after {} seconds", 
@@ -118,6 +125,12 @@ public class GeneralRateLimitingService {
             chatAttempts.put(clientIp, attemptInfo);
         }
         
+        // Check if window has expired
+        if (attemptInfo.isWindowExpired(chatWindowSeconds)) {
+            logger.info("⏱️ CHAT WINDOW RESET - IP: {}, window: {}s", clientIp, chatWindowSeconds);
+            attemptInfo.reset();
+        }
+
         // Check if auto-reset time has expired
         if (attemptInfo.isAutoResetExpired(chatAutoResetSeconds)) {
             logger.info("🔄 AUTO RESET EXPIRED - Resetting chat attempts for IP: {} after {} seconds", 
@@ -160,6 +173,12 @@ public class GeneralRateLimitingService {
             reviewAttempts.put(clientIp, attemptInfo);
         }
         
+        // Check if window has expired
+        if (attemptInfo.isWindowExpired(reviewWindowSeconds)) {
+            logger.info("⏱️ REVIEW WINDOW RESET - IP: {}, window: {}s", clientIp, reviewWindowSeconds);
+            attemptInfo.reset();
+        }
+
         // Check if auto-reset time has expired
         if (attemptInfo.isAutoResetExpired(reviewAutoResetSeconds)) {
             logger.info("🔄 AUTO RESET EXPIRED - Resetting review attempts for IP: {} after {} seconds", 
@@ -238,7 +257,10 @@ public class GeneralRateLimitingService {
     private void addRateLimitHeaders(HttpServletResponse response, GeneralAttemptInfo attemptInfo, int maxAttempts, int windowSeconds) {
         response.setHeader("X-RateLimit-Limit", String.valueOf(maxAttempts));
         response.setHeader("X-RateLimit-Remaining", String.valueOf(Math.max(0, maxAttempts - attemptInfo.getAttemptCount())));
-        response.setHeader("X-RateLimit-Reset", String.valueOf(windowSeconds));
+        long secondsSinceFirstAttempt = attemptInfo.secondsSinceFirstAttempt();
+        long secondsUntilReset = Math.max(0, windowSeconds - secondsSinceFirstAttempt);
+
+        response.setHeader("X-RateLimit-Reset", String.valueOf(secondsUntilReset));
     }
     
     /**
@@ -250,11 +272,13 @@ public class GeneralRateLimitingService {
         private String clientIp;
         
         public GeneralAttemptInfo() {
-            this.attemptCount = 0;
-            this.firstAttemptTime = LocalDateTime.now();
+            reset();
         }
         
         public void incrementAttempt() {
+            if (attemptCount == 0) {
+                firstAttemptTime = LocalDateTime.now();
+            }
             this.attemptCount++;
         }
         
@@ -265,6 +289,10 @@ public class GeneralRateLimitingService {
         
         public int getAttemptCount() {
             return attemptCount;
+        }
+        
+        public boolean isWindowExpired(int windowSeconds) {
+            return firstAttemptTime != null && LocalDateTime.now().isAfter(firstAttemptTime.plusSeconds(windowSeconds));
         }
         
         public boolean isAutoResetExpired(int autoResetSeconds) {
@@ -281,6 +309,13 @@ public class GeneralRateLimitingService {
         
         public LocalDateTime getFirstAttemptTime() {
             return firstAttemptTime;
+        }
+
+        public long secondsSinceFirstAttempt() {
+            if (firstAttemptTime == null) {
+                return 0;
+            }
+            return Math.max(0, Duration.between(firstAttemptTime, LocalDateTime.now()).getSeconds());
         }
     }
 }
