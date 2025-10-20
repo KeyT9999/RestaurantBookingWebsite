@@ -86,4 +86,36 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
     @Query("SELECT r FROM RestaurantProfile r WHERE r.approvalStatus = 'SUSPENDED' ORDER BY r.approvedAt DESC")
     List<RestaurantProfile> findSuspendedRestaurants();
 
+    /**
+     * ===== PERFORMANCE OPTIMIZATION: Push filters to database =====
+     * Find APPROVED restaurants with filters applied at database level
+     * BEFORE: Load all restaurants (Integer.MAX_VALUE) then filter in Java
+     * AFTER: Filter in database, return only matching restaurants with pagination
+     * 
+     * @param search - Search term for name/address/cuisine (nullable)
+     * @param cuisineType - Exact cuisine type match (nullable)
+     * @param minPrice - Minimum average price (nullable)
+     * @param maxPrice - Maximum average price (nullable)
+     * @param minRating - Minimum average rating (nullable)
+     * @param pageable - Pagination and sorting
+     * @return Page of matching restaurants
+     */
+    @Query("SELECT r FROM RestaurantProfile r " +
+           "WHERE r.approvalStatus = 'APPROVED' " +
+           "AND (:search IS NULL OR :search = '' OR " +
+           "     LOWER(r.restaurantName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(r.address) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "     LOWER(r.cuisineType) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:cuisineType IS NULL OR :cuisineType = '' OR r.cuisineType = :cuisineType) " +
+           "AND (:minPrice IS NULL OR r.averagePrice >= :minPrice) " +
+           "AND (:maxPrice IS NULL OR r.averagePrice <= :maxPrice) " +
+           "AND (:minRating IS NULL OR r.averageRating >= :minRating)")
+    Page<RestaurantProfile> findApprovedWithFilters(
+            @Param("search") String search,
+            @Param("cuisineType") String cuisineType,
+            @Param("minPrice") java.math.BigDecimal minPrice,
+            @Param("maxPrice") java.math.BigDecimal maxPrice,
+            @Param("minRating") Double minRating,
+            Pageable pageable);
+
 }

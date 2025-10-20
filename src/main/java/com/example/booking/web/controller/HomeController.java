@@ -27,10 +27,13 @@ import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.ReviewService;
+import com.example.booking.repository.RestaurantMediaRepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Controller for handling home page and static pages
@@ -49,6 +52,9 @@ public class HomeController {
 
     @Autowired
     private ReviewService reviewService;
+
+    @Autowired
+    private RestaurantMediaRepository restaurantMediaRepository;
 
     /**
      * Home page - main landing page
@@ -126,16 +132,30 @@ public class HomeController {
             Page<RestaurantProfile> restaurants = restaurantService.getRestaurantsWithFilters(
                 pageable, search, cuisineType, priceRange, ratingFilter);
             
-            // Load cover images for each restaurant
-            for (RestaurantProfile restaurant : restaurants.getContent()) {
-                List<RestaurantMedia> coverImages = restaurantOwnerService.getMediaByRestaurant(restaurant)
-                        .stream()
-                        .filter(m -> "cover".equalsIgnoreCase(m.getType()))
-                        .toList();
-
-                // Set the first cover image as the main image
-                if (!coverImages.isEmpty()) {
-                    restaurant.setMainImageUrl(coverImages.get(0).getUrl());
+            // ===== PERFORMANCE OPTIMIZATION: Fix N+1 with batch query =====
+            // BEFORE: Loop through each restaurant and query media separately (1 + N queries)
+            // AFTER: Single batch query for all restaurants (1 + 1 queries)
+            if (!restaurants.getContent().isEmpty()) {
+                // Batch fetch cover images for all restaurants in one query
+                List<RestaurantMedia> allCoverImages = restaurantMediaRepository
+                        .findByRestaurantsAndType(restaurants.getContent(), "cover");
+                
+                // Group by restaurant ID and take the first (newest) image for each restaurant
+                Map<Integer, String> coverUrlMap = allCoverImages.stream()
+                        .collect(Collectors.groupingBy(
+                                m -> m.getRestaurant().getRestaurantId(),
+                                Collectors.collectingAndThen(
+                                        Collectors.toList(),
+                                        list -> list.isEmpty() ? null : list.get(0).getUrl()
+                                )
+                        ));
+                
+                // Set cover image URLs on restaurants
+                for (RestaurantProfile restaurant : restaurants.getContent()) {
+                    String coverUrl = coverUrlMap.get(restaurant.getRestaurantId());
+                    if (coverUrl != null) {
+                        restaurant.setMainImageUrl(coverUrl);
+                    }
                 }
             }
 
