@@ -91,6 +91,12 @@
                                 </a>
                             </li>
                             <li sec:authorize="hasRole('CUSTOMER')">
+                                <a class="dropdown-item" th:href="@{/booking/my}">
+                                    <i class="fas fa-calendar-check me-2"></i>
+                                    My Reservations
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('CUSTOMER')">
                                 <a class="dropdown-item" th:href="@{/customer/favorites}">
                                     <i class="fas fa-heart me-2"></i>
                                     Favorites

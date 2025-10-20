@@ -3,60 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Reservations - Aurelius Fine Dining</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>My Reservations - Book Eat</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom Luxury CSS -->
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Home Resy Style CSS -->
+    <link th:href="@{/css/home-resy.css}" rel="stylesheet">
+    <!-- Design System CSS -->
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
 </head>
 
 <body>
-    <!-- Header Fragment -->
-    <div th:insert="~{fragments/header :: site-header}"></div>
+    <!-- Design System Header -->
+    <div th:with="activeNav='reservations'" 
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
     
     <!-- Main Content -->
     <main class="main-content">
         <div class="container mt-4">
             <!-- Page Header -->
-            <div class="luxury-card mb-4">
-                <div class="d-flex justify-content-between align-items-center">
+            <div class="ds-card ds-mb-6">
+                <div class="ds-flex ds-justify-between ds-align-center">
                     <div>
-                        <h2 class="luxury-title mb-2">
-                            <i class="fas fa-calendar-alt luxury-icon"></i> My Reservations
-                        </h2>
-                        <p class="text-muted mb-0">Manage your dining experiences</p>
+                        <h1 class="ds-heading-2 ds-mb-2">
+                            <i class="fas fa-calendar-check ds-icon ds-icon-lg"></i> My Reservations
+                        </h1>
+                        <p class="ds-text-secondary ds-mb-0">Manage your dining experiences</p>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="ds-flex ds-gap-3">
                         <!-- Filter Buttons -->
-                        <div class="btn-group" role="group">
-                            <input type="radio" class="btn-check" name="filter" id="filter-all" 
+                        <div class="ds-btn-group" role="group">
+                            <input type="radio" class="ds-btn-check" name="filter" id="filter-all" 
                                    th:checked="${currentFilter == 'all'}">
-                            <label class="btn btn-outline-warning" for="filter-all" onclick="filterBookings('all')">
+                            <label class="ds-btn ds-btn-outline" for="filter-all" onclick="filterBookings('all')">
                                 <i class="fas fa-list"></i> All
-                                <span class="badge bg-warning text-dark ms-1" 
+                                <span class="ds-badge ds-badge-primary ds-ml-2" 
                                       th:text="${totalBookings + totalWaitlist}"></span>
                             </label>
 
-                            <input type="radio" class="btn-check" name="filter" id="filter-bookings"
+                            <input type="radio" class="ds-btn-check" name="filter" id="filter-bookings"
                                    th:checked="${currentFilter == 'bookings'}">
-                            <label class="btn btn-outline-warning" for="filter-bookings" onclick="filterBookings('bookings')">
+                            <label class="ds-btn ds-btn-outline" for="filter-bookings" onclick="filterBookings('bookings')">
                                 <i class="fas fa-calendar-check"></i> Bookings
-                                <span class="badge bg-warning text-dark ms-1" th:text="${totalBookings}"></span>
+                                <span class="ds-badge ds-badge-primary ds-ml-2" th:text="${totalBookings}"></span>
                             </label>
 
-                            <input type="radio" class="btn-check" name="filter" id="filter-waitlist"
+                            <input type="radio" class="ds-btn-check" name="filter" id="filter-waitlist"
                                    th:checked="${currentFilter == 'waitlist'}">
-                            <label class="btn btn-outline-warning" for="filter-waitlist" onclick="filterBookings('waitlist')">
+                            <label class="ds-btn ds-btn-outline" for="filter-waitlist" onclick="filterBookings('waitlist')">
                                 <i class="fas fa-clock"></i> Waitlist
-                                <span class="badge bg-warning text-dark ms-1" th:text="${totalWaitlist}"></span>
+                                <span class="ds-badge ds-badge-primary ds-ml-2" th:text="${totalWaitlist}"></span>
                             </label>
                         </div>
                         
-                        <a href="/booking/new" class="btn btn--gold">
+                        <a href="/booking/new" class="ds-btn ds-btn-primary">
                             <i class="fas fa-plus-circle"></i> New Reservation
                         </a>
                     </div>
@@ -64,152 +68,149 @@
             </div>
             
             <!-- Flash Messages -->
-            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle luxury-icon"></i>
+            <div th:if="${successMessage}" class="ds-alert ds-alert-success ds-mb-4" role="alert">
+                <i class="fas fa-check-circle ds-icon"></i>
                 <span th:text="${successMessage}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
             </div>
             
-            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle luxury-icon"></i>
+            <div th:if="${errorMessage}" class="ds-alert ds-alert-error ds-mb-4" role="alert">
+                <i class="fas fa-exclamation-triangle ds-icon"></i>
                 <span th:text="${errorMessage}"></span>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
             </div>
             
             <!-- Payment Info Alert -->
-            <div th:if="${totalBookings > 0}" class="alert alert-info luxury-card mb-3" style="background: rgba(23, 162, 184, 0.1); border: 1px solid rgba(23, 162, 184, 0.3);">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-info-circle text-info me-2" style="font-size: 1.2rem;"></i>
+            <div th:if="${totalBookings > 0}" class="ds-alert ds-alert-info ds-mb-4">
+                <div class="ds-flex ds-align-center">
+                    <i class="fas fa-info-circle ds-icon ds-mr-3"></i>
                     <div>
-                        <strong class="text-info">Payment Available</strong>
-                        <p class="mb-0 text-muted">Complete payment for pending reservations to confirm your booking. Look for the <i class="fas fa-credit-card text-success"></i> Pay button on pending bookings.</p>
+                        <strong class="ds-text-primary">Payment Available</strong>
+                        <p class="ds-mb-0 ds-text-secondary">Complete payment for pending reservations to confirm your booking. Look for the <i class="fas fa-credit-card ds-text-success"></i> Pay button on pending bookings.</p>
                     </div>
                 </div>
             </div>
             
             <!-- Reservations Content -->
-            <div class="luxury-card">
+            <div class="ds-card">
                 <!-- Regular Bookings Section -->
                 <div th:if="${currentFilter == 'all' or currentFilter == 'bookings'}">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="luxury-title mb-0">
-                            <i class="fas fa-calendar-check luxury-icon"></i> 
+                    <div class="ds-flex ds-justify-between ds-align-center ds-mb-4">
+                        <h3 class="ds-heading-3 ds-mb-0">
+                            <i class="fas fa-calendar-check ds-icon"></i> 
                             Confirmed Bookings
-                            <span class="badge bg-success ms-2" th:text="${totalBookings}"></span>
-                        </h4>
+                            <span class="ds-badge ds-badge-success ds-ml-2" th:text="${totalBookings}"></span>
+                        </h3>
                     </div>
                     
-                    <div th:if="${#lists.isEmpty(bookings)}" class="text-center py-4">
-                        <i class="fas fa-calendar-times" style="font-size: 3rem; color: var(--luxury-gold); margin-bottom: 1rem; opacity: 0.6;"></i>
-                        <h5 class="luxury-title mb-3">No Confirmed Bookings</h5>
-                        <p class="text-muted mb-4">You don't have any confirmed reservations yet.</p>
+                    <div th:if="${#lists.isEmpty(bookings)}" class="ds-text-center ds-py-6">
+                        <i class="fas fa-calendar-times ds-icon ds-icon-3xl ds-text-secondary ds-mb-4" style="opacity: 0.6;"></i>
+                        <h4 class="ds-heading-4 ds-mb-3">No Confirmed Bookings</h4>
+                        <p class="ds-text-secondary ds-mb-4">You don't have any confirmed reservations yet.</p>
+                        <a href="/booking/new" class="ds-btn ds-btn-primary">
+                            <i class="fas fa-plus-circle"></i> Make a Reservation
+                        </a>
                     </div>
                 
                 <div th:unless="${#lists.isEmpty(bookings)}">
                     <!-- Desktop Table View -->
                     <div class="d-none d-lg-block">
-                        <div class="table-responsive">
-                            <table class="table table-hover" style="color: var(--luxury-white);">
-                                <thead style="border-bottom: 2px solid var(--luxury-gold);">
+                        <div class="ds-table-responsive">
+                            <table class="ds-table ds-table-hover">
+                                <thead>
                                     <tr>
-                                        <th style="color: var(--luxury-gold); font-weight: 600;">Booking ID</th>
-                                        <th style="color: var(--luxury-gold); font-weight: 600;">Restaurant</th>
-                                        <th style="color: var(--luxury-gold); font-weight: 600;">Table</th>
-                                        <th style="color: var(--luxury-gold); font-weight: 600;">Date & Time</th>
-                                        <th style="color: var(--luxury-gold); font-weight: 600;">Guests</th>
-                                        <th style="color: var(--luxury-gold); font-weight: 600;">Deposit</th>
-                                        <th style="color: var(--luxury-gold); font-weight: 600;">Status</th>
-                                        <th style="color: var(--luxury-gold); font-weight: 600;">Actions</th>
+                                        <th>Booking ID</th>
+                                        <th>Restaurant</th>
+                                        <th>Table</th>
+                                        <th>Date & Time</th>
+                                        <th>Guests</th>
+                                        <th>Deposit</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr th:each="booking : ${bookings}" style="border-bottom: 1px solid rgba(212, 175, 55, 0.2);">
+                                    <tr th:each="booking : ${bookings}">
                                         <td>
-                                            <code style="background: rgba(212, 175, 55, 0.2); color: var(--luxury-gold-light); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;" 
+                                            <code class="ds-code" 
                                                   th:text="|${#strings.substring(booking.bookingId.toString(), 0, #strings.length(booking.bookingId.toString()) > 8 ? 8 : #strings.length(booking.bookingId.toString()))}|"></code>
                                         </td>
                                         <td>
                                             <div>
-                                                <strong th:text="${booking.restaurant != null ? booking.restaurant.restaurantName : 'N/A'}" style="color: var(--luxury-white);"></strong>
+                                                <strong class="ds-text-primary" th:text="${booking.restaurant != null ? booking.restaurant.restaurantName : 'N/A'}"></strong>
                                                 <br>
-                                                <small class="text-muted" th:text="${booking.restaurant != null ? booking.restaurant.address : ''}"></small>
+                                                <small class="ds-text-secondary" th:text="${booking.restaurant != null ? booking.restaurant.address : ''}"></small>
                                             </div>
                                         </td>
                                         <td>
                                             <span th:if="${booking.table}" 
                                                   th:text="${booking.table.tableName}"
-                                                  class="badge"
-                                                  style="background: var(--luxury-gold); color: var(--luxury-black);"></span>
+                                                  class="ds-badge ds-badge-primary"></span>
                                             <span th:unless="${booking.table}" 
-                                                  class="text-muted" style="font-style: italic;">No preference</span>
+                                                  class="ds-text-secondary" style="font-style: italic;">No preference</span>
                                         </td>
                                         <td>
-                                            <i class="fas fa-clock luxury-icon"></i>
-                                            <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}" style="color: var(--luxury-white);"></span>
+                                            <i class="fas fa-clock ds-icon ds-mr-2"></i>
+                                            <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}"></span>
                                         </td>
                                         <td>
-                                            <i class="fas fa-users luxury-icon"></i>
-                                            <span th:text="${booking.numberOfGuests}" style="color: var(--luxury-white);"></span>
+                                            <i class="fas fa-users ds-icon ds-mr-2"></i>
+                                            <span th:text="${booking.numberOfGuests}"></span>
                                         </td>
                                         <td>
                                             <span th:if="${booking.hasDeposit()}" 
-                                                  class="badge bg-success">
+                                                  class="ds-badge ds-badge-success">
                                                 <i class="fas fa-money-bill-wave"></i>
                                                 <span th:text="|${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')} VNĐ|"></span>
                                             </span>
                                             <span th:unless="${booking.hasDeposit()}" 
-                                                  class="text-muted" style="font-style: italic;">No deposit</span>
+                                                  class="ds-text-secondary" style="font-style: italic;">No deposit</span>
                                         </td>
                                         <td>
-                                            <span class="badge bg-warning text-dark"
+                                            <span class="ds-badge ds-badge-warning"
                                                   th:if="${booking.status != null and booking.status.name() == 'PENDING'}">
                                                 <i class="fas fa-clock"></i> Pending
                                             </span>
-                                            <span class="badge bg-success"
+                                            <span class="ds-badge ds-badge-success"
                                                   th:if="${booking.status != null and booking.status.name() == 'CONFIRMED'}">
                                                 <i class="fas fa-check-circle"></i> Confirmed
                                             </span>
-                                            <span class="badge bg-danger"
+                                            <span class="ds-badge ds-badge-error"
                                                   th:if="${booking.status != null and booking.status.name() == 'CANCELLED'}">
                                                 <i class="fas fa-times-circle"></i> Cancelled
                                             </span>
-                                            <span class="badge bg-secondary"
+                                            <span class="ds-badge ds-badge-secondary"
                                                   th:if="${booking.status != null and booking.status.name() == 'NO_SHOW'}">
                                                 <i class="fas fa-user-times"></i> No Show
                                             </span>
-                                            <span class="badge bg-secondary"
+                                            <span class="ds-badge ds-badge-secondary"
                                                   th:if="${booking.status == null}">
                                                 <i class="fas fa-question-circle"></i> Unknown
                                             </span>
                                         </td>
                                         <td>
-                                            <div class="btn-group btn-group-sm" role="group">
+                                            <div class="ds-btn-group ds-btn-group-sm" role="group">
                                                 <button type="button" 
-                                                        class="btn btn-outline-info btn-sm"
+                                                        class="ds-btn ds-btn-outline ds-btn-sm"
                                                         title="View Details"
                                                         onclick="showBookingDetails(this)"
-                                                        th:data-booking-id="${booking.bookingId}"
-                                                        style="border-color: var(--luxury-gold); color: var(--luxury-gold);">
+                                                        th:data-booking-id="${booking.bookingId}">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
                                                 <a th:if="${booking.canBeEdited()}" 
                                                    th:href="@{/booking/{id}/edit(id=${booking.bookingId})}" 
-                                                   class="btn btn-outline-warning btn-sm"
-                                                   title="Edit Reservation"
-                                                   style="border-color: var(--luxury-gold); color: var(--luxury-gold);">
+                                                   class="ds-btn ds-btn-outline ds-btn-sm"
+                                                   title="Edit Reservation">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <!-- Payment Button for PENDING bookings with deposit -->
                                                 <a th:if="${booking.status != null and booking.status.name() == 'PENDING' and booking.hasDeposit()}" 
                                                    th:href="@{|/payment/${booking.bookingId}|}" 
-                                                   class="btn btn-outline-success btn-sm"
-                                                   title="Complete Payment"
-                                                   style="border-color: var(--luxury-gold); color: var(--luxury-gold); background: rgba(40, 167, 69, 0.1);">
+                                                   class="ds-btn ds-btn-outline ds-btn-sm ds-btn-success"
+                                                   title="Complete Payment">
                                                     <i class="fas fa-credit-card"></i> Pay
                                                 </a>
                                                 <button th:if="${booking.canBeCancelled()}" 
                                                         type="button" 
-                                                        class="btn btn-outline-danger btn-sm"
+                                                        class="ds-btn ds-btn-outline ds-btn-sm ds-btn-error"
                                                         title="Cancel Reservation"
                                                         onclick="confirmCancel(this)"
                                                         th:data-booking-id="${booking.bookingId}"
@@ -575,8 +576,8 @@
         </div>
     </main>
     
-    <!-- Footer Fragment -->
-    <div th:insert="~{fragments/footer :: site-footer}"></div>
+    <!-- Design System Footer -->
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
