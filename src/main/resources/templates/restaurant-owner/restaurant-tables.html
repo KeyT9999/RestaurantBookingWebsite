@@ -1,266 +1,222 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title th:text="${pageTitle}">Quản lý Bàn</title>
-    <link rel="stylesheet" th:href="@{/css/restaurant-admin.css}" />
-</head>
-<body>
-    <nav class="page-switch card">
-        <div class="nav-breadcrumb">
-            <a th:href="@{/restaurant-owner/dashboard}" class="nav-link">← Dashboard</a>
-            <span class="nav-separator">|</span>
-            <a th:href="@{/restaurant-owner/profile}" class="nav-link">Hồ sơ Nhà hàng</a>
-            <span class="nav-separator">|</span>
-            <span class="nav-current" th:text="${restaurant.restaurantName}">Tên Nhà hàng</span>
-            <span class="nav-separator">|</span>
-            <span class="nav-current">Quản lý Bàn</span>
-        </div>
-        <div class="nav-actions">
-            <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}" 
-               class="nav-action-btn">
-                <i class="icon">🍽️</i>
-                Quản lý Món ăn
-            </a>
-            <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media'}" 
-               class="nav-action-btn">
-                <i class="icon">🖼️</i>
-                Quản lý Media
-            </a>
-        </div>
-    </nav>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} ?: 'Quản lý bàn - Book Eat'">Quản lý bàn - Book Eat</title>
 
-    <div class="container">
-        <!-- Success/Error Messages -->
-        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-
-        <!-- Table Management Actions -->
-        <div class="card">
-            <div class="actions-header">
-                <h2>Quản lý Bàn</h2>
-                <div class="actions">
-                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}" 
-                       class="btn btn-secondary">
-                        <i class="icon">🍽️</i>
-                        Quản lý Món ăn
-                    </a>
-                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/create'}" 
-                       class="btn btn-primary">
-                        <i class="icon">➕</i>
-                        Thêm bàn mới
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tables List -->
-        <div class="card">
-            <h3>Danh sách Bàn</h3>
-            
-            <div th:if="${tables != null and !tables.isEmpty()}" class="tables-grid">
-                <div th:each="table : ${tables}" class="table-card">
-                    <div class="table-header">
-                        <h4 th:text="${table.tableName}">Tên bàn</h4>
-                        <div class="table-status" th:classappend="${table.status}">
-                            <span th:text="${table.status}">Trạng thái</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Table Images Carousel -->
-                    <div class="table-images" th:if="${table.hasImages()}">
-                        <div class="image-carousel" th:id="'carousel-' + ${table.tableId}">
-                            <div class="carousel-container">
-                                <div class="carousel-track" th:id="'track-' + ${table.tableId}">
-                                    <div th:each="image, iterStat : ${table.getTableImages()}" 
-                                         class="carousel-slide" 
-                                         th:classappend="${iterStat.first} ? 'active' : ''"
-                                         th:data-slide="${iterStat.index}">
-                                        <img th:src="${image.url}" 
-                                             th:alt="${table.tableName + ' - Ảnh ' + (iterStat.index + 1)}"
-                                             class="table-image"
-                                             loading="lazy">
-                                    </div>
-                                </div>
-                                
-                                <!-- Navigation arrows -->
-                                <button class="carousel-btn prev" 
-                                        th:onclick="'prevSlide(' + ${table.tableId} + ')'"
-                                        th:if="${#lists.size(table.getTableImages()) > 1}">
-                                    <i class="icon">‹</i>
-                                </button>
-                                <button class="carousel-btn next" 
-                                        th:onclick="'nextSlide(' + ${table.tableId} + ')'"
-                                        th:if="${#lists.size(table.getTableImages()) > 1}">
-                                    <i class="icon">›</i>
-                                </button>
-                                
-                                <!-- Dots indicator -->
-                                <div class="carousel-dots" th:if="${#lists.size(table.getTableImages()) > 1}">
-                                    <span th:each="image, iterStat : ${table.getTableImages()}" 
-                                          class="dot" 
-                                          th:classappend="${iterStat.first} ? 'active' : ''"
-                                          th:onclick="'goToSlide(' + ${table.tableId} + ', ' + ${iterStat.index} + ')'"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Fallback for tables without images -->
-                    <div class="table-no-image" th:unless="${table.hasImages()}">
-                        <div class="no-image-placeholder">
-                            <i class="icon">🪑</i>
-                            <span>Chưa có ảnh</span>
-                        </div>
-                    </div>
-                    
-                    <div class="table-info">
-                        <div class="info-item">
-                            <span class="label">Sức chứa:</span>
-                            <span th:text="${table.capacity} + ' người'">Sức chứa</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="label">Số tiền đặt cọc:</span>
-                            <span th:text="${#numbers.formatDecimal(table.depositAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">Số tiền đặt cọc</span>
-                        </div>
-                        <div class="info-item" th:if="${table.hasImages()}">
-                            <span class="label">Số ảnh:</span>
-                            <span th:text="${#lists.size(table.getTableImages())} + ' ảnh'">Số ảnh</span>
-                        </div>
-                    </div>
-                    
-                    <div class="table-actions">
-                        <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/' + ${table.tableId} + '/edit'}" 
-                           class="btn btn-sm btn-secondary">
-                            <i class="icon">✏️</i>
-                            Chỉnh sửa
-                        </a>
-                        <form th:action="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/' + ${table.tableId} + '/delete'}" 
-                              method="post" 
-                              class="inline-form"
-                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa bàn này?')">
-                            <button type="submit" class="btn btn-sm btn-danger">
-                                <i class="icon">🗑️</i>
-                                Xóa
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            
-            <div th:if="${tables == null or tables.isEmpty()}" class="empty-state">
-                <div class="empty-icon">🪑</div>
-                <h3>Chưa có bàn nào</h3>
-                <p>Bắt đầu bằng cách thêm bàn đầu tiên cho nhà hàng của bạn.</p>
-                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/create'}" 
-                   class="btn btn-primary">
-                    <i class="icon">➕</i>
-                    Thêm bàn đầu tiên
-                </a>
-            </div>
-        </div>
-
-        <!-- Statistics -->
-        <div class="card">
-            <h3>Thống kê</h3>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-number" th:text="${tables != null ? #lists.size(tables) : 0}">0</div>
-                    <div class="stat-label">Tổng số bàn</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" th:text="${totalCapacity}">0</div>
-                    <div class="stat-label">Tổng sức chứa</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" th:text="${availableTables}">0</div>
-                    <div class="stat-label">Bàn trống</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" th:text="${occupiedTables}">0</div>
-                    <div class="stat-label">Bàn đang sử dụng</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
 
     <style>
-        /* Restaurant Header */
-        .restaurant-header {
-            text-align: center;
-            padding: 2rem 0;
+        body {
+            font-family: 'Inter', sans-serif;
         }
 
-        .restaurant-header .h1 {
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
+        .tables-hero {
+            background: linear-gradient(135deg, #1f2937, #111827);
+            color: #f8fafc;
+            padding: var(--ds-space-12) 0;
+            position: relative;
         }
 
-        /* Actions Header */
-        .actions-header {
+        .tables-hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2));
+            pointer-events: none;
+        }
+
+        .tables-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .tables-hero-breadcrumb {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: var(--ds-space-2);
+            font-size: 0.9rem;
+            margin-bottom: var(--ds-space-4);
             align-items: center;
-            margin-bottom: 1rem;
         }
 
-        .actions-header h2 {
-            margin: 0;
-            color: #2c3e50;
+        .tables-hero-breadcrumb a {
+            color: rgba(248, 250, 252, 0.8);
+            text-decoration: none;
         }
 
-        /* Tables Grid */
+        .tables-hero-actions {
+            margin-top: var(--ds-space-5);
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--ds-space-3);
+        }
+
+        .tables-quick-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--ds-space-2);
+            padding: 0.6rem 1.1rem;
+            border-radius: var(--ds-radius-full);
+            background: rgba(248, 250, 252, 0.14);
+            color: #f8fafc;
+            font-weight: 500;
+            text-decoration: none;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .tables-quick-link:hover {
+            transform: translateY(-2px);
+            background: rgba(248, 250, 252, 0.22);
+        }
+
+        .ds-btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+        }
+
+        .ds-btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: #fff;
+        }
+
+        .ds-btn-secondary {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5f5);
+            color: #0f172a;
+        }
+
+        .ds-btn-secondary:hover {
+            background: linear-gradient(135deg, #cbd5f5, #94a3b8);
+            color: #0f172a;
+        }
+
+        .tables-stat-grid {
+            display: grid;
+            gap: var(--ds-space-4);
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .tables-stat-card {
+            border-radius: var(--ds-radius-2xl);
+            padding: var(--ds-space-5);
+            background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-2);
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+        }
+
+        .tables-stat-card.success {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+        }
+
+        .tables-stat-card.warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+        }
+
+        .tables-stat-card.accent {
+            background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+        }
+
+        .tables-stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--ds-radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            background: rgba(15, 23, 42, 0.08);
+            color: #0f172a;
+        }
+
+        .tables-stat-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
         .tables-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1rem;
+            gap: var(--ds-space-4);
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
         }
 
         .table-card {
-            border: 1px solid #e1e5e9;
-            border-radius: 8px;
-            padding: 1.5rem;
-            background: white;
-            transition: all 0.3s ease;
-        }
-
-        .table-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        /* Table Images Carousel */
-        .table-images {
-            margin: 1rem 0;
-        }
-
-        .image-carousel {
-            position: relative;
-            width: 100%;
-            height: 200px;
+            background: var(--ds-primary-white);
+            border-radius: var(--ds-radius-2xl);
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.1);
             overflow: hidden;
-            border-radius: 8px;
-            background: #f8f9fa;
-        }
-
-        .carousel-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        .carousel-track {
             display: flex;
-            width: 100%;
+            flex-direction: column;
             height: 100%;
-            transition: transform 0.3s ease;
+        }
+
+        .table-card-header {
+            padding: var(--ds-space-5);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .table-card-header h3 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .table-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: var(--ds-radius-full);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .table-status-AVAILABLE {
+            background: rgba(34, 197, 94, 0.15);
+            color: #15803d;
+        }
+
+        .table-status-OCCUPIED {
+            background: rgba(234, 179, 8, 0.2);
+            color: #b45309;
+        }
+
+        .table-status-MAINTENANCE {
+            background: rgba(59, 130, 246, 0.18);
+            color: #1d4ed8;
+        }
+
+        .table-status-CLEANING {
+            background: rgba(16, 185, 129, 0.18);
+            color: #0f766e;
+        }
+
+        .table-status-RESERVED {
+            background: rgba(99, 102, 241, 0.18);
+            color: #4338ca;
+        }
+
+        .table-carousel {
+            position: relative;
+            background: #0f172a;
+            min-height: 220px;
+        }
+
+        .table-carousel img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
         }
 
         .carousel-slide {
-            min-width: 100%;
-            height: 100%;
             display: none;
         }
 
@@ -268,283 +224,358 @@
             display: block;
         }
 
-        .table-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-
         .carousel-btn {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(15, 23, 42, 0.5);
             color: white;
             border: none;
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            transition: background 0.2s ease;
+            cursor: pointer;
         }
 
         .carousel-btn:hover {
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(15, 23, 42, 0.8);
         }
 
         .carousel-btn.prev {
-            left: 10px;
+            left: 12px;
         }
 
         .carousel-btn.next {
-            right: 10px;
+            right: 12px;
         }
 
         .carousel-dots {
             position: absolute;
-            bottom: 10px;
+            bottom: 12px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 8px;
+            gap: 0.4rem;
         }
 
-        .dot {
-            width: 8px;
-            height: 8px;
+        .carousel-dots .dot {
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(248, 250, 252, 0.4);
+            border: none;
             cursor: pointer;
-            transition: background 0.2s ease;
         }
 
-        .dot.active {
-            background: white;
+        .carousel-dots .dot.active {
+            background: #f8fafc;
         }
 
-        .table-no-image {
-            margin: 1rem 0;
-            height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 2px dashed #dee2e6;
-        }
-
-        .no-image-placeholder {
-            text-align: center;
-            color: #6c757d;
-        }
-
-        .no-image-placeholder i {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        .table-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .table-header h4 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 1.2rem;
-        }
-
-        .table-status {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-
-        .table-status.AVAILABLE {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .table-status.OCCUPIED {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .table-status.MAINTENANCE {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .table-status.CLEANING {
-            background: #cce5ff;
-            color: #004085;
-        }
-
-        /* Table Info */
         .table-info {
-            margin-bottom: 1rem;
+            padding: var(--ds-space-4) var(--ds-space-5);
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-3);
         }
 
-        .info-item {
+        .table-info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #475569;
         }
 
-        .info-item .label {
-            font-weight: 500;
-            color: #6c757d;
+        .table-info-row strong {
+            color: #0f172a;
         }
 
-        /* Table Actions */
         .table-actions {
+            padding: var(--ds-space-4) var(--ds-space-5);
             display: flex;
-            gap: 0.5rem;
-            justify-content: flex-end;
+            gap: var(--ds-space-3);
+            border-top: 1px solid #e2e8f0;
+            flex-wrap: wrap;
         }
 
-        .inline-form {
+        .table-actions form {
             display: inline;
         }
 
-        /* Empty State */
-        .empty-state {
+        .tables-empty {
             text-align: center;
-            padding: 3rem 1rem;
-            color: #6c757d;
+            padding: var(--ds-space-10);
+            border-radius: var(--ds-radius-2xl);
+            background: #f8fafc;
+            border: 1px dashed #cbd5f5;
+            color: #475569;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--ds-space-4);
         }
 
-        .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
+        .tables-empty i {
+            font-size: 2.5rem;
+            color: #94a3b8;
         }
 
-        .empty-state h3 {
-            margin-bottom: 0.5rem;
-            color: #495057;
-        }
-
-        .empty-state p {
-            margin-bottom: 2rem;
-        }
-
-        /* Statistics */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #007bff;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-
-        /* Responsive */
         @media (max-width: 768px) {
-            .actions-header {
+            .tables-hero-actions {
                 flex-direction: column;
-                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .table-actions {
+                flex-direction: column;
                 align-items: stretch;
-            }
-
-            .tables-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
-    
+</head>
+<body class="ds-bg-gray-50">
+    <div th:with="activeNav='restaurants'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+
+    <main>
+        <section class="tables-hero">
+            <div class="ds-container ds-flex ds-flex-col ds-gap-4">
+                <div class="tables-hero-breadcrumb">
+                    <a th:href="@{/restaurant-owner/dashboard}">
+                        <i class="fas fa-arrow-left me-1"></i>Dashboard
+                    </a>
+                    <span>/</span>
+                    <a th:href="@{/restaurant-owner/profile}">Hồ sơ nhà hàng</a>
+                    <span>/</span>
+                    <span th:text="${restaurant.restaurantName}">Nhà hàng</span>
+                    <span>/</span>
+                    <span>Quản lý bàn</span>
+                </div>
+
+                <div>
+                    <h1 class="ds-heading-2 ds-mb-2">Quản lý bàn</h1>
+                    <p class="ds-text-large ds-text-secondary ds-mb-0">
+                        Theo dõi trạng thái bàn, sức chứa và cập nhật thông tin chỗ ngồi cho
+                        <strong th:text="${restaurant.restaurantName}">Nhà hàng</strong>.
+                    </p>
+                </div>
+
+                <div class="tables-hero-actions">
+                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/create'}"
+                       class="tables-quick-link">
+                        <i class="fas fa-plus-circle"></i> Thêm bàn mới
+                    </a>
+                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}"
+                       class="tables-quick-link">
+                        <i class="fas fa-utensils"></i> Quản lý món ăn
+                    </a>
+                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media'}"
+                       class="tables-quick-link">
+                        <i class="fas fa-camera"></i> Quản lý media
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="ds-container ds-flex ds-flex-col ds-gap-5 ds-mt-6">
+            <div th:if="${success}" class="ds-alert ds-alert-success" th:text="${success}"></div>
+            <div th:if="${error}" class="ds-alert ds-alert-error" th:text="${error}"></div>
+
+            <div class="ds-card ds-card-elevated">
+                <div class="ds-card-body">
+                    <div class="tables-stat-grid">
+                        <div class="tables-stat-card">
+                            <div class="tables-stat-icon"><i class="fas fa-table"></i></div>
+                            <div class="tables-stat-value"
+                                 th:text="${tables != null ? tables.size() : 0}">0</div>
+                            <div class="ds-text-secondary">Tổng số bàn</div>
+                        </div>
+                        <div class="tables-stat-card success">
+                            <div class="tables-stat-icon"><i class="fas fa-check-circle"></i></div>
+                            <div class="tables-stat-value"
+                                 th:text="${availableTables != null ? availableTables : 0}">0</div>
+                            <div class="ds-text-secondary">Bàn đang trống</div>
+                        </div>
+                        <div class="tables-stat-card warning">
+                            <div class="tables-stat-icon"><i class="fas fa-chair"></i></div>
+                            <div class="tables-stat-value"
+                                 th:text="${occupiedTables != null ? occupiedTables : 0}">0</div>
+                            <div class="ds-text-secondary">Bàn đang phục vụ</div>
+                        </div>
+                        <div class="tables-stat-card accent">
+                            <div class="tables-stat-icon"><i class="fas fa-users"></i></div>
+                            <div class="tables-stat-value"
+                                 th:text="${totalCapacity != null ? totalCapacity : 0}">0</div>
+                            <div class="ds-text-secondary">Tổng sức chứa</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ds-card ds-card-elevated">
+                <div class="ds-card-body ds-flex ds-flex-col ds-gap-4">
+                    <h2 class="ds-heading-4 ds-mb-0">
+                        <i class="fas fa-layer-group me-2 text-primary"></i>Danh sách bàn
+                    </h2>
+
+                    <div th:if="${tables != null and !tables.isEmpty()}" class="tables-grid">
+                        <article class="table-card" th:each="table : ${tables}">
+                            <div class="table-card-header">
+                                <div>
+                                    <h3 class="ds-heading-5 ds-mb-1" th:text="${table.tableName}">Bàn A1</h3>
+                                    <p class="ds-text-secondary ds-mb-0">
+                                        ID: <span th:text="${table.tableId}">1</span>
+                                    </p>
+                                </div>
+                                <span class="table-status-badge"
+                                      th:classappend="' table-status-' + ${table.status}"
+                                      th:text="${table.status != null ? table.status.displayName : 'Không xác định'}">
+                                </span>
+                            </div>
+
+                            <div class="table-carousel" th:if="${table.hasImages()}"
+                                 th:id="'carousel-' + ${table.tableId}">
+                                <div th:each="image, iterStat : ${table.tableImages}"
+                                     th:class="'carousel-slide' + (${iterStat.first} ? ' active' : '')">
+                                    <img th:src="${image.url}"
+                                         th:alt="${table.tableName + ' - Ảnh ' + (iterStat.index + 1)}"
+                                         loading="lazy">
+                                </div>
+                                <button class="carousel-btn prev"
+                                        th:if="${#lists.size(table.tableImages) > 1}"
+                                        th:onclick="'prevSlide(' + ${table.tableId} + ')'">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button class="carousel-btn next"
+                                        th:if="${#lists.size(table.tableImages) > 1}"
+                                        th:onclick="'nextSlide(' + ${table.tableId} + ')'">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <div class="carousel-dots"
+                                     th:if="${#lists.size(table.tableImages) > 1}">
+                                    <button class="dot"
+                                            th:each="image, iterStat : ${table.tableImages}"
+                                            th:classappend="${iterStat.first} ? 'active' : ''"
+                                            th:onclick="'goToSlide(' + ${table.tableId} + ',' + ${iterStat.index} + ')'">
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-carousel ds-flex ds-align-center ds-justify-center ds-py-6"
+                                 th:unless="${table.hasImages()}">
+                                <div class="ds-flex ds-flex-col ds-items-center ds-gap-2 ds-text-secondary">
+                                    <i class="fas fa-images fa-2x"></i>
+                                    <span>Chưa có hình ảnh cho bàn này</span>
+                                </div>
+                            </div>
+
+                            <div class="table-info">
+                                <div class="table-info-row">
+                                    <span>Sức chứa</span>
+                                    <strong th:text="${table.capacity} + ' khách'">4 khách</strong>
+                                </div>
+                                <div class="table-info-row">
+                                    <span>Đặt cọc</span>
+                                    <strong th:text="${#numbers.formatDecimal(table.depositAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</strong>
+                                </div>
+                            </div>
+
+                            <div class="table-actions">
+                                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/' + ${table.tableId} + '/edit'}"
+                                   class="ds-btn ds-btn-secondary">
+                                    <i class="fas fa-pen-to-square"></i> Chỉnh sửa
+                                </a>
+                                <form th:action="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/' + ${table.tableId} + '/delete'}"
+                                      method="post"
+                                      onsubmit="return confirmDelete(this);">
+                                    <button type="submit" class="ds-btn ds-btn-danger">
+                                        <i class="fas fa-trash"></i> Xóa
+                                    </button>
+                                </form>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div th:if="${tables == null or tables.isEmpty()}" class="tables-empty">
+                        <i class="fas fa-chair"></i>
+                        <div>
+                            <h3 class="ds-heading-5 ds-mb-1">Chưa có bàn nào được tạo</h3>
+                            <p class="ds-text-secondary ds-mb-0">
+                                Tạo bàn đầu tiên để quản lý sơ đồ chỗ ngồi và tối ưu hóa phục vụ.
+                            </p>
+                        </div>
+                        <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/create'}"
+                           class="ds-btn ds-btn-primary ds-btn-lg">
+                            <i class="fas fa-plus-circle"></i> Thêm bàn mới
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+
     <script>
-        // Carousel functionality for table images
         function prevSlide(tableId) {
             const carousel = document.getElementById('carousel-' + tableId);
             const slides = carousel.querySelectorAll('.carousel-slide');
             const dots = carousel.querySelectorAll('.dot');
-            
-            let currentSlide = 0;
+
+            let currentIndex = 0;
             slides.forEach((slide, index) => {
                 if (slide.classList.contains('active')) {
-                    currentSlide = index;
+                    currentIndex = index;
                 }
             });
-            
-            // Remove active class from current slide and dot
-            slides[currentSlide].classList.remove('active');
-            dots[currentSlide].classList.remove('active');
-            
-            // Calculate previous slide index
-            const prevSlide = currentSlide === 0 ? slides.length - 1 : currentSlide - 1;
-            
-            // Add active class to previous slide and dot
-            slides[prevSlide].classList.add('active');
-            dots[prevSlide].classList.add('active');
+
+            slides[currentIndex].classList.remove('active');
+            dots[currentIndex]?.classList.remove('active');
+
+            const prevIndex = currentIndex === 0 ? slides.length - 1 : currentIndex - 1;
+
+            slides[prevIndex].classList.add('active');
+            dots[prevIndex]?.classList.add('active');
         }
-        
+
         function nextSlide(tableId) {
             const carousel = document.getElementById('carousel-' + tableId);
             const slides = carousel.querySelectorAll('.carousel-slide');
             const dots = carousel.querySelectorAll('.dot');
-            
-            let currentSlide = 0;
+
+            let currentIndex = 0;
             slides.forEach((slide, index) => {
                 if (slide.classList.contains('active')) {
-                    currentSlide = index;
+                    currentIndex = index;
                 }
             });
-            
-            // Remove active class from current slide and dot
-            slides[currentSlide].classList.remove('active');
-            dots[currentSlide].classList.remove('active');
-            
-            // Calculate next slide index
-            const nextSlide = currentSlide === slides.length - 1 ? 0 : currentSlide + 1;
-            
-            // Add active class to next slide and dot
-            slides[nextSlide].classList.add('active');
-            dots[nextSlide].classList.add('active');
+
+            slides[currentIndex].classList.remove('active');
+            dots[currentIndex]?.classList.remove('active');
+
+            const nextIndex = currentIndex === slides.length - 1 ? 0 : currentIndex + 1;
+
+            slides[nextIndex].classList.add('active');
+            dots[nextIndex]?.classList.add('active');
         }
-        
+
         function goToSlide(tableId, slideIndex) {
             const carousel = document.getElementById('carousel-' + tableId);
             const slides = carousel.querySelectorAll('.carousel-slide');
             const dots = carousel.querySelectorAll('.dot');
-            
-            // Remove active class from all slides and dots
+
             slides.forEach(slide => slide.classList.remove('active'));
             dots.forEach(dot => dot.classList.remove('active'));
-            
-            // Add active class to selected slide and dot
+
             slides[slideIndex].classList.add('active');
-            dots[slideIndex].classList.add('active');
+            dots[slideIndex]?.classList.add('active');
+        }
+
+        function confirmDelete(form) {
+            return confirm('Bạn có chắc chắn muốn xóa bàn này?');
         }
     </script>
 </body>

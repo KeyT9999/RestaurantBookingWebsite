@@ -89,8 +89,22 @@ public class RestaurantManagementService {
                     .findByRestaurantRestaurantIdOrderByTableName(restaurantId);
 
             System.out.println("✅ Found " + tables.size() + " tables");
-            tables.forEach(table -> System.out.println("   - " + table.getTableName() + " (Capacity: "
-                    + table.getCapacity() + ", Deposit: " + table.getDepositAmount() + ")"));
+            tables.forEach(table -> {
+                System.out.println("   - " + table.getTableName() + " (Capacity: "
+                        + table.getCapacity() + ", Deposit: " + table.getDepositAmount() + ")");
+
+                // Eagerly initialize related data to avoid LazyInitializationException later (API, templates…)
+                try {
+                    if (table.getRestaurant() != null && table.getRestaurant().getMedia() != null) {
+                        table.getRestaurant().getMedia().size(); // trigger load
+                    }
+                    // Invoke helper once to cache results
+                    table.getTableImages();
+                } catch (Exception initEx) {
+                    System.err.println("⚠️ Unable to preload table media for table "
+                            + table.getTableId() + ": " + initEx.getMessage());
+                }
+            });
 
             return tables;
         } catch (Exception e) {

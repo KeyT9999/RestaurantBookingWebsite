@@ -97,6 +97,10 @@
             color: #fff;
             box-shadow: 0 14px 30px rgba(249,115,22,0.35);
         }
+        .dashboard-tab.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
         .dashboard-main-section {
             padding: var(--ds-space-12) 0 var(--ds-space-16);
         }
@@ -330,7 +334,7 @@
          th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
     <main>
-        <section class="dashboard-hero-section">
+        <section class="dashboard-hero-section" th:with="defaultRestaurant=${restaurants != null and !#lists.isEmpty(restaurants) ? restaurants[0] : null}">
             <div class="ds-container">
                 <div class="dashboard-hero ds-card ds-card-emphasis ds-flex ds-flex-col ds-gap-4"
                      th:with="primaryRestaurant=${restaurants != null and !#lists.isEmpty(restaurants) ? restaurants[0] : null}">
@@ -368,10 +372,16 @@
                             <i class="fas fa-id-card"></i>
                             Hồ sơ
                         </a>
-                        <a th:href="@{/restaurant-owner/tables}" class="dashboard-tab">
+                        <a th:if="${primaryRestaurant != null}"
+                           th:href="@{'/restaurant-owner/restaurants/' + ${primaryRestaurant.restaurantId} + '/tables'}"
+                           class="dashboard-tab">
                             <i class="fas fa-chair"></i>
                             Bàn
                         </a>
+                        <span th:if="${primaryRestaurant == null}" class="dashboard-tab disabled">
+                            <i class="fas fa-chair"></i>
+                            Bàn
+                        </span>
                         <a th:href="@{/restaurant-owner/bookings}" class="dashboard-tab">
                             <i class="fas fa-book-open"></i>
                             Booking
@@ -497,10 +507,16 @@
                                     <strong><i class="fas fa-clipboard-list me-2 text-primary"></i>Tạo booking mới</strong>
                                     <span>Đặt chỗ thủ công cho khách hàng thân thiết.</span>
                                 </a>
-                                <a th:href="@{/restaurant-owner/tables/create}" class="dashboard-quick-link">
+                                <a th:if="${defaultRestaurant != null}"
+                                   th:href="@{'/restaurant-owner/restaurants/' + ${defaultRestaurant.restaurantId} + '/tables/create'}"
+                                   class="dashboard-quick-link">
                                     <strong><i class="fas fa-chair me-2 text-primary"></i>Thêm bàn mới</strong>
                                     <span>Cập nhật sơ đồ chỗ ngồi để tối ưu phục vụ.</span>
                                 </a>
+                                <div th:if="${defaultRestaurant == null}" class="dashboard-quick-link" style="opacity:0.5; pointer-events:none;">
+                                    <strong><i class="fas fa-chair me-2 text-primary"></i>Thêm bàn mới</strong>
+                                    <span>Cần tạo nhà hàng trước khi thêm bàn.</span>
+                                </div>
                                 <a th:href="@{/restaurant-owner/dishes/create}" class="dashboard-quick-link">
                                     <strong><i class="fas fa-utensils me-2 text-danger"></i>Thêm món ăn</strong>
                                     <span>Làm mới thực đơn với những món đặc sắc.</span>
@@ -562,9 +578,14 @@
                                 <div th:if="${availableTables == null or availableTables.isEmpty()}" class="dashboard-empty-state">
                                     <div class="fs-2">🪑</div>
                                     <p class="ds-text-base ds-mb-0">Không có bàn trống vào lúc này.</p>
-                                    <a th:href="@{/restaurant-owner/tables}" class="ds-btn ds-btn-secondary">
+                                    <a th:if="${defaultRestaurant != null}"
+                                       th:href="@{'/restaurant-owner/restaurants/' + ${defaultRestaurant.restaurantId} + '/tables'}"
+                                       class="ds-btn ds-btn-secondary">
                                         <i class="fas fa-chair"></i> Quản lý bàn
                                     </a>
+                                    <span th:if="${defaultRestaurant == null}" class="ds-btn ds-btn-secondary disabled" style="pointer-events:none; opacity:0.5;">
+                                        <i class="fas fa-chair"></i> Quản lý bàn
+                                    </span>
                                 </div>
                             </div>
                         </div>
