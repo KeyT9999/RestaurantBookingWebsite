@@ -204,10 +204,66 @@ class CustomerChatManager {
       return;
     }
 
-    restaurants.forEach((restaurant) => {
+    // Separate AI restaurant from others
+    const aiRestaurant = restaurants.find((r) => r.restaurantId === 37);
+    const otherRestaurants = restaurants.filter((r) => r.restaurantId !== 37);
+
+    // Add AI restaurant first with special container
+    if (aiRestaurant) {
+      const aiContainer = this.createAIContainer(aiRestaurant);
+      restaurantList.appendChild(aiContainer);
+    }
+
+    // Add other restaurants
+    otherRestaurants.forEach((restaurant) => {
       const restaurantItem = this.createRestaurantItem(restaurant);
       restaurantList.appendChild(restaurantItem);
     });
+  }
+
+  // Create special AI container
+  createAIContainer(restaurant) {
+    const container = document.createElement("div");
+    container.className = "ai-restaurant-container";
+
+    container.innerHTML = `
+      <div class="ai-restaurant-header">
+        <h6 class="ai-section-title">
+          <i class="fas fa-robot text-gold"></i>
+          Trợ lý AI
+        </h6>
+      </div>
+      <div class="ai-restaurant-item" data-restaurant-id="37">
+        <div class="ai-restaurant-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="ai-restaurant-info">
+          <div class="ai-restaurant-name">AI Assistant</div>
+          <div class="ai-restaurant-description">Trợ lý thông minh của bạn</div>
+          <div class="ai-restaurant-status">
+            <span class="status-dot ai-status"></span>
+            <span>Luôn sẵn sàng</span>
+          </div>
+        </div>
+        <div class="ai-restaurant-actions">
+          <button class="btn btn-gold btn-sm start-ai-chat-btn">
+            <i class="fas fa-comments"></i>
+            Chat
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Add click handler for AI restaurant
+    const aiChatBtn = container.querySelector(".start-ai-chat-btn");
+    if (aiChatBtn) {
+      aiChatBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.startChatWithAI();
+      });
+    }
+
+    return container;
   }
 
   // Create restaurant item element
@@ -226,6 +282,7 @@ class CustomerChatManager {
     if (restaurant.roomId) {
       restaurantItem.dataset.roomId = restaurant.roomId;
     }
+
     nameElement.textContent = restaurant.restaurantName || "Nhà hàng";
     addressElement.textContent = restaurant.address || "Địa chỉ không xác định";
 
@@ -243,6 +300,30 @@ class CustomerChatManager {
     });
 
     return item;
+  }
+
+  // Start chat with AI
+  async startChatWithAI() {
+    try {
+      const response = await fetch("/api/chat/rooms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `restaurantId=37`, // AI restaurant ID
+      });
+
+      if (response.ok) {
+        const room = await response.json();
+        this.joinRoom(room.roomId);
+      } else {
+        const error = await response.json();
+        this.showError(error.message || "Không thể tạo cuộc trò chuyện với AI");
+      }
+    } catch (error) {
+      console.error("Error starting chat with AI:", error);
+      this.showError("Lỗi khi tạo cuộc trò chuyện với AI");
+    }
   }
 
   // Start chat with restaurant

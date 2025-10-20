@@ -56,6 +56,12 @@ payment:
     cancel-url: ${APP_BASE_URL}/payment/payos/cancel
     webhook-url: ${APP_BASE_URL}/payment/api/payos/webhook
 
+# AI Server Configuration for Production
+ai:
+  server:
+    url: ${AI_SERVER_URL:https://restaurant-chatbot-service.onrender.com}
+    timeout: ${AI_SERVER_TIMEOUT:60000}
+
 # Cloudinary Configuration - với fallback để tránh lỗi khi không có config
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME:}

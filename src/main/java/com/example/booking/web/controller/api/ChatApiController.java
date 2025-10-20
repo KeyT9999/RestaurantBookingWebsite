@@ -2,6 +2,7 @@ package com.example.booking.web.controller.api;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,6 @@ import com.example.booking.dto.ChatRoomDto;
 import com.example.booking.dto.RestaurantChatDto;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.RestaurantManagementService;
-import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.annotation.RateLimited;
 import com.example.booking.service.SimpleUserService;
 
@@ -48,6 +48,7 @@ public class ChatApiController {
     @Autowired
     private SimpleUserService userService;
     
+
     /**
      * Get all restaurants available for chat
      */
@@ -67,6 +68,17 @@ public class ChatApiController {
                 case admin:
                     // Customers and admins can chat with any restaurant
                     restaurants = restaurantService.findAllRestaurants();
+
+                    // Ensure AI Restaurant (ID = 37) is included for customers and put it first
+                    if (userRole == UserRole.CUSTOMER || userRole == UserRole.customer) {
+                        Optional<RestaurantProfile> aiRestaurant = restaurantService.findRestaurantById(37);
+                        if (aiRestaurant.isPresent()) {
+                            // Remove AI restaurant if it exists in the list
+                            restaurants.removeIf(r -> r.getRestaurantId().equals(37));
+                            // Add AI restaurant at the beginning of the list
+                            restaurants.add(0, aiRestaurant.get());
+                        }
+                    }
                     break;
                 case RESTAURANT_OWNER:
                 case restaurant_owner:
@@ -181,6 +193,7 @@ public class ChatApiController {
         try {
             User user = getUserFromAuthentication(authentication);
             
+
             // Check if user can chat with this restaurant
             if (!chatService.canUserChatWithRestaurant(user.getId(), user.getRole(), restaurantId)) {
                 return ResponseEntity.badRequest().body("Not authorized to chat with this restaurant");

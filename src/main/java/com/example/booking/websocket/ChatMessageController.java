@@ -44,6 +44,9 @@ public class ChatMessageController {
     @Autowired
     private InputSanitizer inputSanitizer;
 
+    @Autowired
+    private com.example.booking.service.AIService aiService;
+
     /**
      * Handle incoming chat messages - Optimized and safe version
      */
@@ -107,7 +110,30 @@ public class ChatMessageController {
                 return;
             }
             
-            // Send message with sanitized content
+            // Check if this is a message to AI Restaurant (ID = 37)
+            if (isAIRestaurantMessage(request.getRoomId())) {
+                // Send customer message first
+                Message customerMessage = chatService.sendMessage(
+                        request.getRoomId(),
+                        senderId,
+                        sanitizedContent,
+                        MessageType.TEXT);
+
+                // Broadcast customer message
+                messagingTemplate.convertAndSend("/topic/room/" + request.getRoomId(),
+                        new ChatMessageResponse(customerMessage));
+
+                System.out.println("Customer message sent to AI restaurant, processing AI response...");
+
+                // Process AI response asynchronously
+                processAIResponse(request.getRoomId(), sanitizedContent, user.getId());
+
+                // Broadcast unread count updates
+                broadcastUnreadCountUpdates(request.getRoomId(), senderId);
+                return;
+            }
+
+            // Send message with sanitized content (normal chat)
             Message message = chatService.sendMessage(
                 request.getRoomId(), 
                 senderId, 
@@ -572,6 +598,83 @@ public class ChatMessageController {
         public String getUserId() { return userId; }
     }
     
+    /**
+     * Check if this is a message to AI Restaurant (ID = 37)
+     */
+    private boolean isAIRestaurantMessage(String roomId) {
+        try {
+            ChatRoom room = chatService.getRoomById(roomId);
+            return room != null && room.getRestaurant() != null &&
+                    room.getRestaurant().getRestaurantId().equals(37);
+        } catch (Exception e) {
+            System.err.println("Error checking AI restaurant message: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Process AI response asynchronously
+     */
+    @org.springframework.scheduling.annotation.Async
+    public void processAIResponse(String roomId, String message, UUID userId) {
+        try {
+            System.out.println("Processing AI response for room: " + roomId);
+
+            // Show typing indicator
+            messagingTemplate.convertAndSend("/topic/room/" + roomId + "/typing",
+                    new TypingResponse("AI Assistant", true));
+
+            // Call AI service
+            String aiResponse = aiService.sendMessageToAI(message, userId.toString());
+
+            // Hide typing indicator
+            messagingTemplate.convertAndSend("/topic/room/" + roomId + "/typing",
+                    new TypingResponse("AI Assistant", false));
+
+            // Create AI message
+            UUID aiUserId = chatService.getAIRestaurantOwnerId();
+            if (aiUserId != null) {
+                Message aiMessage = chatService.sendMessage(
+                        roomId,
+                        aiUserId,
+                        aiResponse,
+                        MessageType.TEXT);
+
+                // Broadcast AI response
+                messagingTemplate.convertAndSend("/topic/room/" + roomId,
+                        new ChatMessageResponse(aiMessage));
+
+                System.out.println("AI response sent successfully");
+
+                // Update unread counts
+                broadcastUnreadCountUpdates(roomId, aiUserId);
+            } else {
+                System.err.println("AI restaurant owner ID not found");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error processing AI response: " + e.getMessage());
+            e.printStackTrace();
+
+            // Send error message
+            try {
+                UUID aiUserId = chatService.getAIRestaurantOwnerId();
+                if (aiUserId != null) {
+                    Message errorMessage = chatService.sendMessage(
+                            roomId,
+                            aiUserId,
+                            "Xin lỗi, có lỗi xảy ra khi xử lý tin nhắn của bạn.",
+                            MessageType.TEXT);
+
+                    messagingTemplate.convertAndSend("/topic/room/" + roomId,
+                            new ChatMessageResponse(errorMessage));
+                }
+            } catch (Exception ex) {
+                System.err.println("Error sending error message: " + ex.getMessage());
+            }
+        }
+    }
+
     public static class ErrorResponse {
         private String message;
         

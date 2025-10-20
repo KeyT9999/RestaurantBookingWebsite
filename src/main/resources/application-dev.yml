@@ -43,6 +43,12 @@ spring:
           google:
             issuer-uri: https://accounts.google.com
 
+# AI Server Configuration for Development
+ai:
+  server:
+    url: http://localhost:8000
+    timeout: 30000
+
 logging:
   level:
     org.hibernate.SQL: DEBUG
@@ -51,3 +57,4 @@ logging:
     org.springframework.security.oauth2: DEBUG
     org.springframework.security.oauth2.client: DEBUG
     com.example.booking: DEBUG
+    com.example.booking.service.AIService: DEBUG
