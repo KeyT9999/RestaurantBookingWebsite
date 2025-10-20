@@ -15,6 +15,14 @@
     
     <!-- Home Resy Style CSS -->
     <link th:href="@{/css/home-resy.css}" rel="stylesheet">
+    <style>
+      .nearby-section { display:none; }
+      .nearby-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:16px; }
+      .nearby-card { border:1px solid #eee; border-radius:12px; padding:12px; background:#fff; }
+      .nearby-card h4 { font-size:1.05rem; margin:0 0 6px; }
+      .nearby-meta { font-size:0.9rem; color:#555; display:flex; gap:8px; align-items:center; }
+      .nearby-actions { margin-top:8px; }
+    </style>
     
 </head>
 <body>
@@ -229,6 +237,21 @@
                 </div>
             </div>
         </section>
+
+    <!-- Recommended Near You (dynamic) -->
+    <section class="nearby-section" id="nearby">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Gợi ý gần bạn</h2>
+                <p class="section-subtitle">Nhà hàng gần vị trí hiện tại của bạn</p>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="text-muted small" id="nearbySummary"></div>
+                <button class="btn btn-sm btn-outline-secondary" id="btnDisableLocation" type="button">Tắt định vị</button>
+            </div>
+            <div id="nearbyGrid" class="nearby-grid"></div>
+        </div>
+    </section>
 
     <!-- Popular Restaurants -->
     <section class="popular-section" id="restaurants">
@@ -484,5 +507,18 @@
 
     <!-- Resy Scripts -->
     <div th:replace="~{fragments/resy-scripts :: resy-scripts}"></div>
+
+    <!-- Location Modal Fragment -->
+    <div th:insert="~{fragments/location-modal :: location-modal}"></div>
+
+    <!-- Location Feature Bootstrapper -->
+    <script th:inline="javascript">
+      window.APP_CTX = window.APP_CTX || {};
+      APP_CTX.authenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
+      APP_CTX.isRestaurantOwner = /*[[${#authorization.expression('hasRole(''RESTAURANT_OWNER'')')}]]*/ false;
+      APP_CTX.showLocationPrompt = /*[[${session.SHOW_LOCATION_PROMPT}]]*/ false;
+      APP_CTX.baseUrl = /*[[@{/}]]*/ '/';
+    </script>
+    <script th:src="@{/js/location.js}"></script>
 </body>
 </html>

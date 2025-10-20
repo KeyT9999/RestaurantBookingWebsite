@@ -44,6 +44,18 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         
         logger.info("🔄 RATE LIMIT RESET - IP: {} after successful login", clientIp);
         
+        // Set a session flag to trigger location prompt once per login session (skip for RESTAURANT_OWNER)
+        try {
+            boolean isRestaurantOwner = authentication != null &&
+                    authentication.getAuthorities().stream()
+                            .anyMatch(a -> "ROLE_RESTAURANT_OWNER".equals(a.getAuthority()));
+            if (!isRestaurantOwner) {
+                request.getSession(true).setAttribute("SHOW_LOCATION_PROMPT", Boolean.TRUE);
+            } else {
+                request.getSession(true).removeAttribute("SHOW_LOCATION_PROMPT");
+            }
+        } catch (Exception ignore) {}
+
         // Redirect to home page
         response.sendRedirect("/");
     }
