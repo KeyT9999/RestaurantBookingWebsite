@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <!-- This fragment is for inclusion only -->
+</head>
+<body>
+
+<!-- ================================================
+     DESIGN SYSTEM COMPONENT LIBRARY
+     Unified components for consistent UI across all pages
+     ================================================ -->
+
+<!-- ================================================
+     1. UNIFIED HEADER COMPONENT
+     ================================================ -->
+<div th:fragment="unified-header" class="ds-unified-header">
+    <!-- Mini Header - Only show for non-customer users -->
+    <div class="ds-mini-header" sec:authorize="!hasRole('CUSTOMER')">
+        <div class="ds-container">
+            <div class="ds-mini-header-content">
+                <div class="ds-mini-header-left">
+                    <!-- Có thể thêm thông tin khác ở đây -->
+                </div>
+                <div class="ds-mini-header-right">
+                    <a th:href="@{/restaurant-owner/dashboard}" class="ds-for-restaurants" sec:authorize="hasRole('RESTAURANT_OWNER')">For Restaurants</a>
+                    <a th:href="@{/auth/register}" class="ds-for-restaurants" sec:authorize="!isAuthenticated()">For Restaurants</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Header -->
+    <nav class="ds-navbar">
+        <div class="ds-container">
+            <div class="ds-navbar-content">
+                <a th:href="@{/}" class="ds-navbar-brand">Book Eat</a>
+                
+                <ul class="ds-navbar-nav">
+                    <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
+                    <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
+                    <li><a th:href="@{/about}" th:classappend="${activeNav == 'about' ? 'active' : ''}">Về chúng tôi</a></li>
+                    <li><a th:href="@{/contact}" th:classappend="${activeNav == 'contact' ? 'active' : ''}">Liên hệ</a></li>
+                </ul>
+                
+                <div class="ds-navbar-actions">
+                    <!-- Guest User Actions -->
+                    <a th:href="@{/login}" class="ds-btn ds-btn-secondary" sec:authorize="!isAuthenticated()">Đăng nhập</a>
+                    <a th:href="@{/auth/register}" class="ds-btn ds-btn-primary" sec:authorize="!isAuthenticated()">Đăng ký</a>
+                    
+                    <!-- Authenticated User Actions -->
+                    <div sec:authorize="isAuthenticated()" class="ds-user-actions">
+                        <!-- Customer Actions -->
+                        <a th:href="@{/customer/favorites}" class="ds-btn ds-btn-secondary ds-btn-icon" sec:authorize="hasRole('CUSTOMER')" title="Favorites">
+                            <i class="fas fa-heart"></i>
+                        </a>
+                        
+                        <!-- Restaurant Owner Dashboard -->
+                        <a th:href="@{/restaurant-owner/dashboard}" class="ds-btn ds-btn-primary" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                        
+                        <!-- Admin Dashboard -->
+                        <a th:href="@{/admin/dashboard}" class="ds-btn ds-btn-primary" sec:authorize="hasRole('ADMIN')">
+                            <i class="fas fa-cog"></i>
+                            Admin
+                        </a>
+                        
+                        <!-- User Profile Dropdown -->
+                        <div class="ds-user-dropdown">
+                            <button class="ds-btn ds-btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle"></i>
+                                <span sec:authentication="name">User</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/auth/profile}">
+                                        <i class="fas fa-user"></i>
+                                        Profile
+                                    </a>
+                                </li>
+                                <li sec:authorize="hasRole('CUSTOMER')">
+                                    <a class="dropdown-item" th:href="@{/customer/favorites}">
+                                        <i class="fas fa-heart"></i>
+                                        Favorites
+                                    </a>
+                                </li>
+                                <li sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/dashboard}">
+                                        <i class="fas fa-tachometer-alt"></i>
+                                        Restaurant Dashboard
+                                    </a>
+                                </li>
+                                <li sec:authorize="hasRole('ADMIN')">
+                                    <a class="dropdown-item" th:href="@{/admin/dashboard}">
+                                        <i class="fas fa-cog"></i>
+                                        Admin Dashboard
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/logout}">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>
+
+<!-- ================================================
+     2. UNIFIED FOOTER COMPONENT
+     ================================================ -->
+<div th:fragment="unified-footer" class="ds-unified-footer">
+    <footer class="ds-footer">
+        <div class="ds-container">
+            <div class="ds-footer-content">
+                <div class="ds-footer-section">
+                    <h4 class="ds-heading-5">Book Eat</h4>
+                    <p class="ds-text-small ds-mb-4">
+                        Nền tảng đặt bàn nhà hàng hàng đầu Việt Nam. 
+                        Kết nối khách hàng với những nhà hàng tốt nhất.
+                    </p>
+                </div>
+                <div class="ds-footer-section">
+                    <h5 class="ds-heading-6">Khám phá</h5>
+                    <ul class="ds-footer-links">
+                        <li><a th:href="@{/restaurants}">Nhà hàng gần đây</a></li>
+                        <li><a th:href="@{/restaurants}">Nhà hàng phổ biến</a></li>
+                        <li><a th:href="@{/restaurants}">Nhà hàng mới</a></li>
+                        <li><a th:href="@{/restaurants}">Ưu đãi đặc biệt</a></li>
+                    </ul>
+                </div>
+                <div class="ds-footer-section">
+                    <h5 class="ds-heading-6">Hỗ trợ</h5>
+                    <ul class="ds-footer-links">
+                        <li><a th:href="@{/contact}">Trung tâm trợ giúp</a></li>
+                        <li><a th:href="@{/contact}">Liên hệ</a></li>
+                        <li><a th:href="@{/terms-of-service}">Điều khoản sử dụng</a></li>
+                        <li><a th:href="@{/terms-of-service}">Chính sách bảo mật</a></li>
+                    </ul>
+                </div>
+                <div class="ds-footer-section">
+                    <h5 class="ds-heading-6">Liên hệ</h5>
+                    <ul class="ds-footer-links">
+                        <li><a href="tel:19001234">📞 1900 1234</a></li>
+                        <li><a href="mailto:support@bookeat.vn">✉️ support@bookeat.vn</a></li>
+                        <li><a href="#contact">📍 Đà Nẵng, Việt Nam</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="ds-footer-bottom">
+                <p class="ds-text-xs ds-text-center">&copy; 2025 Book Eat. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<!-- ================================================
+     3. RESTAURANT CARD COMPONENT
+     ================================================ -->
+<div th:fragment="restaurant-card(restaurant)" class="ds-restaurant-card">
+    <div class="ds-restaurant-image">
+        <div class="ds-restaurant-badge" th:text="${restaurant.badge ?: 'Featured'}">Featured</div>
+    </div>
+    <div class="ds-restaurant-info">
+        <h3 class="ds-restaurant-name" th:text="${restaurant.name}">Restaurant Name</h3>
+        <p class="ds-restaurant-cuisine" th:text="${restaurant.cuisine}">Cuisine Type</p>
+        <div class="ds-restaurant-rating">
+            <div class="ds-stars">
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+                <i class="fas fa-star"></i>
+            </div>
+            <span class="ds-rating-text" th:text="${restaurant.rating} + ' (' + ${restaurant.reviewCount} + ' đánh giá)'">4.8 (124 đánh giá)</span>
+        </div>
+        <div class="ds-restaurant-price" th:text="${restaurant.priceRange}">$$$$</div>
+        <button class="ds-book-btn" th:onclick="'bookRestaurant(\'' + ${restaurant.id} + '\')'">Đặt bàn</button>
+    </div>
+</div>
+
+<!-- ================================================
+     4. SECTION HEADER COMPONENT
+     ================================================ -->
+<div th:fragment="section-header(title, subtitle)" class="ds-section-header">
+    <h2 class="ds-heading-2 ds-text-center" th:text="${title}">Section Title</h2>
+    <p class="ds-text-large ds-text-center ds-text-secondary ds-mt-2" th:text="${subtitle}">Section subtitle</p>
+</div>
+
+<!-- ================================================
+     5. HERO SECTION COMPONENT
+     ================================================ -->
+<div th:fragment="hero-section(title, subtitle, primaryButton, secondaryButton)" class="ds-hero-section">
+    <div class="ds-hero-background">
+        <!-- Background content -->
+    </div>
+    <div class="ds-hero-overlay">
+        <div class="ds-hero-content">
+            <h1 class="ds-hero-title" th:text="${title}">Hero Title</h1>
+            <p class="ds-hero-subtitle" th:text="${subtitle}">Hero subtitle</p>
+            <div class="ds-hero-buttons">
+                <a th:href="${primaryButton.url}" class="ds-btn ds-btn-video" th:text="${primaryButton.text}">Primary Action</a>
+                <a th:href="${secondaryButton.url}" class="ds-btn ds-btn-video-outline" th:text="${secondaryButton.text}">Secondary Action</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================
+     6. FEATURE GRID COMPONENT
+     ================================================ -->
+<div th:fragment="feature-grid(features)" class="ds-feature-grid">
+    <div class="ds-grid ds-grid-cols-4 ds-gap-6">
+        <div th:each="feature : ${features}" class="ds-feature-item">
+            <div class="ds-feature-icon">
+                <i th:class="${feature.icon}"></i>
+            </div>
+            <h4 class="ds-heading-5" th:text="${feature.title}">Feature Title</h4>
+            <p class="ds-text-small ds-text-secondary" th:text="${feature.description}">Feature description</p>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================
+     7. STATS COMPONENT
+     ================================================ -->
+<div th:fragment="stats-component(stats)" class="ds-stats-component">
+    <div class="ds-grid ds-grid-cols-3 ds-gap-8">
+        <div th:each="stat : ${stats}" class="ds-stat-item ds-text-center">
+            <div class="ds-stat-number" th:text="${stat.number}">1,200+</div>
+            <div class="ds-stat-label ds-text-small ds-text-secondary" th:text="${stat.label}">Label</div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================
+     8. LOADING COMPONENT
+     ================================================ -->
+<div th:fragment="loading-spinner" class="ds-loading-spinner">
+    <div class="ds-spinner"></div>
+    <p class="ds-text-small ds-text-secondary">Đang tải...</p>
+</div>
+
+<!-- ================================================
+     9. ALERT COMPONENTS
+     ================================================ -->
+<div th:fragment="alert-success(message)" class="ds-alert ds-alert-success">
+    <i class="fas fa-check-circle"></i>
+    <span th:text="${message}">Success message</span>
+</div>
+
+<div th:fragment="alert-error(message)" class="ds-alert ds-alert-error">
+    <i class="fas fa-exclamation-circle"></i>
+    <span th:text="${message}">Error message</span>
+</div>
+
+<div th:fragment="alert-warning(message)" class="ds-alert ds-alert-warning">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span th:text="${message}">Warning message</span>
+</div>
+
+<div th:fragment="alert-info(message)" class="ds-alert ds-alert-info">
+    <i class="fas fa-info-circle"></i>
+    <span th:text="${message}">Info message</span>
+</div>
+
+<!-- ================================================
+     10. BREADCRUMB COMPONENT
+     ================================================ -->
+<div th:fragment="breadcrumb(items)" class="ds-breadcrumb">
+    <nav aria-label="breadcrumb">
+        <ol class="ds-breadcrumb-list">
+            <li th:each="item, iterStat : ${items}" class="ds-breadcrumb-item" th:classappend="${iterStat.last} ? 'active' : ''">
+                <a th:if="${!iterStat.last}" th:href="${item.url}" th:text="${item.name}">Item</a>
+                <span th:if="${iterStat.last}" th:text="${item.name}">Current Item</span>
+            </li>
+        </ol>
+    </nav>
+</div>
+
+<!-- ================================================
+     11. PAGINATION COMPONENT
+     ================================================ -->
+<div th:fragment="pagination(currentPage, totalPages, baseUrl)" class="ds-pagination">
+    <nav aria-label="Page navigation">
+        <ul class="ds-pagination-list">
+            <li class="ds-pagination-item" th:classappend="${currentPage == 1} ? 'disabled' : ''">
+                <a th:if="${currentPage > 1}" th:href="${baseUrl + '?page=' + (currentPage - 1)}" class="ds-pagination-link">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <span th:if="${currentPage == 1}" class="ds-pagination-link ds-disabled">
+                    <i class="fas fa-chevron-left"></i>
+                </span>
+            </li>
+            
+            <li th:each="page : ${#numbers.sequence(1, totalPages)}" 
+                class="ds-pagination-item" 
+                th:classappend="${page == currentPage} ? 'active' : ''">
+                <a th:href="${baseUrl + '?page=' + page}" 
+                   class="ds-pagination-link" 
+                   th:text="${page}">1</a>
+            </li>
+            
+            <li class="ds-pagination-item" th:classappend="${currentPage == totalPages} ? 'disabled' : ''">
+                <a th:if="${currentPage < totalPages}" th:href="${baseUrl + '?page=' + (currentPage + 1)}" class="ds-pagination-link">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                <span th:if="${currentPage == totalPages}" class="ds-pagination-link ds-disabled">
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<!-- ================================================
+     12. MODAL COMPONENT
+     ================================================ -->
+<div th:fragment="modal(id, title, content)" class="ds-modal" th:id="${id}" tabindex="-1" aria-hidden="true">
+    <div class="ds-modal-backdrop"></div>
+    <div class="ds-modal-content">
+        <div class="ds-modal-header">
+            <h5 class="ds-heading-5" th:text="${title}">Modal Title</h5>
+            <button type="button" class="ds-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ds-modal-body">
+            <div th:utext="${content}">Modal content</div>
+        </div>
+        <div class="ds-modal-footer">
+            <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            <button type="button" class="ds-btn ds-btn-primary">Xác nhận</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================
+     END OF COMPONENT LIBRARY
+     ================================================ -->
+
+</body>
+</html>

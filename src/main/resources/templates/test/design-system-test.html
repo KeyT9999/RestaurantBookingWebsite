@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design System Test - Book Eat</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Design System CSS -->
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+    
+    <style>
+        .test-section {
+            margin-bottom: var(--ds-space-16);
+            padding: var(--ds-space-8) 0;
+            border-bottom: 1px solid var(--ds-neutral-300);
+        }
+        
+        .test-section:last-child {
+            border-bottom: none;
+        }
+        
+        .test-title {
+            font-size: var(--ds-font-size-2xl);
+            font-weight: var(--ds-font-weight-bold);
+            color: var(--ds-primary-black);
+            margin-bottom: var(--ds-space-6);
+            padding-bottom: var(--ds-space-2);
+            border-bottom: 2px solid var(--ds-primary-red);
+        }
+        
+        .test-subtitle {
+            font-size: var(--ds-font-size-lg);
+            color: var(--ds-neutral-700);
+            margin-bottom: var(--ds-space-4);
+        }
+        
+        .component-demo {
+            background: var(--ds-neutral-50);
+            border: 1px solid var(--ds-neutral-300);
+            border-radius: var(--ds-radius-lg);
+            padding: var(--ds-space-6);
+            margin-bottom: var(--ds-space-6);
+        }
+        
+        .code-block {
+            background: var(--ds-neutral-900);
+            color: var(--ds-primary-white);
+            padding: var(--ds-space-4);
+            border-radius: var(--ds-radius-md);
+            font-family: var(--ds-font-family-mono);
+            font-size: var(--ds-font-size-sm);
+            overflow-x: auto;
+            margin-top: var(--ds-space-4);
+        }
+    </style>
+</head>
+<body>
+    <!-- Design System Header -->
+    <div th:replace="~{fragments/design-system-components :: unified-header}"></div>
+    
+    <main class="ds-container" style="margin-top: var(--ds-space-8);">
+        <!-- Page Header -->
+        <div class="test-section">
+            <h1 class="ds-heading-1">Design System Test Page</h1>
+            <p class="ds-text-large">Kiểm tra tất cả components và utilities của Design System</p>
+        </div>
+        
+        <!-- Typography Test -->
+        <div class="test-section">
+            <h2 class="test-title">Typography</h2>
+            <div class="component-demo">
+                <h1 class="ds-heading-1">Heading 1 - Main Title</h1>
+                <h2 class="ds-heading-2">Heading 2 - Section Title</h2>
+                <h3 class="ds-heading-3">Heading 3 - Subsection</h3>
+                <h4 class="ds-heading-4">Heading 4 - Component Title</h4>
+                <h5 class="ds-heading-5">Heading 5 - Small Title</h5>
+                <h6 class="ds-heading-6">Heading 6 - Minor Title</h6>
+                
+                <p class="ds-text-large">Large text - This is large body text for important content.</p>
+                <p class="ds-text-base">Base text - This is regular body text for most content.</p>
+                <p class="ds-text-small">Small text - This is small text for captions and labels.</p>
+                <p class="ds-text-xs">Extra small text - This is very small text for fine print.</p>
+            </div>
+        </div>
+        
+        <!-- Button Test -->
+        <div class="test-section">
+            <h2 class="test-title">Buttons</h2>
+            <div class="component-demo">
+                <div class="ds-flex ds-gap-4 ds-flex-wrap">
+                    <button class="ds-btn ds-btn-primary">Primary Button</button>
+                    <button class="ds-btn ds-btn-secondary">Secondary Button</button>
+                    <button class="ds-btn ds-btn-outline">Outline Button</button>
+                    <button class="ds-btn ds-btn-ghost">Ghost Button</button>
+                    <button class="ds-btn ds-btn-danger">Danger Button</button>
+                    <button class="ds-btn ds-btn-success">Success Button</button>
+                </div>
+                
+                <h3 class="test-subtitle">Button Sizes</h3>
+                <div class="ds-flex ds-gap-4 ds-flex-wrap ds-items-center">
+                    <button class="ds-btn ds-btn-primary ds-btn-sm">Small</button>
+                    <button class="ds-btn ds-btn-primary">Medium</button>
+                    <button class="ds-btn ds-btn-primary ds-btn-lg">Large</button>
+                    <button class="ds-btn ds-btn-primary ds-btn-xl">Extra Large</button>
+                </div>
+                
+                <h3 class="test-subtitle">Icon Buttons</h3>
+                <div class="ds-flex ds-gap-4 ds-flex-wrap">
+                    <button class="ds-btn ds-btn-primary ds-btn-icon"><i class="fas fa-heart"></i></button>
+                    <button class="ds-btn ds-btn-secondary ds-btn-icon"><i class="fas fa-star"></i></button>
+                    <button class="ds-btn ds-btn-outline ds-btn-icon"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card Test -->
+        <div class="test-section">
+            <h2 class="test-title">Cards</h2>
+            <div class="component-demo">
+                <div class="ds-grid ds-grid-cols-3 ds-gap-6">
+                    <div class="ds-card">
+                        <div class="ds-card-header">
+                            <h5 class="ds-heading-5">Basic Card</h5>
+                        </div>
+                        <div class="ds-card-body">
+                            <p class="ds-text-base">This is a basic card with header and body.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="ds-card">
+                        <div class="ds-card-body">
+                            <h5 class="ds-heading-5">Simple Card</h5>
+                            <p class="ds-text-base">This is a simple card with just body content.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="ds-card">
+                        <div class="ds-card-header">
+                            <h5 class="ds-heading-5">Complete Card</h5>
+                        </div>
+                        <div class="ds-card-body">
+                            <p class="ds-text-base">This card has header, body, and footer.</p>
+                        </div>
+                        <div class="ds-card-footer">
+                            <button class="ds-btn ds-btn-primary ds-btn-sm">Action</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Restaurant Card Test -->
+        <div class="test-section">
+            <h2 class="test-title">Restaurant Cards</h2>
+            <div class="component-demo">
+                <div class="ds-grid ds-grid-cols-3 ds-gap-6">
+                    <div class="ds-restaurant-card">
+                        <div class="ds-restaurant-image">
+                            <div class="ds-restaurant-badge">Premium</div>
+                        </div>
+                        <div class="ds-restaurant-info">
+                            <h3 class="ds-restaurant-name">Le Bistrot</h3>
+                            <p class="ds-restaurant-cuisine">French • Fine Dining</p>
+                            <div class="ds-restaurant-rating">
+                                <div class="ds-stars">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span class="ds-rating-text">4.8 (124 đánh giá)</span>
+                            </div>
+                            <div class="ds-restaurant-price">$$$$</div>
+                            <button class="ds-book-btn">Đặt bàn</button>
+                        </div>
+                    </div>
+                    
+                    <div class="ds-restaurant-card">
+                        <div class="ds-restaurant-image" style="background: var(--ds-gradient-success);">
+                            <div class="ds-restaurant-badge">Popular</div>
+                        </div>
+                        <div class="ds-restaurant-info">
+                            <h3 class="ds-restaurant-name">Garden Terrace</h3>
+                            <p class="ds-restaurant-cuisine">Asian • Casual</p>
+                            <div class="ds-restaurant-rating">
+                                <div class="ds-stars">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span class="ds-rating-text">4.6 (89 đánh giá)</span>
+                            </div>
+                            <div class="ds-restaurant-price">$$$</div>
+                            <button class="ds-book-btn">Đặt bàn</button>
+                        </div>
+                    </div>
+                    
+                    <div class="ds-restaurant-card">
+                        <div class="ds-restaurant-image" style="background: var(--ds-gradient-warm);">
+                            <div class="ds-restaurant-badge">New</div>
+                        </div>
+                        <div class="ds-restaurant-info">
+                            <h3 class="ds-restaurant-name">Sky Lounge</h3>
+                            <p class="ds-restaurant-cuisine">International • Rooftop</p>
+                            <div class="ds-restaurant-rating">
+                                <div class="ds-stars">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span class="ds-rating-text">4.9 (67 đánh giá)</span>
+                            </div>
+                            <div class="ds-restaurant-price">$$$$</div>
+                            <button class="ds-book-btn">Đặt bàn</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Form Test -->
+        <div class="test-section">
+            <h2 class="test-title">Forms</h2>
+            <div class="component-demo">
+                <form class="ds-form">
+                    <div class="ds-form-group">
+                        <label class="ds-form-label" for="test-input">Text Input</label>
+                        <input type="text" id="test-input" class="ds-form-input" placeholder="Enter text here">
+                    </div>
+                    
+                    <div class="ds-form-group">
+                        <label class="ds-form-label" for="test-select">Select</label>
+                        <select id="test-select" class="ds-form-select">
+                            <option>Option 1</option>
+                            <option>Option 2</option>
+                            <option>Option 3</option>
+                        </select>
+                    </div>
+                    
+                    <div class="ds-form-group">
+                        <label class="ds-form-label" for="test-textarea">Textarea</label>
+                        <textarea id="test-textarea" class="ds-form-textarea" placeholder="Enter your message"></textarea>
+                    </div>
+                    
+                    <div class="ds-flex ds-gap-4">
+                        <button type="submit" class="ds-btn ds-btn-primary">Submit</button>
+                        <button type="reset" class="ds-btn ds-btn-secondary">Reset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Alert Test -->
+        <div class="test-section">
+            <h2 class="test-title">Alerts</h2>
+            <div class="component-demo">
+                <div class="ds-alert ds-alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>This is a success alert message!</span>
+                </div>
+                
+                <div class="ds-alert ds-alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>This is an error alert message!</span>
+                </div>
+                
+                <div class="ds-alert ds-alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>This is a warning alert message!</span>
+                </div>
+                
+                <div class="ds-alert ds-alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>This is an info alert message!</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Test -->
+        <div class="test-section">
+            <h2 class="test-title">Stats Component</h2>
+            <div class="component-demo">
+                <div class="ds-stats-component">
+                    <div class="ds-grid ds-grid-cols-3 ds-gap-8">
+                        <div class="ds-stat-item ds-text-center">
+                            <div class="ds-stat-number">1,200+</div>
+                            <div class="ds-stat-label">Nhà hàng</div>
+                        </div>
+                        <div class="ds-stat-item ds-text-center">
+                            <div class="ds-stat-number">50K+</div>
+                            <div class="ds-stat-label">Khách hàng</div>
+                        </div>
+                        <div class="ds-stat-item ds-text-center">
+                            <div class="ds-stat-number">4.8</div>
+                            <div class="ds-stat-label">Đánh giá</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Feature Grid Test -->
+        <div class="test-section">
+            <h2 class="test-title">Feature Grid</h2>
+            <div class="component-demo">
+                <div class="ds-feature-grid">
+                    <div class="ds-grid ds-grid-cols-4 ds-gap-6">
+                        <div class="ds-feature-item">
+                            <div class="ds-feature-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <h4 class="ds-heading-5">Đặt bàn nhanh chóng</h4>
+                            <p class="ds-text-small ds-text-secondary">Xác nhận tức thì trong vài giây</p>
+                        </div>
+                        <div class="ds-feature-item">
+                            <div class="ds-feature-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h4 class="ds-heading-5">An toàn & Bảo mật</h4>
+                            <p class="ds-text-small ds-text-secondary">Thông tin được mã hóa bảo mật</p>
+                        </div>
+                        <div class="ds-feature-item">
+                            <div class="ds-feature-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <h4 class="ds-heading-5">Chất lượng đảm bảo</h4>
+                            <p class="ds-text-small ds-text-secondary">Nhà hàng được chọn lọc kỹ càng</p>
+                        </div>
+                        <div class="ds-feature-item">
+                            <div class="ds-feature-icon">
+                                <i class="fas fa-headset"></i>
+                            </div>
+                            <h4 class="ds-heading-5">Hỗ trợ 24/7</h4>
+                            <p class="ds-text-small ds-text-secondary">Luôn sẵn sàng hỗ trợ bạn</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Test -->
+        <div class="test-section">
+            <h2 class="test-title">Loading Components</h2>
+            <div class="component-demo">
+                <div class="ds-loading-spinner">
+                    <div class="ds-spinner"></div>
+                    <p class="ds-text-small ds-text-secondary">Đang tải...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Breadcrumb Test -->
+        <div class="test-section">
+            <h2 class="test-title">Breadcrumb</h2>
+            <div class="component-demo">
+                <nav class="ds-breadcrumb">
+                    <ol class="ds-breadcrumb-list">
+                        <li class="ds-breadcrumb-item">
+                            <a href="/">Trang chủ</a>
+                        </li>
+                        <li class="ds-breadcrumb-item">
+                            <a href="/restaurants">Nhà hàng</a>
+                        </li>
+                        <li class="ds-breadcrumb-item active">
+                            <span>Chi tiết nhà hàng</span>
+                        </li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Pagination Test -->
+        <div class="test-section">
+            <h2 class="test-title">Pagination</h2>
+            <div class="component-demo">
+                <nav class="ds-pagination">
+                    <ul class="ds-pagination-list">
+                        <li class="ds-pagination-item disabled">
+                            <span class="ds-pagination-link ds-disabled">
+                                <i class="fas fa-chevron-left"></i>
+                            </span>
+                        </li>
+                        <li class="ds-pagination-item active">
+                            <a class="ds-pagination-link">1</a>
+                        </li>
+                        <li class="ds-pagination-item">
+                            <a class="ds-pagination-link">2</a>
+                        </li>
+                        <li class="ds-pagination-item">
+                            <a class="ds-pagination-link">3</a>
+                        </li>
+                        <li class="ds-pagination-item">
+                            <a class="ds-pagination-link">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Utility Classes Test -->
+        <div class="test-section">
+            <h2 class="test-title">Utility Classes</h2>
+            <div class="component-demo">
+                <h3 class="test-subtitle">Spacing</h3>
+                <div class="ds-p-4 ds-bg-neutral-100 ds-mb-4">
+                    <p class="ds-mb-2">This box has padding and margin utilities.</p>
+                    <p>ds-p-4, ds-bg-neutral-100, ds-mb-4</p>
+                </div>
+                
+                <h3 class="test-subtitle">Text Colors</h3>
+                <div class="ds-flex ds-gap-4 ds-flex-wrap">
+                    <p class="ds-text-primary">Primary Text</p>
+                    <p class="ds-text-secondary">Secondary Text</p>
+                    <p class="ds-text-tertiary">Tertiary Text</p>
+                    <p class="ds-text-success">Success Text</p>
+                    <p class="ds-text-error">Error Text</p>
+                    <p class="ds-text-warning">Warning Text</p>
+                    <p class="ds-text-info">Info Text</p>
+                </div>
+                
+                <h3 class="test-subtitle">Background Colors</h3>
+                <div class="ds-flex ds-gap-4 ds-flex-wrap">
+                    <div class="ds-p-2 ds-bg-primary ds-text-white">Primary BG</div>
+                    <div class="ds-p-2 ds-bg-gray-100">Gray BG</div>
+                    <div class="ds-p-2 ds-bg-success ds-text-white">Success BG</div>
+                    <div class="ds-p-2 ds-bg-error ds-text-white">Error BG</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Responsive Test -->
+        <div class="test-section">
+            <h2 class="test-title">Responsive Design</h2>
+            <div class="component-demo">
+                <p class="ds-text-base">Resize your browser window to see responsive behavior.</p>
+                <div class="ds-grid ds-grid-auto ds-gap-4">
+                    <div class="ds-p-4 ds-bg-neutral-100 ds-rounded">Auto Grid Item 1</div>
+                    <div class="ds-p-4 ds-bg-neutral-100 ds-rounded">Auto Grid Item 2</div>
+                    <div class="ds-p-4 ds-bg-neutral-100 ds-rounded">Auto Grid Item 3</div>
+                    <div class="ds-p-4 ds-bg-neutral-100 ds-rounded">Auto Grid Item 4</div>
+                </div>
+            </div>
+        </div>
+        
+    </main>
+    
+    <!-- Design System Footer -->
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Test JavaScript functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Design System Test Page Loaded');
+            
+            // Test button clicks
+            document.querySelectorAll('.ds-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    if (this.type !== 'submit' && this.type !== 'reset') {
+                        e.preventDefault();
+                        console.log('Button clicked:', this.textContent.trim());
+                    }
+                });
+            });
+            
+            // Test form interactions
+            document.querySelectorAll('.ds-form-input').forEach(input => {
+                input.addEventListener('focus', function() {
+                    console.log('Input focused:', this.id);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
