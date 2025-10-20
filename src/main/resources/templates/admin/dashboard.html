@@ -3,411 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - BookEat</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap 5 CSS -->
+    <title>Admin Dashboard - Book Eat</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+
     <style>
-        :root {
-            --primary-blue: #4A90E2;
-            --primary-blue-light: #6BA3F0;
-            --primary-blue-dark: #357ABD;
-            --accent-orange: #FF6B35;
-            --background-light: #F8F9FA;
-            --background-white: #FFFFFF;
-            --text-dark: #2C3E50;
-            --text-medium: #5A6C7D;
-            --text-light: #8A9BA8;
-            --border-light: #E1E8ED;
-            --gold-primary: #D4AF37;
-            --gold-light: #FFD700;
-            --dark-bg: #121212;
-            --dark-card: #1A1A1A;
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--ds-neutral-50);
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--primary-blue) 100%);
-            min-height: 100vh;
-            color: var(--text-dark);
-            padding-top: 100px;
+        .admin-hero {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.94), rgba(26, 26, 26, 0.75)), url('https://images.unsplash.com/photo-1499028344343-cd173ffc68a9?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+            border-radius: var(--ds-radius-3xl);
+            padding: var(--ds-space-12) var(--ds-space-10);
+            color: var(--ds-primary-white);
+            position: relative;
+            overflow: hidden;
         }
-        
-        .admin-container {
-            background: var(--background-white);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(74, 144, 226, 0.15);
-            padding: 2rem;
-            margin-bottom: 2rem;
+
+        .admin-hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.65), rgba(26, 26, 26, 0.3));
         }
-        
-        .stats-card {
-            background: var(--background-white);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+        .admin-hero > * {
+            position: relative;
+            z-index: 1;
         }
-        
-        .stats-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(74, 144, 226, 0.15);
-            border-color: var(--primary-blue);
+
+        .admin-stat-card {
+            border-radius: var(--ds-radius-xl);
+            background: var(--ds-primary-white);
+            box-shadow: var(--ds-shadow-lg);
+            padding: var(--ds-space-6);
         }
-        
-        .stats-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary-blue);
-            margin-bottom: 0.5rem;
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .stats-label {
-            color: var(--text-medium);
-            font-size: 0.9rem;
-            font-weight: 500;
+
+        .admin-stat-card .label {
+            color: var(--ds-neutral-500);
+            font-size: var(--ds-font-size-sm);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.08em;
         }
-        
-        .section-title {
-            color: var(--text-dark);
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
+
+        .admin-stat-card .value {
+            font-size: var(--ds-font-size-4xl);
+            font-weight: var(--ds-font-weight-bold);
+            color: var(--ds-neutral-900);
+        }
+
+        .admin-quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: var(--ds-space-4);
+        }
+
+        .admin-quick-actions a {
+            border-radius: var(--ds-radius-lg);
+            border: 1px solid var(--ds-neutral-200);
+            padding: var(--ds-space-4);
             display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--ds-space-2);
+            background: var(--ds-primary-white);
+            color: var(--ds-neutral-700);
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .admin-quick-actions a:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--ds-shadow-xl);
+            color: var(--ds-neutral-900);
+        }
+
+        .admin-quick-actions a .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--ds-radius-full);
+            background: var(--ds-neutral-900);
+            color: var(--ds-primary-white);
+            display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            font-size: var(--ds-font-size-base);
         }
-        
-        .section-title i {
-            color: var(--primary-blue);
+
+        .table thead {
+            background: var(--ds-neutral-100);
         }
-        
-        .management-card {
-            background: var(--background-white);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            height: 100%;
+
+        .badge-pill {
+            border-radius: var(--ds-radius-full);
+            padding: var(--ds-space-1) var(--ds-space-3);
+            font-size: var(--ds-font-size-xs);
         }
-        
-        .management-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(74, 144, 226, 0.15);
-            border-color: var(--primary-blue);
-        }
-        
-        .management-card .icon {
-            font-size: 2.5rem;
-            color: var(--primary-blue);
-            margin-bottom: 1rem;
-        }
-        
-        .management-card h3 {
-            color: var(--text-dark);
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-        }
-        
-        .management-card p {
-            color: var(--text-medium);
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .btn-primary {
-            background: var(--primary-blue);
-            border-color: var(--primary-blue);
-            color: white;
-            font-weight: 600;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-blue-dark);
-            border-color: var(--primary-blue-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
-        }
-        
-        .table-container {
-            background: var(--background-white);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        
-        .table th {
-            background: var(--background-light);
-            color: var(--text-dark);
-            font-weight: 600;
-            border-color: var(--border-light);
-        }
-        
-        .table td {
-            border-color: var(--border-light);
-            color: var(--text-dark);
-        }
-        
-        .badge {
-            font-size: 0.75rem;
-            padding: 0.5rem 0.75rem;
-        }
-        
-        .badge.bg-warning {
-            background: var(--accent-orange) !important;
-        }
-        
-        .text-primary { color: var(--primary-blue) !important; }
-        .text-success { color: #28a745 !important; }
-        .text-warning { color: var(--accent-orange) !important; }
-        .text-danger { color: #dc3545 !important; }
-        .text-muted { color: var(--text-light) !important; }
-        
-        .alert {
-            border-radius: 8px;
-            border: none;
-        }
-        
-        .alert-danger {
-            background: rgba(220, 53, 69, 0.1);
-            color: #dc3545;
-        }
-        
-        /* Quick Access Buttons */
-        .quick-access-buttons {
-            gap: 0.5rem;
-        }
-        
-        .quick-access-buttons .btn {
-            border-radius: 8px;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-        
-        .quick-access-buttons .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        .quick-access-buttons .btn-outline-primary:hover {
-            background: var(--primary-blue);
-            border-color: var(--primary-blue);
-            color: white;
-        }
-        
-        .quick-access-buttons .btn-outline-success:hover {
-            background: #28a745;
-            border-color: #28a745;
-            color: white;
-        }
-        
-        .quick-access-buttons .btn-outline-info:hover {
-            background: #17a2b8;
-            border-color: #17a2b8;
-            color: white;
-        }
-        
-        .quick-access-buttons .btn-outline-secondary:hover {
-            background: #6c757d;
-            border-color: #6c757d;
-            color: white;
-        }
-        
-        .quick-access-buttons .btn-outline-warning:hover {
-            background: var(--accent-orange);
-            border-color: var(--accent-orange);
-            color: white;
-        }
-        
-        .quick-access-buttons .btn-outline-dark:hover {
-            background: #343a40;
-            border-color: #343a40;
-            color: white;
-        }
-        
-        /* Responsive buttons */
-        @media (max-width: 768px) {
-            .quick-access-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .quick-access-buttons .btn {
-                width: 100%;
-                max-width: 300px;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            .quick-access-buttons .btn {
-                font-size: 0.875rem;
-                padding: 0.4rem 0.8rem;
-            }
-        }
+
     </style>
 </head>
-
 <body>
-    <!-- Header Fragment -->
-    <div th:insert="fragments/header :: site-header"></div>
-    
-    <!-- Main Content -->
+    <div th:with="activeNav='admin-dashboard'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+
     <main>
-        <div class="container">
-            <!-- Header -->
-            <div class="admin-container">
-                <div class="row mb-4">
-                    <div class="col-12 text-center">
-                        <h1 class="section-title justify-content-center">
-                            <i class="fas fa-tachometer-alt"></i> Admin Dashboard
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container ds-flex ds-flex-col ds-gap-8">
+                <!-- Hero -->
+                <div class="admin-hero ds-flex ds-flex-col ds-gap-6">
+                    <div class="ds-flex ds-flex-col ds-gap-3">
+                        <span class="register-pill" style="background: rgba(255, 255, 255, 0.18);">
+                            <i class="fas fa-shield-alt"></i>
+                            Bảng điều khiển quản trị
+                        </span>
+                        <h1 class="ds-heading-2 ds-text-white ds-m-0">
+                            Xin chào, quản trị viên Book Eat!
                         </h1>
-                        <p class="text-muted fs-5">Quản trị hệ thống BookEat</p>
+                        <p class="ds-text-base" style="color: rgba(255, 255, 255, 0.75); max-width: 560px;">
+                            Theo dõi trạng thái hệ thống, doanh thu và hoạt động nhà hàng theo thời gian thực. Mọi dữ liệu quan trọng đều có ở đây.
+                        </p>
                     </div>
-                </div>
-                
-                <!-- Quick Access Buttons -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="d-flex flex-wrap justify-content-center quick-access-buttons">
-                            <!-- Financial Management -->
-                            <a th:href="@{/admin/withdrawal}" class="btn btn-outline-primary">
-                                <i class="fas fa-credit-card me-2"></i>Quản lý Rút tiền
-                            </a>
-                            
-                            <!-- Restaurant Management -->
-                            <a th:href="@{/admin/restaurant/requests}" class="btn btn-outline-success">
-                                <i class="fas fa-utensils me-2"></i>Duyệt Nhà hàng
-                                <span th:if="${pendingRestaurants > 0}" class="badge bg-warning ms-1" th:text="${pendingRestaurants}">0</span>
-                            </a>
-                            
-                            <!-- User Management -->
-                            <a th:href="@{/admin/users}" class="btn btn-outline-info">
-                                <i class="fas fa-users me-2"></i>Quản lý Người dùng
-                            </a>
-                            
-                            <!-- Chat Management -->
-                            <a th:href="@{/admin/chat}" class="btn btn-outline-secondary">
-                                <i class="fas fa-comments me-2"></i>Quản lý Chat
-                            </a>
-                            
-                            <!-- Security Management -->
-                            <a th:href="@{/admin/rate-limiting}" class="btn btn-outline-warning">
-                                <i class="fas fa-shield-alt me-2"></i>Rate Limiting
-                            </a>
-                            
-                            <!-- System Settings -->
-                            <a th:href="@{/admin/settings}" class="btn btn-outline-dark">
-                                <i class="fas fa-cog me-2"></i>Cài đặt
-                            </a>
+                    <div class="ds-grid ds-grid-cols-3 ds-gap-6 ds-grid-auto">
+                        <div class="admin-stat-card">
+                            <div class="label">Tổng người dùng</div>
+                            <div class="value" th:text="${totalUsers}">0</div>
+                            <div class="ds-text-sm ds-text-secondary">Khách hàng và chủ nhà hàng đang hoạt động</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Tổng nhà hàng</div>
+                            <div class="value" th:text="${totalRestaurants}">0</div>
+                            <div class="ds-text-sm ds-text-secondary">Bao gồm đã duyệt và đang chờ duyệt</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Booking tuần này</div>
+                            <div class="value" th:text="${newBookingsWeek}">0</div>
+                            <div class="ds-text-sm ds-text-secondary">Số lượt đặt bàn mới trong 7 ngày qua</div>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Error Message -->
+
+                <!-- Quick actions -->
+                <div class="admin-quick-actions">
+                    <a th:href="@{/admin/withdrawal}">
+                        <span class="icon"><i class="fas fa-credit-card"></i></span>
+                        <strong>Quản lý rút tiền</strong>
+                        <span class="ds-text-sm ds-text-secondary">Xử lý yêu cầu rút tiền từ nhà hàng</span>
+                    </a>
+                    <a th:href="@{/admin/restaurant/requests}">
+                        <span class="icon"><i class="fas fa-utensils"></i></span>
+                        <strong>Duyệt nhà hàng</strong>
+                        <span class="ds-text-sm ds-text-secondary">Quản lý các yêu cầu đăng ký mới</span>
+                        <span th:if="${pendingRestaurants > 0}" class="badge badge-pill bg-warning ds-mt-2" th:text="${pendingRestaurants} + ' chờ duyệt'">0 chờ duyệt</span>
+                    </a>
+                    <a th:href="@{/admin/users}">
+                        <span class="icon"><i class="fas fa-users"></i></span>
+                        <strong>Quản lý người dùng</strong>
+                        <span class="ds-text-sm ds-text-secondary">Quản lý tài khoản khách hàng và nhà hàng</span>
+                    </a>
+                    <a th:href="@{/admin/chat}">
+                        <span class="icon"><i class="fas fa-comments"></i></span>
+                        <strong>Quản lý chat</strong>
+                        <span class="ds-text-sm ds-text-secondary">Hỗ trợ khách hàng qua hệ thống chat</span>
+                    </a>
+                    <a th:href="@{/admin/rate-limiting}">
+                        <span class="icon"><i class="fas fa-shield-alt"></i></span>
+                        <strong>Rate limiting</strong>
+                        <span class="ds-text-sm ds-text-secondary">Giám sát và cấu hình giới hạn tần suất</span>
+                    </a>
+                    <a th:href="@{/admin/settings}">
+                        <span class="icon"><i class="fas fa-cog"></i></span>
+                        <strong>Cài đặt hệ thống</strong>
+                        <span class="ds-text-sm ds-text-secondary">Cấu hình thông số và quyền admin</span>
+                    </a>
+                </div>
+
+                <!-- Alerts -->
                 <div th:if="${error}" class="alert alert-danger" role="alert">
-                    <i class="fas fa-exclamation-triangle"></i> <span th:text="${error}"></span>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span th:text="${error}"></span>
                 </div>
-            </div>
-            
-            <!-- Financial Statistics -->
-            <div class="admin-container">
-                <h2 class="section-title">
-                    <i class="fas fa-chart-line"></i> Thống kê Tài chính
-                </h2>
-                <div class="row">
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="stats-card">
-                            <div class="stats-number text-warning" th:text="${withdrawalStats != null ? withdrawalStats.pendingCount : 0}">0</div>
-                            <div class="stats-label">Yêu cầu chờ xử lý</div>
+
+                <!-- Financial overview -->
+                <section class="ds-grid ds-grid-auto ds-gap-6">
+                    <article class="ds-card ds-card-body">
+                        <h2 class="ds-heading-4 ds-mb-4"><i class="fas fa-chart-line me-2"></i>Thống kê tài chính</h2>
+                        <div class="ds-grid ds-grid-cols-4 ds-gap-4 ds-grid-auto">
+                            <div class="admin-stat-card">
+                                <div class="label">Yêu cầu chờ xử lý</div>
+                                <div class="value ds-text-warning" th:text="${withdrawalStats != null ? withdrawalStats.pendingCount : 0}">0</div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <div class="label">Tiền chờ rút (VNĐ)</div>
+                                <div class="value ds-text-warning" th:text="${totalPendingAmount != null ? totalPendingAmount : 0}">0</div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <div class="label">Đã rút (VNĐ)</div>
+                                <div class="value ds-text-success" th:text="${totalWithdrawnAmount != null ? totalWithdrawnAmount : 0}">0</div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <div class="label">Hoa hồng (VNĐ)</div>
+                                <div class="value ds-text-primary" th:text="${totalCommission != null ? totalCommission : 0}">0</div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="ds-card ds-card-body">
+                        <h2 class="ds-heading-4 ds-mb-4"><i class="fas fa-coins me-2"></i>Doanh thu</h2>
+                        <div class="ds-grid ds-grid-cols-3 ds-gap-4 ds-grid-auto">
+                            <div class="admin-stat-card">
+                                <div class="label">Doanh thu hôm nay</div>
+                                <div class="value ds-text-success" th:text="${todayRevenue}">0</div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <div class="label">Doanh thu tháng</div>
+                                <div class="value ds-text-primary" th:text="${monthlyRevenue}">0</div>
+                            </div>
+                            <div class="admin-stat-card">
+                                <div class="label">Tổng doanh thu</div>
+                                <div class="value ds-text-primary" th:text="${totalRevenue}">0</div>
+                            </div>
+                        </div>
+                    </article>
+                </section>
+
+                <!-- Restaurant status -->
+                <section class="ds-card ds-card-body">
+                    <h2 class="ds-heading-4 ds-mb-4"><i class="fas fa-utensils me-2"></i>Thống kê nhà hàng</h2>
+                    <div class="ds-grid ds-grid-cols-4 ds-gap-4 ds-grid-auto">
+                        <div class="admin-stat-card">
+                            <div class="label">Chờ duyệt</div>
+                            <div class="value ds-text-warning" th:text="${pendingRestaurants}">0</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Đã duyệt</div>
+                            <div class="value ds-text-success" th:text="${approvedRestaurants}">0</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Bị từ chối</div>
+                            <div class="value ds-text-error" th:text="${rejectedRestaurants}">0</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Tạm dừng</div>
+                            <div class="value ds-text-secondary" th:text="${suspendedRestaurants}">0</div>
                         </div>
                     </div>
-                    
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="stats-card">
-                            <div class="stats-number text-warning" th:text="${totalPendingAmount != null ? totalPendingAmount : 0}">0</div>
-                            <div class="stats-label">Tiền chờ rút (VNĐ)</div>
+                </section>
+
+                <!-- Engagement stats -->
+                <section class="ds-card ds-card-body">
+                    <h2 class="ds-heading-4 ds-mb-4"><i class="fas fa-user-plus me-2"></i>Hoạt động hôm nay</h2>
+                    <div class="ds-grid ds-grid-cols-4 ds-gap-4 ds-grid-auto">
+                        <div class="admin-stat-card">
+                            <div class="label">Người dùng mới</div>
+                            <div class="value ds-text-primary" th:text="${newUsersToday}">0</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Nhà hàng mới</div>
+                            <div class="value ds-text-primary" th:text="${newRestaurantsToday}">0</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Đặt bàn đang hoạt động</div>
+                            <div class="value ds-text-success" th:text="${activeReservations}">0</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Yêu cầu rút tiền</div>
+                            <div class="value ds-text-warning" th:text="${pendingWithdrawals}">0</div>
                         </div>
                     </div>
-                    
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="stats-card">
-                            <div class="stats-number text-success" th:text="${totalWithdrawnAmount != null ? totalWithdrawnAmount : 0}">0</div>
-                            <div class="stats-label">Đã rút (VNĐ)</div>
-                        </div>
+                </section>
+
+                <!-- Top restaurants table -->
+                <section class="ds-card ds-card-body">
+                    <div class="ds-flex ds-items-center ds-justify-between ds-mb-4">
+                        <h2 class="ds-heading-4 ds-m-0"><i class="fas fa-trophy me-2"></i>Top nhà hàng rút tiền</h2>
+                        <span class="ds-text-sm ds-text-secondary">Theo tổng doanh thu và hoạt động rút tiền gần đây</span>
                     </div>
-                    
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="stats-card">
-                            <div class="stats-number text-primary" th:text="${totalCommission != null ? totalCommission : 0}">0</div>
-                            <div class="stats-label">Hoa hồng thu được (VNĐ)</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Restaurant Statistics -->
-            <div class="admin-container">
-                <h2 class="section-title">
-                    <i class="fas fa-utensils"></i> Thống kê Nhà hàng
-                </h2>
-                <div class="row">
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="stats-card">
-                            <div class="stats-number text-warning" th:text="${pendingRestaurants}">0</div>
-                            <div class="stats-label">Chờ duyệt</div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="stats-card">
-                            <div class="stats-number text-success" th:text="${approvedRestaurants}">0</div>
-                            <div class="stats-label">Đã duyệt</div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="stats-card">
-                            <div class="stats-number text-danger" th:text="${rejectedRestaurants}">0</div>
-                            <div class="stats-label">Bị từ chối</div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="stats-card">
-                            <div class="stats-number text-muted" th:text="${suspendedRestaurants}">0</div>
-                            <div class="stats-label">Tạm dừng</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Top Restaurants Table -->
-            <div class="admin-container">
-                <h2 class="section-title">
-                    <i class="fas fa-trophy"></i> Top Nhà hàng Rút tiền
-                </h2>
-                <div class="table-container">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table align-middle">
                             <thead>
                                 <tr>
                                     <th>#</th>
@@ -423,14 +300,14 @@
                                 <tr th:each="restaurant, iterStat : ${topRestaurants}">
                                     <td th:text="${iterStat.index + 1}">1</td>
                                     <td>
-                                        <strong th:text="${restaurant.restaurantName}">Pizza Italia</strong>
-                                        <br><small class="text-muted" th:text="'ID: ' + ${restaurant.restaurantId}">ID: 18</small>
+                                        <strong th:text="${restaurant.restaurantName}">Nhà hàng A</strong><br>
+                                        <small class="ds-text-secondary" th:text="'ID: ' + ${restaurant.restaurantId}">ID: 1</small>
                                     </td>
-                                    <td class="text-primary" th:text="${restaurant.totalRevenue} + ' VNĐ'">10,000,000 VNĐ</td>
-                                    <td class="text-success" th:text="${restaurant.totalWithdrawn} + ' VNĐ'">2,200,000 VNĐ</td>
-                                    <td class="text-warning" th:text="${restaurant.pendingWithdrawal} + ' VNĐ'">2,100,000 VNĐ</td>
-                                    <td class="text-primary" th:text="${restaurant.availableBalance} + ' VNĐ'">4,950,000 VNĐ</td>
-                                    <td class="text-primary" th:text="${restaurant.totalCommission} + ' VNĐ'">750,000 VNĐ</td>
+                                    <td class="ds-text-primary" th:text="${restaurant.totalRevenue} + ' VNĐ'">0 VNĐ</td>
+                                    <td class="ds-text-success" th:text="${restaurant.totalWithdrawn} + ' VNĐ'">0 VNĐ</td>
+                                    <td class="ds-text-warning" th:text="${restaurant.pendingWithdrawal} + ' VNĐ'">0 VNĐ</td>
+                                    <td class="ds-text-primary" th:text="${restaurant.availableBalance} + ' VNĐ'">0 VNĐ</td>
+                                    <td class="ds-text-primary" th:text="${restaurant.totalCommission} + ' VNĐ'">0 VNĐ</td>
                                 </tr>
                                 <tr th:if="${#lists.isEmpty(topRestaurants)}">
                                     <td colspan="7" class="text-center text-muted">Chưa có dữ liệu</td>
@@ -438,131 +315,39 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-            
+                </section>
 
-            <!-- Management Functions -->
-            <div class="admin-container">
-                <h2 class="section-title">
-                    <i class="fas fa-cogs"></i> Quản lý Hệ thống
-                </h2>
-                <div class="row">
-                    <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="management-card">
-                            <div class="icon">
-                                <i class="fas fa-credit-card"></i>
-                            </div>
-                            <h3>Quản lý rút tiền</h3>
-                            <p>Xử lý yêu cầu rút tiền từ nhà hàng</p>
-                            <a th:href="@{/admin/withdrawal}" class="btn btn-primary w-100">
-                                <span>Quản lý rút tiền</span>
-                            </a>
+                <!-- System management -->
+                <section class="ds-card ds-card-body">
+                    <h2 class="ds-heading-4 ds-mb-4"><i class="fas fa-sitemap me-2"></i>Điều hướng quản trị</h2>
+                    <div class="ds-grid ds-grid-cols-4 ds-gap-4 ds-grid-auto">
+                        <div class="admin-stat-card">
+                            <div class="label">Quản lý rút tiền</div>
+                            <p class="ds-text-sm ds-text-secondary ds-mt-2">Xử lý yêu cầu rút tiền từ nhà hàng</p>
+                            <a th:href="@{/admin/withdrawal}" class="ds-btn ds-btn-primary ds-btn-sm ds-mt-3 w-100">Đi đến trang</a>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Quản lý thông báo</div>
+                            <p class="ds-text-sm ds-text-secondary ds-mt-2">Gửi và giám sát thông báo hệ thống</p>
+                            <a th:href="@{/admin/notifications}" class="ds-btn ds-btn-primary ds-btn-sm ds-mt-3 w-100">Đi đến trang</a>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Báo cáo & thống kê</div>
+                            <p class="ds-text-sm ds-text-secondary ds-mt-2">Theo dõi báo cáo chi tiết theo thời gian</p>
+                            <a th:href="@{/admin/reports}" class="ds-btn ds-btn-primary ds-btn-sm ds-mt-3 w-100">Đi đến trang</a>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div class="label">Cài đặt hệ thống</div>
+                            <p class="ds-text-sm ds-text-secondary ds-mt-2">Cấu hình nền tảng và quyền hạn</p>
+                            <a th:href="@{/admin/settings}" class="ds-btn ds-btn-primary ds-btn-sm ds-mt-3 w-100">Đi đến trang</a>
                         </div>
                     </div>
-                    
-                    <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="management-card">
-                            <div class="icon">
-                                <i class="fas fa-utensils"></i>
-                                <span th:if="${pendingRestaurants > 0}" class="badge bg-warning ms-1" th:text="${pendingRestaurants}">0</span>
-                            </div>
-                            <h3>Duyệt nhà hàng</h3>
-                            <p>Quản lý yêu cầu đăng ký nhà hàng</p>
-                            <a th:href="@{/admin/restaurant/requests}" class="btn btn-primary w-100">
-                                <span>Duyệt nhà hàng</span>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="management-card">
-                            <div class="icon">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <h3>Quản lý người dùng</h3>
-                            <p>Quản lý tài khoản người dùng</p>
-                            <a th:href="@{/admin/users}" class="btn btn-primary w-100">
-                                <span>Quản lý người dùng</span>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="management-card">
-                            <div class="icon">
-                                <i class="fas fa-comments"></i>
-                            </div>
-                            <h3>Quản lý chat</h3>
-                            <p>Hỗ trợ khách hàng qua chat</p>
-                            <a th:href="@{/admin/chat}" class="btn btn-primary w-100">
-                                <span>Quản lý chat</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                </section>
             </div>
-            
-            <!-- Additional Management Functions -->
-            <div class="admin-container">
-                <div class="row">
-                    <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="management-card">
-                            <div class="icon">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <h3>Rate Limiting</h3>
-                            <p>Quản lý giới hạn tần suất truy cập</p>
-                            <a th:href="@{/admin/rate-limiting}" class="btn btn-primary w-100">
-                                <span>Quản lý Rate Limiting</span>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="management-card">
-                            <div class="icon">
-                                <i class="fas fa-cog"></i>
-                            </div>
-                            <h3>Cài đặt hệ thống</h3>
-                            <p>Cấu hình và cài đặt hệ thống</p>
-                            <a th:href="@{/admin/settings}" class="btn btn-primary w-100">
-                                <span>Cài đặt hệ thống</span>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="management-card">
-                            <div class="icon">
-                                <i class="fas fa-chart-line"></i>
-                            </div>
-                            <h3>Báo cáo</h3>
-                            <p>Xem báo cáo và thống kê chi tiết</p>
-                            <a th:href="@{/admin/reports}" class="btn btn-primary w-100">
-                                <span>Xem báo cáo</span>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="management-card">
-                            <div class="icon">
-                                <i class="fas fa-bell"></i>
-                            </div>
-                            <h3>Thông báo</h3>
-                            <p>Quản lý thông báo hệ thống</p>
-                            <a th:href="@{/admin/notifications}" class="btn btn-primary w-100">
-                                <span>Quản lý thông báo</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </section>
     </main>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
 </body>
 </html>

@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
 /**
  * Interceptor for rate limiting requests based on IP address
  */
@@ -28,14 +27,24 @@ public class RateLimitingInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String clientIp = getClientIpAddress(request);
         String requestPath = request.getRequestURI();
-        String method = request.getMethod();
 
         // Log all requests for debugging
+        String method = request.getMethod();
         logger.info("🔍 INTERCEPTING - Method: {}, Path: {}, IP: {}", method, requestPath, clientIp);
         
+        // Only enforce rate limiting on mutating requests (POST/PUT/PATCH/DELETE)
+        boolean isMutatingRequest = "POST".equalsIgnoreCase(method)
+                || "PUT".equalsIgnoreCase(method)
+                || "PATCH".equalsIgnoreCase(method)
+                || "DELETE".equalsIgnoreCase(method);
+
+        if (!isMutatingRequest) {
+            return true;
+        }
+
         // Apply rate limiting based on endpoint type
         boolean isAllowed = true;
-        
+
         if (requestPath.startsWith("/booking/") || requestPath.startsWith("/api/booking/")) {
             isAllowed = generalRateLimitingService.isBookingAllowed(request, response);
         } else if (requestPath.startsWith("/api/chat/")) {
