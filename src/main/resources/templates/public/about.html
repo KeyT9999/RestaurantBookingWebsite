@@ -5,77 +5,159 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Về chúng tôi - Book Eat</title>
-    
-    <!-- Bootstrap 5 CSS -->
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Resy Style CSS -->
-    <link th:href="@{/css/home-resy.css}" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
 </head>
-<body class="page-bg">
-    <!-- Resy Style Header -->
-    <div th:replace="~{fragments/resy-header :: resy-header}"></div>
-    
-    	<div class="admin-content py-4">
-		<div class="container">
-			<div class="row justify-content-center">
-				<div class="col-md-10">
-					<div class="text-center mb-5">
-						<h1 class="section-title">Về Book Eat</h1>
-						<p class="section__subtitle">Trải nghiệm ẩm thực đẳng cấp</p>
-					</div>
-                
-                					<div class="row">
-						<div class="col-md-6 mb-4">
-							<div class="card booking-card">
-								<div class="card-body">
-									<h3 class="card-title">
-										<i class="fas fa-utensils luxury-icon"></i> Tầm nhìn
-									</h3>
-									<p class="card-text text-muted">
-										Mang đến những trải nghiệm ẩm thực tuyệt vời nhất với chất lượng dịch vụ hoàn hảo và không gian sang trọng.
-									</p>
-								</div>
-							</div>
-						</div>
-						
-						<div class="col-md-6 mb-4">
-							<div class="card booking-card">
-								<div class="card-body">
-									<h3 class="card-title">
-										<i class="fas fa-star luxury-icon"></i> Sứ mệnh
-									</h3>
-									<p class="card-text text-muted">
-										Tạo ra những khoảnh khắc đáng nhớ thông qua nghệ thuật ẩm thực và dịch vụ khách hàng xuất sắc.
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
-                
-                					<div class="text-center mt-5">
-						<a th:href="@{/booking/new}" class="btn btn-gold btn--large me-3">
-							<i class="fas fa-calendar-plus"></i> Đặt bàn ngay
-						</a>
-						<a th:href="@{/}" class="btn btn-outline-secondary btn--large">
-							<i class="fas fa-home"></i> Về trang chủ
-						</a>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<!-- Resy Footer -->
-		<div th:replace="~{fragments/resy-footer :: resy-footer}"></div>
-	</div>
-	
-	<!-- Resy Scripts -->
-	<div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+<body class="ds-bg-white">
+    <div th:with="activeNav='about'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+
+    <main>
+        <section class="ds-bg-gray-50" style="padding: var(--ds-space-16) 0;">
+            <div class="ds-container">
+                <nav class="ds-breadcrumb" aria-label="breadcrumb">
+                    <ol class="ds-breadcrumb-list">
+                        <li class="ds-breadcrumb-item">
+                            <a th:href="@{/}">Trang chủ</a>
+                        </li>
+                        <li class="ds-breadcrumb-item active">
+                            <span>Về chúng tôi</span>
+                        </li>
+                    </ol>
+                </nav>
+
+                <div class="ds-flex ds-flex-col ds-items-center ds-text-center ds-gap-4">
+                    <h1 class="ds-heading-2">Về Book Eat</h1>
+                    <p class="ds-text-large ds-text-secondary" style="max-width: 640px;">
+                        Book Eat kết nối những tín đồ ẩm thực với những nhà hàng tốt nhất trên khắp Việt Nam,
+                        mang đến trải nghiệm đặt bàn liền mạch, tinh tế và giàu cảm xúc.
+                    </p>
+                    <div class="ds-flex ds-gap-4 ds-justify-center ds-flex-wrap ds-mt-4">
+                        <a th:href="@{/booking/new}" class="ds-btn ds-btn-primary ds-btn-lg">
+                            <i class="fas fa-calendar-plus"></i>
+                            Đặt bàn ngay
+                        </a>
+                        <a th:href="@{/}" class="ds-btn ds-btn-secondary ds-btn-lg">
+                            <i class="fas fa-home"></i>
+                            Về trang chủ
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container">
+                <div class="ds-grid ds-grid-auto ds-gap-8">
+                    <article class="ds-card">
+                        <div class="ds-card-body ds-flex ds-flex-col ds-items-center ds-gap-4 ds-text-center">
+                            <div class="ds-feature-icon">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <h2 class="ds-heading-4">Tầm nhìn</h2>
+                            <p class="ds-text-base ds-text-secondary">
+                                Mang đến trải nghiệm ẩm thực tuyệt vời nhất với chất lượng dịch vụ hoàn hảo và
+                                không gian sang trọng dành cho mọi khách hàng.
+                            </p>
+                        </div>
+                    </article>
+                    <article class="ds-card">
+                        <div class="ds-card-body ds-flex ds-flex-col ds-items-center ds-gap-4 ds-text-center">
+                            <div class="ds-feature-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <h2 class="ds-heading-4">Sứ mệnh</h2>
+                            <p class="ds-text-base ds-text-secondary">
+                                Tạo ra những khoảnh khắc đáng nhớ thông qua nghệ thuật ẩm thực và dịch vụ khách
+                                hàng tinh tế, hiện đại.
+                            </p>
+                        </div>
+                    </article>
+                    <article class="ds-card">
+                        <div class="ds-card-body ds-flex ds-flex-col ds-items-center ds-gap-4 ds-text-center">
+                            <div class="ds-feature-icon">
+                                <i class="fas fa-gem"></i>
+                            </div>
+                            <h2 class="ds-heading-4">Giá trị cốt lõi</h2>
+                            <p class="ds-text-base ds-text-secondary">
+                                Chúng tôi ưu tiên sự tinh tế, tin cậy và cá nhân hóa trong mọi hành trình ẩm thực
+                                của khách hàng.
+                            </p>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="ds-bg-gray-50" style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container">
+                <div class="ds-card">
+                    <div class="ds-card-body ds-grid ds-grid-auto ds-gap-6">
+                        <div class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">Giá trị khác biệt</h2>
+                            <p class="ds-text-base ds-text-secondary">
+                                Mỗi trải nghiệm đặt bàn được thiết kế để phản ánh phong cách sống hiện đại, đồng
+                                thời giữ trọn cảm giác gần gũi và ấm áp cho mọi thực khách.
+                            </p>
+                        </div>
+                        <ul class="ds-flex ds-flex-col ds-gap-3 ds-m-0 ds-p-0" style="list-style: none;">
+                            <li class="ds-flex ds-gap-3 ds-items-start">
+                                <span class="ds-text-primary">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <span class="ds-text-base ds-text-secondary">
+                                    Cá nhân hóa đề xuất dựa trên sở thích và thói quen của từng người dùng.
+                                </span>
+                            </li>
+                            <li class="ds-flex ds-gap-3 ds-items-start">
+                                <span class="ds-text-primary">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <span class="ds-text-base ds-text-secondary">
+                                    Quản lý đặt bàn thông minh giúp hành trình dùng bữa trọn vẹn và trơn tru.
+                                </span>
+                            </li>
+                            <li class="ds-flex ds-gap-3 ds-items-start">
+                                <span class="ds-text-primary">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <span class="ds-text-base ds-text-secondary">
+                                    Hợp tác chặt chẽ với nhà hàng đối tác để đảm bảo chất lượng dịch vụ cao cấp.
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container">
+                <h2 class="ds-heading-3 ds-text-center" style="margin-bottom: var(--ds-space-6);">
+                    Những con số ấn tượng
+                </h2>
+                <div class="ds-grid ds-grid-auto ds-gap-6 ds-text-center">
+                    <div class="ds-stat-item">
+                        <span class="ds-stat-number">500+</span>
+                        <span class="ds-stat-label">Nhà hàng đối tác toàn quốc</span>
+                    </div>
+                    <div class="ds-stat-item">
+                        <span class="ds-stat-number">150K+</span>
+                        <span class="ds-stat-label">Lượt đặt bàn thành công mỗi năm</span>
+                    </div>
+                    <div class="ds-stat-item">
+                        <span class="ds-stat-number">4.8/5</span>
+                        <span class="ds-stat-label">Mức độ hài lòng từ khách hàng</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
 </body>
-</html> 
+</html>

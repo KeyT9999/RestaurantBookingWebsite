@@ -1,0 +1,48 @@
+[33mcommit cd5e3f845e30571a5eba984edb8c2943afe851f4[m
+Author: Thang <trankimthang0207@gmail.com>
+Date:   Sun Oct 19 16:52:06 2025 +0700
+
+    dg fix AI
+
+analyze_ai_data_sources.bat
+check_ai_data_detailed.sql
+check_ai_database_data.sql
+check_database_data.bat
+debug_ai_flow.bat
+debug_ai_system.bat
+debug_openai_parsing.bat
+debug_pizza_issue.bat
+final_pizza_test.bat
+fix_ai_configuration.bat
+quick_test_encoding.bat
+restart_and_debug_vietnamese.bat
+restart_and_test_ai.bat
+restart_and_test_encoding.bat
+simple_ai_test.bat
+src/main/java/com/example/booking/config/EncodingConfiguration.java
+src/main/java/com/example/booking/config/OpenAIConfiguration.java
+src/main/java/com/example/booking/repository/RestaurantProfileRepository.java
+src/main/java/com/example/booking/service/RestaurantManagementService.java
+src/main/java/com/example/booking/service/ai/AiSearchService.java
+src/main/java/com/example/booking/service/ai/IntentMapping.java
+src/main/java/com/example/booking/service/ai/OpenAIService.java
+src/main/java/com/example/booking/service/ai/RecommendationService.java
+src/main/java/com/example/booking/test/OpenAITest.java
+src/main/java/com/example/booking/web/controller/AISearchController.java
+src/main/java/com/example/booking/web/controller/TestController.java
+src/main/java/com/example/booking/web/controller/TestPageController.java
+src/main/resources/application.yml
+src/main/resources/static/ai-test.html
+src/main/resources/static/simple-ai-test.html
+test_after_restart.bat
+test_after_startup.bat
+test_ai_fixed.bat
+test_ai_parsing_fix.bat
+test_encoding_fix.bat
+test_fallback_fix.bat
+test_final_fixes.bat
+test_frontend.bat
+test_openai_key.bat
+test_pizza_query.bat
+test_strict_ai_fixes.bat
+test_vietnamese_fix.bat

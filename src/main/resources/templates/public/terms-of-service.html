@@ -4,348 +4,264 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Điều khoản sử dụng - Book Eat</title>
-    
-    <!-- CSS -->
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
-    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
-    <link th:href="@{/css/fontawesome.min.css}" rel="stylesheet">
-    
-    <style>
-        .terms-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            background: var(--color-background-light);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .terms-header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid var(--color-primary);
-        }
-        
-        .terms-header h1 {
-            color: var(--color-primary);
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        
-        .terms-header p {
-            color: var(--color-text-secondary);
-            font-size: 1.1rem;
-        }
-        
-        .terms-content {
-            line-height: 1.8;
-            color: var(--color-text-primary);
-        }
-        
-        .terms-section {
-            margin-bottom: 30px;
-        }
-        
-        .terms-section h2 {
-            color: var(--color-primary);
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--color-border);
-        }
-        
-        .terms-section h3 {
-            color: var(--color-secondary);
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        
-        .terms-section p {
-            margin-bottom: 12px;
-        }
-        
-        .terms-section ul, .terms-section ol {
-            margin-left: 20px;
-            margin-bottom: 15px;
-        }
-        
-        .terms-section li {
-            margin-bottom: 8px;
-        }
-        
-        .highlight-box {
-            background: var(--color-primary-light);
-            border-left: 4px solid var(--color-primary);
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-        }
-        
-        .contact-info {
-            background: var(--color-background-light);
-            border: 1px solid var(--color-border);
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
-        }
-        
-        .contact-info h3 {
-            color: var(--color-primary);
-            margin-bottom: 15px;
-        }
-        
-        .contact-info p {
-            margin-bottom: 8px;
-        }
-        
-        .contact-info strong {
-            color: var(--color-primary);
-        }
-        
-        .back-button {
-            text-align: center;
-            margin-top: 40px;
-        }
-        
-        .btn-back {
-            background: var(--color-primary);
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-back:hover {
-            background: var(--color-primary-dark);
-            color: white;
-            text-decoration: none;
-            transform: translateY(-2px);
-        }
-    </style>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
 </head>
-<body>
-    <!-- Header Fragment -->
-    <div th:replace="fragments/header :: header"></div>
+<body class="ds-bg-white">
+    <div th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
-    <div class="main-content">
-        <div class="terms-container">
-            <!-- Header -->
-            <div class="terms-header">
-                <h1>📋 Điều khoản sử dụng dịch vụ</h1>
-                <p>Book Eat - Nền tảng đặt bàn nhà hàng trực tuyến</p>
-                <p><small>Cập nhật lần cuối: <span th:text="${#dates.format(#dates.createNow(), 'dd/MM/yyyy')}"></span></small></p>
-            </div>
-
-            <!-- Content -->
-            <div class="terms-content">
-                <!-- Section 1: Giới thiệu -->
-                <div class="terms-section">
-                    <h2>1. Giới thiệu chung</h2>
-                    <p>Chào mừng bạn đến với Book Eat - nền tảng đặt bàn nhà hàng trực tuyến hàng đầu Việt Nam. 
-                    Bằng việc sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ các điều khoản và điều kiện được quy định trong văn bản này.</p>
-                    
-                    <div class="highlight-box">
-                        <strong>📌 Lưu ý quan trọng:</strong> Vui lòng đọc kỹ toàn bộ điều khoản này trước khi sử dụng dịch vụ. 
-                        Việc tiếp tục sử dụng dịch vụ đồng nghĩa với việc bạn đã hiểu và đồng ý với tất cả các điều khoản.
-                    </div>
-                </div>
-
-                <!-- Section 2: Định nghĩa -->
-                <div class="terms-section">
-                    <h2>2. Định nghĩa thuật ngữ</h2>
-                    <ul>
-                        <li><strong>"Book Eat"</strong>: Nền tảng đặt bàn nhà hàng trực tuyến do chúng tôi vận hành</li>
-                        <li><strong>"Người dùng"</strong>: Cá nhân hoặc tổ chức sử dụng dịch vụ Book Eat</li>
-                        <li><strong>"Nhà hàng"</strong>: Cơ sở kinh doanh dịch vụ ăn uống đã đăng ký trên nền tảng</li>
-                        <li><strong>"Đặt bàn"</strong>: Việc đặt trước chỗ ngồi tại nhà hàng thông qua nền tảng</li>
-                        <li><strong>"Khách hàng"</strong>: Người dùng thực hiện đặt bàn</li>
-                        <li><strong>"Chủ nhà hàng"</strong>: Người đại diện pháp lý của nhà hàng trên nền tảng</li>
-                    </ul>
-                </div>
-
-                <!-- Section 3: Điều khoản chung -->
-                <div class="terms-section">
-                    <h2>3. Điều khoản sử dụng chung</h2>
-                    
-                    <h3>3.1. Điều kiện sử dụng</h3>
-                    <ul>
-                        <li>Bạn phải từ 18 tuổi trở lên hoặc có sự đồng ý của người giám hộ</li>
-                        <li>Thông tin đăng ký phải chính xác và cập nhật</li>
-                        <li>Không được sử dụng dịch vụ cho mục đích bất hợp pháp</li>
-                        <li>Tuân thủ mọi quy định pháp luật hiện hành</li>
-                    </ul>
-
-                    <h3>3.2. Quyền và trách nhiệm của người dùng</h3>
-                    <ul>
-                        <li>Cung cấp thông tin chính xác khi đăng ký và sử dụng dịch vụ</li>
-                        <li>Bảo mật thông tin tài khoản và mật khẩu</li>
-                        <li>Thông báo ngay lập tức về bất kỳ hoạt động bất thường nào</li>
-                        <li>Thanh toán đầy đủ và đúng hạn cho các dịch vụ đã sử dụng</li>
-                    </ul>
-
-                    <h3>3.3. Quyền và trách nhiệm của Book Eat</h3>
-                    <ul>
-                        <li>Cung cấp nền tảng đặt bàn ổn định và an toàn</li>
-                        <li>Bảo vệ thông tin cá nhân của người dùng</li>
-                        <li>Hỗ trợ kỹ thuật và giải quyết khiếu nại</li>
-                        <li>Duy trì chất lượng dịch vụ theo cam kết</li>
-                    </ul>
-                </div>
-
-                <!-- Section 4: Đặt bàn -->
-                <div class="terms-section">
-                    <h2>4. Quy định về đặt bàn</h2>
-                    
-                    <h3>4.1. Quy trình đặt bàn</h3>
-                    <ol>
-                        <li>Lựa chọn nhà hàng và thời gian mong muốn</li>
-                        <li>Cung cấp thông tin liên hệ và số lượng khách</li>
-                        <li>Thanh toán phí đặt bàn (nếu có)</li>
-                        <li>Nhận xác nhận đặt bàn từ nhà hàng</li>
+    <main>
+        <section class="ds-bg-gray-50" style="padding: var(--ds-space-16) 0;">
+            <div class="ds-container">
+                <nav class="ds-breadcrumb" aria-label="breadcrumb">
+                    <ol class="ds-breadcrumb-list">
+                        <li class="ds-breadcrumb-item">
+                            <a th:href="@{/}">Trang chủ</a>
+                        </li>
+                        <li class="ds-breadcrumb-item active">
+                            <span>Điều khoản sử dụng</span>
+                        </li>
                     </ol>
+                </nav>
 
-                    <h3>4.2. Chính sách hủy và hoàn tiền</h3>
-                    <ul>
-                        <li><strong>Hủy trước 24 giờ:</strong> Hoàn tiền 100%</li>
-                        <li><strong>Hủy trước 12 giờ:</strong> Hoàn tiền 50%</li>
-                        <li><strong>Hủy dưới 12 giờ:</strong> Không hoàn tiền</li>
-                        <li><strong>No-show:</strong> Không hoàn tiền, có thể bị phạt</li>
-                    </ul>
-
-                    <h3>4.3. Trách nhiệm của nhà hàng</h3>
-                    <ul>
-                        <li>Xác nhận đặt bàn trong vòng 2 giờ</li>
-                        <li>Chuẩn bị bàn đúng thời gian đã đặt</li>
-                        <li>Thông báo sớm nếu không thể phục vụ</li>
-                        <li>Cung cấp dịch vụ chất lượng theo cam kết</li>
-                    </ul>
-                </div>
-
-                <!-- Section 5: Thanh toán -->
-                <div class="terms-section">
-                    <h2>5. Quy định thanh toán</h2>
-                    
-                    <h3>5.1. Phương thức thanh toán</h3>
-                    <ul>
-                        <li>Thẻ tín dụng/ghi nợ quốc tế</li>
-                        <li>Ví điện tử (MoMo, ZaloPay, VNPay)</li>
-                        <li>Chuyển khoản ngân hàng</li>
-                        <li>Thanh toán tại nhà hàng (một phần)</li>
-                    </ul>
-
-                    <h3>5.2. Phí dịch vụ</h3>
-                    <ul>
-                        <li>Phí đặt bàn: 10% giá trị đơn hàng (tối thiểu 50,000 VNĐ)</li>
-                        <li>Phí giao dịch: 2.5% (áp dụng cho thanh toán online)</li>
-                        <li>Phí hủy muộn: 50% phí đặt bàn</li>
-                    </ul>
-
-                    <h3>5.3. Hoàn tiền</h3>
-                    <p>Thời gian hoàn tiền: 3-7 ngày làm việc tùy theo phương thức thanh toán ban đầu.</p>
-                </div>
-
-                <!-- Section 6: Nhà hàng đối tác -->
-                <div class="terms-section">
-                    <h2>6. Điều khoản dành cho nhà hàng đối tác</h2>
-                    
-                    <h3>6.1. Điều kiện tham gia</h3>
-                    <ul>
-                        <li>Có giấy phép kinh doanh hợp lệ</li>
-                        <li>Đáp ứng tiêu chuẩn vệ sinh an toàn thực phẩm</li>
-                        <li>Có không gian phục vụ phù hợp</li>
-                        <li>Cam kết chất lượng dịch vụ</li>
-                    </ul>
-
-                    <h3>6.2. Hoa hồng và thanh toán</h3>
-                    <ul>
-                        <li>Hoa hồng nền tảng: 5-8% doanh thu từ đặt bàn</li>
-                        <li>Thanh toán hàng tuần vào thứ 2</li>
-                        <li>Báo cáo chi tiết giao dịch hàng tháng</li>
-                        <li>Hỗ trợ marketing và quảng bá</li>
-                    </ul>
-
-                    <h3>6.3. Nghĩa vụ của nhà hàng</h3>
-                    <ul>
-                        <li>Cập nhật thông tin menu và giá cả chính xác</li>
-                        <li>Xác nhận đặt bàn kịp thời</li>
-                        <li>Chuẩn bị bàn đúng thời gian</li>
-                        <li>Xử lý khiếu nại khách hàng</li>
-                        <li>Tuân thủ quy định vệ sinh an toàn thực phẩm</li>
-                    </ul>
-                </div>
-
-                <!-- Section 7: Bảo mật và quyền riêng tư -->
-                <div class="terms-section">
-                    <h2>7. Bảo mật và quyền riêng tư</h2>
-                    
-                    <h3>7.1. Bảo vệ thông tin cá nhân</h3>
-                    <ul>
-                        <li>Mã hóa tất cả dữ liệu nhạy cảm</li>
-                        <li>Không chia sẻ thông tin với bên thứ ba</li>
-                        <li>Tuân thủ Luật An toàn thông tin mạng</li>
-                        <li>Quyền truy cập và chỉnh sửa thông tin cá nhân</li>
-                    </ul>
-
-                    <h3>7.2. Cookies và theo dõi</h3>
-                    <p>Chúng tôi sử dụng cookies để cải thiện trải nghiệm người dùng. Bạn có thể tắt cookies trong cài đặt trình duyệt.</p>
-                </div>
-
-                <!-- Section 8: Trách nhiệm pháp lý -->
-                <div class="terms-section">
-                    <h2>8. Trách nhiệm pháp lý</h2>
-                    
-                    <h3>8.1. Giới hạn trách nhiệm</h3>
-                    <ul>
-                        <li>Book Eat không chịu trách nhiệm về chất lượng món ăn</li>
-                        <li>Không bồi thường thiệt hại gián tiếp</li>
-                        <li>Trách nhiệm tối đa: Giá trị đơn hàng</li>
-                        <li>Không chịu trách nhiệm về sự cố kỹ thuật bất khả kháng</li>
-                    </ul>
-
-                    <h3>8.2. Giải quyết tranh chấp</h3>
-                    <p>Mọi tranh chấp sẽ được giải quyết thông qua thương lượng. Nếu không thành công, sẽ đưa ra Tòa án có thẩm quyền tại TP. Hồ Chí Minh.</p>
-                </div>
-
-                <!-- Section 9: Thay đổi điều khoản -->
-                <div class="terms-section">
-                    <h2>9. Thay đổi điều khoản</h2>
-                    <p>Book Eat có quyền cập nhật điều khoản này. Thay đổi sẽ có hiệu lực sau 30 ngày thông báo. 
-                    Việc tiếp tục sử dụng dịch vụ đồng nghĩa với việc chấp nhận điều khoản mới.</p>
-                </div>
-
-                <!-- Contact Info -->
-                <div class="contact-info">
-                    <h3>📞 Thông tin liên hệ</h3>
-                    <p><strong>Địa chỉ:</strong> FPT University Da Nang</p>
-                    <p><strong>Hotline:</strong> +84 868899104</p>
-                    <p><strong>Email:</strong> support@bookeat.vn</p>
-                    <p><strong>Thời gian hỗ trợ:</strong> 8:00 - 22:00 (Thứ 2 - Chủ nhật)</p>
+                <div class="ds-flex ds-flex-col ds-items-center ds-text-center ds-gap-4">
+                    <h1 class="ds-heading-2">Điều khoản sử dụng dịch vụ</h1>
+                    <p class="ds-text-large ds-text-secondary" style="max-width: 760px;">
+                        Book Eat - nền tảng đặt bàn nhà hàng trực tuyến hàng đầu Việt Nam. Vui lòng đọc kỹ toàn bộ điều khoản trước khi sử dụng dịch vụ.
+                    </p>
+                    <p class="ds-text-small ds-text-secondary ds-mb-0">
+                        <strong>Cập nhật lần cuối:</strong>
+                        <span th:text="${#dates.format(#dates.createNow(), 'dd/MM/yyyy')}"></span>
+                    </p>
                 </div>
             </div>
+        </section>
 
-            <!-- Back Button -->
-            <div class="back-button">
-                <a th:href="@{/}" class="btn-back">
-                    <i class="fas fa-arrow-left"></i> Quay lại trang chủ
-                </a>
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container">
+                <article class="ds-card">
+                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-8">
+                        <section class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">1. Giới thiệu chung</h2>
+                            <p class="ds-text-base ds-text-secondary">
+                                Chào mừng bạn đến với Book Eat - nền tảng đặt bàn nhà hàng trực tuyến hàng đầu Việt Nam. Bằng việc sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ các điều khoản và điều kiện được quy định trong văn bản này.
+                            </p>
+                            <div class="ds-card ds-bg-gray-50 ds-flex ds-flex-col ds-gap-2" style="border-left: 4px solid var(--ds-primary-black); padding: var(--ds-space-4);">
+                                <p class="ds-text-base ds-text-secondary ds-m-0">
+                                    <strong>📌 Lưu ý quan trọng:</strong> Vui lòng đọc kỹ toàn bộ điều khoản này trước khi sử dụng dịch vụ.
+                                </p>
+                                <p class="ds-text-base ds-text-secondary ds-m-0">
+                                    Việc tiếp tục sử dụng dịch vụ đồng nghĩa với việc bạn đã hiểu và đồng ý với tất cả các điều khoản.
+                                </p>
+                            </div>
+                        </section>
+
+                        <section class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">2. Định nghĩa thuật ngữ</h2>
+                            <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                <li><strong>"Book Eat"</strong>: Nền tảng đặt bàn nhà hàng trực tuyến do chúng tôi vận hành</li>
+                                <li><strong>"Người dùng"</strong>: Cá nhân hoặc tổ chức sử dụng dịch vụ Book Eat</li>
+                                <li><strong>"Nhà hàng"</strong>: Cơ sở kinh doanh dịch vụ ăn uống đã đăng ký trên nền tảng</li>
+                                <li><strong>"Đặt bàn"</strong>: Việc đặt trước chỗ ngồi tại nhà hàng thông qua nền tảng</li>
+                                <li><strong>"Khách hàng"</strong>: Người dùng thực hiện đặt bàn</li>
+                                <li><strong>"Chủ nhà hàng"</strong>: Người đại diện pháp lý của nhà hàng trên nền tảng</li>
+                            </ul>
+                        </section>
+
+                        <section class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">3. Điều khoản sử dụng chung</h2>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">3.1. Điều kiện sử dụng</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Bạn phải từ 18 tuổi trở lên hoặc có sự đồng ý của người giám hộ</li>
+                                    <li>Thông tin đăng ký phải chính xác và cập nhật</li>
+                                    <li>Không được sử dụng dịch vụ cho mục đích bất hợp pháp</li>
+                                    <li>Tuân thủ mọi quy định pháp luật hiện hành</li>
+                                </ul>
+                            </div>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">3.2. Quyền và trách nhiệm của người dùng</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Cung cấp thông tin chính xác khi đăng ký và sử dụng dịch vụ</li>
+                                    <li>Bảo mật tài khoản và mật khẩu</li>
+                                    <li>Thông báo ngay cho Book Eat nếu phát hiện sử dụng trái phép</li>
+                                    <li>Không chia sẻ tài khoản cho bên thứ ba</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">4. Quy trình đặt bàn</h2>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">4.1. Bước 1: Tìm kiếm nhà hàng</h3>
+                                <p class="ds-text-base ds-text-secondary">
+                                    Sử dụng bộ lọc theo vị trí, loại ẩm thực, mức giá và khung giờ để tìm nhà hàng phù hợp. Mỗi nhà hàng đều có thông tin chi tiết về menu, đánh giá và ưu đãi.
+                                </p>
+                            </div>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">4.2. Bước 2: Đặt bàn</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Chọn thời gian, số lượng khách và khu vực ngồi (nếu có)</li>
+                                    <li>Cung cấp thông tin liên hệ và ghi chú yêu cầu đặc biệt</li>
+                                    <li>Xác nhận đặt bàn và nhận email/SMS thông báo</li>
+                                </ul>
+                            </div>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">4.3. Trách nhiệm của nhà hàng</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Xác nhận đặt bàn trong vòng 2 giờ</li>
+                                    <li>Chuẩn bị bàn đúng thời gian đã đặt</li>
+                                    <li>Thông báo sớm nếu không thể phục vụ</li>
+                                    <li>Cung cấp dịch vụ chất lượng theo cam kết</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">5. Quy định thanh toán</h2>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">5.1. Phương thức thanh toán</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Thẻ tín dụng/ghi nợ quốc tế</li>
+                                    <li>Ví điện tử (MoMo, ZaloPay, VNPay)</li>
+                                    <li>Chuyển khoản ngân hàng</li>
+                                    <li>Thanh toán tại nhà hàng (một phần)</li>
+                                </ul>
+                            </div>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">5.2. Phí dịch vụ</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Phí đặt bàn: 10% giá trị đơn hàng (tối thiểu 50,000 VNĐ)</li>
+                                    <li>Phí giao dịch: 2.5% (áp dụng cho thanh toán online)</li>
+                                    <li>Phí hủy muộn: 50% phí đặt bàn</li>
+                                </ul>
+                            </div>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">5.3. Hoàn tiền</h3>
+                                <p class="ds-text-base ds-text-secondary">
+                                    Thời gian hoàn tiền: 3-7 ngày làm việc tùy theo phương thức thanh toán ban đầu.
+                                </p>
+                            </div>
+                        </section>
+
+                        <section class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">6. Điều khoản dành cho nhà hàng đối tác</h2>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">6.1. Điều kiện tham gia</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Có giấy phép kinh doanh hợp lệ</li>
+                                    <li>Đáp ứng tiêu chuẩn vệ sinh an toàn thực phẩm</li>
+                                    <li>Có không gian phục vụ phù hợp</li>
+                                    <li>Cam kết chất lượng dịch vụ</li>
+                                </ul>
+                            </div>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">6.2. Hoa hồng và thanh toán</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Hoa hồng nền tảng: 5-8% doanh thu từ đặt bàn</li>
+                                    <li>Thanh toán hàng tuần vào thứ 2</li>
+                                    <li>Báo cáo chi tiết giao dịch hàng tháng</li>
+                                    <li>Hỗ trợ marketing và quảng bá</li>
+                                </ul>
+                            </div>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">6.3. Nghĩa vụ của nhà hàng</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Cập nhật thông tin menu và giá cả chính xác</li>
+                                    <li>Xác nhận đặt bàn kịp thời</li>
+                                    <li>Chuẩn bị bàn đúng thời gian</li>
+                                    <li>Xử lý khiếu nại khách hàng</li>
+                                    <li>Tuân thủ quy định vệ sinh an toàn thực phẩm</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">7. Bảo mật và quyền riêng tư</h2>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">7.1. Bảo vệ thông tin cá nhân</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Mã hóa tất cả dữ liệu nhạy cảm</li>
+                                    <li>Không chia sẻ thông tin với bên thứ ba</li>
+                                    <li>Tuân thủ Luật An toàn thông tin mạng</li>
+                                    <li>Quyền truy cập và chỉnh sửa thông tin cá nhân</li>
+                                </ul>
+                            </div>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">7.2. Cookies và theo dõi</h3>
+                                <p class="ds-text-base ds-text-secondary">
+                                    Chúng tôi sử dụng cookies để cải thiện trải nghiệm người dùng. Bạn có thể tắt cookies trong cài đặt trình duyệt.
+                                </p>
+                            </div>
+                        </section>
+
+                        <section class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">8. Trách nhiệm pháp lý</h2>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">8.1. Giới hạn trách nhiệm</h3>
+                                <ul class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2" style="list-style: disc; padding-left: var(--ds-space-6);">
+                                    <li>Book Eat không chịu trách nhiệm về chất lượng món ăn</li>
+                                    <li>Không bồi thường thiệt hại gián tiếp</li>
+                                    <li>Trách nhiệm tối đa: Giá trị đơn hàng</li>
+                                    <li>Không chịu trách nhiệm về sự cố kỹ thuật bất khả kháng</li>
+                                </ul>
+                            </div>
+
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-5">8.2. Giải quyết tranh chấp</h3>
+                                <p class="ds-text-base ds-text-secondary">
+                                    Mọi tranh chấp sẽ được giải quyết thông qua thương lượng. Nếu không thành công, sẽ đưa ra Tòa án có thẩm quyền tại TP. Hồ Chí Minh.
+                                </p>
+                            </div>
+                        </section>
+
+                        <section class="ds-flex ds-flex-col ds-gap-3">
+                            <h2 class="ds-heading-3">9. Thay đổi điều khoản</h2>
+                            <p class="ds-text-base ds-text-secondary">
+                                Book Eat có quyền cập nhật điều khoản này. Thay đổi sẽ có hiệu lực sau 30 ngày thông báo. Việc tiếp tục sử dụng dịch vụ đồng nghĩa với việc chấp nhận điều khoản mới.
+                            </p>
+                        </section>
+
+                        <section class="ds-flex ds-flex-col ds-gap-4">
+                            <div class="ds-card ds-bg-gray-50 ds-flex ds-flex-col ds-gap-2" style="border: 1px solid var(--ds-neutral-300); padding: var(--ds-space-4);">
+                                <h3 class="ds-heading-5">📞 Thông tin liên hệ</h3>
+                                <p class="ds-text-base ds-text-secondary ds-m-0"><strong>Địa chỉ:</strong> FPT University Da Nang</p>
+                                <p class="ds-text-base ds-text-secondary ds-m-0"><strong>Hotline:</strong> +84 868899104</p>
+                                <p class="ds-text-base ds-text-secondary ds-m-0"><strong>Email:</strong> support@bookeat.vn</p>
+                                <p class="ds-text-base ds-text-secondary ds-m-0"><strong>Thời gian hỗ trợ:</strong> 8:00 - 22:00 (Thứ 2 - Chủ nhật)</p>
+                            </div>
+
+                            <div class="ds-text-center">
+                                <a th:href="@{/}" class="ds-btn ds-btn-primary ds-btn-lg">
+                                    <i class="fas fa-arrow-left"></i>
+                                    Quay lại trang chủ
+                                </a>
+                            </div>
+                        </section>
+                    </div>
+                </article>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
-    <!-- Footer Fragment -->
-    <div th:replace="fragments/footer :: footer"></div>
-
-    <!-- JavaScript -->
-    <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
 </body>
 </html>
