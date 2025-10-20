@@ -7,9 +7,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -240,6 +238,16 @@ public class RestaurantManagementService {
         // Single database query with all filters and pagination
         Page<RestaurantProfile> result = restaurantProfileRepository.findApprovedWithFilters(
             search, cuisineType, minPrice, maxPrice, minRating, pageable);
+        
+        // Apply rating filter in Java (since averageRating is computed, not a DB column)
+        if (minRating != null) {
+            final Double finalMinRating = minRating;
+            List<RestaurantProfile> filteredContent = result.getContent().stream()
+                .filter(r -> r.getAverageRating() >= finalMinRating)
+                .collect(java.util.stream.Collectors.toList());
+            result = new PageImpl<>(filteredContent, pageable, filteredContent.size());
+            System.out.println("⚠️  Rating filter applied in Java (computed field)");
+        }
         
         System.out.println("✅ DB returned " + result.getContent().size() + " restaurants (page " + 
                           result.getNumber() + " of " + result.getTotalPages() + ", total: " + 

@@ -1,4 +1,4 @@
-package com.example.booking.repository;
+﻿package com.example.booking.repository;
 
 import java.util.List;
 import java.util.UUID;
@@ -96,7 +96,7 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
      * @param cuisineType - Exact cuisine type match (nullable)
      * @param minPrice - Minimum average price (nullable)
      * @param maxPrice - Maximum average price (nullable)
-     * @param minRating - Minimum average rating (nullable, but filtered in Java not DB)
+     * @param minRating - Minimum average rating (nullable)
      * @param pageable - Pagination and sorting
      * @return Page of matching restaurants
      */
@@ -109,7 +109,7 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
            "AND (:cuisineType IS NULL OR :cuisineType = '' OR r.cuisineType = :cuisineType) " +
            "AND (:minPrice IS NULL OR r.averagePrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR r.averagePrice <= :maxPrice) " +
-           "AND (1=1 OR :minRating IS NULL)")
+           "AND (:minRating IS NULL OR r.averageRating >= :minRating)")
     Page<RestaurantProfile> findApprovedWithFilters(
             @Param("search") String search,
             @Param("cuisineType") String cuisineType,
@@ -119,3 +119,4 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
             Pageable pageable);
 
 }
+
