@@ -238,13 +238,24 @@ public class HomeController {
             long totalReviews = 0;
 
             try {
+                System.out.println("🔍 Loading review data for restaurant ID: " + id);
+                System.out.println("🔍 Authentication: " + (authentication != null ? "Present" : "Null"));
+                System.out.println(
+                        "🔍 Is authenticated: " + (authentication != null && authentication.isAuthenticated()));
+
                 // Check if user has reviewed this restaurant
                 if (authentication != null && authentication.isAuthenticated()) {
                     User user = (User) authentication.getPrincipal();
+                    System.out.println("🔍 User ID: " + user.getId());
+
                     Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
+                    System.out.println("🔍 Customer found: " + customerOpt.isPresent());
+
                     if (customerOpt.isPresent()) {
                         hasReviewed = reviewService.hasCustomerReviewedRestaurant(customerOpt.get().getCustomerId(),
                                 id);
+                        System.out.println("🔍 Has reviewed: " + hasReviewed);
+
                         if (hasReviewed) {
                             // Get customer's review for this restaurant
                             List<ReviewDto> customerReviews = reviewService
@@ -254,6 +265,7 @@ public class HomeController {
                                     .findFirst();
                             if (customerReviewOpt.isPresent()) {
                                 customerReview = customerReviewOpt.get();
+                                System.out.println("🔍 Customer review found: " + customerReview.getReviewId());
                             }
                         }
                     }
@@ -263,14 +275,17 @@ public class HomeController {
                 Pageable pageable = PageRequest.of(0, 5);
                 Page<ReviewDto> recentReviewsPage = reviewService.getReviewsByRestaurant(id, pageable);
                 recentReviews = recentReviewsPage.getContent();
+                System.out.println("🔍 Recent reviews count: " + recentReviews.size());
 
                 // Get review statistics
                 statistics = reviewService.getRestaurantReviewStatistics(id);
                 totalReviews = recentReviewsPage.getTotalElements();
+                System.out.println("🔍 Total reviews: " + totalReviews);
 
             } catch (Exception e) {
                 // If review service fails, continue without review data
-                System.err.println("Review service error: " + e.getMessage());
+                System.err.println("❌ Review service error: " + e.getMessage());
+                e.printStackTrace();
             }
 
             // Add to model
@@ -297,6 +312,9 @@ public class HomeController {
             ReviewForm reviewForm = new ReviewForm();
             reviewForm.setRestaurantId(id);
             model.addAttribute("reviewForm", reviewForm);
+
+            // Add debug info
+            model.addAttribute("debug", true);
 
             return "public/restaurant-detail";
             
