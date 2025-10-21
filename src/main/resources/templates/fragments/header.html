@@ -26,7 +26,7 @@
                                 <span>Home</span>
                             </a>
                         </li>
-                        <li class="nav-item dropdown" sec:authorize="hasRole('ADMIN')">
+                        <li class="nav-item dropdown dropdown-hover" sec:authorize="hasRole('ADMIN')">
                             <a class="nav-link dropdown-toggle" href="#" id="adminDashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" th:classappend="${#strings.startsWith(currentPath, '/admin')} ? 'active' : ''">
                                 <i class="fas fa-tachometer-alt nav-icon"></i>
                                 <span>Dashboard</span>
@@ -294,59 +294,6 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 // Admin Dashboard Dropdown Hover
-                const adminDropdownToggle = document.getElementById('adminDashboardDropdown');
-                const adminDropdownMenu = adminDropdownToggle?.nextElementSibling;
-                
-                if (adminDropdownToggle && adminDropdownMenu) {
-                    setupDropdownHover(adminDropdownToggle, adminDropdownMenu);
-                }
-                
-                // User Dropdown Hover
-                const userDropdownToggle = document.querySelector('.user-dropdown');
-                const userDropdownMenu = userDropdownToggle?.nextElementSibling;
-                
-                if (userDropdownToggle && userDropdownMenu) {
-                    setupDropdownHover(userDropdownToggle, userDropdownMenu);
-                }
-                
-                function setupDropdownHover(toggle, menu) {
-                    let hoverTimeout;
-                    
-                    // Show dropdown on mouse enter
-                    toggle.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                        const bsDropdown = new bootstrap.Dropdown(toggle, {
-                            autoClose: false,
-                            display: 'dynamic'
-                        });
-                        bsDropdown.show();
-                    });
-                    
-                    // Hide dropdown on mouse leave with delay
-                    toggle.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(function() {
-                            const bsDropdown = bootstrap.Dropdown.getInstance(toggle);
-                            if (bsDropdown) {
-                                bsDropdown.hide();
-                            }
-                        }, 150);
-                    });
-                    
-                    // Keep dropdown open when hovering over menu
-                    menu.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                    });
-                    
-                    // Hide dropdown when leaving menu
-                    menu.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(function() {
-                            const bsDropdown = bootstrap.Dropdown.getInstance(toggle);
-                            if (bsDropdown) {
-                                bsDropdown.hide();
-                            }
-                        }, 150);
-                    });
-                }
             });
         </script>
         

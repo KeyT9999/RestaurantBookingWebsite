@@ -1,6 +1,9 @@
 package com.example.booking.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -8,10 +11,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.domain.RestaurantBalance;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.dto.payout.RestaurantBalanceDto;
 import com.example.booking.exception.ResourceNotFoundException;
+import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.RestaurantBalanceRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.WithdrawalRequestRepository;
@@ -27,15 +32,20 @@ public class RestaurantBalanceService {
     private final RestaurantBalanceRepository balanceRepository;
     private final RestaurantProfileRepository restaurantRepository;
     private final WithdrawalRequestRepository withdrawalRepository;
+    private final BookingRepository bookingRepository;
+
+    private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("0.075");
     
     public RestaurantBalanceService(
         RestaurantBalanceRepository balanceRepository,
         RestaurantProfileRepository restaurantRepository,
-        WithdrawalRequestRepository withdrawalRepository
+        WithdrawalRequestRepository withdrawalRepository,
+        BookingRepository bookingRepository
     ) {
         this.balanceRepository = balanceRepository;
         this.restaurantRepository = restaurantRepository;
         this.withdrawalRepository = withdrawalRepository;
+        this.bookingRepository = bookingRepository;
     }
     
     /**
@@ -177,6 +187,74 @@ public class RestaurantBalanceService {
         balanceRepository.recalculateAllBalances();
         logger.info("🔄 Recalculated all restaurant balances");
     }
+
+    /**
+     * Admin commission metrics
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal getCommissionToday() {
+        LocalDate today = LocalDate.now();
+        return getCommissionBetween(today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+    }
+
+    @Transactional(readOnly = true)
+    public long getCompletedBookingsToday() {
+        LocalDate today = LocalDate.now();
+        return bookingRepository.countByStatusAndBookingTimeBetween(
+            BookingStatus.COMPLETED,
+            today.atStartOfDay(),
+            today.plusDays(1).atStartOfDay()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal getWeeklyCommission() {
+        LocalDateTime end = LocalDate.now().plusDays(1).atStartOfDay();
+        LocalDateTime start = end.minusDays(7);
+        return getCommissionBetween(start, end);
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal getMonthlyCommission() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime start = today.withDayOfMonth(1).atStartOfDay();
+        LocalDateTime end = today.plusDays(1).atStartOfDay();
+        return getCommissionBetween(start, end);
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal getTotalCommission() {
+        BigDecimal gross = bookingRepository.sumDepositByStatus(BookingStatus.COMPLETED);
+        return calculateCommission(gross);
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal getAverageCommissionPerBooking() {
+        long totalBookings = bookingRepository.countByStatus(BookingStatus.COMPLETED);
+        if (totalBookings == 0) {
+            return BigDecimal.ZERO.setScale(0);
+        }
+        BigDecimal totalCommission = getTotalCommission();
+        return totalCommission.divide(BigDecimal.valueOf(totalBookings), 0, RoundingMode.HALF_UP);
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal getCommissionRate() {
+        return DEFAULT_COMMISSION_RATE.multiply(new BigDecimal("100"));
+    }
+
+    private BigDecimal getCommissionBetween(LocalDateTime start, LocalDateTime end) {
+        BigDecimal gross = bookingRepository.sumDepositByStatusAndCreatedBetween(
+            BookingStatus.COMPLETED, start, end);
+        return calculateCommission(gross);
+    }
+
+    private BigDecimal calculateCommission(BigDecimal grossAmount) {
+        if (grossAmount == null) {
+            grossAmount = BigDecimal.ZERO;
+        }
+        return grossAmount.multiply(DEFAULT_COMMISSION_RATE).setScale(0, RoundingMode.HALF_UP);
+    }
     
     /**
      * Convert entity to DTO
@@ -217,4 +295,3 @@ public class RestaurantBalanceService {
         }
     }
 }
-

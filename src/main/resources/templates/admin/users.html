@@ -1,490 +1,733 @@
-﻿<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Quản lý người dùng - BookEat Admin</title>
-	
-	<!-- Google Fonts -->
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-	
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-	<link th:href="@{/css/luxury.css}" rel="stylesheet">
-	
-	<style>
-		/* Typography base */
-		body {
-			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-			font-weight: 400;
-			line-height: 1.6;
-		}
-		
-		/* Page layout follows light/blue baseline */
-		.page-bg {
-			background-color: var(--background-light);
-			min-height: 100vh;
-		}
-		
-		.section-title {
-			color: var(--text-dark);
-			font-family: var(--font-heading);
-			font-weight: 700;
-			font-size: 2.2rem;
-		}
-		
-		/* Space for fixed header */
-		.admin-content {
-			padding-top: 100px !important;
-		}
-		
-		/* Top actions section */
-		.add-user-section {
-			position: relative;
-			z-index: 100;
-			padding: 1.5rem 0;
-			background: var(--background-white);
-			border-bottom: 1px solid var(--border-light);
-			margin-bottom: 2rem;
-			border-radius: 12px;
-			box-shadow: var(--shadow-card);
-		}
-		
-		/* Primary action button consistent with home */
-		.btn-add-user {
-			background: var(--primary-blue) !important;
-			border: 1px solid var(--primary-blue) !important;
-			color: var(--background-white) !important;
-			font-weight: 600 !important;
-			font-size: 1rem !important;
-			padding: 0.75rem 1.5rem !important;
-			border-radius: 8px !important;
-			box-shadow: var(--shadow-button) !important;
-			transition: var(--transition) !important;
-		}
-		
-		.btn-add-user:hover {
-			background: var(--primary-blue-dark) !important;
-			border-color: var(--primary-blue-dark) !important;
-			transform: translateY(-1px) !important;
-			box-shadow: var(--shadow-hover) !important;
-		}
-		
-		/* Cards */
-		.filter-card {
-			background: var(--background-white);
-			border: 1px solid var(--border-light);
-			color: var(--text-dark);
-			box-shadow: var(--shadow-card);
-			border-radius: 12px;
-		}
-		
-		.user-card {
-			background: var(--background-white);
-			border: 1px solid var(--border-light);
-			color: var(--text-dark);
-			border-radius: 12px;
-			transition: var(--transition);
-			box-shadow: var(--shadow-card);
-		}
-		
-		.user-card:hover {
-			transform: translateY(-3px);
-			box-shadow: var(--shadow-hover);
-			border-color: var(--primary-blue);
-		}
-		
-		.user-card h5 {
-			font-family: var(--font-heading);
-			font-weight: 600;
-			font-size: 1.1rem;
-		}
-		
-		.user-avatar {
-			width: 56px;
-			height: 56px;
-			border-radius: 50%;
-			background: var(--background-light);
-			color: var(--primary-blue);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-weight: 700;
-			font-size: 1.1rem;
-		}
-		
-		.badge-role, .badge-status {
-			font-size: .75rem;
-			font-weight: 500;
-		}
-		
-		.table-muted { color: var(--text-light); font-weight: 400; }
-		
-		.form-label { font-weight: 500; color: var(--text-dark); }
-		
-		/* Form controls align with booking form */
-		.form-control, .form-select {
-			background: var(--background-white);
-			color: var(--text-dark);
-			border: 1px solid var(--border-medium);
-			border-radius: 6px;
-		}
-		
-		.form-control::placeholder { color: var(--text-light); }
-		
-		.form-control:focus, .form-select:focus {
-			background: var(--background-white);
-			color: var(--text-dark);
-			border-color: var(--primary-blue);
-			box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.15);
-		}
-		
-		.btn-gold { /* keep legacy, map to primary */
-			background: var(--primary-blue);
-			border-color: var(--primary-blue);
-			color: var(--background-white);
-			font-weight: 600;
-			font-size: 0.95rem;
-			padding: 0.6rem 1.2rem;
-			border-radius: 8px;
-			box-shadow: var(--shadow-button);
-		}
-		
-		.btn-gold:hover {
-			background: var(--primary-blue-dark);
-			border-color: var(--primary-blue-dark);
-			transform: translateY(-1px);
-			box-shadow: var(--shadow-hover);
-		}
-		
-		.toggle-btn, .edit-btn { border-radius: 8px; transition: var(--transition); }
-		.toggle-btn:hover { background-color: var(--background-light); transform: scale(1.03); }
-		.edit-btn:hover { border-color: var(--primary-blue); color: var(--primary-blue); background-color: rgba(74,144,226,0.08); }
-		
-		/* Toast styles */
-		.toast-container { position: fixed; top: 120px; right: 20px; z-index: 1055; }
-		.toast-custom { font-weight: 500; border-radius: 12px; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-		.toast-success { background: linear-gradient(var(--primary-blue), var(--primary-blue-dark)); color: #fff; }
-		.toast-error { background: linear-gradient(#DC3545, #FD6C6C); color: #fff; }
-		
-		/* Loading spinner */
-		.loading-spinner { animation: spin 1s linear infinite; }
-		@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-		
-		.csrf-token { display: none; }
-	</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý người dùng - Book Eat Admin</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .page-hero {
+            padding: var(--ds-space-16, 6rem) 0 var(--ds-space-12, 4.5rem);
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #f8fafc;
+        }
+
+        .page-hero__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--ds-space-6, 2rem);
+            flex-wrap: wrap;
+        }
+
+        .page-hero__title {
+            font-size: clamp(2rem, 3vw, 2.8rem);
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .page-hero__subtitle {
+            margin: 0;
+            color: rgba(248, 250, 252, 0.85);
+            max-width: 640px;
+        }
+
+        .page-section {
+            padding: var(--ds-space-12, 4.5rem) 0;
+        }
+
+        .filter-grid {
+            display: grid;
+            gap: var(--ds-space-4, 1.5rem);
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: var(--ds-space-3, 1rem);
+        }
+
+        .user-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.12);
+            color: #1d4ed8;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: var(--ds-space-3, 1rem);
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--ds-gray-900, #111827);
+        }
+
+        .user-username {
+            font-size: 0.85rem;
+            color: var(--ds-text-secondary, #6b7280);
+        }
+
+        .user-email {
+            font-size: 0.95rem;
+            color: var(--ds-text-secondary, #6b7280);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--ds-space-2, 0.5rem);
+            font-weight: 600;
+        }
+
+        .user-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--ds-space-2, 0.5rem);
+        }
+
+        .contact-line,
+        .meta-line {
+            display: flex;
+            align-items: center;
+            gap: var(--ds-space-2, 0.5rem);
+            font-size: 0.9rem;
+            color: var(--ds-text-secondary, #6b7280);
+        }
+
+        .ds-icon-muted {
+            color: var(--ds-text-muted, #94a3b8);
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--ds-space-2, 0.5rem);
+        }
+
+        .action-inline-form {
+            display: inline;
+        }
+
+        .table-wrapper {
+            width: 100%;
+        }
+
+        .mobile-user-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-4, 1.5rem);
+        }
+
+        .mobile-user-card .mobile-header {
+            display: flex;
+            align-items: center;
+            gap: var(--ds-space-3, 1rem);
+        }
+
+        .mobile-user-card .mobile-body {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-2, 0.75rem);
+        }
+
+        .mobile-row {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--ds-space-3, 1rem);
+        }
+
+        .mobile-label {
+            color: var(--ds-text-secondary, #6b7280);
+            font-weight: 500;
+        }
+
+        .mobile-value {
+            color: var(--ds-text-primary, #1f2937);
+            font-weight: 500;
+        }
+
+        .mobile-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--ds-space-2, 0.5rem);
+        }
+
+        .admin-toast-container {
+            position: fixed;
+            top: var(--ds-space-6, 2rem);
+            right: var(--ds-space-6, 2rem);
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-3, 1rem);
+        }
+
+        .admin-toast {
+            display: flex;
+            align-items: center;
+            gap: var(--ds-space-3, 1rem);
+            border-radius: var(--ds-radius-lg, 16px);
+            padding: var(--ds-space-3, 1rem) var(--ds-space-4, 1.5rem);
+            background: #ffffff;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.16);
+            min-width: 280px;
+        }
+
+        .admin-toast.success {
+            border-left: 4px solid #16a34a;
+        }
+
+        .admin-toast.error {
+            border-left: 4px solid #dc2626;
+        }
+
+        .admin-toast i {
+            font-size: 1rem;
+        }
+
+        .admin-toast.success i {
+            color: #16a34a;
+        }
+
+        .admin-toast.error i {
+            color: #dc2626;
+        }
+
+        .admin-toast button {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+        }
+
+        .ds-pagination {
+            display: flex;
+            justify-content: center;
+            gap: var(--ds-space-2, 0.75rem);
+        }
+
+        .ds-pagination a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: var(--ds-radius-full, 999px);
+            font-weight: 600;
+            color: var(--ds-text-secondary, #6b7280);
+            border: 1px solid var(--ds-border-subtle, #e2e8f0);
+            background: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .ds-pagination a:hover {
+            border-color: var(--ds-primary-500, #2563eb);
+            color: var(--ds-primary-600, #1d4ed8);
+        }
+
+        .ds-pagination a.current {
+            background: var(--ds-primary-600, #1d4ed8);
+            color: #ffffff;
+            border-color: transparent;
+        }
+
+        @media (max-width: 992px) {
+            .page-hero__header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter-actions {
+                justify-content: flex-start;
+            }
+        }
+    </style>
 </head>
-<body class="page-bg">
-	<div th:insert="fragments/flash :: flash"></div>
-	<div th:replace="~{fragments/header :: site-header}"></div>
+<body class="ds-bg-gray-50">
+    <div th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
+    <main>
+        <section class="page-hero">
+            <div class="ds-container ds-flex ds-flex-col ds-gap-6">
+                <div class="page-hero__header">
+                    <div class="ds-flex ds-flex-col ds-gap-3">
+                        <h1 class="page-hero__title">Quản lý người dùng</h1>
+                    </div>
+                    <a th:href="@{/admin/users/create}" class="ds-btn ds-btn-primary ds-btn-lg">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Thêm người dùng</span>
+                    </a>
+                </div>
+            </div>
+        </section>
 
+        <section class="page-section">
+            <div class="ds-container ds-flex ds-flex-col ds-gap-6">
+                <div class="ds-card ds-card-elevated">
+                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-6">
+                        <form method="get" th:action="@{/admin/users}" class="ds-flex ds-flex-col ds-gap-4">
+                            <div class="filter-grid">
+                                <div class="ds-form-group">
+                                    <label class="ds-form-label" for="searchInput">Tìm kiếm người dùng</label>
+                                    <input id="searchInput"
+                                           class="ds-form-input"
+                                           type="text"
+                                           name="q"
+                                           placeholder="Nhập username hoặc email..."
+                                           th:value="${q}">
+                                </div>
+                                <div class="ds-form-group">
+                                    <label class="ds-form-label" for="roleSelect">Vai trò</label>
+                                    <select id="roleSelect" name="role" class="ds-form-select">
+                                        <option value="" th:selected="${role == null}">Tất cả vai trò</option>
+                                        <option value="admin" th:selected="${role != null and role.getValue() == 'admin'}">👑 Quản trị viên</option>
+                                        <option value="customer" th:selected="${role != null and role.getValue() == 'customer'}">🧑‍🍳 Khách hàng</option>
+                                        <option value="restaurant_owner" th:selected="${role != null and role.getValue() == 'restaurant_owner'}">🏪 Chủ nhà hàng</option>
+                                    </select>
+                                </div>
+                                <div class="ds-form-group">
+                                    <label class="ds-form-label" for="sizeSelect">Hiển thị</label>
+                                    <select id="sizeSelect" name="size" class="ds-form-select">
+                                        <option value="10" th:selected="${sizeParam == '10'}">10 người</option>
+                                        <option value="20" th:selected="${sizeParam == '20'}">20 người</option>
+                                        <option value="50" th:selected="${sizeParam == '50'}">50 người</option>
+                                        <option value="all" th:selected="${sizeParam == 'all'}">Tất cả</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="filter-actions">
+                                <input type="hidden" name="sortBy" th:value="${sortBy}">
+                                <input type="hidden" name="dir" th:value="${dir}">
+                                <button type="submit" class="ds-btn ds-btn-secondary">
+                                    <i class="fas fa-search"></i>
+                                    <span>Tìm kiếm</span>
+                                </button>
+                                <a th:href="@{/admin/users}" class="ds-btn ds-btn-tertiary">
+                                    <i class="fas fa-rotate-left"></i>
+                                    <span>Đặt lại</span>
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
+                <div class="ds-card ds-card-elevated ds-flex ds-flex-col ds-gap-6">
+                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-6">
+                        <div class="table-wrapper d-none d-lg-block" th:if="${users.totalElements > 0}">
+                            <div class="ds-table-responsive">
+                                <table class="ds-table ds-table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Người dùng</th>
+                                            <th>Liên hệ</th>
+                                            <th>Phân quyền</th>
+                                            <th>Hoạt động</th>
+                                            <th>Tổng booking</th>
+                                            <th>Trạng thái</th>
+                                            <th class="text-end">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="u : ${users.content}" th:data-user-id="${u.id}">
+                                            <td>
+                                                <div class="user-cell">
+                                                    <div class="user-avatar" th:text="${(#strings.isEmpty(u.fullName) ? u.username : u.fullName).substring(0,1).toUpperCase()}">U</div>
+                                                    <div class="ds-flex ds-flex-col">
+                                                        <span class="user-name" th:text="${#strings.isEmpty(u.fullName) ? u.username : u.fullName}">Tên người dùng</span>
+                                                        <span class="user-username" th:text="'@' + ${u.username}">@username</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="ds-flex ds-flex-col ds-gap-1">
+                                                    <span class="contact-line">
+                                                        <i class="fas fa-envelope ds-icon-muted"></i>
+                                                        <span class="user-email" th:text="${u.email}">email@example.com</span>
+                                                        <span th:if="${u.googleId != null}" class="ds-badge ds-badge-primary">Google</span>
+                                                    </span>
+                                                    <span class="contact-line">
+                                                        <i class="fas fa-phone ds-icon-muted"></i>
+                                                        <span th:text="${#strings.isEmpty(u.phoneNumber) ? 'Chưa cập nhật' : u.phoneNumber}">0123456789</span>
+                                                    </span>
+                                                    <span class="contact-line">
+                                                        <i class="fas fa-location-dot ds-icon-muted"></i>
+                                                        <span th:text="${#strings.isEmpty(u.address) ? 'Chưa cập nhật' : u.address}">Địa chỉ</span>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="ds-flex ds-flex-col ds-gap-1">
+                                                    <span class="ds-badge ds-badge-secondary role-badge">
+                                                        <i class="fas fa-user-shield"></i>
+                                                        <span th:text="${u.role != null ? u.role.getDisplayName() : 'Không rõ'}">Quyền</span>
+                                                    </span>
+                                                    <span class="contact-line">
+                                                        <i class="fas fa-check-circle ds-icon-muted"></i>
+                                                        <span th:text="${u.emailVerified != null && u.emailVerified ? 'Email đã xác minh' : 'Email chưa xác minh'}">Email đã xác minh</span>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="ds-flex ds-flex-col ds-gap-1">
+                                                    <span class="meta-line">
+                                                        <i class="fas fa-calendar-plus ds-icon-muted"></i>
+                                                        <span th:text="${u.createdAt != null ? #temporals.format(u.createdAt, 'dd/MM/yyyy HH:mm') : 'Không rõ'}">01/10/2025 12:00</span>
+                                                    </span>
+                                                    <span class="meta-line">
+                                                        <i class="fas fa-clock ds-icon-muted"></i>
+                                                        <span th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin, 'dd/MM/yyyy HH:mm') : 'Chưa đăng nhập'}">02/10/2025 08:00</span>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span th:text="${u.role != null and u.role.isCustomer() ? (userBookingCounts[u.id] != null ? userBookingCounts[u.id] : 0) : '-'}">0</span>
+                                            </td>
+                                            <td>
+                                                <span class="ds-badge status-badge"
+                                                      th:id="'statusBadge-' + ${u.id}"
+                                                      th:classappend="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? ' ds-badge-success' : ' ds-badge-warning'">
+                                                    <i th:classappend="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? 'fas fa-lock-open' : 'fas fa-lock'}"></i>
+                                                    <span th:text="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? 'Hoạt động' : 'Tạm khóa'">Hoạt động</span>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="user-actions justify-content-end">
+                                                    <button type="button"
+                                                            class="ds-btn ds-btn-secondary ds-btn-sm user-toggle-btn"
+                                                            th:id="'toggle-btn-' + ${u.id}"
+                                                            th:data-user-id="${u.id}"
+                                                            th:data-current-status="${u.active != null and u.active and u.emailVerified != null and u.emailVerified}"
+                                                            th:title="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
+                                                        <i class="fas" th:classappend="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? ' fa-lock' : ' fa-unlock'}"></i>
+                                                        <span th:text="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? 'Khóa' : 'Mở'">Khóa</span>
+                                                    </button>
+                                                    <a class="ds-btn ds-btn-primary ds-btn-sm"
+                                                       th:href="@{|/admin/users/${u.id}/edit|}"
+                                                       title="Chỉnh sửa thông tin">
+                                                        <i class="fas fa-user-edit"></i>
+                                                        <span>Sửa</span>
+                                                    </a>
+                                                    <form th:if="${u.deletedAt != null}"
+                                                          class="action-inline-form"
+                                                          method="post"
+                                                          th:action="@{|/admin/users/${u.id}/restore|}">
+                                                        <button type="submit" class="ds-btn ds-btn-outline-success ds-btn-sm">
+                                                            <i class="fas fa-undo"></i>
+                                                            <span>Khôi phục</span>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-	</div>
+                        <div class="mobile-user-list d-lg-none" th:if="${users.totalElements > 0}">
+                            <article class="ds-card mobile-user-card" th:each="u : ${users.content}" th:data-user-id="${u.id}">
+                                <div class="ds-card-body ds-flex ds-flex-col ds-gap-4">
+                                    <div class="mobile-header">
+                                        <div class="user-avatar" th:text="${(#strings.isEmpty(u.fullName) ? u.username : u.fullName).substring(0,1).toUpperCase()}">U</div>
+                                        <div class="ds-flex ds-flex-col">
+                                            <span class="user-name" th:text="${#strings.isEmpty(u.fullName) ? u.username : u.fullName}">Tên người dùng</span>
+                                            <span class="user-username" th:text="'@' + ${u.username}">@username</span>
+                                        </div>
+                                    </div>
+                                    <div class="mobile-body">
+                                        <div class="mobile-row">
+                                            <span class="mobile-label">Email</span>
+                                            <span class="mobile-value ds-flex ds-flex-col ds-items-end">
+                                                <span th:text="${u.email}">email@example.com</span>
+                                                <span th:if="${u.googleId != null}" class="ds-badge ds-badge-primary ds-mt-1">Google</span>
+                                            </span>
+                                        </div>
+                                        <div class="mobile-row">
+                                            <span class="mobile-label">Điện thoại</span>
+                                            <span class="mobile-value" th:text="${#strings.isEmpty(u.phoneNumber) ? 'Chưa cập nhật' : u.phoneNumber}">0123456789</span>
+                                        </div>
+                                        <div class="mobile-row">
+                                            <span class="mobile-label">Địa chỉ</span>
+                                            <span class="mobile-value" th:text="${#strings.isEmpty(u.address) ? 'Chưa cập nhật' : u.address}">Địa chỉ</span>
+                                        </div>
+                                        <div class="mobile-row">
+                                            <span class="mobile-label">Vai trò</span>
+                                            <span class="mobile-value" th:text="${u.role != null ? u.role.getDisplayName() : 'Không rõ'}">Quản trị viên</span>
+                                        </div>
+                                        <div class="mobile-row">
+                                            <span class="mobile-label">Email xác minh</span>
+                                            <span class="mobile-value" th:text="${u.emailVerified != null && u.emailVerified ? 'Đã xác minh' : 'Chưa xác minh'}">Đã xác minh</span>
+                                        </div>
+                                        <div class="mobile-row">
+                                            <span class="mobile-label">Tạo lúc</span>
+                                            <span class="mobile-value" th:text="${u.createdAt != null ? #temporals.format(u.createdAt, 'dd/MM/yyyy HH:mm') : 'Không rõ'}">01/10/2025 12:00</span>
+                                        </div>
+                                        <div class="mobile-row">
+                                            <span class="mobile-label">Đăng nhập cuối</span>
+                                            <span class="mobile-value" th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin, 'dd/MM/yyyy HH:mm') : 'Chưa đăng nhập'}">02/10/2025 08:00</span>
+                                        </div>
+                                        <div class="mobile-row">
+                                            <span class="mobile-label">Tổng booking</span>
+                                            <span class="mobile-value" th:text="${u.role != null and u.role.isCustomer() ? (userBookingCounts[u.id] != null ? userBookingCounts[u.id] : 0) : '-'}">0</span>
+                                        </div>
+                                        <div class="mobile-row">
+                                            <span class="mobile-label">Trạng thái</span>
+                                            <span class="mobile-value">
+                                                <span class="ds-badge status-badge"
+                                                      th:id="'mobile-statusBadge-' + ${u.id}"
+                                                      th:classappend="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? ' ds-badge-success' : ' ds-badge-warning'">
+                                                    <i th:classappend="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? 'fas fa-lock-open' : 'fas fa-lock'}"></i>
+                                                    <span th:text="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? 'Hoạt động' : 'Tạm khóa'">Hoạt động</span>
+                                                </span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mobile-actions">
+                                        <button type="button"
+                                                class="ds-btn ds-btn-secondary ds-btn-sm user-toggle-btn"
+                                                th:id="'mobile-toggle-btn-' + ${u.id}"
+                                                th:data-user-id="${u.id}"
+                                                th:data-mobile-badge="'mobile-statusBadge-' + ${u.id}"
+                                                th:data-current-status="${u.active != null and u.active and u.emailVerified != null and u.emailVerified}"
+                                                th:title="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
+                                            <i class="fas" th:classappend="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? ' fa-lock' : ' fa-unlock'}"></i>
+                                            <span th:text="${u.active != null and u.active and u.emailVerified != null and u.emailVerified} ? 'Khóa' : 'Mở'">Khóa</span>
+                                        </button>
+                                        <a class="ds-btn ds-btn-primary ds-btn-sm"
+                                           th:href="@{|/admin/users/${u.id}/edit|}">
+                                            <i class="fas fa-user-edit"></i>
+                                            <span>Sửa</span>
+                                        </a>
+                                        <form th:if="${u.deletedAt != null}"
+                                              class="action-inline-form"
+                                              method="post"
+                                              th:action="@{|/admin/users/${u.id}/restore|}">
+                                            <button type="submit" class="ds-btn ds-btn-outline-success ds-btn-sm">
+                                                <i class="fas fa-undo"></i>
+                                                <span>Khôi phục</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
 
-	<!-- THÊM CLASS admin-content để TRÁNH HEADER -->
-	<div class="admin-content py-5">
-		<div class="container">
-			<!-- ADD USER SECTION - ĐẶC BIỆT NỔI BẬT -->
-			<div class="add-user-section">
-				<div class="row align-items-center">
-					<div class="col-md-8">
-						<h1 class="section-title mb-2">
-							<i class="fas fa-users text-primary me-3"></i> Quản lý người dùng
-						</h1>
-						<p class="text-muted mb-0 fs-6">Quản lý và theo dõi tất cả người dùng trong hệ thống</p>
-					</div>
-					<div class="col-md-4 text-end">
-						<a class="btn btn-add-user" th:href="@{/admin/users/create}">
-							<i class="fas fa-user-plus"></i>
-							<span class="fw-bold">Thêm người dùng mới</span>
-						</a>
-					</div>
-				</div>
-			</div>
+                        <div class="ds-card ds-card-outline text-center ds-py-10 ds-flex ds-flex-col ds-items-center ds-gap-4"
+                             th:if="${users.totalElements == 0}">
+                            <i class="fas fa-users ds-text-muted empty-state-icon"></i>
+                            <div class="ds-flex ds-flex-col ds-gap-2">
+                                <h3 class="ds-heading-4">Không tìm thấy người dùng</h3>
+                                <p class="ds-text-secondary ds-mb-0">Không có người dùng nào phù hợp với bộ lọc hiện tại.</p>
+                            </div>
+                        </div>
+                    </div>
 
-			<!-- Filter / Search -->
-			<div class="card filter-card mb-4">
-				<div class="card-body">
-					<form method="get" th:action="@{/admin/users}">
-						<div class="row g-3 align-items-end">
-							<div class="col-md-4">
-								<label class="form-label">Tìm kiếm người dùng</label>
-								<input class="form-control" name="q" th:value="${q}" placeholder="Nhập username hoặc email...">
-							</div>
-							<div class="col-md-3">
-								<label class="form-label">Vai trò</label>
-								<select name="role" class="form-select">
-									<option th:selected="${role == null}" value="">Tất cả vai trò</option>
-									<option value="admin" th:selected="${role?.getValue()=='admin'}">👑 Admin</option>
-									<option value="customer" th:selected="${role?.getValue()=='customer'}">�� Customer</option>
-									<option value="restaurant_owner" th:selected="${role?.getValue()=='restaurant_owner'}">�� Restaurant Owner</option>
-								</select>
-							</div>
-							<div class="col-md-2">
-								<label class="form-label">Hiển thị</label>
-								<select name="size" class="form-select">
-									<option th:selected="${size==10}" value="10">10 người</option>
-									<option th:selected="${size==20}" value="20">20 người</option>
-									<option th:selected="${size==50}" value="50">50 người</option>
-								</select>
-							</div>
-							<div class="col-md-3 text-end">
-								<input type="hidden" name="sortBy" th:value="${sortBy}">
-								<input type="hidden" name="dir" th:value="${dir}">
-								<button type="submit" class="btn btn-outline-secondary me-2">
-									<i class="fas fa-search me-1"></i> Tìm kiếm
-								</button>
-								<a th:href="@{/admin/users}" class="btn btn-outline-secondary">
-									<i class="fas fa-rotate-left me-1"></i> Reset
-								</a>
-							</div>
-						</div>
-					</form>
-				</div>
-			</div>
+                    <nav th:if="${users.totalPages > 1}" aria-label="Users pagination">
+                        <div class="ds-pagination">
+                            <a th:classappend="${users.first} ? ' disabled'"
+                               th:aria-disabled="${users.first}"
+                               th:href="${users.first} ? '#' : @{|/admin/users?page=${users.number-1}&size=${sizeParam}&q=${q}&role=${role != null ? role.getValue() : ''}&sortBy=${sortBy}&dir=${dir}|}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                            <a th:each="i : ${#numbers.sequence(0, users.totalPages-1)}"
+                               th:text="${i + 1}"
+                               th:classappend="${i == users.number} ? ' current'"
+                               th:href="@{|/admin/users?page=${i}&size=${sizeParam}&q=${q}&role=${role != null ? role.getValue() : ''}&sortBy=${sortBy}&dir=${dir}|}">
+                                1
+                            </a>
+                            <a th:classappend="${users.last} ? ' disabled'"
+                               th:aria-disabled="${users.last}"
+                               th:href="${users.last} ? '#' : @{|/admin/users?page=${users.number+1}&size=${sizeParam}&q=${q}&role=${role != null ? role.getValue() : ''}&sortBy=${sortBy}&dir=${dir}|}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </section>
+    </main>
 
-			<!-- Users Grid -->
-			<div class="row g-4" th:if="${users.totalElements > 0}">
-				<div class="col-md-6 col-xl-4" th:each="u : ${users.content}">
-					<div class="user-card p-4 h-100" th:data-user-id="${u.id}">
-						<div class="d-flex align-items-center mb-4">
-							<div class="user-avatar me-3" th:text="${(#strings.isEmpty(u.fullName) ? u.username : u.fullName).substring(0,1).toUpperCase()}">U</div>
-							<div>
-								<h5 class="mb-1 text-dark" th:text="${#strings.isEmpty(u.fullName) ? u.username : u.fullName}">User</h5>
-								<div class="table-muted small" th:text="${u.email}">email@example.com</div>
-								<div class="table-muted small" th:text="'@' + ${u.username}">@username</div>
-							</div>
-						</div>
-						
-						<div class="mb-3">
-							<span class="table-muted small fw-500">VAI TRÒ:</span>
-							<br>
-							<span class="badge badge-role mt-1"
-								  th:classappend="${u.role.getValue()=='admin'} ? ' bg-danger' : (${u.role.getValue()=='restaurant_owner'} ? ' bg-info' : ' bg-success')"
-								  th:text="${u.role.getValue().toUpperCase()}">CUSTOMER</span>
-						</div>
-						
-						<div class="mb-3">
-							<span class="table-muted small fw-500">TRẠNG THÁI:</span>
-							<br>
-													<span class="badge badge-status mt-1 status-badge" 
-							  th:id="'status-badge-' + ${u.id}"
-							  th:classappend="${u.active && u.emailVerified} ? ' bg-success' : ' bg-warning text-dark'" 
-							  th:text="${u.active && u.emailVerified} ? 'ACTIVE' : 'INACTIVE'">Active</span>
-						</div>
-						
-						<div class="mb-2">
-							<span class="table-muted small">Tạo:</span>
-							<span class="text-light small" th:text="${#temporals.format(u.createdAt,'dd/MM/yyyy')}"></span>
-						</div>
-						
-						<div class="mb-4">
-							<span class="table-muted small">Đăng nhập cuối:</span>
-							<span class="text-light small" th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'dd/MM/yyyy') : 'Chưa bao giờ'}"></span>
-						</div>
-						
-						<div class="d-flex gap-2">
-							<!-- Toggle Active Button với AJAX -->
-													<button type="button" class="btn btn-outline-secondary btn-sm toggle-btn toggle-active-btn" 
-								th:id="'toggle-btn-' + ${u.id}"
-								th:data-user-id="${u.id}"
-								th:data-current-status="${u.active && u.emailVerified}"
-								th:title="${u.active && u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
-								<i class="fas toggle-icon" th:classappend="${u.active && u.emailVerified} ? ' fa-lock' : ' fa-unlock'"></i>
-							</button>
-							
-							<a class="btn btn-outline-primary btn-sm edit-btn" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa thông tin">
-								<i class="fas fa-user-edit"></i>
-							</a>
-						</div>
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
 
-						<!-- Thêm nút restore nếu user đã bị xóa -->
-						<form th:if="${u.deletedAt != null}" method="post" th:action="@{|/admin/users/${u.id}/restore|}" class="mt-2">
-							<button type="submit" class="btn btn-outline-success btn-sm w-100">
-								<i class="fas fa-undo me-1"></i> Khôi phục tài khoản
-							</button>
-						</form>
-					</div>
-				</div>
-			</div>
+    <div id="toastContainer" class="admin-toast-container"></div>
 
-			<!-- Empty state -->
-			<div class="alert alert-light text-center py-5 border" th:if="${users.totalElements == 0}">
-				<i class="fas fa-users text-primary" style="font-size: 3rem; opacity: .5;"></i>
-				<h5 class="mt-3 text-dark">Không có người dùng nào</h5>
-				<p class="mb-0 text-muted">Chưa có người dùng nào phù hợp với tiêu chí tìm kiếm.</p>
-			</div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+    <script th:src="@{/js/main.js}" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButtons = document.querySelectorAll('.user-toggle-btn');
 
-			<!-- Pagination -->
-			<nav th:if="${users.totalPages > 1}" class="mt-5" aria-label="Users pagination">
-				<ul class="pagination justify-content-center">
-					<li class="page-item" th:classappend="${users.first} ? 'disabled'">
-						<a class="page-link" th:href="@{|/admin/users?page=${users.number-1}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}" aria-label="Previous">
-							<span aria-hidden="true">&laquo;</span>
-						</a>
-					</li>
-					<li class="page-item" th:each="i : ${#numbers.sequence(0, users.totalPages-1)}" th:classappend="${i == users.number} ? 'active'">
-						<a class="page-link" th:text="${i+1}" th:href="@{|/admin/users?page=${i}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}">1</a>
-					</li>
-					<li class="page-item" th:classappend="${users.last} ? 'disabled'">
-						<a class="page-link" th:href="@{|/admin/users?page=${users.number+1}&size=${size}&q=${q}&role=${role}&sortBy=${sortBy}&dir=${dir}|}" aria-label="Next">
-							<span aria-hidden="true">&raquo;</span>
-						</a>
-					</li>
-				</ul>
-			</nav>
-		</div>
-	</div>
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
 
-	<!-- Toast Container -->
-	<div class="toast-container" id="toastContainer"></div>
+                    const userId = this.dataset.userId;
+                    const wasActive = this.dataset.currentStatus === 'true';
+                    const icon = this.querySelector('i');
+                    const label = this.querySelector('span');
+                    const desktopBadge = document.getElementById(`statusBadge-${userId}`);
+                    const mobileBadgeId = this.dataset.mobileBadge;
+                    const mobileBadge = mobileBadgeId ? document.getElementById(mobileBadgeId) : null;
 
-	<div th:replace="~{fragments/footer :: site-footer}"></div>
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-	<script th:src="@{/js/main.js}" defer></script>
-</body>
-</html>
-	
-	<script>
-	document.addEventListener('DOMContentLoaded', function() {
-		// Handle toggle active buttons với AJAX
-		document.querySelectorAll('.toggle-active-btn').forEach(button => {
-			button.addEventListener('click', function(event) {
-				event.preventDefault();
-				
-				const userId = this.dataset.userId;
-				const currentStatus = this.dataset.currentStatus === 'true';
-				
-				console.log(`Toggling user ${userId}, current status: ${currentStatus}`);
-				
-				// Disable button during request
-				this.disabled = true;
-				const icon = this.querySelector('.toggle-icon');
-				const originalClass = icon.className;
-				icon.className = 'fas fa-spinner fa-spin loading-spinner';
-				
-				// AJAX request với CSRF token
-				fetch(`/admin/users/${userId}/toggle-active`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-Requested-With': 'XMLHttpRequest'
-					},
-					body: JSON.stringify({})
-				})
-				.then(response => {
-					if (!response.ok) {
-						throw new Error('Network response was not ok');
-					}
-					return response.json();
-				})
-				.then(data => {
-					console.log('Toggle response:', data);
-					
-					if (data.success) {
-						// Update status badge
-						const badge = document.getElementById(`status-badge-${userId}`);
-						
-						if (data.data.newStatus === 'ACTIVE') {
-							badge.className = 'badge badge-status mt-1 status-badge bg-success';
-							badge.textContent = '✅ ACTIVE';
-							if (icon) {
-								icon.className = 'fas fa-lock toggle-icon';
-							}
-							this.title = 'Khóa tài khoản';
-							this.dataset.currentStatus = 'true';
-						} else {
-							badge.className = 'badge badge-status mt-1 status-badge bg-warning text-dark';
-							badge.textContent = '🚫 INACTIVE';
-							if (icon) {
-								icon.className = 'fas fa-unlock toggle-icon';
-							}
-							this.title = 'Mở khóa tài khoản';
-							this.dataset.currentStatus = 'false';
-						}
-						
-						showToast('success', data.message);
-					} else {
-						showToast('error', data.message || 'Có lỗi xảy ra');
-					}
-				})
-				.catch(error => {
-					console.error('Toggle error:', error);
-					showToast('error', 'Không thể kết nối với server. Vui lòng thử lại.');
-				})
-				.finally(() => {
-					// Re-enable button
-					this.disabled = false;
-					icon.className = originalClass;
-				});
-			});
-		});
-		
-		// Show success message from URL parameters
-		const urlParams = new URLSearchParams(window.location.search);
-		const success = urlParams.get('success');
-		const error = urlParams.get('error');
-		
-		if (success) {
-			let message = '';
-			switch(success) {
-				case 'created': message = 'Đã tạo người dùng mới thành công!'; break;
-				case 'updated': message = 'Đã cập nhật thông tin người dùng thành công!'; break;
-			}
-			if (message) {
-				showToast('success', message);
-				// Clean URL
-				history.replaceState({}, document.title, window.location.pathname);
-			}
-		}
-		
-		// Show error messages
-		if (error) {
-			let message = '';
-			switch(error) {
-				case 'user_not_found': message = 'Không tìm thấy người dùng!'; break;
-				case 'load_failed': message = 'Không thể tải thông tin người dùng!'; break;
-				case 'update_failed': message = 'Cập nhật thông tin thất bại!'; break;
-				default: message = 'Có lỗi xảy ra!'; break;
-			}
-			showToast('error', message);
-			// Clean URL
-			history.replaceState({}, document.title, window.location.pathname);
-		}
-	});
-	
-	function showToast(type, message) {
-		const toastContainer = document.getElementById('toastContainer');
-		
-		const toastElement = document.createElement('div');
-		toastElement.className = `toast toast-custom toast-${type}`;
-		toastElement.setAttribute('role', 'alert');
-		toastElement.innerHTML = `
-			<div class="toast-body d-flex align-items-center">
-				<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-3"></i>
-				<span>${message}</span>
-				<button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-			</div>
-		`;
-		
-		toastContainer.appendChild(toastElement);
-		
-		const toast = new bootstrap.Toast(toastElement, {
-			autohide: true,
-			delay: 4000
-		});
-		
-		toast.show();
-		
-		// Remove toast element after it's hidden
-		toastElement.addEventListener('hidden.bs.toast', function() {
-			if (toastElement && toastElement.parentNode) {
-				toastElement.remove();
-			}
-		});
-	}
-	</script>
+                    this.disabled = true;
+                    icon.className = 'fas fa-spinner fa-spin';
+                    label.textContent = 'Đang xử lý';
+
+                    fetch(`/admin/users/${userId}/toggle-active`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.success) {
+                            throw new Error(data.message || 'Có lỗi xảy ra');
+                        }
+
+                        const isActive = data.data.newStatus === 'ACTIVE';
+                        updateStatusBadge(desktopBadge, isActive);
+                        if (mobileBadge) {
+                            updateStatusBadge(mobileBadge, isActive);
+                        }
+                        setToggleButtonState(this, isActive);
+                        this.dataset.currentStatus = String(isActive);
+                        showToast('success', data.message);
+                    })
+                    .catch(error => {
+                        console.error('Toggle error:', error);
+                        setToggleButtonState(this, wasActive);
+                        if (desktopBadge) {
+                            updateStatusBadge(desktopBadge, wasActive);
+                        }
+                        if (mobileBadge) {
+                            updateStatusBadge(mobileBadge, wasActive);
+                        }
+                        showToast('error', error.message || 'Không thể kết nối với server. Vui lòng thử lại.');
+                    })
+                    .finally(() => {
+                        this.disabled = false;
+                    });
+                });
+            });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const success = urlParams.get('success');
+            const error = urlParams.get('error');
+
+            if (success) {
+                if (success === 'created') {
+                    showToast('success', 'Đã tạo người dùng mới thành công!');
+                } else if (success === 'updated') {
+                    showToast('success', 'Đã cập nhật thông tin người dùng thành công!');
+                }
+                history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            if (error) {
+                let message = 'Có lỗi xảy ra!';
+                switch (error) {
+                    case 'user_not_found':
+                        message = 'Không tìm thấy người dùng!';
+                        break;
+                    case 'load_failed':
+                        message = 'Không thể tải thông tin người dùng!';
+                        break;
+                    case 'update_failed':
+                        message = 'Cập nhật thông tin thất bại!';
+                        break;
+                }
+                showToast('error', message);
+                history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+
+        function setToggleButtonState(button, isActive) {
+            const icon = button.querySelector('i');
+            const label = button.querySelector('span');
+
+            if (isActive) {
+                icon.className = 'fas fa-lock';
+                label.textContent = 'Khóa';
+                button.title = 'Khóa tài khoản';
+            } else {
+                icon.className = 'fas fa-unlock';
+                label.textContent = 'Mở';
+                button.title = 'Mở khóa tài khoản';
+            }
+        }
+
+        function updateStatusBadge(badge, isActive) {
+            if (!badge) {
+                return;
+            }
+
+            badge.className = isActive ? 'ds-badge ds-badge-success status-badge' : 'ds-badge ds-badge-warning status-badge';
+            badge.innerHTML = isActive
+                ? '<i class="fas fa-lock-open"></i><span>Hoạt động</span>'
+                : '<i class="fas fa-lock"></i><span>Tạm khóa</span>';
+        }
+
+        function showToast(type, message) {
+            const container = document.getElementById('toastContainer');
+            if (!container) {
+                return;
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `admin-toast ${type}`;
+            toast.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
+                <span>${message}</span>
+                <button type="button" aria-label="Đóng thông báo">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            const closeButton = toast.querySelector('button');
+            closeButton.addEventListener('click', () => {
+                toast.remove();
+            });
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade');
+                toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+            }, 4000);
+        }
+    </script>
 </body>
 </html>
