@@ -61,11 +61,64 @@
                             Dashboard
                         </a>
                         
-                        <!-- Admin Dashboard -->
-                        <a th:href="@{/admin/dashboard}" class="ds-btn ds-btn-primary" sec:authorize="hasRole('ADMIN')">
-                            <i class="fas fa-cog"></i>
-                            Admin
-                        </a>
+                        <!-- Admin Dashboard Dropdown -->
+                        <div class="ds-admin-dropdown dropdown dropdown-hover" sec:authorize="hasRole('ADMIN')">
+                            <button class="ds-btn ds-btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-cog"></i>
+                                Admin
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/withdrawal}">
+                                        <i class="fas fa-credit-card me-2"></i>
+                                        Quản lý rút tiền
+                                        <small class="d-block text-muted">Xử lý yêu cầu rút tiền từ nhà hàng</small>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/restaurant/requests}">
+                                        <i class="fas fa-utensils me-2"></i>
+                                        Duyệt nhà hàng
+                                        <small class="d-block text-muted">Quản lý các yêu cầu đăng ký mới</small>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/users}">
+                                        <i class="fas fa-users me-2"></i>
+                                        Quản lý người dùng
+                                        <small class="d-block text-muted">Quản lý tài khoản khách hàng và nhà hàng</small>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/chat}">
+                                        <i class="fas fa-comments me-2"></i>
+                                        Quản lý chat
+                                        <small class="d-block text-muted">Hỗ trợ khách hàng qua hệ thống chat</small>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/rate-limiting}">
+                                        <i class="fas fa-tachometer-alt me-2"></i>
+                                        Rate limiting
+                                        <small class="d-block text-muted">Giám sát và cấu hình giới hạn tần suất</small>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/settings}">
+                                        <i class="fas fa-cogs me-2"></i>
+                                        Cài đặt hệ thống
+                                        <small class="d-block text-muted">Cấu hình thông số và quyền admin</small>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/admin/dashboard}">
+                                        <i class="fas fa-tachometer-alt me-2"></i>
+                                        Dashboard
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         
                         <!-- User Profile Dropdown -->
                         <div class="ds-user-dropdown">
