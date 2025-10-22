@@ -1,10 +1,15 @@
 package com.example.booking.web.controller;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -28,6 +33,7 @@ import com.example.booking.domain.UserRole;
 import com.example.booking.dto.admin.UserCreateForm;
 import com.example.booking.dto.admin.UserEditForm;
 import com.example.booking.exception.ResourceNotFoundException;
+import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.UserRepository;
 
 import jakarta.validation.Valid;
@@ -39,15 +45,19 @@ public class AdminUserController {
 
 	private final UserRepository repo;
 	private final PasswordEncoder passwordEncoder;
+	private final BookingRepository bookingRepository;
 
-	public AdminUserController(UserRepository repo, PasswordEncoder passwordEncoder) {
+	public AdminUserController(UserRepository repo,
+							  PasswordEncoder passwordEncoder,
+							  BookingRepository bookingRepository) {
 		this.repo = repo;
 		this.passwordEncoder = passwordEncoder;
+		this.bookingRepository = bookingRepository;
 	}
 
 	@GetMapping
     public String list(@RequestParam(defaultValue = "0") int page,
-                       @RequestParam(defaultValue = "10") int size,
+                       @RequestParam(defaultValue = "10") String sizeParam,
                        @RequestParam(defaultValue = "createdAt") String sortBy,
                        @RequestParam(defaultValue = "desc") String dir,
                        @RequestParam(defaultValue = "") String q,
@@ -55,35 +65,80 @@ public class AdminUserController {
                        Model model) {
 
 		Sort sort = "asc".equalsIgnoreCase(dir) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-		Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<User> users;
+		boolean showAll = "all".equalsIgnoreCase(sizeParam);
+		int parsedSize = 10;
+		if (!showAll) {
+			try {
+				parsedSize = Integer.parseInt(sizeParam);
+				if (parsedSize <= 0) {
+					showAll = true;
+				}
+			} catch (NumberFormatException ex) {
+				parsedSize = 10;
+			}
+		}
+
         UserRole parsedRole = null;
         if (role != null && !role.trim().isEmpty()) {
             try {
-                // Accept both lowercase values (admin, customer, restaurant_owner) and enum names
-                String normalized = role.trim().toUpperCase();
-                if ("ADMIN".equals(normalized) || "ROLE_ADMIN".equals(normalized)) {
+                String normalized = role.trim().toLowerCase();
+                // Handle both lowercase and uppercase values from database
+                if ("admin".equals(normalized)) {
                     parsedRole = UserRole.ADMIN;
-                } else if ("CUSTOMER".equals(normalized) || "ROLE_CUSTOMER".equals(normalized)) {
+                } else if ("customer".equals(normalized)) {
                     parsedRole = UserRole.CUSTOMER;
-                } else if ("RESTAURANT_OWNER".equals(normalized) || "ROLE_RESTAURANT_OWNER".equals(normalized) || "RESTAURANT_OWNER".equals(normalized)) {
+                } else if ("restaurant_owner".equals(normalized)) {
                     parsedRole = UserRole.RESTAURANT_OWNER;
                 }
             } catch (IllegalArgumentException ignore) { /* fallback to null */ }
         }
 
-        if (parsedRole != null) {
-            users = repo.findByRole(parsedRole, pageable);
-		} else if (!q.isEmpty()) {
-			users = repo.findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(q, q, pageable);
-		} else {
-			users = repo.findAll(pageable);
+		List<User> filteredUsers = repo.findAll(sort);
+		System.out.println("=== USER LIST DEBUG ===");
+		System.out.println("Total users from DB: " + filteredUsers.size());
+		filteredUsers.forEach(user -> {
+			System.out.println("User: " + user.getUsername() + ", Role: " + user.getRole() + ", Role Value: " + (user.getRole() != null ? user.getRole().getValue() : "null"));
+		});
+		
+        final UserRole roleFilter = parsedRole;
+		if (roleFilter != null) {
+			System.out.println("Filtering by role: " + roleFilter + " (value: " + roleFilter.getValue() + ")");
+			filteredUsers = filteredUsers.stream()
+				.filter(user -> user.getRole() != null && 
+					(user.getRole() == roleFilter || 
+					 user.getRole().getValue().equalsIgnoreCase(roleFilter.getValue())))
+				.collect(Collectors.toList());
+			System.out.println("Users after role filter: " + filteredUsers.size());
+		}
+		if (!q.isEmpty()) {
+			final String keyword = q.toLowerCase(Locale.ROOT);
+			filteredUsers = filteredUsers.stream()
+				.filter(user -> (user.getUsername() != null && user.getUsername().toLowerCase(Locale.ROOT).contains(keyword))
+					|| (user.getEmail() != null && user.getEmail().toLowerCase(Locale.ROOT).contains(keyword)))
+				.collect(Collectors.toList());
 		}
 
-		model.addAttribute("users", users);
+		int effectiveSize = showAll ? Math.max(filteredUsers.size(), 1) : Math.max(parsedSize, 1);
+		int totalPages = filteredUsers.isEmpty() ? 1 : (int) Math.ceil((double) filteredUsers.size() / effectiveSize);
+		if (page < 0) {
+			page = 0;
+		} else if (page >= totalPages) {
+			page = Math.max(totalPages - 1, 0);
+		}
+
+		int fromIndex = Math.min(page * effectiveSize, filteredUsers.size());
+		int toIndex = Math.min(fromIndex + effectiveSize, filteredUsers.size());
+		List<User> pageContent = filteredUsers.subList(fromIndex, toIndex);
+
+		Pageable pageable = PageRequest.of(page, effectiveSize, sort);
+		Page<User> users = new PageImpl<>(pageContent, pageable, filteredUsers.size());
+
+        model.addAttribute("users", users);
 		model.addAttribute("currentPage", page);
-        model.addAttribute("size", size);
+        model.addAttribute("size", effectiveSize);
+		model.addAttribute("sizeParam", showAll ? "all" : String.valueOf(parsedSize));
+		model.addAttribute("showAll", showAll);
 		model.addAttribute("totalPages", users.getTotalPages());
 		model.addAttribute("totalElements", users.getTotalElements());
 		model.addAttribute("sortBy", sortBy);
@@ -91,10 +146,26 @@ public class AdminUserController {
 		model.addAttribute("q", q);
         model.addAttribute("role", parsedRole);
 		model.addAttribute("roles", UserRole.values());
+		Map<UUID, Long> bookingCounts = new HashMap<>();
+		Set<UUID> userIds = users.getContent().stream()
+			.map(User::getId)
+			.filter(id -> id != null)
+			.collect(Collectors.toSet());
+		if (!userIds.isEmpty()) {
+			bookingRepository.countBookingsByUserIds(userIds).forEach(row -> {
+				Object idObj = row[0];
+				if (idObj instanceof UUID) {
+					UUID userId = (UUID) idObj;
+					Object countObj = row[1];
+					long total = countObj instanceof Number ? ((Number) countObj).longValue() : 0L;
+					bookingCounts.put(userId, total);
+				}
+			});
+		}
+		model.addAttribute("userBookingCounts", bookingCounts);
 
 		return "admin/users";
 	}
-
 	@GetMapping("/create")
 	public String createForm(Model model) {
 		System.out.println("=== CREATE FORM DEBUG START ===");

@@ -1,8 +1,6 @@
 package com.example.booking.web.controller;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +13,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.example.booking.dto.admin.RestaurantBalanceInfoDto;
-import com.example.booking.dto.admin.WithdrawalStatsDto;
 import com.example.booking.service.RestaurantApprovalService;
 import com.example.booking.service.RestaurantBalanceService;
-import com.example.booking.service.ReviewReportService;
-import com.example.booking.service.WithdrawalService;
 
 /**
  * Controller for Admin Dashboard
@@ -33,13 +27,7 @@ public class AdminDashboardController {
     private static final Logger logger = LoggerFactory.getLogger(AdminDashboardController.class);
     
     @Autowired
-    private WithdrawalService withdrawalService;
-    
-    @Autowired
     private RestaurantBalanceService balanceService;
-
-    @Autowired
-    private ReviewReportService reviewReportService;
     
     @Autowired
     private RestaurantApprovalService restaurantApprovalService;
@@ -72,44 +60,21 @@ public class AdminDashboardController {
     public String adminDashboard(Model model) {
         try {
             logger.info("Loading admin dashboard");
-            
-            // Get withdrawal statistics
-            WithdrawalStatsDto withdrawalStats = withdrawalService.getWithdrawalStats();
-            model.addAttribute("withdrawalStats", withdrawalStats);
-            
-            // Get total pending amount
-            BigDecimal totalPendingAmount = withdrawalService.getTotalPendingAmount();
-            model.addAttribute("totalPendingAmount", totalPendingAmount);
-            
-            // Get total withdrawn amount
-            BigDecimal totalWithdrawnAmount = withdrawalService.getTotalWithdrawnAmount();
-            model.addAttribute("totalWithdrawnAmount", totalWithdrawnAmount);
-            
-            // Get top restaurants by withdrawal amount
-            List<RestaurantBalanceInfoDto> topRestaurants = withdrawalService.getTopRestaurantsByWithdrawal(10);
-            model.addAttribute("topRestaurants", topRestaurants);
-            
-            // Get monthly withdrawal statistics for chart
-            Map<String, Object> monthlyStats = withdrawalService.getMonthlyWithdrawalStats();
-            model.addAttribute("monthlyStats", monthlyStats);
-            
-            // Get total commission earned
-            BigDecimal totalCommission = withdrawalService.getTotalCommissionEarned();
-            model.addAttribute("totalCommission", totalCommission);
-            
-            // Get restaurant approval statistics
-            long pendingRestaurants = restaurantApprovalService.getPendingRestaurantCount();
-            long approvedRestaurants = restaurantApprovalService.getApprovedRestaurantCount();
-            long rejectedRestaurants = restaurantApprovalService.getRejectedRestaurantCount();
-            long suspendedRestaurants = restaurantApprovalService.getSuspendedRestaurantCount();
-            
-            model.addAttribute("pendingRestaurants", pendingRestaurants);
-            model.addAttribute("approvedRestaurants", approvedRestaurants);
-            model.addAttribute("rejectedRestaurants", rejectedRestaurants);
-            model.addAttribute("suspendedRestaurants", suspendedRestaurants);
 
-            long pendingReviewReports = reviewReportService.countPendingReports();
-            model.addAttribute("pendingReviewReports", pendingReviewReports);
+            BigDecimal commissionToday = balanceService.getCommissionToday();
+            BigDecimal weeklyCommission = balanceService.getWeeklyCommission();
+            BigDecimal monthlyCommission = balanceService.getMonthlyCommission();
+            BigDecimal totalCommission = balanceService.getTotalCommission();
+            BigDecimal avgCommissionPerBooking = balanceService.getAverageCommissionPerBooking();
+            long todayBookings = balanceService.getCompletedBookingsToday();
+
+            model.addAttribute("commissionToday", commissionToday);
+            model.addAttribute("commissionRate", balanceService.getCommissionRate());
+            model.addAttribute("todayBookings", todayBookings);
+            model.addAttribute("avgCommissionPerBooking", avgCommissionPerBooking);
+            model.addAttribute("weeklyCommission", weeklyCommission);
+            model.addAttribute("monthlyCommission", monthlyCommission);
+            model.addAttribute("totalCommission", totalCommission);
             
             logger.info("Admin dashboard loaded successfully");
             

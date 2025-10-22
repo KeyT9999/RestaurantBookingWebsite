@@ -3,284 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Duyệt và Quản lý Đăng ký Nhà hàng | Book Eat Admin Panel</title>
-    
-    <!-- Bootstrap 5 CSS -->
+    <title>Quản lý đăng ký nhà hàng - Book Eat Admin</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+
     <style>
-        .admin-header {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
+
+        .ds-stat-card {
+            position: relative;
+            overflow: hidden;
         }
-        
-        .stats-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-left: 4px solid #007bff;
-        }
-        
-        .stats-number {
+
+        .ds-stat-card-icon {
+            position: absolute;
+            top: var(--ds-space-4);
+            right: var(--ds-space-4);
             font-size: 2rem;
-            font-weight: 700;
-            color: #007bff;
+            opacity: 0.15;
         }
-        
-        .restaurant-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border: 1px solid #e9ecef;
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--ds-space-2);
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--ds-radius-full);
+            font-weight: 600;
+            font-size: 0.75rem;
+            background: var(--ds-yellow-100);
+            color: var(--ds-warning);
         }
-        
-        .status-pending {
-            background-color: #FFF3CD;
-            color: #856404;
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
+
+        .restaurant-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--ds-space-6);
         }
-        
-        .btn-approve {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 500;
+
+        .restaurant-meta {
+            display: grid;
+            gap: var(--ds-space-2);
         }
-        
-        .btn-reject {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 500;
+
+        .restaurant-meta small {
+            color: var(--ds-text-secondary);
+        }
+
+        .ds-avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--ds-neutral-100);
+            color: var(--ds-blue-600);
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .ds-avatar-lg {
+            width: 56px;
+            height: 56px;
+            font-size: 1.25rem;
+        }
+
+        .ds-avatar-gradient {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(59, 130, 246, 0.25));
+            color: var(--ds-blue-600);
         }
     </style>
 </head>
+<body class="ds-bg-gray-50">
+    <div th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
-<body>
-    <!-- Header -->
-    <div class="admin-header">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="mb-2">
-                        <i class="fas fa-utensils me-3"></i>
-                        Duyệt và Quản lý Đăng ký Nhà hàng
-                    </h1>
-                    <p class="mb-0 opacity-75">Duyệt và quản lý các yêu cầu đăng ký nhà hàng mới</p>
-                </div>
-                <div class="col-md-4 text-end">
-                    <a href="/admin/dashboard" class="btn btn-light">
-                        <i class="fas fa-arrow-left me-2"></i>
-                        Quay lại Dashboard
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="container">
-            <!-- Flash Messages -->
-            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <span th:text="${success}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            
-            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <span th:text="${error}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            
-            <!-- Statistics Cards -->
-            <div class="row mb-4">
-                <div class="col-md-3 mb-3">
-                    <div class="stats-card">
-                        <div class="stats-number" th:text="${pendingCount}">0</div>
-                        <div class="text-muted">
-                            <i class="fas fa-clock me-2"></i>
-                            Chờ duyệt
+    <main>
+
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container ds-flex ds-flex-col ds-gap-6">
+                <div class="ds-grid ds-grid-cols-1 md:ds-grid-cols-4 ds-gap-4">
+                    <article class="ds-card ds-card-elevated ds-stat-card">
+                        <div class="ds-stat-card-icon">
+                            <i class="fas fa-hourglass-half"></i>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stats-card">
-                        <div class="stats-number" th:text="${approvedCount}">0</div>
-                        <div class="text-muted">
-                            <i class="fas fa-check-circle me-2"></i>
-                            Đã duyệt
+                        <div class="ds-card-body ds-flex ds-flex-col ds-gap-2">
+                            <span class="ds-text-secondary ds-font-semibold">Chờ duyệt</span>
+                            <span class="ds-heading-3" th:text="${pendingCount}">0</span>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stats-card">
-                        <div class="stats-number" th:text="${rejectedCount}">0</div>
-                        <div class="text-muted">
-                            <i class="fas fa-times-circle me-2"></i>
-                            Bị từ chối
+                    </article>
+                    <article class="ds-card ds-card-elevated ds-stat-card">
+                        <div class="ds-stat-card-icon">
+                            <i class="fas fa-circle-check"></i>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stats-card">
-                        <div class="stats-number" th:text="${suspendedCount}">0</div>
-                        <div class="text-muted">
-                            <i class="fas fa-pause-circle me-2"></i>
-                            Tạm dừng
+                        <div class="ds-card-body ds-flex ds-flex-col ds-gap-2">
+                            <span class="ds-text-secondary ds-font-semibold">Đã duyệt</span>
+                            <span class="ds-heading-3" th:text="${approvedCount}">0</span>
                         </div>
-                    </div>
+                    </article>
+                    <article class="ds-card ds-card-elevated ds-stat-card">
+                        <div class="ds-stat-card-icon">
+                            <i class="fas fa-circle-xmark"></i>
+                        </div>
+                        <div class="ds-card-body ds-flex ds-flex-col ds-gap-2">
+                            <span class="ds-text-secondary ds-font-semibold">Đã từ chối</span>
+                            <span class="ds-heading-3" th:text="${rejectedCount}">0</span>
+                        </div>
+                    </article>
+                    <article class="ds-card ds-card-elevated ds-stat-card">
+                        <div class="ds-stat-card-icon">
+                            <i class="fas fa-pause-circle"></i>
+                        </div>
+                        <div class="ds-card-body ds-flex ds-flex-col ds-gap-2">
+                            <span class="ds-text-secondary ds-font-semibold">Tạm dừng</span>
+                            <span class="ds-heading-3" th:text="${suspendedCount}">0</span>
+                        </div>
+                    </article>
                 </div>
-            </div>
-            
-            <!-- Restaurant List -->
-            <div class="row">
-                <div class="col-12">
-                    <h4 class="mb-3">
-                        <i class="fas fa-list me-2"></i>
-                        Nhà hàng chờ duyệt 
-                        <span class="badge bg-primary ms-2" th:text="${#lists.size(restaurants)}">0</span>
-                    </h4>
-                    
-                    <!-- Empty State -->
-                    <div th:if="${#lists.isEmpty(restaurants)}" class="text-center py-5">
-                        <i class="fas fa-utensils text-muted" style="font-size: 4rem;"></i>
-                        <h4 class="mt-3 text-muted">Không có nhà hàng nào chờ duyệt</h4>
-                        <p class="text-muted">Tất cả nhà hàng đã được xử lý!</p>
+
+                <div th:if="${success}" class="ds-alert ds-alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span th:text="${success}">Thành công</span>
+                </div>
+                <div th:if="${error}" class="ds-alert ds-alert-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span th:text="${error}">Có lỗi xảy ra</span>
+                </div>
+
+                <div th:if="${#lists.isEmpty(restaurants)}"
+                     class="ds-text-center ds-py-4">
+                    <i class="fas fa-check-circle ds-text-success"></i>
+                    <span class="ds-text-sm ds-text-secondary">
+                        Tất cả yêu cầu đã được xử lý
+                    </span>
+                </div>
+
+            <div th:unless="${#lists.isEmpty(restaurants)}"
+                 class="ds-card ds-card-elevated">
+                <div class="ds-card-body ds-flex ds-flex-col ds-gap-6">
+                    <div class="ds-flex ds-justify-between ds-items-center ds-gap-4 ds-flex-wrap">
+                        <div class="ds-flex ds-flex-col ds-gap-1">
+                            <h2 class="ds-heading-4 ds-mb-0">Nhà hàng chờ duyệt</h2>
+                            <p class="ds-text-secondary ds-mb-0">
+                                Kiểm tra thông tin chi tiết và xác nhận duyệt hoặc từ chối từng nhà hàng.
+                            </p>
+                        </div>
+                        <span class="ds-badge">
+                            <i class="fas fa-clipboard-list"></i>
+                            <span th:text="${restaurants.size()} + ' hồ sơ'">0 hồ sơ</span>
+                        </span>
                     </div>
-                    
-                    <!-- Restaurant Cards -->
-                    <div th:unless="${#lists.isEmpty(restaurants)}">
-                        <div class="row">
-                            <div th:each="restaurant : ${restaurants}" class="col-md-6 col-lg-4 mb-4">
-                                <div class="restaurant-card">
-                                    <!-- Restaurant Info -->
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-                                             style="width: 50px; height: 50px;">
-                                            <i class="fas fa-utensils"></i>
-                                        </div>
-                                        <div>
-                                            <h5 class="mb-1" th:text="${restaurant.restaurantName}">Restaurant Name</h5>
-                                            <p class="mb-0 text-muted" th:text="${restaurant.cuisineType}">Cuisine Type</p>
-                                        </div>
+
+                    <div class="restaurant-grid">
+                        <article class="ds-card ds-card-outline" th:each="restaurant : ${restaurants}">
+                            <div class="ds-card-body ds-flex ds-flex-col ds-gap-4">
+                                <div class="ds-flex ds-gap-3 ds-items-start">
+                                    <div class="ds-avatar ds-avatar-lg ds-avatar-gradient">
+                                        <i class="fas fa-utensils"></i>
                                     </div>
-                                    
-                                    <!-- Address -->
-                                    <div class="mb-3">
-                                        <small class="text-muted">
-                                            <i class="fas fa-map-marker-alt me-1"></i>
-                                            <span th:text="${restaurant.address}">Address</span>
-                                        </small>
-                                    </div>
-                                    
-                                    <!-- Phone -->
-                                    <div class="mb-3" th:if="${restaurant.phone != null and restaurant.phone != ''}">
-                                        <small class="text-muted">
-                                            <i class="fas fa-phone me-1"></i>
-                                            <span th:text="${restaurant.phone}">Phone</span>
-                                        </small>
-                                    </div>
-                                    
-                                    <!-- Status -->
-                                    <div class="mb-3">
-                                        <span class="status-pending">
-                                            <i class="fas fa-clock me-1"></i>
-                                            Chờ duyệt
+                                    <div class="ds-flex ds-flex-col ds-gap-1">
+                                        <h3 class="ds-heading-5 ds-mb-0" th:text="${restaurant.restaurantName}">Restaurant</h3>
+                                        <span class="ds-text-secondary" th:text="${restaurant.cuisineType ?: 'Chưa cập nhật'}">
+                                            Loại ẩm thực
                                         </span>
                                     </div>
-                                    
-                                    <!-- Created Date -->
-                                    <div class="mb-3">
-                                        <small class="text-muted">
-                                            <i class="fas fa-calendar me-1"></i>
-                                            Đăng ký: 
-                                            <span th:text="${#temporals.format(restaurant.createdAt, 'dd/MM/yyyy HH:mm')}">Date</span>
-                                        </small>
+                                </div>
+
+                                <div class="restaurant-meta">
+                                    <small>
+                                        <i class="fas fa-location-dot ds-text-muted"></i>
+                                        <span th:text="${restaurant.address ?: 'Chưa cập nhật'}">Địa chỉ</span>
+                                    </small>
+                                    <small th:if="${restaurant.phone != null && restaurant.phone != ''}">
+                                        <i class="fas fa-phone ds-text-muted"></i>
+                                        <span th:text="${restaurant.phone}">Số điện thoại</span>
+                                    </small>
+                                    <small>
+                                        <i class="fas fa-user ds-text-muted"></i>
+                                        Chủ nhà hàng:
+                                        <span th:text="${restaurant.ownerName ?: 'Chưa cập nhật'}">Nguyễn Văn A</span>
+                                    </small>
+                                    <small>
+                                        <i class="fas fa-calendar ds-text-muted"></i>
+                                        Đăng ký:
+                                        <span th:text="${#temporals.format(restaurant.createdAt, 'dd/MM/yyyy HH:mm')}">01/10/2025</span>
+                                    </small>
+                                </div>
+
+                                <div>
+                                    <span class="status-pill">
+                                        <i class="fas fa-clock"></i>
+                                        Chờ duyệt
+                                    </span>
+                                </div>
+
+                                <div class="ds-flex ds-gap-3 ds-flex-wrap">
+                                    <div class="ds-flex-grow">
+                                        <a th:href="@{'/admin/restaurant/requests/' + ${restaurant.restaurantId}}"
+                                           class="ds-btn ds-btn-secondary ds-btn-sm ds-w-full">
+                                            <i class="fas fa-eye"></i>
+                                            Xem chi tiết
+                                        </a>
                                     </div>
-                                    
-                                    <!-- Action Buttons -->
-                                    <div class="d-flex gap-2">
-                                        <form th:action="@{'/admin/restaurant/approve/' + ${restaurant.restaurantId}}" 
-                                              method="post" class="flex-fill">
-                                            <button type="submit" class="btn btn-approve w-100" 
-                                                    onclick="return confirm('Bạn có chắc muốn duyệt nhà hàng \'' + this.form.closest('.restaurant-card').querySelector('h5').textContent + '\'?')">
-                                                <i class="fas fa-check me-2"></i>
-                                                Duyệt
-                                            </button>
-                                        </form>
-                                        
-                                        <form th:action="@{'/admin/restaurant/reject/' + ${restaurant.restaurantId}}" 
-                                              method="post" class="flex-fill">
-                                            <button type="submit" class="btn btn-reject w-100" 
-                                                    onclick="return confirm('Bạn có chắc muốn từ chối nhà hàng \'' + this.form.closest('.restaurant-card').querySelector('h5').textContent + '\'?')">
-                                                <i class="fas fa-times me-2"></i>
-                                                Từ chối
-                                            </button>
-                                        </form>
-                                    </div>
+                                    <form th:action="@{'/admin/restaurant/approve/' + ${restaurant.restaurantId}}"
+                                          method="post" class="ds-flex-grow">
+                                        <button type="submit" class="ds-btn ds-btn-success ds-btn-sm ds-w-full"
+                                                th:attr="data-restaurant-name=${restaurant.restaurantName}">
+                                            <i class="fas fa-check"></i>
+                                            Duyệt
+                                        </button>
+                                    </form>
+                                    <form th:action="@{'/admin/restaurant/reject/' + ${restaurant.restaurantId}}"
+                                          method="post" class="ds-flex-grow">
+                                        <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm ds-w-full"
+                                                th:attr="data-restaurant-name=${restaurant.restaurantName}">
+                                            <i class="fas fa-xmark"></i>
+                                            Từ chối
+                                        </button>
+                                    </form>
                                 </div>
                             </div>
-                        </div>
+                        </article>
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
+        </section>
     </main>
-    
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+
     <script>
-        // Auto-hide flash messages
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
-        
-        // Enhanced confirmation
-        document.addEventListener('DOMContentLoaded', function() {
-            const forms = document.querySelectorAll('form');
-            forms.forEach(function(form) {
-                form.addEventListener('submit', function(e) {
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('form').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    const name = form.querySelector('button')?.getAttribute('data-restaurant-name') || 'nhà hàng';
                     const action = form.action.includes('/approve/') ? 'duyệt' : 'từ chối';
-                    const restaurantCard = form.closest('.restaurant-card');
-                    const restaurantName = restaurantCard ? restaurantCard.querySelector('h5').textContent : 'nhà hàng này';
-                    
-                    if (!confirm(`Bạn có chắc muốn ${action} "${restaurantName}"?\n\nHành động này không thể hoàn tác.`)) {
-                        e.preventDefault();
+                    if (!confirm(`Bạn có chắc chắn muốn ${action} "${name}"? Hành động này sẽ được ghi lại và không thể hoàn tác.`)) {
+                        event.preventDefault();
                         return false;
                     }
-                    
-                    // Show loading state
                     const button = form.querySelector('button');
                     if (button) {
-                        const originalText = button.innerHTML;
+                        const original = button.innerHTML;
                         button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
                         button.disabled = true;
-                        
-                        // Re-enable after 10 seconds in case of error
-                        setTimeout(function() {
-                            button.innerHTML = originalText;
+                        setTimeout(() => {
+                            button.innerHTML = original;
                             button.disabled = false;
                         }, 10000);
                     }

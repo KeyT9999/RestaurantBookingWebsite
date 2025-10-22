@@ -1,473 +1,621 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Đánh giá nhà hàng</title>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap 5 -->
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Luxury CSS -->
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+
     <style>
-        .review-card {
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
+        .review-layout {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-6);
         }
-        
-        .review-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.2);
+
+        .review-summary-grid {
+            display: grid;
+            gap: var(--ds-space-6);
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            align-items: stretch;
         }
-        
-        .review-header {
+
+        .rating-summary {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: var(--ds-space-2);
+        }
+
+        .rating-average {
+            font-size: var(--ds-font-size-5xl);
+            font-weight: var(--ds-font-weight-bold);
+            color: var(--ds-primary-black);
+        }
+
+        .review-stars {
+            color: var(--ds-yellow-500);
+            font-size: 1.5rem;
+        }
+
+        .total-reviews {
+            color: var(--ds-neutral-500);
+            font-size: var(--ds-font-size-sm);
+        }
+
+        .rating-distribution {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-3);
+        }
+
+        .rating-row {
             display: flex;
             align-items: center;
-            margin-bottom: 1rem;
+            gap: var(--ds-space-3);
         }
-        
+
+        .rating-row-label {
+            width: 64px;
+            font-size: var(--ds-font-size-sm);
+            color: var(--ds-neutral-500);
+        }
+
+        .rating-row-track {
+            flex: 1;
+            height: 8px;
+            background-color: var(--ds-neutral-100);
+            border-radius: var(--ds-radius-full);
+            overflow: hidden;
+        }
+
+        .rating-row-fill {
+            height: 100%;
+            background: var(--ds-yellow-500);
+            border-radius: inherit;
+            transition: width var(--ds-transition-fast);
+        }
+
+        .rating-row-count {
+            width: 40px;
+            text-align: right;
+            font-size: var(--ds-font-size-sm);
+            color: var(--ds-neutral-500);
+        }
+
+        .filter-card .ds-card-body {
+            gap: var(--ds-space-4);
+        }
+
+        .filter-card-header {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-2);
+        }
+
+        .filter-chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--ds-space-3);
+        }
+
+        .review-filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--ds-space-2);
+            padding: var(--ds-space-2) var(--ds-space-4);
+            border-radius: var(--ds-radius-full);
+            border: 1px solid var(--ds-neutral-300);
+            background-color: var(--ds-primary-white);
+            color: var(--ds-neutral-700);
+            font-size: var(--ds-font-size-sm);
+            font-weight: var(--ds-font-weight-medium);
+            text-decoration: none;
+            transition: all var(--ds-transition-fast);
+        }
+
+        .review-filter-chip:hover {
+            border-color: var(--ds-primary-black);
+            color: var(--ds-primary-black);
+            background-color: var(--ds-neutral-100);
+        }
+
+        .review-filter-chip.active {
+            background-color: var(--ds-primary-black);
+            color: var(--ds-primary-white);
+            border-color: var(--ds-primary-black);
+        }
+
+        .review-card .ds-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-4);
+        }
+
+        .review-card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--ds-space-4);
+        }
+
         .review-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--luxury-gold), #d4af37);
+            width: 56px;
+            height: 56px;
+            border-radius: var(--ds-radius-full);
+            background: var(--ds-gradient-warm);
+            color: var(--ds-primary-white);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--luxury-black);
-            font-weight: bold;
-            margin-right: 1rem;
-        }
-        
-        .review-info h6 {
-            color: var(--luxury-white);
-            margin: 0;
-            font-weight: 600;
-        }
-        
-        .review-date {
-            color: var(--luxury-gray);
-            font-size: 0.9rem;
-        }
-        
-        .star-rating {
-            color: var(--luxury-gold);
-            font-size: 1.2rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .review-comment {
-            color: var(--luxury-white);
-            line-height: 1.6;
-            margin-bottom: 1rem;
-        }
-        
-        .review-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .btn-review {
-            background: var(--luxury-gold);
-            color: var(--luxury-black);
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-review:hover {
-            background: #d4af37;
-            transform: translateY(-1px);
-        }
-        
-        .btn-outline-review {
-            background: transparent;
-            color: var(--luxury-gold);
-            border: 1px solid var(--luxury-gold);
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-outline-review:hover {
-            background: var(--luxury-gold);
-            color: var(--luxury-black);
-        }
-        
-        .statistics-card {
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .rating-summary {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        
-        .average-rating {
-            font-size: 3rem;
-            font-weight: bold;
-            color: var(--luxury-gold);
-            margin-bottom: 0.5rem;
-        }
-        
-        .total-reviews {
-            color: var(--luxury-gray);
-            font-size: 1.1rem;
-        }
-        
-        .rating-distribution {
-            margin-top: 1rem;
-        }
-        
-        .rating-bar {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        
-        .rating-label {
-            width: 60px;
-            color: var(--luxury-white);
-            font-size: 0.9rem;
-        }
-        
-        .rating-progress {
-            flex: 1;
-            height: 8px;
-            background: rgba(212, 175, 55, 0.2);
-            border-radius: 4px;
-            margin: 0 0.5rem;
+            font-size: 1.25rem;
+            font-weight: var(--ds-font-weight-semibold);
             overflow: hidden;
         }
-        
-        .rating-fill {
+
+        .review-avatar img {
+            width: 100%;
             height: 100%;
-            background: var(--luxury-gold);
-            transition: width 0.3s ease;
+            object-fit: cover;
         }
-        
-        .rating-count {
-            width: 40px;
-            color: var(--luxury-gray);
-            font-size: 0.9rem;
-            text-align: right;
+
+        .review-meta {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-1);
         }
-        
-        .filter-section {
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 2rem;
+
+        .review-author {
+            font-size: var(--ds-font-size-lg);
+            font-weight: var(--ds-font-weight-semibold);
+            color: var(--ds-neutral-900);
+            margin: 0;
         }
-        
-        .filter-btn {
-            background: transparent;
-            color: var(--luxury-gold);
-            border: 1px solid var(--luxury-gold);
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
-            transition: all 0.3s ease;
+
+        .review-date {
+            font-size: var(--ds-font-size-sm);
+            color: var(--ds-neutral-500);
         }
-        
-        .filter-btn:hover,
-        .filter-btn.active {
-            background: var(--luxury-gold);
-            color: var(--luxury-black);
+
+        .review-rating {
+            color: var(--ds-yellow-500);
+            display: flex;
+            gap: var(--ds-space-1);
+            font-size: 1.1rem;
         }
-        
-        .no-reviews {
+
+        .review-rating .far {
+            color: var(--ds-neutral-300);
+        }
+
+        .review-comment {
+            color: var(--ds-neutral-700);
+            line-height: var(--ds-line-height-relaxed);
+        }
+
+        .review-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--ds-space-3);
+        }
+
+        .review-card-highlight {
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            box-shadow: var(--ds-shadow-lg);
+        }
+
+        .review-cta-card .ds-card-body {
+            align-items: center;
             text-align: center;
-            padding: 3rem;
-            color: var(--luxury-gray);
         }
-        
-        .no-reviews i {
-            font-size: 4rem;
-            color: var(--luxury-gold);
-            margin-bottom: 1rem;
+
+        .no-reviews-card .ds-card-body {
+            align-items: center;
+            text-align: center;
+            gap: var(--ds-space-4);
+        }
+
+        .no-reviews-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            border-radius: var(--ds-radius-full);
+            background-color: var(--ds-neutral-100);
+            color: var(--ds-neutral-500);
+            font-size: 2.5rem;
+        }
+
+        .reviews-collection {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-4);
+        }
+
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-4);
+        }
+
+        .ds-pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: var(--ds-space-4);
+        }
+
+        @media (max-width: 768px) {
+            .review-card-header {
+                align-items: flex-start;
+            }
+
+            .review-actions {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .filter-card-header {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
         }
     </style>
 </head>
-<body>
-    <!-- Header -->
-    <div th:insert="fragments/header :: site-header"></div>
-    
-    <main class="main-content">
-        <div class="container py-5">
-            <!-- Flash Messages -->
-            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <span th:text="${success}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            
-            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                <span th:text="${error}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            
-            <!-- Statistics Section -->
-            <div class="statistics-card" th:if="${statistics != null}">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="rating-summary">
-                            <div class="average-rating" th:text="${statistics.formattedAverageRating}">4.5</div>
-                            <div class="star-rating">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <div class="total-reviews" th:text="|${statistics.totalReviews} đánh giá|">150 đánh giá</div>
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="rating-distribution">
-                            <div class="rating-bar">
-                                <div class="rating-label">5 sao</div>
-                                <div class="rating-progress">
-                                    <div class="rating-fill" th:style="'width: ' + ${statistics.fiveStarPercentage} + '%'"></div>
-                                </div>
-                                <div class="rating-count" th:text="${statistics.fiveStarCount}">120</div>
-                            </div>
-                            <div class="rating-bar">
-                                <div class="rating-label">4 sao</div>
-                                <div class="rating-progress">
-                                    <div class="rating-fill" th:style="'width: ' + ${statistics.fourStarPercentage} + '%'"></div>
-                                </div>
-                                <div class="rating-count" th:text="${statistics.fourStarCount}">20</div>
-                            </div>
-                            <div class="rating-bar">
-                                <div class="rating-label">3 sao</div>
-                                <div class="rating-progress">
-                                    <div class="rating-fill" th:style="'width: ' + ${statistics.threeStarPercentage} + '%'"></div>
-                                </div>
-                                <div class="rating-count" th:text="${statistics.threeStarCount}">8</div>
-                            </div>
-                            <div class="rating-bar">
-                                <div class="rating-label">2 sao</div>
-                                <div class="rating-progress">
-                                    <div class="rating-fill" th:style="'width: ' + ${statistics.twoStarPercentage} + '%'"></div>
-                                </div>
-                                <div class="rating-count" th:text="${statistics.twoStarCount}">2</div>
-                            </div>
-                            <div class="rating-bar">
-                                <div class="rating-label">1 sao</div>
-                                <div class="rating-progress">
-                                    <div class="rating-fill" th:style="'width: ' + ${statistics.oneStarPercentage} + '%'"></div>
-                                </div>
-                                <div class="rating-count" th:text="${statistics.oneStarCount}">0</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Filter Section -->
-            <div class="filter-section">
-                <h5 class="luxury-title mb-3">
-                    <i class="fas fa-filter me-2"></i>
-                    Lọc theo đánh giá
-                </h5>
-                <div>
-                    <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId})}" 
-                       class="filter-btn" 
-                       th:classappend="${selectedRating == null} ? 'active' : ''">
-                        Tất cả
-                    </a>
-                    <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=5)}" 
-                       class="filter-btn" 
-                       th:classappend="${selectedRating == 5} ? 'active' : ''">
-                        <i class="fas fa-star"></i> 5 sao
-                    </a>
-                    <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=4)}" 
-                       class="filter-btn" 
-                       th:classappend="${selectedRating == 4} ? 'active' : ''">
-                        <i class="fas fa-star"></i> 4 sao
-                    </a>
-                    <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=3)}" 
-                       class="filter-btn" 
-                       th:classappend="${selectedRating == 3} ? 'active' : ''">
-                        <i class="fas fa-star"></i> 3 sao
-                    </a>
-                    <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=2)}" 
-                       class="filter-btn" 
-                       th:classappend="${selectedRating == 2} ? 'active' : ''">
-                        <i class="fas fa-star"></i> 2 sao
-                    </a>
-                    <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=1)}" 
-                       class="filter-btn" 
-                       th:classappend="${selectedRating == 1} ? 'active' : ''">
-                        <i class="fas fa-star"></i> 1 sao
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Customer Review Section -->
-            <div th:if="${hasReviewed and customerReview != null}" class="review-card" style="border: 2px solid var(--luxury-gold);">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h5 class="luxury-title mb-0">
-                        <i class="fas fa-user-check me-2"></i>
-                        Đánh giá của bạn
-                    </h5>
-                    <div class="review-actions">
-                        <a th:href="@{/reviews/edit/{id}(id=${customerReview.reviewId})}" 
-                           class="btn btn-outline-review btn-sm">
-                            <i class="fas fa-edit"></i> Chỉnh sửa
-                        </a>
-                        <form th:action="@{/reviews/delete/{id}(id=${customerReview.reviewId})}" 
-                              method="post" 
-                              style="display: inline;"
-                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này?')">
-                            <button type="submit" class="btn btn-outline-review btn-sm">
-                                <i class="fas fa-trash"></i> Xóa
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                
-                <div class="review-header">
-                    <div class="review-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="review-info">
-                        <h6 th:text="${customerReview.customerName}">Tên khách hàng</h6>
-                        <div class="review-date" th:text="${#temporals.format(customerReview.createdAt, 'dd/MM/yyyy HH:mm')}">29/01/2025 18:30</div>
-                    </div>
-                </div>
-                
-                <div class="star-rating">
-                    <span th:each="i : ${#numbers.sequence(1, customerReview.rating)}">
-                        <i class="fas fa-star"></i>
-                    </span>
-                    <span th:each="i : ${#numbers.sequence(customerReview.rating + 1, 5)}">
-                        <i class="far fa-star"></i>
-                    </span>
-                </div>
-                
-                <div class="review-comment" th:utext="${customerReview.comment}">Bình luận của khách hàng</div>
-            </div>
-            
-            <!-- Create Review Button -->
-            <div th:if="${!hasReviewed}" class="text-center mb-4">
-                <a th:href="@{/reviews/create/{id}(id=${restaurantId})}" 
-                   class="btn btn-review btn-lg" 
-                   sec:authorize="isAuthenticated()">
-                    <i class="fas fa-star me-2"></i>
-                    Viết đánh giá
-                </a>
-                <div th:unless="${#authentication.isAuthenticated()}" class="mt-3">
-                    <p class="text-muted">Bạn cần đăng nhập để viết đánh giá</p>
-                    <a th:href="@{/login}" class="btn btn-outline-review">
-                        <i class="fas fa-sign-in-alt me-2"></i>
-                        Đăng nhập
-                    </a>
-                </div>
-            </div>
-            
-            <!-- Reviews List -->
-            <div th:if="${reviews != null and !reviews.isEmpty()}">
-                <h5 class="luxury-title mb-4">
-                    <i class="fas fa-comments me-2"></i>
-                    Đánh giá từ khách hàng
-                </h5>
-                
-                <div th:each="review : ${reviews}" class="review-card">
-                    <div class="review-header">
-                        <div class="review-avatar">
-                            <img th:if="${review.customerAvatar != null}" 
-                                 th:src="${review.customerAvatar}" 
-                                 alt="Avatar" 
-                                 style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                            <i th:unless="${review.customerAvatar != null}" class="fas fa-user"></i>
-                        </div>
-                        <div class="review-info">
-                            <h6 th:text="${review.customerName}">Tên khách hàng</h6>
-                            <div class="review-date" th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy HH:mm')}">29/01/2025 18:30</div>
-                        </div>
-                    </div>
-                    
-                    <div class="star-rating">
-                        <span th:each="i : ${#numbers.sequence(1, review.rating)}">
-                            <i class="fas fa-star"></i>
-                        </span>
-                        <span th:each="i : ${#numbers.sequence(review.rating + 1, 5)}">
-                            <i class="far fa-star"></i>
-                        </span>
-                    </div>
-                    
-                    <div class="review-comment" th:utext="${review.comment}">Bình luận của khách hàng</div>
-                </div>
-                
-                <!-- Pagination -->
-                <nav th:if="${totalPages != null and totalPages > 1}" aria-label="Review pagination">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
-                            <a class="page-link" 
-                               th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, page=${currentPage - 1})}"
-                               th:if="${currentPage > 0}">Trước</a>
-                            <span class="page-link" th:unless="${currentPage > 0}">Trước</span>
+<body class="ds-bg-white">
+    <div th:with="activeNav='restaurants'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+
+    <main>
+        <section class="ds-bg-gray-50" style="padding: var(--ds-space-16) 0;">
+            <div class="ds-container">
+                <nav class="ds-breadcrumb" aria-label="breadcrumb">
+                    <ol class="ds-breadcrumb-list">
+                        <li class="ds-breadcrumb-item">
+                            <a th:href="@{/}">Trang chủ</a>
                         </li>
-                        
-                        <li class="page-item" 
-                            th:each="page : ${#numbers.sequence(0, totalPages - 1)}"
-                            th:classappend="${page == currentPage} ? 'active' : ''">
-                            <a class="page-link" 
-                               th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, page=${page})}"
-                               th:text="${page + 1}">1</a>
+                        <li class="ds-breadcrumb-item">
+                            <a th:href="@{/restaurants}">Nhà hàng</a>
                         </li>
-                        
-                        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''">
-                            <a class="page-link" 
-                               th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, page=${currentPage + 1})}"
-                               th:if="${currentPage < totalPages - 1}">Sau</a>
-                            <span class="page-link" th:unless="${currentPage < totalPages - 1}">Sau</span>
+                        <li class="ds-breadcrumb-item active">
+                            <span>Đánh giá</span>
                         </li>
-                    </ul>
+                    </ol>
                 </nav>
+
+                <div class="ds-flex ds-flex-col ds-items-center ds-text-center ds-gap-4">
+                    <h1 class="ds-heading-2">
+                        <i class="fas fa-star ds-text-primary"></i>
+                        Trải nghiệm từ thực khách
+                    </h1>
+                    <p class="ds-text-large ds-text-secondary" style="max-width: 640px;">
+                        Lắng nghe cảm nhận từ cộng đồng Book Eat và chia sẻ góc nhìn của bạn về nhà hàng yêu thích.
+                    </p>
+                </div>
             </div>
-            
-            <!-- No Reviews Message -->
-            <div th:if="${reviews == null or reviews.isEmpty()}" class="no-reviews">
-                <i class="fas fa-comment-slash"></i>
-                <h4>Chưa có đánh giá nào</h4>
-                <p>Hãy là người đầu tiên đánh giá nhà hàng này!</p>
-                <a th:href="@{/reviews/create/{id}(id=${restaurantId})}" 
-                   class="btn btn-review" 
-                   sec:authorize="isAuthenticated()">
-                    <i class="fas fa-star me-2"></i>
-                    Viết đánh giá đầu tiên
-                </a>
+        </section>
+
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container review-layout">
+                <div th:if="${success}" class="ds-alert ds-alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span th:text="${success}">Cập nhật thành công</span>
+                </div>
+
+                <div th:if="${error}" class="ds-alert ds-alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span th:text="${error}">Có lỗi xảy ra</span>
+                </div>
+
+                <div class="ds-card" th:if="${statistics != null}">
+                    <div class="ds-card-body review-summary-grid">
+                        <div class="rating-summary">
+                            <div class="rating-average" th:text="${statistics.formattedAverageRating}">4.5</div>
+                            <div class="review-stars">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="total-reviews" th:text="|${statistics.totalReviews} đánh giá|">
+                                150 đánh giá
+                            </div>
+                        </div>
+                        <div class="rating-distribution">
+                            <div class="rating-row">
+                                <div class="rating-row-label">5 sao</div>
+                                <div class="rating-row-track">
+                                    <div class="rating-row-fill"
+                                         th:style="'width: ' + ${statistics.fiveStarPercentage} + '%'"></div>
+                                </div>
+                                <div class="rating-row-count" th:text="${statistics.fiveStarCount}">120</div>
+                            </div>
+                            <div class="rating-row">
+                                <div class="rating-row-label">4 sao</div>
+                                <div class="rating-row-track">
+                                    <div class="rating-row-fill"
+                                         th:style="'width: ' + ${statistics.fourStarPercentage} + '%'"></div>
+                                </div>
+                                <div class="rating-row-count" th:text="${statistics.fourStarCount}">20</div>
+                            </div>
+                            <div class="rating-row">
+                                <div class="rating-row-label">3 sao</div>
+                                <div class="rating-row-track">
+                                    <div class="rating-row-fill"
+                                         th:style="'width: ' + ${statistics.threeStarPercentage} + '%'"></div>
+                                </div>
+                                <div class="rating-row-count" th:text="${statistics.threeStarCount}">8</div>
+                            </div>
+                            <div class="rating-row">
+                                <div class="rating-row-label">2 sao</div>
+                                <div class="rating-row-track">
+                                    <div class="rating-row-fill"
+                                         th:style="'width: ' + ${statistics.twoStarPercentage} + '%'"></div>
+                                </div>
+                                <div class="rating-row-count" th:text="${statistics.twoStarCount}">2</div>
+                            </div>
+                            <div class="rating-row">
+                                <div class="rating-row-label">1 sao</div>
+                                <div class="rating-row-track">
+                                    <div class="rating-row-fill"
+                                         th:style="'width: ' + ${statistics.oneStarPercentage} + '%'"></div>
+                                </div>
+                                <div class="rating-row-count" th:text="${statistics.oneStarCount}">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ds-card filter-card">
+                    <div class="ds-card-body ds-flex ds-flex-col">
+                        <div class="filter-card-header">
+                            <h2 class="ds-heading-5 ds-flex ds-items-center ds-gap-2 ds-m-0">
+                                <i class="fas fa-filter ds-text-primary"></i>
+                                Lọc theo đánh giá
+                            </h2>
+                            <p class="ds-text-sm ds-text-secondary ds-m-0" th:if="${selectedRating != null}">
+                                Đang hiển thị đánh giá với <strong th:text="|${selectedRating} sao|">5 sao</strong>.
+                            </p>
+                        </div>
+                        <div class="filter-chip-group">
+                            <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId})}"
+                               class="review-filter-chip"
+                               th:classappend="${selectedRating == null} ? ' active' : ''">
+                                Tất cả
+                            </a>
+                            <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=5)}"
+                               class="review-filter-chip"
+                               th:classappend="${selectedRating == 5} ? ' active' : ''">
+                                <i class="fas fa-star"></i>
+                                5 sao
+                            </a>
+                            <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=4)}"
+                               class="review-filter-chip"
+                               th:classappend="${selectedRating == 4} ? ' active' : ''">
+                                <i class="fas fa-star"></i>
+                                4 sao
+                            </a>
+                            <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=3)}"
+                               class="review-filter-chip"
+                               th:classappend="${selectedRating == 3} ? ' active' : ''">
+                                <i class="fas fa-star"></i>
+                                3 sao
+                            </a>
+                            <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=2)}"
+                               class="review-filter-chip"
+                               th:classappend="${selectedRating == 2} ? ' active' : ''">
+                                <i class="fas fa-star"></i>
+                                2 sao
+                            </a>
+                            <a th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, rating=1)}"
+                               class="review-filter-chip"
+                               th:classappend="${selectedRating == 1} ? ' active' : ''">
+                                <i class="fas fa-star"></i>
+                                1 sao
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${hasReviewed and customerReview != null}"
+                     class="ds-card review-card review-card-highlight">
+                    <div class="ds-card-body">
+                        <div class="ds-flex ds-justify-between ds-items-start ds-gap-4">
+                            <h2 class="ds-heading-5 ds-flex ds-items-center ds-gap-2 ds-m-0">
+                                <i class="fas fa-user-check ds-text-success"></i>
+                                Đánh giá của bạn
+                            </h2>
+                            <div class="review-actions">
+                                <a th:href="@{/reviews/edit/{id}(id=${customerReview.reviewId})}"
+                                   class="ds-btn ds-btn-outline ds-btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                    Chỉnh sửa
+                                </a>
+                                <form th:action="@{/reviews/delete/{id}(id=${customerReview.reviewId})}"
+                                      method="post"
+                                      onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này?')">
+                                    <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm">
+                                        <i class="fas fa-trash"></i>
+                                        Xóa
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="review-card-header">
+                            <div class="review-avatar">
+                                <img th:if="${customerReview.customerAvatar != null}"
+                                     th:src="${customerReview.customerAvatar}"
+                                     alt="Avatar">
+                                <i th:unless="${customerReview.customerAvatar != null}" class="fas fa-user"></i>
+                            </div>
+                            <div class="review-meta">
+                                <h3 class="review-author" th:text="${customerReview.customerName}">Tên khách hàng</h3>
+                                <div class="review-date"
+                                     th:text="${#temporals.format(customerReview.createdAt, 'dd/MM/yyyy HH:mm')}">
+                                    29/01/2025 18:30
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="review-rating">
+                            <span th:each="i : ${#numbers.sequence(1, customerReview.rating)}">
+                                <i class="fas fa-star"></i>
+                            </span>
+                            <span th:each="i : ${#numbers.sequence(customerReview.rating + 1, 5)}">
+                                <i class="far fa-star"></i>
+                            </span>
+                        </div>
+
+                        <div class="review-comment" th:utext="${customerReview.comment}">
+                            Bình luận của khách hàng
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${!hasReviewed}" class="ds-card review-cta-card">
+                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-3">
+                        <h2 class="ds-heading-5 ds-m-0">Hãy chia sẻ cảm nhận của bạn</h2>
+                        <p class="ds-text-base ds-text-secondary ds-m-0">
+                            Đánh giá của bạn giúp cộng đồng Book Eat đưa ra lựa chọn chính xác hơn.
+                        </p>
+                        <a th:href="@{/reviews/create/{id}(id=${restaurantId})}"
+                           class="ds-btn ds-btn-primary ds-btn-lg"
+                           sec:authorize="isAuthenticated()">
+                            <i class="fas fa-star me-1"></i>
+                            Viết đánh giá
+                        </a>
+                        <div th:unless="${#authentication.isAuthenticated()}"
+                             class="ds-flex ds-flex-col ds-items-center ds-gap-2">
+                            <p class="ds-text-sm ds-text-secondary ds-m-0">
+                                Bạn cần đăng nhập để viết đánh giá.
+                            </p>
+                            <a th:href="@{/login}" class="ds-btn ds-btn-outline">
+                                <i class="fas fa-sign-in-alt me-1"></i>
+                                Đăng nhập
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${reviews != null and !reviews.isEmpty()}" class="reviews-collection">
+                    <h2 class="ds-heading-4 ds-flex ds-items-center ds-gap-2 ds-m-0">
+                        <i class="fas fa-comments ds-text-primary"></i>
+                        Đánh giá từ khách hàng
+                    </h2>
+
+                    <div class="reviews-list">
+                        <article th:each="review : ${reviews}" class="ds-card review-card">
+                            <div class="ds-card-body">
+                                <div class="review-card-header">
+                                    <div class="review-avatar">
+                                        <img th:if="${review.customerAvatar != null}"
+                                             th:src="${review.customerAvatar}"
+                                             alt="Avatar">
+                                        <i th:unless="${review.customerAvatar != null}" class="fas fa-user"></i>
+                                    </div>
+                                    <div class="review-meta">
+                                        <h3 class="review-author" th:text="${review.customerName}">
+                                            Tên khách hàng
+                                        </h3>
+                                        <div class="review-date"
+                                             th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy HH:mm')}">
+                                            29/01/2025 18:30
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="review-rating">
+                                    <span th:each="i : ${#numbers.sequence(1, review.rating)}">
+                                        <i class="fas fa-star"></i>
+                                    </span>
+                                    <span th:each="i : ${#numbers.sequence(review.rating + 1, 5)}">
+                                        <i class="far fa-star"></i>
+                                    </span>
+                                </div>
+
+                                <div class="review-comment" th:utext="${review.comment}">
+                                    Bình luận của khách hàng
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="ds-pagination-wrapper"
+                         th:if="${totalPages != null and totalPages > 1}">
+                        <nav aria-label="Review pagination" class="ds-pagination">
+                            <ul class="ds-pagination-list">
+                                <li class="ds-pagination-item"
+                                    th:classappend="${currentPage == 0} ? ' disabled' : ''">
+                                    <a class="ds-pagination-link"
+                                       th:if="${currentPage > 0}"
+                                       th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, page=${currentPage - 1})}">
+                                        <i class="fas fa-chevron-left me-1"></i>
+                                        Trước
+                                    </a>
+                                    <span class="ds-pagination-link"
+                                          th:unless="${currentPage > 0}">
+                                        <i class="fas fa-chevron-left me-1"></i>
+                                        Trước
+                                    </span>
+                                </li>
+                                <li class="ds-pagination-item"
+                                    th:each="page : ${#numbers.sequence(0, totalPages - 1)}"
+                                    th:classappend="${page == currentPage} ? ' active' : ''">
+                                    <a class="ds-pagination-link"
+                                       th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, page=${page})}"
+                                       th:text="${page + 1}">1</a>
+                                </li>
+                                <li class="ds-pagination-item"
+                                    th:classappend="${currentPage == totalPages - 1} ? ' disabled' : ''">
+                                    <a class="ds-pagination-link"
+                                       th:if="${currentPage < totalPages - 1}"
+                                       th:href="@{/reviews/restaurant/{id}(id=${restaurantId}, page=${currentPage + 1})}">
+                                        Sau
+                                        <i class="fas fa-chevron-right ms-1"></i>
+                                    </a>
+                                    <span class="ds-pagination-link"
+                                          th:unless="${currentPage < totalPages - 1}">
+                                        Sau
+                                        <i class="fas fa-chevron-right ms-1"></i>
+                                    </span>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <div class="ds-card no-reviews-card"
+                     th:if="${reviews == null or reviews.isEmpty()}">
+                    <div class="ds-card-body">
+                        <div class="no-reviews-icon">
+                            <i class="fas fa-comment-slash"></i>
+                        </div>
+                        <h2 class="ds-heading-4 ds-m-0">Chưa có đánh giá nào</h2>
+                        <p class="ds-text-base ds-text-secondary ds-m-0">
+                            Hãy là người đầu tiên chia sẻ trải nghiệm của bạn về nhà hàng này.
+                        </p>
+                        <a th:href="@{/reviews/create/{id}(id=${restaurantId})}"
+                           class="ds-btn ds-btn-primary"
+                           sec:authorize="isAuthenticated()">
+                            <i class="fas fa-star me-1"></i>
+                            Viết đánh giá đầu tiên
+                        </a>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
     </main>
-    
-    <!-- Footer -->
-    <div th:insert="fragments/footer :: site-footer"></div>
-    
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
 </body>
 </html>

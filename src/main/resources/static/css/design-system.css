@@ -786,10 +786,76 @@ body {
 
 .ds-for-restaurants {
     color: var(--ds-primary-black);
-    font-weight: var(--ds-font-weight-medium);
-    font-size: var(--ds-font-size-xs);
     text-decoration: none;
-    transition: color var(--ds-transition-base);
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-medium);
+}
+
+.ds-for-restaurants:hover {
+    color: var(--ds-neutral-600);
+}
+
+/* Admin Dropdown Styling */
+.ds-admin-dropdown {
+    position: relative;
+}
+
+.ds-admin-dropdown .dropdown-menu {
+    min-width: 320px;
+    border: 1px solid var(--ds-neutral-200);
+    border-radius: var(--ds-radius-lg);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    padding: var(--ds-space-2);
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    display: none;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.2s ease 0.1s;
+    background-color: var(--ds-primary-white);
+    margin-top: var(--ds-space-1);
+    pointer-events: none;
+}
+
+.ds-admin-dropdown:hover .dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.ds-admin-dropdown .dropdown-item {
+    padding: var(--ds-space-3) var(--ds-space-4);
+    border-radius: var(--ds-radius-md);
+    transition: all var(--ds-transition-fast);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.ds-admin-dropdown .dropdown-item:hover {
+    background-color: var(--ds-neutral-50);
+    color: var(--ds-primary-black);
+}
+
+.ds-admin-dropdown .dropdown-item i {
+    margin-right: var(--ds-space-2);
+    width: 16px;
+    text-align: center;
+}
+
+.ds-admin-dropdown .dropdown-item small {
+    margin-top: var(--ds-space-1);
+    font-size: var(--ds-font-size-xs);
+    color: var(--ds-neutral-500);
+    line-height: 1.3;
+}
+
+.ds-admin-dropdown .dropdown-divider {
+    margin: var(--ds-space-2) 0;
+    border-color: var(--ds-neutral-200);
 }
 
 .ds-for-restaurants:hover {
@@ -1051,6 +1117,57 @@ body {
     display: flex;
     align-items: center;
     gap: var(--ds-space-2);
+}
+
+.ds-notification-bell {
+    position: relative;
+}
+
+.ds-notification-bell .notification-bell__trigger {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ds-neutral-300);
+    border-radius: var(--ds-radius-md);
+    background: transparent;
+    color: var(--ds-neutral-900);
+    padding: 0;
+    transition: all var(--ds-transition-base);
+}
+
+.ds-notification-bell .notification-bell__trigger:hover,
+.ds-notification-bell .notification-bell__trigger:focus {
+    background: var(--ds-neutral-100);
+    color: var(--ds-neutral-900);
+    outline: none;
+    box-shadow: none;
+}
+
+.ds-notification-bell .notification-bell__badge {
+    transform: translate(-30%, -40%);
+    font-size: var(--ds-font-size-xs);
+}
+
+.ds-notification-bell .notification-bell__menu {
+    border-radius: var(--ds-radius-lg);
+    border: 1px solid var(--ds-neutral-300);
+    box-shadow: var(--ds-shadow-lg);
+}
+
+.notification-bell__list li {
+    list-style: none;
+}
+
+.notification-bell__link {
+    gap: var(--ds-space-2);
+    padding: var(--ds-space-2) var(--ds-space-4);
+    border-radius: var(--ds-radius-md);
+}
+
+.notification-bell__link:hover {
+    background: var(--ds-neutral-100);
 }
 
 .ds-user-dropdown {
@@ -1481,3 +1598,7 @@ body {
 /* ================================================
    END OF DESIGN SYSTEM
    ================================================ */
+
+.dropdown-hover:hover > .dropdown-menu { display: block; }
+.dropdown-hover .dropdown-menu { margin-top:0; }
+

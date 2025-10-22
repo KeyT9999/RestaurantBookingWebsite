@@ -3,292 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý rút tiền</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <title>Quản lý rút tiền - Book Eat Admin</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+
     <style>
-        /* Header styling */
-        .main-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+
+        .ds-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--ds-space-2);
+            padding: 0.35rem 0.85rem;
+            border-radius: var(--ds-radius-full);
+            font-size: var(--ds-font-size-sm);
+            font-weight: 600;
+            background: var(--ds-neutral-100);
+            color: var(--ds-neutral-700);
         }
-        
-        .header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
+
+        .ds-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--ds-font-size-sm);
         }
-        
-        .header-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .header-subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-bottom: 0;
-        }
-        
-        /* Navigation */
-        .nav-links {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        
-        .nav-link {
-            color: white;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 25px;
-            background: rgba(255,255,255,0.1);
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        
-        .nav-link:hover {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            transform: translateY(-2px);
-        }
-        
-        /* Main content */
-        .main-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 1rem;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+
+        .ds-table-responsive {
+            border: 1px solid var(--ds-neutral-200);
+            border-radius: var(--ds-radius-lg);
+            background: var(--ds-primary-white);
             overflow: hidden;
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 1.5rem;
-        }
-        
-        .card-header h5 {
-            margin: 0;
-            font-weight: 600;
-            font-size: 1.3rem;
-        }
-        
-        .card-body {
-            padding: 2rem;
-        }
-        
-        /* Filter buttons */
-        .btn-group .btn {
-            border-radius: 25px;
-            margin-right: 0.5rem;
-            font-weight: 500;
-            padding: 0.5rem 1.5rem;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-group .btn.active {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        /* Table styling */
-        .table-responsive {
             overflow-x: auto;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        
-        .table {
-            margin-bottom: 0;
-        }
-        
-        .table thead th {
-            background: #f8f9fa;
-            border: none;
+
+        .ds-table thead th {
+            background: var(--ds-neutral-50);
+            color: var(--ds-neutral-700);
             font-weight: 600;
-            color: #495057;
-            padding: 1rem;
+            padding: var(--ds-space-4);
+            border-bottom: 1px solid var(--ds-neutral-200);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.04em;
         }
-        
-        .table tbody td {
-            padding: 1rem;
-            vertical-align: middle;
-            border-top: 1px solid #e9ecef;
+
+        .ds-table tbody td {
+            padding: var(--ds-space-4);
+            border-bottom: 1px solid var(--ds-neutral-200);
+            vertical-align: top;
         }
-        
-        .table tbody tr:hover {
-            background-color: #f8f9fa;
+
+        .ds-table tbody tr:hover {
+            background: var(--ds-neutral-50);
         }
-        
-        /* Status badges */
-        .badge {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--ds-space-2);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--ds-radius-full);
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
-        
-        /* Action buttons */
-        .btn-group-vertical .btn {
-            border-radius: 8px;
-            margin-bottom: 0.25rem;
-            font-size: 0.875rem;
-            padding: 0.375rem 0.75rem;
+
+        .status-pill.pending {
+            background: var(--ds-yellow-100);
+            color: var(--ds-warning);
         }
-        
-        /* Alerts */
-        .alert {
-            border: none;
-            border-radius: 10px;
-            padding: 1rem 1.5rem;
+
+        .status-pill.success {
+            background: var(--ds-green-100);
+            color: var(--ds-success);
         }
-        
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: #6c757d;
+
+        .status-pill.rejected {
+            background: #fee2e2;
+            color: var(--ds-error);
         }
-        
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
+
+        .status-pill.unknown {
+            background: var(--ds-neutral-100);
+            color: var(--ds-neutral-700);
         }
-        
-        /* Modal styling */
-        .modal-content {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+
+        .withdrawal-filters .ds-btn {
+            min-width: 140px;
         }
-        
-        .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 15px 15px 0 0;
-        }
-        
-        .modal-body {
-            padding: 2rem;
-        }
-        
-        .modal-footer {
-            border: none;
-            padding: 1rem 2rem 2rem;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-title {
-                font-size: 2rem;
-            }
-            
-            .nav-links {
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-            
-            .card-body {
-                padding: 1rem;
-            }
-            
-            .table-responsive {
-                font-size: 0.875rem;
-            }
+
+        .ds-modal-body p,
+        .ds-modal-body span {
+            font-size: var(--ds-font-size-sm);
         }
     </style>
 </head>
-<body>
-    <!-- Main Header -->
-    <div class="main-header">
-        <div class="header-content">
-            <h1 class="header-title">
-                <i class="bi bi-credit-card-2-front"></i>
-                Quản lý rút tiền
-            </h1>
-            <p class="header-subtitle">Quản lý và xử lý các yêu cầu rút tiền từ nhà hàng</p>
-            
-            <div class="nav-links">
-                <a href="/" class="nav-link">
-                    <i class="bi bi-house"></i> Trang chủ
-                </a>
-                <a href="/admin/dashboard" class="nav-link">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                </a>
-                <a href="/admin/partners" class="nav-link">
-                    <i class="bi bi-shop"></i> Partners
-                </a>
-                <a href="/admin/withdrawal" class="nav-link">
-                    <i class="bi bi-credit-card-2-front"></i> Rút tiền
-                </a>
-            </div>
-        </div>
-    </div>
+<body class="ds-bg-gray-50">
+    <div th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="bi bi-list-ul"></i> Danh sách yêu cầu rút tiền
-                            <span class="badge bg-secondary ms-2" th:text="${withdrawals.size()}">0</span>
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        
-                        <!-- Success/Error Messages -->
-                        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bi bi-check-circle"></i>
-                            <span th:text="${success}">Success message</span>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                        
-                        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <span th:text="${error}">Error message</span>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                        
-                        <!-- Filter Buttons -->
-                        <div class="mb-3">
-                            <div class="btn-group" role="group">
-                                <a href="/admin/withdrawal" class="btn btn-outline-secondary" th:classappend="${filter == 'ALL' ? 'active' : ''}">Tất cả</a>
-                                <a href="/admin/withdrawal?status=PENDING" class="btn btn-outline-warning" th:classappend="${filter == 'PENDING' ? 'active' : ''}">Chờ duyệt</a>
-                                <a href="/admin/withdrawal?status=SUCCEEDED" class="btn btn-outline-success" th:classappend="${filter == 'SUCCEEDED' ? 'active' : ''}">Thành công</a>
-                                <a href="/admin/withdrawal?status=REJECTED" class="btn btn-outline-danger" th:classappend="${filter == 'REJECTED' ? 'active' : ''}">Từ chối</a>
+    <main>
+
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container ds-flex ds-flex-col ds-gap-6">
+                <div class="ds-card ds-card-elevated">
+                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-6">
+                        <div class="ds-flex ds-flex-wrap ds-gap-4 ds-justify-between ds-items-start">
+                            <div class="ds-flex ds-flex-col ds-gap-1">
+                                <h2 class="ds-heading-4 ds-mb-0">Danh sách yêu cầu rút tiền</h2>
+                                <p class="ds-text-secondary ds-mb-0">
+                                    Xem tình trạng từng yêu cầu và xác nhận chi trả ngay trên hệ thống.
+                                </p>
                             </div>
+                            <span class="ds-badge">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span th:text="${withdrawals.size()} + ' yêu cầu'">0 yêu cầu</span>
+                            </span>
                         </div>
 
-                        <!-- No data message -->
-                        <div th:if="${#lists.isEmpty(withdrawals)}" class="empty-state">
-                            <i class="bi bi-inbox"></i>
-                            <h5 class="text-muted mt-3">Không có yêu cầu rút tiền</h5>
-                            <p class="text-muted">Hiện tại chưa có yêu cầu rút tiền nào.</p>
+                        <div th:if="${success}" class="ds-alert ds-alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <span th:text="${success}">Thao tác thành công.</span>
+                        </div>
+                        <div th:if="${error}" class="ds-alert ds-alert-error">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span th:text="${error}">Có lỗi xảy ra.</span>
                         </div>
 
-                        <!-- Withdrawal List as Table -->
-                        <div th:if="${!#lists.isEmpty(withdrawals)}" class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-light">
+                        <div class="withdrawal-filters ds-flex ds-flex-wrap ds-gap-2">
+                            <a href="/admin/withdrawal"
+                               class="ds-btn ds-btn-sm"
+                               th:classappend="${filter == 'ALL'} ? ' ds-btn-primary' : ' ds-btn-outline'">
+                                Tất cả
+                            </a>
+                            <a href="/admin/withdrawal?status=PENDING"
+                               class="ds-btn ds-btn-sm"
+                               th:classappend="${filter == 'PENDING'} ? ' ds-btn-primary' : ' ds-btn-outline'">
+                                Chờ duyệt
+                            </a>
+                            <a href="/admin/withdrawal?status=SUCCEEDED"
+                               class="ds-btn ds-btn-sm"
+                               th:classappend="${filter == 'SUCCEEDED'} ? ' ds-btn-primary' : ' ds-btn-outline'">
+                                Thành công
+                            </a>
+                            <a href="/admin/withdrawal?status=REJECTED"
+                               class="ds-btn ds-btn-sm"
+                               th:classappend="${filter == 'REJECTED'} ? ' ds-btn-primary' : ' ds-btn-outline'">
+                                Từ chối
+                            </a>
+                        </div>
+
+                        <div th:if="${#lists.isEmpty(withdrawals)}"
+                             class="ds-card ds-card-outline ds-text-center ds-flex ds-flex-col ds-items-center ds-gap-3 ds-py-10">
+                            <i class="fas fa-inbox fa-3x ds-text-muted"></i>
+                            <h3 class="ds-heading-4 ds-mb-0">Chưa có yêu cầu rút tiền</h3>
+                            <p class="ds-text-secondary ds-mb-0">
+                                Khi nhà hàng tạo yêu cầu, bạn sẽ thấy thông tin chi tiết tại đây.
+                            </p>
+                        </div>
+
+                        <div th:if="${!#lists.isEmpty(withdrawals)}" class="ds-table-responsive">
+                            <table class="ds-table">
+                                <thead>
                                     <tr>
                                         <th>ID</th>
-                                        <th>Từ ai</th>
+                                        <th>Người yêu cầu</th>
                                         <th>Nhà hàng</th>
                                         <th>Số tiền</th>
                                         <th>STK ngân hàng</th>
@@ -300,140 +179,137 @@
                                 </thead>
                                 <tbody>
                                     <tr th:each="request : ${withdrawals}">
-                                        <!-- ID -->
                                         <td>
-                                            <strong>#<span th:text="${request.requestId}">123</span></strong>
+                                            <strong th:text="'#' + ${request.requestId}">#123</strong>
                                         </td>
-                                        
-                                        <!-- Từ ai -->
                                         <td>
-                                            <div>
-                                                <strong th:text="${request.ownerName ?: 'N/A'}">Nguyễn Văn A</strong>
-                                                <br><small class="text-muted" th:text="${request.ownerEmail ?: 'N/A'}">email@example.com</small>
+                                            <div class="ds-flex ds-flex-col ds-gap-1">
+                                                <span class="ds-text-primary ds-font-semibold"
+                                                      th:text="${request.ownerName ?: 'N/A'}">Nguyễn Văn A</span>
+                                                <small class="ds-text-secondary"
+                                                       th:text="${request.ownerEmail ?: 'N/A'}">email@example.com</small>
                                             </div>
                                         </td>
-                                        
-                                        <!-- Nhà hàng -->
                                         <td>
-                                            <div>
-                                                <strong th:text="${request.restaurantName ?: 'N/A'}">Pizza Italia</strong>
-                                                <br><small class="text-muted" th:text="'ID: ' + ${request.restaurantId}">ID: 18</small>
+                                            <div class="ds-flex ds-flex-col ds-gap-1">
+                                                <span th:text="${request.restaurantName ?: 'N/A'}">Pizza Italia</span>
+                                                <small class="ds-text-secondary"
+                                                       th:text="'ID: ' + ${request.restaurantId}">ID: 18</small>
                                             </div>
                                         </td>
-                                        
-                                        <!-- Số tiền -->
                                         <td>
-                                            <div>
-                                                <strong class="text-success" th:text="${#numbers.formatDecimal(request.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">1,000,000 VNĐ</strong>
-                                                <br><small class="text-muted" th:text="${request.description ?: 'Rút tiền về tài khoản ngân hàng'}">Mô tả</small>
+                                            <div class="ds-flex ds-flex-col ds-gap-1">
+                                                <span class="ds-text-success ds-font-semibold"
+                                                      th:text="${#numbers.formatDecimal(request.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                                                    1,000,000 VNĐ
+                                                </span>
+                                                <small class="ds-text-secondary"
+                                                       th:text="${request.description ?: 'Rút tiền về tài khoản ngân hàng'}">
+                                                    Ghi chú
+                                                </small>
                                             </div>
                                         </td>
-                                        
-                                        <!-- STK ngân hàng -->
                                         <td>
-                                            <div>
-                                                <strong th:text="${request.bankAccountNumber ?: 'N/A'}">1234567890</strong>
-                                                <br><small class="text-muted" th:text="${request.accountHolderName ?: 'N/A'}">Tên chủ tài khoản</small>
+                                            <div class="ds-flex ds-flex-col ds-gap-1">
+                                                <span th:text="${request.bankAccountNumber ?: 'N/A'}">1234567890</span>
+                                                <small class="ds-text-secondary"
+                                                       th:text="${request.accountHolderName ?: 'N/A'}">Tên chủ tài khoản</small>
                                             </div>
                                         </td>
-                                        
-                                        <!-- Ngân hàng -->
                                         <td>
-                                            <div>
-                                                <strong th:text="${request.bankName ?: 'N/A'}">Vietcombank</strong>
-                                                <br><small class="text-muted" th:text="${request.bankCode ?: 'N/A'}">970436</small>
+                                            <div class="ds-flex ds-flex-col ds-gap-1">
+                                                <span th:text="${request.bankName ?: 'N/A'}">Vietcombank</span>
+                                                <small class="ds-text-secondary"
+                                                       th:text="${request.bankCode ?: 'N/A'}">970436</small>
                                             </div>
                                         </td>
-                                        
-                                        <!-- Ngày tạo -->
                                         <td>
-                                            <div>
-                                                <strong th:text="${#temporals.format(request.createdAt, 'dd/MM/yyyy')}">08/10/2025</strong>
-                                                <br><small class="text-muted" th:text="${#temporals.format(request.createdAt, 'HH:mm')}">14:04</small>
+                                            <div class="ds-flex ds-flex-col ds-gap-1">
+                                                <span th:text="${#temporals.format(request.createdAt, 'dd/MM/yyyy')}">08/10/2025</span>
+                                                <small class="ds-text-secondary"
+                                                       th:text="${#temporals.format(request.createdAt, 'HH:mm')}">14:04</small>
                                             </div>
                                         </td>
-                                        
-                                        <!-- Trạng thái -->
                                         <td>
-                                            <span th:switch="${request.status.name()}" class="badge">
-                                                <span th:case="'PENDING'" class="badge bg-warning">PENDING</span>
-                                                <span th:case="'SUCCEEDED'" class="badge bg-success">SUCCEEDED</span>
-                                                <span th:case="'REJECTED'" class="badge bg-danger">REJECTED</span>
-                                                <span th:case="*" class="badge bg-secondary" th:text="${request.status.name()}">UNKNOWN</span>
+                                            <span th:switch="${request.status.name()}">
+                                                <span th:case="'PENDING'" class="status-pill pending">
+                                                    <i class="fas fa-clock"></i> Chờ duyệt
+                                                </span>
+                                                <span th:case="'SUCCEEDED'" class="status-pill success">
+                                                    <i class="fas fa-check-circle"></i> Thành công
+                                                </span>
+                                                <span th:case="'REJECTED'" class="status-pill rejected">
+                                                    <i class="fas fa-xmark-circle"></i> Từ chối
+                                                </span>
+                                                <span th:case="*" class="status-pill unknown" th:text="${request.status.name()}">
+                                                    UNKNOWN
+                                                </span>
                                             </span>
                                         </td>
-                                        
-                                        <!-- Thao tác -->
                                         <td>
-                                            <div th:switch="${request.status.name()}">
-                                                <!-- PENDING: Show Accept and Reject buttons -->
-                                                <div th:case="'PENDING'">
-                                                    <div class="btn-group-vertical" role="group">
-                                                        <button type="button" class="btn btn-success btn-sm mb-1" 
-                                                                th:attr="data-bs-toggle='modal', data-bs-target='#markPaidModal', data-request-id=${request.requestId}">
-                                                            <i class="bi bi-check-circle"></i> Chấp nhận
-                                                        </button>
-                                                        <button type="button" class="btn btn-danger btn-sm" 
-                                                                th:attr="data-bs-toggle='modal', data-bs-target='#rejectModal', data-request-id=${request.requestId}">
-                                                            <i class="bi bi-x-circle"></i> Từ chối
-                                                        </button>
-                                                    </div>
+                                            <div th:switch="${request.status.name()}" class="ds-flex ds-flex-col ds-gap-2">
+                                                <div th:case="'PENDING'" class="ds-flex ds-flex-col ds-gap-2">
+                                                    <button type="button"
+                                                            class="ds-btn ds-btn-success ds-btn-sm"
+                                                            th:attr="data-bs-toggle='modal', data-bs-target='#markPaidModal', data-request-id=${request.requestId}">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        Chấp nhận
+                                                    </button>
+                                                    <button type="button"
+                                                            class="ds-btn ds-btn-danger ds-btn-sm"
+                                                            th:attr="data-bs-toggle='modal', data-bs-target='#rejectModal', data-request-id=${request.requestId}">
+                                                        <i class="fas fa-xmark-circle"></i>
+                                                        Từ chối
+                                                    </button>
                                                 </div>
-                                                
-                                                <!-- SUCCEEDED: Show success info -->
-                                                <div th:case="'SUCCEEDED'">
-                                                    <span class="text-success">
-                                                        <i class="bi bi-check-circle-fill"></i> Đã chuyển tiền
-                                                    </span>
+                                                <div th:case="'SUCCEEDED'" class="ds-text-success ds-flex ds-gap-2 ds-items-center">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    <span>Đã chuyển tiền</span>
                                                 </div>
-                                                
-                                                <!-- REJECTED: Show rejected info -->
-                                                <div th:case="'REJECTED'">
-                                                    <span class="text-danger">
-                                                        <i class="bi bi-x-circle-fill"></i> Đã từ chối
-                                                    </span>
+                                                <div th:case="'REJECTED'" class="ds-text-error ds-flex ds-gap-2 ds-items-center">
+                                                    <i class="fas fa-ban"></i>
+                                                    <span>Đã từ chối</span>
                                                 </div>
-                                                
-                                                <!-- Default -->
-                                                <div th:case="*">
-                                                    <span class="text-muted">-</span>
-                                                </div>
+                                                <div th:case="*" class="ds-text-secondary">-</div>
                                             </div>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    </div>
+        </section>
+    </main>
+
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
 
     <!-- Mark Paid Modal -->
     <div class="modal fade" id="markPaidModal" tabindex="-1" aria-labelledby="markPaidModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <form id="markPaidForm" method="post">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="markPaidModalLabel">Xác nhận đã chuyển tiền</h5>
+                        <h5 class="modal-title" id="markPaidModalLabel">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Xác nhận đã chuyển tiền
+                        </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body ds-modal-body ds-flex ds-flex-col ds-gap-3">
                         <input type="hidden" name="requestId" id="markPaidRequestId" value="">
-                        
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>Xác nhận:</strong> Bạn có chắc chắn đã chuyển tiền cho yêu cầu rút tiền này?
+                        <div class="ds-alert ds-alert-info ds-mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Hãy chắc chắn rằng bạn đã hoàn tất việc chuyển tiền cho nhà hàng trước khi xác nhận.</span>
                         </div>
-                        
-                        <p>Hành động này sẽ đánh dấu yêu cầu rút tiền là <strong>đã thành công</strong> và không thể hoàn tác.</p>
+                        <p class="ds-text-secondary ds-mb-0">
+                            Sau khi xác nhận, trạng thái yêu cầu sẽ được cập nhật thành <strong>đã thanh toán</strong> và không thể hoàn tác.
+                        </p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-success">Xác nhận đã chuyển tiền</button>
+                        <button type="button" class="ds-btn ds-btn-outline" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="ds-btn ds-btn-success">Xác nhận đã chuyển tiền</button>
                     </div>
                 </form>
             </div>
@@ -442,23 +318,26 @@
 
     <!-- Reject Modal -->
     <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <form id="rejectForm" method="post">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="rejectModalLabel">Từ chối yêu cầu rút tiền</h5>
+                        <h5 class="modal-title" id="rejectModalLabel">
+                            <i class="fas fa-circle-exclamation text-danger me-2"></i>
+                            Từ chối yêu cầu rút tiền
+                        </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body ds-modal-body ds-flex ds-flex-col ds-gap-3">
                         <input type="hidden" name="requestId" id="rejectRequestId" value="">
-                        
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <strong>Chú ý:</strong> Hành động này sẽ từ chối yêu cầu rút tiền và không thể hoàn tác.
+                        <div class="ds-alert ds-alert-warning ds-mb-0">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            <span>Hành động này sẽ đánh dấu yêu cầu bị từ chối. Hãy nhập lý do rõ ràng để nhà hàng nắm thông tin.</span>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="rejectReason" class="form-label">Lý do từ chối <span class="text-danger">*</span></label>
+                        <div class="ds-flex ds-flex-col ds-gap-3">
+                            <label for="rejectReason" class="ds-text-secondary ds-font-semibold">
+                                Lý do từ chối <span class="ds-text-error">*</span>
+                            </label>
                             <select class="form-select" id="rejectReason" name="rejectReason" required>
                                 <option value="">-- Chọn lý do --</option>
                                 <option value="THONG_TIN_SAI">Thông tin tài khoản ngân hàng không chính xác</option>
@@ -468,53 +347,42 @@
                                 <option value="KHAC">Lý do khác</option>
                             </select>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="rejectNote" class="form-label">Ghi chú chi tiết</label>
-                            <textarea class="form-control" id="rejectNote" name="rejectNote" rows="4" 
+                        <div class="ds-flex ds-flex-col ds-gap-2">
+                            <label for="rejectNote" class="ds-text-secondary ds-font-semibold">Ghi chú chi tiết</label>
+                            <textarea class="form-control" id="rejectNote" name="rejectNote" rows="4"
                                       placeholder="Mô tả chi tiết lý do từ chối..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                        <button type="button" class="ds-btn ds-btn-outline" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="ds-btn ds-btn-danger">Xác nhận từ chối</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Modal handler -->
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Mark Paid Modal
             const markPaidModal = document.getElementById('markPaidModal');
             if (markPaidModal) {
                 markPaidModal.addEventListener('show.bs.modal', function (event) {
                     const button = event.relatedTarget;
                     const requestId = button.getAttribute('data-request-id');
                     document.getElementById('markPaidRequestId').value = requestId;
-                    
-                    // Set form action
-                    const form = document.getElementById('markPaidForm');
-                    form.action = '/admin/withdrawal/' + requestId + '/mark-paid';
+                    document.getElementById('markPaidForm').action = '/admin/withdrawal/' + requestId + '/mark-paid';
                 });
             }
-            
-            // Reject Modal
+
             const rejectModal = document.getElementById('rejectModal');
             if (rejectModal) {
                 rejectModal.addEventListener('show.bs.modal', function (event) {
                     const button = event.relatedTarget;
                     const requestId = button.getAttribute('data-request-id');
                     document.getElementById('rejectRequestId').value = requestId;
-                    
-                    // Set form action
-                    const form = document.getElementById('rejectForm');
-                    form.action = '/admin/withdrawal/' + requestId + '/reject';
+                    document.getElementById('rejectForm').action = '/admin/withdrawal/' + requestId + '/reject';
                 });
             }
         });
