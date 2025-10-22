@@ -198,6 +198,13 @@
                                 </div>
 
                                 <div class="ds-flex ds-gap-3 ds-flex-wrap">
+                                    <div class="ds-flex-grow">
+                                        <a th:href="@{'/admin/restaurant/requests/' + ${restaurant.restaurantId}}"
+                                           class="ds-btn ds-btn-secondary ds-btn-sm ds-w-full">
+                                            <i class="fas fa-eye"></i>
+                                            Xem chi tiết
+                                        </a>
+                                    </div>
                                     <form th:action="@{'/admin/restaurant/approve/' + ${restaurant.restaurantId}}"
                                           method="post" class="ds-flex-grow">
                                         <button type="submit" class="ds-btn ds-btn-success ds-btn-sm ds-w-full"

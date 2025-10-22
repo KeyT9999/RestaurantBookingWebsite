@@ -54,6 +54,9 @@
                         <a th:href="@{/customer/favorites}" class="ds-btn ds-btn-secondary ds-btn-icon" sec:authorize="hasRole('CUSTOMER')" title="Favorites">
                             <i class="fas fa-heart"></i>
                         </a>
+
+                        <!-- Notification Bell -->
+                        <div class="ds-notification-bell" th:insert="~{fragments/notification-bell :: notification-bell}"></div>
                         
                         <!-- Restaurant Owner Dashboard -->
                         <a th:href="@{/restaurant-owner/dashboard}" class="ds-btn ds-btn-primary" sec:authorize="hasRole('RESTAURANT_OWNER')">

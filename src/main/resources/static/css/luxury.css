@@ -444,6 +444,41 @@ a:hover {
     justify-content: center;
 }
 
+.notification-bell__trigger {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-dark);
+}
+
+.notification-bell__trigger:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.notification-bell__icon {
+    font-size: 1.2rem;
+}
+
+.notification-bell__badge {
+    min-width: 20px;
+    font-size: 0.7rem;
+}
+
+.notification-bell__list li {
+    list-style: none;
+}
+
+.notification-bell__link {
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+.notification-bell__link:hover {
+    background-color: rgba(74, 144, 226, 0.08);
+}
+
 /* Prevent layout shift */
 .nav-item {
     height: 36px;
