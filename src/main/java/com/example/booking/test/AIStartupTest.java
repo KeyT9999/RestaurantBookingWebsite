@@ -16,7 +16,7 @@ import com.example.booking.service.ai.RecommendationService;
 /**
  * Test component để chạy test AI service khi ứng dụng khởi động
  */
-@Component
+// @Component
 public class AIStartupTest implements CommandLineRunner {
 
     @Autowired
