@@ -1,0 +1,223 @@
+/* ================================================
+   AUTH PAGES COMMON STYLES
+   Black & White Theme - Shared styles for all auth pages
+   ================================================ */
+
+/* Form specific styles - Black & White Theme */
+.auth-form-container {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.form-icon {
+    color: var(--ds-neutral-700);
+    margin-right: var(--ds-space-2);
+}
+
+.required {
+    color: var(--ds-neutral-900);
+    font-weight: var(--ds-font-weight-semibold);
+}
+
+.form-text {
+    color: var(--ds-neutral-600);
+    font-size: var(--ds-font-size-sm);
+}
+
+.invalid-feedback {
+    color: var(--ds-neutral-900);
+    font-size: var(--ds-font-size-sm);
+    margin-top: var(--ds-space-1);
+    font-weight: var(--ds-font-weight-medium);
+}
+
+/* Enhanced form styling for black & white theme */
+.ds-form-input {
+    border: 2px solid var(--ds-neutral-300);
+    transition: all 0.3s ease;
+}
+
+.ds-form-input:focus {
+    border-color: var(--ds-neutral-900);
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+}
+
+.ds-form-input-error {
+    border-color: var(--ds-neutral-900);
+    background-color: rgba(0,0,0,0.02);
+}
+
+.ds-btn-primary {
+    background-color: var(--ds-neutral-900);
+    border-color: var(--ds-neutral-900);
+    color: var(--ds-primary-white);
+}
+
+.ds-btn-primary:hover {
+    background-color: var(--ds-neutral-700);
+    border-color: var(--ds-neutral-700);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.ds-btn-secondary {
+    background-color: var(--ds-primary-white);
+    border: 2px solid var(--ds-neutral-900);
+    color: var(--ds-neutral-900);
+}
+
+.ds-btn-secondary:hover {
+    background-color: var(--ds-neutral-900);
+    color: var(--ds-primary-white);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.ds-link-primary {
+    color: var(--ds-neutral-900);
+    font-weight: var(--ds-font-weight-semibold);
+}
+
+.ds-link-primary:hover {
+    color: var(--ds-neutral-700);
+    text-decoration: underline;
+}
+
+/* Card styling */
+.ds-card {
+    border: 1px solid var(--ds-neutral-300);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.ds-card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+/* Alert styling */
+.ds-alert-error {
+    background-color: rgba(0,0,0,0.05);
+    border: 1px solid var(--ds-neutral-900);
+    color: var(--ds-neutral-900);
+    border-left: 4px solid var(--ds-neutral-900);
+}
+
+.ds-alert-info {
+    background-color: rgba(0,0,0,0.05);
+    border: 1px solid var(--ds-neutral-300);
+    color: var(--ds-neutral-900);
+    border-left: 4px solid var(--ds-neutral-700);
+}
+
+/* Icon styling - Unified for all auth pages */
+.feature-icon {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--ds-radius-full);
+    background: var(--ds-neutral-900);
+    color: var(--ds-primary-white);
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* Password strength indicator */
+.password-strength {
+    margin-top: var(--ds-space-2);
+}
+
+.password-strength small {
+    color: var(--ds-neutral-600);
+    font-style: italic;
+    font-size: var(--ds-font-size-sm);
+}
+
+/* Account Type Selection Modal - Only for register page */
+.account-type-overlay { 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0,0,0,0.75); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: var(--ds-space-4);
+    z-index: var(--ds-z-modal);
+}
+
+.account-type-modal { 
+    background: var(--ds-primary-white); 
+    border-radius: var(--ds-radius-2xl); 
+    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    width: 100%; 
+    max-width: 680px; 
+    border: 1px solid var(--ds-neutral-300);
+}
+
+.account-type-actions { 
+    display: grid; 
+    gap: var(--ds-space-4); 
+}
+
+.account-type-card { 
+    text-align: left; 
+    cursor: pointer;
+    border: 2px solid var(--ds-neutral-300);
+    border-radius: var(--ds-radius-lg);
+    transition: all 0.3s ease;
+    background: var(--ds-primary-white);
+}
+
+.account-type-card:hover {
+    border-color: var(--ds-neutral-900);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    background: var(--ds-neutral-50);
+}
+
+.account-type-card:focus {
+    border-color: var(--ds-neutral-900);
+    outline: 3px solid rgba(0,0,0,0.1);
+    outline-offset: 2px;
+}
+
+.account-type-card .ds-card-body { 
+    display: flex; 
+    gap: var(--ds-space-4); 
+    align-items: center; 
+    padding: var(--ds-space-5) var(--ds-space-6);
+}
+
+.account-type-icon { 
+    width: 44px; 
+    height: 44px; 
+    border-radius: var(--ds-radius-full);
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    background: var(--ds-neutral-900); 
+    color: var(--ds-primary-white); 
+    font-size: var(--ds-font-size-xl);
+}
+
+.account-type-title { 
+    font-size: var(--ds-font-size-xl); 
+    font-weight: var(--ds-font-weight-semibold); 
+    margin: 0; 
+    color: var(--ds-neutral-900);
+}
+
+.account-type-desc { 
+    margin: 4px 0 0 0; 
+    color: var(--ds-neutral-600); 
+    font-size: var(--ds-font-size-sm);
+}
+
+.account-type-card:focus-visible { 
+    outline: 3px solid rgba(0,0,0,0.2); 
+    outline-offset: 2px; 
+}
+
+.hidden {
+    display: none !important;
+}

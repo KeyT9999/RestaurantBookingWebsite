@@ -1,539 +1,280 @@
-<!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng ký - Book Eat – Đặt bàn online, giữ chỗ ngay</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Bootstrap 5 CSS -->
+    <title>Đăng ký - Book Eat</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Font Awesome for luxury icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <style>
-        :root {
-            --primary-blue: #4A90E2;
-            --primary-blue-light: #6BA3F0;
-            --primary-blue-dark: #357ABD;
-            --accent-orange: #FF6B35;
-            --background-light: #F8F9FA;
-            --background-white: #FFFFFF;
-            --text-dark: #2C3E50;
-            --text-medium: #5A6C7D;
-            --text-light: #8A9BA8;
-            --border-light: #E1E8ED;
-            --border-medium: #D1D9E0;
-        }
-
-        .account-type-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 22, 46, 0.85);
-            backdrop-filter: blur(6px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            padding: 20px;
-        }
-
-        .account-type-modal {
-            background: var(--background-white);
-            border-radius: 16px;
-            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
-            padding: 32px;
-            max-width: 520px;
-            width: 100%;
-            text-align: center;
-            animation: fadeInUp 0.4s ease;
-        }
-
-        .account-type-modal h2 {
-            color: var(--text-dark);
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .account-type-modal p {
-            color: var(--text-medium);
-            margin-bottom: 28px;
-        }
-
-        .account-type-options {
-            display: grid;
-            gap: 16px;
-        }
-
-        .account-type-card {
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            padding: 20px;
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            text-align: left;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .account-type-card i {
-            font-size: 2rem;
-            color: var(--primary-blue);
-        }
-
-        .account-type-card:hover,
-        .account-type-card:focus {
-            border-color: var(--primary-blue);
-            box-shadow: 0 12px 28px rgba(74, 144, 226, 0.18);
-            transform: translateY(-2px);
-        }
-
-        .account-type-card h5 {
-            margin: 0;
-            color: var(--text-dark);
-            font-weight: 600;
-        }
-
-        .account-type-card span {
-            display: block;
-            color: var(--text-light);
-            font-size: 0.95rem;
-            margin-top: 6px;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--primary-blue) 100%);
-            min-height: 100vh;
-            color: var(--background-white);
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Background Pattern */
-        body::before {
-            display: none;
-        }
-
-        .register-container {
-            position: relative;
-            z-index: 1;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            padding: 40px 0;
-        }
-
-        .register-card {
-            background: var(--background-white);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(74, 144, 226, 0.15);
-            padding: 32px 24px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .register-card::before {
-            display: none;
-        }
-
-        .brand-section {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .brand-icon {
-            font-size: 3rem;
-            color: var(--primary-blue);
-            margin-bottom: 16px;
-        }
-
-        .brand-title {
-            font-family: 'Inter', sans-serif;
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            margin-bottom: 8px;
-        }
-
-        .brand-subtitle {
-            color: var(--text-medium);
-            font-size: 1rem;
-            font-weight: 400;
-        }
-
-        .form-control {
-            background: var(--background-white);
-            border: 1px solid var(--border-medium);
-            border-radius: 8px;
-            color: var(--text-dark);
-            padding: 12px 16px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            margin-bottom: 8px;
-        }
-
-        .form-control:focus {
-            background: var(--background-white);
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.15);
-            color: var(--text-dark);
-        }
-
-        .form-control::placeholder {
-            color: var(--text-light);
-        }
-
-        .form-label {
-            color: var(--text-dark);
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        .luxury-icon {
-            color: var(--primary-blue);
-            margin-right: 6px;
-        }
-
-        .btn-register {
-            background: var(--primary-blue);
-            border: none;
-            color: var(--background-white);
-            font-weight: 600;
-            padding: 12px 24px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
-            font-size: 1rem;
-        }
-
-        .btn-register:hover {
-            background: var(--primary-blue-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-        }
-
-        .btn-google {
-            background: transparent;
-            border: 1px solid var(--border-medium);
-            color: var(--text-dark);
-            font-weight: 500;
-            padding: 12px 24px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-        }
-
-        .btn-google:hover {
-            background: var(--background-light);
-            color: var(--text-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .divider {
-            position: relative;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: var(--border-light);
-        }
-
-        .divider span {
-            background: var(--background-white);
-            padding: 0 16px;
-            color: var(--text-light);
-            font-style: italic;
-        }
-
-        .alert {
-            border: none;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 20px;
-            border-left: 4px solid var(--accent-orange);
-        }
-
-        .alert-danger {
-            background: rgba(255, 107, 53, 0.1);
-            color: var(--accent-orange-dark);
-        }
-
-        .invalid-feedback {
-            color: var(--accent-orange);
-            font-size: 0.85rem;
-            margin-top: 5px;
-        }
-
-        .link-luxury {
-            color: var(--primary-blue);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .link-luxury:hover {
-            color: var(--primary-blue-dark);
-        }
-
-        .required {
-            color: var(--accent-orange);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .register-card {
-                padding: 24px 20px;
-            }
-
-            .brand-title {
-                font-size: 1.8rem;
-            }
-
-            .brand-icon {
-                font-size: 2.5rem;
-            }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+    <link th:href="@{/css/auth-common.css}" rel="stylesheet">
 </head>
-<body>
-    <div class="register-container hidden" id="registerContainer">
-    <div class="container">
-        <div class="row justify-content-center">
-                <div class="col-md-8 col-lg-6 col-xl-5">
-                    <div class="register-card">
-                        <div class="brand-section">
-                            <div class="brand-icon">
-                                <i class="fas fa-user-plus"></i>
+<body class="ds-bg-white">
+    <!-- Unified Header -->
+    <div th:with="activeNav=''"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+
+    <main>
+        <!-- Compact Header Section -->
+        <section class="ds-bg-gray-50" style="padding: var(--ds-space-8) 0;">
+            <div class="ds-container">
+                <nav class="ds-breadcrumb" aria-label="breadcrumb">
+                    <ol class="ds-breadcrumb-list">
+                        <li class="ds-breadcrumb-item">
+                            <a th:href="@{/}">Trang chủ</a>
+                        </li>
+                        <li class="ds-breadcrumb-item active">
+                            <span>Đăng ký</span>
+                        </li>
+                    </ol>
+                </nav>
+
+                <div class="ds-flex ds-flex-col ds-items-center ds-text-center ds-gap-2">
+                    <h4 class="ds-heading-4">Đăng ký tài khoản</h4>
+                    <p class="ds-text-sm ds-text-secondary" style="max-width: 480px; font-style: italic;">
+                        Tạo tài khoản để trải nghiệm dịch vụ đặt bàn nhà hàng tốt nhất
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Register Form Section -->
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container">
+                <div class="auth-form-container">
+                    <div class="ds-card">
+                        <div class="ds-card-body">
+                            <!-- Icon and Title -->
+                            <div class="ds-text-center ds-mb-4">
+                                <div class="ds-flex ds-items-center ds-justify-center ds-gap-2">
+                                    <div class="feature-icon" style="width: 30px; height: 30px; font-size: var(--ds-font-size-base); display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <h5 class="ds-heading-5 ds-mb-0" style="line-height: 1;">Đăng ký tài khoản</h5>
+                                </div>
                             </div>
-                            <h1 class="brand-title">Join Book Eat</h1>
-                            <p class="brand-subtitle">Tạo tài khoản để đặt bàn dễ dàng</p>
+                            
+                            <!-- Error Message -->
+                            <div th:if="${errorMessage}" class="ds-alert ds-alert-error ds-mb-4">
+                                <i class="fas fa-exclamation-triangle ds-mr-2"></i>
+                                <span th:text="${errorMessage}"></span>
+                            </div>
+                            
+                            <!-- Register Form -->
+                            <form th:action="@{/auth/register}" method="post" th:object="${registerForm}" id="registerForm">
+                                <input type="hidden" id="accountType" th:field="*{accountType}">
+                                
+                                <!-- Username -->
+                                <div class="ds-form-group ds-mb-4">
+                                    <label for="username" class="ds-form-label">
+                                        <i class="fas fa-user form-icon"></i> 
+                                        Username <span class="required">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="ds-form-input" 
+                                           id="username" 
+                                           name="username"
+                                           th:field="*{username}"
+                                           th:classappend="${#fields.hasErrors('username')} ? 'ds-form-input-error' : ''"
+                                           placeholder="Nhập username">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" 
+                                         th:errors="*{username}"></div>
+                                </div>
+                                
+                                <!-- Email -->
+                                <div class="ds-form-group ds-mb-4">
+                                    <label for="email" class="ds-form-label">
+                                        <i class="fas fa-envelope form-icon"></i> 
+                                        Email <span class="required">*</span>
+                                    </label>
+                                    <input type="email" 
+                                           class="ds-form-input" 
+                                           id="email" 
+                                           name="email"
+                                           th:field="*{email}"
+                                           th:classappend="${#fields.hasErrors('email')} ? 'ds-form-input-error' : ''"
+                                           placeholder="Nhập email (VD: example@gmail.com)"
+                                           pattern=".*@(gmail\.com|outlook\.com\.vn|yahoo\.com|hotmail\.com|student\.ctu\.edu\.vn|ctu\.edu\.vn)$"
+                                           title="Email phải thuộc một trong các domain: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" 
+                                         th:errors="*{email}"></div>
+                                    <small class="form-text">Chỉ chấp nhận: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn</small>
+                                </div>
+                                
+                                <!-- Full Name -->
+                                <div class="ds-form-group ds-mb-4">
+                                    <label for="fullName" class="ds-form-label">
+                                        <i class="fas fa-id-card form-icon"></i> 
+                                        Họ và tên <span class="required">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="ds-form-input" 
+                                           id="fullName" 
+                                           name="fullName"
+                                           th:field="*{fullName}"
+                                           th:classappend="${#fields.hasErrors('fullName')} ? 'ds-form-input-error' : ''"
+                                           placeholder="Nhập họ và tên">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" 
+                                         th:errors="*{fullName}"></div>
+                                </div>
+                                
+                                <!-- Phone Number -->
+                                <div class="ds-form-group ds-mb-4">
+                                    <label for="phoneNumber" class="ds-form-label">
+                                        <i class="fas fa-phone form-icon"></i> 
+                                        Số điện thoại
+                                    </label>
+                                    <input type="tel" 
+                                           class="ds-form-input" 
+                                           id="phoneNumber" 
+                                           name="phoneNumber"
+                                           th:field="*{phoneNumber}"
+                                           th:classappend="${#fields.hasErrors('phoneNumber')} ? 'ds-form-input-error' : ''"
+                                           placeholder="Nhập số điện thoại (VD: 0987654321)"
+                                           pattern="^(0[3|5|7|8|9])[0-9]{8}$"
+                                           title="Số điện thoại phải là 10 số và bắt đầu bằng 03, 05, 07, 08, 09">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('phoneNumber')}" 
+                                         th:errors="*{phoneNumber}"></div>
+                                    <small class="form-text">Định dạng: 0987654321 (10 số, bắt đầu bằng 03, 05, 07, 08, 09)</small>
+                                </div>
+                                
+                                <!-- Address -->
+                                <div class="ds-form-group ds-mb-4">
+                                    <label for="address" class="ds-form-label">
+                                        <i class="fas fa-map-marker-alt form-icon"></i> 
+                                        Địa chỉ
+                                    </label>
+                                    <input type="text" 
+                                           class="ds-form-input" 
+                                           id="address" 
+                                           name="address"
+                                           th:field="*{address}"
+                                           th:classappend="${#fields.hasErrors('address')} ? 'ds-form-input-error' : ''"
+                                           placeholder="Nhập địa chỉ (tùy chọn)">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" 
+                                         th:errors="*{address}"></div>
+                                </div>
+                                
+                                <!-- Password -->
+                                <div class="ds-form-group ds-mb-4">
+                                    <label for="password" class="ds-form-label">
+                                        <i class="fas fa-lock form-icon"></i> 
+                                        Mật khẩu <span class="required">*</span>
+                                    </label>
+                                    <input type="password" 
+                                           class="ds-form-input" 
+                                           id="password" 
+                                           name="password"
+                                           th:field="*{password}"
+                                           th:classappend="${#fields.hasErrors('password')} ? 'ds-form-input-error' : ''"
+                                           placeholder="Nhập mật khẩu"
+                                           minlength="8"
+                                           pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                                           title="Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" 
+                                         th:errors="*{password}"></div>
+                                    <small class="form-text">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)</small>
+                                </div>
+                                
+                                <!-- Confirm Password -->
+                                <div class="ds-form-group ds-mb-6">
+                                    <label for="confirmPassword" class="ds-form-label">
+                                        <i class="fas fa-lock form-icon"></i> 
+                                        Xác nhận mật khẩu <span class="required">*</span>
+                                    </label>
+                                    <input type="password" 
+                                           class="ds-form-input" 
+                                           id="confirmPassword" 
+                                           name="confirmPassword"
+                                           th:field="*{confirmPassword}"
+                                           th:classappend="${#fields.hasErrors('confirmPassword')} ? 'ds-form-input-error' : ''"
+                                           placeholder="Nhập lại mật khẩu">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}" 
+                                         th:errors="*{confirmPassword}"></div>
+                                </div>
+                                
+                                <!-- Register Button -->
+                                <div class="ds-mb-4">
+                                    <button type="submit" class="ds-btn ds-btn-primary ds-btn-lg" style="width: 100%;">
+                                        <i class="fas fa-user-plus ds-mr-2"></i>
+                                        Đăng ký
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <!-- Divider -->
+                            <div class="ds-flex ds-items-center ds-gap-4 ds-text-center ds-text-secondary ds-mb-4" style="text-transform: uppercase; font-size: var(--ds-font-size-xs);">
+                                <span style="flex:1;height:1px;background: var(--ds-neutral-300);"></span>
+                                <span>hoặc</span>
+                                <span style="flex:1;height:1px;background: var(--ds-neutral-300);"></span>
+                            </div>
+                            
+                            <!-- Google Register -->
+                            <div class="ds-mb-4">
+                                <a href="/oauth2/authorization/google" class="ds-btn ds-btn-secondary ds-btn-lg" style="width: 100%;">
+                                    <i class="fab fa-google ds-mr-2"></i>
+                                    Tiếp tục với Google
+                                </a>
+                            </div>
+                            
+                            <!-- Login Link -->
+                            <div class="ds-text-center">
+                                <p class="ds-mb-0 ds-text-secondary">
+                                    Đã có tài khoản? 
+                                    <a th:href="@{/login}" class="ds-link ds-link-primary">
+                                        <i class="fas fa-sign-in-alt ds-mr-1"></i>
+                                        Đăng nhập ngay
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <!-- Error Message -->
-                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
-                            <i class="fas fa-exclamation-triangle luxury-icon"></i>
-                        <span th:text="${errorMessage}"></span>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Account Type Selection Modal -->
+    <div id="accountTypeOverlay" class="account-type-overlay" role="dialog" aria-modal="true" aria-labelledby="accountTypeTitle" aria-hidden="false">
+        <div class="account-type-modal">
+            <div class="ds-card">
+                <div class="ds-card-body" style="padding: var(--ds-space-8);">
+                    <div class="ds-text-center ds-mb-6">
+                        <h2 id="accountTypeTitle" class="ds-heading-3 ds-mb-2">Chọn loại tài khoản</h2>
+                        <p class="ds-text-large ds-text-secondary">Bạn muốn đăng ký với vai trò nào?</p>
                     </div>
-                    
-                    <!-- Register Form -->
-                    <form th:action="@{/auth/register}" method="post" th:object="${registerForm}" id="registerForm">
-                        <input type="hidden" id="accountType" th:field="*{accountType}">
-                        
-                        <!-- Username -->
-                        <div class="mb-3">
-                            <label for="username" class="form-label">
-                                    <i class="fas fa-user luxury-icon"></i> Username <span class="required">*</span>
-                            </label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="username" 
-                                   name="username"
-                                   th:field="*{username}"
-                                   th:classappend="${#fields.hasErrors('username')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập username">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" 
-                                 th:errors="*{username}"></div>
-                        </div>
-                        
-                        <!-- Email -->
-                        <div class="mb-3">
-                            <label for="email" class="form-label">
-                                    <i class="fas fa-envelope luxury-icon"></i> Email <span class="required">*</span>
-                            </label>
-                            <input type="email" 
-                                   class="form-control" 
-                                   id="email" 
-                                   name="email"
-                                   th:field="*{email}"
-                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập email (VD: example@gmail.com)"
-                                   pattern=".*@(gmail\.com|outlook\.com\.vn|yahoo\.com|hotmail\.com|student\.ctu\.edu\.vn|ctu\.edu\.vn)$"
-                                   title="Email phải thuộc một trong các domain: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" 
-                                 th:errors="*{email}"></div>
-                            <small class="form-text text-muted">Chỉ chấp nhận: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn</small>
-                        </div>
-                        
-                        <!-- Full Name -->
-                        <div class="mb-3">
-                            <label for="fullName" class="form-label">
-                                    <i class="fas fa-id-card luxury-icon"></i> Họ và tên <span class="required">*</span>
-                            </label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="fullName" 
-                                   name="fullName"
-                                   th:field="*{fullName}"
-                                   th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập họ và tên">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" 
-                                 th:errors="*{fullName}"></div>
-                        </div>
-                        
-                        <!-- Phone Number -->
-                        <div class="mb-3">
-                            <label for="phoneNumber" class="form-label">
-                                    <i class="fas fa-phone luxury-icon"></i> Số điện thoại
-                            </label>
-                            <input type="tel" 
-                                   class="form-control" 
-                                   id="phoneNumber" 
-                                   name="phoneNumber"
-                                   th:field="*{phoneNumber}"
-                                   th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập số điện thoại (VD: 0987654321)"
-                                   pattern="^(0[3|5|7|8|9])[0-9]{8}$"
-                                   title="Số điện thoại phải là 10 số và bắt đầu bằng 03, 05, 07, 08, 09">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('phoneNumber')}" 
-                                 th:errors="*{phoneNumber}"></div>
-                            <small class="form-text text-muted">Định dạng: 0987654321 (10 số, bắt đầu bằng 03, 05, 07, 08, 09)</small>
-                        </div>
-                        
-                        <!-- Address -->
-                        <div class="mb-3">
-                            <label for="address" class="form-label">
-                                    <i class="fas fa-map-marker-alt luxury-icon"></i> Địa chỉ
-                            </label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="address" 
-                                   name="address"
-                                   th:field="*{address}"
-                                   th:classappend="${#fields.hasErrors('address')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập địa chỉ (tùy chọn)">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" 
-                                 th:errors="*{address}"></div>
-                        </div>
-                        
-                        <!-- Password -->
-                        <div class="mb-3">
-                            <label for="password" class="form-label">
-                                    <i class="fas fa-lock luxury-icon"></i> Mật khẩu <span class="required">*</span>
-                            </label>
-                            <input type="password" 
-                                   class="form-control" 
-                                   id="password" 
-                                   name="password"
-                                   th:field="*{password}"
-                                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập mật khẩu"
-                                   minlength="8"
-                                   pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-                                   title="Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" 
-                                 th:errors="*{password}"></div>
-                            <small class="form-text text-muted">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)</small>
-                        </div>
-                        
-                        <!-- Confirm Password -->
-                        <div class="mb-3">
-                            <label for="confirmPassword" class="form-label">
-                                    <i class="fas fa-lock luxury-icon"></i> Xác nhận mật khẩu <span class="required">*</span>
-                            </label>
-                            <input type="password" 
-                                   class="form-control" 
-                                   id="confirmPassword" 
-                                   name="confirmPassword"
-                                   th:field="*{confirmPassword}"
-                                   th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid' : ''"
-                                   placeholder="Nhập lại mật khẩu">
-                            <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}" 
-                                 th:errors="*{confirmPassword}"></div>
-                        </div>
-                        
-                        <!-- Register Button -->
-                        <div class="d-grid mb-3">
-                                <button type="submit" class="btn btn-register">
-                                    <i class="fas fa-user-plus"></i> Đăng ký
-                            </button>
-                        </div>
-                    </form>
-                    
-                    <!-- Divider -->
-                        <div class="divider">
-                            <span>hoặc</span>
-                    </div>
-                    
-                    <!-- Google Register -->
-                        <div class="d-grid mb-4">
-                            <a href="/oauth2/authorization/google" class="btn btn-google">
-                                <i class="fab fa-google"></i> Tiếp tục với Google
-                        </a>
-                    </div>
-                    
-                    <!-- Login Link -->
-                    <div class="text-center">
-                            <p class="mb-0" style="color: var(--text-light);">
-                            Đã có tài khoản? 
-                                <a href="/login" class="link-luxury">
-                                    <i class="fas fa-sign-in-alt"></i> Đăng nhập ngay
-                            </a>
-                        </p>
-                        </div>
+                    <div class="account-type-actions">
+                        <button type="button" class="ds-card account-type-card" data-type="customer">
+                            <div class="ds-card-body">
+                                <span class="account-type-icon" aria-hidden="true"><i class="fas fa-user"></i></span>
+                                <div>
+                                    <h5 class="account-type-title">Đăng ký khách hàng</h5>
+                                    <p class="account-type-desc">Dùng để đặt bàn, khám phá nhà hàng và nhận ưu đãi.</p>
+                                </div>
+                            </div>
+                        </button>
+                        <button type="button" class="ds-card account-type-card" data-type="restaurant_owner">
+                            <div class="ds-card-body">
+                                <span class="account-type-icon" aria-hidden="true"><i class="fas fa-store"></i></span>
+                                <div>
+                                    <h5 class="account-type-title">Đăng ký chủ nhà hàng</h5>
+                                    <p class="account-type-desc">Quản lý nhà hàng, đặt bàn và chương trình ưu đãi dành riêng.</p>
+                                </div>
+                            </div>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div id="accountTypeOverlay" class="account-type-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="accountTypeTitle" aria-hidden="true">
-        <div class="account-type-modal">
-            <h2 id="accountTypeTitle">Chọn loại tài khoản</h2>
-            <p>Bạn muốn đăng ký với vai trò nào?</p>
-            <div class="account-type-options">
-                <button type="button" class="account-type-card" data-type="customer">
-                    <i class="fas fa-user"></i>
-                    <div>
-                        <h5>Đăng ký khách hàng</h5>
-                        <span>Dùng để đặt bàn, khám phá nhà hàng và nhận ưu đãi.</span>
-                    </div>
-                </button>
-                <button type="button" class="account-type-card" data-type="restaurant_owner">
-                    <i class="fas fa-store"></i>
-                    <div>
-                        <h5>Đăng ký chủ nhà hàng</h5>
-                        <span>Quản lý nhà hàng, đặt bàn và chương trình ưu đãi dành riêng.</span>
-                    </div>
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
+    <!-- Footer -->
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const password = document.getElementById('password');
@@ -542,11 +283,8 @@
             const accountTypeOverlay = document.getElementById('accountTypeOverlay');
             const accountTypeInput = document.getElementById('accountType');
             const accountTypeCards = document.querySelectorAll('.account-type-card');
-            const formTitle = document.querySelector('.brand-title');
-            const formSubtitle = document.querySelector('.brand-subtitle');
-            const registerContainer = document.getElementById('registerContainer');
-            const restaurantFields = document.getElementById('restaurantFields');
-            const restaurantNameInput = document.getElementById('restaurantName');
+            const formTitle = document.querySelector('.ds-heading-4');
+            const formSubtitle = document.querySelector('.ds-text-sm');
 
             function validatePasswordMatch() {
                 if (password.value !== confirmPassword.value) {
@@ -624,27 +362,11 @@
             function updateFormText(type) {
                 if (!formTitle || !formSubtitle) return;
                 if ('restaurant_owner' === type) {
-                    formTitle.textContent = 'Đăng ký Chủ nhà hàng';
+                    formTitle.textContent = 'Đăng ký chủ nhà hàng';
                     formSubtitle.textContent = 'Quản lý nhà hàng và kết nối với khách hàng';
                 } else {
-                    formTitle.textContent = 'Đăng ký Khách hàng';
+                    formTitle.textContent = 'Đăng ký khách hàng';
                     formSubtitle.textContent = 'Tạo tài khoản để đặt bàn dễ dàng';
-                }
-            }
-
-            function toggleRestaurantFields(type) {
-                if (!restaurantFields) return;
-                const isOwner = type === 'restaurant_owner';
-                if (isOwner) {
-                    restaurantFields.classList.remove('hidden');
-                    if (restaurantNameInput) {
-                        restaurantNameInput.required = true;
-                    }
-                } else {
-                    restaurantFields.classList.add('hidden');
-                    if (restaurantNameInput) {
-                        restaurantNameInput.required = false;
-                    }
                 }
             }
 
@@ -656,7 +378,6 @@
                         accountTypeInput.value = type;
                     }
                     updateFormText(type);
-                    toggleRestaurantFields(type);
                     hideOverlay();
                     const usernameField = document.getElementById('username');
                     if (usernameField) {
@@ -687,18 +408,15 @@
                 });
             }
 
+            // Always show overlay on page load to let user choose account type
+            showOverlay();
+            
+            // If accountType is already set, hide overlay and update form text
             if (accountTypeInput && accountTypeInput.value) {
                 hideOverlay();
                 updateFormText(accountTypeInput.value);
-                toggleRestaurantFields(accountTypeInput.value);
-            } else {
-                showOverlay();
-            }
-
-            if (registerContainer) {
-                registerContainer.classList.remove('hidden');
             }
         });
     </script>
 </body>
-</html> 
+</html>
