@@ -58,11 +58,70 @@
                         <!-- Notification Bell -->
                         <div class="ds-notification-bell" th:insert="~{fragments/notification-bell :: notification-bell}"></div>
                         
-                        <!-- Restaurant Owner Dashboard -->
-                        <a th:href="@{/restaurant-owner/dashboard}" class="ds-btn ds-btn-primary" sec:authorize="hasRole('RESTAURANT_OWNER')">
-                            <i class="fas fa-tachometer-alt"></i>
-                            Dashboard
+                        <a th:href="@{/restaurant-owner/restaurants/create}"
+                           class="ds-btn ds-btn-secondary"
+                           sec:authorize="hasRole('RESTAURANT_OWNER')">
+                            <i class="fas fa-plus"></i>
+                            Tạo Nhà Hàng
                         </a>
+
+                        <!-- Restaurant Owner Dashboard Dropdown -->
+                        <div class="dropdown dropdown-hover" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                            <button class="ds-btn ds-btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Dashboard
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/dashboard}">
+                                        <i class="fas fa-chart-line me-2"></i>
+                                        Tổng quan
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/profile}">
+                                        <i class="fas fa-id-card me-2"></i>
+                                        Hồ sơ
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/tables}">
+                                        <i class="fas fa-chair me-2"></i>
+                                        Bàn
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/bookings}">
+                                        <i class="fas fa-calendar-check me-2"></i>
+                                        Booking
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/waitlist}">
+                                        <i class="fas fa-list-ol me-2"></i>
+                                        Waitlist
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/vouchers}">
+                                        <i class="fas fa-ticket-alt me-2"></i>
+                                        Voucher
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/media}">
+                                        <i class="fas fa-images me-2"></i>
+                                        Media
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/restaurant-owner/withdrawal}">
+                                        <i class="fas fa-wallet me-2"></i>
+                                        Rút tiền
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         
                         <!-- Admin Dashboard Dropdown -->
                         <div class="ds-admin-dropdown dropdown dropdown-hover" sec:authorize="hasRole('ADMIN')">

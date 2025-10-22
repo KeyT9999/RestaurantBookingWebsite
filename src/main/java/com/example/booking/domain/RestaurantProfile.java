@@ -71,6 +71,88 @@ public class RestaurantProfile {
     @Column(name = "website_url")
     @Size(max = 255, message = "URL website không được quá 255 ký tự")
     private String websiteUrl;
+
+    // === EXTENDED PRESENTATION FIELDS ===
+    @Column(name = "hero_city", length = 100)
+    private String heroCity;
+
+    @Column(name = "hero_headline", length = 255)
+    private String heroHeadline;
+
+    @Column(name = "hero_subheadline", length = 255)
+    private String heroSubheadline;
+
+    @Column(name = "hero_search_placeholder", length = 255)
+    private String heroSearchPlaceholder;
+
+    @Column(name = "contact_hotline", length = 50)
+    private String contactHotline;
+
+    @Column(name = "contact_secondary_phone", length = 50)
+    private String contactSecondaryPhone;
+
+    @Column(name = "status_message", length = 255)
+    private String statusMessage;
+
+    @Column(name = "price_range_min", precision = 18, scale = 2)
+    private BigDecimal priceRangeMin;
+
+    @Column(name = "price_range_max", precision = 18, scale = 2)
+    private BigDecimal priceRangeMax;
+
+    @Column(name = "booking_information", columnDefinition = "TEXT")
+    private String bookingInformation;
+
+    @Column(name = "booking_notes", columnDefinition = "TEXT")
+    private String bookingNotes;
+
+    @Column(name = "general_promotions", columnDefinition = "TEXT")
+    private String generalPromotions;
+
+    @Column(name = "group_promotions", columnDefinition = "TEXT")
+    private String groupPromotions;
+
+    @Column(name = "promotion_notes", columnDefinition = "TEXT")
+    private String promotionNotes;
+
+    @Column(name = "summary_highlights", columnDefinition = "TEXT")
+    private String summaryHighlights;
+
+    @Column(name = "suitable_for", columnDefinition = "TEXT")
+    private String suitableFor;
+
+    @Column(name = "signature_dishes", columnDefinition = "TEXT")
+    private String signatureDishes;
+
+    @Column(name = "space_description_detail", columnDefinition = "TEXT")
+    private String spaceDescriptionDetail;
+
+    @Column(name = "parking_details", columnDefinition = "TEXT")
+    private String parkingDetails;
+
+    @Column(name = "unique_features", columnDefinition = "TEXT")
+    private String uniqueFeatures;
+
+    @Column(name = "pricing_details", columnDefinition = "TEXT")
+    private String pricingDetails;
+
+    @Column(name = "menu_highlights", columnDefinition = "TEXT")
+    private String menuHighlights;
+
+    @Column(name = "policy_rules", columnDefinition = "TEXT")
+    private String policyRules;
+
+    @Column(name = "amenities", columnDefinition = "TEXT")
+    private String amenities;
+
+    @Column(name = "gallery_notes", columnDefinition = "TEXT")
+    private String galleryNotes;
+
+    @Column(name = "direction_info", columnDefinition = "TEXT")
+    private String directionInfo;
+
+    @Column(name = "operating_schedule", columnDefinition = "TEXT")
+    private String operatingSchedule;
     
     // Transient field for main image URL (not persisted to database)
     @Transient
@@ -253,6 +335,222 @@ public class RestaurantProfile {
     
     public void setWebsiteUrl(String websiteUrl) {
         this.websiteUrl = websiteUrl;
+    }
+
+    public String getHeroCity() {
+        return heroCity;
+    }
+
+    public void setHeroCity(String heroCity) {
+        this.heroCity = heroCity;
+    }
+
+    public String getHeroHeadline() {
+        return heroHeadline;
+    }
+
+    public void setHeroHeadline(String heroHeadline) {
+        this.heroHeadline = heroHeadline;
+    }
+
+    public String getHeroSubheadline() {
+        return heroSubheadline;
+    }
+
+    public void setHeroSubheadline(String heroSubheadline) {
+        this.heroSubheadline = heroSubheadline;
+    }
+
+    public String getHeroSearchPlaceholder() {
+        return heroSearchPlaceholder;
+    }
+
+    public void setHeroSearchPlaceholder(String heroSearchPlaceholder) {
+        this.heroSearchPlaceholder = heroSearchPlaceholder;
+    }
+
+    public String getContactHotline() {
+        return contactHotline;
+    }
+
+    public void setContactHotline(String contactHotline) {
+        this.contactHotline = contactHotline;
+    }
+
+    public String getContactSecondaryPhone() {
+        return contactSecondaryPhone;
+    }
+
+    public void setContactSecondaryPhone(String contactSecondaryPhone) {
+        this.contactSecondaryPhone = contactSecondaryPhone;
+    }
+
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+
+    public void setStatusMessage(String statusMessage) {
+        this.statusMessage = statusMessage;
+    }
+
+    public BigDecimal getPriceRangeMin() {
+        return priceRangeMin;
+    }
+
+    public void setPriceRangeMin(BigDecimal priceRangeMin) {
+        this.priceRangeMin = priceRangeMin;
+    }
+
+    public BigDecimal getPriceRangeMax() {
+        return priceRangeMax;
+    }
+
+    public void setPriceRangeMax(BigDecimal priceRangeMax) {
+        this.priceRangeMax = priceRangeMax;
+    }
+
+    public String getBookingInformation() {
+        return bookingInformation;
+    }
+
+    public void setBookingInformation(String bookingInformation) {
+        this.bookingInformation = bookingInformation;
+    }
+
+    public String getBookingNotes() {
+        return bookingNotes;
+    }
+
+    public void setBookingNotes(String bookingNotes) {
+        this.bookingNotes = bookingNotes;
+    }
+
+    public String getGeneralPromotions() {
+        return generalPromotions;
+    }
+
+    public void setGeneralPromotions(String generalPromotions) {
+        this.generalPromotions = generalPromotions;
+    }
+
+    public String getGroupPromotions() {
+        return groupPromotions;
+    }
+
+    public void setGroupPromotions(String groupPromotions) {
+        this.groupPromotions = groupPromotions;
+    }
+
+    public String getPromotionNotes() {
+        return promotionNotes;
+    }
+
+    public void setPromotionNotes(String promotionNotes) {
+        this.promotionNotes = promotionNotes;
+    }
+
+    public String getSummaryHighlights() {
+        return summaryHighlights;
+    }
+
+    public void setSummaryHighlights(String summaryHighlights) {
+        this.summaryHighlights = summaryHighlights;
+    }
+
+    public String getSuitableFor() {
+        return suitableFor;
+    }
+
+    public void setSuitableFor(String suitableFor) {
+        this.suitableFor = suitableFor;
+    }
+
+    public String getSignatureDishes() {
+        return signatureDishes;
+    }
+
+    public void setSignatureDishes(String signatureDishes) {
+        this.signatureDishes = signatureDishes;
+    }
+
+    public String getSpaceDescriptionDetail() {
+        return spaceDescriptionDetail;
+    }
+
+    public void setSpaceDescriptionDetail(String spaceDescriptionDetail) {
+        this.spaceDescriptionDetail = spaceDescriptionDetail;
+    }
+
+    public String getParkingDetails() {
+        return parkingDetails;
+    }
+
+    public void setParkingDetails(String parkingDetails) {
+        this.parkingDetails = parkingDetails;
+    }
+
+    public String getUniqueFeatures() {
+        return uniqueFeatures;
+    }
+
+    public void setUniqueFeatures(String uniqueFeatures) {
+        this.uniqueFeatures = uniqueFeatures;
+    }
+
+    public String getPricingDetails() {
+        return pricingDetails;
+    }
+
+    public void setPricingDetails(String pricingDetails) {
+        this.pricingDetails = pricingDetails;
+    }
+
+    public String getMenuHighlights() {
+        return menuHighlights;
+    }
+
+    public void setMenuHighlights(String menuHighlights) {
+        this.menuHighlights = menuHighlights;
+    }
+
+    public String getPolicyRules() {
+        return policyRules;
+    }
+
+    public void setPolicyRules(String policyRules) {
+        this.policyRules = policyRules;
+    }
+
+    public String getAmenities() {
+        return amenities;
+    }
+
+    public void setAmenities(String amenities) {
+        this.amenities = amenities;
+    }
+
+    public String getGalleryNotes() {
+        return galleryNotes;
+    }
+
+    public void setGalleryNotes(String galleryNotes) {
+        this.galleryNotes = galleryNotes;
+    }
+
+    public String getDirectionInfo() {
+        return directionInfo;
+    }
+
+    public void setDirectionInfo(String directionInfo) {
+        this.directionInfo = directionInfo;
+    }
+
+    public String getOperatingSchedule() {
+        return operatingSchedule;
+    }
+
+    public void setOperatingSchedule(String operatingSchedule) {
+        this.operatingSchedule = operatingSchedule;
     }
     
     public String getMainImageUrl() {
