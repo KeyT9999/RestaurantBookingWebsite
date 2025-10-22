@@ -1119,6 +1119,57 @@ body {
     gap: var(--ds-space-2);
 }
 
+.ds-notification-bell {
+    position: relative;
+}
+
+.ds-notification-bell .notification-bell__trigger {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--ds-neutral-300);
+    border-radius: var(--ds-radius-md);
+    background: transparent;
+    color: var(--ds-neutral-900);
+    padding: 0;
+    transition: all var(--ds-transition-base);
+}
+
+.ds-notification-bell .notification-bell__trigger:hover,
+.ds-notification-bell .notification-bell__trigger:focus {
+    background: var(--ds-neutral-100);
+    color: var(--ds-neutral-900);
+    outline: none;
+    box-shadow: none;
+}
+
+.ds-notification-bell .notification-bell__badge {
+    transform: translate(-30%, -40%);
+    font-size: var(--ds-font-size-xs);
+}
+
+.ds-notification-bell .notification-bell__menu {
+    border-radius: var(--ds-radius-lg);
+    border: 1px solid var(--ds-neutral-300);
+    box-shadow: var(--ds-shadow-lg);
+}
+
+.notification-bell__list li {
+    list-style: none;
+}
+
+.notification-bell__link {
+    gap: var(--ds-space-2);
+    padding: var(--ds-space-2) var(--ds-space-4);
+    border-radius: var(--ds-radius-md);
+}
+
+.notification-bell__link:hover {
+    background: var(--ds-neutral-100);
+}
+
 .ds-user-dropdown {
     position: relative;
 }

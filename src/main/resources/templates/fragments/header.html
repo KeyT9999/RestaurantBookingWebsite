@@ -150,8 +150,8 @@
                             </a>
                         </li>
                         
-                        <!-- Notification Bell (for authenticated non-admin users) -->
-                        <li class="nav-item" sec:authorize="isAuthenticated() and !hasRole('ADMIN')">
+                        <!-- Notification Bell (all authenticated roles) -->
+                        <li class="nav-item" sec:authorize="isAuthenticated()">
                             <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
                         </li>
                         
