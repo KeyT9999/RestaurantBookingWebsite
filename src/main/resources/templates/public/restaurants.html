@@ -243,7 +243,7 @@
                             </div>
 
                             <div class="ds-restaurant-overlay">
-                                <a th:href="@{/booking/new}"
+                                <a th:href="@{/booking/new(restaurantId=${restaurant.restaurantId})}"
                                    class="ds-btn ds-btn-primary ds-btn-sm"
                                    sec:authorize="!hasRole('RESTAURANT_OWNER')">
                                     Đặt bàn

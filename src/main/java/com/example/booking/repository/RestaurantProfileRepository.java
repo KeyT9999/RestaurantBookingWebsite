@@ -48,6 +48,12 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
     List<RestaurantProfile> findByApprovalStatus(RestaurantApprovalStatus approvalStatus);
     
     /**
+     * Find approved restaurants excluding AI restaurant (ID = 37)
+     */
+    @Query("SELECT r FROM RestaurantProfile r WHERE r.approvalStatus = 'APPROVED' AND r.restaurantId != 37")
+    List<RestaurantProfile> findApprovedExcludingAI();
+
+    /**
      * Find restaurants by approval status with pagination
      */
     Page<RestaurantProfile> findByApprovalStatus(RestaurantApprovalStatus approvalStatus, Pageable pageable);
@@ -102,6 +108,7 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
      */
     @Query("SELECT r FROM RestaurantProfile r " +
            "WHERE r.approvalStatus = 'APPROVED' " +
+                  "AND r.restaurantId != 37 " +
            "AND (:search IS NULL OR :search = '' OR " +
            "     LOWER(r.restaurantName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "     LOWER(r.address) LIKE LOWER(CONCAT('%', :search, '%')) OR " +

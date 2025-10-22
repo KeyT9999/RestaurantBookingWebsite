@@ -84,7 +84,8 @@ public class BookingController {
      * Show booking form - Only for customers and guests
      */
     @GetMapping("/new")
-    public String showBookingForm(Model model, Authentication authentication) {
+    public String showBookingForm(@RequestParam(value = "restaurantId", required = false) Integer restaurantId,
+            Model model, Authentication authentication) {
         if (authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_RESTAURANT_OWNER"))) {
             return "redirect:/restaurant-owner/dashboard?error=cannot_book_public";
@@ -103,6 +104,10 @@ public class BookingController {
             bookingForm = (BookingForm) model.asMap().get("bookingForm");
         } else {
             bookingForm = new BookingForm();
+            // Pre-select restaurant if provided
+            if (restaurantId != null) {
+                bookingForm.setRestaurantId(restaurantId);
+            }
         }
 
         model.addAttribute("restaurants", restaurants);

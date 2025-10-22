@@ -48,7 +48,7 @@ public class RestaurantManagementService {
      */
     @Transactional(readOnly = true)
     public List<RestaurantProfile> findAllRestaurants() {
-        return restaurantProfileRepository.findByApprovalStatus(com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED);
+        return restaurantProfileRepository.findApprovedExcludingAI();
     }
 
     /**
@@ -64,8 +64,13 @@ public class RestaurantManagementService {
      */
     @Transactional(readOnly = true)
     public List<RestaurantProfile> findRestaurantsByName(String name) {
-        return restaurantProfileRepository.findByRestaurantNameContainingIgnoreCaseAndApprovalStatus(
+        List<RestaurantProfile> restaurants = restaurantProfileRepository
+                .findByRestaurantNameContainingIgnoreCaseAndApprovalStatus(
             name, com.example.booking.common.enums.RestaurantApprovalStatus.APPROVED);
+        // Filter out AI restaurant (ID = 37)
+        return restaurants.stream()
+                .filter(r -> !r.getRestaurantId().equals(37))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
@@ -269,5 +274,42 @@ public class RestaurantManagementService {
         System.out.println("===============================");
         
         return result;
+    }
+
+    /**
+     * Get all dishes by restaurant with their images
+     */
+    @Transactional(readOnly = true)
+    public List<com.example.booking.dto.DishWithImageDto> getDishesByRestaurantWithImages(Integer restaurantId) {
+        List<Dish> dishes = dishRepository.findByRestaurantRestaurantIdOrderByNameAsc(restaurantId);
+
+        // Convert to DTO with image URLs
+        return dishes.stream()
+                .map(dish -> {
+                    String imageUrl = getDishImageUrl(restaurantId, dish.getDishId());
+                    return new com.example.booking.dto.DishWithImageDto(dish, imageUrl);
+                })
+                .toList();
+    }
+
+    /**
+     * Get dish image URL by restaurant and dish ID
+     */
+    private String getDishImageUrl(Integer restaurantId, Integer dishId) {
+        try {
+            Optional<RestaurantProfile> restaurant = restaurantProfileRepository.findById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return null;
+            }
+
+            String dishIdPattern = "/dish_" + dishId + "_";
+            RestaurantMedia dishImage = restaurantMediaRepository
+                    .findDishImageByRestaurantAndDishId(restaurant.get(), dishIdPattern);
+
+            return dishImage != null ? dishImage.getUrl() : null;
+        } catch (Exception e) {
+            System.err.println("Error getting dish image URL: " + e.getMessage());
+            return null;
+        }
     }
 }

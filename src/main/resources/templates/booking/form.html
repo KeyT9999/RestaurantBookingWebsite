@@ -21,6 +21,184 @@
     <link th:href="@{/css/home-resy.css}" rel="stylesheet">
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
     <link th:href="@{/css/booking-resy.css}" rel="stylesheet">
+    
+    <!-- Custom styles for booking form -->
+    <style>
+        /* Menu and Service Cards Styling */
+        .dish-card, .service-card {
+            transition: all 0.3s ease;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .dish-card:hover, .service-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: #007bff;
+        }
+        
+        .dish-card.selected, .service-card.selected {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+        
+        /* Dish Card Specific */
+        .dish-card .card-img-top {
+            height: 180px !important;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .dish-card:hover .card-img-top {
+            transform: scale(1.05);
+        }
+        
+        .dish-card .dish-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+        
+        .dish-card .dish-description {
+            font-size: 0.85rem;
+            color: #6c757d;
+            line-height: 1.4;
+            height: 2.8rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .dish-card .dish-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #e74c3c;
+        }
+        
+        .dish-card .dish-category {
+            font-size: 0.75rem;
+            background: #f8f9fa;
+            color: #6c757d;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+        }
+        
+        /* Service Card Specific */
+        .service-card .service-icon {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .service-card .service-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+        
+        .service-card .service-description {
+            font-size: 0.85rem;
+            color: #6c757d;
+            line-height: 1.4;
+            height: 2.8rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .service-card .service-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #e74c3c;
+        }
+        
+        /* Checkbox Styling */
+        .dish-card .form-check-input, .service-card .form-check-input {
+            width: 1.2rem;
+            height: 1.2rem;
+            margin-top: 0.1rem;
+        }
+        
+        .dish-card .form-check-input:checked, .service-card .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        /* Container Spacing */
+        #menuItemsContainer, #servicesContainer {
+            margin-top: 1rem;
+        }
+        
+        /* Selection Count Styling */
+        #selectedDishesCount, #selectedServicesCount {
+            background: #f8f9fa;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .dish-card .dish-description, .service-card .service-description {
+                height: auto;
+                -webkit-line-clamp: 3;
+            }
+            
+            .dish-card .card-img-top {
+                height: 150px !important;
+            }
+            
+            .col-md-4 {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .dish-card .card-body, .service-card .card-body {
+                padding: 1rem !important;
+            }
+            
+            .dish-card .dish-name, .service-card .service-name {
+                font-size: 0.9rem;
+            }
+            
+            .dish-card .dish-description, .service-card .service-description {
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* Grid spacing improvements */
+        .row {
+            margin-left: -0.5rem;
+            margin-right: -0.5rem;
+        }
+        
+        .row > [class*="col-"] {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        
+        /* Loading State */
+        .loading-placeholder {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
 </head>
 
 <body class="booking-page" th:with="activeNav='restaurants'">
@@ -201,15 +379,15 @@
                                     Thực đơn gọi trước
                                     <span class="optional-label">(không bắt buộc)</span>
                                 </label>
-                                <div class="d-flex flex-wrap align-items-center gap-2">
-                                    <button type="button"
-                                            class="btn btn-outline-primary"
-                                            id="viewMenuBtn"
-                                            onclick="openMenuPopup()"
-                                            disabled>
-                                        <i class="fas fa-eye"></i> Xem menu
-                                    </button>
+                                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                                     <span id="selectedDishesCount" class="text-muted small">Chưa chọn món</span>
+                                </div>
+                                
+                                <!-- Menu Items Display -->
+                                <div id="menuItemsContainer" class="mt-3" style="display: none;">
+                                    <div class="row" id="menuItemsList">
+                                        <!-- Menu items will be loaded here -->
+                                    </div>
                                 </div>
                                 <small class="booking-hint">
                                     Đặt món trước để giữ mức giá và giúp nhà hàng chuẩn bị nhanh chóng.
@@ -230,9 +408,15 @@
                                     Dịch vụ bổ sung
                                     <span class="optional-label">(không bắt buộc)</span>
                                 </label>
-                                <div class="services-container" id="servicesContainer">
-                                    <!-- Services will be injected bằng JavaScript -->
+                                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                    <span id="selectedServicesCount" class="text-muted small">Chưa chọn dịch vụ</span>
                                 </div>
+                                
+                                <!-- Services Display -->
+                                <div id="servicesContainer" class="mt-3">
+                                    <!-- Services will be injected by JavaScript -->
+                                </div>
+                                
                                 <small class="booking-hint">
                                     Thêm các dịch vụ như trang trí, hoa hoặc yêu cầu hỗ trợ để nâng tầm trải nghiệm.
                                 </small>
@@ -884,7 +1068,7 @@
         }
 
         function loadDishes(restaurantId) {
-            fetch(`/api/booking/restaurants/${restaurantId}/dishes`)
+            return fetch(`/api/booking/restaurants/${restaurantId}/dishes`)
                 .then(response => response.json())
                 .then(dishes => {
                     console.log('🔍 Raw dishes API response:', dishes);
@@ -908,21 +1092,33 @@
                     availableDishes = dishesWithImages;
                     console.log('🔍 Dishes with images:', availableDishes);
                     
-                    // Update button text based on dishes availability
-                    const viewMenuBtn = document.getElementById('viewMenuBtn');
+                    // Display menu items directly
+                    const menuItemsContainer = document.getElementById('menuItemsContainer');
+                    const menuItemsList = document.getElementById('menuItemsList');
+                    
                     if (dishes.length === 0) {
-                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu (chưa có món nào phù hợp)';
-                        viewMenuBtn.disabled = true;
+                        menuItemsContainer.style.display = 'none';
                     } else {
-                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu';
-                        viewMenuBtn.disabled = false;
+                        menuItemsContainer.style.display = 'block';
+                        menuItemsList.innerHTML = '';
+                        
+                        // Add loading state
+                        menuItemsList.innerHTML = '<div class="col-12 text-center"><div class="loading-placeholder" style="height: 200px; border-radius: 12px;"></div></div>';
+                        
+                        // Simulate loading delay for better UX
+                        setTimeout(() => {
+                            menuItemsList.innerHTML = '';
+                            dishes.forEach(dish => {
+                                const dishCard = createDishCard(dish);
+                                menuItemsList.appendChild(dishCard);
+                            });
+                        }, 300);
                     }
                 })
                 .catch(error => {
                     console.error('Error loading dishes:', error);
-                    const viewMenuBtn = document.getElementById('viewMenuBtn');
-                    viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu (lỗi tải dữ liệu)';
-                    viewMenuBtn.disabled = true;
+                    const menuItemsContainer = document.getElementById('menuItemsContainer');
+                    menuItemsContainer.style.display = 'none';
                 });
         }
 
@@ -947,7 +1143,7 @@
                     servicesContainer.innerHTML = '';
                     
                     // Always show services section for debugging
-                    document.getElementById('servicesSection').style.display = 'block';
+                    document.getElementById('section-services').style.display = 'block';
                     
                     if (services.length === 0) {
                         console.log('⚠️ No services found, adding placeholder');
@@ -960,18 +1156,31 @@
                         return;
                     }
                     
-                    services.forEach(service => {
-                        console.log('➕ Adding service:', service.name, 'Price:', service.price);
-                        const serviceCard = createServiceCard(service);
-                        servicesContainer.appendChild(serviceCard);
-                    });
+                    // Add loading state
+                    servicesContainer.innerHTML = '<div class="row"><div class="col-12 text-center"><div class="loading-placeholder" style="height: 150px; border-radius: 12px;"></div></div></div>';
+                    
+                    // Simulate loading delay for better UX
+                    setTimeout(() => {
+                        // Create row container for services
+                        const servicesRow = document.createElement('div');
+                        servicesRow.className = 'row';
+                        
+                        services.forEach(service => {
+                            console.log('➕ Adding service:', service.name, 'Price:', service.price);
+                            const serviceCard = createServiceCard(service);
+                            servicesRow.appendChild(serviceCard);
+                        });
+                        
+                        servicesContainer.innerHTML = '';
+                        servicesContainer.appendChild(servicesRow);
+                    }, 300);
                     
                     console.log('✅ Services cards created successfully');
                 })
                 .catch(error => {
                     console.error('❌ Error loading services:', error);
                     // Still show services section even on error
-                    document.getElementById('servicesSection').style.display = 'block';
+                    document.getElementById('section-services').style.display = 'block';
                     const servicesContainer = document.getElementById('servicesContainer');
                     servicesContainer.innerHTML = `
                         <div class="text-center text-danger py-4">
@@ -983,10 +1192,10 @@
         }
 
         function createServiceCard(service) {
-            const card = document.createElement('div');
-            card.className = 'service-card';
-            card.dataset.serviceId = service.serviceId;
-            card.dataset.price = service.price || 0;
+            const col = document.createElement('div');
+            col.className = 'col-md-4 col-sm-6 mb-3';
+            col.dataset.serviceId = service.serviceId;
+            col.dataset.price = service.price || 0;
             
             // Service icon mapping
             const iconMap = {
@@ -1003,24 +1212,39 @@
             };
             
             const iconClass = iconMap[service.name] || 'fas fa-concierge-bell';
+            const price = new Intl.NumberFormat('vi-VN').format(service.price || 0) + ' VNĐ';
             
-            card.innerHTML = `
-                <div class="service-checkbox"></div>
-                <i class="service-icon ${iconClass}"></i>
-                <div class="service-name">${service.name}</div>
-                <div class="service-description">${service.description || 'Enhance your dining experience'}</div>
-                <div class="service-price">
-                    <i class="fas fa-tag"></i>
-                    ${formatCurrency(service.price || 0)}
+            col.innerHTML = `
+                <div class="card service-card h-100" data-service-id="${service.serviceId}" data-price="${service.price || 0}">
+                    <div class="card-body text-center p-3">
+                        <div class="form-check">
+                            <input class="form-check-input service-checkbox" type="checkbox" value="${service.serviceId}" id="service-${service.serviceId}">
+                            <label class="form-check-label w-100" for="service-${service.serviceId}">
+                                <div class="service-icon mb-3">
+                                    <i class="${iconClass} fa-3x text-primary"></i>
+                                </div>
+                                <h6 class="service-name">${service.name}</h6>
+                                <p class="service-description">${service.description || 'Enhance your dining experience'}</p>
+                                <div class="service-price mt-2">
+                                    <i class="fas fa-tag"></i>
+                                    ${price}
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             `;
             
             // Add click event listener
-            card.addEventListener('click', function() {
-                toggleServiceSelection(this);
+            col.addEventListener('click', function(e) {
+                if (e.target.type !== 'checkbox') {
+                    const checkbox = col.querySelector('.service-checkbox');
+                    checkbox.checked = !checkbox.checked;
+                    toggleServiceSelection(col);
+                }
             });
             
-            return card;
+            return col;
         }
 
         function toggleServiceSelection(card) {
@@ -1059,6 +1283,7 @@
             console.log('🔍 After toggle - selectedServices.length:', selectedServices.length);
             console.log('🔍 After toggle - selectedServices:', selectedServices);
             
+            updateServiceSelectionUI();
             updateTotalAmount();
             saveFormState();
         }
@@ -1223,16 +1448,16 @@
             const price = new Intl.NumberFormat('vi-VN').format(dish.price) + ' VNĐ';
             
             col.innerHTML = `
-                <div class="card dish-card" data-dish-id="${dish.dishId}" data-price="${dish.price}">
-                    <div class="card-body">
+                <div class="card dish-card h-100" data-dish-id="${dish.dishId}" data-price="${dish.price}">
+                    <div class="card-body p-3">
                         <div class="form-check">
                             <input class="form-check-input dish-checkbox" type="checkbox" value="${dish.dishId}" id="dish-${dish.dishId}">
                             <label class="form-check-label w-100" for="dish-${dish.dishId}">
-                                <img src="${imageUrl}" class="card-img-top" alt="${dish.name}" style="height: 200px; object-fit: cover;">
-                                <div class="mt-2">
+                                <img src="${imageUrl}" class="card-img-top" alt="${dish.name}">
+                                <div class="mt-3">
                                     <h6 class="dish-name">${dish.name}</h6>
                                     <p class="dish-description">${dish.description || 'Không có mô tả'}</p>
-                                    <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
                                         <span class="dish-price">${price}</span>
                                         <span class="dish-category">${dish.category || 'Khác'}</span>
                                     </div>
@@ -1243,7 +1468,76 @@
                 </div>
             `;
             
+            // Add click event listener
+            col.addEventListener('click', function(e) {
+                if (e.target.type !== 'checkbox') {
+                    const checkbox = col.querySelector('.dish-checkbox');
+                    checkbox.checked = !checkbox.checked;
+                    toggleDishSelection(checkbox);
+                }
+            });
+            
             return col;
+        }
+
+        function toggleDishSelection(checkbox) {
+            const dishId = checkbox.value;
+            const dishCard = checkbox.closest('.dish-card');
+            const dishName = dishCard.querySelector('.dish-name').textContent;
+            const dishPrice = parseFloat(dishCard.dataset.price) || 0;
+            
+            if (checkbox.checked) {
+                // Add to selectedDishes array
+                selectedDishes.push({
+                    id: dishId,
+                    name: dishName,
+                    price: dishPrice
+                });
+                dishCard.classList.add('selected');
+            } else {
+                // Remove from selectedDishes array
+                selectedDishes = selectedDishes.filter(d => d.id !== dishId);
+                dishCard.classList.remove('selected');
+            }
+            
+            updateDishSelectionUI();
+            updateTotalAmount();
+            saveFormState();
+        }
+
+        function updateDishSelectionUI() {
+            const selectedDishesCount = document.getElementById('selectedDishesCount');
+            const selectedDishesSummary = document.getElementById('selectedDishesSummary');
+            const selectedDishesList = document.getElementById('selectedDishesList');
+            const selectedDishIds = document.getElementById('selectedDishIds');
+            
+            if (selectedDishes.length > 0) {
+                selectedDishesCount.textContent = `Đã chọn ${selectedDishes.length} món`;
+                selectedDishesSummary.style.display = 'block';
+                
+                selectedDishesList.innerHTML = selectedDishes.map(dish => 
+                    `<div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>${dish.name}</span>
+                        <span class="text-primary">${formatCurrency(dish.price)}</span>
+                    </div>`
+                ).join('');
+                
+                selectedDishIds.value = selectedDishes.map(d => d.id).join(',');
+            } else {
+                selectedDishesCount.textContent = 'Chưa chọn món';
+                selectedDishesSummary.style.display = 'none';
+                selectedDishIds.value = '';
+            }
+        }
+
+        function updateServiceSelectionUI() {
+            const selectedServicesCount = document.getElementById('selectedServicesCount');
+            
+            if (selectedServices.length > 0) {
+                selectedServicesCount.textContent = `Đã chọn ${selectedServices.length} dịch vụ`;
+            } else {
+                selectedServicesCount.textContent = 'Chưa chọn dịch vụ';
+            }
         }
 
         function renderTablePopupContent() {

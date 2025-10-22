@@ -1081,12 +1081,6 @@
                         <i class="fas fa-comment-slash text-muted" style="font-size: 3rem;"></i>
                         <h5 class="text-muted mt-3">Chưa có đánh giá nào</h5>
                         <p class="text-muted">Hãy là người đầu tiên đánh giá nhà hàng này!</p>
-                        <a th:href="@{/reviews/create/{id}(id=${restaurant.restaurantId})}" 
-                           class="btn btn-primary" 
-                           sec:authorize="isAuthenticated()">
-                            <i class="fas fa-star me-2"></i>
-                            Viết đánh giá đầu tiên
-                        </a>
                     </div>
                 </div>
             </div>
@@ -1171,7 +1165,7 @@
                     
                     <!-- Book Button -->
                     <div class="mt-4" sec:authorize="!hasRole('RESTAURANT_OWNER')">
-                        <a th:href="@{/booking/new}" class="btn btn-book-now w-100">
+                        <a th:href="@{/booking/new(restaurantId=${restaurant.restaurantId})}" class="btn btn-book-now w-100">
                             <i class="fas fa-calendar-check me-2"></i>
                             Đặt Bàn Ngay
                         </a>
@@ -1194,7 +1188,7 @@
         <div class="cta-section">
             <h2 class="mb-3">Sẵn sàng đặt bàn?</h2>
             <p class="mb-4 fs-5">Trải nghiệm ẩm thực tuyệt vời đang chờ đón bạn!</p>
-            <a th:href="@{/booking/new}" class="btn btn-book-now">
+            <a th:href="@{/booking/new(restaurantId=${restaurant.restaurantId})}" class="btn btn-book-now">
                 <i class="fas fa-calendar-plus me-2"></i>
                 Đặt Bàn Ngay
             </a>
