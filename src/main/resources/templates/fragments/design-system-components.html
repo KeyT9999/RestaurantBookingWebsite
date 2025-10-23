@@ -38,9 +38,6 @@
                     <!-- Authenticated User Actions -->
                     <div sec:authorize="isAuthenticated()" class="ds-user-actions">
                         <!-- Customer Actions -->
-                        <a th:href="@{/customer/favorites}" class="ds-btn ds-btn-secondary ds-btn-icon" sec:authorize="hasRole('CUSTOMER')" title="Favorites">
-                            <i class="fas fa-heart"></i>
-                        </a>
 
                         <!-- Notification Bell -->
                         <div class="ds-notification-bell" th:insert="~{fragments/notification-bell :: notification-bell}"></div>
@@ -190,7 +187,7 @@
                                 </li>
                                 <li sec:authorize="hasRole('CUSTOMER')">
                                     <a class="dropdown-item" th:href="@{/customer/favorites}">
-                                        <i class="fas fa-heart"></i>
+                                        <i class="fas fa-star"></i>
                                         Favorites
                                     </a>
                                 </li>

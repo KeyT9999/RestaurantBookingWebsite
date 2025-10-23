@@ -28,6 +28,7 @@ import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.ReviewService;
+import com.example.booking.service.NotificationService;
 import com.example.booking.repository.RestaurantMediaRepository;
 
 import java.text.NumberFormat;
@@ -67,6 +68,9 @@ public class HomeController {
 
     @Autowired
     private RestaurantMediaRepository restaurantMediaRepository;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     /**
      * Home page - main landing page
@@ -101,6 +105,16 @@ public class HomeController {
                     model.addAttribute("userRole", "RESTAURANT_OWNER");
                     break;
                 }
+            }
+            
+            // Add notification count for authenticated users
+            try {
+                User user = (User) authentication.getPrincipal();
+                long unreadCount = notificationService.countUnreadByUserId(user.getId());
+                model.addAttribute("unreadCount", unreadCount);
+            } catch (Exception e) {
+                System.err.println("Error loading notification count: " + e.getMessage());
+                model.addAttribute("unreadCount", 0L);
             }
         }
 
