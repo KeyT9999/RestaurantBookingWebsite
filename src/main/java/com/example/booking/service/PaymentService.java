@@ -460,10 +460,11 @@ public class PaymentService {
     
     /**
      * Calculate total amount for booking based on payment type
-     * NEW LOGIC: 
-     * - Deposit = 10% of total if total > 500k, else minimum 10k
+     * NEW LOGIC:
+     * - Deposit = 10% of total
      * - Full payment = 100% total
-     * @param booking The booking
+     * 
+     * @param booking     The booking
      * @param paymentType The payment type
      * @param voucherCode The voucher code
      * @return Total amount
@@ -477,19 +478,9 @@ public class PaymentService {
         BigDecimal paymentAmount;
         
         if (paymentType == PaymentType.DEPOSIT) {
-            // NEW LOGIC: Deposit = 10% if total > 500k
-            BigDecimal threshold = new BigDecimal("500000");
-            BigDecimal minimumDeposit = new BigDecimal("10000");
-            
-            if (fullTotal.compareTo(threshold) > 0) {
-                // Total > 500k → deposit = 10%
-                paymentAmount = fullTotal.multiply(new BigDecimal("0.1"));
-                logger.info("   → Deposit (10% of {}): {}", fullTotal, paymentAmount);
-            } else {
-                // Total <= 500k → minimum deposit 10k
-                paymentAmount = minimumDeposit;
-                logger.info("   → Minimum deposit (total <= 500k): {}", paymentAmount);
-            }
+            // Deposit = 10% of total
+            paymentAmount = fullTotal.multiply(new BigDecimal("0.1"));
+            logger.info("   → Deposit (10% of {}): {}", fullTotal, paymentAmount);
         } else {
             // FULL_PAYMENT: use full total
             paymentAmount = fullTotal;

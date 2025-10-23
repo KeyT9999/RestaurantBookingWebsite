@@ -345,19 +345,18 @@ public class BookingService {
         BigDecimal totalAmount = calculateTotalAmount(booking);
         System.out.println("💰 Final total booking amount: " + totalAmount);
 
-        // Apply deposit rule: if total > 500,000 VND then deposit = 10% of total; otherwise 0
+        // Apply deposit rule: deposit = 10% of total amount
         try {
-            BigDecimal threshold = new BigDecimal("500000");
-            if (totalAmount != null && totalAmount.compareTo(threshold) > 0) {
-                BigDecimal tenPercent = new BigDecimal("0.10");
+            BigDecimal tenPercent = new BigDecimal("0.10");
+            if (totalAmount != null) {
                 BigDecimal computedDeposit = totalAmount.multiply(tenPercent);
                 // Round to nearest VND
                 computedDeposit = computedDeposit.setScale(0, java.math.RoundingMode.HALF_UP);
                 booking.setDepositAmount(computedDeposit);
-                System.out.println("✅ Deposit set by 10% rule: " + computedDeposit);
+                System.out.println("✅ Deposit set to 10%: " + computedDeposit);
             } else {
                 booking.setDepositAmount(BigDecimal.ZERO);
-                System.out.println("✅ Deposit set to 0 by 10% rule (<= 500k)");
+                System.out.println("⚠️ Total amount is null, deposit set to 0");
             }
             booking = bookingRepository.save(booking);
         } catch (Exception e) {
