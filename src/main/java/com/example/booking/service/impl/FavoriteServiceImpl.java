@@ -24,7 +24,10 @@ import com.example.booking.dto.customer.ToggleFavoriteResponse;
 import com.example.booking.repository.CustomerFavoriteRepository;
 import com.example.booking.repository.CustomerRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
+import com.example.booking.repository.RestaurantMediaRepository;
+import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.service.FavoriteService;
+import com.example.booking.service.ReviewService;
 
 @Service
 @Transactional
@@ -39,6 +42,12 @@ public class FavoriteServiceImpl implements FavoriteService {
     @Autowired
     private RestaurantProfileRepository restaurantRepository;
     
+    @Autowired
+    private RestaurantMediaRepository restaurantMediaRepository;
+
+    @Autowired
+    private ReviewService reviewService;
+
     @Override
     public ToggleFavoriteResponse toggleFavorite(UUID customerId, ToggleFavoriteRequest request) {
         try {
@@ -91,7 +100,7 @@ public class FavoriteServiceImpl implements FavoriteService {
             System.out.println("Favorite count: " + favoriteCount);
             System.out.println("=============================");
             
-            return ToggleFavoriteResponse.success(finalStatus, (int) favoriteCount);
+            return ToggleFavoriteResponse.success(finalStatus, (int) favoriteCount, restaurantId);
             
         } catch (Exception e) {
             return ToggleFavoriteResponse.error("Có lỗi xảy ra: " + e.getMessage());
@@ -455,33 +464,59 @@ public class FavoriteServiceImpl implements FavoriteService {
         dto.setFavoritedAt(favoritedAt);
         dto.setFavorited(isFavorited);
         
-        // Set test values for rating and review count to enable sorting
-        // In real app, these would come from Review entity
-        dto.setAverageRating(generateTestRating(restaurant.getRestaurantId()));
-        dto.setReviewCount(generateTestReviewCount(restaurant.getRestaurantId()));
+        // Set real values for rating and review count from Review entity
+        try {
+            double averageRating = reviewService.getAverageRatingByRestaurant(restaurant.getRestaurantId());
+            long reviewCount = reviewService.getReviewCountByRestaurant(restaurant.getRestaurantId());
+            dto.setAverageRating(averageRating);
+            dto.setReviewCount((int) reviewCount);
+        } catch (Exception e) {
+            // If no reviews exist, set default values
+            dto.setAverageRating(0.0);
+            dto.setReviewCount(0);
+        }
         
-        // TODO: Get image URL from RestaurantMedia
-        dto.setImageUrl(null);
+        // Get main image URL from RestaurantMedia
+        dto.setImageUrl(getRestaurantMainImageUrl(restaurant));
         
         return dto;
     }
-    
+
     /**
-     * Generate test rating based on restaurant ID for sorting testing
+     * Get restaurant main image URL from RestaurantMedia
      */
-    private Double generateTestRating(Integer restaurantId) {
-        // Generate different ratings based on restaurant ID for testing
-        int hash = restaurantId.hashCode();
-        double rating = 3.0 + (hash % 20) / 10.0; // Rating between 3.0 and 5.0
-        return Math.round(rating * 10.0) / 10.0; // Round to 1 decimal place
-    }
-    
-    /**
-     * Generate test review count based on restaurant ID for sorting testing
-     */
-    private Integer generateTestReviewCount(Integer restaurantId) {
-        // Generate different review counts based on restaurant ID for testing
-        int hash = restaurantId.hashCode();
-        return Math.abs(hash % 50) + 1; // Review count between 1 and 50
+    private String getRestaurantMainImageUrl(RestaurantProfile restaurant) {
+        try {
+            // First try to get cover image
+            List<RestaurantMedia> coverImages = restaurantMediaRepository
+                    .findByRestaurantAndType(restaurant, "cover");
+
+            if (!coverImages.isEmpty()) {
+                return coverImages.get(0).getUrl();
+            }
+
+            // If no cover, try to get logo
+            List<RestaurantMedia> logoImages = restaurantMediaRepository
+                    .findByRestaurantAndType(restaurant, "logo");
+
+            if (!logoImages.isEmpty()) {
+                return logoImages.get(0).getUrl();
+            }
+
+            // If no logo, try to get any gallery image
+            List<RestaurantMedia> galleryImages = restaurantMediaRepository
+                    .findByRestaurantAndType(restaurant, "gallery");
+
+            if (!galleryImages.isEmpty()) {
+                return galleryImages.get(0).getUrl();
+            }
+
+            // If no images found, return null
+            return null;
+
+        } catch (Exception e) {
+            System.err.println("Error getting restaurant image URL: " + e.getMessage());
+            return null;
+        }
     }
 }

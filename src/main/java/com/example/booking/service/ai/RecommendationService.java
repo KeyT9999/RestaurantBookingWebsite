@@ -189,7 +189,7 @@ public class RecommendationService {
         rec.setImageUrl(restaurant.getMainImageUrl());
         rec.setRating(restaurant.getFormattedAverageRating());
         rec.setDistanceKm(0.0);
-        rec.setBookingUrl("/restaurants/" + restaurant.getId() + "/booking");
+        rec.setBookingUrl("/booking/new?restaurantId=" + restaurant.getId());
         rec.setViewDetailsUrl("/restaurants/" + restaurant.getId());
         return rec;
     }
@@ -204,7 +204,7 @@ public class RecommendationService {
         rec.setImageUrl(restaurant.getMainImageUrl());
         rec.setRating(restaurant.getFormattedAverageRating());
         rec.setDistanceKm(0.0);
-        rec.setBookingUrl("/restaurants/" + restaurant.getId() + "/booking");
+        rec.setBookingUrl("/booking/new?restaurantId=" + restaurant.getId());
         rec.setViewDetailsUrl("/restaurants/" + restaurant.getId());
         return rec;
     }

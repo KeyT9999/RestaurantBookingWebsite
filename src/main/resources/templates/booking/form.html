@@ -21,6 +21,210 @@
     <link th:href="@{/css/home-resy.css}" rel="stylesheet">
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
     <link th:href="@{/css/booking-resy.css}" rel="stylesheet">
+    
+    <!-- Custom styles for booking form -->
+    <style>
+        /* Menu and Service Cards Styling */
+        .dish-card, .service-card {
+            transition: all 0.3s ease;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .dish-card:hover, .service-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-color: #007bff;
+        }
+        
+        .dish-card.selected, .service-card.selected {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+
+        /* Quantity input styling */
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .quantity-input {
+            width: 60px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Dish image styling */
+        .dish-image {
+            transition: transform 0.3s ease;
+        }
+
+        .dish-image:hover {
+            transform: scale(1.05);
+        }
+        
+        /* Dish Card Specific */
+        .dish-card .card-img-top {
+            height: 180px !important;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .dish-card:hover .card-img-top {
+            transform: scale(1.05);
+        }
+        
+        .dish-card .dish-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+        
+        .dish-card .dish-description {
+            font-size: 0.85rem;
+            color: #6c757d;
+            line-height: 1.4;
+            height: 2.8rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .dish-card .dish-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #e74c3c;
+        }
+        
+        .dish-card .dish-category {
+            font-size: 0.75rem;
+            background: #f8f9fa;
+            color: #6c757d;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+        }
+        
+        /* Service Card Specific */
+        .service-card .service-icon {
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .service-card .service-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+        
+        .service-card .service-description {
+            font-size: 0.85rem;
+            color: #6c757d;
+            line-height: 1.4;
+            height: 2.8rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .service-card .service-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #e74c3c;
+        }
+        
+        /* Checkbox Styling */
+        .dish-card .form-check-input, .service-card .form-check-input {
+            width: 1.2rem;
+            height: 1.2rem;
+            margin-top: 0.1rem;
+        }
+        
+        .dish-card .form-check-input:checked, .service-card .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        /* Container Spacing */
+        #menuItemsContainer, #servicesContainer {
+            margin-top: 1rem;
+        }
+        
+        /* Selection Count Styling */
+        #selectedDishesCount, #selectedServicesCount {
+            background: #f8f9fa;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .dish-card .dish-description, .service-card .service-description {
+                height: auto;
+                -webkit-line-clamp: 3;
+            }
+            
+            .dish-card .card-img-top {
+                height: 150px !important;
+            }
+            
+            .col-md-4 {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .dish-card .card-body, .service-card .card-body {
+                padding: 1rem !important;
+            }
+            
+            .dish-card .dish-name, .service-card .service-name {
+                font-size: 0.9rem;
+            }
+            
+            .dish-card .dish-description, .service-card .service-description {
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* Grid spacing improvements */
+        .row {
+            margin-left: -0.5rem;
+            margin-right: -0.5rem;
+        }
+        
+        .row > [class*="col-"] {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+        
+        /* Loading State */
+        .loading-placeholder {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
 </head>
 
 <body class="booking-page" th:with="activeNav='restaurants'">
@@ -201,15 +405,15 @@
                                     Thực đơn gọi trước
                                     <span class="optional-label">(không bắt buộc)</span>
                                 </label>
-                                <div class="d-flex flex-wrap align-items-center gap-2">
-                                    <button type="button"
-                                            class="btn btn-outline-primary"
-                                            id="viewMenuBtn"
-                                            onclick="openMenuPopup()"
-                                            disabled>
-                                        <i class="fas fa-eye"></i> Xem menu
-                                    </button>
+                                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                                     <span id="selectedDishesCount" class="text-muted small">Chưa chọn món</span>
+                                </div>
+                                
+                                <!-- Menu Items Display -->
+                                <div id="menuItemsContainer" class="mt-3" style="display: none;">
+                                    <div class="row" id="menuItemsList">
+                                        <!-- Menu items will be loaded here -->
+                                    </div>
                                 </div>
                                 <small class="booking-hint">
                                     Đặt món trước để giữ mức giá và giúp nhà hàng chuẩn bị nhanh chóng.
@@ -230,9 +434,15 @@
                                     Dịch vụ bổ sung
                                     <span class="optional-label">(không bắt buộc)</span>
                                 </label>
-                                <div class="services-container" id="servicesContainer">
-                                    <!-- Services will be injected bằng JavaScript -->
+                                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                    <span id="selectedServicesCount" class="text-muted small">Chưa chọn dịch vụ</span>
                                 </div>
+                                
+                                <!-- Services Display -->
+                                <div id="servicesContainer" class="mt-3">
+                                    <!-- Services will be injected by JavaScript -->
+                                </div>
+                                
                                 <small class="booking-hint">
                                     Thêm các dịch vụ như trang trí, hoa hoặc yêu cầu hỗ trợ để nâng tầm trải nghiệm.
                                 </small>
@@ -628,20 +838,6 @@
 
         // Debug function to log all selections
         function logAllSelections() {
-            console.log('📊 === CURRENT SELECTIONS DEBUG ===');
-            console.log('🔍 selectedTables:', selectedTables);
-            console.log('🔍 selectedTables.length:', selectedTables.length);
-            console.log('🔍 selectedDishes:', selectedDishes);
-            console.log('🔍 selectedDishes.length:', selectedDishes.length);
-            console.log('🔍 selectedServices:', selectedServices);
-            console.log('🔍 selectedServices.length:', selectedServices.length);
-            console.log('🔍 availableTables:', availableTables);
-            console.log('🔍 availableTables.length:', availableTables.length);
-            console.log('🔍 availableDishes:', availableDishes);
-            console.log('🔍 availableDishes.length:', availableDishes.length);
-            console.log('🔍 availableServices:', availableServices);
-            console.log('🔍 availableServices.length:', availableServices.length);
-            console.log('📊 === END SELECTIONS DEBUG ===');
         }
 
         function loadTables() {
@@ -650,23 +846,19 @@
             const restaurantId = document.getElementById('restaurantId').value;
             const viewTablesBtn = document.getElementById('viewTablesBtn');
             
-            console.log('🔍 Loading tables for restaurant ID:', restaurantId);
             logAllSelections();
             
             if (restaurantId) {
                 viewTablesBtn.disabled = false;
                 return fetch(`/api/booking/restaurants/${restaurantId}/tables`)
                     .then(response => {
-                        console.log('📡 API Response status:', response.status);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         return response.json();
                     })
                     .then(tables => {
-                        console.log('📋 Received tables:', tables);
                         availableTables = tables;
-                        console.log('📋 availableTables updated:', availableTables);
                         logAllSelections();
                         
                         // Load table layouts
@@ -678,12 +870,10 @@
                                 return [];
                             })
                             .then(layouts => {
-                                console.log('📋 Received table layouts:', layouts);
                                 tableLayouts = layouts;
                                 return tables;
                             })
                             .catch(error => {
-                                console.log('⚠️ No table layouts found:', error);
                                 tableLayouts = [];
                                 return tables;
                             });
@@ -692,7 +882,6 @@
                         tablesLoaded = true;
                         tablesLoading = false;
                         if (tables.length === 0) {
-                            console.log('⚠️ No tables found for restaurant ID:', restaurantId);
                         } else {
                             renderTablesInModal(tables);
                         }
@@ -701,12 +890,10 @@
                             loadDishes(restaurantId),
                             loadServices(restaurantId)
                         ]).then(() => {
-                            console.log('✅ All data (tables, dishes, services, layouts) loaded successfully');
                             return tables;
                         });
                     })
                     .catch(error => {
-                        console.error('❌ Error loading tables:', error);
                         availableTables = [];
                         tablesLoaded = true;
                         tablesLoading = false;
@@ -714,10 +901,8 @@
                             loadDishes(restaurantId),
                             loadServices(restaurantId)
                         ]).then(() => {
-                            console.log('✅ Dishes and services loaded despite table error');
                             return []; // Return empty array on error
                         }).catch(() => {
-                            console.log('❌ Error loading dishes/services too');
                             return []; // Return empty array on error
                         });
                     });
@@ -761,7 +946,6 @@
             // Update total amount
             updateTotalAmount();
             
-            console.log('✅ Table selection toggled:', tableId, 'Selected tables:', selectedTables.length);
         }
 
         // Show Table Images Modal
@@ -880,15 +1064,12 @@
                 tablesList.appendChild(tableCard);
             });
             
-            console.log('✅ Tables rendered in modal successfully');
         }
 
         function loadDishes(restaurantId) {
-            fetch(`/api/booking/restaurants/${restaurantId}/dishes`)
+            return fetch(`/api/booking/restaurants/${restaurantId}/dishes`)
                 .then(response => response.json())
                 .then(dishes => {
-                    console.log('🔍 Raw dishes API response:', dishes);
-                    console.log('🔍 First dish structure:', dishes[0]);
                     
                     // Load dish images
                     const dishesWithImages = dishes.map(dish => {
@@ -906,39 +1087,43 @@
                     });
                     
                     availableDishes = dishesWithImages;
-                    console.log('🔍 Dishes with images:', availableDishes);
                     
-                    // Update button text based on dishes availability
-                    const viewMenuBtn = document.getElementById('viewMenuBtn');
+                    // Display menu items directly
+                    const menuItemsContainer = document.getElementById('menuItemsContainer');
+                    const menuItemsList = document.getElementById('menuItemsList');
+                    
                     if (dishes.length === 0) {
-                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu (chưa có món nào phù hợp)';
-                        viewMenuBtn.disabled = true;
+                        menuItemsContainer.style.display = 'none';
                     } else {
-                        viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu';
-                        viewMenuBtn.disabled = false;
+                        menuItemsContainer.style.display = 'block';
+                        menuItemsList.innerHTML = '';
+                        
+                        // Add loading state
+                        menuItemsList.innerHTML = '<div class="col-12 text-center"><div class="loading-placeholder" style="height: 200px; border-radius: 12px;"></div></div>';
+                        
+                        // Simulate loading delay for better UX
+                        setTimeout(() => {
+                            menuItemsList.innerHTML = '';
+                            dishes.forEach(dish => {
+                                const dishCard = createDishCard(dish);
+                                menuItemsList.appendChild(dishCard);
+                            });
+                        }, 300);
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading dishes:', error);
-                    const viewMenuBtn = document.getElementById('viewMenuBtn');
-                    viewMenuBtn.innerHTML = '<i class="fas fa-eye"></i> Xem menu (lỗi tải dữ liệu)';
-                    viewMenuBtn.disabled = true;
+                    const menuItemsContainer = document.getElementById('menuItemsContainer');
+                    menuItemsContainer.style.display = 'none';
                 });
         }
 
         function loadServices(restaurantId) {
-            console.log('🔍 Loading services for restaurant ID:', restaurantId);
             
             return fetch(`/api/booking/restaurants/${restaurantId}/services`)
                 .then(response => {
-                    console.log('📡 Services API response status:', response.status);
                     return response.json();
                 })
                 .then(services => {
-                    console.log('🔍 Raw services API response:', services);
-                    console.log('🔍 First service structure:', services[0]);
-                    console.log('📋 Services received:', services);
-                    console.log('📋 Services count:', services.length);
                     
                     // Store services in global variable
                     availableServices = services;
@@ -947,10 +1132,9 @@
                     servicesContainer.innerHTML = '';
                     
                     // Always show services section for debugging
-                    document.getElementById('servicesSection').style.display = 'block';
+                    document.getElementById('section-services').style.display = 'block';
                     
                     if (services.length === 0) {
-                        console.log('⚠️ No services found, adding placeholder');
                         servicesContainer.innerHTML = `
                             <div class="text-center text-muted py-4">
                                 <i class="fas fa-concierge-bell fa-2x mb-2"></i>
@@ -960,18 +1144,28 @@
                         return;
                     }
                     
-                    services.forEach(service => {
-                        console.log('➕ Adding service:', service.name, 'Price:', service.price);
-                        const serviceCard = createServiceCard(service);
-                        servicesContainer.appendChild(serviceCard);
-                    });
+                    // Add loading state
+                    servicesContainer.innerHTML = '<div class="row"><div class="col-12 text-center"><div class="loading-placeholder" style="height: 150px; border-radius: 12px;"></div></div></div>';
                     
-                    console.log('✅ Services cards created successfully');
+                    // Simulate loading delay for better UX
+                    setTimeout(() => {
+                        // Create row container for services
+                        const servicesRow = document.createElement('div');
+                        servicesRow.className = 'row';
+                        
+                        services.forEach(service => {
+                            const serviceCard = createServiceCard(service);
+                            servicesRow.appendChild(serviceCard);
+                        });
+                        
+                        servicesContainer.innerHTML = '';
+                        servicesContainer.appendChild(servicesRow);
+                    }, 300);
+                    
                 })
                 .catch(error => {
-                    console.error('❌ Error loading services:', error);
                     // Still show services section even on error
-                    document.getElementById('servicesSection').style.display = 'block';
+                    document.getElementById('section-services').style.display = 'block';
                     const servicesContainer = document.getElementById('servicesContainer');
                     servicesContainer.innerHTML = `
                         <div class="text-center text-danger py-4">
@@ -983,10 +1177,10 @@
         }
 
         function createServiceCard(service) {
-            const card = document.createElement('div');
-            card.className = 'service-card';
-            card.dataset.serviceId = service.serviceId;
-            card.dataset.price = service.price || 0;
+            const col = document.createElement('div');
+            col.className = 'col-12 mb-2';
+            col.dataset.serviceId = service.serviceId;
+            col.dataset.price = service.price || 0;
             
             // Service icon mapping
             const iconMap = {
@@ -1003,48 +1197,46 @@
             };
             
             const iconClass = iconMap[service.name] || 'fas fa-concierge-bell';
+            const price = new Intl.NumberFormat('vi-VN').format(service.price || 0) + ' VNĐ';
             
-            card.innerHTML = `
-                <div class="service-checkbox"></div>
-                <i class="service-icon ${iconClass}"></i>
-                <div class="service-name">${service.name}</div>
-                <div class="service-description">${service.description || 'Enhance your dining experience'}</div>
-                <div class="service-price">
-                    <i class="fas fa-tag"></i>
-                    ${formatCurrency(service.price || 0)}
+            col.innerHTML = `
+                <div class="card service-card" data-service-id="${service.serviceId}" data-price="${service.price || 0}">
+                    <div class="card-body p-3">
+                        <div class="row align-items-center">
+                            <div class="col-4">
+                                <h6 class="service-name mb-1">${service.name}</h6>
+                            </div>
+                            <div class="col-4">
+                                <p class="service-description small text-muted mb-0">${service.description || 'Enhance your dining experience'}</p>
+                            </div>
+                            <div class="col-4">
+                                <span class="service-price text-danger fw-bold">${price}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
             
             // Add click event listener
-            card.addEventListener('click', function() {
-                toggleServiceSelection(this);
+            col.addEventListener('click', function(e) {
+                toggleServiceSelectionByCard(col);
             });
             
-            return card;
+            return col;
         }
 
         function toggleServiceSelection(card) {
-            console.log('🔍 toggleServiceSelection() called');
-            console.log('🔍 Card details:', {
-                serviceId: card.dataset.serviceId,
-                serviceName: card.querySelector('.service-name')?.textContent,
-                price: card.dataset.price,
-                isSelected: card.classList.contains('selected')
-            });
             
             const isSelected = card.classList.contains('selected');
             const serviceId = card.dataset.serviceId;
             const serviceName = card.querySelector('.service-name').textContent;
             const servicePrice = parseFloat(card.dataset.price) || 0;
             
-            console.log('🔍 Before toggle - selectedServices.length:', selectedServices.length);
-            console.log('🔍 Before toggle - selectedServices:', selectedServices);
             
             if (isSelected) {
                 // Remove from selectedServices array
                 card.classList.remove('selected');
                 selectedServices = selectedServices.filter(s => s.id !== serviceId);
-                console.log('❌ Removed service from selectedServices:', serviceName);
             } else {
                 // Add to selectedServices array
                 card.classList.add('selected');
@@ -1053,12 +1245,38 @@
                     name: serviceName,
                     price: servicePrice
                 });
-                console.log('✅ Added service to selectedServices:', serviceName);
             }
             
-            console.log('🔍 After toggle - selectedServices.length:', selectedServices.length);
-            console.log('🔍 After toggle - selectedServices:', selectedServices);
             
+            updateServiceSelectionUI();
+            updateTotalAmount();
+            saveFormState();
+        }
+
+        function toggleServiceSelectionByCard(card) {
+            const serviceId = card.dataset.serviceId;
+            const serviceCard = card.querySelector('.service-card');
+            const serviceName = serviceCard.querySelector('.service-name').textContent;
+            const servicePrice = parseFloat(serviceCard.dataset.price) || 0;
+            
+            // Check if service is already selected
+            const existingIndex = selectedServices.findIndex(s => s.id === serviceId);
+            
+            if (existingIndex === -1) {
+                // Add to selectedServices array
+                selectedServices.push({
+                    id: serviceId,
+                    name: serviceName,
+                    price: servicePrice
+                });
+                serviceCard.classList.add('selected');
+            } else {
+                // Remove from selectedServices array
+                selectedServices = selectedServices.filter(s => s.id !== serviceId);
+                serviceCard.classList.remove('selected');
+            }
+            
+            updateServiceSelectionUI();
             updateTotalAmount();
             saveFormState();
         }
@@ -1210,46 +1428,252 @@
         
         function createDishCard(dish) {
             const col = document.createElement('div');
-            col.className = 'col-md-4 col-sm-6';
+            col.className = 'col-12 mb-2';
             
+            const price = new Intl.NumberFormat('vi-VN').format(dish.price) + ' VNĐ';
             const imageUrl = dish.imageUrl || `data:image/svg+xml;base64,${btoa(`
-                <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="300" height="200" fill="#f8f9fa"/>
-                    <text x="150" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="#6c757d">
+                <svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="80" height="80" fill="#f8f9fa"/>
+                    <text x="40" y="40" text-anchor="middle" font-family="Arial" font-size="12" fill="#6c757d">
                         ${dish.name || 'No Image'}
                     </text>
                 </svg>
             `)}`;
-            const price = new Intl.NumberFormat('vi-VN').format(dish.price) + ' VNĐ';
             
             col.innerHTML = `
                 <div class="card dish-card" data-dish-id="${dish.dishId}" data-price="${dish.price}">
-                    <div class="card-body">
-                        <div class="form-check">
-                            <input class="form-check-input dish-checkbox" type="checkbox" value="${dish.dishId}" id="dish-${dish.dishId}">
-                            <label class="form-check-label w-100" for="dish-${dish.dishId}">
-                                <img src="${imageUrl}" class="card-img-top" alt="${dish.name}" style="height: 200px; object-fit: cover;">
-                                <div class="mt-2">
-                                    <h6 class="dish-name">${dish.name}</h6>
-                                    <p class="dish-description">${dish.description || 'Không có mô tả'}</p>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="dish-price">${price}</span>
-                                        <span class="dish-category">${dish.category || 'Khác'}</span>
-                                    </div>
+                    <div class="card-body p-3">
+                        <div class="row align-items-center">
+                            <div class="col-2">
+                                <img src="${imageUrl}" class="dish-image" alt="${dish.name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                            </div>
+                            <div class="col-3">
+                                <h6 class="dish-name mb-1">${dish.name}</h6>
+                                <small class="text-muted dish-category">${dish.category || 'Khác'}</small>
+                            </div>
+                            <div class="col-4">
+                                <p class="dish-description mb-1 small">${dish.description || 'Không có mô tả'}</p>
+                                <span class="dish-price text-danger fw-bold">${price}</span>
+                            </div>
+                            <div class="col-3">
+                                <div class="input-group input-group-sm">
+                                    <button class="btn btn-outline-secondary btn-sm quantity-btn" type="button" onclick="decreaseQuantity(${dish.dishId})">-</button>
+                                    <input type="number" class="form-control text-center quantity-input" value="1" min="1" max="99" id="quantity-${dish.dishId}" onchange="updateDishQuantity(${dish.dishId})">
+                                    <button class="btn btn-outline-secondary btn-sm quantity-btn" type="button" onclick="increaseQuantity(${dish.dishId})">+</button>
                                 </div>
-                            </label>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
             
+            // Add click event listener for card to toggle selection
+            col.addEventListener('click', function(e) {
+                if (!e.target.closest('.input-group')) {
+                    toggleDishSelectionByCard(col);
+                }
+            });
+            
+            // Add event listener for quantity input changes
+            const quantityInput = col.querySelector('.quantity-input');
+            if (quantityInput) {
+                quantityInput.addEventListener('input', function() {
+                    updateDishQuantity(dishId);
+                });
+            }
+            
             return col;
         }
 
+        function toggleDishSelection(checkbox) {
+            const dishId = checkbox.value;
+            const dishCard = checkbox.closest('.dish-card');
+            const dishName = dishCard.querySelector('.dish-name').textContent;
+            const dishPrice = parseFloat(dishCard.dataset.price) || 0;
+            const quantity = parseInt(dishCard.querySelector('.quantity-input').value) || 1;
+            
+            if (checkbox.checked) {
+                // Add to selectedDishes array
+                selectedDishes.push({
+                    id: dishId,
+                    name: dishName,
+                    price: dishPrice,
+                    quantity: quantity
+                });
+                dishCard.classList.add('selected');
+            } else {
+                // Remove from selectedDishes array
+                selectedDishes = selectedDishes.filter(d => d.id !== dishId);
+                dishCard.classList.remove('selected');
+            }
+            
+            updateDishSelectionUI();
+            updateTotalAmount();
+            saveFormState();
+        }
+
+        function toggleDishSelectionByCard(card) {
+            const dishCard = card.querySelector('.dish-card');
+            const dishId = dishCard.dataset.dishId;
+            const dishName = dishCard.querySelector('.dish-name').textContent;
+            const dishPrice = parseFloat(dishCard.dataset.price) || 0;
+            const quantity = parseInt(dishCard.querySelector('.quantity-input').value) || 1;
+            
+            // Check if dish is already selected using classList like service
+            const isSelected = dishCard.classList.contains('selected');
+            
+            
+            if (!isSelected) {
+                // Add to selectedDishes array
+                selectedDishes.push({
+                    id: dishId,
+                    name: dishName,
+                    price: dishPrice,
+                    quantity: quantity
+                });
+                dishCard.classList.add('selected');
+            } else {
+                // Remove from selectedDishes array - ensure proper comparison
+                const beforeLength = selectedDishes.length;
+                
+                selectedDishes = selectedDishes.filter(d => {
+                    const shouldKeep = String(d.id) !== String(dishId);
+                    return shouldKeep;
+                });
+                
+                const afterLength = selectedDishes.length;
+                dishCard.classList.remove('selected');
+            }
+            
+            
+            updateDishSelectionUI();
+            updateTotalAmount();
+            saveFormState();
+        }
+
+        function increaseQuantity(dishId) {
+            const quantityInput = document.getElementById(`quantity-${dishId}`);
+            const currentValue = parseInt(quantityInput.value) || 1;
+            if (currentValue < 99) {
+                quantityInput.value = currentValue + 1;
+                // Check if dish is selected and update quantity
+                const dishCard = quantityInput.closest('.dish-card');
+                if (dishCard && dishCard.classList.contains('selected')) {
+                    const actualDishId = dishCard.dataset.dishId;
+                    const dishIndex = selectedDishes.findIndex(d => String(d.id) === String(actualDishId));
+                    if (dishIndex !== -1) {
+                        selectedDishes[dishIndex].quantity = currentValue + 1;
+                        updateDishSelectionUI();
+                        updateTotalAmount();
+                        saveFormState();
+                    }
+                }
+            }
+        }
+
+        function decreaseQuantity(dishId) {
+            const quantityInput = document.getElementById(`quantity-${dishId}`);
+            const currentValue = parseInt(quantityInput.value) || 1;
+            if (currentValue > 1) {
+                quantityInput.value = currentValue - 1;
+                // Check if dish is selected and update quantity
+                const dishCard = quantityInput.closest('.dish-card');
+                if (dishCard && dishCard.classList.contains('selected')) {
+                    const actualDishId = dishCard.dataset.dishId;
+                    const dishIndex = selectedDishes.findIndex(d => String(d.id) === String(actualDishId));
+                    if (dishIndex !== -1) {
+                        selectedDishes[dishIndex].quantity = currentValue - 1;
+                        updateDishSelectionUI();
+                        updateTotalAmount();
+                        saveFormState();
+                    }
+                }
+            }
+        }
+
+        function updateDishQuantity(dishId) {
+            const quantityInput = document.getElementById(`quantity-${dishId}`);
+            const quantity = parseInt(quantityInput.value) || 1;
+            
+            // Validate quantity range
+            if (quantity < 1) {
+                quantityInput.value = 1;
+                return;
+            }
+            if (quantity > 99) {
+                quantityInput.value = 99;
+                return;
+            }
+            
+            // Check if dish is selected and update quantity
+            const dishCard = quantityInput.closest('.dish-card');
+            if (dishCard && dishCard.classList.contains('selected')) {
+                const actualDishId = dishCard.dataset.dishId;
+                const dishIndex = selectedDishes.findIndex(d => String(d.id) === String(actualDishId));
+                if (dishIndex !== -1) {
+                    selectedDishes[dishIndex].quantity = quantity;
+                    updateDishSelectionUI();
+                    updateTotalAmount();
+                    saveFormState();
+                }
+            }
+        }
+
+        function updateDishSelectionUI() {
+            
+            const selectedDishesCount = document.getElementById('selectedDishesCount');
+            const selectedDishesSummary = document.getElementById('selectedDishesSummary');
+            const selectedDishesList = document.getElementById('selectedDishesList');
+            const selectedDishIds = document.getElementById('selectedDishIds');
+            
+            if (selectedDishes.length > 0) {
+                const totalQuantity = selectedDishes.reduce((sum, dish) => sum + (dish.quantity || 1), 0);
+                selectedDishesCount.textContent = `Đã chọn ${selectedDishes.length} món (${totalQuantity} phần)`;
+                selectedDishesSummary.style.display = 'block';
+                
+                selectedDishesList.innerHTML = selectedDishes.map(dish => {
+                    const quantity = dish.quantity || 1;
+                    const totalPrice = dish.price * quantity;
+                    return `<div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>${dish.name} x${quantity}</span>
+                        <span class="text-primary">${formatCurrency(totalPrice)}</span>
+                    </div>`;
+                }).join('');
+                
+                selectedDishIds.value = selectedDishes.map(d => d.id).join(',');
+            } else {
+                selectedDishesCount.textContent = 'Chưa chọn món';
+                selectedDishesSummary.style.display = 'none';
+                selectedDishIds.value = '';
+            }
+        }
+
+        function syncDishSelectionState() {
+            // Sync the selected state of dish cards with selectedDishes array
+            document.querySelectorAll('.dish-card').forEach(card => {
+                const dishId = card.dataset.dishId;
+                const isInArray = selectedDishes.some(d => d.id === dishId);
+                const hasSelectedClass = card.classList.contains('selected');
+                
+                if (isInArray && !hasSelectedClass) {
+                    card.classList.add('selected');
+                } else if (!isInArray && hasSelectedClass) {
+                    card.classList.remove('selected');
+                }
+            });
+        }
+
+        function updateServiceSelectionUI() {
+            const selectedServicesCount = document.getElementById('selectedServicesCount');
+            
+            if (selectedServices.length > 0) {
+                selectedServicesCount.textContent = `Đã chọn ${selectedServices.length} dịch vụ`;
+            } else {
+                selectedServicesCount.textContent = 'Chưa chọn dịch vụ';
+            }
+        }
+
         function renderTablePopupContent() {
-            console.log('🚀 Rendering table popup content...');
-            console.log('📋 Current selectedTables:', selectedTables);
-            console.log('📋 Current selectedTableIds value:', document.getElementById('selectedTableIds').value);
             
             // Reset search box and filtered data
             const tableSearchInput = document.getElementById('tablesSearchInput');
@@ -1294,7 +1718,6 @@
                 const statusValue = getTableStatusValue(table.status);
                 const statusClass = getStatusBadgeClass(table.status);
                 const statusText = getStatusDisplayName(table.status);
-                console.log('🎨 Table:', table.tableName, 'Original Status:', table.status, 'Processed Status:', statusValue, 'Class:', statusClass, 'Text:', statusText);
                 
                 // Create table image placeholder
                 const imageUrl = table.mainImage || `data:image/svg+xml;base64,${btoa(`
@@ -1353,23 +1776,17 @@
             const selectedTableIds = document.getElementById('selectedTableIds').value;
             if (selectedTableIds) {
                 const tableIds = selectedTableIds.split(',');
-                console.log('🔄 Restoring table selections:', tableIds);
                 
                 setTimeout(() => {
                     selectedTables = []; // Reset selectedTables array
-                    console.log('🔄 Starting restore process for tables:', tableIds);
                     
                     tableIds.forEach(tableId => {
-                        console.log('🔍 Looking for checkbox with value:', tableId);
                         const checkbox = document.querySelector(`#tableModal input[value="${tableId}"]`);
-                        console.log('🔍 Found checkbox:', checkbox);
                         
                         if (checkbox) {
                             checkbox.checked = true;
-                            console.log('✅ Checkbox checked for table:', tableId);
                             
                             const tableCard = checkbox.closest('.table-card');
-                            console.log('🔍 Found tableCard:', tableCard);
                             
                             if (tableCard) {
                                 const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
@@ -1377,12 +1794,6 @@
                                 const capacityText = tableCard.querySelector('.card-text small').textContent;
                                 const capacity = parseInt(capacityText.match(/\d+/)[0]);
                                 
-                                console.log('📊 Table data:', {
-                                    id: tableId,
-                                    name: tableName,
-                                    deposit: deposit,
-                                    capacity: capacity
-                                });
                                 
                                 selectedTables.push({
                                     id: tableId,
@@ -1390,23 +1801,18 @@
                                     deposit: deposit,
                                     capacity: capacity
                                 });
-                                console.log('✅ Added to selectedTables:', tableId, tableName);
                             } else {
-                                console.log('❌ Could not find tableCard for checkbox:', checkbox);
                             }
                         } else {
-                            console.log('❌ Could not find checkbox for table:', tableId);
                         }
                     });
                     
-                    console.log('📋 Final selectedTables array:', selectedTables);
                     updateTableSelectionUI(); // Update UI after restoring
                 }, 100);
             }
         }
 
         function openTablePopup(forceReload = false) {
-            console.log('🚀 openTablePopup called - forceReload:', forceReload);
 
             const restaurantId = document.getElementById('restaurantId').value;
             if (!restaurantId) {
@@ -1421,19 +1827,16 @@
             };
 
             if (forceReload || !availableTables || availableTables.length === 0) {
-                console.log('🔄 Reloading tables before showing popup...');
                 loadTables().then(tables => {
                     if (tables && tables.length) {
                         showModalWithContent();
                     } else {
                         renderTablePopupContent();
                         const warningMsg = 'Không tìm thấy bàn khả dụng cho nhà hàng này.';
-                        console.warn(warningMsg);
                         const modal = new bootstrap.Modal(document.getElementById('tableModal'));
                         modal.show();
                     }
                 }).catch(error => {
-                    console.error('❌ Error reloading tables before popup:', error);
                     renderTablePopupContent();
                     const modal = new bootstrap.Modal(document.getElementById('tableModal'));
                     modal.show();
@@ -1469,15 +1872,11 @@
         }
 
         function confirmTableSelection() {
-            console.log('🎯 confirmTableSelection() called');
             const checkboxes = document.querySelectorAll('.table-checkbox:checked');
-            console.log('🎯 Found checked checkboxes:', checkboxes.length);
             selectedTables = [];
             
             checkboxes.forEach(checkbox => {
-                console.log('🎯 Processing checkbox:', checkbox.value);
                 const tableCard = checkbox.closest('.table-card');
-                console.log('🎯 Found tableCard:', tableCard);
                 
                 const tableId = tableCard.getAttribute('data-table-id');
                 const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
@@ -1485,12 +1884,6 @@
                 const capacityText = tableCard.querySelector('.card-text small').textContent;
                 const capacity = parseInt(capacityText.match(/\d+/)[0]);
                 
-                console.log('🎯 Table data:', {
-                    id: tableId,
-                    name: tableName,
-                    deposit: deposit,
-                    capacity: capacity
-                });
                 
                 selectedTables.push({
                     id: tableId,
@@ -1498,10 +1891,8 @@
                     deposit: deposit,
                     capacity: capacity
                 });
-                console.log('🎯 Added to selectedTables:', tableId);
             });
             
-            console.log('🎯 Final selectedTables in confirmTableSelection:', selectedTables);
             
             // Update UI
             updateTableSelectionUI();
@@ -1663,25 +2054,20 @@
         
         // Form validation before submit
         function validateForm() {
-            console.log('🔍 validateForm() called - starting validation...');
             
             // Log current selections before validation
             logAllSelections();
             
             // First, run our comprehensive validation
             if (!validateFormBeforeSubmit()) {
-                console.log('❌ validateFormBeforeSubmit() failed, stopping form submission');
-                console.log('🔍 After validation failure - checking if selections are preserved...');
                 logAllSelections();
                 
                 // Restore form state after validation failure
-                console.log('🔄 Restoring form state after validation failure...');
                 restoreFormState();
                 
                 return false;
             }
             
-            console.log('✅ validateFormBeforeSubmit() passed, proceeding with Smart Waitlist check...');
             
             // Save current form state before validation
             saveFormState();
@@ -1704,7 +2090,6 @@
             }
             
             // Check availability with Smart Waitlist
-            console.log('🔍 Starting Smart Waitlist availability check...');
             checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds);
             
             // Prevent default form submission - we'll handle it in the callback
@@ -1713,7 +2098,6 @@
         
         // Save form state to hidden inputs
         function saveFormState() {
-            console.log('💾 saveFormState() called - saving current selections...');
             logAllSelections();
             
             // Save table selections
@@ -1722,19 +2106,15 @@
                 .filter(id => id !== '')
                 .join(',');
             document.getElementById('selectedTableIds').value = tableIds;
-            console.log('💾 Saved tableIds:', tableIds);
             
             // Save dish selections
             const dishIds = selectedDishes.map(d => `${d.id}:${d.quantity}`).join(',');
             document.getElementById('selectedDishIds').value = dishIds;
-            console.log('💾 Saved dishIds:', dishIds);
             
             // Save service selections
             const serviceIds = selectedServices.map(s => s.id).join(',');
             document.getElementById('selectedServiceIds').value = serviceIds;
-            console.log('💾 Saved serviceIds:', serviceIds);
             
-            console.log('💾 Form state saved successfully');
         }
         
         // Set minimum datetime to now + 30 minutes
@@ -1747,10 +2127,8 @@
             // Load tables if restaurant is already selected (edit mode)
             if (document.getElementById('restaurantId').value) {
                 loadTables().then(() => {
-                    console.log('✅ Tables loaded, now restoring form state...');
                     restoreFormState();
                 }).catch((error) => {
-                    console.error('❌ Error loading tables:', error);
                     // Still try to restore form state even if tables fail to load
                     restoreFormState();
                 });
@@ -1782,7 +2160,6 @@
             
             // Reload vouchers when restaurant changes
             document.getElementById('restaurantId').addEventListener('change', function() {
-                console.log('Restaurant changed, reloading vouchers...');
                 loadAvailableVouchers();
             });
         });
@@ -1790,7 +2167,6 @@
         // Load available vouchers for the customer
         function loadAvailableVouchers() {
             const restaurantId = document.getElementById('restaurantId').value;
-            console.log('Loading vouchers for restaurant:', restaurantId);
             
             // Always use demo endpoint which handles authentication internally
             const url = restaurantId ? `/api/vouchers/demo?restaurantId=${restaurantId}` : '/api/vouchers/demo';
@@ -1811,11 +2187,9 @@
             })
             .then(vouchers => {
                 availableVouchers = vouchers;
-                console.log('Loaded vouchers:', vouchers);
                 populateVoucherDropdown();
             })
             .catch(error => {
-                console.error('Error loading vouchers:', error);
                 // Show empty dropdown on error
                 availableVouchers = [];
                 populateVoucherDropdown();
@@ -1909,7 +2283,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error validating voucher:', error);
                 showVoucherError('Không thể kiểm tra voucher, vui lòng thử lại.');
             })
             .finally(() => {
@@ -1987,7 +2360,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error validating voucher:', error);
                 showVoucherError('Không thể kiểm tra voucher, vui lòng thử lại.');
             })
             .finally(() => {
@@ -2040,9 +2412,6 @@
         
         // Restore form state after conflict/error
         function restoreFormState() {
-            console.log('🔄 restoreFormState() called - restoring form state...');
-            console.log('🔍 Current URL:', window.location.href);
-            console.log('🔍 Is edit mode:', window.location.href.includes('/edit'));
             
             // Debug: Check hidden input values at the start of restoreFormState
             const selectedTableIds = document.getElementById('selectedTableIds').value;
@@ -2053,94 +2422,69 @@
             if (serviceIdsInput && !selectedServiceIds && serviceIdsInput.dataset.initialValue) {
                 selectedServiceIds = serviceIdsInput.dataset.initialValue;
                 serviceIdsInput.value = selectedServiceIds;
-                console.log('🔁 Restored serviceIds from initial dataset:', selectedServiceIds);
             }
-            console.log('🔍 Hidden input values at START of restoreFormState():');
-            console.log('  - selectedTableIds:', selectedTableIds);
-            console.log('  - selectedDishIds:', selectedDishIds);
-            console.log('  - selectedServiceIds:', selectedServiceIds);
+            
+            // Debug: Check if selectedDishes array is being modified
             
             logAllSelections();
             
             // Check if we need to load data first
             const restaurantId = document.getElementById('restaurantId').value;
             if (restaurantId && (availableTables.length === 0 || availableDishes.length === 0 || availableServices.length === 0)) {
-                console.log('🔄 Data not loaded yet, loading first...');
                 loadTables().then(() => {
-                    console.log('✅ Data loaded, now restoring form state...');
                     performRestore();
                 }).catch((error) => {
-                    console.error('❌ Error loading data:', error);
                     // Still try to restore with whatever data we have
                     performRestore();
                 });
             } else {
-                console.log('🔄 Data already loaded, proceeding with restore...');
                 performRestore();
             }
             
             function performRestore() {
-                console.log('🔄 performRestore() called...');
-                console.log('🔍 Data availability check:');
-                console.log('  - availableTables.length:', availableTables.length);
-                console.log('  - availableDishes.length:', availableDishes.length);
-                console.log('  - availableServices.length:', availableServices.length);
                 logAllSelections();
             
             // Debug: Check booking time input value
             const bookingTimeInput = document.getElementById('bookingTime');
-            console.log('🔍 Booking time input value:', bookingTimeInput.value);
-            console.log('🔍 Booking time input type:', bookingTimeInput.type);
             
             // Fix datetime format if needed
             const dataBookingTime = bookingTimeInput.getAttribute('data-booking-time');
-            console.log('🔍 Data booking time attribute:', dataBookingTime);
             
             if (dataBookingTime) {
                 try {
                     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dataBookingTime)) {
                         bookingTimeInput.value = dataBookingTime;
-                        console.log('🔍 Set booking time to (direct):', dataBookingTime);
                     } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dataBookingTime)) {
                         bookingTimeInput.value = dataBookingTime.slice(0, 16);
-                        console.log('🔍 Set booking time to (trimmed seconds):', bookingTimeInput.value);
                     } else if (/Z|[+-]\d{2}:?\d{2}$/.test(dataBookingTime)) {
                         const asDate = new Date(dataBookingTime);
                         const localDate = new Date(asDate.getTime() - asDate.getTimezoneOffset() * 60000);
                         bookingTimeInput.value = localDate.toISOString().slice(0, 16);
-                        console.log('🔍 Set booking time to (timezone adjusted):', bookingTimeInput.value);
                     } else {
                         const normalized = dataBookingTime.replace(' ', 'T');
                         bookingTimeInput.value = normalized.length >= 16 ? normalized.slice(0, 16) : normalized;
-                        console.log('🔍 Set booking time to (normalized):', bookingTimeInput.value);
                     }
                 } catch (error) {
-                    console.error('❌ Error formatting booking time:', error);
                 }
             }
             
             // If still no value, try to get from Thymeleaf
             if (!bookingTimeInput.value) {
                 const thValue = bookingTimeInput.getAttribute('th:value');
-                console.log('🔍 Thymeleaf value attribute:', thValue);
                 
                 if (thValue) {
                     bookingTimeInput.value = thValue;
-                    console.log('🔍 Set booking time from Thymeleaf:', bookingTimeInput.value);
                 }
             }
             
             // Restore table selection if any
             const selectedTableIds = document.getElementById('selectedTableIds').value;
-            console.log('🔍 selectedTableIds from hidden input:', selectedTableIds);
             if (selectedTableIds) {
                 const tableIds = selectedTableIds.split(',');
                 selectedTables = [];
                 
                 // Find tables from availableTables array and add to selectedTables
                 tableIds.forEach(tableId => {
-                    console.log('🔍 Looking for table with ID:', tableId, 'type:', typeof tableId);
-                    console.log('🔍 Available tables:', availableTables.map(t => ({ id: t.tableId, type: typeof t.tableId, name: t.tableName })));
                     
                     const table = availableTables.find(t => t.tableId == tableId);
                     if (table) {
@@ -2150,19 +2494,15 @@
                             deposit: table.depositAmount || 0,
                             capacity: table.capacity
                         });
-                        console.log('✅ Added table to selectedTables:', table.tableName);
                     } else {
-                        console.log('❌ Table not found in availableTables:', tableId);
                     }
                 });
                 
-                console.log(`✅ Restored ${selectedTables.length}/${tableIds.length} tables to selectedTables array`);
                 updateTableSelectionUI();
             }
             
             // Restore dish selections if any
             const selectedDishIds = document.getElementById('selectedDishIds').value;
-            console.log('🔍 selectedDishIds from hidden input:', selectedDishIds);
             if (selectedDishIds) {
                 const dishSelections = selectedDishIds.split(',');
                 selectedDishes = [];
@@ -2171,12 +2511,6 @@
                 dishSelections.forEach(selection => {
                     const [dishId, quantity] = selection.split(':');
                     if (dishId && quantity) {
-                        console.log('🔍 Looking for dish with ID:', dishId, 'type:', typeof dishId);
-                    console.log('🔍 Available dishes:', availableDishes.map(d => ({ 
-                        dishId: d.dishId, 
-                        type: typeof d.dishId, 
-                        name: d.name 
-                    })));
                         
                     // Find dish by dishId field
                     const dish = availableDishes.find(d => d.dishId == dishId);
@@ -2187,39 +2521,26 @@
                                 price: dish.price,
                                 quantity: parseInt(quantity)
                             });
-                            console.log('✅ Added dish to selectedDishes:', dish.name, 'x' + quantity);
                         } else {
-                            console.log('❌ Dish not found in availableDishes:', dishId);
                         }
                     }
                 });
                 
-                console.log(`✅ Restored ${selectedDishes.length}/${dishSelections.length} dishes to selectedDishes array`);
                 updateMenuSelectionUI();
             }
             
             // Restore service selections if any
             const selectedServiceIds = document.getElementById('selectedServiceIds').value;
-            console.log('🔍 selectedServiceIds from hidden input:', selectedServiceIds);
             if (selectedServiceIds) {
                 const serviceIds = selectedServiceIds.split(',');
                 selectedServices = [];
                 
                 // Find services from availableServices array and add to selectedServices
-                console.log('🔍 Starting services restore process...');
-                console.log('🔍 serviceIds to restore:', serviceIds);
-                console.log('🔍 availableServices before restore:', availableServices.map(s => ({ 
-                    serviceId: s.serviceId, 
-                    type: typeof s.serviceId, 
-                    name: s.name 
-                })));
                 
                 serviceIds.forEach((serviceId, index) => {
-                    console.log(`🔍 Processing service ${index + 1}/${serviceIds.length}:`, serviceId, 'type:', typeof serviceId);
                     
                     // Find service by serviceId field
                     const service = availableServices.find(s => s.serviceId == serviceId);
-                    console.log('🔍 Found service:', service ? service.name : 'NOT FOUND');
                     
                     if (service) {
                         selectedServices.push({
@@ -2227,39 +2548,21 @@
                             name: service.name,
                             price: service.price || 0
                         });
-                        console.log('✅ Added service to selectedServices:', service.name, 'price:', service.price);
                     } else {
-                        console.log('❌ Service not found in availableServices:', serviceId);
-                        console.log('🔍 Available serviceIds:', availableServices.map(s => s.serviceId));
                     }
                 });
                 
-                console.log(`✅ Restored ${selectedServices.length}/${serviceIds.length} services to selectedServices array`);
                 
                 // Also mark services as selected in DOM
-                console.log('🔍 Starting DOM marking for services...');
                 serviceIds.forEach((serviceId, index) => {
-                    console.log(`🔍 Looking for service card ${index + 1}/${serviceIds.length} with ID:`, serviceId);
                     
                     const serviceCard = document.querySelector(`.service-card[data-service-id="${serviceId}"]`) || 
                                       document.querySelector(`.service-card[data-id="${serviceId}"]`);
                     
-                    console.log('🔍 Found service card:', serviceCard ? 'YES' : 'NO');
                     if (serviceCard) {
-                        console.log('🔍 Service card details:', {
-                            id: serviceCard.getAttribute('data-service-id') || serviceCard.getAttribute('data-id'),
-                            name: serviceCard.querySelector('.card-title')?.textContent || 'No title',
-                            classes: serviceCard.className
-                        });
                         
                         serviceCard.classList.add('selected');
-                        console.log('✅ Marked service as selected in DOM:', serviceId);
                     } else {
-                        console.log('❌ Service card not found in DOM:', serviceId);
-                        console.log('🔍 All service cards in DOM:', document.querySelectorAll('.service-card').length);
-                        console.log('🔍 Available service card IDs:', Array.from(document.querySelectorAll('.service-card')).map(card => 
-                            card.getAttribute('data-service-id') || card.getAttribute('data-id')
-                        ));
                     }
                 });
             }
@@ -2269,33 +2572,26 @@
                 updateTotalAmount();
             }, 2000);
             
-            console.log('🔄 performRestore() completed');
             logAllSelections();
             }
             
-            console.log('🔄 restoreFormState() completed');
 
             // Recalculate totals once restore is done to avoid early resets
             setTimeout(() => updateTotalAmount(), 0);
         }
         
         function updateVoucherDiscountInSummary() {
-            console.log('updateVoucherDiscountInSummary called, voucherDiscount:', voucherDiscount);
             const voucherDiscountRow = document.getElementById('voucherDiscountRow');
             const voucherDiscountDisplay = document.getElementById('voucherDiscountDisplay');
             
-            console.log('voucherDiscountRow element:', voucherDiscountRow);
-            console.log('voucherDiscountDisplay element:', voucherDiscountDisplay);
             
             if (voucherDiscount > 0) {
                 // Show voucher discount row
                 if (voucherDiscountRow) {
                     voucherDiscountRow.style.display = 'flex';
-                    console.log('Voucher discount row shown');
                 }
                 if (voucherDiscountDisplay) {
                     voucherDiscountDisplay.textContent = '-' + formatCurrency(voucherDiscount);
-                    console.log('Voucher discount amount updated to:', '-' + formatCurrency(voucherDiscount));
                 }
                 
                 // Update hidden inputs
@@ -2318,7 +2614,6 @@
                 // Hide voucher discount row
                 if (voucherDiscountRow) {
                     voucherDiscountRow.style.display = 'none';
-                    console.log('Voucher discount row hidden');
                 }
                 
                 // Reset hidden inputs
@@ -2394,7 +2689,6 @@
          * Check availability before form submission
          */
         function checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds) {
-            console.log('🔍 Checking availability before booking...');
             
             const params = new URLSearchParams({
                 restaurantId: restaurantId,
@@ -2409,19 +2703,15 @@
             fetch(`/api/booking/availability-check?${params}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('📊 Availability check response:', data);
                     currentAvailabilityData = data;
                     
                     if (data.hasConflict) {
-                        console.log('⚠️ Conflict detected, showing Smart Waitlist popup');
                         showSmartWaitlistPopup(data);
                     } else {
-                        console.log('✅ No conflicts, proceeding with booking');
                         submitBookingForm();
                     }
                 })
                 .catch(error => {
-                    console.error('❌ Error checking availability:', error);
                     // Fallback to normal booking if API fails
                     submitBookingForm();
                 });
@@ -2431,7 +2721,6 @@
          * Show Smart Waitlist popup with conflict information
          */
         function showSmartWaitlistPopup(data) {
-            console.log('🎭 Showing Smart Waitlist popup with data:', data);
             
             // Update popup title based on conflict type
             const popupTitle = document.getElementById('popupTitle');
@@ -2511,7 +2800,6 @@
          * Join Smart Waitlist
          */
         function joinSmartWaitlist() {
-            console.log('⏰ User chose to join waitlist');
             
             // Get form data with null checks
             const restaurantIdElement = document.getElementById('restaurantId');
@@ -2519,7 +2807,6 @@
             const bookingTimeElement = document.getElementById('bookingTime');
             
             if (!restaurantIdElement || !guestCountElement || !bookingTimeElement) {
-                console.error('❌ Required form elements not found');
                 showNotification('Không tìm thấy dữ liệu biểu mẫu, vui lòng tải lại trang và thử lại.', 'error');
                 return;
             }
@@ -2534,15 +2821,6 @@
             const serviceIds = document.getElementById('selectedServiceIds').value || '';
             const tableIds = document.getElementById('selectedTableIds').value || '';
             
-            console.log('🔍 Join waitlist data:', {
-                restaurantId: restaurantId,
-                guestCount: guestCount,
-                preferredBookingTime: preferredBookingTime,
-                specialRequests: specialRequests,
-                dishIds: dishIds,
-                serviceIds: serviceIds,
-                tableIds: tableIds
-            });
             
             // Call API to join waitlist
             fetch('/api/booking/join-waitlist', {
@@ -2562,7 +2840,6 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log('✅ Join waitlist response:', data);
                 
                 if (data.success) {
                     // Close the popup
@@ -2576,7 +2853,6 @@
                 }
             })
             .catch(error => {
-                console.error('❌ Error joining waitlist:', error);
                 showNotification('Không thể tham gia danh sách chờ, vui lòng thử lại.', 'error');
             });
         }
@@ -2585,7 +2861,6 @@
          * Validate form before submission
          */
         function validateFormBeforeSubmit() {
-            console.log('🔍 Validating form before submission...');
             
             // Get form data
             const restaurantId = document.getElementById('restaurantId').value;
@@ -2594,11 +2869,6 @@
             const tableId = document.getElementById('tableId').value;
             const tableIds = document.getElementById('selectedTableIds').value;
             
-            console.log('   Restaurant ID:', restaurantId);
-            console.log('   Guest Count:', guestCount);
-            console.log('   Booking Time:', bookingTime);
-            console.log('   Table ID:', tableId);
-            console.log('   Table IDs:', tableIds);
             
             // 1. Validate required fields
             if (!restaurantId) {
@@ -2632,7 +2902,6 @@
                 return false;
             }
             
-            console.log('✅ Form validation passed');
             return true;
         }
         
@@ -2640,13 +2909,11 @@
          * Validate table capacity before submission
          */
         function validateTableCapacityBeforeSubmit(guestCount, tableId, tableIds) {
-            console.log('🔍 Validating table capacity...');
             
             if (tableId) {
                 // Single table validation
                 const table = availableTables.find(t => t.tableId == tableId);
                 if (table) {
-                    console.log('   Table capacity:', table.capacity);
                     if (guestCount > table.capacity) {
                         showNotification(`Số khách (${guestCount}) vượt quá sức chứa của bàn ${table.tableName} (${table.capacity} người)`, 'error');
                         return false;
@@ -2666,14 +2933,12 @@
                     }
                 }
                 
-                console.log('   Total capacity:', totalCapacity);
                 if (guestCount > totalCapacity) {
                     showNotification(`Số khách (${guestCount}) vượt quá tổng sức chứa của các bàn đã chọn (${totalCapacity} người)`, 'error');
                     return false;
                 }
             }
             
-            console.log('✅ Table capacity validation passed');
             return true;
         }
         
@@ -2681,11 +2946,9 @@
          * Submit booking form (original function)
          */
         function submitBookingForm() {
-            console.log('📝 Submitting booking form...');
             
             // Validate form before submission
             if (!validateFormBeforeSubmit()) {
-                console.log('❌ Form validation failed, not submitting');
                 return;
             }
             
@@ -2695,12 +2958,10 @@
             // Find and submit the form
             const form = document.getElementById('bookingForm');
             if (!form) {
-                console.error('❌ Booking form not found');
                 showNotification('Không tìm thấy biểu mẫu, vui lòng tải lại trang và thử lại.', 'error');
                 return;
             }
             
-            console.log('✅ Form validation passed, submitting form...');
             form.submit();
         }
         
@@ -2735,7 +2996,6 @@
             tablesLoading = false;
             availableTables = [];
             filteredTables = [];
-            console.log('🔄 Clearing form data...');
             
             // Clear selected tables
             selectedTables = [];
@@ -2763,7 +3023,6 @@
             // Clear booking time
             document.getElementById('bookingTime').value = '';
             
-            console.log('✅ Form data cleared');
         }
         
         // ==================== END SMART WAITLIST FUNCTIONALITY ====================

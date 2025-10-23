@@ -237,7 +237,7 @@
                             </div>
 
                             <div class="ds-restaurant-overlay">
-                                <a th:href="@{/booking/new}"
+                                <a th:href="@{/booking/new(restaurantId=${restaurant.restaurantId})}"
                                    class="ds-btn ds-btn-primary ds-btn-sm"
                                    sec:authorize="!hasRole('RESTAURANT_OWNER')">
                                     Đặt bàn
@@ -272,12 +272,8 @@
 
                             <div class="ds-restaurant-rating">
                                 <div class="ds-stars">
-                                    <span th:each="i : ${#numbers.sequence(1, restaurant.averageRating)}">
-                                        <i class="fas fa-star"></i>
-                                    </span>
-                                    <span th:each="i : ${#numbers.sequence(restaurant.averageRating + 1, 5)}">
-                                        <i class="far fa-star"></i>
-                                    </span>
+                                    <i class="fas fa-star" th:each="i : ${#numbers.sequence(1, 5)}" 
+                                       th:classappend="${i <= restaurant.averageRating} ? '' : 'text-muted'"></i>
                                 </div>
                                 <span class="ds-rating-text"
                                       th:text="|${restaurant.formattedAverageRating} (${restaurant.reviewCount} đánh giá)|">
@@ -340,11 +336,6 @@
                 </nav>
 
                 <div class="ds-flex ds-justify-center ds-gap-4 ds-flex-wrap ds-mt-8">
-                    <a th:href="@{/booking/new}"
-                       class="ds-btn ds-btn-primary ds-btn-lg">
-                        <i class="fas fa-calendar-plus"></i>
-                        Đặt bàn ngay
-                    </a>
                     <a th:href="@{/}"
                        class="ds-btn ds-btn-secondary ds-btn-lg">
                         <i class="fas fa-home"></i>

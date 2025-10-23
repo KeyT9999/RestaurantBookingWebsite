@@ -18,15 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantTable;
-import com.example.booking.domain.Dish;
 import com.example.booking.dto.RestaurantServiceDto;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.User;
 import com.example.booking.dto.BookingDetailsDto;
 import com.example.booking.dto.BookingDishDto;
 import com.example.booking.dto.BookingServiceDto;
-import com.example.booking.dto.RestaurantTableDto;
-import com.example.booking.dto.DishDto;
+import com.example.booking.dto.DishWithImageDto;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.SimpleUserService;
 import java.util.Map;
@@ -267,30 +265,19 @@ public class BookingApiController {
     }
 
     /**
-     * API endpoint để lấy danh sách món ăn theo nhà hàng
+     * API endpoint để lấy danh sách món ăn theo nhà hàng (với ảnh)
      */
     @GetMapping("/restaurants/{restaurantId}/dishes")
-    public ResponseEntity<List<DishDto>> getDishesByRestaurant(@PathVariable("restaurantId") Integer restaurantId) {
+    public ResponseEntity<List<DishWithImageDto>> getDishesByRestaurant(
+            @PathVariable("restaurantId") Integer restaurantId) {
         try {
-            System.out.println("🔍 API: Getting dishes for restaurant ID: " + restaurantId);
+            System.out.println("🔍 API: Getting dishes with images for restaurant ID: " + restaurantId);
 
-            List<Dish> dishes = restaurantService.findDishesByRestaurant(restaurantId);
-            System.out.println("✅ API: Found " + dishes.size() + " dishes");
+            List<DishWithImageDto> dishesWithImages = restaurantService.getDishesByRestaurantWithImages(restaurantId);
+            System.out.println("✅ API: Found " + dishesWithImages.size() + " dishes with images");
 
-            // Convert to DTO to avoid Hibernate proxy issues
-            List<DishDto> dishDtos = dishes.stream()
-                    .map(dish -> new DishDto(
-                            dish.getDishId(),
-                            dish.getName(),
-                            dish.getDescription(),
-                            dish.getPrice(),
-                            dish.getCategory(),
-                            dish.getStatus() != null ? dish.getStatus().toString() : "UNKNOWN",
-                            dish.getRestaurant() != null ? dish.getRestaurant().getRestaurantId() : null))
-                    .collect(Collectors.toList());
-
-            System.out.println("✅ API: Returning " + dishDtos.size() + " dish DTOs");
-            return ResponseEntity.ok(dishDtos);
+            System.out.println("✅ API: Returning " + dishesWithImages.size() + " dish DTOs with images");
+            return ResponseEntity.ok(dishesWithImages);
         } catch (Exception e) {
             System.err.println("❌ API Error: " + e.getMessage());
             e.printStackTrace();
