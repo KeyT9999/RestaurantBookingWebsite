@@ -156,6 +156,7 @@
             overflow: hidden;
             transition: all 0.3s ease;
             border: 2px solid #d1d5db;
+            cursor: pointer;
         }
         
         .ds-restaurant-card:hover {
@@ -642,7 +643,9 @@
 
                 <div class="restaurant-list">
                     <article class="ds-restaurant-card"
-                             th:each="restaurant : ${restaurants.content}">
+                             th:each="restaurant : ${restaurants.content}"
+                             th:onclick="|window.location.href='/restaurants/' + ${restaurant.restaurantId}|"
+                             style="cursor: pointer;">
                         <div class="ds-restaurant-image">
                             <img th:if="${restaurant.mainImageUrl != null and !restaurant.mainImageUrl.isEmpty()}"
                                  th:src="${restaurant.mainImageUrl}"
@@ -659,19 +662,21 @@
                             <div class="heart-toggle" sec:authorize="hasRole('CUSTOMER')">
                                 <i class="fas fa-heart heart-icon"
                                    th:data-restaurant-id="${restaurant.restaurantId}"
-                                   onclick="toggleFavorite(this)"
+                                   onclick="event.stopPropagation(); toggleFavorite(this)"
                                    title="Thêm vào yêu thích"></i>
                             </div>
 
                             <div class="ds-restaurant-overlay">
                                 <a th:href="@{/booking/new(restaurantId=${restaurant.restaurantId})}"
                                    class="ds-btn ds-btn-primary ds-btn-sm"
-                                   sec:authorize="!hasRole('RESTAURANT_OWNER')">
+                                   sec:authorize="!hasRole('RESTAURANT_OWNER')"
+                                   onclick="event.stopPropagation()">
                                     Đặt bàn
                                 </a>
                                 <a th:href="@{/restaurant-owner/dashboard}"
                                    class="ds-btn ds-btn-primary ds-btn-sm"
-                                   sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                   sec:authorize="hasRole('RESTAURANT_OWNER')"
+                                   onclick="event.stopPropagation()">
                                     Quản lý
                                 </a>
                             </div>
