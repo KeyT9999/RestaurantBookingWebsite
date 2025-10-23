@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About & Contact Navigation Component</title>
+</head>
+<body>
+    <!-- About & Contact Navigation Component -->
+    <div th:fragment="about-contact-nav">
+        <!-- About Button -->
+        <li><a th:href="@{/about}" th:classappend="${activeNav == 'about' ? 'active' : ''}">Về chúng tôi</a></li>
+        
+        <!-- Contact Button -->
+        <li><a th:href="@{/contact}" th:classappend="${activeNav == 'contact' ? 'active' : ''}">Liên hệ</a></li>
+    </div>
+    
+    <!-- Alternative: Individual Components -->
+    <div th:fragment="about-nav">
+        <li><a th:href="@{/about}" th:classappend="${activeNav == 'about' ? 'active' : ''}">Về chúng tôi</a></li>
+    </div>
+    
+    <div th:fragment="contact-nav">
+        <li><a th:href="@{/contact}" th:classappend="${activeNav == 'contact' ? 'active' : ''}">Liên hệ</a></li>
+    </div>
+    
+    <!-- Footer Contact Component -->
+    <div th:fragment="footer-contact">
+        <h4>Liên hệ</h4>
+        <ul>
+            <li><a href="tel:19001234">📞 1900 1234</a></li>
+            <li><a href="mailto:support@bookeat.com">✉️ support@bookeat.com</a></li>
+            <li><a href="#">📍 123 Đường ABC, Quận 1, TP.HCM</a></li>
+        </ul>
+    </div>
+    
+    <!-- Footer Contact Links Component -->
+    <div th:fragment="footer-contact-links">
+        <li><a th:href="@{/contact}">Liên hệ</a></li>
+    </div>
+</body>
+</html>

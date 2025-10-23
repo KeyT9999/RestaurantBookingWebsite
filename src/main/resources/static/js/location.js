@@ -1,6 +1,7 @@
 (() => {
   const storageKey = 'userLocation';
   const promptKey = 'locationPromptHandled';
+  const permissionKey = 'locationPermissionState';
   let geoWatchId = null;
   let lastUpdate = { ts: 0, lat: null, lng: null };
   const MIN_UPDATE_MS = 3 * 60 * 1000; // 3 minutes
@@ -25,10 +26,12 @@
   function setLocation(lat, lng) {
     sessionStorage.setItem(storageKey, JSON.stringify({ lat, lng, ts: Date.now() }));
     sessionStorage.setItem(promptKey, '1');
+    localStorage.setItem(permissionKey, 'granted');
   }
 
   function clearLocation() {
     sessionStorage.removeItem(storageKey);
+    localStorage.removeItem(permissionKey);
   }
 
   function hasLocation() {
@@ -37,6 +40,14 @@
 
   function getLocation() {
     try { return JSON.parse(sessionStorage.getItem(storageKey) || '{}'); } catch { return {}; }
+  }
+
+  function hasPermissionBeenHandled() {
+    return localStorage.getItem(permissionKey) === 'granted' || localStorage.getItem(permissionKey) === 'denied';
+  }
+
+  function setPermissionDenied() {
+    localStorage.setItem(permissionKey, 'denied');
   }
 
   function stopWatch() {
@@ -147,6 +158,7 @@
     });
 
     deny && deny.addEventListener('click', () => {
+      setPermissionDenied();
       picker && (picker.style.display = 'block');
     });
 
@@ -188,7 +200,23 @@
       return;
     }
 
-    // 1) Immediately after login: always show our modal first (no auto geolocation)
+    // DISABLED: Location permission feature is temporarily disabled
+    // Uncomment the code below to re-enable location features
+    
+    /*
+    // 1) Check if user has already handled location permission
+    if (APP_CTX.authenticated && hasPermissionBeenHandled()) {
+      // User already granted or denied permission, don't show modal again
+      if (hasLocation()) {
+        const loc = getLocation();
+        const items = await fetchNearby(loc.lat, loc.lng);
+        renderNearby(items);
+        startWatch();
+      }
+      return;
+    }
+
+    // 2) Immediately after login: show modal only if not handled before
     const firstAfterLogin = !!APP_CTX.showLocationPrompt && !sessionStorage.getItem(promptKey);
     if (APP_CTX.authenticated && firstAfterLogin) {
       showModal();
@@ -224,8 +252,9 @@
     }
 
     // Otherwise, if server still indicates prompting is desired (fallback)
-    const shouldPrompt = !!APP_CTX.showLocationPrompt && !sessionStorage.getItem(promptKey);
+    const shouldPrompt = !!APP_CTX.showLocationPrompt && !sessionStorage.getItem(promptKey) && !hasPermissionBeenHandled();
     if (APP_CTX.authenticated && shouldPrompt) showModal();
+    */
   }
 
   if (document.readyState === 'loading') {

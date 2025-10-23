@@ -20,7 +20,7 @@
                 </nav>
                 <div class="header-actions">
                     <!-- Guest User Actions -->
-                    <a th:href="@{/login}" class="btn-resy-outline" sec:authorize="!isAuthenticated()">Đăng nhập</a>
+                    <button type="button" class="btn-resy-outline" data-bs-toggle="modal" data-bs-target="#loginModal" sec:authorize="!isAuthenticated()">Đăng nhập</button>
                     <a th:href="@{/auth/register}" class="btn-resy" sec:authorize="!isAuthenticated()">Đăng ký</a>
                     
                     <!-- Authenticated User Actions -->
@@ -87,6 +87,9 @@
             </div>
         </header>
     </div>
+    
+    <!-- Login Modal Fragment -->
+    <div th:insert="~{fragments/login-modal :: login-modal}"></div>
 </body>
 </html>
 
