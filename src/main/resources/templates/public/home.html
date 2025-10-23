@@ -24,6 +24,71 @@
       .nearby-card h4 { font-size:1.05rem; margin:0 0 6px; }
       .nearby-meta { font-size:0.9rem; color:#555; display:flex; gap:8px; align-items:center; }
       .nearby-actions { margin-top:8px; }
+      
+      /* Notification Bell Styles for Home Page */
+      .notification-bell-wrapper {
+        display: inline-block;
+        margin-right: 12px;
+      }
+      
+      .notification-bell-container {
+        position: relative;
+      }
+      
+      .notification-bell__trigger {
+        background: none;
+        border: none;
+        color: #333;
+        font-size: 18px;
+        padding: 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+      }
+      
+      .notification-bell__trigger:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: #007bff;
+      }
+      
+      .notification-bell__badge {
+        font-size: 10px;
+        min-width: 16px;
+        height: 16px;
+        line-height: 16px;
+        padding: 0 4px;
+      }
+      
+      .notification-bell__menu {
+        min-width: 320px;
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        background-color: #ffffff !important;
+        backdrop-filter: none !important;
+      }
+      
+      .notification-bell__menu .dropdown-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .notification-bell__menu .dropdown-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+      }
+      
+      .notification-bell__menu .dropdown-item:hover {
+        background-color: #f8f9fa;
+      }
+      
+      .notification-bell__menu .dropdown-item:last-child {
+        border-bottom: none;
+      }
     </style>
     
 </head>
@@ -112,6 +177,11 @@
                 
                 <!-- Authenticated User Actions -->
                 <div sec:authorize="isAuthenticated()" class="user-actions">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell-wrapper">
+                        <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
+                    </div>
+                    
                     <!-- Restaurant Owner Dashboard -->
                     <a th:href="@{/restaurant-owner/dashboard}" class="btn-resy" sec:authorize="hasRole('RESTAURANT_OWNER')">
                         <i class="fas fa-tachometer-alt"></i>
@@ -145,7 +215,7 @@
                             </li>
                             <li sec:authorize="hasRole('CUSTOMER')">
                                 <a class="dropdown-item" th:href="@{/customer/favorites}">
-                                    <i class="fas fa-heart me-2"></i>
+                                    <i class="fas fa-star me-2"></i>
                                     Favorites
                                 </a>
                             </li>
