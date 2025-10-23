@@ -16,7 +16,9 @@ public interface RestaurantTableRepository extends JpaRepository<RestaurantTable
     // Method để lấy tables theo restaurant ID
     List<RestaurantTable> findByRestaurantRestaurantIdOrderByTableName(Integer restaurantId);
     
-    // Method đơn giản hơn để test
+    /**
+     * Find tables by restaurant ID
+     */
     List<RestaurantTable> findByRestaurantRestaurantId(Integer restaurantId);
 
     @Query("SELECT t FROM RestaurantTable t WHERE t.restaurant.restaurantId = :restaurantId AND t.capacity >= :capacity")

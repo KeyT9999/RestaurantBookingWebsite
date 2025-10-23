@@ -1,5 +1,6 @@
 package com.example.booking.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,4 +21,9 @@ public interface BookingDishRepository extends JpaRepository<BookingDish, Intege
      * Delete all dishes for a booking
      */
     void deleteByBooking(Booking booking);
+    
+    /**
+     * Find booking dishes by dish ID and booking time after
+     */
+    List<BookingDish> findByDishDishIdAndBookingBookingTimeAfter(Integer dishId, LocalDateTime afterTime);
 }
