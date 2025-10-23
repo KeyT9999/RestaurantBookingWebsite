@@ -25,13 +25,11 @@
                 <ul class="ds-navbar-nav">
                     <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
                     <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
-                    <li><a th:href="@{/about}" th:classappend="${activeNav == 'about' ? 'active' : ''}">Về chúng tôi</a></li>
-                    <li><a th:href="@{/contact}" th:classappend="${activeNav == 'contact' ? 'active' : ''}">Liên hệ</a></li>
                 </ul>
                 
                 <div class="ds-navbar-actions">
                     <!-- Guest User Actions -->
-                    <a th:href="@{/login}" class="ds-btn ds-btn-secondary" sec:authorize="!isAuthenticated()">Đăng nhập</a>
+                    <button type="button" class="ds-btn ds-btn-secondary" data-bs-toggle="modal" data-bs-target="#loginModal" sec:authorize="!isAuthenticated()">Đăng nhập</button>
                     <a th:href="@{/auth/register}" class="ds-btn ds-btn-primary" sec:authorize="!isAuthenticated()">Đăng ký</a>
                     
                     <!-- Authenticated User Actions -->
@@ -248,7 +246,6 @@
                     <h5 class="ds-heading-6">Hỗ trợ</h5>
                     <ul class="ds-footer-links">
                         <li><a th:href="@{/contact}">Trung tâm trợ giúp</a></li>
-                        <li><a th:href="@{/contact}">Liên hệ</a></li>
                         <li><a th:href="@{/terms-of-service}">Điều khoản sử dụng</a></li>
                         <li><a th:href="@{/terms-of-service}">Chính sách bảo mật</a></li>
                     </ul>
@@ -453,6 +450,9 @@
 <!-- ================================================
      END OF COMPONENT LIBRARY
      ================================================ -->
+
+<!-- Login Modal Fragment -->
+<div th:insert="~{fragments/login-modal :: login-modal}"></div>
 
 </body>
 </html>

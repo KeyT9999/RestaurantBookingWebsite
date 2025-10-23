@@ -87,6 +87,37 @@ body:not(:has(.mini-header)) .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 2rem;
+}
+
+/* Header Left Section - Logo only */
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
+.header-left .logo {
+    margin-right: 0;
+}
+
+/* Header Center Section - Navigation */
+.header-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.header-center .nav-menu {
+    margin: 0;
+    display: flex;
+    gap: 2rem;
+}
+
+/* Header Right Section */
+.header-right {
+    display: flex;
+    align-items: center;
     gap: 1rem;
 }
 
@@ -1097,6 +1128,7 @@ body:not(:has(.mini-header)) .header {
     position: relative;
     display: flex;
     align-items: center;
+    margin-right: 0.5rem;
 }
 
 .search-toggle {
@@ -1304,6 +1336,45 @@ body:not(:has(.mini-header)) .header {
     .search-clear {
         padding: 0.625rem 1rem;
         font-size: 0.85rem;
+    }
+}
+
+/* Header Layout Responsive */
+@media (max-width: 768px) {
+    .header .container {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem 0;
+    }
+    
+    .header-left {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .header-center {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .header-right {
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-center .nav-menu {
+        gap: 1rem;
+    }
+    
+    .header-right {
+        gap: 0.5rem;
+    }
+    
+    .header-search {
+        margin-right: 0;
     }
 }
 
