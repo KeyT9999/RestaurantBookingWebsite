@@ -405,7 +405,7 @@ public class HomeController {
             // Add debug info
             model.addAttribute("debug", true);
 
-            return "public/restaurant-detail";
+            return "public/restaurant-detail-simple";
             
         } catch (Exception e) {
             return "redirect:/restaurants?error=" + e.getMessage();
