@@ -4,124 +4,308 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title th:text="${pageTitle}">Quản lý Đặt bàn - Booking Management</title>
-    <link rel="stylesheet" href="/css/restaurant-admin.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <style>
-        .chip-pending { background: #fff3cd; color: #856404; }
-        .chip-confirmed { background: #d4edda; color: #155724; }
-        .chip-cancelled { background: #f8d7da; color: #721c24; }
-        .chip-completed { background: #d1ecf1; color: #0c5460; }
-        .chip-default { background: #e2e3e5; color: #383d41; }
-    </style>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
 </head>
-<body>
-    <nav class="page-switch card">
-        <a class="nav-btn" href="/restaurant-owner/dashboard" title="Về FOH Dashboard">← FOH Dashboard</a>
-        <a class="nav-btn" href="/restaurant-owner/tables" title="Quản lý Bàn">→ Quản lý Bàn</a>
-    </nav>
-
-    <div class="container">
-        <!-- Error Message -->
-        <div th:if="${error != null}" class="card" style="background: #f8d7da; border-color: #f5c6cb;">
-            <h2 class="h2" style="color: #721c24;">⚠️ Lỗi</h2>
-            <p th:text="${error}" style="color: #721c24;">Có lỗi xảy ra</p>
-            <div class="actions">
-                <a href="/restaurant-owner/profile" class="btn">Tạo nhà hàng</a>
-                <a href="/restaurant-owner/dashboard" class="btn btn-ghost">Về Dashboard</a>
-            </div>
-        </div>
-
-        <header class="nav card" th:if="${error == null}">
-            <div class="nav-left">
-                <h1 class="h1" th:if="${isAllRestaurants}">Quản lý Đặt bàn - Tất cả nhà hàng</h1>
-                <h1 class="h1" th:if="${!isAllRestaurants}">Quản lý Đặt bàn - <span th:text="${currentRestaurant != null ? currentRestaurant.restaurantName : 'Nhà hàng'}">Nhà hàng ABC</span></h1>
-                <p class="muted" th:if="${isAllRestaurants}">Xem và quản lý tất cả đặt bàn của tất cả nhà hàng</p>
-                <p class="muted" th:if="${!isAllRestaurants}">Xem và quản lý đặt bàn của nhà hàng này</p>
-            </div>
-            <div class="actions">
-                <a th:href="@{/restaurant-owner/bookings}" th:if="${!isAllRestaurants}" class="btn btn-ghost">← Tất cả nhà hàng</a>
-                <button class="btn">+ Tạo đặt bàn</button>
-                <button class="btn btn-ghost">Xuất báo cáo</button>
-            </div>
-        </header>
-
-        <!-- Restaurant Selection -->
-        <div class="card" th:if="${error == null and restaurants != null and !restaurants.empty}">
-            <h2 class="h2">Chọn nhà hàng</h2>
-            <div class="grid grid-3">
-                <div th:each="restaurant : ${restaurants}" class="card" style="padding: 1rem;">
-                    <h3 class="h3" th:text="${restaurant.restaurantName}">Nhà hàng ABC</h3>
-                    <p class="muted" th:text="${restaurant.cuisineType != null and restaurant.cuisineType != '' ? restaurant.cuisineType : 'Chưa có thông tin'}">Việt Nam</p>
-                    <div class="actions">
-                        <a th:href="@{/restaurant-owner/restaurants/{id}/bookings(id=${restaurant.restaurantId})}" 
-                           class="btn small">Xem Booking</a>
-                        <a th:href="@{/restaurant-owner/profile/{id}(id=${restaurant.restaurantId})}" 
-                           class="btn btn-ghost small">Quản lý</a>
+<body class="bookings-page">
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+                
+                <!-- Restaurant Selector -->
+                <div class="restaurant-selector" th:if="${restaurants != null and !restaurants.empty}">
+                    <div class="restaurant-dropdown" onclick="toggleRestaurantMenu()">
+                        <div class="restaurant-info">
+                            <div class="restaurant-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="restaurant-details">
+                                <h4 th:text="${currentRestaurant != null ? currentRestaurant.restaurantName : 'Chọn nhà hàng'}">Nhà hàng mặc định</h4>
+                                <p th:text="${currentRestaurant != null ? currentRestaurant.address : 'Địa chỉ nhà hàng'}">Địa chỉ nhà hàng</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    
+                    <div class="restaurant-menu" id="restaurantMenu">
+                        <div th:each="restaurant, iterStat : ${restaurants}" 
+                             class="restaurant-item" 
+                             th:classappend="${restaurant.restaurantId == restaurantId ? 'active' : ''}"
+                             th:onclick="'selectRestaurant(' + ${restaurant.restaurantId} + ')'">
+                            <div class="restaurant-info">
+                                <div class="restaurant-icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="restaurant-details">
+                                    <h4 th:text="${restaurant.restaurantName}">Tên nhà hàng</h4>
+                                    <p th:text="${restaurant.address}">Địa chỉ</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="card" th:if="${error == null}">
-            <h2 class="h2">Bộ lọc</h2>
-            <form method="get" 
-                  th:action="${isAllRestaurants} ? @{/restaurant-owner/bookings} : @{/restaurant-owner/restaurants/{id}/bookings(id=${restaurantId})}" 
-                  class="grid grid-4">
-                <input type="hidden" name="restaurantId" th:value="${restaurantId}" />
-                <label class="form-item">
-                    <span class="form-label">Ngày</span>
-                    <input type="date" name="date" th:value="${selectedDate}" />
-                </label>
-                <label class="form-item">
-                    <span class="form-label">Trạng thái</span>
-                    <select name="status">
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">PENDING</option>
-                        <option value="CONFIRMED" th:selected="${selectedStatus == 'CONFIRMED'}">CONFIRMED</option>
-                        <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">CANCELLED</option>
-                        <option value="COMPLETED" th:selected="${selectedStatus == 'COMPLETED'}">COMPLETED</option>
-                        <option value="NO_SHOW" th:selected="${selectedStatus == 'NO_SHOW'}">NO_SHOW</option>
-                    </select>
-                </label>
-                <label class="form-item">
-                    <span class="form-label">Số khách</span>
-                    <select name="guestCount">
-                        <option value="">Tất cả</option>
-                        <option>1-2 người</option>
-                        <option>3-4 người</option>
-                        <option>5-6 người</option>
-                        <option>7+ người</option>
-                    </select>
-                </label>
-                <label class="form-item">
-                    <span class="form-label">Tìm kiếm</span>
-                    <input type="text" name="search" placeholder="Tên khách, số điện thoại..." />
-                </label>
-            </form>
-            <div class="actions">
-                <button type="submit" class="btn">Lọc</button>
-                <a th:href="${isAllRestaurants} ? @{/restaurant-owner/bookings} : @{/restaurant-owner/restaurants/{id}/bookings(id=${restaurantId})}" class="btn btn-ghost">Xóa lọc</a>
-                <div class="spacer"></div>
-                <button class="btn btn-ghost">Lưu bộ lọc</button>
+            
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
+                </div>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
+    </header>
 
-        <!-- Booking List -->
-        <div class="card" th:if="${error == null}">
-            <h2 class="h2">Danh sách đặt bàn</h2>
-            <div class="table-wrap">
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <h3>Dashboard</h3>
+                        <p>V 1.0</p>
+                    </div>
+                </div>
+                
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/restaurant-owner/dashboard" th:href="${restaurantId != null ? '/restaurant-owner/dashboard?restaurantId=' + restaurantId : '/restaurant-owner/dashboard'}">
+                            <i class="fas fa-chart-line"></i>
+                            Tổng quan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/bookings" th:href="${restaurantId != null ? '/restaurant-owner/bookings?restaurantId=' + restaurantId : '/restaurant-owner/bookings'}" class="active">
+                            <i class="fas fa-calendar-check"></i>
+                            Booking
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/tables">
+                            <i class="fas fa-chair"></i>
+                            Quản lý bàn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/profile">
+                            <i class="fas fa-store"></i>
+                            Hồ sơ nhà hàng
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/menu">
+                            <i class="fas fa-utensils"></i>
+                            Thực đơn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/payments">
+                            <i class="fas fa-credit-card"></i>
+                            Thanh toán
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/messages">
+                            <i class="fas fa-envelope"></i>
+                            Tin nhắn
+                            <span class="menu-badge">6</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/reports">
+                            <i class="fas fa-chart-bar"></i>
+                            Báo cáo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1 class="content-title">Restaurant Management Dashboard</h1>
+                <p class="content-subtitle">Quản lý và theo dõi hoạt động nhà hàng của bạn</p>
+            </div>
+
+            <!-- Error Message -->
+            <div th:if="${error != null}" class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span th:text="${error}">Có lỗi xảy ra</span>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid" th:if="${error == null}">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+12.5%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value" th:text="${totalBookings}">12</div>
+                    <div class="kpi-label">Tổng cộng</div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="kpi-trend negative">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>-3.1%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value" th:text="${pendingBookings}">3</div>
+                    <div class="kpi-label">Chờ xác nhận</div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="kpi-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+8.2%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value" th:text="${confirmedBookings}">8</div>
+                    <div class="kpi-label">Đã xác nhận</div>
+                </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="kpi-trend negative">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>-2.5%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value" th:text="${cancelledBookings}">1</div>
+                    <div class="kpi-label">Đã hủy</div>
+                </div>
+            </div>
+
+
+            <!-- Filters -->
+            <div class="chart-card" th:if="${error == null}">
+                <div class="chart-header">
+                    <h3 class="chart-title">Bộ lọc</h3>
+                </div>
+                <div class="chart-content">
+                    <form method="get" 
+                          th:action="${isAllRestaurants} ? @{/restaurant-owner/bookings} : @{/restaurant-owner/bookings}" 
+                          class="filter-form-compact">
+                        <input type="hidden" name="restaurantId" th:value="${restaurantId}" />
+                        <div class="filter-row-compact">
+                            <div class="filter-group-compact">
+                                <input type="date" name="date" th:value="${selectedDate}" class="filter-input-compact" placeholder="Ngày" title="Chọn ngày" />
+                            </div>
+                            <div class="filter-group-compact">
+                                <select name="status" class="filter-input-compact" title="Chọn trạng thái">
+                                    <option value="">Trạng thái</option>
+                                    <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">PENDING</option>
+                                    <option value="CONFIRMED" th:selected="${selectedStatus == 'CONFIRMED'}">CONFIRMED</option>
+                                    <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">CANCELLED</option>
+                                    <option value="COMPLETED" th:selected="${selectedStatus == 'COMPLETED'}">COMPLETED</option>
+                                    <option value="NO_SHOW" th:selected="${selectedStatus == 'NO_SHOW'}">NO_SHOW</option>
+                                </select>
+                            </div>
+                            <div class="filter-group-compact">
+                                <select name="guestCount" class="filter-input-compact" title="Chọn số khách">
+                                    <option value="">Số khách</option>
+                                    <option>1-2</option>
+                                    <option>3-4</option>
+                                    <option>5-6</option>
+                                    <option>7+</option>
+                                </select>
+                            </div>
+                            <div class="filter-group-compact">
+                                <input type="text" name="search" placeholder="Tìm kiếm..." class="filter-input-compact" title="Tìm theo tên hoặc số điện thoại" />
+                            </div>
+                            <div class="filter-group-compact">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter"></i>
+                                    Lọc
+                                </button>
+                            </div>
+                            <div class="filter-group-compact">
+                                <a th:href="${isAllRestaurants} ? @{/restaurant-owner/bookings} : @{/restaurant-owner/bookings}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i>
+                                    Xóa lọc
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Booking List -->
+            <div class="chart-card" th:if="${error == null}">
+                <div class="chart-header">
+                    <h3 class="chart-title">Danh sách đặt bàn</h3>
+                </div>
+                <div class="chart-content">
+                    <div class="table-container">
                 <table class="table">
                     <thead>
                         <tr>
                             <th>ID</th>
                             <th>Khách hàng</th>
+                            <th>Thời gian đặt</th>
                             <th>Thời gian</th>
                             <th>Số khách</th>
                             <th>Bàn</th>
                             <th>Trạng thái</th>
                             <th>Đặt cọc</th>
-                            <th>Thao tác</th>
+                            <th class="text-center">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -131,6 +315,12 @@
                                 <div>
                                     <strong th:text="${booking.customer != null and booking.customer.user != null and booking.customer.user.fullName != null ? booking.customer.user.fullName : 'N/A'}">Nguyễn Văn A</strong><br>
                                     <small th:text="${booking.customer != null and booking.customer.user != null and booking.customer.user.phoneNumber != null ? booking.customer.user.phoneNumber : 'N/A'}">0123 456 789</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <strong th:text="${booking.createdAt != null ? #temporals.format(booking.createdAt, 'dd/MM/yyyy') : 'N/A'}">29/01/2025</strong><br>
+                                    <small th:text="${booking.createdAt != null ? #temporals.format(booking.createdAt, 'HH:mm') : 'N/A'}">14:30</small>
                                 </div>
                             </td>
                             <td>
@@ -158,56 +348,71 @@
                             </td>
                             <td th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">500.000đ</td>
                             <td class="actions">
-                                <a th:href="@{/restaurant-owner/bookings/{id}(id=${booking.bookingId})}" 
-                                   class="btn btn-ghost small">Xem</a>
+                                <button th:onclick="'openBookingDetail(' + ${booking.bookingId} + ')'" 
+                                        class="btn btn-info small">
+                                    <i class="fas fa-eye"></i>
+                                    Xem
+                                </button>
                                 
                                 <!-- Chat button -->
                                 <a th:href="@{/restaurant-owner/chat?bookingId={id}(id=${booking.bookingId})}" 
-                                   class="btn small" 
-                                   style="background: #17a2b8; color: white;"
+                                   class="btn btn-primary small" 
                                    title="Chat với khách hàng">
-                                    <i class="fas fa-comments"></i> Chat
+                                    <i class="fas fa-comments"></i>
+                                    Chat
                                 </a>
                                 
                                 <!-- Edit button for editable bookings -->
                                 <a th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" 
                                    th:href="@{/booking/{id}/edit(id=${booking.bookingId})}" 
-                                   class="btn small">Chỉnh sửa</a>
+                                   class="btn btn-warning small">
+                                    <i class="fas fa-edit"></i>
+                                    Chỉnh sửa
+                                </a>
                                 
                                 <!-- Status update buttons based on current status -->
                                 <form th:if="${booking.status.name() == 'PENDING'}" 
                                       th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
                                       method="post" style="display: inline;">
                                     <input type="hidden" name="status" value="CONFIRMED" />
-                                    <button type="submit" class="btn small">Xác nhận</button>
+                                    <button type="submit" class="btn btn-success small">
+                                        <i class="fas fa-check"></i>
+                                        Xác nhận
+                                    </button>
                                 </form>
                                 
                                 <form th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" 
                                       th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
                                       method="post" style="display: inline;">
                                     <input type="hidden" name="status" value="CANCELLED" />
-                                    <button type="submit" class="btn btn-ghost small">Hủy</button>
+                                    <button type="submit" class="btn btn-danger small">
+                                        <i class="fas fa-times"></i>
+                                        Hủy
+                                    </button>
                                 </form>
                                 
                                 <form th:if="${booking.status.name() == 'CONFIRMED'}" 
                                       th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
                                       method="post" style="display: inline;">
                                     <input type="hidden" name="status" value="NO_SHOW" />
-                                    <button type="submit" class="btn btn-ghost small">No Show</button>
+                                    <button type="submit" class="btn btn-secondary small">
+                                        <i class="fas fa-user-times"></i>
+                                        No Show
+                                    </button>
                                 </form>
                                 
                                 <!-- Check-in/Check-out buttons -->
                                 <button th:if="${booking.status.name() == 'CONFIRMED' or booking.status.name() == 'COMPLETED'}" 
-                                        class="btn small" 
-                                        style="background: #28a745; color: white;"
+                                        class="btn btn-success small" 
                                         th:onclick="'checkInCustomer(' + ${booking.bookingId} + ')'">
+                                    <i class="fas fa-sign-in-alt"></i>
                                     Check-in
                                 </button>
                                 
                                 <button th:if="${booking.status.name() == 'CONFIRMED' or booking.status.name() == 'COMPLETED'}" 
-                                        class="btn btn-ghost small" 
-                                        style="background: #dc3545; color: white;"
+                                        class="btn btn-secondary small" 
                                         th:onclick="'checkOutCustomer(' + ${booking.bookingId} + ')'">
+                                    <i class="fas fa-sign-out-alt"></i>
                                     Check-out
                                 </button>
                             </td>
@@ -221,52 +426,69 @@
                         </tr>
                     </tbody>
                 </table>
+                    </div>
+                </div>
             </div>
-
-            <!-- Pagination -->
-            <div class="pagination">
-                <button class="btn btn-ghost">« Trước</button>
-                <span class="muted">Trang 1/5</span>
-                <button class="btn btn-ghost">Sau »</button>
-            </div>
-        </div>
-
-        <!-- Statistics -->
-        <div class="grid grid-4" th:if="${error == null}">
-            <div class="card">
-                <h3 class="h3">Tổng cộng</h3>
-                <p style="font-size: 2rem; margin: 0; color: #007bff;" th:text="${totalBookings}">12</p>
-                <small class="muted">đặt bàn</small>
-            </div>
-            <div class="card">
-                <h3 class="h3">Chờ xác nhận</h3>
-                <p style="font-size: 2rem; margin: 0; color: #ffc107;" th:text="${pendingBookings}">3</p>
-                <small class="muted">đặt bàn</small>
-            </div>
-            <div class="card">
-                <h3 class="h3">Đã xác nhận</h3>
-                <p style="font-size: 2rem; margin: 0; color: #28a745;" th:text="${confirmedBookings}">8</p>
-                <small class="muted">đặt bàn</small>
-            </div>
-            <div class="card">
-                <h3 class="h3">Đã hủy</h3>
-                <p style="font-size: 2rem; margin: 0; color: #dc3545;" th:text="${cancelledBookings}">1</p>
-                <small class="muted">đặt bàn</small>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="card" th:if="${error == null}">
-            <h2 class="h2">Thao tác nhanh</h2>
-            <div class="grid grid-3">
-                <button class="btn">Gửi nhắc nhở SMS</button>
-                <button class="btn btn-ghost">Xuất danh sách khách VIP</button>
-                <button class="btn btn-ghost">Tạo báo cáo doanh thu</button>
-            </div>
-        </div>
+        </main>
     </div>
 
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
+        // Restaurant Selector - From Dashboard
+        function toggleRestaurantMenu() {
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            
+            menu.classList.toggle('show');
+            dropdown.classList.toggle('active');
+        }
+
+        function selectRestaurant(restaurantId) {
+            // Update UI to show selected restaurant immediately
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            const selectedItem = event.target.closest('.restaurant-item');
+            
+            // Get restaurant info from selected item
+            const restaurantName = selectedItem.querySelector('h4').textContent;
+            const restaurantAddress = selectedItem.querySelector('p').textContent;
+            
+            // Update dropdown display
+            const dropdownInfo = dropdown.querySelector('.restaurant-details');
+            dropdownInfo.querySelector('h4').textContent = restaurantName;
+            dropdownInfo.querySelector('p').textContent = restaurantAddress;
+            
+            // Remove active class from all items
+            document.querySelectorAll('.restaurant-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to selected item
+            selectedItem.classList.add('active');
+            
+            // Close menu
+            menu.classList.remove('show');
+            dropdown.classList.remove('active');
+            
+            // Reload page with selected restaurant
+            window.location.href = '/restaurant-owner/bookings?restaurantId=' + restaurantId;
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const selector = document.querySelector('.restaurant-selector');
+            if (selector && !selector.contains(event.target)) {
+                const menu = document.getElementById('restaurantMenu');
+                const dropdown = document.querySelector('.restaurant-dropdown');
+                if (menu && dropdown) {
+                    menu.classList.remove('show');
+                    dropdown.classList.remove('active');
+                }
+            }
+        });
+
         // Demo functionality
         document.addEventListener('DOMContentLoaded', function() {
             // Status filter
@@ -336,5 +558,1319 @@
             }
         }
     </script>
+
+    <!-- Booking Detail Modal -->
+    <div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-labelledby="bookingDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookingDetailModalLabel">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Chi tiết Booking
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Loading State -->
+                    <div id="bookingDetailLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Đang tải thông tin booking...</p>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="bookingDetailError" class="text-center py-5" style="display: none;">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="bookingDetailErrorMessage">Không thể tải thông tin booking</span>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="loadBookingDetail()">
+                            <i class="fas fa-refresh me-2"></i>
+                            Thử lại
+                        </button>
+                    </div>
+
+                    <!-- Booking Detail Content -->
+                    <div id="bookingDetailContent" style="display: none;">
+                        <div class="row">
+                            <!-- Cột trái -->
+                            <div class="col-md-6">
+                                <!-- Booking Summary -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-calendar-check me-2"></i>
+                                        <h6 class="mb-0">Booking Summary</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="bookingSummary">
+                                            <!-- Booking summary will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Khách hàng -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-user me-2"></i>
+                                        <h6 class="mb-0">Khách hàng</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="customerInfo">
+                                            <!-- Customer info will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bàn & Sơ đồ -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-table me-2"></i>
+                                            <h6 class="mb-0">Bàn & Sơ đồ</h6>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="openTableSelectionModal()">
+                                            <i class="fas fa-exchange-alt me-1"></i>Đổi bàn
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="assignedTables">
+                                            <!-- Tables will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Thanh toán/Đặt cọc -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-credit-card me-2"></i>
+                                            <h6 class="mb-0">Thanh toán/Đặt cọc</h6>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="openRefundModal()">
+                                            <i class="fas fa-undo me-1"></i>Refund
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="paymentInfo">
+                                            <!-- Payment info will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cột phải -->
+                            <div class="col-md-6">
+                                <!-- Timeline (Hoạt động) -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-history me-2"></i>
+                                        <h6 class="mb-0">Timeline (Hoạt động)</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="activityTimeline">
+                                            <!-- Activity timeline will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Ghi chú nội bộ -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-sticky-note me-2"></i>
+                                            <h6 class="mb-0">Ghi chú nội bộ</h6>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="addInternalNote()">
+                                            <i class="fas fa-plus me-1"></i>Thêm
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="internalNotes">
+                                            <!-- Internal notes will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Lịch sử liên lạc -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-comments me-2"></i>
+                                        <h6 class="mb-0">Lịch sử liên lạc</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="communicationHistory">
+                                            <!-- Communication history will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Booking Actions -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Quản lý Booking</h6>
+                                        <p class="card-text text-muted">Thực hiện các thao tác quản lý đặt bàn</p>
+                                        <div id="bookingActions" class="d-flex gap-2 justify-content-center flex-wrap">
+                                            <!-- Actions will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        Đóng
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="refreshBookingsList()">
+                        <i class="fas fa-refresh me-2"></i>
+                        Làm mới danh sách
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Selection Modal -->
+    <div class="modal fade" id="tableSelectionModal" tabindex="-1" aria-labelledby="tableSelectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tableSelectionModalLabel">
+                        <i class="fas fa-table me-2"></i>
+                        Chọn bàn mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="availableTables">
+                        <!-- Available tables will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmTableChange()">Xác nhận</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Refund Modal -->
+    <div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="refundModalLabel">
+                        <i class="fas fa-undo me-2"></i>
+                        Xác nhận hoàn tiền
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Bạn có chắc chắn muốn hoàn tiền cho booking này?
+                    </div>
+                    <div id="refundDetails">
+                        <!-- Refund details will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmRefund()">Xác nhận hoàn tiền</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Internal Note Modal -->
+    <div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addNoteModalLabel">
+                        <i class="fas fa-sticky-note me-2"></i>
+                        Thêm ghi chú nội bộ
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="noteContent" class="form-label">Nội dung ghi chú</label>
+                        <textarea class="form-control" id="noteContent" rows="4" placeholder="Nhập ghi chú nội bộ..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveInternalNote()">Lưu ghi chú</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Detail Modal JavaScript -->
+    <script>
+        let currentBookingId = null;
+
+        function openBookingDetail(bookingId) {
+            currentBookingId = bookingId;
+            const modal = new bootstrap.Modal(document.getElementById('bookingDetailModal'));
+            modal.show();
+            loadBookingDetail();
+        }
+
+        function loadBookingDetail() {
+            if (!currentBookingId) return;
+
+            console.log("🚀 Loading booking detail for ID:", currentBookingId);
+
+            // Show loading state
+            document.getElementById('bookingDetailLoading').style.display = 'block';
+            document.getElementById('bookingDetailError').style.display = 'none';
+            document.getElementById('bookingDetailContent').style.display = 'none';
+
+            // Fetch booking detail
+            const url = `/restaurant-owner/bookings/${currentBookingId}/api`;
+            console.log("📡 Fetching from URL:", url);
+            
+            fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin', // Include cookies/session
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    console.log("📡 Response status:", response.status);
+                    console.log("📡 Response headers:", response.headers);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.text(); // First get as text to see what we're getting
+                })
+                .then(text => {
+                    console.log("📡 Raw response:", text);
+                    try {
+                        const data = JSON.parse(text);
+                        console.log("📡 Parsed JSON:", data);
+                        if (data.success) {
+                            populateBookingDetail(data.booking);
+                            document.getElementById('bookingDetailLoading').style.display = 'none';
+                            document.getElementById('bookingDetailContent').style.display = 'block';
+                        } else {
+                            throw new Error(data.message || 'Không thể tải thông tin booking');
+                        }
+                    } catch (parseError) {
+                        console.error("❌ JSON Parse Error:", parseError);
+                        console.error("❌ Raw text that failed to parse:", text);
+                        throw new Error('Response is not valid JSON: ' + text.substring(0, 100));
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error loading booking detail:', error);
+                    document.getElementById('bookingDetailLoading').style.display = 'none';
+                    document.getElementById('bookingDetailError').style.display = 'block';
+                    document.getElementById('bookingDetailErrorMessage').textContent = error.message;
+                });
+        }
+
+        function populateBookingSummary(booking) {
+            const bookingSummary = document.getElementById('bookingSummary');
+            const statusClass = getStatusClass(booking.status);
+            
+            bookingSummary.innerHTML = `
+                <div class="row">
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">Thời gian</small>
+                        <div class="fw-medium">${formatDateTime(booking.bookingTime)}</div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">Số khách</small>
+                        <div class="fw-medium">${booking.numberOfGuests} người</div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">Bàn</small>
+                        <div class="fw-medium">${booking.bookingTables && booking.bookingTables.length > 0 ? booking.bookingTables.map(t => t.tableName).join(', ') : 'Chưa chọn'}</div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">Nguồn đặt</small>
+                        <div class="fw-medium">Website</div>
+                    </div>
+                    <div class="col-12 mb-2">
+                        <small class="text-muted">Ghi chú khách</small>
+                        <div class="fw-medium">${booking.note || 'Không có ghi chú'}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function populateCustomerInfo(booking) {
+            const customerInfo = document.getElementById('customerInfo');
+            
+            customerInfo.innerHTML = `
+                <div class="row">
+                    <div class="col-12 mb-2">
+                        <small class="text-muted">Tên</small>
+                        <div class="fw-medium">${booking.customer?.fullName || 'N/A'}</div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">SĐT</small>
+                        <div class="fw-medium">${booking.customer?.phoneNumber || 'N/A'}</div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">Email</small>
+                        <div class="fw-medium">${booking.customer?.email || 'N/A'}</div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">Lịch sử/No-show</small>
+                        <div class="fw-medium">
+                            <span class="badge bg-success">0 lần</span>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <small class="text-muted">Tổng chi tiêu</small>
+                        <div class="fw-medium text-success">${formatCurrency(calculateTotalSpending(booking))}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function populateAssignedTables(booking) {
+            const assignedTables = document.getElementById('assignedTables');
+            
+            if (booking.bookingTables && booking.bookingTables.length > 0) {
+                assignedTables.innerHTML = booking.bookingTables.map(table => `
+                    <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded mb-2">
+                        <div>
+                            <div class="fw-medium">${table.tableName}</div>
+                            <small class="text-muted">Phân bàn: ${formatDateTime(table.assignedAt)}</small>
+                        </div>
+                        <span class="badge bg-success">Đã phân</span>
+                    </div>
+                `).join('');
+            } else {
+                assignedTables.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-table text-muted fa-2x mb-2"></i>
+                        <p class="text-muted mb-0">Chưa phân bàn</p>
+                    </div>
+                `;
+            }
+        }
+
+function populatePaymentInfo(booking) {
+    const paymentInfo = document.getElementById('paymentInfo');
+    const dishesTotal = booking.bookingDishes ? booking.bookingDishes.reduce((sum, dish) => sum + dish.totalPrice, 0) : 0;
+    const servicesTotal = booking.bookingServices ? booking.bookingServices.reduce((sum, service) => sum + service.totalPrice, 0) : 0;
+    const totalAmount = booking.depositAmount + dishesTotal + servicesTotal;
+    
+    // Create dishes list HTML
+    let dishesListHtml = '';
+    if (booking.bookingDishes && booking.bookingDishes.length > 0) {
+        dishesListHtml = `
+            <div class="invoice-section-compact">
+                <h6 class="invoice-section-title-compact">
+                    <i class="fas fa-utensils me-1"></i>
+                    Món ăn (${booking.bookingDishes.length})
+                </h6>
+                <div class="invoice-items-compact">
+        `;
+        
+        booking.bookingDishes.forEach((dish, index) => {
+            dishesListHtml += `
+                <div class="invoice-item-compact d-flex justify-content-between align-items-center py-1 ${index < booking.bookingDishes.length - 1 ? 'border-bottom' : ''}">
+                    <div class="flex-grow-1">
+                        <div class="fw-medium text-dark small">${dish.dishName}</div>
+                        <small class="text-muted">${dish.formattedPrice} × ${dish.quantity}</small>
+                    </div>
+                    <div class="text-end ms-2">
+                        <div class="fw-medium text-primary small">${dish.formattedTotalPrice}</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        dishesListHtml += `
+                </div>
+            </div>
+        `;
+    }
+    
+    // Create services list HTML
+    let servicesListHtml = '';
+    if (booking.bookingServices && booking.bookingServices.length > 0) {
+        servicesListHtml = `
+            <div class="invoice-section-compact">
+                <h6 class="invoice-section-title-compact">
+                    <i class="fas fa-concierge-bell me-1"></i>
+                    Dịch vụ (${booking.bookingServices.length})
+                </h6>
+                <div class="invoice-items-compact">
+        `;
+        
+        booking.bookingServices.forEach((service, index) => {
+            servicesListHtml += `
+                <div class="invoice-item-compact d-flex justify-content-between align-items-center py-1 ${index < booking.bookingServices.length - 1 ? 'border-bottom' : ''}">
+                    <div class="flex-grow-1">
+                        <div class="fw-medium text-dark small">${service.serviceName}</div>
+                        <small class="text-muted">${service.formattedPrice} × ${service.quantity}</small>
+                    </div>
+                    <div class="text-end ms-2">
+                        <div class="fw-medium text-primary small">${service.formattedTotalPrice}</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        servicesListHtml += `
+                </div>
+            </div>
+        `;
+    }
+    
+    paymentInfo.innerHTML = `
+        <div class="invoice-container">
+            <div class="invoice-body">
+                ${dishesListHtml}
+                ${servicesListHtml}
+                
+                <div class="invoice-totals">
+                    <div class="invoice-total-item">
+                        <span class="text-muted">Tiền đặt cọc:</span>
+                        <span class="fw-medium">${formatCurrency(booking.depositAmount)}</span>
+                    </div>
+                    <div class="invoice-total-item">
+                        <span class="text-muted">Tổng món ăn:</span>
+                        <span class="fw-medium">${formatCurrency(dishesTotal)}</span>
+                    </div>
+                    <div class="invoice-total-item">
+                        <span class="text-muted">Tổng dịch vụ:</span>
+                        <span class="fw-medium">${formatCurrency(servicesTotal)}</span>
+                    </div>
+                    <div class="invoice-total-item invoice-total-final">
+                        <span class="fw-bold">Tổng cộng:</span>
+                        <span class="fw-bold text-primary fs-5">${formatCurrency(totalAmount)}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+        function populateActivityTimeline(booking) {
+            const activityTimeline = document.getElementById('activityTimeline');
+            
+            let timelineContent = `
+                <div class="d-flex align-items-start mb-3">
+                    <div class="bg-primary rounded-circle p-1 me-3 mt-1" style="width: 8px; height: 8px;"></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-medium">Created</div>
+                        <small class="text-muted">${formatDateTime(booking.createdAt)}</small>
+                        <div class="text-muted small">Hệ thống</div>
+                    </div>
+                </div>
+            `;
+            
+            if (booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' || booking.status === 'CANCELLED') {
+                timelineContent += `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="bg-success rounded-circle p-1 me-3 mt-1" style="width: 8px; height: 8px;"></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">Confirmed</div>
+                            <small class="text-muted">${formatDateTime(booking.updatedAt)}</small>
+                            <div class="text-muted small">Restaurant Owner</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (booking.status === 'COMPLETED') {
+                timelineContent += `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="bg-info rounded-circle p-1 me-3 mt-1" style="width: 8px; height: 8px;"></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">Completed</div>
+                            <small class="text-muted">${formatDateTime(booking.updatedAt)}</small>
+                            <div class="text-muted small">Restaurant Owner</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (booking.status === 'CANCELLED') {
+                timelineContent += `
+                    <div class="d-flex align-items-start mb-3">
+                        <div class="bg-danger rounded-circle p-1 me-3 mt-1" style="width: 8px; height: 8px;"></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">Cancelled</div>
+                            <small class="text-muted">${formatDateTime(booking.updatedAt)}</small>
+                            <div class="text-muted small">Restaurant Owner</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            activityTimeline.innerHTML = timelineContent;
+        }
+
+        function populateInternalNotes(booking) {
+            const internalNotes = document.getElementById('internalNotes');
+            
+            // Use real data from API
+            const notes = booking.internalNotes || [];
+            
+            if (notes.length > 0) {
+                internalNotes.innerHTML = notes.map(note => `
+                    <div class="d-flex justify-content-between align-items-start p-2 bg-light rounded mb-2">
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">${note.content}</div>
+                            <small class="text-muted">${note.author} - ${formatDateTime(note.createdAt)}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteInternalNote(${note.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                internalNotes.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-sticky-note text-muted fa-2x mb-2"></i>
+                        <p class="text-muted mb-0">Chưa có ghi chú nội bộ</p>
+                    </div>
+                `;
+            }
+        }
+
+        function populateCommunicationHistory(booking) {
+            const communicationHistory = document.getElementById('communicationHistory');
+            
+            // Use real data from API
+            const communications = booking.communicationHistory || [];
+            
+            if (communications.length > 0) {
+                communicationHistory.innerHTML = communications.map(comm => `
+                    <div class="d-flex align-items-start p-2 bg-light rounded mb-2">
+                        <div class="me-2">
+                            <i class="fas ${comm.type === 'MESSAGE' ? 'fa-comment' : comm.type === 'CALL' ? 'fa-phone' : 'fa-envelope'} 
+                               ${comm.direction === 'INCOMING' ? 'text-primary' : 'text-success'}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">${comm.content}</div>
+                            <small class="text-muted">${formatDateTime(comm.timestamp)}</small>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                communicationHistory.innerHTML = `
+                    <div class="text-center py-3">
+                        <i class="fas fa-comments text-muted fa-2x mb-2"></i>
+                        <p class="text-muted mb-0">Chưa có lịch sử liên lạc</p>
+                    </div>
+                `;
+            }
+        }
+
+        function calculateTotalSpending(booking) {
+            const dishesTotal = booking.bookingDishes ? booking.bookingDishes.reduce((sum, dish) => sum + dish.totalPrice, 0) : 0;
+            const servicesTotal = booking.bookingServices ? booking.bookingServices.reduce((sum, service) => sum + service.totalPrice, 0) : 0;
+            return booking.depositAmount + dishesTotal + servicesTotal;
+        }
+
+        function populateBookingActions(booking) {
+            const actionsContainer = document.getElementById('bookingActions');
+            let actions = '';
+
+            if (booking.status === 'PENDING') {
+                actions += `
+                    <form style="display: inline;" onsubmit="updateBookingStatus(event, 'CONFIRMED')">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-check me-1"></i>Xác nhận
+                        </button>
+                    </form>
+                `;
+            }
+
+            if (booking.status === 'PENDING' || booking.status === 'CONFIRMED') {
+                actions += `
+                    <form style="display: inline;" onsubmit="updateBookingStatus(event, 'CANCELLED')">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-times me-1"></i>Hủy
+                        </button>
+                    </form>
+                `;
+            }
+
+            if (booking.status === 'CONFIRMED') {
+                actions += `
+                    <form style="display: inline;" onsubmit="updateBookingStatus(event, 'COMPLETED')">
+                        <button type="submit" class="btn btn-info btn-sm">
+                            <i class="fas fa-check-circle me-1"></i>Hoàn thành
+                        </button>
+                    </form>
+                    <form style="display: inline;" onsubmit="updateBookingStatus(event, 'NO_SHOW')">
+                        <button type="submit" class="btn btn-warning btn-sm">
+                            <i class="fas fa-user-times me-1"></i>No Show
+                        </button>
+                    </form>
+                `;
+            }
+
+            actionsContainer.innerHTML = actions;
+        }
+
+        function updateBookingStatus(event, status) {
+            event.preventDefault();
+            
+            if (!currentBookingId) return;
+
+            const formData = new FormData();
+            formData.append('status', status);
+
+            fetch(`/restaurant-owner/bookings/${currentBookingId}/status`, {
+                method: 'POST',
+                credentials: 'same-origin', // Include cookies/session
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Cập nhật trạng thái thành công!');
+                    loadBookingDetail(); // Reload booking detail
+                    refreshBookingsList(); // Refresh the main bookings list
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi cập nhật trạng thái');
+            });
+        }
+
+        function getStatusClass(status) {
+            switch (status) {
+                case 'PENDING': return 'bg-warning text-dark';
+                case 'CONFIRMED': return 'bg-success';
+                case 'CANCELLED': return 'bg-danger';
+                case 'COMPLETED': return 'bg-info';
+                case 'NO_SHOW': return 'bg-secondary';
+                default: return 'bg-secondary';
+            }
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'});
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
+        }
+
+        function refreshBookingsList() {
+            // Reload the current page to refresh the bookings list
+            window.location.reload();
+        }
+
+        // Modal functions
+        function openTableSelectionModal() {
+            // Show loading state
+            const availableTablesDiv = document.getElementById('availableTables');
+            availableTablesDiv.innerHTML = `
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Đang tải danh sách bàn...</p>
+                </div>
+            `;
+            
+            // Show modal first
+            const modal = new bootstrap.Modal(document.getElementById('tableSelectionModal'));
+            modal.show();
+            
+            // Fetch available tables from API
+            const url = `/restaurant-owner/bookings/${currentBookingId}/available-tables`;
+            console.log("📡 Fetching available tables from:", url);
+            
+            fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log("📡 Response status:", response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("📡 Available tables data:", data);
+                if (data.success) {
+                    populateAvailableTables(data.availableTables);
+                } else {
+                    throw new Error(data.message || 'Không thể tải danh sách bàn');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error loading available tables:', error);
+                availableTablesDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Lỗi khi tải danh sách bàn: ${error.message}
+                    </div>
+                `;
+            });
+        }
+
+        function populateAvailableTables(tables) {
+            const availableTablesDiv = document.getElementById('availableTables');
+            
+            if (tables.length > 0) {
+                availableTablesDiv.innerHTML = tables.map(table => `
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="selectedTable" value="${table.id}" 
+                               id="table${table.id}">
+                        <label class="form-check-label" for="table${table.id}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-medium">${table.name}</span>
+                                    <small class="text-muted ms-2">(${table.capacity} người)</small>
+                                </div>
+                                <span class="badge bg-success">Trống</span>
+                            </div>
+                        </label>
+                    </div>
+                `).join('');
+            } else {
+                availableTablesDiv.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Không có bàn nào khả dụng để đổi
+                    </div>
+                `;
+            }
+        }
+
+        function confirmTableChange() {
+            const selectedTable = document.querySelector('input[name="selectedTable"]:checked');
+            if (!selectedTable) {
+                alert('Vui lòng chọn bàn mới');
+                return;
+            }
+            
+            const newTableId = selectedTable.value;
+            const tableName = selectedTable.nextElementSibling.querySelector('.fw-medium').textContent;
+            
+            console.log("🔄 Changing table to:", newTableId, tableName);
+            
+            // Show loading state
+            const modalFooter = document.querySelector('#tableSelectionModal .modal-footer');
+            const originalFooter = modalFooter.innerHTML;
+            modalFooter.innerHTML = `
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Đang xử lý...</span>
+                </div>
+                Đang đổi bàn...
+            `;
+            
+            // Make API call to change table
+            const url = `/restaurant-owner/bookings/${currentBookingId}/change-table`;
+            fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `newTableId=${newTableId}`
+            })
+            .then(response => {
+                console.log("📡 Change table response status:", response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("📡 Change table response:", data);
+                if (data.success) {
+                    alert(data.message || `Đã đổi bàn thành công sang bàn ${tableName}`);
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('tableSelectionModal'));
+                    modal.hide();
+                    
+                    // Refresh the booking detail
+                    loadBookingDetail();
+                } else {
+                    throw new Error(data.message || 'Không thể đổi bàn');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error changing table:', error);
+                alert('Lỗi khi đổi bàn: ' + error.message);
+            })
+            .finally(() => {
+                // Restore original footer
+                modalFooter.innerHTML = originalFooter;
+            });
+        }
+
+        function openRefundModal() {
+            const refundDetails = document.getElementById('refundDetails');
+            refundDetails.innerHTML = `
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">Số tiền đặt cọc</small>
+                        <div class="fw-bold text-primary">${formatCurrency(currentBooking?.depositAmount || 0)}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Phương thức hoàn tiền</small>
+                        <div class="fw-medium">MoMo</div>
+                    </div>
+                </div>
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('refundModal'));
+            modal.show();
+        }
+
+        function confirmRefund() {
+            // In real implementation, this would make an API call to process refund
+            alert('Đã xử lý hoàn tiền thành công');
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('refundModal'));
+            modal.hide();
+            
+            // Refresh the booking detail
+            loadBookingDetail();
+        }
+
+        function addInternalNote() {
+            const modal = new bootstrap.Modal(document.getElementById('addNoteModal'));
+            modal.show();
+        }
+
+        function saveInternalNote() {
+            const noteContent = document.getElementById('noteContent').value.trim();
+            if (!noteContent) {
+                alert('Vui lòng nhập nội dung ghi chú');
+                return;
+            }
+            
+            console.log("💾 Saving internal note:", noteContent);
+            
+            // Show loading state
+            const modalFooter = document.querySelector('#addNoteModal .modal-footer');
+            const originalFooter = modalFooter.innerHTML;
+            modalFooter.innerHTML = `
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Đang lưu...</span>
+                </div>
+                Đang lưu ghi chú...
+            `;
+            
+            // Make API call to add note
+            const url = `/restaurant-owner/bookings/${currentBookingId}/add-note`;
+            fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `content=${encodeURIComponent(noteContent)}`
+            })
+            .then(response => {
+                console.log("📡 Add note response status:", response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("📡 Add note response:", data);
+                if (data.success) {
+                    alert(data.message || 'Đã thêm ghi chú thành công');
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addNoteModal'));
+                    modal.hide();
+                    
+                    // Clear form
+                    document.getElementById('noteContent').value = '';
+                    
+                    // Refresh the booking detail to show new note
+                    loadBookingDetail();
+                } else {
+                    throw new Error(data.message || 'Không thể thêm ghi chú');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error adding note:', error);
+                alert('Lỗi khi thêm ghi chú: ' + error.message);
+            })
+            .finally(() => {
+                // Restore original footer
+                modalFooter.innerHTML = originalFooter;
+            });
+        }
+
+        function deleteInternalNote(noteId) {
+            if (confirm('Bạn có chắc chắn muốn xóa ghi chú này?')) {
+                console.log("🗑️ Deleting internal note:", noteId);
+                
+                // Make API call to delete note
+                const url = `/restaurant-owner/bookings/${currentBookingId}/delete-note`;
+                fetch(url, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `noteId=${noteId}`
+                })
+                .then(response => {
+                    console.log("📡 Delete note response status:", response.status);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("📡 Delete note response:", data);
+                    if (data.success) {
+                        alert(data.message || 'Đã xóa ghi chú thành công');
+                        
+                        // Refresh the booking detail to remove the note
+                        loadBookingDetail();
+                    } else {
+                        throw new Error(data.message || 'Không thể xóa ghi chú');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error deleting note:', error);
+                    alert('Lỗi khi xóa ghi chú: ' + error.message);
+                });
+            }
+        }
+
+        // Store current booking data globally for modal functions
+        let currentBooking = null;
+
+        function populateBookingDetail(booking) {
+            currentBooking = booking; // Store globally
+            
+            // Update modal title
+            document.getElementById('bookingDetailModalLabel').innerHTML = 
+                `<i class="fas fa-calendar-check me-2"></i>Booking #BK${booking.bookingId.toString().padStart(3, '0')}`;
+
+            // Populate Booking Summary
+            populateBookingSummary(booking);
+            
+            // Populate Customer Info
+            populateCustomerInfo(booking);
+            
+            // Populate Assigned Tables
+            populateAssignedTables(booking);
+            
+            // Populate Payment Info
+            populatePaymentInfo(booking);
+            
+            // Populate Activity Timeline
+            populateActivityTimeline(booking);
+            
+            // Populate Internal Notes
+            populateInternalNotes(booking);
+            
+            // Populate Communication History
+            populateCommunicationHistory(booking);
+
+            // Populate actions
+            populateBookingActions(booking);
+        }
+    </script>
+    
+<style>
+    /* Invoice Styles */
+    .invoice-container {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        border: 1px solid #e9ecef;
+    }
+    
+    .invoice-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .invoice-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    .invoice-status .badge {
+        font-size: 0.875rem;
+        padding: 8px 12px;
+    }
+    
+    /* Payment Header */
+    .payment-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .payment-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #495057;
+        display: flex;
+        align-items: center;
+    }
+    
+    .payment-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .payment-actions .badge {
+        font-size: 0.875rem;
+        padding: 6px 12px;
+    }
+    
+    .invoice-body {
+        padding: 20px;
+    }
+    
+    .invoice-section {
+        margin-bottom: 24px;
+    }
+    
+    .invoice-section:last-of-type {
+        margin-bottom: 0;
+    }
+    
+    .invoice-section-title {
+        color: #495057;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e9ecef;
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Compact sections */
+    .invoice-section-compact {
+        margin-bottom: 16px;
+    }
+    
+    .invoice-section-compact:last-of-type {
+        margin-bottom: 0;
+    }
+    
+    .invoice-section-title-compact {
+        color: #495057;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+    }
+    
+    .invoice-items {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .invoice-item {
+        transition: background-color 0.2s ease;
+        padding: 12px !important;
+        margin: 0 -12px;
+        border-radius: 6px;
+    }
+    
+    .invoice-item:hover {
+        background-color: #e9ecef;
+    }
+    
+    .invoice-item:last-child {
+        border-bottom: none !important;
+    }
+    
+    /* Compact items */
+    .invoice-items-compact {
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .invoice-item-compact {
+        transition: background-color 0.2s ease;
+        padding: 6px !important;
+        margin: 0 -8px;
+        border-radius: 4px;
+    }
+    
+    .invoice-item-compact:hover {
+        background-color: #e9ecef;
+    }
+    
+    .invoice-item-compact:last-child {
+        border-bottom: none !important;
+    }
+    
+    .invoice-subtotal {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 2px solid #dee2e6;
+        background: #fff;
+        border-radius: 6px;
+        padding: 12px;
+    }
+    
+    .invoice-totals {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .invoice-total-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .invoice-total-item:last-child {
+        border-bottom: none;
+    }
+    
+    .invoice-total-final {
+        margin-top: 12px;
+        padding-top: 16px;
+        border-top: 2px solid #007bff;
+        background: #fff;
+        border-radius: 6px;
+        padding: 16px;
+        font-size: 1.1rem;
+    }
+    
+    .invoice-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+    
+    .invoice-actions .badge {
+        font-size: 0.875rem;
+        padding: 6px 12px;
+    }
+    
+    /* Scrollbar Styles */
+    .invoice-items::-webkit-scrollbar,
+    .invoice-items-compact::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .invoice-items::-webkit-scrollbar-track,
+    .invoice-items-compact::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .invoice-items::-webkit-scrollbar-thumb,
+    .invoice-items-compact::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+    
+    .invoice-items::-webkit-scrollbar-thumb:hover,
+    .invoice-items-compact::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .invoice-header {
+            flex-direction: column;
+            gap: 12px;
+            text-align: center;
+        }
+        
+        .invoice-body {
+            padding: 16px;
+        }
+        
+        .invoice-item,
+        .invoice-item-compact {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .invoice-item .text-end,
+        .invoice-item-compact .text-end {
+            text-align: left !important;
+        }
+    }
+    
+    /* Animation */
+    .invoice-container {
+        animation: slideInUp 0.3s ease-out;
+    }
+    
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
 </body>
 </html>

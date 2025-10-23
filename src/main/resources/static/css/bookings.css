@@ -1,0 +1,673 @@
+/* ================================================
+   BOOKINGS PAGE - CLEAN BLACK & WHITE DESIGN
+   Based on home-resy.css và design-system.css
+   ================================================ */
+
+:root {
+    /* Colors - Consistent với home page */
+    --bookings-black: #1A1A1A;
+    --bookings-gray: #6B7280;
+    --bookings-light-gray: #F3F4F6;
+    --bookings-white: #FFFFFF;
+    --bookings-border: #E5E7EB;
+    
+    /* Status Colors - Clean và minimal */
+    --status-pending: #F59E0B;
+    --status-confirmed: #059669;
+    --status-cancelled: #DC2626;
+    --status-completed: #2563EB;
+    --status-no-show: #6B7280;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bookings-white);
+    color: var(--bookings-black);
+    line-height: 1.6;
+}
+
+/* ================================================
+   RESTAURANT SELECTOR - From Dashboard
+   ================================================ */
+
+.restaurant-selector {
+    position: relative;
+    margin-right: 2rem;
+}
+
+.restaurant-dropdown {
+    background: var(--bookings-white);
+    border: 2px solid var(--bookings-border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    min-width: 250px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+.restaurant-dropdown:hover {
+    border-color: var(--bookings-black);
+}
+
+.restaurant-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+.restaurant-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--bookings-light-gray);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bookings-black);
+    font-size: 1rem;
+}
+
+.restaurant-details h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--bookings-black);
+    margin: 0 0 0.25rem 0;
+}
+
+.restaurant-details p {
+    font-size: 0.8rem;
+    color: var(--bookings-gray);
+    margin: 0;
+}
+
+.dropdown-arrow {
+    color: var(--bookings-gray);
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.restaurant-dropdown.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.restaurant-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bookings-white);
+    border: 2px solid var(--bookings-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    margin-top: 0.25rem;
+}
+
+.restaurant-menu.show {
+    display: block;
+}
+
+.restaurant-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--bookings-border);
+}
+
+.restaurant-item:last-child {
+    border-bottom: none;
+}
+
+.restaurant-item:hover {
+    background: var(--bookings-light-gray);
+}
+
+.restaurant-item.active {
+    background: var(--bookings-black);
+    color: var(--bookings-white);
+}
+
+.restaurant-item.active .restaurant-icon {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--bookings-white);
+}
+
+.restaurant-item.active .restaurant-details h4,
+.restaurant-item.active .restaurant-details p {
+    color: var(--bookings-white);
+}
+
+/* ================================================
+   NAVIGATION
+   ================================================ */
+
+.page-switch {
+    background: var(--bookings-white);
+    border: 2px solid var(--bookings-black);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin: 1rem auto;
+    max-width: 1200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--bookings-white);
+    color: var(--bookings-black);
+    border: 2px solid var(--bookings-black);
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    background: var(--bookings-black);
+    color: var(--bookings-white);
+    transform: translateY(-1px);
+}
+
+/* ================================================
+   CONTAINER & LAYOUT
+   ================================================ */
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* ================================================
+   CARDS - Clean và minimal
+   ================================================ */
+
+.card {
+    background: var(--bookings-white);
+    border: 2px solid var(--bookings-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* ================================================
+   HEADERS & TYPOGRAPHY
+   ================================================ */
+
+.h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--bookings-black);
+    margin-bottom: 0.5rem;
+}
+
+.h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--bookings-black);
+    margin-bottom: 1rem;
+}
+
+.h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--bookings-black);
+    margin-bottom: 0.5rem;
+}
+
+.muted {
+    color: var(--bookings-gray);
+    font-size: 0.9rem;
+}
+
+/* ================================================
+   HEADER SECTION
+   ================================================ */
+
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.nav-left {
+    flex: 1;
+    min-width: 300px;
+}
+
+.nav-right {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* ================================================
+   GRID SYSTEM
+   ================================================ */
+
+.grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1024px) {
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .grid-3,
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+    
+    .nav {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .nav-right {
+        justify-content: flex-start;
+    }
+}
+
+/* ================================================
+   FORM ELEMENTS
+   ================================================ */
+
+.form-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--bookings-black);
+    font-size: 0.9rem;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="email"],
+input[type="tel"],
+select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--bookings-border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: var(--bookings-white);
+    color: var(--bookings-black);
+    transition: all 0.2s ease;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--bookings-black);
+    box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+}
+
+/* ================================================
+   BUTTONS - Clean và consistent
+   ================================================ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--bookings-black);
+    background: var(--bookings-black);
+    color: var(--bookings-white);
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn:hover {
+    background: var(--bookings-white);
+    color: var(--bookings-black);
+    transform: translateY(-1px);
+}
+
+.btn-ghost {
+    background: var(--bookings-white);
+    color: var(--bookings-black);
+    border-color: var(--bookings-gray);
+}
+
+.btn-ghost:hover {
+    background: var(--bookings-light-gray);
+    border-color: var(--bookings-black);
+}
+
+.btn.small {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+}
+
+/* ================================================
+   ACTIONS BAR
+   ================================================ */
+
+.actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.actions .spacer {
+    flex: 1;
+}
+
+/* ================================================
+   TABLE - Clean và readable
+   ================================================ */
+
+.table-wrap {
+    overflow-x: auto;
+    border: 2px solid var(--bookings-border);
+    border-radius: 12px;
+    margin-top: 1rem;
+    background: var(--bookings-white);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.table thead {
+    background: var(--bookings-black);
+    color: var(--bookings-white);
+}
+
+.table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--bookings-border);
+    vertical-align: top;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background: var(--bookings-light-gray);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table .actions {
+    margin: 0;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* ================================================
+   STATUS CHIPS - Clean và minimal
+   ================================================ */
+
+.chip {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.chip-pending {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--status-pending);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.chip-confirmed {
+    background: rgba(5, 150, 105, 0.1);
+    color: var(--status-confirmed);
+    border: 1px solid rgba(5, 150, 105, 0.3);
+}
+
+.chip-cancelled {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--status-cancelled);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.chip-completed {
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--status-completed);
+    border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.chip-default {
+    background: rgba(107, 114, 128, 0.1);
+    color: var(--status-no-show);
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* ================================================
+   STATISTICS CARDS
+   ================================================ */
+
+.stats-card {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--bookings-black);
+    margin-bottom: 0.5rem;
+}
+
+.stats-label {
+    color: var(--bookings-gray);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* ================================================
+   PAGINATION
+   ================================================ */
+
+.pagination {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+/* ================================================
+   ERROR STATES
+   ================================================ */
+
+.error-card {
+    background: rgba(220, 38, 38, 0.05);
+    border: 2px solid rgba(220, 38, 38, 0.2);
+    color: var(--status-cancelled);
+}
+
+/* ================================================
+   RESPONSIVE DESIGN
+   ================================================ */
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 0.5rem;
+    }
+    
+    .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .h1 {
+        font-size: 1.5rem;
+    }
+    
+    .h2 {
+        font-size: 1.25rem;
+    }
+    
+    .table-wrap {
+        font-size: 0.8rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+    
+    .actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    /* Restaurant Selector Mobile */
+    .restaurant-selector {
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+    
+    .restaurant-dropdown {
+        min-width: 200px;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .restaurant-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+    
+    .restaurant-details h4 {
+        font-size: 0.8rem;
+    }
+    
+    .restaurant-details p {
+        font-size: 0.7rem;
+    }
+    
+    .nav {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .nav-left {
+        min-width: auto;
+    }
+    
+    .nav-right {
+        justify-content: flex-start;
+        margin-top: 1rem;
+    }
+}
+
+/* ================================================
+   ANIMATIONS & TRANSITIONS
+   ================================================ */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+/* ================================================
+   UTILITY CLASSES
+   ================================================ */
+
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+
+.p-0 { padding: 0; }
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
