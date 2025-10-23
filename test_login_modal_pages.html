@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Modal trên các trang</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-link { display: inline-block; margin: 5px; padding: 10px 15px; background: #007bff; color: white; text-decoration: none; border-radius: 3px; }
+        .test-link:hover { background: #0056b3; }
+        .status { padding: 5px 10px; border-radius: 3px; margin-left: 10px; }
+        .status.ok { background: #d4edda; color: #155724; }
+        .status.pending { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Login Modal trên các trang</h1>
+    
+    <div class="test-section">
+        <h2>✅ Trang sử dụng unified-header (có login modal)</h2>
+        <p>Các trang này sẽ có login modal hoạt động:</p>
+        <a href="http://localhost:8080/restaurants" class="test-link" target="_blank">/restaurants</a>
+        <a href="http://localhost:8080/auth/register" class="test-link" target="_blank">/auth/register</a>
+        <a href="http://localhost:8080/payment/result" class="test-link" target="_blank">/payment/result</a>
+        <a href="http://localhost:8080/customer/favorites" class="test-link" target="_blank">/customer/favorites</a>
+        <a href="http://localhost:8080/booking/list" class="test-link" target="_blank">/booking/list</a>
+        <a href="http://localhost:8080/admin/users" class="test-link" target="_blank">/admin/users</a>
+        <a href="http://localhost:8080/restaurant-owner/dashboard" class="test-link" target="_blank">/restaurant-owner/dashboard</a>
+    </div>
+    
+    <div class="test-section">
+        <h2>✅ Trang sử dụng resy-header (có login modal)</h2>
+        <p>Các trang này cũng sẽ có login modal hoạt động:</p>
+        <a href="http://localhost:8080/booking/form" class="test-link" target="_blank">/booking/form</a>
+        <a href="http://localhost:8080/restaurants/1" class="test-link" target="_blank">/restaurants/1 (restaurant-detail)</a>
+    </div>
+    
+    <div class="test-section">
+        <h2>📋 Hướng dẫn test</h2>
+        <ol>
+            <li>Mở từng link trên trong tab mới</li>
+            <li>Kiểm tra xem có nút "Đăng nhập" không</li>
+            <li>Nhấn nút "Đăng nhập"</li>
+            <li>Kiểm tra xem modal login có hiện ra không</li>
+            <li>Kiểm tra xem có thể đóng modal bằng nút X không</li>
+            <li>Kiểm tra xem có thể nhấn "Đăng ký ngay" để chuyển sang trang đăng ký không</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Các thay đổi đã thực hiện</h2>
+        <ul>
+            <li>✅ Thêm login modal fragment vào unified-header</li>
+            <li>✅ Thêm CSS login-modal.css vào unified-header</li>
+            <li>✅ Thêm JavaScript helper functions (closeLoginModal, openRegisterModal)</li>
+            <li>✅ Thêm auto-focus cho username input khi modal mở</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Kết quả mong đợi</h2>
+        <p><strong>Tất cả trang đều có thể nhấn login được!</strong></p>
+        <ul>
+            <li>Trang sử dụng unified-header: có login modal từ design-system-components</li>
+            <li>Trang sử dụng resy-header: có login modal từ resy-header</li>
+            <li>Modal login hiển thị đúng với CSS đẹp</li>
+            <li>JavaScript helper functions hoạt động bình thường</li>
+        </ul>
+    </div>
+    
+    <script>
+        // Auto-test script để kiểm tra các trang
+        function testLoginModal() {
+            const testLinks = document.querySelectorAll('.test-link');
+            testLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    console.log('Testing page:', this.href);
+                    // Có thể thêm logic test tự động ở đây
+                });
+            });
+        }
+        
+        // Chạy test khi trang load
+        document.addEventListener('DOMContentLoaded', testLoginModal);
+    </script>
+</body>
+</html>
