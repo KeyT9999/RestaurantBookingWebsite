@@ -318,70 +318,41 @@
                 <p class="section-subtitle">Những nhà hàng được yêu thích nhất</p>
             </div>
             
-            <div class="restaurant-grid">
-                <div class="restaurant-card">
-                    <div class="restaurant-image">
-                        <div class="restaurant-badge">Premium</div>
+            <div class="alert alert-light text-center" role="status"
+                 th:if="${#lists.isEmpty(popularRestaurants)}">
+                Dữ liệu nhà hàng phổ biến đang được cập nhật.
+            </div>
+
+            <div class="restaurant-grid" th:if="${!#lists.isEmpty(popularRestaurants)}">
+                <div class="restaurant-card" th:each="restaurant : ${popularRestaurants}">
+                    <div class="restaurant-image"
+                         th:style="${restaurant.hasCoverImage()} ? 'background-image: url(' + restaurant.coverImageUrl + ');' : 'background: ' + restaurant.fallbackGradient + ';'">
+                        <div class="restaurant-badge"
+                             th:text="${restaurant.badge}"
+                             th:if="${restaurant.badge != null}"></div>
                     </div>
                     <div class="restaurant-info">
-                        <h3 class="restaurant-name">Le Bistrot</h3>
-                        <p class="restaurant-cuisine">French • Fine Dining</p>
+                        <h3 class="restaurant-name" th:text="${restaurant.name}">Tên nhà hàng</h3>
+                        <p class="restaurant-cuisine"
+                           th:text="${#strings.defaultString(restaurant.cuisineType, 'Đang cập nhật')} + (restaurant.address != null ? ' • ' + restaurant.address : '')">
+                            Ẩm thực • Địa chỉ
+                        </p>
                         <div class="restaurant-rating">
                             <div class="stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"
+                                   th:each="star : ${#numbers.sequence(1, 5)}"
+                                   th:classappend="${star <= restaurant.roundedRating} ? ' text-warning' : ' text-muted'"></i>
                             </div>
-                            <span class="rating-text">4.8 (124 đánh giá)</span>
+                            <span class="rating-text"
+                                  th:text="${restaurant.formattedRating} + ' (' + restaurant.reviewCount + ' đánh giá)'">
+                                4.5 (20 đánh giá)
+                            </span>
                         </div>
-                        <div class="restaurant-price">$$$$</div>
-                        <button class="book-btn">Đặt bàn</button>
-                    </div>
-                </div>
-                
-                <div class="restaurant-card">
-                    <div class="restaurant-image" style="background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 100%);">
-                        <div class="restaurant-badge">Popular</div>
-                    </div>
-                    <div class="restaurant-info">
-                        <h3 class="restaurant-name">Garden Terrace</h3>
-                        <p class="restaurant-cuisine">Asian • Casual</p>
-                        <div class="restaurant-rating">
-                            <div class="stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <span class="rating-text">4.6 (89 đánh giá)</span>
-                        </div>
-                        <div class="restaurant-price">$$$</div>
-                        <button class="book-btn">Đặt bàn</button>
-                    </div>
-                                </div>
-                
-                <div class="restaurant-card">
-                    <div class="restaurant-image" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
-                        <div class="restaurant-badge">New</div>
-                                </div>
-                    <div class="restaurant-info">
-                        <h3 class="restaurant-name">Sky Lounge</h3>
-                        <p class="restaurant-cuisine">International • Rooftop</p>
-                        <div class="restaurant-rating">
-                            <div class="stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <span class="rating-text">4.9 (67 đánh giá)</span>
-                        </div>
-                        <div class="restaurant-price">$$$$</div>
-                        <button class="book-btn">Đặt bàn</button>
+                        <div class="restaurant-price" th:text="${restaurant.priceLabel}">₫120,000</div>
+                        <a class="book-btn"
+                           th:href="@{/restaurants/{id}(id=${restaurant.id})}">
+                            Đặt bàn
+                        </a>
                     </div>
                 </div>
             </div>

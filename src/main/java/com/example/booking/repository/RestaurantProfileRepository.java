@@ -124,5 +124,15 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
             @Param("maxPrice") java.math.BigDecimal maxPrice,
             @Param("minRating") Double minRating,
             Pageable pageable);
+    
+    /**
+     * Find top-rated approved restaurants sorted by rating, review count, and approval time
+     */
+    @Query("SELECT r FROM RestaurantProfile r " +
+           "LEFT JOIN r.reviews rv " +
+           "WHERE r.approvalStatus = 'APPROVED' AND r.restaurantId <> 37 " +
+           "GROUP BY r " +
+           "ORDER BY COALESCE(AVG(rv.rating), 0) DESC, COUNT(rv) DESC, r.approvedAt DESC")
+    List<RestaurantProfile> findTopRatedRestaurants(Pageable pageable);
 
 }

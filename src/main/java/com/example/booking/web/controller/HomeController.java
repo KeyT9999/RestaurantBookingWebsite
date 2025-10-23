@@ -20,17 +20,22 @@ import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.User;
 import com.example.booking.dto.DishWithImageDto;
+import com.example.booking.dto.PopularRestaurantDto;
 import com.example.booking.dto.ReviewDto;
-import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.dto.ReviewForm;
+import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.ReviewService;
 import com.example.booking.repository.RestaurantMediaRepository;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,6 +45,13 @@ import java.util.stream.Collectors;
  */
 @Controller
 public class HomeController {
+    
+    private static final String[] POPULAR_CARD_GRADIENTS = {
+            "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            "linear-gradient(135deg, #43cea2 0%, #185a9d 100%)",
+            "linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%)",
+            "linear-gradient(135deg, #f9d423 0%, #ff4e50 100%)"
+    };
     
     @Autowired
     private RestaurantOwnerService restaurantOwnerService;
@@ -91,8 +103,80 @@ public class HomeController {
                 }
             }
         }
+
+        // Popular restaurants for home page
+        List<RestaurantProfile> topRestaurants = restaurantService.findTopRatedRestaurants(6);
+        List<PopularRestaurantDto> popularRestaurants = buildPopularRestaurantCards(topRestaurants);
+        model.addAttribute("popularRestaurants", popularRestaurants);
         
         return "public/home";
+    }
+    
+    private List<PopularRestaurantDto> buildPopularRestaurantCards(List<RestaurantProfile> restaurants) {
+        if (restaurants == null || restaurants.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<RestaurantMedia> coverMedia = restaurantMediaRepository.findByRestaurantsAndType(restaurants, "cover");
+        Map<Integer, String> coverMap = coverMedia.stream()
+                .collect(Collectors.toMap(
+                        media -> media.getRestaurant().getRestaurantId(),
+                        RestaurantMedia::getUrl,
+                        (existing, ignored) -> existing,
+                        LinkedHashMap::new));
+
+        List<PopularRestaurantDto> cards = new ArrayList<>();
+        for (int i = 0; i < restaurants.size(); i++) {
+            RestaurantProfile restaurant = restaurants.get(i);
+            ReviewStatisticsDto statistics = null;
+            try {
+                statistics = reviewService.getRestaurantReviewStatistics(restaurant.getRestaurantId());
+            } catch (Exception ex) {
+                System.err.println("⚠️ Unable to load review statistics for restaurant "
+                        + restaurant.getRestaurantId() + ": " + ex.getMessage());
+            }
+
+            double averageRating = statistics != null ? statistics.getAverageRating() : restaurant.getAverageRating();
+            int reviewCount = statistics != null ? statistics.getTotalReviews() : restaurant.getReviewCount();
+
+            cards.add(new PopularRestaurantDto(
+                    restaurant.getRestaurantId(),
+                    restaurant.getRestaurantName(),
+                    restaurant.getCuisineType(),
+                    restaurant.getAddress(),
+                    averageRating,
+                    reviewCount,
+                    resolvePriceLabel(restaurant),
+                    resolveBadge(i, reviewCount),
+                    coverMap.get(restaurant.getRestaurantId()),
+                    POPULAR_CARD_GRADIENTS[i % POPULAR_CARD_GRADIENTS.length]
+            ));
+        }
+
+        return cards;
+    }
+
+    private String resolveBadge(int index, int reviewCount) {
+        if (index == 0) {
+            return "Top Rated";
+        }
+        if (index == 1) {
+            return "Khách yêu thích";
+        }
+        if (index == 2) {
+            return "Được đặt nhiều";
+        }
+        return reviewCount >= 10 ? "Yêu thích" : null;
+    }
+
+    private String resolvePriceLabel(RestaurantProfile restaurant) {
+        if (restaurant.getAveragePrice() == null) {
+            return "Giá đang cập nhật";
+        }
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        currencyFormat.setMaximumFractionDigits(0);
+        currencyFormat.setMinimumFractionDigits(0);
+        return currencyFormat.format(restaurant.getAveragePrice());
     }
     
     
