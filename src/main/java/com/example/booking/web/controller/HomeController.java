@@ -61,12 +61,22 @@ public class HomeController {
      * Shows home page for all users, with additional options for authenticated users
      */
     @GetMapping("/")
-    public String home(Model model, Authentication authentication) {
+    public String home(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String cuisineType,
+            @RequestParam(required = false) String priceRange,
+            Model model, 
+            Authentication authentication) {
         // Add any model attributes needed for home page
         model.addAttribute("pageTitle", "Book Eat - Đặt bàn online, giữ chỗ ngay");
         
         // Set active navigation
         model.addAttribute("activeNav", "home");
+        
+        // Pass search parameters to template for form persistence
+        model.addAttribute("search", search);
+        model.addAttribute("cuisineType", cuisineType);
+        model.addAttribute("priceRange", priceRange);
         
         // Add user role information for conditional display
         if (authentication != null && authentication.isAuthenticated()) {
@@ -85,25 +95,6 @@ public class HomeController {
         return "public/home";
     }
     
-    /**
-     * About page
-     */
-    @GetMapping("/about")
-    public String about(Model model) {
-        model.addAttribute("pageTitle", "Về chúng tôi - Book Eat");
-        model.addAttribute("activeNav", "about");
-        return "public/about";
-    }
-    
-    /**
-     * Contact page  
-     */
-    @GetMapping("/contact")
-    public String contact(Model model) {
-        model.addAttribute("pageTitle", "Liên hệ - Book Eat");
-        model.addAttribute("activeNav", "contact");
-        return "public/contact";
-    }
     
     /**
      * Restaurants listing page with filtering and sorting
