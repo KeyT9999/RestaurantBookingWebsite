@@ -10,263 +10,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link th:href="@{/css/design-system.css}" rel="stylesheet">
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .payment-status-card {
-            border-radius: 20px;
-            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
-            overflow: hidden;
-        }
-
-        .status-ring {
-            width: 96px;
-            height: 96px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.75rem;
-            color: #fff;
-            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
-        }
-
-        .status-completed {
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-        }
-
-        .status-processing {
-            background: linear-gradient(135deg, #f97316 0%, #facc15 100%);
-        }
-
-        .status-failed {
-            background: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
-        }
-
-        .status-pending {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        }
-
-        .status-caption {
-            max-width: 540px;
-            color: #475569;
-        }
-
-        .detail-grid {
-            display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        }
-
-        .detail-item {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 1rem;
-        }
-
-        .detail-item strong {
-            display: block;
-            font-size: 0.85rem;
-            letter-spacing: 0.04em;
-            color: #64748b;
-            text-transform: uppercase;
-            margin-bottom: 0.35rem;
-        }
-
-        .detail-item span {
-            font-size: 1.05rem;
-            color: #0f172a;
-            font-weight: 600;
-        }
-
-        .summary-stats {
-            display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        }
-
-        .summary-stat {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            align-items: center;
-            padding: 1.5rem;
-            border-radius: 16px;
-            color: #0f172a;
-        }
-
-        .summary-stat small {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            opacity: 0.8;
-        }
-
-        .summary-total {
-            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-        }
-
-        .summary-paid {
-            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-        }
-
-        .summary-remaining {
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-        }
-
-        .action-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .action-grid > * {
-            min-width: 220px;
-        }
-
-        .card-grid {
-            display: grid;
-            gap: 1.75rem;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        }
-
-        .ds-note-warning {
-            background: linear-gradient(135deg, rgba(254, 243, 199, 0.7), rgba(252, 211, 77, 0.6));
-            border-left: 5px solid #f59e0b;
-            padding: 1.25rem;
-            border-radius: 14px;
-            color: #78350f;
-        }
-
-        /* PayOS QR Code Styles */
-        .payos-qr-section {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-radius: 18px;
-            padding: 2rem;
-            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
-        }
-
-        .qr-container {
-            text-align: center;
-        }
-
-        .qr-code-container {
-            background: #fff;
-            border-radius: 18px;
-            padding: 2rem;
-            margin: 1.5rem 0;
-            border: 2px dashed #cbd5f5;
-            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.15);
-        }
-
-        .qr-placeholder {
-            padding: 2rem;
-            color: #475569;
-        }
-
-        .qr-image img {
-            max-width: 260px;
-            height: auto;
-            border-radius: 12px;
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
-        }
-
-        .payment-info {
-            background: #ffffff;
-            border-radius: 14px;
-            padding: 1.5rem;
-            margin: 1rem 0;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-        }
-
-        .payment-info .info-item {
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            border-radius: 10px;
-            background: #f1f5f9;
-            text-align: left;
-        }
-
-        .payment-info .info-item strong {
-            display: block;
-            font-size: 0.85rem;
-            letter-spacing: 0.05em;
-            color: #64748b;
-            text-transform: uppercase;
-        }
-
-        .payment-info .info-item span {
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        .cash-payment-section {
-            background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
-            border-radius: 18px;
-            padding: 2rem;
-            box-shadow: 0 16px 44px rgba(217, 119, 6, 0.15);
-        }
-
-        .cash-payment-section .alert {
-            border-radius: 12px;
-            margin-top: 1rem;
-        }
-
-        .qr-actions,
-        .cash-actions {
-            display: flex;
-            gap: 0.75rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .qr-actions .btn,
-        .cash-actions .btn {
-            min-width: 180px;
-        }
-
-        .status-spinner {
-            width: 44px;
-            height: 44px;
-            border: 4px solid rgba(148, 163, 184, 0.35);
-            border-top-color: #6366f1;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        .invoice-modal {
-            backdrop-filter: blur(4px);
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .payos-qr-section,
-            .cash-payment-section {
-                padding: 1.5rem;
-            }
-
-            .summary-stat {
-                padding: 1.25rem;
-            }
-
-            .action-grid > * {
-                min-width: 160px;
-            }
-        }
-    </style>
 </head>
 <body class="ds-bg-white">
 
@@ -274,7 +17,7 @@
          th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
     <main>
-        <section class="ds-bg-gray-50" style="padding: var(--ds-space-16) 0;">
+        <section class="ds-bg-gray-50 ds-section">
             <div class="ds-container"
                  th:with="statusName=${payment != null ? payment.status.name() : 'PENDING'}, pid=${payment != null ? payment.paymentId : 0}">
                 <nav class="ds-breadcrumb" aria-label="breadcrumb">
@@ -296,7 +39,7 @@
                 <article class="ds-card ds-card-emphasis ds-text-center"
                          th:if="${payment == null}">
                     <div class="ds-card-body ds-flex ds-flex-col ds-gap-4 ds-items-center">
-                        <div class="status-ring status-failed">
+                        <div class="ds-status-ring ds-status-ring--lg ds-status--error">
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
                         <h1 class="ds-heading-3">Không tìm thấy giao dịch</h1>
@@ -316,12 +59,12 @@
                     </div>
                 </article>
 
-                <article class="ds-card payment-status-card"
+                <article class="ds-card ds-card-emphasis"
                          th:if="${payment != null}">
                     <div class="ds-card-body ds-flex ds-flex-col ds-gap-4 ds-items-center ds-text-center"
                          th:with="status=${statusName}">
-                        <div class="status-ring"
-                             th:classappend="' status-' + ${#strings.toLowerCase(status)}">
+                        <div class="ds-status-ring ds-status-ring--lg"
+                             th:classappend="' ds-status--' + ${#strings.toLowerCase(status)}">
                             <i th:class="${status == 'COMPLETED' ? 'fas fa-check-circle'
                                          : (status == 'FAILED' ? 'fas fa-times-circle'
                                          : (status == 'PROCESSING' ? 'fas fa-clock'
@@ -372,7 +115,7 @@
         </section>
 
         <section th:if="${payment != null}"
-                 style="padding: var(--ds-space-12) 0;">
+                 class="ds-section-compact">
             <div class="ds-container">
                 <article class="ds-card ds-text-center">
                     <div class="ds-card-body ds-flex ds-flex-col ds-gap-5"
@@ -526,12 +269,12 @@
             </div>
         </section>
         <section th:if="${payment != null}"
-                 style="padding: var(--ds-space-12) 0;">
+                 class="ds-section-compact">
             <div class="ds-container card-grid">
                 <article class="ds-card">
                     <div class="ds-card-body ds-flex ds-flex-col ds-gap-5">
                         <header class="ds-flex ds-items-center ds-gap-3">
-                            <div class="status-ring status-pending" style="width: 54px; height: 54px; font-size: 1.5rem; box-shadow: none;">
+                            <div class="ds-status-ring ds-status--pending">
                                 <i class="fas fa-file-invoice-dollar"></i>
                             </div>
                             <div>
@@ -540,22 +283,22 @@
                             </div>
                         </header>
 
-                        <div class="summary-stats"
+                        <div class="ds-summary-grid"
                              th:if="${payment != null}"
                              th:with="totalValue=${totalAmount != null ? totalAmount : payment.amount},
                                       remainingValue=${remainingAmount != null ? remainingAmount : (totalAmount != null ? totalAmount.subtract(payment.amount) : T(java.math.BigDecimal).ZERO)}">
-                            <div class="summary-stat summary-total">
+                            <div class="ds-summary-card">
                                 <small>Tổng giá trị đơn</small>
-                                <span th:text="${#numbers.formatDecimal(totalValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span>
+                                <strong th:text="${#numbers.formatDecimal(totalValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
                             </div>
-                            <div class="summary-stat summary-paid">
+                            <div class="ds-summary-card">
                                 <small>Đã thanh toán</small>
-                                <span th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span>
+                                <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
                             </div>
-                            <div class="summary-stat summary-remaining">
+                            <div class="ds-summary-card">
                                 <small>Còn lại</small>
-                                <span th:classappend="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) > 0} ? ' text-danger' : ' text-success'"
-                                      th:text="${#numbers.formatDecimal(remainingValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</span>
+                                <strong th:classappend="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) > 0} ? ' text-danger' : ' text-success'"
+                                      th:text="${#numbers.formatDecimal(remainingValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
                             </div>
                         </div>
 
@@ -612,7 +355,7 @@
                 <article class="ds-card">
                     <div class="ds-card-body ds-flex ds-flex-col ds-gap-5">
                         <header class="ds-flex ds-items-center ds-gap-3">
-                            <div class="status-ring status-completed" style="width: 54px; height: 54px; font-size: 1.5rem; box-shadow: none;">
+                            <div class="ds-status-ring ds-status--success">
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
                             <div>
@@ -642,104 +385,6 @@
                                 <strong>Trạng thái đặt bàn</strong>
                                 <span th:text="${payment.booking.status.displayName}">Chờ xác nhận</span>
                             </div>
-                        </div>
-                    </div>
-                </article>
-            </div>
-        </section>
-
-        <section th:if="${payment != null && payment.status.name() == 'PENDING'}"
-                 style="padding: var(--ds-space-12) 0;">
-            <div class="ds-container card-grid">
-                <article class="payos-qr-section"
-                         th:if="${payment.paymentMethod.name() == 'PAYOS'}">
-                    <div class="qr-container">
-                        <header class="ds-flex ds-flex-col ds-gap-2 ds-items-center">
-                            <h2 class="ds-heading-4 ds-m-0">
-                                <i class="fas fa-qrcode me-2"></i>
-                                Quét mã để thanh toán PayOS
-                            </h2>
-                            <p class="ds-text-secondary ds-text-base status-caption">
-                                Sử dụng ứng dụng ngân hàng để quét mã QR bên dưới và xác nhận thanh toán.
-                            </p>
-                        </header>
-
-                        <div class="qr-code-container">
-                            <div class="qr-placeholder" id="qrPlaceholder">
-                                <i class="fas fa-qrcode fa-3x text-muted"></i>
-                                <p class="mt-2 mb-0">Đang tải mã QR...</p>
-                            </div>
-                            <div class="qr-image" id="qrImage" style="display: none;">
-                                <img id="qrCodeImg" src="" alt="PayOS QR Code">
-                            </div>
-                        </div>
-
-                        <div class="payment-info">
-                            <div class="info-item">
-                                <strong>Số tiền</strong>
-                                <span class="amount"
-                                      th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
-                            </div>
-                            <div class="info-item">
-                                <strong>Mã đơn hàng</strong>
-                                <span class="order-code" th:text="${payment.paymentId}">#0</span>
-                            </div>
-                        </div>
-
-                        <div class="ds-text-start ds-mt-4 payment-instructions">
-                            <h3 class="ds-heading-5 ds-mb-3">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Hướng dẫn thanh toán
-                            </h3>
-                            <ol class="ds-text-base ds-text-secondary ds-flex ds-flex-col ds-gap-2 ds-ps-3">
-                                <li>Mở ứng dụng ngân hàng hoặc ví điện tử hỗ trợ VietQR.</li>
-                                <li>Chọn chức năng <strong>Quét QR</strong>.</li>
-                                <li>Quét mã QR hiển thị ở trên.</li>
-                                <li>Xác nhận thông tin và hoàn tất thanh toán.</li>
-                            </ol>
-                        </div>
-
-                        <div class="qr-actions ds-mt-4">
-                            <button type="button" class="ds-btn ds-btn-primary"
-                                    onclick="refreshQRCode(event)">
-                                <i class="fas fa-sync-alt"></i>
-                                Làm mới QR
-                            </button>
-                            <button type="button" class="ds-btn ds-btn-secondary"
-                                    onclick="copyPaymentInfo()">
-                                <i class="fas fa-copy"></i>
-                                Sao chép thông tin
-                            </button>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="cash-payment-section"
-                         th:if="${payment.paymentMethod.name() == 'CASH'}">
-                    <div class="ds-flex ds-flex-col ds-gap-3 ds-text-center">
-                        <h2 class="ds-heading-4">
-                            <i class="fas fa-money-bill-wave me-2"></i>
-                            Thanh toán tiền mặt tại nhà hàng
-                        </h2>
-                        <p class="ds-text-base ds-text-secondary status-caption">
-                            Vui lòng hoàn tất thanh toán trực tiếp tại quầy lễ tân khi đến nhà hàng để xác nhận đặt chỗ.
-                        </p>
-
-                        <div class="alert alert-info ds-text-start">
-                            <strong>Lưu ý:</strong>
-                            Bạn sẽ thanh toán
-                            <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
-                            tại nhà hàng. Hãy giữ mã đặt bàn
-                            <strong th:text="${payment.booking.bookingId}">#123</strong>
-                            để thuận tiện cho việc đối chiếu.
-                        </div>
-
-                        <div class="cash-actions ds-mt-3">
-                            <button type="button" class="ds-btn ds-btn-primary ds-btn-lg"
-                                    onclick="confirmCashPayment(event)">
-                                <i class="fas fa-check"></i>
-                                Xác nhận đã thanh toán
-                            </button>
                         </div>
                     </div>
                 </article>

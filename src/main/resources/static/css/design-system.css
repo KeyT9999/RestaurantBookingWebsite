@@ -1,3 +1,30 @@
+.ds-summary-grid {
+    display: grid;
+    gap: var(--ds-space-4);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.ds-summary-card {
+    padding: var(--ds-space-5);
+    border-radius: var(--ds-radius-xl);
+    background: linear-gradient(135deg, rgba(229, 231, 235, 0.6), rgba(229, 231, 235, 0.3));
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+    text-align: center;
+}
+
+.ds-summary-card small {
+    font-size: var(--ds-font-size-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ds-neutral-500);
+}
+
+.ds-summary-card strong {
+    font-size: var(--ds-font-size-lg);
+    color: var(--ds-neutral-900);
+}
 /* ================================================
    BOOK EAT DESIGN SYSTEM
    Unified Design System cho toàn bộ ứng dụng
@@ -596,6 +623,15 @@ body {
     box-shadow: var(--ds-shadow-lg);
 }
 
+.ds-card-emphasis {
+    border-color: var(--ds-neutral-200);
+    box-shadow: var(--ds-shadow-lg);
+}
+
+.ds-card-emphasis .ds-card-body {
+    padding: var(--ds-space-8);
+}
+
 .ds-card-header {
     padding: var(--ds-space-6);
     border-bottom: 1px solid var(--ds-neutral-300);
@@ -609,6 +645,10 @@ body {
     padding: var(--ds-space-6);
     border-top: 1px solid var(--ds-neutral-300);
     background-color: var(--ds-neutral-50);
+}
+
+.ds-surface-muted {
+    background: var(--ds-neutral-50);
 }
 
 /* Specialized Cards from home-resy.css */
@@ -766,6 +806,14 @@ body {
     display: flex;
     align-items: center;
     gap: var(--ds-space-4);
+}
+
+.ds-section {
+    padding: var(--ds-space-16) 0;
+}
+
+.ds-section-compact {
+    padding: var(--ds-space-12) 0;
 }
 
 /* Mini Header */
@@ -1429,6 +1477,24 @@ body {
     border: 1px solid var(--ds-info);
 }
 
+.ds-hero {
+    padding: var(--ds-space-16) 0;
+    background: var(--ds-neutral-50);
+}
+
+.ds-hero__title {
+    font-size: var(--ds-font-size-4xl);
+    font-weight: var(--ds-font-weight-semibold);
+    margin-bottom: var(--ds-space-3);
+    color: var(--ds-neutral-900);
+}
+
+.ds-hero__subtitle {
+    font-size: var(--ds-font-size-lg);
+    color: var(--ds-neutral-500);
+    max-width: 600px;
+}
+
 /* Breadcrumb */
 .ds-breadcrumb {
     margin-bottom: var(--ds-space-6);
@@ -1467,6 +1533,40 @@ body {
     color: var(--ds-primary-black);
     font-size: var(--ds-font-size-sm);
     font-weight: var(--ds-font-weight-medium);
+}
+
+.ds-status-ring {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--ds-primary-white);
+    box-shadow: var(--ds-shadow-lg);
+}
+
+.ds-status-ring--lg {
+    width: 96px;
+    height: 96px;
+    font-size: 2.75rem;
+}
+
+.ds-status--success {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.ds-status--warning {
+    background: linear-gradient(135deg, #f97316 0%, #facc15 100%);
+}
+
+.ds-status--error {
+    background: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
+}
+
+.ds-status--pending {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 }
 
 /* Pagination */
@@ -1996,5 +2096,63 @@ body {
     .data-table td {
         padding: var(--ds-space-2) var(--ds-space-3);
     }
+}
+
+.status-caption {
+    max-width: 540px;
+    color: var(--ds-neutral-500);
+}
+
+.qr-actions,
+.cash-actions {
+    display: flex;
+    gap: var(--ds-space-3);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.qr-actions > *,
+.cash-actions > * {
+    min-width: 180px;
+}
+
+.status-spinner {
+    width: 44px;
+    height: 44px;
+    border: 4px solid rgba(148, 163, 184, 0.35);
+    border-top-color: var(--ds-blue-600);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.payment-info {
+    background: var(--ds-primary-white);
+    border-radius: var(--ds-radius-lg);
+    padding: var(--ds-space-5);
+    border: 1px solid var(--ds-neutral-200);
+    box-shadow: var(--ds-shadow-sm);
+}
+
+.payment-info .info-item {
+    margin-bottom: var(--ds-space-4);
+    padding: var(--ds-space-3);
+    border-radius: var(--ds-radius-md);
+    background: var(--ds-neutral-100);
+    text-align: left;
+}
+
+.payment-info .info-item strong {
+    display: block;
+    font-size: var(--ds-font-size-xs);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ds-neutral-500);
+    margin-bottom: var(--ds-space-1);
+}
+
+.payment-info .info-item span {
+    font-size: var(--ds-font-size-base);
+    font-weight: var(--ds-font-weight-semibold);
+    color: var(--ds-neutral-900);
 }
 
