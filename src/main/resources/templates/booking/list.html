@@ -17,291 +17,181 @@
     <link th:href="@{/css/design-system.css}" rel="stylesheet">
 </head>
 
-<body>
+<body class="minimal-theme">
     <!-- Design System Header -->
     <div th:with="activeNav='reservations'" 
          th:replace="~{fragments/design-system-components :: unified-header}"></div>
     
     <!-- Main Content -->
-    <main class="main-content">
-        <div class="container mt-4">
+    <main class="main-content minimal-layout">
+        <div class="page-shell">
             <!-- Page Header -->
-            <div class="ds-card ds-mb-6">
-                <div class="ds-flex ds-justify-between ds-align-center">
-                    <div>
-                        <h1 class="ds-heading-2 ds-mb-2">
-                            <i class="fas fa-calendar-check ds-icon ds-icon-lg"></i> My Reservations
-                        </h1>
-                        <p class="ds-text-secondary ds-mb-0">Manage your dining experiences</p>
-                    </div>
-                    <div class="ds-flex ds-gap-3">
-                        <!-- Filter Buttons -->
-                        <div class="ds-btn-group" role="group">
-                            <input type="radio" class="ds-btn-check" name="filter" id="filter-all" 
-                                   th:checked="${currentFilter == 'all'}">
-                            <label class="ds-btn ds-btn-outline" for="filter-all" onclick="filterBookings('all')">
-                                <i class="fas fa-list"></i> All
-                                <span class="ds-badge ds-badge-primary ds-ml-2" 
-                                      th:text="${totalBookings + totalWaitlist}"></span>
-                            </label>
-
-                            <input type="radio" class="ds-btn-check" name="filter" id="filter-bookings"
-                                   th:checked="${currentFilter == 'bookings'}">
-                            <label class="ds-btn ds-btn-outline" for="filter-bookings" onclick="filterBookings('bookings')">
-                                <i class="fas fa-calendar-check"></i> Bookings
-                                <span class="ds-badge ds-badge-primary ds-ml-2" th:text="${totalBookings}"></span>
-                            </label>
-
-                            <input type="radio" class="ds-btn-check" name="filter" id="filter-waitlist"
-                                   th:checked="${currentFilter == 'waitlist'}">
-                            <label class="ds-btn ds-btn-outline" for="filter-waitlist" onclick="filterBookings('waitlist')">
-                                <i class="fas fa-clock"></i> Waitlist
-                                <span class="ds-badge ds-badge-primary ds-ml-2" th:text="${totalWaitlist}"></span>
-                            </label>
-                        </div>
-                        
-                        <a href="/booking/new" class="ds-btn ds-btn-primary">
-                            <i class="fas fa-plus-circle"></i> New Reservation
-                        </a>
-                    </div>
+            <header class="page-header">
+                <div class="page-header__content">
+                    <h1 class="page-title">My Reservations</h1>
+                    <p class="page-subtitle">Manage your dining experiences</p>
                 </div>
-            </div>
+                <div class="segment-control" role="tablist">
+                    <button type="button"
+                            class="segment-control__item"
+                            th:classappend="${currentFilter == 'all'} ? ' is-active'"
+                            onclick="filterBookings('all')"
+                            th:attr="aria-pressed=${currentFilter == 'all'}">
+                        <span>All</span>
+                        <span class="segment-control__count"
+                              th:text="${totalBookings + totalWaitlist}">0</span>
+                    </button>
+                    <button type="button"
+                            class="segment-control__item"
+                            th:classappend="${currentFilter == 'bookings'} ? ' is-active'"
+                            onclick="filterBookings('bookings')"
+                            th:attr="aria-pressed=${currentFilter == 'bookings'}">
+                        <span>Bookings</span>
+                        <span class="segment-control__count"
+                              th:text="${totalBookings}">0</span>
+                    </button>
+                    <button type="button"
+                            class="segment-control__item"
+                            th:classappend="${currentFilter == 'waitlist'} ? ' is-active'"
+                            onclick="filterBookings('waitlist')"
+                            th:attr="aria-pressed=${currentFilter == 'waitlist'}">
+                        <span>Waitlist</span>
+                        <span class="segment-control__count"
+                              th:text="${totalWaitlist}">0</span>
+                    </button>
+                </div>
+            </header>
             
             <!-- Flash Messages -->
-            <div th:if="${successMessage}" class="ds-alert ds-alert-success ds-mb-4" role="alert">
-                <i class="fas fa-check-circle ds-icon"></i>
-                <span th:text="${successMessage}"></span>
-            </div>
-            
-            <div th:if="${errorMessage}" class="ds-alert ds-alert-error ds-mb-4" role="alert">
-                <i class="fas fa-exclamation-triangle ds-icon"></i>
-                <span th:text="${errorMessage}"></span>
-            </div>
-            
-            <!-- Payment Info Alert -->
-            <div th:if="${totalBookings > 0}" class="ds-alert ds-alert-info ds-mb-4">
-                <div class="ds-flex ds-align-center">
-                    <i class="fas fa-info-circle ds-icon ds-mr-3"></i>
-                    <div>
-                        <strong class="ds-text-primary">Payment Available</strong>
-                        <p class="ds-mb-0 ds-text-secondary">Complete payment for pending reservations to confirm your booking. Look for the <i class="fas fa-credit-card ds-text-success"></i> Pay button on pending bookings.</p>
-                    </div>
+            <div class="flash-area">
+                <div th:if="${successMessage}" class="flash flash--success" role="status">
+                    <span class="flash__label">Success</span>
+                    <span th:text="${successMessage}"></span>
+                </div>
+                
+                <div th:if="${errorMessage}" class="flash flash--error" role="alert">
+                    <span class="flash__label">Error</span>
+                    <span th:text="${errorMessage}"></span>
+                </div>
+                
+                <!-- Payment Info Alert -->
+                <div th:if="${totalBookings > 0}" class="flash flash--info" role="status">
+                    <span class="flash__label">Payment</span>
+                    <span>Complete payment for pending reservations to confirm your booking. Look for the pay action on pending bookings.</span>
                 </div>
             </div>
             
             <!-- Reservations Content -->
-            <div class="ds-card">
+            <section class="surface-block">
                 <!-- Regular Bookings Section -->
-                <div th:if="${currentFilter == 'all' or currentFilter == 'bookings'}">
-                    <div class="ds-flex ds-justify-between ds-align-center ds-mb-4">
-                        <h3 class="ds-heading-3 ds-mb-0">
-                            <i class="fas fa-calendar-check ds-icon"></i> 
-                            Confirmed Bookings
-                            <span class="ds-badge ds-badge-success ds-ml-2" th:text="${totalBookings}"></span>
-                        </h3>
+                <div th:if="${currentFilter == 'all' or currentFilter == 'bookings'}" class="stack gap-24">
+                    <div class="section-header">
+                        <h2 class="section-title">Confirmed bookings</h2>
+                        <span class="section-meta" th:text="${totalBookings + ' reservations'}"></span>
                     </div>
                     
-                    <div th:if="${#lists.isEmpty(bookings)}" class="ds-text-center ds-py-6">
-                        <i class="fas fa-calendar-times ds-icon ds-icon-3xl ds-text-secondary ds-mb-4" style="opacity: 0.6;"></i>
-                        <h4 class="ds-heading-4 ds-mb-3">No Confirmed Bookings</h4>
-                        <p class="ds-text-secondary ds-mb-4">You don't have any confirmed reservations yet.</p>
-                        <a href="/booking/new" class="ds-btn ds-btn-primary">
-                            <i class="fas fa-plus-circle"></i> Make a Reservation
-                        </a>
+                    <div th:if="${#lists.isEmpty(bookings)}" class="empty-state">
+                        <div class="empty-state__icon" aria-hidden="true">📅</div>
+                        <h3 class="empty-state__title">No confirmed bookings</h3>
+                        <p class="empty-state__body">You don't have any confirmed reservations yet.</p>
+                        <a href="/booking/new" class="button button--primary">Make a reservation</a>
                     </div>
                 
-                <div th:unless="${#lists.isEmpty(bookings)}">
-                    <!-- Desktop Table View -->
-                    <div class="d-none d-lg-block">
-                        <div class="ds-table-responsive">
-                            <table class="ds-table ds-table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Booking ID</th>
-                                        <th>Restaurant</th>
-                                        <th>Table</th>
-                                        <th>Date & Time</th>
-                                        <th>Guests</th>
-                                        <th>Deposit</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="booking : ${bookings}">
-                                        <td>
-                                            <code class="ds-code" 
-                                                  th:text="|${#strings.substring(booking.bookingId.toString(), 0, #strings.length(booking.bookingId.toString()) > 8 ? 8 : #strings.length(booking.bookingId.toString()))}|"></code>
-                                        </td>
-                                        <td>
-                                            <div>
-                                                <strong class="ds-text-primary" th:text="${booking.restaurant != null ? booking.restaurant.restaurantName : 'N/A'}"></strong>
-                                                <br>
-                                                <small class="ds-text-secondary" th:text="${booking.restaurant != null ? booking.restaurant.address : ''}"></small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span th:if="${booking.table}" 
-                                                  th:text="${booking.table.tableName}"
-                                                  class="ds-badge ds-badge-primary"></span>
-                                            <span th:unless="${booking.table}" 
-                                                  class="ds-text-secondary" style="font-style: italic;">No preference</span>
-                                        </td>
-                                        <td>
-                                            <i class="fas fa-clock ds-icon ds-mr-2"></i>
-                                            <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}"></span>
-                                        </td>
-                                        <td>
-                                            <i class="fas fa-users ds-icon ds-mr-2"></i>
-                                            <span th:text="${booking.numberOfGuests}"></span>
-                                        </td>
-                                        <td>
-                                            <span th:if="${booking.hasDeposit()}" 
-                                                  class="ds-badge ds-badge-success">
-                                                <i class="fas fa-money-bill-wave"></i>
-                                                <span th:text="|${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')} VNĐ|"></span>
-                                            </span>
-                                            <span th:unless="${booking.hasDeposit()}" 
-                                                  class="ds-text-secondary" style="font-style: italic;">No deposit</span>
-                                        </td>
-                                        <td>
-                                            <span class="ds-badge ds-badge-warning"
-                                                  th:if="${booking.status != null and booking.status.name() == 'PENDING'}">
-                                                <i class="fas fa-clock"></i> Pending
-                                            </span>
-                                            <span class="ds-badge ds-badge-success"
-                                                  th:if="${booking.status != null and booking.status.name() == 'CONFIRMED'}">
-                                                <i class="fas fa-check-circle"></i> Confirmed
-                                            </span>
-                                            <span class="ds-badge ds-badge-error"
-                                                  th:if="${booking.status != null and booking.status.name() == 'CANCELLED'}">
-                                                <i class="fas fa-times-circle"></i> Cancelled
-                                            </span>
-                                            <span class="ds-badge ds-badge-secondary"
-                                                  th:if="${booking.status != null and booking.status.name() == 'NO_SHOW'}">
-                                                <i class="fas fa-user-times"></i> No Show
-                                            </span>
-                                            <span class="ds-badge ds-badge-secondary"
-                                                  th:if="${booking.status == null}">
-                                                <i class="fas fa-question-circle"></i> Unknown
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div class="ds-btn-group ds-btn-group-sm" role="group">
-                                                <button type="button" 
-                                                        class="ds-btn ds-btn-outline ds-btn-sm"
-                                                        title="View Details"
-                                                        onclick="showBookingDetails(this)"
-                                                        th:data-booking-id="${booking.bookingId}">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <a th:if="${booking.canBeEdited()}" 
-                                                   th:href="@{/booking/{id}/edit(id=${booking.bookingId})}" 
-                                                   class="ds-btn ds-btn-outline ds-btn-sm"
-                                                   title="Edit Reservation">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <!-- Payment Button for PENDING bookings with deposit -->
-                                                <a th:if="${booking.status != null and booking.status.name() == 'PENDING' and booking.hasDeposit()}" 
-                                                   th:href="@{|/payment/${booking.bookingId}|}" 
-                                                   class="ds-btn ds-btn-outline ds-btn-sm ds-btn-success"
-                                                   title="Complete Payment">
-                                                    <i class="fas fa-credit-card"></i> Pay
-                                                </a>
-                                                <button th:if="${booking.canBeCancelled()}" 
-                                                        type="button" 
-                                                        class="ds-btn ds-btn-outline ds-btn-sm ds-btn-error"
-                                                        title="Cancel Reservation"
-                                                        onclick="confirmCancel(this)"
-                                                        th:data-booking-id="${booking.bookingId}"
-                                                        th:data-restaurant-name="${booking.restaurant != null ? booking.restaurant.restaurantName : ''}">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <!-- Mobile Card View -->
-                    <div class="d-lg-none">
-                        <div th:each="booking : ${bookings}" class="card mb-3" style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="luxury-title mb-0" th:text="${booking.restaurant != null ? booking.restaurant.restaurantName : 'N/A'}"></h6>
-                                    <span>
-                                        <span class="badge bg-warning text-dark"
+                <div th:unless="${#lists.isEmpty(bookings)}" class="table-wrapper">
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Booking</th>
+                                    <th scope="col">Restaurant</th>
+                                    <th scope="col">Table</th>
+                                    <th scope="col">Date &amp; time</th>
+                                    <th scope="col">Guests</th>
+                                    <th scope="col">Deposit</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Created</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="booking : ${bookings}">
+                                    <td>
+                                        <span class="mono" th:text="|${#strings.substring(booking.bookingId.toString(), 0, #strings.length(booking.bookingId.toString()) > 8 ? 8 : #strings.length(booking.bookingId.toString()))}|"></span>
+                                    </td>
+                                    <td>
+                                        <div class="stack gap-4">
+                                            <span class="text-strong" th:text="${booking.restaurant != null ? booking.restaurant.restaurantName : 'N/A'}"></span>
+                                            <span class="text-muted" th:text="${booking.restaurant != null ? booking.restaurant.address : ''}"></span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span th:if="${booking.table}" class="badge" th:text="${booking.table.tableName}"></span>
+                                        <span th:unless="${booking.table}" class="text-muted">No preference</span>
+                                    </td>
+                                    <td>
+                                        <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}"></span>
+                                    </td>
+                                    <td>
+                                        <span th:text="${booking.numberOfGuests}"></span>
+                                    </td>
+                                    <td>
+                                        <span th:if="${booking.hasDeposit()}" class="text-strong" th:text="|${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')} VNĐ|"></span>
+                                        <span th:unless="${booking.hasDeposit()}" class="text-muted">No deposit</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge--pending"
                                               th:if="${booking.status != null and booking.status.name() == 'PENDING'}">Pending</span>
-                                        <span class="badge bg-success"
+                                        <span class="badge badge--success"
                                               th:if="${booking.status != null and booking.status.name() == 'CONFIRMED'}">Confirmed</span>
-                                        <span class="badge bg-danger"
+                                        <span class="badge badge--error"
                                               th:if="${booking.status != null and booking.status.name() == 'CANCELLED'}">Cancelled</span>
-                                        <span class="badge bg-secondary"
-                                              th:if="${booking.status != null and booking.status.name() == 'NO_SHOW'}">No Show</span>
-                                        <span class="badge bg-secondary"
+                                        <span class="badge"
+                                              th:if="${booking.status != null and booking.status.name() == 'NO_SHOW'}">No show</span>
+                                        <span class="badge"
                                               th:if="${booking.status == null}">Unknown</span>
-                                    </span>
-                                </div>
-                                
-                                <p class="text-muted small mb-2" th:text="${booking.restaurant != null ? booking.restaurant.address : ''}"></p>
-                                
-                                <div class="row mb-2">
-                                    <div class="col-6">
-                                        <small style="color: var(--luxury-gray);">
-                                            <i class="fas fa-clock luxury-icon"></i>
-                                            <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}"></span>
-                                        </small>
-                                    </div>
-                                    <div class="col-6">
-                                        <small style="color: var(--luxury-gray);">
-                                            <i class="fas fa-users luxury-icon"></i>
-                                            <span th:text="|${booking.numberOfGuests} guests|"></span>
-                                        </small>
-                                    </div>
-                                </div>
-                                
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <small>
-                                        <code style="background: rgba(212, 175, 55, 0.2); color: var(--luxury-gold-light); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem;" 
-                                              th:text="|${#strings.substring(booking.bookingId.toString(), 0, #strings.length(booking.bookingId.toString()) > 8 ? 8 : #strings.length(booking.bookingId.toString()))}...|"></code>
-                                    </small>
-                                    <div class="btn-group btn-group-sm">
-                                        <button type="button" 
-                                                class="btn btn-outline-info btn-sm"
-                                                title="View Details"
-                                                onclick="showBookingDetails(this)"
-                                                th:data-booking-id="${booking.bookingId}"
-                                                style="border-color: var(--luxury-gold); color: var(--luxury-gold);">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <a th:if="${booking.canBeEdited()}" 
-                                           th:href="@{/booking/{id}/edit(id=${booking.bookingId})}" 
-                                           class="btn btn-outline-warning btn-sm"
-                                           style="border-color: var(--luxury-gold); color: var(--luxury-gold);">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <!-- Payment Button for PENDING bookings with deposit -->
-                                        <a th:if="${booking.status != null and booking.status.name() == 'PENDING' and booking.hasDeposit()}" 
-                                           th:href="@{|/payment/${booking.bookingId}|}" 
-                                           class="btn btn-outline-success btn-sm"
-                                           title="Complete Payment"
-                                           style="border-color: var(--luxury-gold); color: var(--luxury-gold); background: rgba(40, 167, 69, 0.1);">
-                                            <i class="fas fa-credit-card"></i>
-                                        </a>
-                                        <button th:if="${booking.canBeCancelled()}" 
-                                                type="button" 
-                                                class="btn btn-outline-danger btn-sm"
-                                                onclick="confirmCancel(this)"
-                                                th:data-booking-id="${booking.bookingId}"
-                                                th:data-restaurant-name="${booking.restaurant != null ? booking.restaurant.restaurantName : ''}">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted" th:text="${#temporals.format(booking.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
+                                    </td>
+                                    <td>
+                                        <div class="action-bar">
+                                            <button type="button"
+                                                    class="icon-button"
+                                                    title="View details"
+                                                    onclick="showBookingDetails(this)"
+                                                    th:data-booking-id="${booking.bookingId}">
+                                                <span class="sr-only">View details</span>
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
+                                            </button>
+                                            <a th:if="${booking.canBeEdited()}"
+                                               th:href="@{/booking/{id}/edit(id=${booking.bookingId})}"
+                                               class="icon-button"
+                                               title="Edit reservation">
+                                                <span class="sr-only">Edit reservation</span>
+                                                <i class="fas fa-edit" aria-hidden="true"></i>
+                                            </a>
+                                            <a th:if="${booking.status != null and booking.status.name() == 'PENDING' and booking.hasDeposit()}"
+                                               th:href="@{|/payment/${booking.bookingId}|}"
+                                               class="icon-button"
+                                               title="Complete payment">
+                                                <span class="sr-only">Complete payment</span>
+                                                <i class="fas fa-credit-card" aria-hidden="true"></i>
+                                            </a>
+                                            <button th:if="${booking.canBeCancelled()}"
+                                                    type="button"
+                                                    class="icon-button icon-button--danger"
+                                                    title="Cancel reservation"
+                                                    onclick="confirmCancel(this)"
+                                                    th:data-booking-id="${booking.bookingId}"
+                                                    th:data-restaurant-name="${booking.restaurant != null ? booking.restaurant.restaurantName : ''}">
+                                                <span class="sr-only">Cancel reservation</span>
+                                                <i class="fas fa-times" aria-hidden="true"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -309,198 +199,106 @@
             <!-- Waitlist Section -->
             <div th:if="${currentFilter == 'all' or currentFilter == 'waitlist'}">
                 <!-- Separator -->
-                <div th:if="${currentFilter == 'all' and !#lists.isEmpty(bookings) and !#lists.isEmpty(waitlistEntries)}" 
-                     class="border-top border-warning my-4"></div>
-                     
-                <div th:if="${currentFilter == 'all' or currentFilter == 'waitlist'}">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="luxury-title mb-0">
-                            <i class="fas fa-clock luxury-icon"></i> 
-                            Waitlist Entries
-                            <span class="badge bg-info ms-2" th:text="${totalWaitlist}"></span>
-                        </h4>
-                    </div>
-                    
-                    <div th:if="${#lists.isEmpty(waitlistEntries)}" class="text-center py-4">
-                        <i class="fas fa-clock" style="font-size: 3rem; color: var(--luxury-gold); margin-bottom: 1rem; opacity: 0.6;"></i>
-                        <h5 class="luxury-title mb-3">No Waitlist Entries</h5>
-                        <p class="text-muted mb-4">You're not currently on any waitlists.</p>
-                    </div>
-                    
-                    <div th:unless="${#lists.isEmpty(waitlistEntries)}">
-                        <!-- Desktop Waitlist Table -->
-                        <div class="d-none d-lg-block">
-                            <div class="table-responsive">
-                                <table class="table table-hover" style="color: var(--luxury-white);">
-                                    <thead style="border-bottom: 2px solid var(--luxury-gold);">
-                                        <tr>
-                                            <th style="color: var(--luxury-gold); font-weight: 600;">Position</th>
-                                            <th style="color: var(--luxury-gold); font-weight: 600;">Restaurant</th>
-                                            <th style="color: var(--luxury-gold); font-weight: 600;">Guests</th>
-                                            <th style="color: var(--luxury-gold); font-weight: 600;">Joined</th>
-                                            <th style="color: var(--luxury-gold); font-weight: 600;">Est. Wait</th>
-                                            <th style="color: var(--luxury-gold); font-weight: 600;">Status</th>
-                                            <th style="color: var(--luxury-gold); font-weight: 600;">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr th:each="waitlist, iterStat : ${waitlistEntries}" 
-                                            style="border-bottom: 1px solid rgba(212, 175, 55, 0.2);">
-                                            <td>
-                                                <span class="badge bg-primary fs-6">#<span th:text="${iterStat.index + 1}"></span></span>
-                                            </td>
-                                            <td>
-                                                <div>
-                                                    <strong th:text="${waitlist.restaurant.restaurantName}" style="color: var(--luxury-white);"></strong>
-                                                    <br>
-                                                    <small class="text-muted" th:text="${waitlist.restaurant.address}"></small>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-info" th:text="|${waitlist.partySize} guests|"></span>
-                                            </td>
-                                            <td>
-                                                <i class="fas fa-clock luxury-icon"></i>
-                                                <span th:text="${#temporals.format(waitlist.joinTime, 'dd/MM HH:mm')}" style="color: var(--luxury-white);"></span>
-                                            </td>
-                                            <td>
-                                                <span th:text="|~${waitlist.estimatedWaitTime} min|" 
-                                                      style="color: var(--luxury-white);"></span>
-                                                <br>
-                                                <small class="text-muted" th:if="${iterStat.index == 0}">Next in line</small>
-                                                <small class="text-muted" th:unless="${iterStat.index == 0}">#<span th:text="${iterStat.index}"></span> in queue</small>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-warning text-dark"
-                                                      th:if="${waitlist.status.name() == 'WAITING'}">
-                                                    <i class="fas fa-clock"></i> Waiting
-                                                </span>
-                                                <span class="badge bg-success"
-                                                      th:if="${waitlist.status.name() == 'CALLED'}">
-                                                    <i class="fas fa-phone"></i> Called
-                                                </span>
-                                                <span class="badge bg-danger"
-                                                      th:if="${waitlist.status.name() == 'CANCELLED'}">
-                                                    <i class="fas fa-times"></i> Cancelled
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button" 
-                                                            class="btn btn-outline-info btn-sm"
-                                                            title="View Details"
-                                                            onclick="showWaitlistDetails(this)"
-                                                            th:data-waitlist-id="${waitlist.waitlistId}">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button type="button" 
-                                                            class="btn btn-outline-danger btn-sm"
-                                                            title="Cancel Waitlist"
-                                                            onclick="cancelWaitlist(this)"
-                                                            th:data-waitlist-id="${waitlist.waitlistId}">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-                        <!-- Mobile Waitlist Cards -->
-                        <div class="d-lg-none">
-                            <div th:each="waitlist, iterStat : ${waitlistEntries}" class="card mb-3" 
-                                 style="background: rgba(26, 26, 26, 0.8); border: 1px solid var(--luxury-gold);">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <h6 class="luxury-title mb-0" th:text="${waitlist.restaurant.restaurantName}"></h6>
-                                        <span class="badge bg-primary">#<span th:text="${iterStat.index + 1}"></span></span>
-                                    </div>
-                                    
-                                    <p class="text-muted small mb-2" th:text="${waitlist.restaurant.address}"></p>
-                                    
-                                    <div class="row mb-2">
-                                        <div class="col-6">
-                                            <small style="color: var(--luxury-gray);">
-                                                <i class="fas fa-users luxury-icon"></i>
-                                                <span th:text="|${waitlist.partySize} guests|"></span>
-                                            </small>
+            <div th:if="${currentFilter == 'all' or currentFilter == 'waitlist'}" class="stack gap-24">
+                <div class="divider" th:if="${currentFilter == 'all' and !#lists.isEmpty(bookings) and !#lists.isEmpty(waitlistEntries)}"></div>
+                <div class="section-header">
+                    <h2 class="section-title">Waitlist entries</h2>
+                    <span class="section-meta" th:text="${totalWaitlist + ' entries'}"></span>
+                </div>
+
+                <div th:if="${#lists.isEmpty(waitlistEntries)}" class="empty-state">
+                    <div class="empty-state__icon" aria-hidden="true">⏳</div>
+                    <h3 class="empty-state__title">No waitlist entries</h3>
+                    <p class="empty-state__body">You're not currently on any waitlists.</p>
+                </div>
+
+                <div th:unless="${#lists.isEmpty(waitlistEntries)}" class="table-wrapper">
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Position</th>
+                                    <th scope="col">Restaurant</th>
+                                    <th scope="col">Guests</th>
+                                    <th scope="col">Joined</th>
+                                    <th scope="col">Est. wait</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="waitlist, iterStat : ${waitlistEntries}">
+                                    <td><span class="badge" th:text="|#${iterStat.index + 1}|"></span></td>
+                                    <td>
+                                        <div class="stack gap-4">
+                                            <span class="text-strong" th:text="${waitlist.restaurant.restaurantName}"></span>
+                                            <span class="text-muted" th:text="${waitlist.restaurant.address}"></span>
                                         </div>
-                                        <div class="col-6">
-                                            <small style="color: var(--luxury-gray);">
-                                                <i class="fas fa-clock luxury-icon"></i>
-                                                <span th:text="|~${waitlist.estimatedWaitTime} min|"></span>
-                                            </small>
+                                    </td>
+                                    <td><span class="text-strong" th:text="|${waitlist.partySize} guests|"></span></td>
+                                    <td><span th:text="${#temporals.format(waitlist.joinTime, 'dd/MM HH:mm')}"></span></td>
+                                    <td>
+                                        <div class="stack gap-4">
+                                            <span th:text="|~${waitlist.estimatedWaitTime} min|"></span>
+                                            <span class="text-muted" th:text="${iterStat.index == 0 ? 'Next in line' : '#' + iterStat.index + ' in queue'}"></span>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="row mb-2">
-                                        <div class="col-12">
-                                            <small style="color: var(--luxury-gray);">
-                                                <i class="fas fa-calendar luxury-icon"></i>
-                                                <span th:text="${#temporals.format(waitlist.joinTime, 'dd/MM HH:mm')}"></span>
-                                                <span th:if="${iterStat.index == 0}" class="badge bg-success ms-2">Next!</span>
-                                                <span th:unless="${iterStat.index == 0}" class="badge bg-info ms-2">#<span th:text="${iterStat.index}"></span></span>
-                                            </small>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="badge bg-warning text-dark"
-                                                  th:if="${waitlist.status.name() == 'WAITING'}">Waiting</span>
-                                            <span class="badge bg-success"
-                                                  th:if="${waitlist.status.name() == 'CALLED'}">Called</span>
-                                            <span class="badge bg-danger"
-                                                  th:if="${waitlist.status.name() == 'CANCELLED'}">Cancelled</span>
-                                        </div>
-                                        <div class="btn-group btn-group-sm">
-                                            <button type="button" 
-                                                    class="btn btn-outline-info btn-sm"
-                                                    title="View Details"
+                                    </td>
+                                    <td>
+                                        <span class="badge badge--pending" th:if="${waitlist.status.name() == 'WAITING'}">Waiting</span>
+                                        <span class="badge badge--info" th:if="${waitlist.status.name() == 'CALLED'}">Called</span>
+                                        <span class="badge badge--error" th:if="${waitlist.status.name() == 'CANCELLED'}">Cancelled</span>
+                                    </td>
+                                    <td>
+                                        <div class="action-bar">
+                                            <button type="button"
+                                                    class="icon-button"
+                                                    title="View details"
                                                     onclick="showWaitlistDetails(this)"
                                                     th:data-waitlist-id="${waitlist.waitlistId}">
-                                                <i class="fas fa-eye"></i>
+                                                <span class="sr-only">View details</span>
+                                                <i class="fas fa-eye" aria-hidden="true"></i>
                                             </button>
-                                            <button type="button" 
-                                                    class="btn btn-outline-danger btn-sm"
+                                            <button type="button"
+                                                    class="icon-button icon-button--danger"
+                                                    title="Cancel waitlist"
                                                     onclick="cancelWaitlist(this)"
                                                     th:data-waitlist-id="${waitlist.waitlistId}">
-                                                <i class="fas fa-times"></i>
+                                                <span class="sr-only">Cancel waitlist</span>
+                                                <i class="fas fa-times" aria-hidden="true"></i>
                                             </button>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+            </div>
             </div>
             
             <!-- Booking Details Modal -->
             <div class="modal fade" id="bookingDetailsModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
-                    <div class="modal-content" style="border: 2px solid var(--luxury-gold);">
-                        <div class="modal-header" style="border-bottom: 1px solid var(--luxury-gold);">
-                            <h5 class="modal-title luxury-title">
-                                <i class="fas fa-calendar-alt" style="color: var(--luxury-gold);"></i>
+                    <div class="modal-content ds-card">
+                        <div class="modal-header ds-card-header">
+                            <h5 class="modal-title ds-heading-4">
+                                <i class="fas fa-calendar-alt ds-icon"></i>
                                 Booking Details
                             </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
+                        <div class="modal-body ds-card-body">
                             <div id="bookingDetailsContent">
-                                <div class="text-center">
+                                <div class="ds-text-center ds-py-4">
                                     <div class="spinner-border text-warning" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
-                                    <p class="mt-2 text-muted">Loading booking details...</p>
+                                    <p class="ds-mt-3 ds-text-secondary">Loading booking details...</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer" style="border-top: 1px solid var(--luxury-gold);">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <div class="modal-footer ds-card-footer">
+                            <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">
                                 <i class="fas fa-times"></i> Close
                             </button>
                         </div>
@@ -511,31 +309,31 @@
             <!-- Cancel Booking Modal -->
             <div class="modal fade" id="cancelModal" tabindex="-1">
                 <div class="modal-dialog">
-                    <div class="modal-content" style="border: 2px solid var(--luxury-gold);">
-                        <div class="modal-header" style="border-bottom: 1px solid var(--luxury-gold);">
-                            <h5 class="modal-title luxury-title">
-                                <i class="fas fa-exclamation-triangle" style="color: #ffc107;"></i>
+                    <div class="modal-content ds-card">
+                        <div class="modal-header ds-card-header">
+                            <h5 class="modal-title ds-heading-4">
+                                <i class="fas fa-exclamation-triangle ds-text-warning"></i>
                                 Confirm Cancellation
                             </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
-                            <p style="color: var(--luxury-white);">Are you sure you want to cancel this reservation?</p>
-                            <div class="alert alert-info" style="background: rgba(212, 175, 55, 0.1); border: 1px solid var(--luxury-gold); color: var(--luxury-white);">
+                        <div class="modal-body ds-card-body">
+                            <p class="ds-text-primary">Are you sure you want to cancel this reservation?</p>
+                            <div class="ds-alert ds-alert-info">
                                 <strong>Restaurant:</strong> <span id="modalRestaurantName"></span><br>
                                 <strong>Booking ID:</strong> <span id="modalBookingId"></span>
                             </div>
-                            <p class="text-muted">
-                                <i class="fas fa-info-circle luxury-icon"></i>
+                            <p class="ds-text-secondary">
+                                <i class="fas fa-info-circle ds-icon"></i>
                                 This action cannot be undone.
                             </p>
                         </div>
-                        <div class="modal-footer" style="border-top: 1px solid var(--luxury-gold);">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <div class="modal-footer ds-card-footer">
+                            <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">
                                 <i class="fas fa-times"></i> Cancel
                             </button>
                             <form id="cancelForm" method="post" style="display: inline;">
-                                <button type="submit" class="btn btn-danger">
+                                <button type="submit" class="ds-btn ds-btn-error">
                                     <i class="fas fa-trash-alt"></i> Yes, Cancel Reservation
                                 </button>
                             </form>
@@ -547,26 +345,26 @@
             <!-- Waitlist Detail Modal -->
             <div class="modal fade" id="waitlistDetailModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
-                    <div class="modal-content" style="border: 2px solid var(--luxury-gold);">
-                        <div class="modal-header" style="border-bottom: 1px solid var(--luxury-gold);">
-                            <h5 class="modal-title luxury-title">
-                                <i class="fas fa-clock" style="color: var(--luxury-gold);"></i>
+                    <div class="modal-content ds-card">
+                        <div class="modal-header ds-card-header">
+                            <h5 class="modal-title ds-heading-4">
+                                <i class="fas fa-clock ds-icon"></i>
                                 Waitlist Details
                             </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                        <div class="modal-body">
+                        <div class="modal-body ds-card-body">
                             <div id="waitlistDetailContent">
-                                <div class="text-center">
+                                <div class="ds-text-center ds-py-4">
                                     <div class="spinner-border text-warning" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
-                                    <p class="mt-2 text-muted">Loading waitlist details...</p>
+                                    <p class="ds-mt-3 ds-text-secondary">Loading waitlist details...</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer" style="border-top: 1px solid var(--luxury-gold);">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <div class="modal-footer ds-card-footer">
+                            <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">
                                 <i class="fas fa-times"></i> Close
                             </button>
                         </div>
@@ -1227,3 +1025,4 @@
     </script>
 </body>
 </html>
+

@@ -1,6 +1,8 @@
 package com.example.booking.service;
 
 import com.example.booking.domain.RateLimitStatistics;
+import com.example.booking.domain.SuspiciousActivity;
+import com.example.booking.domain.RequestPattern;
 import com.example.booking.repository.RateLimitStatisticsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -307,78 +309,5 @@ public class AdvancedRateLimitingService {
                 entry.getValue().getTimestamp().isBefore(cutoffTime));
         
         logger.info("🧹 CLEANUP COMPLETED - Cleaned up old rate limiting data");
-    }
-    
-    /**
-     * Inner class to track request patterns
-     */
-    private static class RequestPattern {
-        private final List<RequestInfo> requests = new ArrayList<>();
-        private LocalDateTime lastRequestTime = LocalDateTime.now();
-        
-        public void addRequest(String path, String userAgent, LocalDateTime timestamp) {
-            requests.add(new RequestInfo(path, userAgent, timestamp));
-            this.lastRequestTime = timestamp;
-            
-            // Keep only last 100 requests
-            if (requests.size() > 100) {
-                requests.remove(0);
-            }
-        }
-        
-        public int getRequestsInLastMinute() {
-            LocalDateTime oneMinuteAgo = LocalDateTime.now().minusMinutes(1);
-            return (int) requests.stream()
-                    .filter(r -> r.getTimestamp().isAfter(oneMinuteAgo))
-                    .count();
-        }
-        
-        public boolean hasUnusualPattern() {
-            // Check for patterns like repeated requests to same endpoint
-            Map<String, Long> pathCounts = requests.stream()
-                    .collect(java.util.stream.Collectors.groupingBy(
-                            RequestInfo::getPath, 
-                            java.util.stream.Collectors.counting()));
-            
-            return pathCounts.values().stream().anyMatch(count -> count > 20);
-        }
-        
-        public LocalDateTime getLastRequestTime() {
-            return lastRequestTime;
-        }
-        
-        private static class RequestInfo {
-            private final String path;
-            private final String userAgent;
-            private final LocalDateTime timestamp;
-            
-            public RequestInfo(String path, String userAgent, LocalDateTime timestamp) {
-                this.path = path;
-                this.userAgent = userAgent;
-                this.timestamp = timestamp;
-            }
-            
-            public String getPath() { return path; }
-            public LocalDateTime getTimestamp() { return timestamp; }
-        }
-    }
-    
-    /**
-     * Inner class to track suspicious activity
-     */
-    private static class SuspiciousActivity {
-        private final String type;
-        private final String details;
-        private final LocalDateTime timestamp;
-        
-        public SuspiciousActivity(String type, String details) {
-            this.type = type;
-            this.details = details;
-            this.timestamp = LocalDateTime.now();
-        }
-        
-        public String getType() { return type; }
-        public String getDetails() { return details; }
-        public LocalDateTime getTimestamp() { return timestamp; }
     }
 }

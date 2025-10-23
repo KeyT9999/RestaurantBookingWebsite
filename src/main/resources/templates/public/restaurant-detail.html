@@ -1151,11 +1151,8 @@
                             <div class="fw-bold">
                                 <span th:text="${restaurant.formattedAverageRating}">4.5</span>
                                 <span class="text-warning ms-1">
-                                    <i class="fas fa-star"></i>
-                                    <i class="fas fa-star"></i>
-                                    <i class="fas fa-star"></i>
-                                    <i class="fas fa-star"></i>
-                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star" th:each="i : ${#numbers.sequence(1, 5)}" 
+                                       th:classappend="${i <= restaurant.averageRating} ? '' : 'text-muted'"></i>
                                 </span>
                                 <br>
                                 <small class="text-muted" th:text="|${restaurant.reviewCount} đánh giá|">150 đánh giá</small>
