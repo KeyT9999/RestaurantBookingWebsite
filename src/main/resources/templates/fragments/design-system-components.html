@@ -15,20 +15,6 @@
      1. UNIFIED HEADER COMPONENT
      ================================================ -->
 <div th:fragment="unified-header" class="ds-unified-header">
-    <!-- Mini Header - Only show for non-customer users -->
-    <div class="ds-mini-header" sec:authorize="!hasRole('CUSTOMER')">
-        <div class="ds-container">
-            <div class="ds-mini-header-content">
-                <div class="ds-mini-header-left">
-                    <!-- Có thể thêm thông tin khác ở đây -->
-                </div>
-                <div class="ds-mini-header-right">
-                    <a th:href="@{/restaurant-owner/dashboard}" class="ds-for-restaurants" sec:authorize="hasRole('RESTAURANT_OWNER')">For Restaurants</a>
-                    <a th:href="@{/auth/register}" class="ds-for-restaurants" sec:authorize="!isAuthenticated()">For Restaurants</a>
-                </div>
-            </div>
-        </div>
-    </div>
     
     <!-- Main Header -->
     <nav class="ds-navbar">

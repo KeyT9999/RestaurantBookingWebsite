@@ -62,5 +62,5 @@ ai:
     timeout-ms: ${OPENAI_TIMEOUT_MS:800}
   
   features:
-    enabled: ${AI_ENABLED:false}
-    search-enabled: ${AI_SEARCH_ENABLED:false} 
+    enabled: ${AI_ENABLED:true}
+    search-enabled: ${AI_SEARCH_ENABLED:true} 

@@ -7,20 +7,6 @@
 <body>
     <!-- Resy Style Header Fragment -->
     <div th:fragment="resy-header">
-        <!-- Mini Header - Only show for non-customer users -->
-        <div class="mini-header" sec:authorize="!hasRole('CUSTOMER')">
-            <div class="container">
-                <div class="mini-header-content">
-                    <div class="mini-header-left">
-                        <!-- Có thể thêm thông tin khác ở đây -->
-                    </div>
-                    <div class="mini-header-right">
-                        <a th:href="@{/restaurant-owner/dashboard}" class="for-restaurants" sec:authorize="hasRole('RESTAURANT_OWNER')">For Restaurants</a>
-                        <a th:href="@{/auth/register}" class="for-restaurants" sec:authorize="!isAuthenticated()">For Restaurants</a>
-                    </div>
-                </div>
-            </div>
-        </div>
         
         <!-- Main Header -->
         <header class="header">
@@ -30,8 +16,6 @@
                     <ul class="nav-menu">
                         <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
                         <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
-                        <li><a th:href="@{/about}" th:classappend="${activeNav == 'about' ? 'active' : ''}">Về chúng tôi</a></li>
-                        <li><a th:href="@{/contact}" th:classappend="${activeNav == 'contact' ? 'active' : ''}">Liên hệ</a></li>
                     </ul>
                 </nav>
                 <div class="header-actions">

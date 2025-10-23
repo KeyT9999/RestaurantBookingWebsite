@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Header Component</title>
+</head>
+<body>
+    <!-- Mini Header Component - For Restaurants Link -->
+    <div th:fragment="mini-header" class="mini-header" sec:authorize="!hasRole('CUSTOMER')">
+        <div class="container">
+            <div class="mini-header-content">
+                <div class="mini-header-left">
+                    <!-- Có thể thêm thông tin khác ở đây -->
+                </div>
+                <div class="mini-header-right">
+                    <a th:href="@{/restaurant-owner/dashboard}" class="for-restaurants" sec:authorize="hasRole('RESTAURANT_OWNER')">For Restaurants</a>
+                    <a th:href="@{/auth/register}" class="for-restaurants" sec:authorize="!isAuthenticated()">For Restaurants</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
