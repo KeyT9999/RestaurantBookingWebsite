@@ -29,6 +29,11 @@
                     <a th:href="@{/customer/favorites}" class="btn-resy-outline icon-only" sec:authorize="hasRole('CUSTOMER')" title="Favorites">
                         <i class="fas fa-heart"></i>
                     </a>
+
+                        <!-- Notifications -->
+                        <div class="notification-bell-wrapper" sec:authorize="isAuthenticated()">
+                            <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
+                        </div>
                         
                         <!-- Restaurant Owner Dashboard -->
                         <a th:href="@{/restaurant-owner/dashboard}" class="btn-resy" sec:authorize="hasRole('RESTAURANT_OWNER')">

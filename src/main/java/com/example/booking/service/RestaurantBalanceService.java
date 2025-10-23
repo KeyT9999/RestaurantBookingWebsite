@@ -34,7 +34,7 @@ public class RestaurantBalanceService {
     private final WithdrawalRequestRepository withdrawalRepository;
     private final BookingRepository bookingRepository;
 
-    private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("0.075");
+    private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("0.30");
     
     public RestaurantBalanceService(
         RestaurantBalanceRepository balanceRepository,

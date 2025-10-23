@@ -224,10 +224,10 @@
                             <div class="ds-text-center">
                                 <p class="ds-mb-0 ds-text-secondary">
                                     Đã có tài khoản? 
-                                    <a th:href="@{/login}" class="ds-link ds-link-primary">
+                                    <button type="button" class="ds-link ds-link-primary" data-bs-toggle="modal" data-bs-target="#loginModal" style="background: none; border: none; padding: 0; text-decoration: none;">
                                         <i class="fas fa-sign-in-alt ds-mr-1"></i>
                                         Đăng nhập ngay
-                                    </a>
+                                    </button>
                                 </p>
                             </div>
                         </div>
@@ -418,5 +418,8 @@
             }
         });
     </script>
+
+    <!-- Include Login Modal -->
+    <div th:insert="~{fragments/login-modal :: login-modal}"></div>
 </body>
 </html>
