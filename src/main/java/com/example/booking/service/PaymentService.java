@@ -45,10 +45,7 @@ public class PaymentService {
     private CustomerRepository customerRepository;
     
     // Voucher repository is not required for current PayOS flow
-    
-    @Autowired
-    private BookingService bookingService;
-    
+
     // PayOsService is used indirectly through webhook processing
     
     @Autowired
@@ -219,7 +216,7 @@ public class PaymentService {
                 
                 // Complete booking (thanh toán thành công)
                 try {
-                    bookingService.completeBooking(payment.getBooking().getBookingId());
+                    completeBooking(payment.getBooking());
                     logger.info("Booking {} completed after PayOS payment", payment.getBooking().getBookingId());
                 } catch (Exception e) {
                     logger.error("Failed to complete booking after PayOS payment. paymentId: {}",
@@ -232,7 +229,7 @@ public class PaymentService {
                     Customer customer = booking.getCustomer();
                     
                     // Calculate remaining amount
-                    java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
+                    java.math.BigDecimal totalAmount = calculateTotalAmount(booking);
                     java.math.BigDecimal remainingAmount = totalAmount.subtract(payment.getAmount());
                     
                     // Send email to customer
@@ -322,11 +319,11 @@ public class PaymentService {
         
         // Confirm booking when payment is successful
         try {
-            bookingService.confirmBooking(payment.getBooking().getBookingId());
+            confirmBooking(payment.getBooking());
             logger.info("Booking confirmed after cash payment. BookingId: {}", payment.getBooking().getBookingId());
         } catch (Exception e) {
             logger.error("Failed to confirm booking after cash payment. BookingId: {}", 
-                payment.getBooking().getBookingId(), e);
+                    payment.getBooking().getBookingId(), e);
         }
         
         return updatedPayment;
@@ -358,11 +355,11 @@ public class PaymentService {
         
         // Confirm booking when payment is successful
         try {
-            bookingService.confirmBooking(payment.getBooking().getBookingId());
+            confirmBooking(payment.getBooking());
             logger.info("Booking confirmed after card payment. BookingId: {}", payment.getBooking().getBookingId());
         } catch (Exception e) {
             logger.error("Failed to confirm booking after card payment. BookingId: {}", 
-                payment.getBooking().getBookingId(), e);
+                    payment.getBooking().getBookingId(), e);
         }
         
         return updatedPayment;
@@ -512,7 +509,7 @@ public class PaymentService {
         // - Deposit amount (table fees)
         // - Dish prices from bookingDishes
         // - Service prices from bookingServices
-        return bookingService.calculateTotalAmount(booking);
+        return calculateTotalAmount(booking);
     }
     
     /**
@@ -616,5 +613,46 @@ public class PaymentService {
      */
     public Optional<Payment> findByOrderCode(Long orderCode) {
         return paymentRepository.findByOrderCode(orderCode);
+    }
+
+    /**
+     * Complete booking after payment
+     */
+    private void completeBooking(Booking booking) {
+        booking.setStatus(com.example.booking.common.enums.BookingStatus.COMPLETED);
+        bookingRepository.save(booking);
+    }
+
+    /**
+     * Confirm booking after payment
+     */
+    private void confirmBooking(Booking booking) {
+        booking.setStatus(com.example.booking.common.enums.BookingStatus.CONFIRMED);
+        bookingRepository.save(booking);
+    }
+
+    /**
+     * Calculate total amount for booking
+     */
+    private BigDecimal calculateTotalAmount(Booking booking) {
+        BigDecimal totalAmount = booking.getDepositAmount();
+
+        // Add dish prices if any
+        if (booking.getBookingDishes() != null) {
+            for (com.example.booking.domain.BookingDish bookingDish : booking.getBookingDishes()) {
+                totalAmount = totalAmount
+                        .add(bookingDish.getDish().getPrice().multiply(new BigDecimal(bookingDish.getQuantity())));
+            }
+        }
+
+        // Add service prices if any
+        if (booking.getBookingServices() != null) {
+            for (com.example.booking.domain.BookingService bookingService : booking.getBookingServices()) {
+                totalAmount = totalAmount.add(
+                        bookingService.getService().getPrice().multiply(new BigDecimal(bookingService.getQuantity())));
+            }
+        }
+
+        return totalAmount;
     }
 }

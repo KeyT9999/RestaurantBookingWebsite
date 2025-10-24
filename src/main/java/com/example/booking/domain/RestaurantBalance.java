@@ -66,6 +66,13 @@ public class RestaurantBalance {
     @Column(name = "total_withdrawal_requests")
     private Integer totalWithdrawalRequests = 0;
     
+    // Refund tracking
+    @Column(name = "pending_refund", precision = 18, scale = 2)
+    private BigDecimal pendingRefund = BigDecimal.ZERO;
+
+    @Column(name = "total_refunded", precision = 18, scale = 2)
+    private BigDecimal totalRefunded = BigDecimal.ZERO;
+
     // Calculated balance
     @Column(name = "available_balance", precision = 18, scale = 2)
     private BigDecimal availableBalance = BigDecimal.ZERO;
@@ -111,14 +118,15 @@ public class RestaurantBalance {
     }
     
     /**
-     * Tính toán và cập nhật số dư khả dụng
+     * Tính toán và cập nhật số dư khả dụng (CHO PHÉP ÂM)
      */
     public void recalculateAvailableBalance() {
         this.totalCommission = calculateCommission();
         this.availableBalance = this.totalRevenue
             .subtract(this.totalCommission)
             .subtract(this.totalWithdrawn)
-            .subtract(this.pendingWithdrawal);
+                .subtract(this.pendingWithdrawal)
+                .subtract(this.pendingRefund); // Trừ pending refund
         this.lastCalculatedAt = LocalDateTime.now();
     }
     
@@ -260,6 +268,22 @@ public class RestaurantBalance {
         this.totalWithdrawalRequests = totalWithdrawalRequests;
     }
     
+    public BigDecimal getPendingRefund() {
+        return pendingRefund != null ? pendingRefund : BigDecimal.ZERO;
+    }
+
+    public void setPendingRefund(BigDecimal pendingRefund) {
+        this.pendingRefund = pendingRefund;
+    }
+
+    public BigDecimal getTotalRefunded() {
+        return totalRefunded != null ? totalRefunded : BigDecimal.ZERO;
+    }
+
+    public void setTotalRefunded(BigDecimal totalRefunded) {
+        this.totalRefunded = totalRefunded;
+    }
+
     public BigDecimal getAvailableBalance() {
         return availableBalance;
     }

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf?.token}">
     <title>My Reservations - Book Eat</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -332,11 +333,9 @@
                             <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">
                                 <i class="fas fa-times"></i> Cancel
                             </button>
-                            <form id="cancelForm" method="post" style="display: inline;">
-                                <button type="submit" class="ds-btn ds-btn-error">
-                                    <i class="fas fa-trash-alt"></i> Yes, Cancel Reservation
-                                </button>
-                            </form>
+                            <button type="button" class="ds-btn ds-btn-error" id="confirmCancelBtn">
+                                <i class="fas fa-trash-alt"></i> Yes, Cancel Reservation
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -385,15 +384,67 @@
     
     <script>
         function confirmCancel(button) {
+            console.log('🔍 confirmCancel called with button:', button);
+            
             const bookingId = button.getAttribute('data-booking-id');
             const restaurantName = button.getAttribute('data-restaurant-name');
             
-            document.getElementById('modalBookingId').textContent = bookingId.substring(0, Math.min(8, bookingId.length)) + '...';
-            document.getElementById('modalRestaurantName').textContent = restaurantName;
-            document.getElementById('cancelForm').action = `/booking/${bookingId}/cancel`;
+            console.log('📋 Booking ID:', bookingId);
+            console.log('🏪 Restaurant Name:', restaurantName);
             
-            const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
-            modal.show();
+            // Store booking ID for bank account modal
+            window.currentBookingId = bookingId;
+            window.currentBookingIdForCancel = bookingId; // Also store in cancel variable
+            window.currentRestaurantName = restaurantName;
+            
+            console.log('✅ Stored booking ID in global variables:', {
+                currentBookingId: window.currentBookingId,
+                currentBookingIdForCancel: window.currentBookingIdForCancel
+            });
+            
+            // Show bank account modal instead of cancel modal
+            showBankAccountModal(bookingId);
+        }
+        
+        // Show bank account modal for cancel booking
+        function showBankAccountModal(bookingId) {
+            console.log('🔍 showBankAccountModal called with bookingId:', bookingId);
+            
+            // Store booking ID in global variable as backup
+            window.currentBookingIdForCancel = bookingId;
+            console.log('✅ Stored booking ID in global variable:', window.currentBookingIdForCancel);
+            
+            // Check if modal element exists
+            const modalElement = document.getElementById('bankAccountModal');
+            console.log('🔍 Modal element found:', modalElement);
+            
+            if (!modalElement) {
+                console.error('❌ Modal element #bankAccountModal not found!');
+                alert('Modal không được tìm thấy. Vui lòng refresh trang và thử lại.');
+                return;
+            }
+            
+            // Show modal first
+            const bankAccountModal = new bootstrap.Modal(modalElement);
+            bankAccountModal.show();
+            console.log('✅ Modal shown successfully');
+            
+            // Wait for modal to be fully loaded, then set booking ID
+            setTimeout(() => {
+                const inputElement = document.getElementById('modalBookingIdForBank');
+                console.log('🔍 Input element found:', inputElement);
+                
+                if (!inputElement) {
+                    console.error('❌ Input element #modalBookingIdForBank not found!');
+                    alert('Input element không được tìm thấy. Vui lòng refresh trang và thử lại.');
+                    return;
+                }
+                
+                // Set booking ID
+                inputElement.value = bookingId;
+                console.log('✅ Set booking ID to input:', bookingId);
+                console.log('✅ Input value after setting:', inputElement.value);
+            }, 100); // Wait 100ms for modal to be fully loaded
         }
         
         function showBookingDetails(button) {
@@ -1022,7 +1073,23 @@
                 allBadge.textContent = bookingRows.length + waitlistRows.length;
             }
         }
+        
+        // Handle cancel booking with bank account modal
+        document.getElementById('confirmCancelBtn').addEventListener('click', function() {
+            const bookingId = this.getAttribute('data-booking-id');
+            if (bookingId) {
+                // Close current modal
+                const cancelModal = bootstrap.Modal.getInstance(document.getElementById('cancelModal'));
+                cancelModal.hide();
+                
+                // Show bank account modal
+                showBankAccountModal(bookingId);
+            }
+        });
     </script>
+    
+    <!-- Include Bank Account Modal -->
+    <div th:replace="~{customer/bank-account-modal :: bank-account-modal}"></div>
 </body>
 </html>
 

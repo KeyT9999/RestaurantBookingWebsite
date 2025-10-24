@@ -287,6 +287,20 @@ public class RestaurantBalanceService {
     }
     
     /**
+     * Lấy balance theo restaurant ID (alias method)
+     */
+    public RestaurantBalance getBalanceByRestaurantId(Integer restaurantId) {
+        return getOrCreateBalance(restaurantId);
+    }
+
+    /**
+     * Save balance (alias method)
+     */
+    public RestaurantBalance saveBalance(RestaurantBalance balance) {
+        return balanceRepository.save(balance);
+    }
+
+    /**
      * Custom exception
      */
     public static class InsufficientBalanceException extends RuntimeException {

@@ -95,6 +95,9 @@ public class Payment {
     @Column(name = "refund_reason")
     private String refundReason;
     
+    @Column(name = "refund_request_id")
+    private Integer refundRequestId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_type", nullable = false)
     private PaymentType paymentType = PaymentType.DEPOSIT;
@@ -269,6 +272,14 @@ public class Payment {
         this.refundReason = refundReason;
     }
     
+    public Integer getRefundRequestId() {
+        return refundRequestId;
+    }
+
+    public void setRefundRequestId(Integer refundRequestId) {
+        this.refundRequestId = refundRequestId;
+    }
+
     public PaymentType getPaymentType() {
         return paymentType;
     }

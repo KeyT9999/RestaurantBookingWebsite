@@ -557,6 +557,48 @@
                 });
             }
         }
+        
+        // Show cancel modal for restaurant owner
+        function showCancelModal(bookingId) {
+            document.getElementById('cancelBookingId').value = bookingId;
+            const modal = new bootstrap.Modal(document.getElementById('cancelModal'));
+            modal.show();
+        }
+        
+        // Handle cancel booking form submission
+        document.getElementById('cancelForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const bookingId = document.getElementById('cancelBookingId').value;
+            const cancelReason = document.getElementById('cancelReason').value;
+            
+            if (!cancelReason.trim()) {
+                alert('Vui lòng nhập lý do hủy booking');
+                return;
+            }
+            
+            // Submit cancel request
+            fetch(`/restaurant-owner/api/bookings/${bookingId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `cancelReason=${encodeURIComponent(cancelReason)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đã hủy booking và tạo refund request!');
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi hủy booking');
+            });
+        });
     </script>
 
     <!-- Booking Detail Modal -->

@@ -10,11 +10,14 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.booking.common.enums.BookingStatus;
+import com.example.booking.domain.PaymentStatus;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.BookingDish;
 import com.example.booking.domain.BookingTable;
@@ -23,6 +26,7 @@ import com.example.booking.domain.Dish;
 import com.example.booking.domain.Notification;
 import com.example.booking.domain.NotificationStatus;
 import com.example.booking.domain.NotificationType;
+import com.example.booking.domain.Payment;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.RestaurantTable;
@@ -35,6 +39,7 @@ import com.example.booking.repository.BookingTableRepository;
 import com.example.booking.repository.CustomerRepository;
 import com.example.booking.repository.DishRepository;
 import com.example.booking.repository.NotificationRepository;
+import com.example.booking.repository.PaymentRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.RestaurantServiceRepository;
 import com.example.booking.repository.RestaurantTableRepository;
@@ -47,6 +52,8 @@ import jakarta.persistence.PersistenceContext;
 @Transactional
 public class BookingService {
     
+    private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
+
     @Autowired
     private BookingRepository bookingRepository;
 
@@ -82,6 +89,12 @@ public class BookingService {
 
     @Autowired
     private BookingConflictService conflictService;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private RefundService refundService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -468,9 +481,11 @@ public class BookingService {
     }
 
     /**
-     * Hủy booking
+     * Hủy booking (Customer)
      */
-    public Booking cancelBooking(Integer bookingId, UUID customerId) {
+    @Transactional
+    public Booking cancelBooking(Integer bookingId, UUID customerId, String cancelReason,
+            String bankCode, String accountNumber) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
 
@@ -479,23 +494,80 @@ public class BookingService {
             throw new IllegalArgumentException("You can only cancel your own bookings");
         }
 
-        // Check if booking can be cancelled
-        if (!booking.canBeCancelled()) {
-            throw new IllegalArgumentException("This booking cannot be cancelled");
-        }
+        // Không cần kiểm tra booking status nữa, chỉ cần kiểm tra payment status
+        // COMPLETED
+        // Process refund
+        processRefundForCancelledBooking(booking, cancelReason, bankCode, accountNumber);
 
-        // Không cần update table status khi cancel booking
-        // Status sẽ được quản lý riêng biệt
-        if (!booking.getBookingTables().isEmpty()) {
-            System.out.println("🔍 Cancelling table assignments...");
-            for (BookingTable bookingTable : booking.getBookingTables()) {
-                RestaurantTable table = bookingTable.getTable();
-                System.out.println("✅ Cancelled assignment for table " + table.getTableName());
-            }
-        }
-
+        // Update booking status
         booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelReason(cancelReason);
+        booking.setCancelledAt(LocalDateTime.now());
+        booking.setCancelledBy(customerId);
+
         return bookingRepository.save(booking);
+    }
+
+    /**
+     * Hủy booking (Restaurant Owner)
+     */
+    @Transactional
+    public Booking cancelBookingByRestaurant(Integer bookingId, UUID restaurantOwnerId, String cancelReason) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+
+        // Validate restaurant ownership
+        if (!booking.getRestaurant().getOwner().getUser().getId().equals(restaurantOwnerId)) {
+            throw new IllegalArgumentException("You can only cancel bookings for your restaurant");
+        }
+
+        // Không cần kiểm tra booking status nữa, chỉ cần kiểm tra payment status
+        // COMPLETED
+        // Process refund (restaurant owner cancel - no bank account info needed)
+        processRefundForCancelledBooking(booking, cancelReason, "", "");
+
+        // Update booking status
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setCancelReason(cancelReason);
+        booking.setCancelledAt(LocalDateTime.now());
+        booking.setCancelledBy(restaurantOwnerId);
+
+        return bookingRepository.save(booking);
+    }
+
+    /**
+     * Process refund for cancelled booking
+     */
+    private void processRefundForCancelledBooking(Booking booking, String cancelReason,
+            String bankCode, String accountNumber) {
+        logger.info("🔄 Processing refund for cancelled booking: {}", booking.getBookingId());
+
+        // Tìm payment của booking
+        Optional<Payment> paymentOpt = paymentRepository.findByBooking(booking);
+
+        if (paymentOpt.isPresent()) {
+            Payment payment = paymentOpt.get();
+            logger.info("✅ Payment found: ID={}, Status={}, Amount={}",
+                    payment.getPaymentId(), payment.getStatus(), payment.getAmount());
+
+            // Chỉ refund khi payment đã completed (không cần kiểm tra booking status)
+            if (payment.getStatus() == PaymentStatus.COMPLETED) {
+                logger.info("🔄 Creating refund request for completed payment: {}", payment.getPaymentId());
+
+                // Tạo refund request với manual transfer và thông tin bank account
+                refundService.processRefundWithManualTransfer(
+                        payment.getPaymentId(),
+                        "Booking cancelled: " + cancelReason,
+                        bankCode,
+                        accountNumber);
+
+                logger.info("✅ Refund request created successfully");
+            } else {
+                logger.warn("⚠️ Payment status is not COMPLETED: {}, skipping refund", payment.getStatus());
+            }
+        } else {
+            logger.warn("⚠️ No payment found for booking: {}, skipping refund", booking.getBookingId());
+        }
     }
 
     /**
