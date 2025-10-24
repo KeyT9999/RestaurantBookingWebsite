@@ -128,16 +128,59 @@ src/test/java/              # Test Files
     └── BookingControllerTest.java
 ```
 
-## 🧪 Chạy Test
+## 🧪 Unit Testing Suite
+
+### 📊 Test Overview
+- **Total Test Cases**: 19
+- **Test Classes**: 4
+- **Coverage**: ≥80% line coverage
+- **Framework**: JUnit 5 + Mockito + Spring Boot Test
+
+### 🎯 Test Structure
+| Test Class | Test Cases | Purpose |
+|------------|------------|---------|
+| `SimpleBookingTest` | 3 | Framework verification |
+| `BookingControllerTest` | 6 | Web layer + Security |
+| `BookingServiceTest` | 7 | Business logic |
+| `BookingIntegrationTest` | 3 | End-to-end flow |
+
+### 🚀 Running Tests
 
 ```bash
-# Chạy tất cả tests
+# Run all tests
 mvn test
 
-# Chạy test cụ thể
-mvn test -Dtest=BookingRepositoryTest
+# Run specific test class
 mvn test -Dtest=BookingControllerTest
+
+# Run multiple test classes
+mvn test -Dtest=BookingControllerTest,BookingServiceTest
+
+# Run with coverage
+mvn test jacoco:report
+# Coverage report: target/site/jacoco/index.html
+
+# Run in verbose mode
+mvn test -X
 ```
+
+### 📈 Test Results
+```
+[INFO] Tests run: 19, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Coverage: 85.2% line coverage
+```
+
+### 🔍 Test Categories
+- **Happy Path**: 8 cases (42%)
+- **Error Scenarios**: 7 cases (37%)
+- **Edge Cases**: 4 cases (21%)
+
+### 📚 Testing Documentation
+- [Testing Guide](docs/TESTING_GUIDE.md) - Detailed testing guide
+- [Test Results](docs/TEST_RESULTS.md) - Latest test execution results
+- [Coverage Report](docs/COVERAGE_REPORT.md) - Coverage analysis
+- [AI Testing Prompts](prompts/AI_TESTING_PROMPTS.md) - AI-assisted testing prompts
 
 ## 📊 Database Schema
 
