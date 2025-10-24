@@ -1,13 +1,26 @@
 package com.example.booking.test.util;
 
-import com.example.booking.common.enums.BookingStatus;
-import com.example.booking.common.enums.TableStatus;
-import com.example.booking.common.enums.PaymentStatus;
-import com.example.booking.domain.*;
-import com.example.booking.dto.BookingForm;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import com.example.booking.common.enums.BookingStatus;
+import com.example.booking.common.enums.TableStatus;
+import com.example.booking.domain.Booking;
+import com.example.booking.domain.Customer;
+import com.example.booking.domain.Dish;
+import com.example.booking.domain.Notification;
+import com.example.booking.domain.NotificationStatus;
+import com.example.booking.domain.NotificationType;
+import com.example.booking.domain.Payment;
+import com.example.booking.domain.PaymentMethod;
+import com.example.booking.domain.PaymentStatus;
+import com.example.booking.domain.RestaurantOwner;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantTable;
+import com.example.booking.domain.User;
+import com.example.booking.domain.UserRole;
+import com.example.booking.dto.BookingForm;
 
 /**
  * MockDataFactory - Comprehensive factory for creating realistic test data
@@ -27,15 +40,12 @@ public class MockDataFactory {
         Customer customer = new Customer();
         customer.setCustomerId(CUSTOMER_UUID);
         customer.setFullName("John Doe");
-        customer.setEmail("john.doe@example.com");
-        customer.setPhoneNumber("0123456789");
         return customer;
     }
     
-    public static Customer createMockCustomer(String name, String email) {
+    public static Customer createMockCustomer(String name) {
         Customer customer = createMockCustomer();
         customer.setFullName(name);
-        customer.setEmail(email);
         return customer;
     }
     
@@ -53,9 +63,8 @@ public class MockDataFactory {
         restaurant.setRestaurantId(1);
         restaurant.setRestaurantName("Test Restaurant");
         restaurant.setAddress("123 Test Street, District 1, Ho Chi Minh City");
-        restaurant.setPhoneNumber("0987654321");
+        restaurant.setPhone("0987654321");
         restaurant.setDescription("A beautiful restaurant for testing");
-        restaurant.setStatus(com.example.booking.common.enums.RestaurantStatus.ACTIVE);
         return restaurant;
     }
     
@@ -81,7 +90,6 @@ public class MockDataFactory {
         table.setTableName("Table 1");
         table.setCapacity(4);
         table.setStatus(TableStatus.AVAILABLE);
-        table.setDescription("A comfortable table for 4 people");
         return table;
     }
     
@@ -171,20 +179,20 @@ public class MockDataFactory {
         user.setEmail("john.doe@example.com");
         user.setFullName("John Doe");
         user.setPhoneNumber("0123456789");
-        user.setRole(com.example.booking.common.enums.UserRole.CUSTOMER);
+        user.setRole(UserRole.CUSTOMER);
         user.setActive(true);
         user.setCreatedAt(LocalDateTime.now());
         return user;
     }
     
-    public static User createMockUser(com.example.booking.common.enums.UserRole role) {
+    public static User createMockUser(UserRole role) {
         User user = createMockUser();
         user.setRole(role);
         return user;
     }
     
     public static User createMockRestaurantOwnerUser() {
-        User user = createMockUser(com.example.booking.common.enums.UserRole.RESTAURANT_OWNER);
+        User user = createMockUser(UserRole.RESTAURANT_OWNER);
         user.setId(RESTAURANT_OWNER_UUID);
         user.setUsername("restaurantowner");
         user.setEmail("owner@restaurant.com");
@@ -192,7 +200,7 @@ public class MockDataFactory {
     }
     
     public static User createMockAdminUser() {
-        User user = createMockUser(com.example.booking.common.enums.UserRole.ADMIN);
+        User user = createMockUser(UserRole.ADMIN);
         user.setId(ADMIN_UUID);
         user.setUsername("admin");
         user.setEmail("admin@system.com");
@@ -203,10 +211,8 @@ public class MockDataFactory {
     
     public static RestaurantOwner createMockRestaurantOwner() {
         RestaurantOwner owner = new RestaurantOwner();
-        owner.setOwnerId(1);
+        owner.setOwnerId(UUID.randomUUID());
         owner.setUser(createMockRestaurantOwnerUser());
-        owner.setBusinessLicense("BL123456789");
-        owner.setTaxCode("TC987654321");
         owner.setCreatedAt(LocalDateTime.now());
         return owner;
     }
@@ -219,8 +225,7 @@ public class MockDataFactory {
         payment.setBooking(createMockBooking());
         payment.setAmount(new BigDecimal("100000.00"));
         payment.setStatus(PaymentStatus.PENDING);
-        payment.setPaymentMethod("CREDIT_CARD");
-        payment.setCreatedAt(LocalDateTime.now());
+        payment.setPaymentMethod(PaymentMethod.CARD);
         return payment;
     }
     
@@ -235,11 +240,10 @@ public class MockDataFactory {
     public static Notification createMockNotification() {
         Notification notification = new Notification();
         notification.setNotificationId(1);
-        notification.setUser(createMockUser());
         notification.setTitle("Booking Confirmation");
-        notification.setMessage("Your booking has been confirmed");
-        notification.setType(com.example.booking.domain.NotificationType.BOOKING_CONFIRMATION);
-        notification.setStatus(com.example.booking.domain.NotificationStatus.UNREAD);
+        notification.setContent("Your booking has been confirmed");
+        notification.setType(NotificationType.BOOKING_CONFIRMED);
+        notification.setStatus(NotificationStatus.PENDING);
         notification.setCreatedAt(LocalDateTime.now());
         return notification;
     }
@@ -254,7 +258,6 @@ public class MockDataFactory {
         dish.setPrice(new BigDecimal("50000.00"));
         dish.setCategory("Main Course");
         dish.setRestaurant(createMockRestaurant());
-        dish.setAvailable(true);
         return dish;
     }
     
