@@ -382,7 +382,7 @@
 
     <!-- Popular Restaurants -->
     <section class="popular-section" id="restaurants">
-            <div class="container">
+        <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Nhà hàng phổ biến</h2>
                 <p class="section-subtitle">Những nhà hàng được yêu thích nhất</p>
@@ -393,8 +393,9 @@
                 Dữ liệu nhà hàng phổ biến đang được cập nhật.
             </div>
 
+            <!-- Popular Restaurants - Simple Grid -->
             <div class="restaurant-grid" th:if="${!#lists.isEmpty(popularRestaurants)}">
-                <div class="restaurant-card" th:each="restaurant : ${popularRestaurants}">
+                <div class="restaurant-card" th:each="restaurant, iterStat : ${popularRestaurants}" th:if="${iterStat.index < 3}">
                     <div class="restaurant-image"
                          th:style="${restaurant.hasCoverImage()} ? 'background-image: url(' + restaurant.coverImageUrl + ');' : 'background: ' + restaurant.fallbackGradient + ';'">
                         <div class="restaurant-badge"

@@ -554,10 +554,12 @@ body:not(:has(.mini-header)) .header {
     font-size: 1.1rem;
 }
 
+/* Restaurant Grid - Simple 3 Cards */
 .restaurant-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
+    margin: 2rem 0;
 }
 
 .restaurant-card {
@@ -567,6 +569,19 @@ body:not(:has(.mini-header)) .header {
     border: 1px solid #E5E7EB;
     transition: all 0.2s ease;
     cursor: pointer;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .restaurant-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .restaurant-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .restaurant-card:hover {

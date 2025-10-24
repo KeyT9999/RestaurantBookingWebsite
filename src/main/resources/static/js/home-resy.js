@@ -86,6 +86,7 @@
         });
     }
 
+
     /**
      * Partner card hover effects (optional enhancement)
      */
