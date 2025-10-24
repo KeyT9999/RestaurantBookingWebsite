@@ -1,23 +1,25 @@
 package com.example.booking.service;
 
-import com.example.booking.domain.RateLimitStatistics;
-import com.example.booking.domain.SuspiciousActivity;
-import com.example.booking.domain.RequestPattern;
-import com.example.booking.repository.RateLimitStatisticsRepository;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.booking.domain.RateLimitStatistics;
+import com.example.booking.domain.RequestPattern;
+import com.example.booking.domain.SuspiciousActivity;
+import com.example.booking.repository.RateLimitStatisticsRepository;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Advanced Rate Limiting Service with intelligent threat detection
