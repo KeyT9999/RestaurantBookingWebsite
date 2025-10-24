@@ -30,6 +30,14 @@ import com.example.booking.repository.BookingRepository;
 import com.example.booking.service.BookingConflictService;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.VoucherService;
+import com.example.booking.service.PayOsService;
+import com.example.booking.service.PaymentService;
+import com.example.booking.service.RefundService;
+import com.example.booking.service.EnhancedRefundService;
+import com.example.booking.service.RestaurantBalanceService;
+import com.example.booking.service.BankAccountService;
+import com.example.booking.service.EmailService;
+import com.example.booking.service.NotificationService;
 
 /**
  * Simplified integration tests for Booking functionality
@@ -54,6 +62,30 @@ class BookingIntegrationTest {
 
     @MockBean
     private BookingConflictService bookingConflictService;
+
+    @MockBean
+    private PayOsService payOsService;
+
+    @MockBean
+    private PaymentService paymentService;
+
+    @MockBean
+    private RefundService refundService;
+
+    @MockBean
+    private EnhancedRefundService enhancedRefundService;
+
+    @MockBean
+    private RestaurantBalanceService restaurantBalanceService;
+
+    @MockBean
+    private BankAccountService bankAccountService;
+
+    @MockBean
+    private EmailService emailService;
+
+    @MockBean
+    private NotificationService notificationService;
 
     private Customer customer;
     private RestaurantProfile restaurant;
