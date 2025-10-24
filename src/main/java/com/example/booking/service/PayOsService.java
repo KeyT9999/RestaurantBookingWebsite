@@ -1,7 +1,9 @@
 package com.example.booking.service;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +43,10 @@ public class PayOsService {
     @Value("${payment.payos.endpoint}")
     private String endpoint;
     
+    // Alias fields for compatibility
+    private String secretKey;
+    private String baseUrl;
+
     @Value("${payment.payos.return-url}")
     private String returnUrl;
     
@@ -53,6 +59,12 @@ public class PayOsService {
     public PayOsService(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+    }
+
+    // Initialize alias fields
+    public void initAliasFields() {
+        this.secretKey = this.checksumKey;
+        this.baseUrl = this.endpoint;
     }
 
     public CreateLinkResponse createPaymentLink(long orderCode, long amount, String description) {
@@ -549,6 +561,110 @@ public class PayOsService {
             public String getAccountName() { return accountName; }
             public String getName() { return name; }
             public String getShortName() { return shortName; }
+        }
+    }
+
+    /**
+     * Tạo QR code chuyển tiền cho refund
+     */
+    public String createTransferQRCode(BigDecimal amount, String bankAccount, String bankName, String accountHolder,
+            String description) {
+        try {
+            logger.info("🔄 Creating transfer QR code for refund");
+            logger.info("   Amount: {}", amount);
+            logger.info("   Bank Account: {}", bankAccount);
+            logger.info("   Bank Name: {}", bankName);
+            logger.info("   Account Holder: {}", accountHolder);
+
+            // Tạo dữ liệu QR code theo format PayOS
+            Map<String, Object> qrData = new HashMap<>();
+            qrData.put("type", "transfer");
+            qrData.put("amount", amount.toString());
+            qrData.put("bankAccount", bankAccount);
+            qrData.put("bankName", bankName);
+            qrData.put("accountHolder", accountHolder);
+            qrData.put("description", description);
+            qrData.put("timestamp", System.currentTimeMillis());
+
+            // Tạo signature cho QR code
+            String dataString = String.format("%s|%s|%s|%s|%s",
+                    amount.toString(), bankAccount, bankName, accountHolder, description);
+            String signature = signTransferQR(dataString);
+            qrData.put("signature", signature);
+
+            // Chuyển đổi thành JSON string
+            String qrCodeData = objectMapper.writeValueAsString(qrData);
+
+            logger.info("✅ Transfer QR code created successfully");
+            return qrCodeData;
+
+        } catch (Exception e) {
+            logger.error("❌ Error creating transfer QR code", e);
+            return null;
+        }
+    }
+
+    /**
+     * Tạo signature cho transfer QR code
+     */
+    private String signTransferQR(String data) {
+        try {
+            // Sử dụng HMAC SHA256 với secret key
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA256");
+            mac.init(secretKeySpec);
+
+            byte[] signature = mac.doFinal(data.getBytes());
+            return Base64.getEncoder().encodeToString(signature);
+
+        } catch (Exception e) {
+            logger.error("Error signing transfer QR data", e);
+            return null;
+        }
+    }
+
+    /**
+     * Tạo URL QR code từ PayOS (nếu có API)
+     */
+    public String createTransferQRCodeUrl(BigDecimal amount, String bankAccount, String bankName, String accountHolder,
+            String description) {
+        try {
+            logger.info("🔄 Creating transfer QR code URL from PayOS");
+
+            // Tạo dữ liệu cho PayOS API
+            Map<String, Object> requestData = new HashMap<>();
+            requestData.put("amount", amount.multiply(new BigDecimal("100")).intValue()); // PayOS sử dụng đơn vị nhỏ
+                                                                                          // nhất
+            requestData.put("description", description);
+            requestData.put("bankAccount", bankAccount);
+            requestData.put("bankName", bankName);
+            requestData.put("accountHolder", accountHolder);
+
+            // Gọi PayOS API để tạo QR code
+            String url = baseUrl + "/v2/payment/transfer-qr";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + secretKey);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestData, headers);
+
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    URI.create(url), HttpMethod.POST, entity, Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Map<String, Object> responseBody = response.getBody();
+                String qrCodeUrl = (String) responseBody.get("qrCodeUrl");
+                logger.info("✅ Transfer QR code URL created: {}", qrCodeUrl);
+                return qrCodeUrl;
+            } else {
+                logger.error("❌ PayOS API returned error: {}", response.getBody());
+                return null;
+            }
+
+        } catch (Exception e) {
+            logger.error("❌ Error creating transfer QR code URL", e);
+            // Fallback: tạo QR code data thay vì URL
+            return createTransferQRCode(amount, bankAccount, bankName, accountHolder, description);
         }
     }
 }

@@ -11,9 +11,12 @@ import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.util.Collections;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -53,6 +56,8 @@ import jakarta.validation.Valid;
 // @PreAuthorize("!hasRole('RESTAURANT_OWNER')") // Block restaurant owners from
 // public booking
 public class BookingController {
+
+    private static final Logger logger = LoggerFactory.getLogger(BookingController.class);
 
     static {
         System.out.println("🚀🚀🚀 BookingController class loaded! 🚀🚀🚀");
@@ -415,7 +420,7 @@ public class BookingController {
      */
     @GetMapping("/my")
     public String showMyBookings(Model model, Authentication authentication,
-            @RequestParam(required = false) String filter) {
+            @RequestParam(required = false) String filter, CsrfToken csrfToken) {
         UUID customerId = getCurrentCustomerId(authentication);
         System.out.println("🔍 Getting bookings for customer ID: " + customerId);
 
@@ -453,6 +458,11 @@ public class BookingController {
         model.addAttribute("currentFilter", filter != null ? filter : "all");
         model.addAttribute("totalBookings", totalBookingsCount); // Use original count
         model.addAttribute("totalWaitlist", totalWaitlistCount); // Use original count
+
+        // Add CSRF token to model
+        if (csrfToken != null) {
+            model.addAttribute("_csrf", csrfToken);
+        }
 
         return "booking/list";
     }
@@ -625,7 +635,7 @@ public class BookingController {
     }
 
     /**
-     * Hủy booking
+     * Hủy booking (old method - disabled)
      */
     @PostMapping("/{id}/cancel")
     public String cancelBooking(@PathVariable("id") Integer bookingId,
@@ -634,7 +644,9 @@ public class BookingController {
 
         try {
             UUID customerId = getCurrentCustomerId(authentication);
-            bookingService.cancelBooking(bookingId, customerId);
+            // This method will be called from the modal with bank account info
+            // For now, just redirect to booking list
+            redirectAttributes.addFlashAttribute("errorMessage", "Please use the cancel button in the booking list");
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Booking cancelled successfully!");
@@ -645,6 +657,54 @@ public class BookingController {
                     "Error cancelling booking: " + e.getMessage());
             return "redirect:/booking/my";
         }
+    }
+
+    /**
+     * API endpoint để cancel booking với bank account info
+     */
+    @PostMapping("/api/cancel/{bookingId}")
+    public String cancelBookingWithBankAccount(@PathVariable Integer bookingId,
+            @RequestParam String cancelReason,
+            @RequestParam String bankCode,
+            @RequestParam String accountNumber,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+
+        logger.info("🔄 Cancel booking API called for bookingId: {}", bookingId);
+        logger.info("📋 Cancel reason: {}", cancelReason);
+        logger.info("📋 Bank code: {}", bankCode);
+        logger.info("📋 Account number: {}", accountNumber);
+        logger.info("📋 Authentication: {}", authentication != null ? "authenticated" : "null");
+
+        try {
+            if (authentication == null) {
+                logger.error("❌ Authentication is null, redirecting to login");
+                redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để hủy booking");
+                return "redirect:/login";
+            }
+
+            UUID customerId = getCurrentCustomerId(authentication);
+            logger.info("📋 Customer ID: {}", customerId);
+
+            // Cancel booking với bank account info
+            Booking cancelledBooking = bookingService.cancelBooking(bookingId, customerId, cancelReason, bankCode,
+                    accountNumber);
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã hủy booking và tạo refund request thành công!");
+            logger.info("✅ Booking cancelled successfully: {}", cancelledBooking.getBookingId());
+
+        } catch (Exception e) {
+            logger.error("❌ Error cancelling booking with bank account", e);
+            logger.error("❌ Error details: {}", e.getMessage());
+            logger.error("❌ Stack trace: ", e);
+
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Lỗi khi hủy booking: " + e.getMessage());
+        }
+
+        logger.info("🔄 Redirecting to /booking/my");
+        return "redirect:/booking/my";
     }
 
     /**

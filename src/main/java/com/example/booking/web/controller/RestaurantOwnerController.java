@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1159,6 +1162,70 @@ public class RestaurantOwnerController {
         return "redirect:/restaurant-owner/bookings";
     }
     
+    /**
+     * Cancel booking (Restaurant Owner)
+     */
+    @PostMapping("/bookings/{id}/cancel")
+    public String cancelBooking(@PathVariable Integer id,
+            @RequestParam String cancelReason,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        try {
+            // Get current restaurant owner
+            User user = getUserFromAuthentication(authentication);
+            UUID restaurantOwnerId = user.getId();
+
+            // Cancel booking with refund processing
+            bookingService.cancelBookingByRestaurant(id, restaurantOwnerId, cancelReason);
+
+            redirectAttributes.addFlashAttribute("success", "Đã hủy booking và tạo refund request!");
+
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", "Không thể hủy booking: " + e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi hủy booking: " + e.getMessage());
+        }
+
+        return "redirect:/restaurant-owner/bookings";
+    }
+
+    /**
+     * API endpoint để cancel booking (Restaurant Owner)
+     */
+    @PostMapping("/api/bookings/{id}/cancel")
+    @ResponseBody
+    public ResponseEntity<?> cancelBookingApi(@PathVariable Integer id,
+            @RequestParam String cancelReason,
+            Authentication authentication) {
+        try {
+            // Get current restaurant owner
+            User user = getUserFromAuthentication(authentication);
+            UUID restaurantOwnerId = user.getId();
+
+            // Cancel booking with refund processing
+            bookingService.cancelBookingByRestaurant(id, restaurantOwnerId, cancelReason);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Đã hủy booking và tạo refund request!");
+            response.put("bookingId", id);
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Không thể hủy booking: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            logger.error("Error cancelling booking for restaurant owner", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Lỗi khi hủy booking: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
     /**
      * Show edit booking form for restaurant owner
      */
