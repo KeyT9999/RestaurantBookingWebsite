@@ -91,7 +91,7 @@ public class SecurityConfig {
 				.requestMatchers("/css/**", "/js/**", "/images/**", "/uploads/**", 
 						"/login", "/error", "/h2-console/**", 
 						"/actuator/**", "/oauth2/**", "/", "/about", "/contact", "/restaurants",
-						"/test/**", "/withdrawal/**", "/ai/**").permitAll()
+						"/restaurants/**", "/test/**", "/withdrawal/**", "/ai/**").permitAll()
 				.requestMatchers("/payment/payos/return").permitAll()
 				.requestMatchers("/payment/api/payos/webhook").permitAll()
 				.requestMatchers("/test-vouchers/**").permitAll()

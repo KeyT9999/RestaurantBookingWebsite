@@ -16,6 +16,9 @@
      ================================================ -->
 <div th:fragment="unified-header" class="ds-unified-header">
     
+    <!-- Login Modal CSS -->
+    <link th:href="@{/css/login-modal.css}" rel="stylesheet">
+    
     <!-- Main Header -->
     <nav class="ds-navbar">
         <div class="ds-container">
@@ -35,9 +38,6 @@
                     <!-- Authenticated User Actions -->
                     <div sec:authorize="isAuthenticated()" class="ds-user-actions">
                         <!-- Customer Actions -->
-                        <a th:href="@{/customer/favorites}" class="ds-btn ds-btn-secondary ds-btn-icon" sec:authorize="hasRole('CUSTOMER')" title="Favorites">
-                            <i class="fas fa-heart"></i>
-                        </a>
 
                         <!-- Notification Bell -->
                         <div class="ds-notification-bell" th:insert="~{fragments/notification-bell :: notification-bell}"></div>
@@ -187,7 +187,7 @@
                                 </li>
                                 <li sec:authorize="hasRole('CUSTOMER')">
                                     <a class="dropdown-item" th:href="@{/customer/favorites}">
-                                        <i class="fas fa-heart"></i>
+                                        <i class="fas fa-star"></i>
                                         Favorites
                                     </a>
                                 </li>
@@ -217,6 +217,35 @@
             </div>
         </div>
     </nav>
+    
+    <!-- Login Modal Fragment -->
+    <div th:insert="~{fragments/login-modal :: login-modal}"></div>
+    
+    <!-- Login Modal JavaScript -->
+    <script>
+        // Login Modal Helper Functions
+        function closeLoginModal() {
+            const modal = document.getElementById('loginModal');
+            if (modal) {
+                const bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
+                bsModal.hide();
+            }
+        }
+        
+        function openRegisterModal() {
+            window.location.href = '/auth/register';
+        }
+        
+        // Auto-focus on username input when modal opens
+        document.addEventListener('shown.bs.modal', function(event) {
+            if (event.target.id === 'loginModal') {
+                const usernameInput = event.target.querySelector('#username');
+                if (usernameInput) {
+                    usernameInput.focus();
+                }
+            }
+        });
+    </script>
 </div>
 
 <!-- ================================================

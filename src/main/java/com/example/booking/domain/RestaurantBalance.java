@@ -5,7 +5,19 @@ import java.time.LocalDateTime;
 
 import com.example.booking.common.enums.CommissionType;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 /**
  * Số dư và thống kê tài chính của nhà hàng
@@ -32,7 +44,7 @@ public class RestaurantBalance {
     
     // Commission configuration
     @Column(name = "commission_rate", precision = 5, scale = 2)
-    private BigDecimal commissionRate = new BigDecimal("7.50"); // 7.5%
+    private BigDecimal commissionRate = new BigDecimal("30.00"); // 30%
     
     @Enumerated(EnumType.STRING)
     @Column(name = "commission_type", length = 20)

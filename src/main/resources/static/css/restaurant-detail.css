@@ -1,0 +1,763 @@
+/* Restaurant Detail Page Styles */
+:root {
+    --primary: #4A90E2;
+    --secondary: #357ABD;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-400: #9CA3AF;
+    --gray-500: #6B7280;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+}
+
+/* Base Styles */
+.restaurant-detail-page {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--gray-50);
+}
+
+/* Debug styles to ensure right column is visible */
+.col-lg-4 {
+    display: block !important;
+    min-height: 500px;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+}
+
+/* Ensure reservation widget is visible */
+aside[role="complementary"] {
+    display: block !important;
+    min-height: 500px;
+}
+
+/* Header Section */
+.restaurant-detail-page__header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.restaurant-detail-page__info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.restaurant-detail-page__logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    object-fit: cover;
+    background: white;
+}
+
+.restaurant-detail-page__details h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.restaurant-detail-page__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.restaurant-detail-page__meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.restaurant-detail-page__cuisine-tag {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Navigation Tabs */
+.restaurant-detail-page__nav-tabs {
+    border-bottom: 2px solid var(--gray-200);
+    margin-bottom: 2rem;
+}
+
+.restaurant-detail-page__nav-link {
+    border: none;
+    color: var(--gray-600);
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.restaurant-detail-page__nav-link:hover {
+    color: var(--primary);
+    border-bottom-color: var(--gray-300);
+}
+
+.restaurant-detail-page__nav-link--active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: none;
+}
+
+/* Tab Content */
+.restaurant-detail-page__tab-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.restaurant-detail-page__tab-pane {
+    padding: 2rem;
+}
+
+/* About Tab */
+.restaurant-detail-page__about-section {
+    margin-bottom: 2rem;
+}
+
+.restaurant-detail-page__section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 1rem;
+}
+
+.restaurant-detail-page__section-subtitle {
+    color: var(--gray-600);
+    margin-bottom: 1.5rem;
+}
+
+.restaurant-detail-page__story-card {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.restaurant-detail-page__cuisine-types {
+    margin-bottom: 2rem;
+}
+
+.restaurant-detail-page__cuisine-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.restaurant-detail-page__cuisine-tag-item {
+    background: var(--primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.restaurant-detail-page__cuisine-tag-item:hover {
+    background: var(--secondary);
+    transform: translateY(-1px);
+}
+
+.restaurant-detail-page__highlights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.restaurant-detail-page__highlight-card {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.restaurant-detail-page__highlight-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.restaurant-detail-page__highlight-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 1.5rem;
+}
+
+.restaurant-detail-page__highlight-icon--ingredients {
+    background: var(--success);
+    color: white;
+}
+
+.restaurant-detail-page__highlight-icon--award {
+    background: var(--warning);
+    color: white;
+}
+
+.restaurant-detail-page__highlight-icon--sustainable {
+    background: var(--success);
+    color: white;
+}
+
+.restaurant-detail-page__highlight-icon--experience {
+    background: var(--primary);
+    color: white;
+}
+
+/* Menu Tab */
+.restaurant-detail-page__menu-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.restaurant-detail-page__filter-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--gray-300);
+    background: white;
+    color: var(--gray-600);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.restaurant-detail-page__filter-btn:hover,
+.restaurant-detail-page__filter-btn--active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.restaurant-detail-page__menu-items {
+    display: grid;
+    gap: 1rem;
+}
+
+.restaurant-detail-page__menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.restaurant-detail-page__menu-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.restaurant-detail-page__menu-item-info {
+    flex: 1;
+}
+
+.restaurant-detail-page__menu-item-name {
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.restaurant-detail-page__menu-item-description {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.restaurant-detail-page__menu-item-tags {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.restaurant-detail-page__menu-tag {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.restaurant-detail-page__menu-tag--popular {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}
+
+.restaurant-detail-page__menu-tag--vegetarian {
+    background: var(--success);
+    color: white;
+}
+
+.restaurant-detail-page__menu-tag--spicy {
+    background: var(--danger);
+    color: white;
+}
+
+.restaurant-detail-page__menu-item-price {
+    font-weight: 600;
+    color: var(--gray-800);
+    font-size: 1.1rem;
+}
+
+/* Tables Tab */
+.restaurant-detail-page__table-legend {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    justify-content: center;
+}
+
+.restaurant-detail-page__legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.restaurant-detail-page__legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.restaurant-detail-page__legend-dot--available {
+    background: var(--success);
+}
+
+.restaurant-detail-page__legend-dot--reserved {
+    background: var(--danger);
+}
+
+.restaurant-detail-page__restaurant-layout {
+    background: var(--gray-100);
+    border: 2px solid var(--gray-300);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    min-height: 400px;
+}
+
+.restaurant-detail-page__layout-area {
+    position: absolute;
+    padding: 0.5rem;
+    background: var(--gray-200);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.restaurant-detail-page__layout-area--windows {
+    top: 1rem;
+    left: 1rem;
+}
+
+.restaurant-detail-page__layout-area--kitchen {
+    top: 1rem;
+    right: 1rem;
+}
+
+.restaurant-detail-page__layout-area--entrance {
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.restaurant-detail-page__table-item {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.restaurant-detail-page__table-item:hover {
+    transform: scale(1.1);
+}
+
+.restaurant-detail-page__table-item--available {
+    background: var(--success);
+}
+
+.restaurant-detail-page__table-item--reserved {
+    background: var(--danger);
+}
+
+.restaurant-detail-page__table-views {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.restaurant-detail-page__table-view-card {
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.restaurant-detail-page__table-view-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.restaurant-detail-page__table-view-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.restaurant-detail-page__table-view-info {
+    padding: 1rem;
+}
+
+.restaurant-detail-page__table-view-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.restaurant-detail-page__table-view-description {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+/* Reviews Tab */
+.restaurant-detail-page__rating-summary {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: var(--gray-50);
+    border-radius: 8px;
+}
+
+.restaurant-detail-page__rating-number {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--gray-800);
+}
+
+.restaurant-detail-page__rating-stars {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.restaurant-detail-page__rating-stars .fa-star {
+    color: var(--warning);
+}
+
+.restaurant-detail-page__rating-text {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+.restaurant-detail-page__rating-breakdown {
+    flex: 1;
+}
+
+.restaurant-detail-page__rating-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.restaurant-detail-page__rating-label {
+    width: 20px;
+    font-size: 0.9rem;
+    color: var(--gray-600);
+}
+
+.restaurant-detail-page__rating-progress {
+    flex: 1;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.restaurant-detail-page__rating-fill {
+    height: 100%;
+    background: var(--warning);
+    transition: width 0.3s ease;
+}
+
+.restaurant-detail-page__rating-count {
+    width: 40px;
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--gray-600);
+}
+
+.restaurant-detail-page__reviews-list {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.restaurant-detail-page__review-item {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.restaurant-detail-page__review-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.restaurant-detail-page__review-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--gray-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.restaurant-detail-page__review-info {
+    flex: 1;
+}
+
+.restaurant-detail-page__review-name {
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 0.25rem;
+}
+
+.restaurant-detail-page__review-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: var(--gray-600);
+}
+
+.restaurant-detail-page__review-title {
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.restaurant-detail-page__review-content {
+    color: var(--gray-700);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.restaurant-detail-page__review-tags {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.restaurant-detail-page__review-tag {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+}
+
+.restaurant-detail-page__review-helpful {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+/* Reservation Widget */
+.restaurant-detail-page__reservation-widget {
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 2rem;
+    min-height: 400px; /* Ensure minimum height */
+    display: block !important; /* Force display */
+}
+
+.restaurant-detail-page__reservation-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 1.5rem;
+}
+
+.restaurant-detail-page__form-group {
+    margin-bottom: 1.5rem;
+}
+
+.restaurant-detail-page__form-label {
+    font-weight: 500;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+}
+
+.restaurant-detail-page__form-control {
+    border: 1px solid var(--gray-300);
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.restaurant-detail-page__form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    outline: none;
+}
+
+.restaurant-detail-page__input-group {
+    position: relative;
+}
+
+.restaurant-detail-page__input-group .restaurant-detail-page__form-control {
+    padding-left: 2.5rem;
+}
+
+.restaurant-detail-page__input-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    z-index: 3;
+}
+
+.restaurant-detail-page__btn-book {
+    background: var(--gray-800);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.restaurant-detail-page__btn-book:hover {
+    background: var(--gray-900);
+    transform: translateY(-1px);
+}
+
+.restaurant-detail-page__cancellation-policy {
+    font-size: 0.8rem;
+    color: var(--gray-600);
+    text-align: center;
+    margin-top: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .restaurant-detail-page__info {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .restaurant-detail-page__meta {
+        justify-content: center;
+    }
+    
+    .restaurant-detail-page__highlights-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .restaurant-detail-page__menu-filters {
+        justify-content: center;
+    }
+    
+    .restaurant-detail-page__rating-summary {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .restaurant-detail-page__table-legend {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* Loading States */
+.restaurant-detail-page__loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.restaurant-detail-page__skeleton {
+    background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Focus States for Accessibility */
+.restaurant-detail-page__nav-link:focus,
+.restaurant-detail-page__filter-btn:focus,
+.restaurant-detail-page__table-item:focus,
+.restaurant-detail-page__form-control:focus,
+.restaurant-detail-page__btn-book:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .restaurant-detail-page__nav-link {
+        border: 1px solid currentColor;
+    }
+    
+    .restaurant-detail-page__form-control {
+        border-width: 2px;
+    }
+}

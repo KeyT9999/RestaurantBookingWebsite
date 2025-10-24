@@ -24,6 +24,71 @@
       .nearby-card h4 { font-size:1.05rem; margin:0 0 6px; }
       .nearby-meta { font-size:0.9rem; color:#555; display:flex; gap:8px; align-items:center; }
       .nearby-actions { margin-top:8px; }
+      
+      /* Notification Bell Styles for Home Page */
+      .notification-bell-wrapper {
+        display: inline-block;
+        margin-right: 12px;
+      }
+      
+      .notification-bell-container {
+        position: relative;
+      }
+      
+      .notification-bell__trigger {
+        background: none;
+        border: none;
+        color: #333;
+        font-size: 18px;
+        padding: 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+      }
+      
+      .notification-bell__trigger:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: #007bff;
+      }
+      
+      .notification-bell__badge {
+        font-size: 10px;
+        min-width: 16px;
+        height: 16px;
+        line-height: 16px;
+        padding: 0 4px;
+      }
+      
+      .notification-bell__menu {
+        min-width: 320px;
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        background-color: #ffffff !important;
+        backdrop-filter: none !important;
+      }
+      
+      .notification-bell__menu .dropdown-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .notification-bell__menu .dropdown-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+      }
+      
+      .notification-bell__menu .dropdown-item:hover {
+        background-color: #f8f9fa;
+      }
+      
+      .notification-bell__menu .dropdown-item:last-child {
+        border-bottom: none;
+      }
     </style>
     
 </head>
@@ -112,6 +177,11 @@
                 
                 <!-- Authenticated User Actions -->
                 <div sec:authorize="isAuthenticated()" class="user-actions">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell-wrapper">
+                        <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
+                    </div>
+                    
                     <!-- Restaurant Owner Dashboard -->
                     <a th:href="@{/restaurant-owner/dashboard}" class="btn-resy" sec:authorize="hasRole('RESTAURANT_OWNER')">
                         <i class="fas fa-tachometer-alt"></i>
@@ -145,7 +215,7 @@
                             </li>
                             <li sec:authorize="hasRole('CUSTOMER')">
                                 <a class="dropdown-item" th:href="@{/customer/favorites}">
-                                    <i class="fas fa-heart me-2"></i>
+                                    <i class="fas fa-star me-2"></i>
                                     Favorites
                                 </a>
                             </li>
@@ -318,70 +388,41 @@
                 <p class="section-subtitle">Những nhà hàng được yêu thích nhất</p>
             </div>
             
-            <div class="restaurant-grid">
-                <div class="restaurant-card">
-                    <div class="restaurant-image">
-                        <div class="restaurant-badge">Premium</div>
+            <div class="alert alert-light text-center" role="status"
+                 th:if="${#lists.isEmpty(popularRestaurants)}">
+                Dữ liệu nhà hàng phổ biến đang được cập nhật.
+            </div>
+
+            <div class="restaurant-grid" th:if="${!#lists.isEmpty(popularRestaurants)}">
+                <div class="restaurant-card" th:each="restaurant : ${popularRestaurants}">
+                    <div class="restaurant-image"
+                         th:style="${restaurant.hasCoverImage()} ? 'background-image: url(' + restaurant.coverImageUrl + ');' : 'background: ' + restaurant.fallbackGradient + ';'">
+                        <div class="restaurant-badge"
+                             th:text="${restaurant.badge}"
+                             th:if="${restaurant.badge != null}"></div>
                     </div>
                     <div class="restaurant-info">
-                        <h3 class="restaurant-name">Le Bistrot</h3>
-                        <p class="restaurant-cuisine">French • Fine Dining</p>
+                        <h3 class="restaurant-name" th:text="${restaurant.name}">Tên nhà hàng</h3>
+                        <p class="restaurant-cuisine"
+                           th:text="${#strings.defaultString(restaurant.cuisineType, 'Đang cập nhật')} + (restaurant.address != null ? ' • ' + restaurant.address : '')">
+                            Ẩm thực • Địa chỉ
+                        </p>
                         <div class="restaurant-rating">
                             <div class="stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"
+                                   th:each="star : ${#numbers.sequence(1, 5)}"
+                                   th:classappend="${star <= restaurant.roundedRating} ? ' text-warning' : ' text-muted'"></i>
                             </div>
-                            <span class="rating-text">4.8 (124 đánh giá)</span>
+                            <span class="rating-text"
+                                  th:text="${restaurant.formattedRating} + ' (' + restaurant.reviewCount + ' đánh giá)'">
+                                4.5 (20 đánh giá)
+                            </span>
                         </div>
-                        <div class="restaurant-price">$$$$</div>
-                        <button class="book-btn">Đặt bàn</button>
-                    </div>
-                </div>
-                
-                <div class="restaurant-card">
-                    <div class="restaurant-image" style="background: linear-gradient(135deg, #a8e6cf 0%, #88d8c0 100%);">
-                        <div class="restaurant-badge">Popular</div>
-                    </div>
-                    <div class="restaurant-info">
-                        <h3 class="restaurant-name">Garden Terrace</h3>
-                        <p class="restaurant-cuisine">Asian • Casual</p>
-                        <div class="restaurant-rating">
-                            <div class="stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <span class="rating-text">4.6 (89 đánh giá)</span>
-                        </div>
-                        <div class="restaurant-price">$$$</div>
-                        <button class="book-btn">Đặt bàn</button>
-                    </div>
-                                </div>
-                
-                <div class="restaurant-card">
-                    <div class="restaurant-image" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);">
-                        <div class="restaurant-badge">New</div>
-                                </div>
-                    <div class="restaurant-info">
-                        <h3 class="restaurant-name">Sky Lounge</h3>
-                        <p class="restaurant-cuisine">International • Rooftop</p>
-                        <div class="restaurant-rating">
-                            <div class="stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <span class="rating-text">4.9 (67 đánh giá)</span>
-                        </div>
-                        <div class="restaurant-price">$$$$</div>
-                        <button class="book-btn">Đặt bàn</button>
+                        <div class="restaurant-price" th:text="${restaurant.priceLabel}">₫120,000</div>
+                        <a class="book-btn"
+                           th:href="@{/restaurants/{id}(id=${restaurant.id})}">
+                            Đặt bàn
+                        </a>
                     </div>
                 </div>
             </div>

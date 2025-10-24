@@ -41,6 +41,9 @@ public class RefundService {
     private PayOsService payOsService;
     
     @Autowired
+    private EnhancedRefundService enhancedRefundService;
+    
+    @Autowired
     private RefundRequestRepository refundRequestRepository;
 
     @Autowired
@@ -50,83 +53,18 @@ public class RefundService {
     private BankAccountService bankAccountService;
 
     /**
-     * Hoàn tiền cho một payment
+     * Hoàn tiền cho một payment với logic mới:
+     * - Trừ 30% hoa hồng từ ví nhà hàng
+     * - Admin chuyển tiền cho khách hàng
+     * - Thông báo khách hàng về thời gian hoàn tiền (1-3 ngày)
      * @param paymentId ID của payment cần hoàn tiền
      * @param refundAmount Số tiền hoàn (null = hoàn toàn bộ)
      * @param reason Lý do hoàn tiền
      * @return Payment đã được cập nhật
      */
     public Payment processRefund(Integer paymentId, BigDecimal refundAmount, String reason) {
-        logger.info("🔄 Processing refund for paymentId: {}, amount: {}, reason: {}", 
-                   paymentId, refundAmount, reason);
-        
-        Payment payment = paymentRepository.findById(paymentId)
-            .orElseThrow(() -> new IllegalArgumentException("Payment not found: " + paymentId));
-        
-        // Validate payment status
-        if (payment.getStatus() != PaymentStatus.COMPLETED) {
-            throw new IllegalArgumentException("Only completed payments can be refunded. Current status: " + payment.getStatus());
-        }
-        
-        if (payment.getRefundedAt() != null) {
-            throw new IllegalArgumentException("Payment has already been refunded");
-        }
-        
-        // Determine refund amount
-        BigDecimal actualRefundAmount = refundAmount != null ? refundAmount : payment.getAmount();
-        
-        if (actualRefundAmount.compareTo(payment.getAmount()) > 0) {
-            throw new IllegalArgumentException("Refund amount cannot exceed payment amount");
-        }
-        
-        if (actualRefundAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Refund amount must be positive");
-        }
-        
-        try {
-            // Process refund based on payment method
-            boolean refundSuccess = false;
-            
-            switch (payment.getPaymentMethod()) {
-                case PAYOS -> {
-                    refundSuccess = processPayOSRefund(payment, actualRefundAmount, reason);
-                }
-                case ZALOPAY -> {
-                    // TODO: Implement ZaloPay refund
-                    logger.warn("ZaloPay refund not implemented yet");
-                    throw new UnsupportedOperationException("ZaloPay refund not implemented yet");
-                }
-                case CARD -> {
-                    // TODO: Implement Card refund
-                    logger.warn("Card refund not implemented yet");
-                    throw new UnsupportedOperationException("Card refund not implemented yet");
-                }
-                default -> {
-                    throw new IllegalArgumentException("Unsupported payment method for refund: " + payment.getPaymentMethod());
-                }
-            }
-            
-            if (refundSuccess) {
-                // Update payment status
-                payment.setStatus(PaymentStatus.REFUNDED);
-                payment.setRefundedAt(LocalDateTime.now());
-                payment.setRefundAmount(actualRefundAmount);
-                payment.setRefundReason(reason);
-                
-                Payment updatedPayment = paymentRepository.save(payment);
-                
-                logger.info("✅ Refund processed successfully for paymentId: {}, amount: {}", 
-                           paymentId, actualRefundAmount);
-                
-                return updatedPayment;
-            } else {
-                throw new RuntimeException("Refund processing failed");
-            }
-            
-        } catch (Exception e) {
-            logger.error("❌ Error processing refund for paymentId: {}", paymentId, e);
-            throw new RuntimeException("Failed to process refund: " + e.getMessage(), e);
-        }
+        // Sử dụng EnhancedRefundService với logic mới
+        return enhancedRefundService.processRefundWithCommissionDeduction(paymentId, refundAmount, reason);
     }
     
     /**

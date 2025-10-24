@@ -107,7 +107,453 @@
         }
 
         .filter-item {
-            min-width: 200px;
+            min-width: 180px;
+            flex: 1;
+        }
+        
+        .filter-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        /* Compact breadcrumb */
+        .ds-breadcrumb {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        
+        .ds-breadcrumb-list {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .ds-breadcrumb-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .ds-breadcrumb-item:not(:last-child)::after {
+            content: '/';
+            margin-left: 0.5rem;
+            color: #6b7280;
+        }
+        
+        /* Restaurant List Layout */
+        .restaurant-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .ds-restaurant-card {
+            display: flex;
+            flex-direction: row;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 2px solid #d1d5db;
+            cursor: pointer;
+        }
+        
+        .ds-restaurant-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+            border-color: #9ca3af;
+        }
+        
+        .ds-restaurant-image {
+            flex: 0 0 250px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .ds-restaurant-photo {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            object-position: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .ds-restaurant-card:hover .ds-restaurant-photo {
+            transform: scale(1.05);
+        }
+        
+        /* Perfect centering for heart icon */
+        .heart-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10;
+        }
+        
+        .heart-icon {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            color: #ef4444;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .heart-icon:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+        
+        /* Perfect centering for overlay buttons */
+        .ds-restaurant-overlay {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        
+        .ds-restaurant-overlay .ds-btn {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .ds-restaurant-overlay .ds-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translateY(-1px);
+        }
+        
+        .ds-restaurant-info {
+            flex: 1;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        /* Perfect icon alignment for OCD */
+        .ds-restaurant-info .ds-flex {
+            align-items: center;
+            line-height: 1.5;
+        }
+        
+        .ds-restaurant-info i {
+            width: 16px;
+            text-align: center;
+            font-size: 0.875rem;
+            color: #6b7280;
+            flex-shrink: 0;
+        }
+        
+        .ds-restaurant-info span {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.5;
+        }
+        
+        .ds-restaurant-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        
+        /* Restaurant Header with NEW Badge */
+        .restaurant-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .new-badge {
+            background: #ef4444;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+        
+        /* Rating Stars */
+        .restaurant-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stars {
+            display: flex;
+            gap: 0.125rem;
+        }
+        
+        .stars .fa-star {
+            font-size: 0.875rem;
+        }
+        
+        .star-filled {
+            color: #fbbf24;
+        }
+        
+        .star-empty {
+            color: #d1d5db;
+        }
+        
+        .rating-text {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        /* Restaurant Details */
+        .restaurant-details {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .price-indicator {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .cuisine-type {
+            font-weight: 500;
+        }
+        
+        .location {
+            color: #6b7280;
+        }
+        
+        /* Availability Status */
+        .availability-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            color: #059669;
+        }
+        
+        .availability-status .fa-clock {
+            color: #ef4444;
+        }
+        
+        /* Time Slots */
+        .time-slots {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .time-slot-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .time-slot-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+        
+        .time-slot-btn:first-child {
+            background: #dc2626;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Button optimization */
+        .ds-restaurant-info .ds-btn {
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        /* Perfect spacing for OCD */
+        .ds-restaurant-info > *:not(:last-child) {
+            margin-bottom: 0.5rem;
+        }
+        
+        .ds-restaurant-info > *:last-child {
+            margin-bottom: 0;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-row .filter-item {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: end;
+            flex-shrink: 0;
+        }
+        
+        /* Compact form styling */
+        .ds-form-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.125rem;
+        }
+        
+        .ds-form-input,
+        .ds-form-select {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+            height: 2.25rem;
+        }
+        
+        .ds-btn {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            height: 2.25rem;
+        }
+        
+        /* Remove default form group margins */
+        .ds-form-group {
+            margin-bottom: 0;
+        }
+        
+        .ds-form-group .ds-form-label {
+            margin-bottom: 0.125rem;
+        }
+        
+        @media (max-width: 1200px) {
+            .filter-row {
+                flex-wrap: wrap;
+            }
+            
+            .filter-item {
+                min-width: 140px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .filter-item {
+                min-width: 100%;
+            }
+            
+            .filter-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+            
+            .filter-actions button {
+                flex: 1;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .filter-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .filter-actions button {
+                width: 100%;
+            }
+        }
+        
+        /* Restaurant List Responsive */
+        @media (max-width: 768px) {
+            .ds-restaurant-card {
+                flex-direction: column;
+            }
+            
+            .ds-restaurant-image {
+                flex: none;
+                height: 200px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .ds-restaurant-photo {
+                height: 200px;
+                object-fit: cover;
+                object-position: center;
+            }
+            
+            .ds-restaurant-info {
+                padding: 1rem;
+            }
+            
+            .ds-restaurant-name {
+                font-size: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .ds-restaurant-info .ds-flex {
+                margin-bottom: 0.5rem;
+            }
+            
+            .restaurant-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .time-slots {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .time-slot-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .restaurant-list {
+                gap: 1rem;
+            }
+            
+            .ds-restaurant-info {
+                padding: 0.75rem;
+            }
         }
     </style>
 </head>
@@ -116,10 +562,10 @@
          th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
     <main>
-        <section class="ds-bg-gray-50" style="padding: var(--ds-space-16) 0;">
+        <section class="ds-bg-gray-50" style="padding: var(--ds-space-4) 0;">
             <div class="ds-container">
-                <nav class="ds-breadcrumb" aria-label="breadcrumb">
-                    <ol class="ds-breadcrumb-list">
+                <nav class="ds-breadcrumb" aria-label="breadcrumb" style="margin: 0; padding: 0.5rem 0;">
+                    <ol class="ds-breadcrumb-list" style="margin: 0; padding: 0;">
                         <li class="ds-breadcrumb-item">
                             <a th:href="@{/}">Trang chủ</a>
                         </li>
@@ -128,15 +574,15 @@
                         </li>
                     </ol>
                 </nav>
-
             </div>
         </section>
 
-        <section style="padding: var(--ds-space-12) 0;">
+        <section style="padding: var(--ds-space-6) 0;">
             <div class="ds-container">
-                <article class="ds-card ds-mb-8">
-                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-6">
-                        <div class="ds-grid ds-grid-auto ds-gap-6 ds-items-end">
+                <article class="ds-card ds-mb-4">
+                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-2" style="padding: 1rem;">
+                        <div class="filter-container">
+                            <div class="filter-row">
                             <div class="ds-form-group filter-item">
                                 <label class="ds-form-label" for="searchInput">Tìm kiếm</label>
                                 <input type="text" id="searchInput"
@@ -144,7 +590,6 @@
                                        th:value="${search}"
                                        placeholder="Tên nhà hàng...">
                             </div>
-
                             <div class="ds-form-group filter-item">
                                 <label class="ds-form-label" for="cuisineFilter">Loại ẩm thực</label>
                                 <select id="cuisineFilter" class="ds-form-select">
@@ -157,27 +602,15 @@
                                     <option value="American" th:selected="${cuisineType == 'American'}">Mỹ</option>
                                 </select>
                             </div>
-
                             <div class="ds-form-group filter-item">
                                 <label class="ds-form-label" for="priceFilter">Khoảng giá</label>
                                 <select id="priceFilter" class="ds-form-select">
                                     <option value="">Tất cả</option>
-                                    <option value="low" th:selected="${priceRange == 'low'}">Dưới 200.000 VNĐ</option>
-                                    <option value="medium" th:selected="${priceRange == 'medium'}">200.000 - 500.000 VNĐ</option>
-                                    <option value="high" th:selected="${priceRange == 'high'}">Trên 500.000 VNĐ</option>
+                                        <option value="low" th:selected="${priceRange == 'low'}">Dưới 200k</option>
+                                        <option value="medium" th:selected="${priceRange == 'medium'}">200k - 500k</option>
+                                        <option value="high" th:selected="${priceRange == 'high'}">Trên 500k</option>
                                 </select>
                             </div>
-
-                            <div class="ds-form-group filter-item">
-                                <label class="ds-form-label" for="ratingFilter">Đánh giá</label>
-                                <select id="ratingFilter" class="ds-form-select">
-                                    <option value="">Tất cả</option>
-                                    <option value="4" th:selected="${ratingFilter == '4'}">Từ 4 sao</option>
-                                    <option value="3" th:selected="${ratingFilter == '3'}">Từ 3 sao</option>
-                                    <option value="2" th:selected="${ratingFilter == '2'}">Từ 2 sao</option>
-                                </select>
-                            </div>
-
                             <div class="ds-form-group filter-item">
                                 <label class="ds-form-label" for="sortSelect">Sắp xếp</label>
                                 <select id="sortSelect" class="ds-form-select">
@@ -188,34 +621,31 @@
                                     <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' and sortDir == 'desc'}">Giá cao nhất</option>
                                 </select>
                             </div>
-
-                            <div class="filter-item">
-                                <label class="ds-form-label" for="filterActions">&nbsp;</label>
-                                <div class="ds-flex ds-gap-3 ds-flex-wrap">
+                                <div class="filter-actions">
                                     <button type="button" id="filterActions"
                                             class="ds-btn ds-btn-primary"
                                             onclick="applyFilters()">
                                         <i class="fas fa-filter"></i>
                                         Lọc
                                     </button>
+                                    <button type="button" id="clearFilters"
+                                            class="ds-btn ds-btn-secondary"
+                                            onclick="clearFilters()">
+                                        <i class="fas fa-times"></i>
+                                        Xóa
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="ds-flex ds-justify-end">
-                            <button type="button"
-                                    class="ds-btn ds-btn-secondary ds-btn-sm"
-                                    onclick="clearFilters()">
-                                <i class="fas fa-times"></i>
-                                Xóa bộ lọc
-                            </button>
-                        </div>
                     </div>
                 </article>
 
-                <div class="ds-grid ds-grid-auto ds-gap-8">
+                <div class="restaurant-list">
                     <article class="ds-restaurant-card"
-                             th:each="restaurant : ${restaurants.content}">
+                             th:each="restaurant : ${restaurants.content}"
+                             th:onclick="|window.location.href='/restaurants/' + ${restaurant.restaurantId}|"
+                             style="cursor: pointer;">
                         <div class="ds-restaurant-image">
                             <img th:if="${restaurant.mainImageUrl != null and !restaurant.mainImageUrl.isEmpty()}"
                                  th:src="${restaurant.mainImageUrl}"
@@ -232,61 +662,60 @@
                             <div class="heart-toggle" sec:authorize="hasRole('CUSTOMER')">
                                 <i class="fas fa-heart heart-icon"
                                    th:data-restaurant-id="${restaurant.restaurantId}"
-                                   onclick="toggleFavorite(this)"
+                                   onclick="event.stopPropagation(); toggleFavorite(this)"
                                    title="Thêm vào yêu thích"></i>
                             </div>
 
                             <div class="ds-restaurant-overlay">
                                 <a th:href="@{/booking/new(restaurantId=${restaurant.restaurantId})}"
                                    class="ds-btn ds-btn-primary ds-btn-sm"
-                                   sec:authorize="!hasRole('RESTAURANT_OWNER')">
+                                   sec:authorize="!hasRole('RESTAURANT_OWNER')"
+                                   onclick="event.stopPropagation()">
                                     Đặt bàn
                                 </a>
                                 <a th:href="@{/restaurant-owner/dashboard}"
                                    class="ds-btn ds-btn-primary ds-btn-sm"
-                                   sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                   sec:authorize="hasRole('RESTAURANT_OWNER')"
+                                   onclick="event.stopPropagation()">
                                     Quản lý
                                 </a>
                             </div>
                         </div>
 
                         <div class="ds-restaurant-info ds-flex ds-flex-col ds-gap-3">
+                            <!-- Restaurant Name with NEW Badge -->
+                            <div class="restaurant-header">
                             <h3 class="ds-restaurant-name" th:text="${restaurant.restaurantName}">Restaurant Name</h3>
-
-                            <p class="ds-text-base ds-text-secondary ds-flex ds-gap-2 ds-items-center">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <span th:text="${restaurant.address}">Address</span>
-                            </p>
-
-                            <p class="ds-text-base ds-text-secondary ds-flex ds-gap-2 ds-items-center"
-                               th:if="${restaurant.cuisineType != null}">
-                                <i class="fas fa-utensils"></i>
-                                <span th:text="${restaurant.cuisineType}">Cuisine</span>
-                            </p>
-
-                            <p class="ds-text-base ds-text-secondary ds-flex ds-gap-2 ds-items-center"
-                               th:if="${restaurant.averagePrice != null}">
-                                <i class="fas fa-tag"></i>
-                                <span th:text="${#numbers.formatDecimal(restaurant.averagePrice, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">Price</span>
-                            </p>
-
-                            <div class="ds-restaurant-rating">
-                                <div class="ds-stars">
-                                    <i class="fas fa-star" th:each="i : ${#numbers.sequence(1, 5)}" 
-                                       th:classappend="${i <= restaurant.averageRating} ? '' : 'text-muted'"></i>
-                                </div>
-                                <span class="ds-rating-text"
-                                      th:text="|${restaurant.formattedAverageRating} (${restaurant.reviewCount} đánh giá)|">
-                                    4.8 (0 đánh giá)
-                                </span>
+                                <span class="new-badge">NEW</span>
                             </div>
 
-                            <div class="ds-mt-2">
-                                <a th:href="@{'/restaurants/' + ${restaurant.restaurantId}}"
-                                   class="ds-btn ds-btn-secondary ds-btn-sm ds-w-full">
-                                    <i class="fas fa-eye"></i>
-                                    Xem chi tiết
-                                </a>
+                            <!-- Rating Stars -->
+                            <div class="restaurant-rating">
+                                <div class="stars">
+                                    <i class="fas fa-star" th:each="i : ${#numbers.sequence(1, 5)}" 
+                                       th:classappend="${i <= restaurant.averageRating} ? 'star-filled' : 'star-empty'"></i>
+                                </div>
+                                <span class="rating-text" th:text="|${restaurant.formattedAverageRating} (${restaurant.reviewCount})|">4.5 (11)</span>
+                            </div>
+
+                            <!-- Price and Details -->
+                            <div class="restaurant-details">
+                                <span class="price-indicator">$$$$</span>
+                                <span class="cuisine-type" th:text="${restaurant.cuisineType}">Vietnamese</span>
+                                <span class="location" th:text="${restaurant.address}">Hoi An</span>
+                            </div>
+
+                            <!-- Availability Status -->
+                            <div class="availability-status">
+                                <i class="fas fa-clock"></i>
+                                <span>You're in luck! We still have 3 timeslots left</span>
+                            </div>
+
+                            <!-- Time Slots -->
+                            <div class="time-slots">
+                                <button class="time-slot-btn">7:00 PM*</button>
+                                <button class="time-slot-btn">7:15 PM*</button>
+                                <button class="time-slot-btn">7:30 PM*</button>
                             </div>
                         </div>
                     </article>

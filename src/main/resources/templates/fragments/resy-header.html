@@ -26,9 +26,11 @@
                     <!-- Authenticated User Actions -->
                     <div sec:authorize="isAuthenticated()" class="user-actions">
                     <!-- Customer Actions -->
-                    <a th:href="@{/customer/favorites}" class="btn-resy-outline icon-only" sec:authorize="hasRole('CUSTOMER')" title="Favorites">
-                        <i class="fas fa-heart"></i>
-                    </a>
+
+                        <!-- Notifications -->
+                        <div class="notification-bell-wrapper" sec:authorize="isAuthenticated()">
+                            <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
+                        </div>
                         
                         <!-- Restaurant Owner Dashboard -->
                         <a th:href="@{/restaurant-owner/dashboard}" class="btn-resy" sec:authorize="hasRole('RESTAURANT_OWNER')">
@@ -57,7 +59,7 @@
                                 </li>
                                 <li sec:authorize="hasRole('CUSTOMER')">
                                     <a class="dropdown-item" th:href="@{/customer/favorites}">
-                                        <i class="fas fa-heart me-2"></i>
+                                        <i class="fas fa-star me-2"></i>
                                         Favorites
                                     </a>
                                 </li>

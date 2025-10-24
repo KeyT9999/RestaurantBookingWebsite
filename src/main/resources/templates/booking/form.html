@@ -230,38 +230,6 @@
 <body class="booking-page" th:with="activeNav='restaurants'">
     <div th:replace="~{fragments/resy-header :: resy-header}"></div>
     
-    <section class="booking-hero">
-        <div class="container">
-            <div class="booking-hero__content">
-                <span class="booking-hero__badge">Book Eat Experience</span>
-                <h1 th:text="${bookingId != null ? 'Chỉnh sửa đặt bàn' : 'Đặt bàn mới'}"></h1>
-                <p>Đặt bàn trực quan và đồng bộ với trải nghiệm trang chủ Book Eat.</p>
-                <div class="booking-hero__meta">
-                    <div class="booking-hero__meta-item">
-                        <i class="fas fa-utensils"></i>
-                        <span>Chọn nhà hàng &amp; bàn yêu thích</span>
-                    </div>
-                    <div class="booking-hero__meta-item">
-                        <i class="fas fa-clock"></i>
-                        <span>Giữ chỗ chỉ trong vài bước</span>
-                    </div>
-                    <div class="booking-hero__meta-item">
-                        <i class="fas fa-ticket-alt"></i>
-                        <span>Áp dụng voucher tức thì</span>
-                    </div>
-                </div>
-                <div class="booking-hero__actions">
-                    <a href="#section-basic" class="btn-resy anchor-link">
-                        <i class="fas fa-calendar-plus me-2"></i> Bắt đầu đặt bàn
-                    </a>
-                    <a href="#section-tables" class="btn-resy-outline anchor-link">
-                        <i class="fas fa-chair me-2"></i> Xem lựa chọn bàn
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <main class="booking-main">
         <div class="container booking-shell">
             <div class="booking-panel">

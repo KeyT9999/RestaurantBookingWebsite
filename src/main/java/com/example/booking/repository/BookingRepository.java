@@ -128,6 +128,24 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      */
     List<Booking> findByRestaurantAndBookingTimeBetween(RestaurantProfile restaurant, LocalDateTime startTime,
                   LocalDateTime endTime);
+    
+    /**
+     * Find bookings by restaurant ID and booking time range
+     */
+    List<Booking> findByRestaurantRestaurantIdAndBookingTimeBetween(Integer restaurantId, LocalDateTime startTime,
+                  LocalDateTime endTime);
+    
+    /**
+     * Find bookings by restaurant ID ordered by booking time desc with eager loading
+     */
+    @Query("SELECT DISTINCT b FROM Booking b " +
+           "LEFT JOIN FETCH b.customer c " +
+           "LEFT JOIN FETCH c.user u " +
+           "LEFT JOIN FETCH b.bookingTables bt " +
+           "LEFT JOIN FETCH bt.table t " +
+           "WHERE b.restaurant.restaurantId = :restaurantId " +
+           "ORDER BY b.bookingTime DESC")
+    List<Booking> findByRestaurantRestaurantIdOrderByBookingTimeDesc(@Param("restaurantId") Integer restaurantId);
 
     /**
      * Find bookings by restaurant, status and booking time range
