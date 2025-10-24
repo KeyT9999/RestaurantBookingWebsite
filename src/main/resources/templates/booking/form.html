@@ -224,6 +224,54 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+        
+        /* Table List Styles */
+        .table-list-item {
+            transition: all 0.2s ease;
+        }
+        
+        .table-list-item:hover {
+            border-color: #007bff !important;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15) !important;
+            transform: translateY(-1px);
+        }
+        
+        .table-list-item.selected {
+            border-color: #007bff !important;
+            background-color: #f8f9ff !important;
+        }
+        
+        .table-info h6 {
+            color: #2c3e50;
+        }
+        
+        .table-actions .btn {
+            border-radius: 6px;
+            padding: 6px 10px;
+        }
+        
+        .table-actions .btn:hover {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .table-list-item {
+                padding: 10px !important;
+            }
+            
+            .table-info .d-flex {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 4px !important;
+            }
+            
+            .table-actions {
+                margin-top: 8px;
+            }
+        }
     </style>
 </head>
 
@@ -896,6 +944,14 @@
             // Toggle checkbox
             checkbox.checked = !checkbox.checked;
             
+            // Update visual selection
+            const tableItem = checkbox.closest('.table-list-item');
+            if (checkbox.checked) {
+                tableItem.classList.add('selected');
+            } else {
+                tableItem.classList.remove('selected');
+            }
+            
             // Update selected tables array
             if (checkbox.checked) {
                 if (!selectedTables.find(t => t.tableId === tableId)) {
@@ -980,56 +1036,45 @@
                 const statusClass = getStatusBadgeClass(table.status);
                 const statusText = getStatusDisplayName(table.status);
                 
-                // Create table image placeholder
-                const imageUrl = table.mainImage || `data:image/svg+xml;base64,${btoa(`
-                    <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="300" height="200" fill="#f8f9fa"/>
-                        <text x="150" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="#6c757d">
-                            ${table.tableName || 'Table'}
-                        </text>
-                    </svg>
-                `)}`;
-                
-                const tableCard = document.createElement('div');
-                tableCard.className = 'col-md-4 mb-3';
-                tableCard.innerHTML = `
-                    <div class="card table-card" data-table-id="${table.tableId}" data-deposit="${table.depositAmount || 0}">
-                        <div class="card-body p-0">
-                            <!-- Image section - separate click event -->
-                            <div class="image-section" onclick="showTableImages(${table.tableId})" 
-                                 style="cursor: pointer; position: relative;" title="Click để xem tất cả ảnh của bàn">
-                                <img src="${imageUrl}" class="card-img-top" alt="${table.tableName}" 
-                                     style="height: 200px; object-fit: cover;">
-                                <div class="image-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
-                                     background: rgba(0,0,0,0); transition: background 0.3s ease; display: flex; 
-                                     align-items: center; justify-content: center;">
-                                    <i class="fas fa-images text-white" style="opacity: 0; transition: opacity 0.3s ease; font-size: 2rem;"></i>
-                                </div>
-                            </div>
-                            
-                            <!-- Content section - select table event -->
-                            <div class="content-section" onclick="toggleTableSelection(${table.tableId})" 
-                                 style="cursor: pointer; padding: 1rem;">
-                                <div class="form-check d-flex align-items-center">
-                                    <input class="form-check-input table-checkbox me-2" 
+                const tableItem = document.createElement('div');
+                tableItem.className = 'col-12 mb-2';
+                tableItem.innerHTML = `
+                    <div class="table-list-item" data-table-id="${table.tableId}" data-deposit="${table.depositAmount || 0}" 
+                         onclick="toggleTableSelection(${table.tableId})" 
+                         style="cursor: pointer; border: 1px solid #dee2e6; border-radius: 8px; padding: 12px; background: white; transition: all 0.2s ease; hover:border-color: #007bff; hover:box-shadow: 0 2px 4px rgba(0,123,255,0.1);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <div class="form-check me-3">
+                                    <input class="form-check-input table-checkbox" 
                                            type="checkbox" 
                                            value="${table.tableId}"
                                            id="table-${table.tableId}"
                                            onclick="event.stopPropagation(); toggleTableSelection(${table.tableId})">
-                                    <label class="form-check-label flex-grow-1" for="table-${table.tableId}">
-                                        <h6 class="card-title mb-1">${table.tableName}</h6>
-                                        <p class="card-text mb-1">
-                                            <small class="text-muted">Sức chứa: ${table.capacity} khách</small><br>
-                                            <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
-                                        </p>
-                                        <span class="badge ${statusClass}">${statusText}</span>
-                                    </label>
                                 </div>
+                                
+                                <div class="table-info flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <h6 class="mb-0 fw-bold">${table.tableName}</h6>
+                                        <span class="badge ${statusClass}">${statusText}</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3 text-muted small">
+                                        <span><i class="fas fa-users me-1"></i>${table.capacity} khách</span>
+                                        <span><i class="fas fa-money-bill-wave me-1"></i>${formatCurrency(table.depositAmount || 0)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="table-actions">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                        onclick="event.stopPropagation(); showTableImages(${table.tableId})" 
+                                        title="Xem ảnh bàn">
+                                    <i class="fas fa-images"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
                 `;
-                tablesList.appendChild(tableCard);
+                tablesList.appendChild(tableItem);
             });
             
         }
@@ -1682,62 +1727,8 @@
                     `;
                 }
             } else {
-                filteredTables.forEach(table => {
-                const statusValue = getTableStatusValue(table.status);
-                const statusClass = getStatusBadgeClass(table.status);
-                const statusText = getStatusDisplayName(table.status);
-                
-                // Create table image placeholder
-                const imageUrl = table.mainImage || `data:image/svg+xml;base64,${btoa(`
-                    <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="300" height="200" fill="#f8f9fa"/>
-                        <text x="150" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="#6c757d">
-                            ${table.tableName || 'Table'}
-                        </text>
-                    </svg>
-                `)}`;
-                
-                const tableCard = document.createElement('div');
-                tableCard.className = 'col-md-4 mb-3';
-                tableCard.innerHTML = `
-                    <div class="card table-card" data-table-id="${table.tableId}" data-deposit="${table.depositAmount || 0}">
-                        <div class="card-body p-0">
-                            <!-- Image section - separate click event -->
-                            <div class="image-section" onclick="showTableImages(${table.tableId})" 
-                                 style="cursor: pointer; position: relative;" title="Click để xem tất cả ảnh của bàn">
-                                <img src="${imageUrl}" class="card-img-top" alt="${table.tableName}" 
-                                     style="height: 200px; object-fit: cover;">
-                                <div class="image-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
-                                     background: rgba(0,0,0,0); transition: background 0.3s ease; display: flex; 
-                                     align-items: center; justify-content: center;">
-                                    <i class="fas fa-images text-white" style="opacity: 0; transition: opacity 0.3s ease; font-size: 2rem;"></i>
-                                </div>
-                            </div>
-                            
-                            <!-- Content section - select table event -->
-                            <div class="content-section" onclick="toggleTableSelection(${table.tableId})" 
-                                 style="cursor: pointer; padding: 1rem;">
-                                <div class="form-check d-flex align-items-center">
-                                    <input class="form-check-input table-checkbox me-2" 
-                                           type="checkbox" 
-                                           value="${table.tableId}"
-                                           id="table-${table.tableId}"
-                                           onclick="event.stopPropagation(); toggleTableSelection(${table.tableId})">
-                                    <label class="form-check-label flex-grow-1" for="table-${table.tableId}">
-                                        <h6 class="card-title mb-1">${table.tableName}</h6>
-                                        <p class="card-text mb-1">
-                                            <small class="text-muted">Sức chứa: ${table.capacity} khách</small><br>
-                                            <small class="text-muted">Deposit: ${formatCurrency(table.depositAmount || 0)}</small>
-                                        </p>
-                                        <span class="badge ${statusClass}">${statusText}</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                tablesList.appendChild(tableCard);
-            });
+                // Use the new list layout function
+                renderTablesInModal(filteredTables);
             }
             
             // Restore previous selections from hidden input
@@ -1754,14 +1745,13 @@
                         if (checkbox) {
                             checkbox.checked = true;
                             
-                            const tableCard = checkbox.closest('.table-card');
+                            const tableItem = checkbox.closest('.table-list-item');
                             
-                            if (tableCard) {
-                                const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
-                                const tableName = tableCard.querySelector('.card-title').textContent;
-                                const capacityText = tableCard.querySelector('.card-text small').textContent;
+                            if (tableItem) {
+                                const deposit = parseFloat(tableItem.getAttribute('data-deposit'));
+                                const tableName = tableItem.querySelector('h6').textContent;
+                                const capacityText = tableItem.querySelector('.d-flex .small span:first-child').textContent;
                                 const capacity = parseInt(capacityText.match(/\d+/)[0]);
-                                
                                 
                                 selectedTables.push({
                                     id: tableId,
@@ -1769,9 +1759,7 @@
                                     deposit: deposit,
                                     capacity: capacity
                                 });
-                            } else {
                             }
-                        } else {
                         }
                     });
                     
@@ -1844,14 +1832,13 @@
             selectedTables = [];
             
             checkboxes.forEach(checkbox => {
-                const tableCard = checkbox.closest('.table-card');
+                const tableItem = checkbox.closest('.table-list-item');
                 
-                const tableId = tableCard.getAttribute('data-table-id');
-                const deposit = parseFloat(tableCard.getAttribute('data-deposit'));
-                const tableName = tableCard.querySelector('.card-title').textContent;
-                const capacityText = tableCard.querySelector('.card-text small').textContent;
+                const tableId = tableItem.getAttribute('data-table-id');
+                const deposit = parseFloat(tableItem.getAttribute('data-deposit'));
+                const tableName = tableItem.querySelector('h6').textContent;
+                const capacityText = tableItem.querySelector('.d-flex .small span:first-child').textContent;
                 const capacity = parseInt(capacityText.match(/\d+/)[0]);
-                
                 
                 selectedTables.push({
                     id: tableId,
@@ -1860,7 +1847,6 @@
                     capacity: capacity
                 });
             });
-            
             
             // Update UI
             updateTableSelectionUI();
@@ -2915,6 +2901,11 @@
          */
         function submitBookingForm() {
             
+            // Check authentication first
+            if (!checkAuthentication()) {
+                return;
+            }
+            
             // Validate form before submission
             if (!validateFormBeforeSubmit()) {
                 return;
@@ -2931,6 +2922,83 @@
             }
             
             form.submit();
+        }
+        
+        /**
+         * Check if user is authenticated
+         */
+        function checkAuthentication() {
+            // Check if user is logged in by looking for authentication indicators
+            const isLoggedIn = document.body.getAttribute('data-user-logged-in') === 'true' || 
+                              document.querySelector('[data-user-id]') !== null ||
+                              document.querySelector('.user-menu') !== null;
+            
+            if (!isLoggedIn) {
+                // Show login modal
+                showLoginModal();
+                return false;
+            }
+            
+            return true;
+        }
+        
+        /**
+         * Show login modal
+         */
+        function showLoginModal() {
+            // Save current form state before redirecting to login
+            saveFormState();
+            
+            // Create login modal if it doesn't exist
+            let loginModal = document.getElementById('loginModal');
+            if (!loginModal) {
+                loginModal = document.createElement('div');
+                loginModal.id = 'loginModal';
+                loginModal.className = 'modal fade';
+                loginModal.setAttribute('tabindex', '-1');
+                loginModal.setAttribute('aria-labelledby', 'loginModalLabel');
+                loginModal.setAttribute('aria-hidden', 'true');
+                loginModal.innerHTML = `
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="loginModalLabel">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập để đặt bàn
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="text-center mb-4">
+                                    <i class="fas fa-user-lock text-primary" style="font-size: 3rem;"></i>
+                                    <p class="mt-3 text-muted">Bạn cần đăng nhập để có thể đặt bàn</p>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <a href="/login?returnUrl=${encodeURIComponent(window.location.href)}" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+                                    </a>
+                                    <a href="/register?returnUrl=${encodeURIComponent(window.location.href)}" class="btn btn-outline-primary">
+                                        <i class="fas fa-user-plus me-2"></i>Đăng ký tài khoản
+                                    </a>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Thông tin đặt bàn của bạn sẽ được lưu tạm thời
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(loginModal);
+            }
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(loginModal);
+            modal.show();
+            
+            // Show notification
+            showNotification('Vui lòng đăng nhập để tiếp tục đặt bàn', 'warning');
         }
         
         /**
@@ -2994,6 +3062,173 @@
         }
         
         // ==================== END SMART WAITLIST FUNCTIONALITY ====================
+    </script>
+    
+    <!-- Simple JavaScript Pre-fill (No Thymeleaf conflicts) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 DEBUG: Booking form JavaScript loaded');
+            
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const prefillDate = urlParams.get('prefillDate');
+            const prefillTime = urlParams.get('prefillTime');
+            const prefillGuests = urlParams.get('prefillGuests');
+            const restaurantId = urlParams.get('restaurantId');
+            
+            console.log('🔍 DEBUG: URL parameters:');
+            console.log('  restaurantId:', restaurantId);
+            console.log('  prefillDate:', prefillDate);
+            console.log('  prefillTime:', prefillTime);
+            console.log('  prefillGuests:', prefillGuests);
+            
+            // Pre-fill restaurant selection
+            if (restaurantId) {
+                const restaurantSelect = document.getElementById('restaurantId');
+                if (restaurantSelect) {
+                    restaurantSelect.value = restaurantId;
+                    console.log('✅ DEBUG: Set restaurantId to:', restaurantId);
+                    
+                    // Auto-load tables
+                    if (typeof loadTables === 'function') {
+                        loadTables();
+                        console.log('🔍 DEBUG: Auto-loading tables for restaurant:', restaurantId);
+                    }
+                }
+            }
+            
+            // Pre-fill date and time
+            if (prefillDate && prefillTime) {
+                const dateTimeString = prefillDate + 'T' + prefillTime;
+                console.log('🔍 DEBUG: Combined datetime:', dateTimeString);
+                
+                const bookingTimeInput = document.getElementById('bookingTime');
+                if (bookingTimeInput) {
+                    bookingTimeInput.value = dateTimeString;
+                    console.log('✅ DEBUG: Set bookingTime to:', dateTimeString);
+                } else {
+                    console.log('❌ DEBUG: bookingTime input not found');
+                }
+            } else {
+                console.log('⚠️ DEBUG: Missing prefill date/time data');
+            }
+            
+            // Pre-fill guest count
+            if (prefillGuests) {
+                const guestCountInput = document.getElementById('guestCount');
+                if (guestCountInput) {
+                    guestCountInput.value = prefillGuests;
+                    console.log('✅ DEBUG: Set guestCount to:', prefillGuests);
+                } else {
+                    console.log('❌ DEBUG: guestCount input not found');
+                }
+            } else {
+                console.log('⚠️ DEBUG: prefillGuests is null or empty');
+            }
+            
+            // Show success message if all data is pre-filled
+            if (restaurantId && prefillDate && prefillTime && prefillGuests) {
+                console.log('🎉 DEBUG: All data successfully pre-filled!');
+                
+                // Optional: Show a success message to user
+                const successMsg = document.createElement('div');
+                successMsg.className = 'alert alert-success';
+                successMsg.innerHTML = '<i class="fas fa-check-circle"></i> Thông tin đã được điền sẵn từ trang chi tiết nhà hàng!';
+                
+                const form = document.querySelector('form');
+                if (form) {
+                    form.insertBefore(successMsg, form.firstChild);
+                    
+                    // Auto-hide after 5 seconds
+                    setTimeout(() => {
+                        successMsg.remove();
+                    }, 5000);
+                }
+            }
+            
+            // Check if user just logged in and restore form state
+            checkAndRestoreFormState();
+        });
+        
+        /**
+         * Check if user just logged in and restore form state
+         */
+        function checkAndRestoreFormState() {
+            // Check if there's a saved form state in localStorage
+            const savedState = localStorage.getItem('bookingFormState');
+            if (savedState) {
+                try {
+                    const formData = JSON.parse(savedState);
+                    
+                    // Check if user is now logged in
+                    const isLoggedIn = document.body.getAttribute('data-user-logged-in') === 'true' || 
+                                      document.querySelector('[data-user-id]') !== null;
+                    
+                    if (isLoggedIn) {
+                        // Restore form state
+                        restoreFormState(formData);
+                        
+                        // Clear saved state
+                        localStorage.removeItem('bookingFormState');
+                        
+                        // Show success message
+                        showNotification('Chào mừng bạn quay lại! Thông tin đặt bàn đã được khôi phục.', 'success');
+                    }
+                } catch (error) {
+                    console.error('Error restoring form state:', error);
+                    localStorage.removeItem('bookingFormState');
+                }
+            }
+        }
+        
+        /**
+         * Restore form state from saved data
+         */
+        function restoreFormState(formData) {
+            // Restore basic form fields
+            if (formData.restaurantId) {
+                const restaurantSelect = document.getElementById('restaurantId');
+                if (restaurantSelect) {
+                    restaurantSelect.value = formData.restaurantId;
+                }
+            }
+            
+            if (formData.bookingTime) {
+                const bookingTimeInput = document.getElementById('bookingTime');
+                if (bookingTimeInput) {
+                    bookingTimeInput.value = formData.bookingTime;
+                }
+            }
+            
+            if (formData.guestCount) {
+                const guestCountInput = document.getElementById('guestCount');
+                if (guestCountInput) {
+                    guestCountInput.value = formData.guestCount;
+                }
+            }
+            
+            // Restore selected tables, dishes, services if any
+            if (formData.selectedTableIds) {
+                document.getElementById('selectedTableIds').value = formData.selectedTableIds;
+            }
+            
+            if (formData.selectedDishIds) {
+                document.getElementById('selectedDishIds').value = formData.selectedDishIds;
+            }
+            
+            if (formData.selectedServiceIds) {
+                document.getElementById('selectedServiceIds').value = formData.selectedServiceIds;
+            }
+            
+            // Update UI if needed
+            if (typeof updateTableSelectionUI === 'function') {
+                updateTableSelectionUI();
+            }
+            
+            if (typeof updateTotalAmount === 'function') {
+                updateTotalAmount();
+            }
+        }
     </script>
 </body>
 </html> 

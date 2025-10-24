@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.time.LocalDateTime;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +86,23 @@ public class BookingController {
      */
     @GetMapping("/new")
     public String showBookingForm(@RequestParam(value = "restaurantId", required = false) Integer restaurantId,
+            @RequestParam(value = "prefillDate", required = false) String prefillDate,
+            @RequestParam(value = "prefillTime", required = false) String prefillTime,
+            @RequestParam(value = "prefillGuests", required = false) Integer prefillGuests,
             Model model, Authentication authentication) {
+        
+        // Debug logging
+        System.out.println("🔍 DEBUG: BookingController /new called with:");
+        System.out.println("  restaurantId: " + restaurantId);
+        System.out.println("  prefillDate: " + prefillDate);
+        System.out.println("  prefillTime: " + prefillTime);
+        System.out.println("  prefillGuests: " + prefillGuests);
+        
+        // Pass parameters to view for JavaScript to handle
+        model.addAttribute("prefillRestaurantId", restaurantId);
+        model.addAttribute("prefillDate", prefillDate);
+        model.addAttribute("prefillTime", prefillTime);
+        model.addAttribute("prefillGuests", prefillGuests);
         if (authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_RESTAURANT_OWNER"))) {
             return "redirect:/restaurant-owner/dashboard?error=cannot_book_public";
@@ -108,6 +125,9 @@ public class BookingController {
             if (restaurantId != null) {
                 bookingForm.setRestaurantId(restaurantId);
             }
+            
+            // Note: Pre-filling is now handled by JavaScript to avoid Thymeleaf conflicts
+            System.out.println("ℹ️ DEBUG: Pre-filling will be handled by JavaScript");
         }
 
         model.addAttribute("restaurants", restaurants);
