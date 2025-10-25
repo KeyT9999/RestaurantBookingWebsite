@@ -152,32 +152,35 @@ You are a **Senior Java Developer** creating comprehensive JUnit 5 unit tests fo
 🎯 Objective:
 Generate complete JUnit 5 test code for the following test cases from our Restaurant Booking System:
 
-**SimpleBookingTest (3 cases):**
-1. testBasicAssertion() - Verify JUnit framework and basic assertions
-2. testMathCalculation() - Test basic math operations
-3. testStringOperations() - Test string concatenation and contains
-
-**BookingControllerTest (6 cases):**
-1. testShowBookingForm_WithCustomerRole_ShouldReturnForm() - Show booking form for customer
-2. testCreateBooking_WithValidData_ShouldSuccess() - Create booking with valid data
-3. testCreateBooking_WithConflict_ShouldReturnError() - Handle booking conflicts
-4. testShowBookingForm_WithRestaurantOwnerRole_ShouldRedirect() - Security: restaurant owner redirect
-5. testShowBookingForm_WithoutAuthentication_ShouldRedirectToLogin() - Security: auth required
-6. testShowBookingForm_WithNoRestaurants_ShouldShowEmptyList() - Edge case: no restaurants
-
 **BookingServiceTest (7 cases):**
-1. testCreateBooking_WithValidData_ShouldSuccess() - Create booking successfully
-2. testCalculateTotalAmount_WithOnlyDeposit_ShouldReturnDepositAmount() - Calculate total amount
-3. testCreateBooking_WithCustomerNotFound_ShouldThrowException() - Customer not found error
-4. testCreateBooking_WithRestaurantNotFound_ShouldThrowException() - Restaurant not found error
-5. testCreateBooking_WithTableNotFound_ShouldThrowException() - Table not found error
-6. testCreateBooking_ShouldSetCorrectStatus() - Verify booking status
-7. testCreateBooking_ShouldSetCorrectDepositAmount() - Verify deposit amount
-
-**BookingIntegrationTest (3 cases):**
-1. testBookingFlow_EndToEnd() - End-to-end booking flow
-2. testBookingAmountCalculation_ShouldBeCorrect() - Amount calculation with DB
-3. testBookingStatusFlow_ShouldUpdateCorrectly() - Status update with DB
+testCreateBooking_WithValidData_ShouldSuccess() - Create booking successfully
+testCreateBooking_WithValidDataAndDishes_ShouldCreateBookingWithDishes() - Create booking with dishes successfully
+testUpdateBooking_WithValidData_ShouldSuccess() - Update booking successfully
+testUpdateBooking_WithUnauthorizedUser_ShouldThrowException() - Unauthorized user cannot update booking
+testFindBookingById_WithValidId_ShouldReturnBooking() - Find booking by ID successfully
+testFindBookingById_WithInvalidId_ShouldReturnEmpty() - Find booking with invalid ID returns empty
+testGetBookingDetailById_WithValidId_ShouldReturnBookingWithDetails() - Get booking details successfully
+testGetBookingWithDetailsById_WithValidId_ShouldReturnFullBookingDetails() - Get full booking details successfully
+testConfirmBooking_WithPendingStatus_ShouldSuccess() - Confirm pending booking successfully
+testConfirmBooking_WithNonPendingStatus_ShouldThrowException() - Cannot confirm non-pending booking
+testCompleteBooking_WithConfirmedStatus_ShouldSuccess() - Complete confirmed booking successfully
+testCompleteBooking_WithNonConfirmedStatus_ShouldThrowException() - Cannot complete non-confirmed booking
+testUpdateBookingStatus_WithValidStatus_ShouldSuccess() - Update booking status successfully
+testCancelBooking_WithValidData_ShouldSuccess() - Cancel booking successfully
+testFindBookingsByCustomer_WithValidCustomerId_ShouldReturnBookings() - Find bookings by customer successfully
+testFindBookingsByCustomer_WithInvalidCustomerId_ShouldReturnEmptyList() - Find bookings with invalid customer returns empty
+testGetBookingsByRestaurant_WithValidRestaurantId_ShouldReturnBookings() - Get bookings by restaurant successfully
+testFindAvailableTables_WithValidData_ShouldReturnAvailableTables() - Find available tables successfully
+testCalculateTotalAmount_WithOnlyDeposit_ShouldReturnDepositAmount() - Calculate total amount with deposit only
+testCalculateTotalAmount_WithDishesAndServices_ShouldReturnCorrectTotal() - Calculate total amount with dishes and services
+testAssignDishesToBooking_WithValidDishes_ShouldSuccess() - Assign dishes to booking successfully
+testAssignServicesToBooking_WithValidServices_ShouldSuccess() - Assign services to booking successfully
+testUpdateBookingWithItems_WithValidData_ShouldSuccess() - Update booking with items successfully
+testCreateBooking_WithCustomerNotFound_ShouldThrowException() - Customer not found error
+testCreateBooking_WithRestaurantNotFound_ShouldThrowException() - Restaurant not found error
+testCreateBooking_WithTableNotFound_ShouldThrowException() - Table not found error
+testCreateBooking_ShouldSetCorrectStatus() - Verify booking status is set correctly
+testCreateBooking_ShouldSetCorrectDepositAmount() - Verify deposit amount is set correctly
 
 📦 Context:
 This is a Spring Boot application with:
