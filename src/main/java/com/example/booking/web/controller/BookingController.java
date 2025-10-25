@@ -112,6 +112,10 @@ public class BookingController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_RESTAURANT_OWNER"))) {
             return "redirect:/restaurant-owner/dashboard?error=cannot_book_public";
         }
+        if (authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return "redirect:/admin/dashboard?error=cannot_book_public";
+        }
         
         List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
         System.out.println("🔍 Found " + restaurants.size() + " restaurants");
@@ -191,6 +195,11 @@ public class BookingController {
                     ", guestCount=" + form.getGuestCount() +
                     ", bookingTime=" + form.getBookingTime());
 
+            if (authentication == null || !authentication.isAuthenticated()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để đặt bàn.");
+                return "redirect:http://localhost/oauth2/authorization/google";
+            }
+
             UUID customerId = getCurrentCustomerId(authentication);
 
             // Voucher integration is now handled in BookingService.createBooking()
@@ -204,7 +213,15 @@ public class BookingController {
 
             // Booking created successfully, redirect to payment
             java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
-            java.math.BigDecimal depositAmount = totalAmount.multiply(new java.math.BigDecimal("0.1"));
+            if (totalAmount == null || totalAmount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                totalAmount = booking.getDepositAmount() != null ? booking.getDepositAmount() : java.math.BigDecimal.ZERO;
+            }
+            java.math.BigDecimal depositAmount;
+            if (totalAmount.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                depositAmount = totalAmount.multiply(new java.math.BigDecimal("0.1"));
+            } else {
+                depositAmount = booking.getDepositAmount() != null ? booking.getDepositAmount() : java.math.BigDecimal.ZERO;
+            }
             String formattedDeposit = String.format("%,.0f", depositAmount);
 
             redirectAttributes.addFlashAttribute("successMessage",

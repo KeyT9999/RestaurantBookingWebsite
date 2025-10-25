@@ -123,6 +123,7 @@ class BookingServiceTest {
         table.setTableName("Table 1");
         table.setCapacity(4);
         table.setRestaurant(restaurant);
+        table.setDepositAmount(new BigDecimal("100000"));
 
         // Setup Mock Booking
         mockBooking = new Booking();
@@ -252,5 +253,329 @@ class BookingServiceTest {
 
         // Then
         assertEquals(new BigDecimal("10000"), result.getDepositAmount());
+    }
+
+    // ==================== ERROR HANDLING TESTS ====================
+
+    @Test
+    void testCreateBooking_WithNullBookingForm_ShouldThrowException() {
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.createBooking(null, customerId);
+        });
+        assertEquals("BookingForm cannot be null", exception.getMessage());
+    }
+
+    @Test
+    void testCreateBooking_WithNullCustomerId_ShouldThrowException() {
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.createBooking(bookingForm, null);
+        });
+        assertEquals("Customer ID cannot be null", exception.getMessage());
+    }
+
+    @Test
+    void testCreateBooking_WithInvalidBookingTime_ShouldThrowException() {
+        // Given
+        bookingForm.setBookingTime(LocalDateTime.now().minusDays(1));
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.createBooking(bookingForm, customerId);
+        });
+        assertEquals("Booking time cannot be in the past", exception.getMessage());
+    }
+
+    @Test
+    void testCreateBooking_WithInvalidGuestCount_ShouldThrowException() {
+        // Given
+        bookingForm.setGuestCount(0);
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.createBooking(bookingForm, customerId);
+        });
+        assertEquals("Guest count must be greater than 0", exception.getMessage());
+    }
+
+    @Test
+    void testCreateBooking_WithNegativeDepositAmount_ShouldThrowException() {
+        // Given
+        bookingForm.setDepositAmount(new BigDecimal("-1000"));
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.createBooking(bookingForm, customerId);
+        });
+        assertEquals("Deposit amount cannot be negative", exception.getMessage());
+    }
+
+    // ==================== BUSINESS LOGIC TESTS ====================
+
+    @Test
+    void testCreateBooking_WithDishes_ShouldCreateBookingWithDishes() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        bookingForm.setDishIds("1,2,3");
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.PENDING, result.getStatus());
+        verify(bookingRepository, atLeastOnce()).save(any(Booking.class));
+    }
+
+    @Test
+    void testCreateBooking_WithServices_ShouldCreateBookingWithServices() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        bookingForm.setServiceIds("1,2");
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.PENDING, result.getStatus());
+        verify(bookingRepository, atLeastOnce()).save(any(Booking.class));
+    }
+
+    @Test
+    void testCreateBooking_WithDishesAndServices_ShouldCreateBookingWithBoth() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        bookingForm.setDishIds("1,2");
+        bookingForm.setServiceIds("1");
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.PENDING, result.getStatus());
+        verify(bookingRepository, atLeastOnce()).save(any(Booking.class));
+    }
+
+    @Test
+    void testCreateBooking_ShouldCreateBookingTable() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        verify(bookingTableRepository).save(any(BookingTable.class));
+    }
+
+    @Test
+    void testCreateBooking_ShouldCreateNotification() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        verify(notificationRepository).save(any(Notification.class));
+    }
+
+    @Test
+    void testCreateBooking_ShouldSetCorrectCreatedAt() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertNotNull(result.getCreatedAt());
+    }
+
+    @Test
+    void testCreateBooking_ShouldSetCorrectUpdatedAt() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertNotNull(result.getUpdatedAt());
+    }
+
+    // ==================== EDGE CASES ====================
+
+    @Test
+    void testCreateBooking_WithEmptyDishIds_ShouldSuccess() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        bookingForm.setDishIds("");
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.PENDING, result.getStatus());
+    }
+
+    @Test
+    void testCreateBooking_WithEmptyServiceIds_ShouldSuccess() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        bookingForm.setServiceIds("");
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.PENDING, result.getStatus());
+    }
+
+    @Test
+    void testCreateBooking_WithNullNote_ShouldSuccess() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        bookingForm.setNote(null);
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.PENDING, result.getStatus());
+    }
+
+    @Test
+    void testCreateBooking_WithVeryLongNote_ShouldSuccess() {
+        // Given
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        bookingForm.setNote("A".repeat(2000));
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.PENDING, result.getStatus());
+    }
+
+    // ==================== CALCULATION TESTS ====================
+
+    @Test
+    void testCalculateTotalAmount_WithDishes_ShouldReturnCorrectTotal() {
+        // Given
+        Booking booking = new Booking();
+        booking.setDepositAmount(new BigDecimal("100000"));
+        // Mock dish prices
+        when(bookingDishRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+        when(bookingServiceRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+
+        // When
+        BigDecimal total = bookingService.calculateTotalAmount(booking);
+
+        // Then
+        assertEquals(new BigDecimal("100000"), total);
+    }
+
+    @Test
+    void testCalculateTotalAmount_WithServices_ShouldReturnCorrectTotal() {
+        // Given
+        Booking booking = new Booking();
+        booking.setDepositAmount(new BigDecimal("100000"));
+        // Mock service prices
+        when(bookingDishRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+        when(bookingServiceRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+
+        // When
+        BigDecimal total = bookingService.calculateTotalAmount(booking);
+
+        // Then
+        assertEquals(new BigDecimal("100000"), total);
+    }
+
+    @Test
+    void testCalculateTotalAmount_WithDishesAndServices_ShouldReturnCorrectTotal() {
+        // Given
+        Booking booking = new Booking();
+        booking.setDepositAmount(new BigDecimal("100000"));
+        // Mock both dish and service prices
+        when(bookingDishRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+        when(bookingServiceRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+
+        // When
+        BigDecimal total = bookingService.calculateTotalAmount(booking);
+
+        // Then
+        assertEquals(new BigDecimal("100000"), total);
+    }
+
+    @Test
+    void testCalculateTotalAmount_WithZeroDeposit_ShouldReturnZero() {
+        // Given
+        Booking booking = new Booking();
+        booking.setDepositAmount(BigDecimal.ZERO);
+        when(bookingDishRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+        when(bookingServiceRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+
+        // When
+        BigDecimal total = bookingService.calculateTotalAmount(booking);
+
+        // Then
+        assertEquals(BigDecimal.ZERO, total);
+    }
+
+    @Test
+    void testCalculateTotalAmount_WithNullBooking_ShouldThrowException() {
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.calculateTotalAmount(null);
+        });
+        assertEquals("Booking cannot be null", exception.getMessage());
     }
 }

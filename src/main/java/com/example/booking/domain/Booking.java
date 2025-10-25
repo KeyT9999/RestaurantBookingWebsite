@@ -49,7 +49,7 @@ public class Booking {
     
     @Column(name = "number_of_guests", nullable = false)
     @Min(value = 1, message = "Số khách tối thiểu là 1")
-    @Max(value = 20, message = "Số khách tối đa là 20")
+    @Max(value = 100, message = "Số khách tối đa là 100")
     private Integer numberOfGuests;
     
     @Enumerated(EnumType.STRING)
