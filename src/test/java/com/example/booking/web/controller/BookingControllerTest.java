@@ -145,6 +145,11 @@ class BookingControllerTest {
         when(generalRateLimitingService.isReviewAllowed(
                 any(HttpServletRequest.class), any(HttpServletResponse.class))).thenReturn(true);
         when(customerService.findByUsername(anyString())).thenReturn(Optional.of(mockCustomer));
+        when(bookingService.calculateTotalAmount(any(Booking.class))).thenAnswer(invocation -> {
+            Booking booking = invocation.getArgument(0);
+            BigDecimal deposit = booking.getDepositAmount();
+            return deposit != null ? deposit : BigDecimal.ZERO;
+        });
     }
 
     // ==================== HAPPY PATH TESTS ====================
@@ -242,5 +247,246 @@ class BookingControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("booking/form"))
                 .andExpect(model().attribute("restaurants", Arrays.asList()));
+    }
+
+    // ==================== VALIDATION TESTS ====================
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithInvalidRestaurantId_ShouldReturnValidationError() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "-1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/new"))
+                .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithInvalidTableId_ShouldReturnValidationError() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "0")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/new"))
+                .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithZeroGuestCount_ShouldReturnValidationError() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "0")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/new"))
+                .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithNegativeGuestCount_ShouldReturnValidationError() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "-1")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/new"))
+                .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithPastBookingTime_ShouldReturnValidationError() throws Exception {
+        // Given
+        LocalDateTime pastTime = LocalDateTime.now().minusDays(1);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", pastTime.toString())
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/new"))
+                .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithNullBookingTime_ShouldReturnValidationError() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/new"))
+                .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithEmptyNote_ShouldSuccess() throws Exception {
+        // Given
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .param("note", "")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithVeryLongNote_ShouldSuccess() throws Exception {
+        // Given
+        String longNote = "A".repeat(1000);
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .param("note", longNote)
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithSpecialCharactersInNote_ShouldSuccess() throws Exception {
+        // Given
+        String specialNote = "Special chars: @#$%^&*()";
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .param("note", specialNote)
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithUnicodeCharacters_ShouldSuccess() throws Exception {
+        // Given
+        String unicodeNote = "Unicode: 你好世界";
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .param("note", unicodeNote)
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithMaximumGuestCount_ShouldSuccess() throws Exception {
+        // Given
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "50")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()));
+    }
+
+    // ==================== SECURITY TESTS ====================
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testCreateBooking_WithAdminRole_ShouldRedirectToAdminDashboard() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/new"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/dashboard?error=cannot_book_public"));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithInvalidCSRF_ShouldReturnError() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testCreateBooking_WithExpiredSession_ShouldRedirectToLogin() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("http://localhost/oauth2/authorization/google"));
     }
 }

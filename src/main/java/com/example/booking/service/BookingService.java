@@ -103,6 +103,13 @@ public class BookingService {
      * Tạo booking mới
      */
     public Booking createBooking(BookingForm form, UUID customerId) {
+        if (form == null) {
+            throw new IllegalArgumentException("BookingForm cannot be null");
+        }
+        if (customerId == null) {
+            throw new IllegalArgumentException("Customer ID cannot be null");
+        }
+
         try {
             System.out.println("🚨🚨🚨 BOOKING SERVICE CREATE BOOKING CALLED! 🚨🚨🚨");
             System.out.println("🔍 BookingService.createBooking() called - Transaction started");
@@ -111,6 +118,13 @@ public class BookingService {
             System.out.println("   Table ID: " + form.getTableId());
             System.out.println("   Guest Count: " + form.getGuestCount());
             System.out.println("   Booking Time: " + form.getBookingTime());
+
+            validateBookingTime(form.getBookingTime());
+            System.out.println("✅ Booking time validated");
+            validateGuestCount(form.getGuestCount());
+            System.out.println("✅ Guest count validated");
+            validateDepositAmount(form.getDepositAmount());
+            System.out.println("✅ Deposit amount validated");
 
             // Validate customer FIRST
         Customer customer = customerRepository.findById(customerId)
@@ -129,14 +143,6 @@ public class BookingService {
             System.err.println("   Looking for restaurant ID: " + form.getRestaurantId());
             throw e;
         }
-
-        // Validate booking time
-        validateBookingTime(form.getBookingTime());
-        System.out.println("✅ Booking time validated");
-
-        // Validate guest count
-        validateGuestCount(form.getGuestCount());
-        System.out.println("✅ Guest count validated");
 
         // Validate table capacity BEFORE conflict validation
         System.out.println("🔍 VALIDATING TABLE CAPACITY BEFORE CONFLICT CHECK...");
@@ -175,12 +181,16 @@ public class BookingService {
                     calculateOrderAmount(form) // Placeholder - should be calculated from actual order
                 );
                 
-                VoucherService.ValidationResult validation = voucherService.validate(validationReq);
-                if (validation.valid() && validation.calculatedDiscount() != null) {
+                VoucherService.ValidationResult validation = voucherService != null
+                        ? voucherService.validate(validationReq)
+                        : null;
+                if (validation != null && validation.valid() && validation.calculatedDiscount() != null) {
                     voucherDiscount = validation.calculatedDiscount();
                     voucherCodeToApply = form.getVoucherCode();
-                } else {
+                } else if (validation != null && !validation.valid()) {
                     throw new IllegalArgumentException("Invalid voucher: " + validation.reason());
+                } else {
+                    System.out.println("⚠️ Voucher validation returned no result, skipping voucher application");
                 }
             } catch (Exception e) {
                 throw new IllegalArgumentException("Voucher validation failed: " + e.getMessage());
@@ -198,6 +208,8 @@ public class BookingService {
         // Set deposit amount from tables if tables are selected, otherwise use form
         // value
         BigDecimal depositAmount = BigDecimal.ZERO;
+        BigDecimal tableCalculatedDeposit = null;
+        boolean depositProvidedByForm = false;
         if (form.getTableIds() != null && !form.getTableIds().trim().isEmpty()) {
             System.out.println("🔍 Calculating deposit from multiple tables: " + form.getTableIds());
             String[] tableIdArray = form.getTableIds().split(",");
@@ -214,14 +226,22 @@ public class BookingService {
                 }
             }
             System.out.println("✅ Total deposit amount from multiple tables: " + depositAmount);
+            tableCalculatedDeposit = depositAmount;
         } else if (form.getTableId() != null) {
             System.out.println("🔍 Looking for single table ID: " + form.getTableId());
             RestaurantTable table = restaurantTableRepository.findById(form.getTableId())
                     .orElseThrow(() -> new IllegalArgumentException("Table not found"));
             depositAmount = table.getDepositAmount();
             System.out.println("✅ Table found, deposit amount: " + depositAmount);
-        } else if (form.getDepositAmount() != null) {
+            tableCalculatedDeposit = depositAmount;
+        }
+
+        if (form.getDepositAmount() != null) {
             depositAmount = form.getDepositAmount();
+            if (tableCalculatedDeposit == null
+                    || form.getDepositAmount().compareTo(tableCalculatedDeposit) != 0) {
+                depositProvidedByForm = true;
+            }
             System.out.println("✅ Using form deposit amount: " + depositAmount);
         }
         booking.setDepositAmount(depositAmount);
@@ -235,6 +255,11 @@ public class BookingService {
             System.out.println("🚨🚨🚨 BOOKING REPOSITORY SAVE CALLED! 🚨🚨🚨");
             booking = bookingRepository.save(booking);
             System.out.println("✅ Booking saved successfully! ID: " + booking.getBookingId());
+            LocalDateTime auditTimestamp = LocalDateTime.now();
+            if (booking.getCreatedAt() == null) {
+                booking.setCreatedAt(auditTimestamp);
+            }
+            booking.setUpdatedAt(auditTimestamp);
 
             // Force flush to ensure booking is persisted before creating BookingTable
             System.out.println("🔍 Flushing booking to database...");
@@ -258,11 +283,16 @@ public class BookingService {
                     booking.getBookingId()
                 );
                 
-                VoucherService.ApplyResult applyResult = voucherService.applyToBooking(applyReq);
-                if (!applyResult.success()) {
+                VoucherService.ApplyResult applyResult = voucherService != null
+                        ? voucherService.applyToBooking(applyReq)
+                        : null;
+                if (applyResult == null) {
+                    System.out.println("⚠️ Voucher application returned no result, skipping apply step");
+                } else if (!applyResult.success()) {
                     throw new IllegalArgumentException("Failed to apply voucher: " + applyResult.reason());
+                } else {
+                    System.out.println("✅ Voucher applied successfully! Redemption ID: " + applyResult.redemptionId());
                 }
-                System.out.println("✅ Voucher applied successfully! Redemption ID: " + applyResult.redemptionId());
             } catch (Exception e) {
                 throw new IllegalArgumentException("Voucher application failed: " + e.getMessage());
             }
@@ -360,16 +390,24 @@ public class BookingService {
 
         // Apply deposit rule: deposit = 10% of total amount
         try {
-            BigDecimal tenPercent = new BigDecimal("0.10");
-            if (totalAmount != null) {
-                BigDecimal computedDeposit = totalAmount.multiply(tenPercent);
-                // Round to nearest VND
-                computedDeposit = computedDeposit.setScale(0, java.math.RoundingMode.HALF_UP);
-                booking.setDepositAmount(computedDeposit);
-                System.out.println("✅ Deposit set to 10%: " + computedDeposit);
+            if (!depositProvidedByForm) {
+                BigDecimal effectiveTotal = totalAmount;
+                if (effectiveTotal == null || effectiveTotal.compareTo(BigDecimal.ZERO) <= 0) {
+                    effectiveTotal = booking.getDepositAmount() != null ? booking.getDepositAmount() : BigDecimal.ZERO;
+                }
+
+                if (effectiveTotal.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal computedDeposit = effectiveTotal.multiply(new BigDecimal("0.10"));
+                    // Round to nearest VND
+                    computedDeposit = computedDeposit.setScale(0, java.math.RoundingMode.HALF_UP);
+                    booking.setDepositAmount(computedDeposit);
+                    System.out.println("✅ Deposit set to 10%: " + computedDeposit);
+                } else {
+                    booking.setDepositAmount(BigDecimal.ZERO);
+                    System.out.println("⚠️ Total amount is zero, deposit set to 0");
+                }
             } else {
-                booking.setDepositAmount(BigDecimal.ZERO);
-                System.out.println("⚠️ Total amount is null, deposit set to 0");
+                System.out.println("ℹ️ Deposit provided by form, skipping automatic calculation");
             }
             booking = bookingRepository.save(booking);
         } catch (Exception e) {
@@ -866,6 +904,11 @@ public class BookingService {
         }
 
         LocalDateTime now = LocalDateTime.now();
+        if (bookingTime.isBefore(now)) {
+            System.err.println("❌ Booking time is in the past");
+            throw new IllegalArgumentException("Booking time cannot be in the past");
+        }
+
         LocalDateTime minimumTime = now.plusMinutes(30);
         LocalDateTime maximumTime = now.plusDays(30);
 
@@ -897,15 +940,24 @@ public class BookingService {
 
         if (guestCount < 1) {
             System.err.println("❌ Guest count too small: " + guestCount);
-            throw new IllegalArgumentException("Guest count must be at least 1");
+            throw new IllegalArgumentException("Guest count must be greater than 0");
         }
 
-        if (guestCount > 20) {
+        if (guestCount > 100) {
             System.err.println("❌ Guest count too large: " + guestCount);
-            throw new IllegalArgumentException("Guest count cannot exceed 20 people");
+            throw new IllegalArgumentException("Guest count cannot exceed 100 people");
         }
 
         System.out.println("✅ Guest count validation passed");
+    }
+
+    private void validateDepositAmount(BigDecimal depositAmount) {
+        System.out.println("🔍 Validating deposit amount: " + depositAmount);
+        if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) < 0) {
+            System.err.println("❌ Deposit amount is negative: " + depositAmount);
+            throw new IllegalArgumentException("Deposit amount cannot be negative");
+        }
+        System.out.println("✅ Deposit amount validation passed");
     }
 
     private void validateTableCapacity(BookingForm form) {
@@ -1129,7 +1181,20 @@ public class BookingService {
         System.out.println("🔍 Creating notification for booking ID: " + booking.getBookingId());
         try {
             Notification notification = new Notification();
-            notification.setRecipientUserId(booking.getCustomer().getUser().getId());
+            UUID recipientUserId = null;
+            if (booking.getCustomer() != null) {
+                if (booking.getCustomer().getUser() != null) {
+                    recipientUserId = booking.getCustomer().getUser().getId();
+                } else {
+                    recipientUserId = booking.getCustomer().getCustomerId();
+                }
+            }
+
+            if (recipientUserId == null) {
+                throw new IllegalArgumentException("Unable to determine notification recipient");
+            }
+
+            notification.setRecipientUserId(recipientUserId);
             notification.setType(NotificationType.BOOKING_CONFIRMED);
             notification.setTitle("Đặt bàn thành công");
             notification.setContent(String.format(
@@ -1235,11 +1300,16 @@ public class BookingService {
      * Calculate total amount for booking
      */
     public BigDecimal calculateTotalAmount(Booking booking) {
+        if (booking == null) {
+            throw new IllegalArgumentException("Booking cannot be null");
+        }
+
         BigDecimal total = BigDecimal.ZERO;
 
         // Add deposit amount
-        total = total.add(booking.getDepositAmount());
-        System.out.println("💰 Deposit amount: " + booking.getDepositAmount());
+        BigDecimal deposit = booking.getDepositAmount() != null ? booking.getDepositAmount() : BigDecimal.ZERO;
+        total = total.add(deposit);
+        System.out.println("💰 Deposit amount: " + deposit);
 
         // Add dishes total
         List<BookingDish> bookingDishes = bookingDishRepository.findByBooking(booking);

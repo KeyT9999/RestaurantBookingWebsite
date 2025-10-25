@@ -45,7 +45,7 @@ public class RestaurantTable {
     
     @Column(name = "capacity", nullable = false)
     @Min(value = 1, message = "Sức chứa tối thiểu là 1")
-    @Max(value = 20, message = "Sức chứa tối đa là 20")
+    @Max(value = 100, message = "Sức chứa tối đa là 100")
     private Integer capacity;
 
     @Convert(converter = TableStatusConverter.class)
