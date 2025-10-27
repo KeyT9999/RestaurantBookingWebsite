@@ -1,5 +1,9 @@
 # BookingService Unit Tests Documentation
 
+
+Link Canva Slide: https://www.canva.com/design/DAG2vdA6nfo/gPC2aeLD_FmPMMdJ0rwaTw/edit?ui=e30
+
+
 ## Tổng quan
 
 Bộ test JUnit cho `BookingService` tập trung vào việc test business logic, validation, và các tính toán trong service layer của chức năng đặt bàn.
