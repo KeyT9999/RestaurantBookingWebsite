@@ -50,6 +50,7 @@ import com.example.booking.repository.NotificationRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.RestaurantServiceRepository;
 import com.example.booking.repository.RestaurantTableRepository;
+import com.example.booking.repository.PaymentRepository;
 
 import jakarta.persistence.EntityManager;
 
@@ -98,6 +99,9 @@ class BookingServiceTest {
 
     @Mock
     private RestaurantServiceRepository restaurantServiceRepository;
+
+    @Mock
+    private PaymentRepository paymentRepository;
 
     @Mock
     private RefundService refundService;
@@ -668,7 +672,7 @@ class BookingServiceTest {
         // Given
         mockBooking.setCustomer(customer);
         when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
-        doNothing().when(refundService).processRefund(anyInt(), any(BigDecimal.class), anyString());
+        // Note: processRefund is a void method, but we don't need to stub it for this test
         when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
@@ -742,6 +746,7 @@ class BookingServiceTest {
     @DisplayName("testFindBookingsByCustomer_WithMultipleBookings_ShouldReturnAll")
     void testFindBookingsByCustomer_WithMultipleBookings_ShouldReturnAll() {
         // Given
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
         List<Booking> bookings = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
             Booking booking = new Booking();
@@ -765,6 +770,7 @@ class BookingServiceTest {
     @DisplayName("testFindBookingsByCustomer_WithNoBookings_ShouldReturnEmpty")
     void testFindBookingsByCustomer_WithNoBookings_ShouldReturnEmpty() {
         // Given
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
         when(bookingRepository.findByCustomerOrderByBookingTimeDesc(any(Customer.class))).thenReturn(Collections.emptyList());
 
         // When
@@ -779,6 +785,7 @@ class BookingServiceTest {
     @DisplayName("testFindBookingsByCustomer_OrderedByBookingTimeDesc_ShouldReturnSorted")
     void testFindBookingsByCustomer_OrderedByBookingTimeDesc_ShouldReturnSorted() {
         // Given
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
         LocalDateTime now = LocalDateTime.now();
         Booking booking1 = new Booking();
         booking1.setBookingId(1);
@@ -807,8 +814,16 @@ class BookingServiceTest {
     @DisplayName("testAssignDishesToBooking_WithValidIds_ShouldSuccess")
     void testAssignDishesToBooking_WithValidIds_ShouldSuccess() {
         // Given
-        when(dishRepository.findById(1)).thenReturn(Optional.of(new com.example.booking.domain.Dish()));
-        when(dishRepository.findById(2)).thenReturn(Optional.of(new com.example.booking.domain.Dish()));
+        com.example.booking.domain.Dish dish1 = new com.example.booking.domain.Dish();
+        dish1.setDishId(1);
+        dish1.setPrice(new BigDecimal("50000"));
+        
+        com.example.booking.domain.Dish dish2 = new com.example.booking.domain.Dish();
+        dish2.setDishId(2);
+        dish2.setPrice(new BigDecimal("30000"));
+        
+        when(dishRepository.findById(1)).thenReturn(Optional.of(dish1));
+        when(dishRepository.findById(2)).thenReturn(Optional.of(dish2));
         when(bookingDishRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
@@ -844,8 +859,16 @@ class BookingServiceTest {
     @DisplayName("testAssignServicesToBooking_WithValidIds_ShouldSuccess")
     void testAssignServicesToBooking_WithValidIds_ShouldSuccess() {
         // Given
-        when(restaurantServiceRepository.findById(1)).thenReturn(Optional.of(new com.example.booking.domain.RestaurantService()));
-        when(restaurantServiceRepository.findById(2)).thenReturn(Optional.of(new com.example.booking.domain.RestaurantService()));
+        com.example.booking.domain.RestaurantService service1 = new com.example.booking.domain.RestaurantService();
+        service1.setServiceId(1);
+        service1.setPrice(new BigDecimal("20000"));
+        
+        com.example.booking.domain.RestaurantService service2 = new com.example.booking.domain.RestaurantService();
+        service2.setServiceId(2);
+        service2.setPrice(new BigDecimal("15000"));
+        
+        when(restaurantServiceRepository.findById(1)).thenReturn(Optional.of(service1));
+        when(restaurantServiceRepository.findById(2)).thenReturn(Optional.of(service2));
         when(bookingServiceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
