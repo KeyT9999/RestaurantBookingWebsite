@@ -11,483 +11,555 @@
     <link th:href="@{/css/design-system.css}" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--ds-neutral-50);
+        body.minimal-theme {
+            background: var(--ds-neutral-50);
+            font-family: var(--ds-font-family-primary);
         }
 
-        .admin-header {
-            background: linear-gradient(135deg, var(--ds-primary-600), var(--ds-primary-800));
-            color: var(--ds-primary-white);
-            padding: var(--ds-space-8) 0;
-            margin-bottom: var(--ds-space-6);
+        .status-panel {
+            display: none;
         }
 
-        .stats-card {
-            background: var(--ds-primary-white);
-            border-radius: var(--ds-radius-xl);
-            padding: var(--ds-space-6);
-            box-shadow: var(--ds-shadow-lg);
-            border-left: 4px solid var(--ds-primary-500);
+        .status-panel.is-active {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-4);
         }
 
-        .stats-number {
-            font-size: var(--ds-font-size-3xl);
-            font-weight: var(--ds-font-weight-bold);
-            color: var(--ds-primary-600);
+        .stack-gap-2 {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-2);
         }
 
-        .refund-card {
-            background: var(--ds-primary-white);
+        .stack-gap-3 {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-3);
+        }
+
+        .stack-gap-4 {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-4);
+        }
+
+        .page-subtitle {
+            max-width: 640px;
+        }
+
+        .refund-entry__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: var(--ds-space-4);
+        }
+
+        .refund-entry__title {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-2);
+        }
+
+        .refund-entry__customer {
+            font-size: var(--ds-font-size-xl);
+            font-weight: var(--ds-font-weight-semibold);
+            color: var(--ds-neutral-900);
+            margin: 0;
+        }
+
+        .refund-entry__restaurant {
+            margin: 0;
+            color: var(--ds-neutral-500);
+            font-size: var(--ds-font-size-sm);
+        }
+
+        .data-pairs {
+            display: grid;
+            gap: var(--ds-space-3);
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .data-pair {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-1);
+            padding: var(--ds-space-3);
+            border-radius: var(--ds-radius-md);
+            background: var(--ds-neutral-100);
+        }
+        .data-label {
+            font-size: var(--ds-font-size-xs);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--ds-neutral-500);
+        }
+
+        .data-value {
+            font-size: var(--ds-font-size-base);
+            font-weight: var(--ds-font-weight-semibold);
+            color: var(--ds-neutral-900);
+        }
+
+        .refund-entry__qr {
+            display: flex;
+            flex-direction: column;
+            gap: var(--ds-space-2);
+        }
+
+        .refund-entry__qr img {
+            width: 160px;
             border-radius: var(--ds-radius-lg);
-            padding: var(--ds-space-6);
-            margin-bottom: var(--ds-space-4);
-            box-shadow: var(--ds-shadow-md);
-            border: 1px solid var(--ds-neutral-200);
-        }
-
-        .status-pending {
-            background-color: var(--ds-warning-100);
-            color: var(--ds-warning-800);
-            padding: var(--ds-space-2) var(--ds-space-3);
-            border-radius: var(--ds-radius-full);
-            font-size: var(--ds-font-size-sm);
-            font-weight: var(--ds-font-weight-medium);
-        }
-
-        .status-completed {
-            background-color: var(--ds-success-100);
-            color: var(--ds-success-800);
-            padding: var(--ds-space-2) var(--ds-space-3);
-            border-radius: var(--ds-radius-full);
-            font-size: var(--ds-font-size-sm);
-            font-weight: var(--ds-font-weight-medium);
-        }
-
-        .status-rejected {
-            background-color: var(--ds-error-100);
-            color: var(--ds-error-800);
-            padding: var(--ds-space-2) var(--ds-space-3);
-            border-radius: var(--ds-radius-full);
-            font-size: var(--ds-font-size-sm);
-            font-weight: var(--ds-font-weight-medium);
-        }
-
-        .btn-complete {
-            background-color: var(--ds-success-600);
-            color: var(--ds-primary-white);
-            border: none;
-            padding: var(--ds-space-3) var(--ds-space-4);
-            border-radius: var(--ds-radius-md);
-            font-weight: var(--ds-font-weight-medium);
-            transition: all 0.2s ease;
-        }
-
-        .btn-complete:hover {
-            background-color: var(--ds-success-700);
-            transform: translateY(-1px);
-        }
-
-        .btn-reject {
-            background-color: var(--ds-error-600);
-            color: var(--ds-primary-white);
-            border: none;
-            padding: var(--ds-space-3) var(--ds-space-4);
-            border-radius: var(--ds-radius-md);
-            font-weight: var(--ds-font-weight-medium);
-            transition: all 0.2s ease;
-        }
-
-        .btn-reject:hover {
-            background-color: var(--ds-error-700);
-            transform: translateY(-1px);
-        }
-
-        .qr-code {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: var(--ds-radius-md);
             box-shadow: var(--ds-shadow-sm);
         }
 
-        .nav-tabs .nav-link {
-            color: var(--ds-neutral-600);
-            border: none;
-            border-bottom: 2px solid transparent;
-            padding: var(--ds-space-3) var(--ds-space-4);
-            font-weight: var(--ds-font-weight-medium);
+        .refund-entry__actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--ds-space-2);
+            align-items: center;
         }
 
-        .nav-tabs .nav-link.active {
-            color: var(--ds-primary-600);
-            border-bottom-color: var(--ds-primary-600);
-            background-color: transparent;
-        }
+        @media (max-width: 768px) {
+            .refund-entry__header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
 
-        .badge {
-            font-size: var(--ds-font-size-xs);
-            font-weight: var(--ds-font-weight-semibold);
+            .data-pairs {
+                grid-template-columns: 1fr;
+            }
+
+            .refund-entry__qr img {
+                width: 140px;
+            }
         }
-    </style>
+            .stats-5cols {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: var(--ds-space-4);
+        }
+        @media (max-width: 1200px) {
+            .stats-5cols { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .stats-5cols { grid-template-columns: repeat(2, 1fr); }
+        }
+</style>
 </head>
-
-<body>
+<body class="minimal-theme">
     <div th:with="activeNav='admin-refund-requests'"
          th:replace="~{fragments/design-system-components :: unified-header}"></div>
-    
-    <main class="main-content">
-        <section class="admin-header">
-            <div class="container">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h1 class="mb-2">
-                            <i class="fas fa-money-bill-wave me-3"></i>
-                            Quản lý Refund Requests
-                        </h1>
-                        <p class="mb-0 opacity-75">Duyệt và xử lý các yêu cầu hoàn tiền từ khách hàng</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <a href="/admin/dashboard" class="btn btn-light">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Quay lại Dashboard
-                        </a>
-                    </div>
+
+    <main class="minimal-layout">
+        <div class="page-shell stack-gap-4">
+            <header class="page-header">
+                <div class="page-header__content">
+                    <p class="page-title">
+                        <i class="fas fa-money-bill-wave me-2"></i>Quản lý hoàn tiền
+                    </p>
+                    <p class="page-subtitle">
+                        Theo dõi, duyệt và ghi nhận các yêu cầu hoàn tiền theo chuẩn giao diện Book Eat.
+                    </p>
+                </div>
+                <div class="action-bar">
+                    <a th:href="@{/admin/dashboard}" class="ds-btn ds-btn-secondary ds-btn-sm">
+                        <i class="fas fa-arrow-left"></i>
+                        Quay lại Dashboard
+                    </a>
+                </div>
+            </header>
+
+            <div class="flash-area" th:if="${success} or ${error}">
+                <div th:if="${success}" class="flash flash--success">
+                    <span class="flash__label">Thành công</span>
+                    <span th:text="${success}">Yêu cầu đã xử lý</span>
+                </div>
+                <div th:if="${error}" class="flash flash--error">
+                    <span class="flash__label">Lá»—i</span>
+                    <span th:text="${error}">Có lỗi xảy ra</span>
                 </div>
             </div>
-        </section>
-        
-        <div class="container">
-            <!-- Flash Messages -->
-            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <span th:text="${success}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            
-            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <span th:text="${error}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            
-            <!-- Statistics Cards -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="stats-card">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Pending</h6>
-                                <div class="stats-number" th:text="${pendingCount}">0</div>
-                            </div>
-                            <i class="fas fa-clock text-warning" style="font-size: 2rem;"></i>
+            <section class="surface-block">
+                <div class="section-header">
+                    <h2 class="section-title">Tổng quan trạng thái</h2>
+                    <p class="section-meta">Chỉ số thời gian thực của toàn bộ yêu cầu hoàn tiền.</p>
+                </div>
+                <div class="ds-summary-grid stats-5cols">
+                    <article class="ds-card ds-card-emphasis">
+                        <div class="ds-card-body stack-gap-2">
+                            <span class="ds-stat-label">Pending</span>
+                            <span class="ds-stat-number" th:text="${pendingCount}">0</span>
+                            <span class="text-muted">Đang chờ xử lý</span>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stats-card">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Completed</h6>
-                                <div class="stats-number" th:text="${completedCount}">0</div>
-                            </div>
-                            <i class="fas fa-check-circle text-success" style="font-size: 2rem;"></i>
+                    </article>
+                    <article class="ds-card">
+                        <div class="ds-card-body stack-gap-2">
+                            <span class="ds-stat-label">Completed</span>
+                            <span class="ds-stat-number" th:text="${completedCount}">0</span>
+                            <span class="text-muted">Đã hoàn tất</span>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stats-card">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Rejected</h6>
-                                <div class="stats-number" th:text="${rejectedCount}">0</div>
-                            </div>
-                            <i class="fas fa-times-circle text-danger" style="font-size: 2rem;"></i>
+                    </article>
+                    <article class="ds-card">
+                        <div class="ds-card-body stack-gap-2">
+                            <span class="ds-stat-label">Rejected</span>
+                            <span class="ds-stat-number" th:text="${rejectedCount}">0</span>
+                            <span class="text-muted">Đã từ chối</span>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stats-card">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-1">Total Amount</h6>
-                                <div class="stats-number" th:text="${#numbers.formatDecimal(totalAmount, 0, 0)}">0</div>
-                            </div>
-                            <i class="fas fa-dollar-sign text-info" style="font-size: 2rem;"></i>
+                    </article>
+                    <article class="ds-card">
+                        <div class="ds-card-body stack-gap-2">
+                            <span class="ds-stat-label">Pending Amount</span>
+                            <span class="ds-stat-number" th:text="${#numbers.formatDecimal(pendingTotal, 0, 0)}">0</span>
+                            <span class="text-muted">Tổng tiền pending (VNĐ)</span>
                         </div>
+                    </article>
+                    <article class="ds-card">
+                        <div class="ds-card-body stack-gap-2">
+                            <span class="ds-stat-label">Completed Amount</span>
+                            <span class="ds-stat-number" th:text="${#numbers.formatDecimal(completedTotal, 0, 0)}">0</span>
+                            <span class="text-muted">Tổng tiền đã hoàn (VNĐ)</span>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="surface-block">
+                <div class="section-header">
+                    <div class="stack-gap-2">
+                        <h2 class="section-title">Danh sách refund requests</h2>
+                    </div>
+                    <div class="segment-control" id="refundStatusFilters">
+                        <button type="button"
+                                class="segment-control__item is-active"
+                                data-status-target="pending">
+                            <i class="fas fa-clock me-1"></i>Chờ duyệt
+                            <span class="segment-control__count" th:text="${pendingCount}">0</span>
+                        </button>
+                        <button type="button"
+                                class="segment-control__item"
+                                data-status-target="completed">
+                            <i class="fas fa-circle-check me-1"></i>Đã hoàn tất
+                            <span class="segment-control__count" th:text="${completedCount}">0</span>
+                        </button>
+                        <button type="button"
+                                class="segment-control__item"
+                                data-status-target="rejected">
+                            <i class="fas fa-circle-xmark me-1"></i>Đã từ chối
+                            <span class="segment-control__count" th:text="${rejectedCount}">0</span>
+                        </button>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Filter Tabs -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <ul class="nav nav-tabs" id="refundTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#pending" type="button" role="tab">
-                                <i class="fas fa-clock me-2"></i>Pending
-                                <span class="badge bg-warning ms-2" th:text="${pendingCount}">0</span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#completed" type="button" role="tab">
-                                <i class="fas fa-check-circle me-2"></i>Completed
-                                <span class="badge bg-success ms-2" th:text="${completedCount}">0</span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#rejected" type="button" role="tab">
-                                <i class="fas fa-times-circle me-2"></i>Rejected
-                                <span class="badge bg-danger ms-2" th:text="${rejectedCount}">0</span>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Tab Content -->
-            <div class="tab-content" id="refundTabContent">
-                <!-- Pending Refunds -->
-                <div class="tab-pane fade show active" id="pending" role="tabpanel">
-                    <div th:if="${#lists.isEmpty(pendingRefunds)}" class="text-center py-5">
-                        <i class="fas fa-inbox" style="font-size: 4rem; color: #ccc;"></i>
-                        <h4 class="mt-3 text-muted">Không có refund request nào đang chờ</h4>
-                        <p class="text-muted">Tất cả refund requests đã được xử lý</p>
+
+                <div class="divider"></div>
+                <div class="status-panel is-active" data-status="pending">
+                    <div th:if="${#lists.isEmpty(pendingRefunds)}" class="empty-state">
+                        <i class="fas fa-inbox empty-state__icon"></i>
+                        <p class="empty-state__title">Không có yêu cầu đang chờ duyệt</p>
+                        <p class="empty-state__body">
+                            Tất cả refund requests đã được xử lý. Khi có yêu cầu mới chúng sẽ hiển thị tại đây.
+                        </p>
                     </div>
-                    
-                    <div th:unless="${#lists.isEmpty(pendingRefunds)}">
-                        <div th:each="refund : ${pendingRefunds}" class="refund-card">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <div>
-                                            <h5 class="mb-1">
-                                                <i class="fas fa-user me-2"></i>
-                                                <span th:text="${refund.customer.fullName}">Customer Name</span>
-                                            </h5>
-                                            <p class="text-muted mb-1">
-                                                <i class="fas fa-store me-2"></i>
-                                                <span th:text="${refund.restaurant.restaurantName}">Restaurant Name</span>
-                                            </p>
-                                            <p class="text-muted mb-1">
-                                                <i class="fas fa-money-bill-wave me-2"></i>
-                                                <span th:text="${#numbers.formatDecimal(refund.amount, 0, 0)}">0</span> VNĐ
-                                            </p>
-                                        </div>
-                                        <span class="status-pending">PENDING</span>
+
+                    <div th:unless="${#lists.isEmpty(pendingRefunds)}" class="stack-gap-4">
+                        <article th:each="refund : ${pendingRefunds}" class="ds-card">
+                            <div class="ds-card-body stack-gap-4">
+                                <div class="refund-entry__header">
+                                    <div class="refund-entry__title">
+                                        <p class="refund-entry__customer" th:text="${refund.customer.fullName}">Tên khách hàng</p>
+                                        <p class="refund-entry__restaurant">
+                                            <i class="fas fa-store me-1"></i>
+                                            <span th:text="${refund.restaurant.restaurantName}">Nhà hàng</span>
+                                        </p>
                                     </div>
-                                    
-                                    <div class="mb-3">
-                                        <h6><i class="fas fa-comment me-2"></i>Lý do:</h6>
-                                        <p class="text-muted" th:text="${refund.reason}">Reason</p>
+                                    <span class="badge badge--pending">Chờ duyệt</span>
+                                </div>
+
+                                <div class="data-pairs">
+                                    <div class="data-pair">
+                                        <span class="data-label">Số tiền</span>
+                                        <span class="data-value" th:text="${#numbers.formatDecimal(refund.amount, 0, 0)} + ' VNĐ'">0 VNĐ</span>
                                     </div>
-                                    
-                                    <div class="mb-3">
-                                        <h6><i class="fas fa-university me-2"></i>Thông tin ngân hàng:</h6>
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <p class="mb-1"><strong>Ngân hàng:</strong> <span th:text="${bankNameMap[refund.customerBankCode] ?: refund.customerBankCode}">Bank Name</span></p>
-                                                <p class="mb-1"><strong>Số tài khoản:</strong> <span th:text="${refund.customerAccountNumber}">Account Number</span></p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <p class="mb-1"><strong>Thời gian yêu cầu:</strong> <span th:text="${#temporals.format(refund.requestedAt, 'dd/MM/yyyy HH:mm')}">Date</span></p>
-                                            </div>
-                                        </div>
+                                    <div class="data-pair">
+                                        <span class="data-label">Booking ID</span>
+                                        <span class="data-value mono" th:text="${refund.payment.booking.bookingId}">#0</span>
+                                    </div>
+                                    <div class="data-pair">
+                                        <span class="data-label">Thời gian yêu cầu</span>
+                                        <span class="data-value" th:text="${#temporals.format(refund.requestedAt, 'dd/MM/yyyy HH:mm')}">dd/MM/yyyy HH:mm</span>
+                                    </div>
+                                    <div class="data-pair">
+                                        <span class="data-label">Mã hoàn tiền</span>
+                                        <span class="data-value mono" th:text="${refund.refundRequestId}">#0</span>
                                     </div>
                                 </div>
-                                
-                                <div class="col-md-4">
-                                    <div class="text-center mb-3">
-                                        <h6><i class="fas fa-qrcode me-2"></i>VietQR:</h6>
-                                        <div th:if="${refund.vietqrUrl != null}" class="mb-3">
-                                            <img th:src="${refund.vietqrUrl}" 
-                                                 class="img-fluid border rounded" 
-                                                 style="max-width: 200px; max-height: 200px;"
-                                                 alt="VietQR Code">
-                                            <p class="text-muted mt-2 small">
-                                                Admin quét QR này để chuyển tiền cho customer
-                                            </p>
-                                        </div>
-                                        <div th:unless="${refund.vietqrUrl != null}" class="mb-3">
-                                            <div class="alert alert-info">
-                                                <i class="fas fa-info-circle"></i>
-                                                Chưa tạo VietQR
-                                            </div>
+                                <p class="text-muted mb-0" th:if="${refund.reason != null}">
+                                    <i class="fas fa-comment-dots me-1"></i>
+                                    <span th:text="${refund.reason}">Lý do khách cung cấp</span>
+                                </p>
+
+                                <div class="data-pairs">
+                                    <div class="data-pair">
+                                        <span class="data-label">Ngân hàng</span>
+                                        <span class="data-value"
+                                              th:text="${bankNameMap[refund.customerBankCode] ?: refund.customerBankCode}">TPBank</span>
+                                    </div>
+                                    <div class="data-pair">
+                                        <span class="data-label">Chủ tài khoản</span>
+                                        <span class="data-value" th:text="${refund.customerAccountHolder}">Nguyễn Văn A</span>
+                                    </div>
+                                    <div class="data-pair">
+                                        <span class="data-label">Số tài khoản</span>
+                                        <span class="data-value mono" th:text="${refund.customerAccountNumber}">0123456789</span>
+                                    </div>
+                                </div>
+
+                                <div class="stack-gap-3">
+                                    <div class="refund-entry__qr" th:if="${refund.vietqrUrl != null}">
+                                        <img th:src="${refund.vietqrUrl}" alt="Mã VietQR cho refund request" loading="lazy">
+                                        <div class="refund-entry__actions">
+                                            <button type="button"
+                                                    class="ds-btn ds-btn-outline ds-btn-sm"
+                                                    th:attr="data-url=${refund.vietqrUrl}"
+                                                    onclick="copyToClipboard(this.dataset.url)">
+                                                <i class="fas fa-copy"></i>
+                                                Sao chép URL
+                                            </button>
+                                            <a class="ds-btn ds-btn-ghost ds-btn-sm"
+                                               th:href="${refund.vietqrUrl}"
+                                               target="_blank"
+                                               rel="noopener">
+                                                <i class="fas fa-up-right-from-square"></i>
+                                                Mở VietQR
+                                            </a>
                                         </div>
                                     </div>
-                                    
-                                    <div class="d-grid gap-2">
-                                        <!-- Nút Generate VietQR -->
-                                        <button th:if="${refund.vietqrUrl == null}" 
-                                                class="btn btn-primary" 
-                                                th:data-refund-id="${refund.refundRequestId}"
-                                                onclick="generateVietQR(this.dataset.refundId)">
-                                            <i class="fas fa-qrcode me-2"></i>Tạo VietQR
+                                    <p class="text-muted mb-0" th:if="${refund.vietqrUrl == null}">
+                                        <i class="fas fa-qrcode me-1"></i>
+                                        Chưa tạo VietQR cho yêu cầu này. Hãy tạo mã để hướng dẫn chuyển khoản thủ công.
+                                    </p>
+
+                                    <div class="refund-entry__actions">
+                                        <button type="button"
+                                                class="ds-btn ds-btn-primary ds-btn-sm"
+                                                th:if="${refund.vietqrUrl == null}"
+                                                th:attr="data-refund-id=${refund.refundRequestId}"
+                                                onclick="generateVietQR(this.dataset.refundId, this)">
+                                            <i class="fas fa-qrcode"></i>
+                                            Tạo VietQR
                                         </button>
-                                        
-                                        <!-- Nút Complete Refund (sau khi đã chuyển tiền) -->
-                                        <button th:if="${refund.vietqrUrl != null}" 
-                                                class="btn btn-success" 
-                                                th:data-refund-id="${refund.refundRequestId}"
-                                                onclick="completeRefund(this.dataset.refundId)">
-                                            <i class="fas fa-check-circle me-2"></i>Đã chuyển tiền
+
+                                        <button type="button"
+                                                class="ds-btn ds-btn-success ds-btn-sm"
+                                                th:if="${refund.vietqrUrl != null}"
+                                                th:attr="data-refund-id=${refund.refundRequestId}"
+                                                onclick="completeRefund(this.dataset.refundId, this)">
+                                            <i class="fas fa-circle-check"></i>
+                                            Đã chuyển tiền
                                         </button>
-                                        
-                                        <!-- Nút Reject chỉ hiện khi chưa có VietQR -->
-                                        <button th:if="${refund.vietqrUrl == null}" 
-                                                class="btn btn-reject" 
-                                                th:data-refund-id="${refund.refundRequestId}"
+
+                                        <button type="button"
+                                                class="ds-btn ds-btn-danger ds-btn-sm"
+                                                th:if="${refund.vietqrUrl == null}"
+                                                th:attr="data-refund-id=${refund.refundRequestId}"
                                                 onclick="rejectRefund(this.dataset.refundId)">
-                                            <i class="fas fa-times me-2"></i>Từ chối
+                                            <i class="fas fa-ban"></i>
+                                            Từ chối yêu cầu
                                         </button>
-                                        
-                                        <!-- Khi đã có VietQR thì hiển thị trạng thái -->
-                                        <div th:if="${refund.vietqrUrl != null}" class="text-center">
-                                            <div class="alert alert-success">
-                                                <i class="fas fa-qrcode me-2"></i>
-                                                VietQR đã tạo - Chờ admin chuyển tiền
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </article>
                     </div>
                 </div>
-                
-                <!-- Completed Refunds -->
-                <div class="tab-pane fade" id="completed" role="tabpanel">
-                    <div th:if="${#lists.isEmpty(completedRefunds)}" class="text-center py-5">
-                        <i class="fas fa-check-circle" style="font-size: 4rem; color: #ccc;"></i>
-                        <h4 class="mt-3 text-muted">Không có refund request nào đã hoàn thành</h4>
+                <div class="status-panel" data-status="completed">
+                    <div th:if="${#lists.isEmpty(completedRefunds)}" class="empty-state">
+                        <i class="fas fa-circle-check empty-state__icon"></i>
+                        <p class="empty-state__title">Chưa có refund đã hoàn tất</p>
+                        <p class="empty-state__body">Đánh dấu hoàn tất sau khi chuyển khoản để cập nhật dữ liệu chính xác.</p>
                     </div>
-                    
-                    <div th:unless="${#lists.isEmpty(completedRefunds)}">
-                        <div th:each="refund : ${completedRefunds}" class="refund-card">
-                            <div class="row">
-                                <div class="col-md-10">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <div>
-                                            <h5 class="mb-1">
-                                                <i class="fas fa-user me-2"></i>
-                                                <span th:text="${refund.customer.fullName}">Customer Name</span>
-                                            </h5>
-                                            <p class="text-muted mb-1">
-                                                <i class="fas fa-store me-2"></i>
-                                                <span th:text="${refund.restaurant.restaurantName}">Restaurant Name</span>
-                                            </p>
-                                            <p class="text-muted mb-1">
-                                                <i class="fas fa-money-bill-wave me-2"></i>
-                                                <span th:text="${#numbers.formatDecimal(refund.amount, 0, 0)}">0</span> VNĐ
-                                            </p>
-                                        </div>
-                                        <span class="status-completed">COMPLETED</span>
+
+                    <div th:unless="${#lists.isEmpty(completedRefunds)}" class="stack-gap-4">
+                        <article th:each="refund : ${completedRefunds}" class="ds-card">
+                            <div class="ds-card-body stack-gap-3">
+                                <div class="refund-entry__header">
+                                    <div class="refund-entry__title">
+                                        <p class="refund-entry__customer" th:text="${refund.customer.fullName}">Tên khách hàng</p>
+                                        <p class="refund-entry__restaurant">
+                                            <i class="fas fa-store me-1"></i>
+                                            <span th:text="${refund.restaurant.restaurantName}">Nhà hàng</span>
+                                        </p>
                                     </div>
-                                    
-                                    <p class="text-muted">
-                                        <i class="fas fa-clock me-2"></i>
-                                        Hoàn thành lúc: <span th:text="${#temporals.format(refund.processedAt, 'dd/MM/yyyy HH:mm')}">Date</span>
-                                    </p>
+                                    <span class="badge badge--success">Hoàn tất</span>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Rejected Refunds -->
-                <div class="tab-pane fade" id="rejected" role="tabpanel">
-                    <div th:if="${#lists.isEmpty(rejectedRefunds)}" class="text-center py-5">
-                        <i class="fas fa-times-circle" style="font-size: 4rem; color: #ccc;"></i>
-                        <h4 class="mt-3 text-muted">Không có refund request nào bị từ chối</h4>
-                    </div>
-                    
-                    <div th:unless="${#lists.isEmpty(rejectedRefunds)}">
-                        <div th:each="refund : ${rejectedRefunds}" class="refund-card">
-                            <div class="row">
-                                <div class="col-md-10">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <div>
-                                            <h5 class="mb-1">
-                                                <i class="fas fa-user me-2"></i>
-                                                <span th:text="${refund.customer.fullName}">Customer Name</span>
-                                            </h5>
-                                            <p class="text-muted mb-1">
-                                                <i class="fas fa-store me-2"></i>
-                                                <span th:text="${refund.restaurant.restaurantName}">Restaurant Name</span>
-                                            </p>
-                                            <p class="text-muted mb-1">
-                                                <i class="fas fa-money-bill-wave me-2"></i>
-                                                <span th:text="${#numbers.formatDecimal(refund.amount, 0, 0)}">0</span> VNĐ
-                                            </p>
-                                        </div>
-                                        <span class="status-rejected">REJECTED</span>
+
+                                <div class="data-pairs">
+                                    <div class="data-pair">
+                                        <span class="data-label">Số tiền</span>
+                                        <span class="data-value" th:text="${#numbers.formatDecimal(refund.amount, 0, 0)} + ' VNĐ'">0 VNĐ</span>
                                     </div>
-                                    
-                                    <p class="text-muted">
-                                        <i class="fas fa-clock me-2"></i>
-                                        Từ chối lúc: <span th:text="${#temporals.format(refund.processedAt, 'dd/MM/yyyy HH:mm')}">Date</span>
-                                    </p>
-                                </div>
+                                    <div class="data-pair">
+                                        <span class="data-label">Booking ID</span>
+                                        <span class="data-value mono" th:text="${refund.payment.booking.bookingId}">#0</span>
+                                    </div>
+                                    <div class="data-pair">
+                                        <span class="data-label">Hoàn tất lúc</span>
+                                        <span class="data-value" th:text="${#temporals.format(refund.processedAt, 'dd/MM/yyyy HH:mm')}">dd/MM/yyyy HH:mm</span>
+                                    </div>
+                                    </div>
+
+                                <p class="text-muted mb-0" th:if="${refund.adminNote != null}">
+                                    <i class="fas fa-sticky-note me-1"></i>
+                                    <strong>Ghi chú admin:</strong>
+                                    <span th:text="${refund.adminNote}">Đã chuyển khoản thành công</span>
+                                </p>
                             </div>
-                        </div>
+                        </article>
                     </div>
                 </div>
-            </div>
+                <div class="status-panel" data-status="rejected">
+                    <div th:if="${#lists.isEmpty(rejectedRefunds)}" class="empty-state">
+                        <i class="fas fa-circle-xmark empty-state__icon"></i>
+                        <p class="empty-state__title">Chưa có refund bị từ chối</p>
+                        <p class="empty-state__body">Luôn ghi rõ lý do để khách hàng và nhà hàng dễ dàng theo dõi.</p>
+                    </div>
+
+                    <div th:unless="${#lists.isEmpty(rejectedRefunds)}" class="stack-gap-4">
+                        <article th:each="refund : ${rejectedRefunds}" class="ds-card">
+                            <div class="ds-card-body stack-gap-3">
+                                <div class="refund-entry__header">
+                                    <div class="refund-entry__title">
+                                        <p class="refund-entry__customer" th:text="${refund.customer.fullName}">Tên khách hàng</p>
+                                        <p class="refund-entry__restaurant">
+                                            <i class="fas fa-store me-1"></i>
+                                            <span th:text="${refund.restaurant.restaurantName}">Nhà hàng</span>
+                                        </p>
+                                    </div>
+                                    <span class="badge badge--error">Đã từ chối</span>
+                                </div>
+
+                                <div class="data-pairs">
+                                    <div class="data-pair">
+                                        <span class="data-label">Số tiền</span>
+                                        <span class="data-value" th:text="${#numbers.formatDecimal(refund.amount, 0, 0)} + ' VNĐ'">0 VNĐ</span>
+                                    </div>
+                                    <div class="data-pair">
+                                        <span class="data-label">Booking ID</span>
+                                        <span class="data-value mono" th:text="${refund.payment.booking.bookingId}">#0</span>
+                                    </div>
+                                    <div class="data-pair">
+                                        <span class="data-label">Thời gian từ chối</span>
+                                        <span class="data-value" th:text="${#temporals.format(refund.processedAt, 'dd/MM/yyyy HH:mm')}">dd/MM/yyyy HH:mm</span>
+                                    </div>
+                                </div>
+
+                                <p class="text-muted mb-0" th:if="${refund.adminNote != null}">
+                                    <i class="fas fa-circle-info me-1"></i>
+                                    <strong>Lý do từ chối:</strong>
+                                    <span th:text="${refund.adminNote}">Refund không hợp lệ</span>
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
-    
-    <!-- Reject Refund Modal -->
     <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <form id="rejectForm" method="post">
                     <div class="modal-header">
                         <h5 class="modal-title" id="rejectModalLabel">
-                            <i class="fas fa-times-circle text-danger me-2"></i>
-                            Từ chối Refund
+                            <i class="fas fa-circle-xmark text-danger me-2"></i>
+                            Từ chối refund request
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body stack-gap-3">
                         <input type="hidden" name="refundRequestId" id="rejectRefundRequestId" value="">
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span>Hành động này không thể hoàn tác. Vui lòng xem xét kỹ trước khi từ chối.</span>
+                        <div class="flash flash--warning">
+                            <span class="flash__label">Lưu ý</span>
+                            <span>Hành động này không thể hoàn tác. Hãy xác nhận lý do rõ ràng trước khi từ chối.</span>
                         </div>
-                        <div class="mb-3">
+                        <div>
                             <label for="rejectReason" class="form-label">Lý do từ chối <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="rejectReason" name="rejectReason" rows="3" 
+                            <textarea class="form-control" id="rejectReason" name="rejectReason" rows="3"
                                       placeholder="Nhập lý do từ chối refund request..." required></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                        <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">Huá»·</button>
+                        <button type="submit" class="ds-btn ds-btn-danger">Xác nhận từ chối</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusButtons = document.querySelectorAll('[data-status-target]');
+            const statusPanels = document.querySelectorAll('.status-panel');
+
+            statusButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const target = button.dataset.statusTarget;
+
+                    statusButtons.forEach(function (btn) {
+                        btn.classList.toggle('is-active', btn === button);
+                    });
+
+                    statusPanels.forEach(function (panel) {
+                        panel.classList.toggle('is-active', panel.dataset.status === target);
+                    });
+                });
+            });
+
+            const rejectForm = document.getElementById('rejectForm');
+            if (rejectForm) {
+                rejectForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(rejectForm);
+                    const refundRequestId = formData.get('refundRequestId');
+                    const rejectReason = formData.get('rejectReason');
+
+                    fetch(`/admin/refunds/${refundRequestId}/reject`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `rejectReason=${encodeURIComponent(rejectReason)}`
+                    })
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            alert('Refund request đã bị từ chối!');
+                            location.reload();
+                        } else {
+                            alert('Lá»—i: ' + data.error);
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error('Error:', error);
+                        alert('Lỗi khi từ chối refund request');
+                    });
+                });
+            }
+        });
         function rejectRefund(refundRequestId) {
             document.getElementById('rejectRefundRequestId').value = refundRequestId;
             const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
             modal.show();
         }
 
-        function generateVietQR(refundRequestId) {
-            console.log('generateVietQR called with refundRequestId:', refundRequestId);
-            const button = event.target;
+        function generateVietQR(refundRequestId, buttonEl) {
+            const button = buttonEl || event.target;
             const originalText = button.innerHTML;
             button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang tạo...';
             button.disabled = true;
-            
+
             fetch(`/admin/refunds/${refundRequestId}/generate-vietqr`, {
                 method: 'POST',
                 headers: {
@@ -496,45 +568,43 @@
                 },
                 credentials: 'same-origin'
             })
-            .then(response => {
+            .then(function (response) {
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error('HTTP ' + response.status + ': ' + response.statusText);
                 }
-                return response.text().then(text => {
+                return response.text().then(function (text) {
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        throw new Error('Server returned HTML instead of JSON. Check authentication.');
+                        throw new Error('Server trả về HTML thay vì JSON. Kiểm tra lại phiên đăng nhập.');
                     }
                 });
             })
-            .then(data => {
+            .then(function (data) {
                 if (data.success) {
-                    alert("VietQR đã được tạo thành công! Admin có thể quét QR để chuyển tiền.");
+                    alert('VietQR đã được tạo. Hãy chuyển khoản và đánh dấu hoàn tất khi xong.');
                     location.reload();
                 } else {
-                    alert("Lỗi: " + data.message);
+                    alert('Lá»—i: ' + data.message);
                     button.innerHTML = originalText;
                     button.disabled = false;
                 }
             })
-            .catch(error => {
+            .catch(function (error) {
                 console.error('Error:', error);
-                alert("Có lỗi xảy ra khi tạo VietQR: " + error.message);
+                alert('Có lỗi xảy ra khi tạo VietQR: ' + error.message);
                 button.innerHTML = originalText;
                 button.disabled = false;
             });
         }
 
-        function completeRefund(refundRequestId) {
-            // Không cần mã tham chiếu - chỉ cần xác nhận
-            const adminNote = prompt("Nhập ghi chú (tùy chọn):") || "Admin đã hoàn tiền thủ công";
-            
-            const button = event.target;
+        function completeRefund(refundRequestId, buttonEl) {
+            const adminNote = prompt('Nhập ghi chú (tùy chọn):') || 'Admin đã hoàn tiền thủ công';
+            const button = buttonEl || event.target;
             const originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang cập nhật...';
             button.disabled = true;
-            
+
             fetch(`/admin/refunds/${refundRequestId}/complete`, {
                 method: 'POST',
                 headers: {
@@ -543,98 +613,69 @@
                 },
                 credentials: 'same-origin',
                 body: JSON.stringify({
-                    transferReference: "MANUAL_TRANSFER_" + Date.now(),
+                    transferReference: 'MANUAL_TRANSFER_' + Date.now(),
                     adminNote: adminNote
                 })
             })
-            .then(response => {
+            .then(function (response) {
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error('HTTP ' + response.status + ': ' + response.statusText);
                 }
-                return response.text().then(text => {
+                return response.text().then(function (text) {
                     try {
                         return JSON.parse(text);
                     } catch (e) {
-                        throw new Error('Server returned HTML instead of JSON. Check authentication.');
+                        throw new Error('Server trả về HTML thay vì JSON. Kiểm tra lại phiên đăng nhập.');
                     }
                 });
             })
-            .then(data => {
+            .then(function (data) {
                 if (data.success) {
-                    alert("Hoàn tiền đã được hoàn thành thành công!");
+                    alert('Hoàn tiền đã được đánh dấu thành công!');
                     location.reload();
                 } else {
-                    alert("Lỗi: " + data.message);
+                    alert('Lá»—i: ' + data.message);
                     button.innerHTML = originalText;
                     button.disabled = false;
                 }
             })
-            .catch(error => {
+            .catch(function (error) {
                 console.error('Error:', error);
-                alert("Có lỗi xảy ra khi hoàn thành hoàn tiền: " + error.message);
+                alert('Có lỗi xảy ra khi hoàn tất hoàn tiền: ' + error.message);
                 button.innerHTML = originalText;
                 button.disabled = false;
             });
         }
-
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(function() {
-                // Show success message
-                const toast = document.createElement('div');
-                toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
-                toast.style.top = '20px';
-                toast.style.right = '20px';
-                toast.style.zIndex = '9999';
-                toast.innerHTML = `
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            <i class="fas fa-check-circle me-2"></i>Đã copy URL vào clipboard!
+            navigator.clipboard.writeText(text)
+                .then(function () {
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+                    toast.style.top = '20px';
+                    toast.style.right = '20px';
+                    toast.style.zIndex = '9999';
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i>Đã copy URL vào clipboard!
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                         </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                    </div>
-                `;
-                document.body.appendChild(toast);
-                
-                const bsToast = new bootstrap.Toast(toast);
-                bsToast.show();
-                
-                // Remove toast element after it's hidden
-                toast.addEventListener('hidden.bs.toast', function() {
-                    document.body.removeChild(toast);
+                    `;
+                    document.body.appendChild(toast);
+
+                    const bsToast = new bootstrap.Toast(toast);
+                    bsToast.show();
+
+                    toast.addEventListener('hidden.bs.toast', function () {
+                        document.body.removeChild(toast);
+                    });
+                })
+                .catch(function (err) {
+                    console.error('Could not copy text:', err);
+                    alert('Không thể copy URL. Vui lòng sao chép thủ công.');
                 });
-            }).catch(function(err) {
-                console.error('Could not copy text: ', err);
-                alert('Không thể copy URL. Vui lòng copy thủ công.');
-            });
         }
-        
-        document.getElementById('rejectForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const refundRequestId = formData.get('refundRequestId');
-            const rejectReason = formData.get('rejectReason');
-            
-            fetch(`/admin/refunds/${refundRequestId}/reject`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `rejectReason=${encodeURIComponent(rejectReason)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Refund request đã bị từ chối!');
-                    location.reload();
-                } else {
-                    alert('Lỗi: ' + data.error);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Lỗi khi từ chối refund request');
-            });
-        });
     </script>
 </body>
 </html>

@@ -114,7 +114,11 @@ public class AdminDashboardController {
             long completedCount = completedRefunds.size();
             long rejectedCount = rejectedRefunds.size();
 
-            BigDecimal totalAmount = pendingRefunds.stream()
+            // Totals
+            BigDecimal pendingTotal = pendingRefunds.stream()
+                    .map(RefundRequest::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal completedTotal = completedRefunds.stream()
                     .map(RefundRequest::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -124,7 +128,8 @@ public class AdminDashboardController {
             model.addAttribute("pendingCount", pendingCount);
             model.addAttribute("completedCount", completedCount);
             model.addAttribute("rejectedCount", rejectedCount);
-            model.addAttribute("totalAmount", totalAmount);
+            model.addAttribute("pendingTotal", pendingTotal);
+            model.addAttribute("completedTotal", completedTotal);
 
             // Add bank name mapping for template
             Map<String, String> bankNameMap = new HashMap<>();
