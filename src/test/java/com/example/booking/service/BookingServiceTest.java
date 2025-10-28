@@ -2,21 +2,30 @@ package com.example.booking.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,9 +45,12 @@ import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.BookingServiceRepository;
 import com.example.booking.repository.BookingTableRepository;
 import com.example.booking.repository.CustomerRepository;
+import com.example.booking.repository.DishRepository;
 import com.example.booking.repository.NotificationRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
+import com.example.booking.repository.RestaurantServiceRepository;
 import com.example.booking.repository.RestaurantTableRepository;
+import com.example.booking.repository.PaymentRepository;
 
 import jakarta.persistence.EntityManager;
 
@@ -81,6 +93,18 @@ class BookingServiceTest {
 
     @Mock
     private EntityManager entityManager;
+
+    @Mock
+    private DishRepository dishRepository;
+
+    @Mock
+    private RestaurantServiceRepository restaurantServiceRepository;
+
+    @Mock
+    private PaymentRepository paymentRepository;
+
+    @Mock
+    private RefundService refundService;
 
     @InjectMocks
     private BookingService bookingService;
@@ -577,5 +601,300 @@ class BookingServiceTest {
             bookingService.calculateTotalAmount(null);
         });
         assertEquals("Booking cannot be null", exception.getMessage());
+    }
+
+    // ==================== UPDATE BOOKING STATUS TESTS ====================
+
+    @Test
+    @DisplayName("testUpdateBookingStatus_PendingToConfirmed_ShouldSuccess")
+    void testUpdateBookingStatus_PendingToConfirmed_ShouldSuccess() {
+        // Given
+        mockBooking.setStatus(BookingStatus.PENDING);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Booking result = bookingService.updateBookingStatus(1, BookingStatus.CONFIRMED);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.CONFIRMED, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("testUpdateBookingStatus_PendingToCancelled_ShouldSuccess")
+    void testUpdateBookingStatus_PendingToCancelled_ShouldSuccess() {
+        // Given
+        mockBooking.setStatus(BookingStatus.PENDING);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Booking result = bookingService.updateBookingStatus(1, BookingStatus.CANCELLED);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.CANCELLED, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("testUpdateBookingStatus_WithBookingNotFound_ShouldThrowException")
+    void testUpdateBookingStatus_WithBookingNotFound_ShouldThrowException() {
+        // Given
+        when(bookingRepository.findById(999)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.updateBookingStatus(999, BookingStatus.CONFIRMED);
+        });
+        assertEquals("Booking not found", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("testUpdateBookingStatus_InvalidTransition_ShouldThrowException")
+    void testUpdateBookingStatus_InvalidTransition_ShouldThrowException() {
+        // Given
+        mockBooking.setStatus(BookingStatus.COMPLETED);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.updateBookingStatus(1, BookingStatus.CONFIRMED);
+        });
+        assertTrue(exception.getMessage().contains("Invalid status transition"));
+    }
+
+    // ==================== CANCEL BOOKING TESTS ====================
+
+    @Test
+    @DisplayName("testCancelBooking_ByCustomer_ShouldSuccess")
+    void testCancelBooking_ByCustomer_ShouldSuccess() {
+        // Given
+        mockBooking.setCustomer(customer);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+        // Note: processRefund is a void method, but we don't need to stub it for this test
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Booking result = bookingService.cancelBooking(1, customerId, "Change of plans", "VCB", "1234567890");
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.CANCELLED, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("testCancelBooking_WithBookingNotFound_ShouldThrowException")
+    void testCancelBooking_WithBookingNotFound_ShouldThrowException() {
+        // Given
+        when(bookingRepository.findById(999)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.cancelBooking(999, customerId, "Test", "VCB", "1234567890");
+        });
+        assertEquals("Booking not found", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("testCancelBooking_WithUnauthorizedCustomer_ShouldThrowException")
+    void testCancelBooking_WithUnauthorizedCustomer_ShouldThrowException() {
+        // Given
+        UUID differentCustomerId = UUID.randomUUID();
+        mockBooking.setCustomer(customer);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            bookingService.cancelBooking(1, differentCustomerId, "Test", "VCB", "1234567890");
+        });
+        assertTrue(exception.getMessage().contains("You can only cancel your own bookings"));
+    }
+
+    // ==================== FIND BOOKING BY ID TESTS ====================
+
+    @Test
+    @DisplayName("testFindBookingById_WithValidId_ShouldReturnBooking")
+    void testFindBookingById_WithValidId_ShouldReturnBooking() {
+        // Given
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+
+        // When
+        Optional<Booking> result = bookingService.findBookingById(1);
+
+        // Then
+        assertTrue(result.isPresent());
+        assertEquals(1, result.get().getBookingId());
+    }
+
+    @Test
+    @DisplayName("testFindBookingById_WithNonExistentId_ShouldReturnEmpty")
+    void testFindBookingById_WithNonExistentId_ShouldReturnEmpty() {
+        // Given
+        when(bookingRepository.findById(999)).thenReturn(Optional.empty());
+
+        // When
+        Optional<Booking> result = bookingService.findBookingById(999);
+
+        // Then
+        assertFalse(result.isPresent());
+    }
+
+    // ==================== FIND BOOKINGS BY CUSTOMER TESTS ====================
+
+    @Test
+    @DisplayName("testFindBookingsByCustomer_WithMultipleBookings_ShouldReturnAll")
+    void testFindBookingsByCustomer_WithMultipleBookings_ShouldReturnAll() {
+        // Given
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        List<Booking> bookings = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            Booking booking = new Booking();
+            booking.setBookingId(i);
+            booking.setCustomer(customer);
+            booking.setBookingTime(LocalDateTime.now().plusDays(i));
+            booking.setStatus(BookingStatus.PENDING);
+            bookings.add(booking);
+        }
+        when(bookingRepository.findByCustomerOrderByBookingTimeDesc(customer)).thenReturn(bookings);
+
+        // When
+        List<Booking> result = bookingService.findBookingsByCustomer(customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(5, result.size());
+    }
+
+    @Test
+    @DisplayName("testFindBookingsByCustomer_WithNoBookings_ShouldReturnEmpty")
+    void testFindBookingsByCustomer_WithNoBookings_ShouldReturnEmpty() {
+        // Given
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(bookingRepository.findByCustomerOrderByBookingTimeDesc(any(Customer.class))).thenReturn(Collections.emptyList());
+
+        // When
+        List<Booking> result = bookingService.findBookingsByCustomer(customerId);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("testFindBookingsByCustomer_OrderedByBookingTimeDesc_ShouldReturnSorted")
+    void testFindBookingsByCustomer_OrderedByBookingTimeDesc_ShouldReturnSorted() {
+        // Given
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        LocalDateTime now = LocalDateTime.now();
+        Booking booking1 = new Booking();
+        booking1.setBookingId(1);
+        booking1.setBookingTime(now.plusDays(3));
+        Booking booking2 = new Booking();
+        booking2.setBookingId(2);
+        booking2.setBookingTime(now.plusDays(1));
+        Booking booking3 = new Booking();
+        booking3.setBookingId(3);
+        booking3.setBookingTime(now.plusDays(5));
+        
+        List<Booking> bookings = Arrays.asList(booking1, booking2, booking3);
+        when(bookingRepository.findByCustomerOrderByBookingTimeDesc(any(Customer.class))).thenReturn(bookings);
+
+        // When
+        List<Booking> result = bookingService.findBookingsByCustomer(customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(3, result.size());
+    }
+
+    // ==================== ASSIGN DISHES TESTS ====================
+
+    @Test
+    @DisplayName("testAssignDishesToBooking_WithValidIds_ShouldSuccess")
+    void testAssignDishesToBooking_WithValidIds_ShouldSuccess() {
+        // Given
+        com.example.booking.domain.Dish dish1 = new com.example.booking.domain.Dish();
+        dish1.setDishId(1);
+        dish1.setPrice(new BigDecimal("50000"));
+        
+        com.example.booking.domain.Dish dish2 = new com.example.booking.domain.Dish();
+        dish2.setDishId(2);
+        dish2.setPrice(new BigDecimal("30000"));
+        
+        when(dishRepository.findById(1)).thenReturn(Optional.of(dish1));
+        when(dishRepository.findById(2)).thenReturn(Optional.of(dish2));
+        when(bookingDishRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        bookingService.assignDishesToBooking(mockBooking, "1:2,2:1");
+
+        // Then
+        verify(bookingDishRepository, atLeastOnce()).save(any());
+    }
+
+    @Test
+    @DisplayName("testAssignDishesToBooking_WithEmptyString_ShouldSkip")
+    void testAssignDishesToBooking_WithEmptyString_ShouldSkip() {
+        // When
+        bookingService.assignDishesToBooking(mockBooking, "");
+
+        // Then
+        verify(bookingDishRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("testAssignDishesToBooking_WithNull_ShouldSkip")
+    void testAssignDishesToBooking_WithNull_ShouldSkip() {
+        // When
+        bookingService.assignDishesToBooking(mockBooking, null);
+
+        // Then
+        verify(bookingDishRepository, never()).save(any());
+    }
+
+    // ==================== ASSIGN SERVICES TESTS ====================
+
+    @Test
+    @DisplayName("testAssignServicesToBooking_WithValidIds_ShouldSuccess")
+    void testAssignServicesToBooking_WithValidIds_ShouldSuccess() {
+        // Given
+        com.example.booking.domain.RestaurantService service1 = new com.example.booking.domain.RestaurantService();
+        service1.setServiceId(1);
+        service1.setPrice(new BigDecimal("20000"));
+        
+        com.example.booking.domain.RestaurantService service2 = new com.example.booking.domain.RestaurantService();
+        service2.setServiceId(2);
+        service2.setPrice(new BigDecimal("15000"));
+        
+        when(restaurantServiceRepository.findById(1)).thenReturn(Optional.of(service1));
+        when(restaurantServiceRepository.findById(2)).thenReturn(Optional.of(service2));
+        when(bookingServiceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        bookingService.assignServicesToBooking(mockBooking, "1,2");
+
+        // Then
+        verify(bookingServiceRepository, atLeastOnce()).save(any());
+    }
+
+    @Test
+    @DisplayName("testAssignServicesToBooking_WithEmptyString_ShouldSkip")
+    void testAssignServicesToBooking_WithEmptyString_ShouldSkip() {
+        // When
+        bookingService.assignServicesToBooking(mockBooking, "");
+
+        // Then
+        verify(bookingServiceRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("testAssignServicesToBooking_WithNull_ShouldSkip")
+    void testAssignServicesToBooking_WithNull_ShouldSkip() {
+        // When
+        bookingService.assignServicesToBooking(mockBooking, null);
+
+        // Then
+        verify(bookingServiceRepository, never()).save(any());
     }
 }

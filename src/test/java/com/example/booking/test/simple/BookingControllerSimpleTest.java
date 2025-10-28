@@ -3,7 +3,9 @@ package com.example.booking.test.simple;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,6 +21,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -31,6 +35,8 @@ import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.web.controller.BookingController;
+import com.example.booking.domain.Customer;
+import com.example.booking.domain.User;
 
 /**
  * Simple unit test for BookingController without Spring context
@@ -66,6 +72,8 @@ class BookingControllerSimpleTest {
     private BookingForm bookingForm;
     private Booking mockBooking;
     private RestaurantProfile mockRestaurant;
+    private Customer mockCustomer;
+    private User mockUser;
 
     @BeforeEach
     void setUp() {
@@ -85,11 +93,34 @@ class BookingControllerSimpleTest {
         mockRestaurant = new RestaurantProfile();
         mockRestaurant.setRestaurantId(1);
         mockRestaurant.setRestaurantName("Test Restaurant");
+
+        mockUser = new User();
+        mockUser.setId(UUID.randomUUID());
+        mockUser.setUsername("testuser");
+
+        mockCustomer = new Customer();
+        mockCustomer.setCustomerId(UUID.randomUUID());
+        mockCustomer.setUser(mockUser);
+
+    }
+
+    private void stubAuthenticationForForm() {
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(mockUser);
+        when(authentication.getAuthorities()).thenReturn((Collection) List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+    }
+
+    private void stubAuthenticationForCreateBooking() {
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(mockUser);
+        when(authentication.getName()).thenReturn(mockUser.getUsername());
+        when(customerService.findByUsername(mockUser.getUsername())).thenReturn(Optional.of(mockCustomer));
     }
 
     @Test
     void testShowBookingForm_WithValidData_ShouldReturnForm() {
         // Given
+        stubAuthenticationForForm();
         List<RestaurantProfile> restaurants = Arrays.asList(mockRestaurant);
         when(restaurantService.findAllRestaurants()).thenReturn(restaurants);
 
@@ -106,6 +137,7 @@ class BookingControllerSimpleTest {
     @Test
     void testShowBookingForm_WithNoRestaurants_ShouldShowEmptyList() {
         // Given
+        stubAuthenticationForForm();
         when(restaurantService.findAllRestaurants()).thenReturn(List.of());
 
         // When
@@ -121,7 +153,9 @@ class BookingControllerSimpleTest {
     @Test
     void testCreateBooking_WithValidData_ShouldSuccess() {
         // Given
+        stubAuthenticationForCreateBooking();
         when(bindingResult.hasErrors()).thenReturn(false);
+        when(bookingService.calculateTotalAmount(any(Booking.class))).thenReturn(new BigDecimal("100000"));
         when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
                 .thenReturn(mockBooking);
 
@@ -131,7 +165,8 @@ class BookingControllerSimpleTest {
         // Then
         assertEquals("redirect:/payment/" + mockBooking.getBookingId(), result);
         verify(bookingService).createBooking(any(BookingForm.class), any(UUID.class));
-        verify(redirectAttributes).addFlashAttribute("successMessage", "Đặt bàn thành công!");
+        verify(redirectAttributes).addFlashAttribute("successMessage",
+                "Đặt bàn thành công! Vui lòng đặt cọc 10,000 VNĐ để xác nhận.");
     }
 
     @Test
@@ -143,13 +178,14 @@ class BookingControllerSimpleTest {
         String result = bookingController.createBooking(bookingForm, bindingResult, model, authentication, redirectAttributes);
 
         // Then
-        assertEquals("booking/form", result);
+        assertEquals("redirect:/booking/new", result);
         verify(bookingService, never()).createBooking(any(BookingForm.class), any(UUID.class));
     }
 
     @Test
     void testCreateBooking_WithConflict_ShouldReturnError() {
         // Given
+        stubAuthenticationForCreateBooking();
         when(bindingResult.hasErrors()).thenReturn(false);
         when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
                 .thenThrow(new BookingConflictException(BookingConflictException.ConflictType.TABLE_OCCUPIED, "Table already booked"));
@@ -160,6 +196,6 @@ class BookingControllerSimpleTest {
         // Then
         assertEquals("redirect:/booking/new", result);
         verify(bookingService).createBooking(any(BookingForm.class), any(UUID.class));
-        verify(redirectAttributes).addFlashAttribute("errorMessage", "Table already booked");
+        verify(redirectAttributes).addFlashAttribute("errorMessage", "Booking conflict: Bàn đã được đặt: Table already booked");
     }
 }

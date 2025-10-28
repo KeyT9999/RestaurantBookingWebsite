@@ -312,4 +312,170 @@ public class AdvancedRateLimitingService {
         
         logger.info("🧹 CLEANUP COMPLETED - Cleaned up old rate limiting data");
     }
+    
+    /**
+     * Check rate limit for IP and operation type
+     * Returns true if allowed, false if blocked
+     */
+    public boolean checkRateLimit(String clientIp, String operationType) {
+        if (clientIp == null) {
+            logger.error("❌ NULL IP - Cannot check rate limit");
+            return false;
+        }
+        
+        logger.info("🔍 CHECK RATE LIMIT - IP: {}, Operation: {}, Time: {}", 
+                clientIp, operationType, LocalDateTime.now().format(formatter));
+        
+        // Get or create statistics
+        RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
+                .orElse(new RateLimitStatistics(clientIp));
+        
+        // Increment total requests
+        stats.incrementTotalRequests();
+        stats.setLastRequestAt(LocalDateTime.now());
+        
+        // Check if IP is currently blocked
+        if (stats.isCurrentlyBlocked()) {
+            stats.incrementBlockedCount();
+            stats.incrementFailedRequests();
+            statisticsRepository.save(stats);
+            
+            logger.warn("🚫 IP BLOCKED - IP: {}, Until: {}", 
+                    clientIp, stats.getBlockedUntil());
+            return false;
+        }
+        
+        // Check basic rate limit
+        boolean allowed = checkBasicRateLimit(stats, operationType);
+        
+        if (!allowed) {
+            stats.incrementBlockedCount();
+            stats.incrementFailedRequests();
+            
+            // Create alert if threshold exceeded
+            if (stats.getBlockedCount() >= alertThreshold) {
+                if (monitoringEnabled) {
+                    monitoringService.logBlockedRequest(clientIp, operationType, "Rate limit exceeded");
+                }
+            }
+            
+            logger.warn("🚫 RATE LIMIT EXCEEDED - IP: {}, Operation: {}, Blocked Count: {}", 
+                    clientIp, operationType, stats.getBlockedCount());
+        } else {
+            stats.incrementSuccessfulRequests();
+            logger.info("✅ RATE LIMIT OK - IP: {}, Operation: {}", clientIp, operationType);
+        }
+        
+        stats.calculateRiskScore();
+        stats.updateSuspiciousFlag();
+        statisticsRepository.save(stats);
+        
+        return allowed;
+    }
+    
+    /**
+     * Reset rate limit for IP and operation type
+     * Clears all buckets and statistics
+     */
+    public void resetRateLimit(String clientIp, String operationType) {
+        if (clientIp == null) {
+            logger.error("❌ NULL IP - Cannot reset rate limit");
+            return;
+        }
+        
+        logger.info("🔄 RESET RATE LIMIT - IP: {}, Operation: {}, Time: {}", 
+                clientIp, operationType, LocalDateTime.now().format(formatter));
+        
+        // Reset statistics
+        RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp).orElse(null);
+        if (stats != null) {
+            if (operationType == null || operationType.isEmpty()) {
+                // Reset all operations
+                stats.resetBlockedCount();
+                stats.setBlockedUntil(null);
+                stats.setLastBlockedAt(null);
+                logger.info("✅ RESET ALL OPERATIONS - IP: {}", clientIp);
+            } else {
+                // Reset specific operation (adjust bucket only)
+                logger.info("✅ RESET OPERATION - IP: {}, Operation: {}", clientIp, operationType);
+            }
+            
+            stats.calculateRiskScore();
+            stats.updateSuspiciousFlag();
+            statisticsRepository.save(stats);
+        }
+        
+        // Clear request patterns
+        requestPatterns.remove(clientIp);
+        
+        // Resolve alerts if exists
+        if (monitoringEnabled) {
+            databaseService.resetRateLimitForIp(clientIp);
+        }
+    }
+    
+    /**
+     * Get rate limit statistics for IP
+     * Returns comprehensive stats including blocked count, success rate, risk score
+     */
+    public Map<String, Object> getRateLimitStats(String clientIp) {
+        if (clientIp == null) {
+            logger.error("❌ NULL IP - Cannot get stats");
+            return new HashMap<>();
+        }
+        
+        logger.info("📊 GET RATE LIMIT STATS - IP: {}, Time: {}", 
+                clientIp, LocalDateTime.now().format(formatter));
+        
+        Map<String, Object> stats = new HashMap<>();
+        
+        // Get statistics from database
+        RateLimitStatistics dbStats = statisticsRepository.findByIpAddress(clientIp).orElse(null);
+        if (dbStats != null) {
+            stats.put("ipAddress", dbStats.getIpAddress());
+            stats.put("totalRequests", dbStats.getTotalRequests());
+            stats.put("successfulRequests", dbStats.getSuccessfulRequests());
+            stats.put("failedRequests", dbStats.getFailedRequests());
+            stats.put("blockedCount", dbStats.getBlockedCount());
+            stats.put("successRate", dbStats.getFormattedSuccessRate());
+            stats.put("failureRate", dbStats.getFormattedFailureRate());
+            stats.put("riskScore", dbStats.getRiskScore());
+            stats.put("riskLevel", dbStats.getRiskLevel());
+            stats.put("isSuspicious", dbStats.getIsSuspicious());
+            stats.put("isCurrentlyBlocked", dbStats.isCurrentlyBlocked());
+            stats.put("lastRequestAt", dbStats.getLastRequestAt());
+            stats.put("lastBlockedAt", dbStats.getLastBlockedAt());
+            stats.put("blockedUntil", dbStats.getBlockedUntil());
+            stats.put("timeUntilUnblock", dbStats.getTimeUntilUnblock());
+        }
+        
+        // Get request pattern info
+        RequestPattern pattern = requestPatterns.get(clientIp);
+        if (pattern != null) {
+            stats.put("requestsInLastMinute", pattern.getRequestsInLastMinute());
+            stats.put("hasUnusualPattern", pattern.hasUnusualPattern());
+        }
+        
+        // Get chat bucket info (login, booking, chat operations)
+        Map<String, Object> bucketInfo = new HashMap<>();
+        bucketInfo.put("login", getOperationBucketInfo(clientIp, "login"));
+        bucketInfo.put("booking", getOperationBucketInfo(clientIp, "booking"));
+        bucketInfo.put("chat", getOperationBucketInfo(clientIp, "chat"));
+        stats.put("buckets", bucketInfo);
+        
+        logger.info("✅ STATS RETRIEVED - IP: {}, Total Requests: {}, Blocked: {}", 
+                clientIp, stats.get("totalRequests"), stats.get("blockedCount"));
+        
+        return stats;
+    }
+    
+    /**
+     * Helper method to get bucket info for specific operation
+     */
+    private Map<String, Object> getOperationBucketInfo(String clientIp, String operationType) {
+        Map<String, Object> info = new HashMap<>();
+        info.put("operation", operationType);
+        info.put("ip", clientIp);
+        return info;
+    }
 }

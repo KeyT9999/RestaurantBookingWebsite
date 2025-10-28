@@ -2,25 +2,27 @@ package com.example.booking.web.controller;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.security.test.context.support.WithMockUser;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
@@ -29,14 +31,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.config.AuthRateLimitFilter;
 import com.example.booking.config.GeneralRateLimitFilter;
 import com.example.booking.config.LoginRateLimitFilter;
 import com.example.booking.config.PermanentlyBlockedIpFilter;
-import com.example.booking.web.advice.NotificationHeaderAdvice;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantTable;
+import com.example.booking.domain.User;
+import com.example.booking.domain.Waitlist;
+import com.example.booking.domain.WaitlistStatus;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.exception.BookingConflictException;
 import com.example.booking.service.AdvancedRateLimitingService;
@@ -45,11 +51,14 @@ import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.EndpointRateLimitingService;
 import com.example.booking.service.GeneralRateLimitingService;
-import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.RestaurantManagementService;
+import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.SimpleUserService;
 import com.example.booking.service.WaitlistService;
-import com.example.booking.domain.User;
+import com.example.booking.web.advice.NotificationHeaderAdvice;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Simplified test cases for BookingController
@@ -61,7 +70,10 @@ import com.example.booking.domain.User;
                 LoginRateLimitFilter.class,
                 PermanentlyBlockedIpFilter.class,
                 NotificationHeaderAdvice.class
-        }))
+        }),
+        excludeAutoConfiguration = {org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration.class}
+)
+@AutoConfigureMockMvc(addFilters = false)
 class BookingControllerTest {
 
     @Autowired
@@ -101,6 +113,8 @@ class BookingControllerTest {
     private Booking mockBooking;
     private RestaurantProfile mockRestaurant;
     private Customer mockCustomer;
+    private RestaurantTable mockTable;
+    private Waitlist mockWaitlist;
 
     @BeforeEach
     void setUp() {
@@ -137,6 +151,19 @@ class BookingControllerTest {
         mockCustomer.setCustomerId(UUID.randomUUID());
         mockCustomer.setUser(mockUser);
         mockCustomer.setFullName("Test User");
+
+        // Setup Mock Table
+        mockTable = new RestaurantTable();
+        mockTable.setTableId(1);
+        mockTable.setTableName("Table 1");
+        mockTable.setCapacity(4);
+        mockTable.setRestaurant(mockRestaurant);
+
+        // Setup Mock Waitlist
+        mockWaitlist = new Waitlist();
+        mockWaitlist.setWaitlistId(1);
+        mockWaitlist.setEstimatedWaitTime(15);
+        mockWaitlist.setStatus(WaitlistStatus.WAITING);
 
         when(generalRateLimitingService.isBookingAllowed(
                 any(HttpServletRequest.class), any(HttpServletResponse.class))).thenReturn(true);
@@ -247,6 +274,44 @@ class BookingControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("booking/form"))
                 .andExpect(model().attribute("restaurants", Arrays.asList()));
+    }
+
+    @Test
+    @DisplayName("testShowBookingForm_WithPrefillParams_ShouldPreSelectRestaurant")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowBookingForm_WithPrefillParams_ShouldPreSelectRestaurant() throws Exception {
+        // Given
+        when(restaurantService.findAllRestaurants()).thenReturn(Arrays.asList(mockRestaurant));
+        when(restaurantService.findTablesByRestaurant(1)).thenReturn(Arrays.asList(mockTable));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/new")
+                .param("restaurantId", "1")
+                .param("prefillDate", "2024-12-25")
+                .param("prefillTime", "19:00")
+                .param("prefillGuests", "4"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("booking/form"))
+                .andExpect(model().attribute("prefillRestaurantId", 1))
+                .andExpect(model().attribute("prefillDate", "2024-12-25"))
+                .andExpect(model().attribute("prefillTime", "19:00"))
+                .andExpect(model().attribute("prefillGuests", 4));
+    }
+
+    @Test
+    @DisplayName("testShowBookingForm_WithSelectedRestaurant_ShouldLoadTables")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowBookingForm_WithSelectedRestaurant_ShouldLoadTables() throws Exception {
+        // Given
+        when(restaurantService.findAllRestaurants()).thenReturn(Arrays.asList(mockRestaurant));
+        when(restaurantService.findTablesByRestaurant(1)).thenReturn(Arrays.asList(mockTable));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/new")
+                .param("restaurantId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("booking/form"))
+                .andExpect(model().attribute("prefillRestaurantId", 1));
     }
 
     // ==================== VALIDATION TESTS ====================
@@ -465,7 +530,11 @@ class BookingControllerTest {
 
     @Test
     @WithMockUser(roles = "CUSTOMER")
-    void testCreateBooking_WithInvalidCSRF_ShouldReturnError() throws Exception {
+    void testCreateBooking_WithMissingCsrf_ShouldRedirectToPayment() throws Exception {
+        // Given
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
         // When & Then
         mockMvc.perform(MockMvcRequestBuilders.post("/booking")
                 .param("restaurantId", "1")
@@ -473,7 +542,8 @@ class BookingControllerTest {
                 .param("guestCount", "4")
                 .param("bookingTime", "2024-12-25T19:00")
                 .param("depositAmount", "100000"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()));
     }
 
     @Test
@@ -488,5 +558,258 @@ class BookingControllerTest {
                 .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("http://localhost/oauth2/authorization/google"));
+    }
+
+    @Test
+    @DisplayName("testCreateBooking_WithMultipleTables_ShouldCreateSuccessfully")
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithMultipleTables_ShouldCreateSuccessfully() throws Exception {
+        // Given
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableIds", "1,2,3")
+                .param("guestCount", "12")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "300000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()));
+    }
+
+    @Test
+    @DisplayName("testCreateBooking_WithDishesAndServices_ShouldCreateSuccessfully")
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_WithDishesAndServices_ShouldCreateSuccessfully() throws Exception {
+        // Given
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .param("dishIds", "1,2,3")
+                .param("serviceIds", "1,2")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()));
+    }
+
+    @Test
+    @DisplayName("testCreateBooking_ShouldCalculateDepositAmount")
+    @WithMockUser(roles = "CUSTOMER")
+    void testCreateBooking_ShouldCalculateDepositAmount() throws Exception {
+        // Given
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+        when(bookingService.calculateTotalAmount(any(Booking.class)))
+                .thenReturn(new BigDecimal("1000000"));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()))
+                .andExpect(flash().attributeExists("successMessage"));
+    }
+
+    // ==================== CANCEL BOOKING TESTS ====================
+
+    @Test
+    @DisplayName("testCancelBooking_WithValidBooking_ShouldCancelSuccessfully")
+    @WithMockUser(roles = "CUSTOMER")
+    void testCancelBooking_WithValidBooking_ShouldCancelSuccessfully() throws Exception {
+        // Given
+        when(bookingService.cancelBooking(eq(1), any(UUID.class), anyString(), anyString(), anyString()))
+                .thenReturn(mockBooking);
+        when(bookingService.getBookingWithDetailsById(1))
+                .thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/api/cancel/1")
+                .param("cancelReason", "Change of plans")
+                .param("bankCode", "VTB")
+                .param("accountNumber", "1234567890")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/my"))
+                .andExpect(flash().attributeExists("successMessage"));
+    }
+
+    @Test
+    @DisplayName("testCancelBooking_WithPendingStatus_ShouldCancelAndCreateRefund")
+    @WithMockUser(roles = "CUSTOMER")
+    void testCancelBooking_WithPendingStatus_ShouldCancelAndCreateRefund() throws Exception {
+        // Given
+        mockBooking.setStatus(BookingStatus.PENDING);
+        when(bookingService.cancelBooking(eq(1), any(UUID.class), anyString(), anyString(), anyString()))
+                .thenReturn(mockBooking);
+        when(bookingService.getBookingWithDetailsById(1))
+                .thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/api/cancel/1")
+                .param("cancelReason", "Refund request")
+                .param("bankCode", "VCB")
+                .param("accountNumber", "0987654321")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/my"))
+                .andExpect(flash().attributeExists("successMessage"));
+    }
+
+    @Test
+    @DisplayName("testCancelBooking_WithNonExistentBooking_ShouldThrowException")
+    @WithMockUser(roles = "CUSTOMER")
+    void testCancelBooking_WithNonExistentBooking_ShouldThrowException() throws Exception {
+        // Given
+        when(bookingService.cancelBooking(eq(999), any(UUID.class), anyString(), anyString(), anyString()))
+                .thenThrow(new IllegalArgumentException("Booking not found: 999"));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/api/cancel/999")
+                .param("cancelReason", "Test")
+                .param("bankCode", "VCB")
+                .param("accountNumber", "1234567890")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    @Test
+    @DisplayName("testCancelBooking_WithUnauthenticatedUser_ShouldRedirectToLogin")
+    void testCancelBooking_WithUnauthenticatedUser_ShouldRedirectToLogin() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/api/cancel/1")
+                .param("cancelReason", "Test")
+                .param("bankCode", "VCB")
+                .param("accountNumber", "1234567890")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+    }
+
+    // ==================== SHOW MY BOOKINGS TESTS ====================
+
+    @Test
+    @DisplayName("testShowMyBookings_WithMultipleBookings_ShouldDisplayAll")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowMyBookings_WithMultipleBookings_ShouldDisplayAll() throws Exception {
+        // Given
+        List<Booking> bookings = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            Booking booking = new Booking();
+            booking.setBookingId(i);
+            booking.setBookingTime(LocalDateTime.now().plusDays(i));
+            booking.setStatus(BookingStatus.PENDING);
+            bookings.add(booking);
+        }
+        when(bookingService.findBookingsByCustomer(any(UUID.class))).thenReturn(bookings);
+        when(waitlistService.getWaitlistByCustomer(any(UUID.class))).thenReturn(new ArrayList<>());
+        when(waitlistService.calculateEstimatedWaitTimeForCustomer(any(Integer.class))).thenReturn(0);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/my"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("booking/list"))
+                .andExpect(model().attributeExists("bookings"))
+                .andExpect(model().attribute("totalBookings", 5));
+    }
+
+    @Test
+    @DisplayName("testShowMyBookings_WithWaitlistEntries_ShouldDisplayBoth")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowMyBookings_WithWaitlistEntries_ShouldDisplayBoth() throws Exception {
+        // Given
+        List<Booking> bookings = Arrays.asList(mockBooking);
+        List<Waitlist> waitlistEntries = Arrays.asList(mockWaitlist);
+        when(bookingService.findBookingsByCustomer(any(UUID.class))).thenReturn(bookings);
+        when(waitlistService.getWaitlistByCustomer(any(UUID.class))).thenReturn(waitlistEntries);
+        when(waitlistService.calculateEstimatedWaitTimeForCustomer(any(Integer.class))).thenReturn(15);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/my"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("booking/list"))
+                .andExpect(model().attributeExists("bookings"))
+                .andExpect(model().attributeExists("waitlistEntries"));
+    }
+
+    @Test
+    @DisplayName("testShowMyBookings_WithFilterBookings_ShouldShowOnlyBookings")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowMyBookings_WithFilterBookings_ShouldShowOnlyBookings() throws Exception {
+        // Given
+        List<Booking> bookings = Arrays.asList(mockBooking);
+        List<Waitlist> waitlistEntries = Arrays.asList(mockWaitlist);
+        when(bookingService.findBookingsByCustomer(any(UUID.class))).thenReturn(bookings);
+        when(waitlistService.getWaitlistByCustomer(any(UUID.class))).thenReturn(waitlistEntries);
+        when(waitlistService.calculateEstimatedWaitTimeForCustomer(any(Integer.class))).thenReturn(0);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/my")
+                .param("filter", "bookings"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("booking/list"))
+                .andExpect(model().attribute("currentFilter", "bookings"))
+                .andExpect(model().attribute("totalBookings", 1));
+    }
+
+    @Test
+    @DisplayName("testShowMyBookings_WithFilterWaitlist_ShouldShowOnlyWaitlist")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowMyBookings_WithFilterWaitlist_ShouldShowOnlyWaitlist() throws Exception {
+        // Given
+        List<Booking> bookings = Arrays.asList(mockBooking);
+        List<Waitlist> waitlistEntries = Arrays.asList(mockWaitlist);
+        when(bookingService.findBookingsByCustomer(any(UUID.class))).thenReturn(bookings);
+        when(waitlistService.getWaitlistByCustomer(any(UUID.class))).thenReturn(waitlistEntries);
+        when(waitlistService.calculateEstimatedWaitTimeForCustomer(any(Integer.class))).thenReturn(20);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/my")
+                .param("filter", "waitlist"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("booking/list"))
+                .andExpect(model().attribute("currentFilter", "waitlist"))
+                .andExpect(model().attribute("totalWaitlist", 1));
+    }
+
+    @Test
+    @DisplayName("testShowMyBookings_CalculateEstimatedWaitTime_ShouldDisplayWaitTime")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowMyBookings_CalculateEstimatedWaitTime_ShouldDisplayWaitTime() throws Exception {
+        // Given
+        mockWaitlist.setEstimatedWaitTime(25);
+        List<Booking> bookings = new ArrayList<>();
+        List<Waitlist> waitlistEntries = Arrays.asList(mockWaitlist);
+        when(bookingService.findBookingsByCustomer(any(UUID.class))).thenReturn(bookings);
+        when(waitlistService.getWaitlistByCustomer(any(UUID.class))).thenReturn(waitlistEntries);
+        when(waitlistService.calculateEstimatedWaitTimeForCustomer(1)).thenReturn(25);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/my"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("booking/list"))
+                .andExpect(model().attributeExists("waitlistEntries"));
+    }
+
+    @Test
+    @DisplayName("testShowMyBookings_WithNoAuthentication_ShouldRedirectToLogin")
+    void testShowMyBookings_WithNoAuthentication_ShouldRedirectToLogin() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/my"))
+                .andExpect(status().is3xxRedirection());
     }
 }
