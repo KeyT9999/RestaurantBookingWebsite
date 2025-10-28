@@ -116,7 +116,11 @@ public class AdminDashboardController {
             long completedCount = completedRefunds.size();
             long rejectedCount = rejectedRefunds.size();
 
-            BigDecimal totalAmount = pendingRefunds.stream()
+            // Totals
+            BigDecimal pendingTotal = pendingRefunds.stream()
+                    .map(RefundRequest::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal completedTotal = completedRefunds.stream()
                     .map(RefundRequest::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -126,7 +130,20 @@ public class AdminDashboardController {
             model.addAttribute("pendingCount", pendingCount);
             model.addAttribute("completedCount", completedCount);
             model.addAttribute("rejectedCount", rejectedCount);
-            model.addAttribute("totalAmount", totalAmount);
+            model.addAttribute("pendingTotal", pendingTotal);
+            model.addAttribute("completedTotal", completedTotal);
+
+            // Add bank name mapping for template
+            Map<String, String> bankNameMap = new HashMap<>();
+            bankNameMap.put("970422", "MB Bank");
+            bankNameMap.put("970436", "Vietcombank");
+            bankNameMap.put("970415", "Techcombank");
+            bankNameMap.put("970416", "VietinBank");
+            bankNameMap.put("970423", "Agribank");
+            bankNameMap.put("970427", "ACB");
+            bankNameMap.put("970418", "Sacombank");
+            bankNameMap.put("970419", "BIDV");
+            model.addAttribute("bankNameMap", bankNameMap);
 
             logger.info("Refund requests page loaded successfully");
 

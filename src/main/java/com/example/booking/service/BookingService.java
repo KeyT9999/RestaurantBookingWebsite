@@ -537,8 +537,8 @@ public class BookingService {
         // Process refund
         processRefundForCancelledBooking(booking, cancelReason, bankCode, accountNumber);
 
-        // Update booking status
-        booking.setStatus(BookingStatus.CANCELLED);
+        // Update booking status: move to PENDING_CANCEL until refund completes
+        booking.setStatus(BookingStatus.PENDING_CANCEL);
         booking.setCancelReason(cancelReason);
         booking.setCancelledAt(LocalDateTime.now());
         booking.setCancelledBy(customerId);
@@ -547,10 +547,11 @@ public class BookingService {
     }
 
     /**
-     * Hủy booking (Restaurant Owner)
+     * Hủy booking (Restaurant Owner) với thông tin ngân hàng
      */
     @Transactional
-    public Booking cancelBookingByRestaurant(Integer bookingId, UUID restaurantOwnerId, String cancelReason) {
+    public Booking cancelBookingByRestaurant(Integer bookingId, UUID restaurantOwnerId, String cancelReason,
+            String bankCode, String accountNumber) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
 
@@ -559,13 +560,11 @@ public class BookingService {
             throw new IllegalArgumentException("You can only cancel bookings for your restaurant");
         }
 
-        // Không cần kiểm tra booking status nữa, chỉ cần kiểm tra payment status
-        // COMPLETED
-        // Process refund (restaurant owner cancel - no bank account info needed)
-        processRefundForCancelledBooking(booking, cancelReason, "", "");
+        // Process refund with bank account info
+        processRefundForCancelledBooking(booking, cancelReason, bankCode, accountNumber);
 
-        // Update booking status
-        booking.setStatus(BookingStatus.CANCELLED);
+        // Update booking status: move to PENDING_CANCEL until refund completes
+        booking.setStatus(BookingStatus.PENDING_CANCEL);
         booking.setCancelReason(cancelReason);
         booking.setCancelledAt(LocalDateTime.now());
         booking.setCancelledBy(restaurantOwnerId);
@@ -574,7 +573,15 @@ public class BookingService {
     }
 
     /**
-     * Process refund for cancelled booking
+     * Hủy booking (Restaurant Owner) - legacy method
+     */
+    @Transactional
+    public Booking cancelBookingByRestaurant(Integer bookingId, UUID restaurantOwnerId, String cancelReason) {
+        return cancelBookingByRestaurant(bookingId, restaurantOwnerId, cancelReason, "", "");
+    }
+
+    /**
+     * Process refund for cancelled booking - legacy method
      */
     private void processRefundForCancelledBooking(Booking booking, String cancelReason,
             String bankCode, String accountNumber) {

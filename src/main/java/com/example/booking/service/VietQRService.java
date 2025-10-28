@@ -71,25 +71,24 @@ public class VietQRService {
             logger.debug("🔍 Returning banks from memory cache");
             return bankCache.values();
         }
-        
+
         // Load from DB
         List<BankDirectory> banksFromDb = bankDirectoryRepository.findByIsActiveTrueOrderByShortNameAsc();
-        
-        if (!banksFromDb.isEmpty()) {
-            logger.debug("🔍 Returning {} banks from database", banksFromDb.size());
-            // Refresh memory cache
-            bankCache.clear();
-            banksFromDb.forEach(bank -> {
-                bankCache.put(bank.getBin(), convertToDto(bank));
-            });
-            lastFetchTime = System.currentTimeMillis();
+
+        // If DB has too few records, auto-sync to ensure completeness
+        final int MIN_BANKS_THRESHOLD = 30; // Expect ~41 banks supporting lookup + transfer
+        if (banksFromDb.size() < MIN_BANKS_THRESHOLD) {
+            logger.warn("⚠️ Bank directory has only {} active banks (< {}), auto-syncing from VietQR",
+                    banksFromDb.size(), MIN_BANKS_THRESHOLD);
+            syncBanksFromVietQR();
             return bankCache.values();
         }
-        
-        // If DB is empty, force sync
-        logger.warn("⚠️ Bank directory empty, forcing sync from VietQR");
-        syncBanksFromVietQR();
-        
+
+        // Populate memory cache from DB
+        logger.debug("🔍 Returning {} banks from database", banksFromDb.size());
+        bankCache.clear();
+        banksFromDb.forEach(bank -> bankCache.put(bank.getBin(), convertToDto(bank)));
+        lastFetchTime = System.currentTimeMillis();
         return bankCache.values();
     }
     
