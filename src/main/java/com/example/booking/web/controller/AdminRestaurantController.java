@@ -207,7 +207,7 @@ public class AdminRestaurantController {
     @PostMapping("/reject/{id}")
     public String rejectRestaurant(
         @PathVariable Integer id,
-        @RequestParam String rejectionReason,
+        @RequestParam(required = false) String rejectionReason,
         Principal principal,
         RedirectAttributes redirectAttributes
     ) {

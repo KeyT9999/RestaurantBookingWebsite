@@ -1,0 +1,8 @@
+mvn test -Dtest=AdminRestaurantControllerTest
+mvn test -Dtest=AdminRestaurantControllerTest$ApproveRestaurantTests
+mvn test -Dtest=AdminRestaurantControllerTest$RejectRestaurantTests
+mvn test -Dtest=AdminRestaurantControllerTest$GetRestaurantsTests
+mvn test -Dtest=AdminRestaurantControllerTest$SecurityTests
+mvn test -Dtest=AdminRestaurantControllerTest$ApproveRestaurantTests#testApproveRestaurant_WithPendingStatus_ShouldApproveSuccessfully
+mvn test -Dtest=AdminRestaurantControllerTest -X
+mvn test -Dtest=AdminRestaurantControllerTest -Dmaven.test.failure.ignore=true
