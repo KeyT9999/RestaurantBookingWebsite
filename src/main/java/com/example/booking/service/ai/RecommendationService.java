@@ -1,7 +1,10 @@
 package com.example.booking.service.ai;
 
+import java.text.Normalizer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,13 +26,33 @@ public class RecommendationService {
     
     @Autowired
     private RestaurantManagementService restaurantService;
+
+    private static final Set<String> DEFAULT_STOP_WORDS = Set.of(
+        "toi", "minh", "ban", "chungtoi",
+        "muon", "an", "uong", "can",
+        "o", "tai", "quan", "phuong", "thanh", "thanhpho",
+        "mon", "gi", "hom", "nay", "ngay", "cho", "nguoi",
+        "gia", "tam", "khoang", "dat", "nhahang", "nha", "hang"
+    );
     
     /**
      * Main search method - simplified version
      */
     public AISearchResponse search(AISearchRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Search request is required");
+        }
+
+        String query = request.getQuery();
+        if (query == null || query.trim().isEmpty()) {
+            throw new IllegalArgumentException("Query text is required");
+        }
+        query = query.trim();
+
+        request.setQuery(query);
+
         try {
-            System.out.println("🔍 AI Search started for query: " + request.getQuery());
+            System.out.println("🔍 AI Search started for query: " + query);
             
             // 1. Parse intent with timeout
             Map<String, Object> intent = parseIntentWithTimeout(request);
@@ -68,21 +91,15 @@ public class RecommendationService {
     /**
      * Parse intent with timeout
      */
-    private Map<String, Object> parseIntentWithTimeout(AISearchRequest request) {
-        try {
-            return openAIService.parseIntent(request.getQuery(), request.getUserId())
-                .get(800, java.util.concurrent.TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            // Simple fallback
-            Map<String, Object> fallback = new java.util.HashMap<>();
-            fallback.put("cuisine", List.of());
-            fallback.put("party_size", 2);
-            fallback.put("price_range", Map.of("min", 100000, "max", 500000));
-            fallback.put("distance", 5.0);
-            fallback.put("dietary", List.of());
-            fallback.put("confidence", 0.5);
-            return fallback;
+    private Map<String, Object> parseIntentWithTimeout(AISearchRequest request) throws Exception {
+        java.util.concurrent.CompletableFuture<Map<String, Object>> intentFuture =
+            openAIService.parseIntent(request.getQuery(), request.getUserId());
+
+        if (intentFuture == null) {
+            throw new IllegalStateException("Intent parsing service unavailable");
         }
+
+        return intentFuture.get(800, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -91,6 +108,9 @@ public class RecommendationService {
     private List<RestaurantProfile> findCandidates(Map<String, Object> intent, AISearchRequest request) {
         System.out.println("🔍 Finding restaurant candidates...");
         List<RestaurantProfile> allRestaurants = restaurantService.findAllRestaurants();
+        if (allRestaurants == null) {
+            allRestaurants = List.of();
+        }
         System.out.println("📊 Total restaurants in DB: " + allRestaurants.size());
         
         List<RestaurantProfile> filtered = allRestaurants.stream()
@@ -98,9 +118,11 @@ public class RecommendationService {
             .filter(restaurant -> matchesPriceRange(restaurant, intent))
             .filter(restaurant -> matchesDietary(restaurant, intent))
             .collect(Collectors.toList());
+
+        List<RestaurantProfile> queryFiltered = applyQueryFiltering(filtered, request);
             
-        System.out.println("✅ Filtered restaurants: " + filtered.size());
-        return filtered;
+        System.out.println("✅ Filtered restaurants: " + queryFiltered.size());
+        return queryFiltered;
     }
     
     /**
@@ -134,9 +156,15 @@ public class RecommendationService {
      */
     private AISearchResponse fallbackSearch(AISearchRequest request) {
         List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
+        if (restaurants == null) {
+            restaurants = List.of();
+        }
+
+        restaurants = applyQueryFiltering(restaurants, request);
+        int limit = request.getMaxResults() != null ? request.getMaxResults() : 5;
         
         List<AISearchResponse.RestaurantRecommendation> recommendations = restaurants.stream()
-            .limit(5)
+            .limit(limit)
             .map(this::createSimpleRecommendation)
             .collect(Collectors.toList());
         
@@ -156,9 +184,14 @@ public class RecommendationService {
         List<String> cuisines = (List<String>) intent.get("cuisine");
         if (cuisines == null || cuisines.isEmpty()) return true;
         
-        return cuisines.stream().anyMatch(cuisine -> 
-            restaurant.getCuisineType() != null && 
-            restaurant.getCuisineType().toLowerCase().contains(cuisine.toLowerCase()));
+        String restaurantCuisine = normalize(restaurant.getCuisineType());
+        if (restaurantCuisine.isEmpty()) {
+            return false;
+        }
+        
+        return cuisines.stream()
+            .map(this::normalize)
+            .anyMatch(restaurantCuisine::contains);
     }
     
     private boolean matchesPriceRange(RestaurantProfile restaurant, Map<String, Object> intent) {
@@ -176,6 +209,79 @@ public class RecommendationService {
     private boolean matchesDietary(RestaurantProfile restaurant, Map<String, Object> intent) {
         // Simple dietary matching - can be enhanced later
         return true;
+    }
+
+    private List<RestaurantProfile> applyQueryFiltering(List<RestaurantProfile> restaurants, AISearchRequest request) {
+        if (restaurants == null || restaurants.isEmpty()) {
+            return List.of();
+        }
+
+        String query = request.getQuery();
+        if (query == null || query.isBlank()) {
+            return restaurants;
+        }
+
+        String normalizedQuery = normalize(query);
+        List<String> keywords = extractKeywords(normalizedQuery);
+
+        return restaurants.stream()
+            .filter(restaurant -> matchesQueryText(restaurant, normalizedQuery, keywords))
+            .collect(Collectors.toList());
+    }
+
+    private boolean matchesQueryText(RestaurantProfile restaurant, String normalizedQuery, List<String> keywords) {
+        if (normalizedQuery == null || normalizedQuery.isBlank()) {
+            return true;
+        }
+
+        String normalizedName = normalize(restaurant.getRestaurantName());
+        String normalizedCuisine = normalize(restaurant.getCuisineType());
+
+        if (!normalizedName.isEmpty() && normalizedName.contains(normalizedQuery)) {
+            return true;
+        }
+
+        if (!normalizedCuisine.isEmpty() && normalizedCuisine.contains(normalizedQuery)) {
+            return true;
+        }
+
+        if (keywords.isEmpty()) {
+            return true;
+        }
+
+        for (String keyword : keywords) {
+            if (!normalizedName.isEmpty() && normalizedName.contains(keyword)) {
+                return true;
+            }
+            if (!normalizedCuisine.isEmpty() && normalizedCuisine.contains(keyword)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private List<String> extractKeywords(String normalizedQuery) {
+        if (normalizedQuery == null || normalizedQuery.isBlank()) {
+            return List.of();
+        }
+
+        return Arrays.stream(normalizedQuery.split("\\s+"))
+            .map(String::trim)
+            .filter(token -> token.length() > 1)
+            .filter(token -> !DEFAULT_STOP_WORDS.contains(token))
+            .distinct()
+            .collect(Collectors.toList());
+    }
+
+    private String normalize(String input) {
+        if (input == null) {
+            return "";
+        }
+        String lower = input.toLowerCase();
+        String normalized = Normalizer.normalize(lower, Normalizer.Form.NFD)
+            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        return normalized.trim();
     }
     
     private AISearchResponse.RestaurantRecommendation createRecommendation(

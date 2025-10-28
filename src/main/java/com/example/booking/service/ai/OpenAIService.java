@@ -26,18 +26,22 @@ public class OpenAIService {
     private OpenAiService openAiService;
     
     @Autowired
-    private ObjectMapper objectMapper;
+    private ObjectMapper objectMapper = new ObjectMapper();
     
     @Value("${ai.openai.model:gpt-4o-mini}")
-    private String model;
+    private String model = "gpt-4o-mini";
     
     @Value("${ai.openai.timeout-ms:800}")
-    private int timeoutMs;
+    private int timeoutMs = 800;
     
     /**
      * Parse user intent - simplified version
      */
     public CompletableFuture<Map<String, Object>> parseIntent(String query, String userId) {
+        if (query == null || query.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(defaultIntentFallback());
+        }
+
         return CompletableFuture.supplyAsync(() -> {
             try {
                 String systemPrompt = """
@@ -71,15 +75,7 @@ public class OpenAIService {
                 return result;
                 
             } catch (Exception e) {
-                // Simple fallback
-                Map<String, Object> fallback = new HashMap<>();
-                fallback.put("cuisine", List.of());
-                fallback.put("party_size", 2);
-                fallback.put("price_range", Map.of("min", 100000, "max", 500000));
-                fallback.put("distance", 5.0);
-                fallback.put("dietary", List.of());
-                fallback.put("confidence", 0.5);
-                return fallback;
+                return defaultIntentFallback();
             }
         }).orTimeout(timeoutMs, TimeUnit.MILLISECONDS);
     }
@@ -121,5 +117,16 @@ public class OpenAIService {
                     .toList();
             }
         }).orTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+    }
+
+    private Map<String, Object> defaultIntentFallback() {
+        Map<String, Object> fallback = new HashMap<>();
+        fallback.put("cuisine", List.of());
+        fallback.put("party_size", 2);
+        fallback.put("price_range", Map.of("min", 100000, "max", 500000));
+        fallback.put("distance", 5.0);
+        fallback.put("dietary", List.of());
+        fallback.put("confidence", 0.5);
+        return fallback;
     }
 }
