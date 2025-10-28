@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf?.token}">
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}">
     <title>Book Eat – Đặt bàn online, giữ chỗ ngay</title>
     
     <!-- Bootstrap 5 CSS -->
@@ -88,6 +90,325 @@
       
       .notification-bell__menu .dropdown-item:last-child {
         border-bottom: none;
+      }
+
+      /* AI Search styles */
+      .ai-search-section {
+        padding: 80px 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 246, 253, 0.95) 100%);
+      }
+
+      .ai-search-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 32px;
+        align-items: stretch;
+      }
+
+      .ai-search-card, .ai-result-card {
+        flex: 1 1 360px;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 18px 45px rgba(16, 36, 94, 0.08);
+        padding: 32px 28px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .ai-search-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+        padding: 1px;
+        background: linear-gradient(135deg, rgba(65, 105, 225, 0.35), rgba(65, 105, 225, 0));
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask-composite: exclude;
+        pointer-events: none;
+      }
+
+      .ai-search-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .ai-search-heading i {
+        font-size: 26px;
+        color: #1b4dd8;
+      }
+
+      .ai-search-title {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 600;
+        color: #1c2a4b;
+      }
+
+      .ai-search-subtitle {
+        color: #55627a;
+        margin-bottom: 24px;
+        line-height: 1.5;
+      }
+
+      .ai-search-card label {
+        display: block;
+        font-weight: 600;
+        color: #263760;
+        margin-bottom: 10px;
+      }
+
+      .ai-query-input {
+        width: 100%;
+        min-height: 120px;
+        border-radius: 16px;
+        border: 1px solid #c9d5ec;
+        padding: 16px 18px;
+        resize: vertical;
+        font-size: 1rem;
+        color: #1c2a4b;
+        box-shadow: inset 0 2px 12px rgba(28, 42, 75, 0.06);
+        transition: border 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .ai-query-input:focus {
+        border-color: #1b4dd8;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(27, 77, 216, 0.15);
+      }
+
+      .ai-form-footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 20px;
+      }
+
+      .ai-max-results {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(27, 77, 216, 0.08);
+        padding: 10px 16px;
+        border-radius: 999px;
+        color: #193166;
+      }
+
+      .ai-max-results input {
+        width: 70px;
+        border: none;
+        background: transparent;
+        text-align: center;
+        font-weight: 600;
+        color: inherit;
+      }
+
+      .ai-max-results input:focus {
+        outline: none;
+      }
+
+      .btn-ai-search {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 28px;
+        border-radius: 999px;
+        border: none;
+        background: linear-gradient(135deg, #1b4dd8 0%, #5a7fff 100%);
+        color: #fff;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 12px 30px rgba(27, 77, 216, 0.35);
+      }
+
+      .btn-ai-search:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 32px rgba(27, 77, 216, 0.4);
+      }
+
+      .ai-status {
+        margin-top: 16px;
+        font-size: 0.95rem;
+        color: #314063;
+        min-height: 24px;
+      }
+
+      .ai-status.error {
+        color: #d64045;
+      }
+
+      .ai-result-card {
+        padding: 32px 30px 28px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .ai-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+        margin-bottom: 18px;
+        color: #1c2a4b;
+      }
+
+      .ai-summary strong {
+        font-size: 1.2rem;
+      }
+
+      .ai-explanation {
+        font-style: italic;
+        color: #4a618d;
+        margin-bottom: 24px;
+      }
+
+      .ai-confidence {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(27, 77, 216, 0.08);
+        color: #1b4dd8;
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-weight: 500;
+      }
+
+      .ai-recommendations {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 16px;
+      }
+
+      .ai-recommendation-card {
+        border: 1px solid #e5ecfa;
+        border-radius: 16px;
+        padding: 18px;
+        background: #fdfdff;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .ai-recommendation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 28px rgba(31, 60, 136, 0.08);
+      }
+
+      .ai-rec-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+      }
+
+      .ai-rec-name {
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: #213152;
+        margin: 0;
+        flex: 1;
+      }
+
+      .ai-rec-rating {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(252, 196, 25, 0.16);
+        color: #b27a00;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 0.9rem;
+      }
+
+      .ai-rec-meta {
+        font-size: 0.92rem;
+        color: #4d5f86;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .ai-rec-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 8px;
+      }
+
+      .ai-rec-actions a {
+        flex: 1;
+        text-align: center;
+        padding: 8px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.92rem;
+        text-decoration: none;
+      }
+
+      .ai-rec-actions .primary {
+        background: linear-gradient(135deg, #1b4dd8 0%, #5a7fff 100%);
+        color: #fff;
+      }
+
+      .ai-rec-actions .secondary {
+        background: #edf2fe;
+        color: #1c2a4b;
+      }
+
+      .ai-empty-state {
+        border: 1px dashed #c7d4f6;
+        border-radius: 16px;
+        padding: 24px;
+        text-align: center;
+        color: #4a618d;
+        background: rgba(237, 242, 254, 0.6);
+      }
+
+      .ai-loading-spinner {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: #1b4dd8;
+      }
+
+      .ai-loading-spinner::before {
+        content: "";
+        width: 16px;
+        height: 16px;
+        border: 3px solid rgba(27, 77, 216, 0.3);
+        border-top-color: #1b4dd8;
+        border-radius: 50%;
+        animation: ai-spin 0.8s linear infinite;
+      }
+
+      @keyframes ai-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      @media (max-width: 991px) {
+        .ai-search-section {
+          padding: 60px 0;
+        }
+
+        .ai-search-card, .ai-result-card {
+          padding: 24px;
+        }
+      }
+
+      @media (max-width: 575px) {
+        .ai-form-footer {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .ai-max-results {
+          justify-content: center;
+        }
       }
     </style>
     
@@ -271,6 +592,59 @@
                         <i class="fas fa-play"></i>
                         Xem thêm
                     </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Recommendation Section -->
+    <section class="ai-search-section" id="ai-search">
+        <div class="container">
+            <div class="ai-search-wrapper">
+                <div class="ai-search-card">
+                    <div class="ai-search-heading">
+                        <i class="fas fa-magic"></i>
+                        <h2 class="ai-search-title">Trợ lý AI gợi ý nhà hàng</h2>
+                    </div>
+                    <p class="ai-search-subtitle">
+                        Mô tả mong muốn của bạn và để Book Eat AI đề xuất những lựa chọn phù hợp nhất dựa trên dữ liệu nhà hàng thực tế.
+                    </p>
+                    <form id="aiSearchForm" novalidate>
+                        <div class="mb-3">
+                            <label for="aiSearchQuery">Bạn muốn ăn gì hôm nay?</label>
+                            <textarea id="aiSearchQuery"
+                                      class="ai-query-input"
+                                      placeholder="Ví dụ: Tôi muốn ăn phở bò cho 2 người ở quận 1, tầm 150k mỗi người"
+                                      minlength="5"
+                                      required></textarea>
+                        </div>
+                        <div class="ai-form-footer">
+                            <div class="ai-max-results">
+                                <i class="fas fa-list-ol"></i>
+                                <span>Số kết quả:</span>
+                                <input type="number" id="aiMaxResults" min="1" max="10" value="5" aria-label="Số kết quả mong muốn">
+                            </div>
+                            <button type="submit" class="btn-ai-search">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                                Tìm nhà hàng bằng AI
+                            </button>
+                        </div>
+                        <div class="ai-status" id="aiSearchStatus" role="status" aria-live="polite"></div>
+                    </form>
+                </div>
+
+                <div class="ai-result-card" id="aiResultsPanel" hidden>
+                    <div class="ai-summary" id="aiResultsSummary"></div>
+                    <div class="ai-explanation" id="aiResultsExplanation"></div>
+                    <div class="ai-confidence" id="aiResultsConfidence" hidden>
+                        <i class="fas fa-signal"></i>
+                        <span></span>
+                    </div>
+                    <div class="ai-recommendations" id="aiRecommendations"></div>
+                    <div class="ai-empty-state" id="aiEmptyState" hidden>
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span>Chưa tìm thấy nhà hàng phù hợp với yêu cầu này. Bạn có thể thử mô tả cụ thể hơn.</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -621,6 +995,7 @@
       APP_CTX.showLocationPrompt = /*[[${session.SHOW_LOCATION_PROMPT}]]*/ false;
       APP_CTX.baseUrl = /*[[@{/}]]*/ '/';
     </script>
+    <script th:src="@{/js/ai-search.js}"></script>
     <script th:src="@{/js/location.js}"></script>
     
     <!-- Header Search JavaScript -->
