@@ -142,6 +142,8 @@
                                     <td>
                                         <span class="badge badge--pending"
                                               th:if="${booking.status != null and booking.status.name() == 'PENDING'}">Pending</span>
+                                        <span class="badge badge--pending"
+                                              th:if="${booking.status != null and booking.status.name() == 'PENDING_CANCEL'}">Pending cancel</span>
                                         <span class="badge badge--success"
                                               th:if="${booking.status != null and booking.status.name() == 'CONFIRMED'}">Confirmed</span>
                                         <span class="badge badge--error"
@@ -491,6 +493,9 @@
                     switch(data.status) {
                         case 'PENDING':
                             statusBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> Pending</span>';
+                            break;
+                        case 'PENDING_CANCEL':
+                            statusBadge = '<span class="badge bg-warning text-dark"><i class="fas fa-hourglass-half"></i> Pending cancel</span>';
                             break;
                         case 'CONFIRMED':
                             statusBadge = '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Confirmed</span>';

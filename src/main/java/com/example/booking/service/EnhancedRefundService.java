@@ -11,12 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.booking.domain.Payment;
 import com.example.booking.domain.PaymentStatus;
+import com.example.booking.domain.RefundRequest;
+import com.example.booking.common.enums.RefundStatus;
 import com.example.booking.domain.RestaurantBalance;
 import com.example.booking.repository.PaymentRepository;
+import com.example.booking.repository.RefundRequestRepository;
 import com.example.booking.repository.RestaurantBalanceRepository;
-import com.example.booking.web.dto.PayOSRefundRequest;
-import com.example.booking.web.dto.PayOSRefundResponse;
-
 /**
  * Service xử lý hoàn tiền với logic mới:
  * - Admin nhận 30% hoa hồng từ tiền đặt cọc
@@ -31,15 +31,13 @@ public class EnhancedRefundService {
     
     @Autowired
     private PaymentRepository paymentRepository;
-    
-    @Autowired
-    private PayOsService payOsService;
+
     
     @Autowired
     private RestaurantBalanceRepository balanceRepository;
     
     @Autowired
-    private RefundNotificationService refundNotificationService;
+    private RefundRequestRepository refundRequestRepository;
     
     /**
      * Hoàn tiền với logic mới:
@@ -147,7 +145,7 @@ public class EnhancedRefundService {
     private boolean processActualRefund(Payment payment, BigDecimal refundAmount, String reason) {
         switch (payment.getPaymentMethod()) {
             case PAYOS -> {
-                return processPayOSRefund(payment, refundAmount, reason);
+                return processManualRefund(payment, refundAmount, reason);
             }
             case ZALOPAY -> {
                 logger.warn("ZaloPay refund not implemented yet");
@@ -164,35 +162,39 @@ public class EnhancedRefundService {
     }
     
     /**
-     * Xử lý hoàn tiền PayOS
+     * Process refund với manual transfer approach (không dùng PayOS)
+     * Admin sẽ chuyển tiền thủ công cho customer
      */
-    private boolean processPayOSRefund(Payment payment, BigDecimal refundAmount, String reason) {
+    private boolean processManualRefund(Payment payment, BigDecimal refundAmount, String reason) {
         try {
-            logger.info("🔄 Processing PayOS refund for orderCode: {}, amount: {}", 
-                       payment.getOrderCode(), refundAmount);
+            logger.info("🔄 Processing manual refund for paymentId: {}, amount: {}",
+                    payment.getPaymentId(), refundAmount);
             
-            if (payment.getOrderCode() == null) {
-                throw new IllegalStateException("Payment orderCode is null");
-            }
-            
-            PayOSRefundRequest refundRequest = new PayOSRefundRequest();
-            refundRequest.setOrderCode(payment.getOrderCode());
-            refundRequest.setAmount(refundAmount.longValue());
+            // Tạo refund request để admin xử lý thủ công
+            RefundRequest refundRequest = new RefundRequest();
+            refundRequest.setPayment(payment);
+            refundRequest.setAmount(refundAmount);
             refundRequest.setReason(reason);
+            refundRequest.setStatus(RefundStatus.PENDING);
+            refundRequest.setRequestedAt(LocalDateTime.now());
+            refundRequest.setCustomer(payment.getCustomer());
+            refundRequest.setRestaurant(payment.getBooking().getRestaurant());
+
+            // Lưu refund request để admin xử lý
+            refundRequestRepository.save(refundRequest);
+
+            // Cập nhật payment status
+            payment.setStatus(PaymentStatus.REFUND_PENDING);
+            payment.setRefundAmount(refundAmount);
+            payment.setRefundReason(reason);
+            payment.setRefundRequestId(refundRequest.getRefundRequestId());
+            paymentRepository.save(payment);
             
-            PayOSRefundResponse refundResponse = payOsService.processRefund(refundRequest);
-            
-            if (refundResponse != null && refundResponse.getCode() == 0) {
-                logger.info("✅ PayOS refund successful: {}", refundResponse.getDesc());
-                return true;
-            } else {
-                logger.error("❌ PayOS refund failed: {}", 
-                           refundResponse != null ? refundResponse.getDesc() : "Unknown error");
-                return false;
-            }
+            logger.info("✅ Manual refund request created: {}", refundRequest.getRefundRequestId());
+            return true;
             
         } catch (Exception e) {
-            logger.error("❌ Error processing PayOS refund", e);
+            logger.error("❌ Error creating manual refund request", e);
             return false;
         }
     }
@@ -202,18 +204,21 @@ public class EnhancedRefundService {
      */
     private void sendRefundNotificationToCustomer(com.example.booking.domain.Customer customer, BigDecimal refundAmount) {
         try {
-            String message = String.format(
-                "Hoàn tiền của bạn (%s VNĐ) sẽ được chuyển về tài khoản trong vòng 1-3 ngày làm việc. " +
-                "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!",
-                refundAmount.toString()
-            );
+            // TODO: Implement notification system
+            // String message = String.format(
+            // "Hoàn tiền của bạn (%s VNĐ) sẽ được chuyển về tài khoản trong vòng 1-3 ngày
+            // làm việc. " +
+            // "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!",
+            // refundAmount.toString()
+            // );
             
-            // Send notification (implement based on your notification system)
-            refundNotificationService.sendNotification(customer.getCustomerId(), 
-                                               "Thông báo hoàn tiền", 
-                                               message);
+            // TODO: Implement notification system
+            // refundNotificationService.sendNotification(customer.getCustomerId(),
+            // "Thông báo hoàn tiền",
+            // message);
             
-            logger.info("📧 Sent refund notification to customer: {}", customer.getCustomerId());
+            logger.info("📧 Refund notification would be sent to customer: {} (notification system not implemented)",
+                    customer.getCustomerId());
             
         } catch (Exception e) {
             logger.error("❌ Error sending refund notification", e);

@@ -1721,14 +1721,16 @@ public class RestaurantOwnerController {
     @ResponseBody
     public ResponseEntity<?> cancelBookingApi(@PathVariable Integer id,
             @RequestParam String cancelReason,
+            @RequestParam(required = false) String bankCode,
+            @RequestParam(required = false) String accountNumber,
             Authentication authentication) {
         try {
             // Get current restaurant owner
             User user = getUserFromAuthentication(authentication);
             UUID restaurantOwnerId = user.getId();
 
-            // Cancel booking with refund processing
-            bookingService.cancelBookingByRestaurant(id, restaurantOwnerId, cancelReason);
+            // Cancel booking with refund processing and bank account info
+            bookingService.cancelBookingByRestaurant(id, restaurantOwnerId, cancelReason, bankCode, accountNumber);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

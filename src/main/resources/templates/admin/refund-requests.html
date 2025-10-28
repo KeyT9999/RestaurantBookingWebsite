@@ -265,11 +265,11 @@
                                         <div>
                                             <h5 class="mb-1">
                                                 <i class="fas fa-user me-2"></i>
-                                                <span th:text="${refund.customerName}">Customer Name</span>
+                                                <span th:text="${refund.customer.fullName}">Customer Name</span>
                                             </h5>
                                             <p class="text-muted mb-1">
                                                 <i class="fas fa-store me-2"></i>
-                                                <span th:text="${refund.restaurantName}">Restaurant Name</span>
+                                                <span th:text="${refund.restaurant.restaurantName}">Restaurant Name</span>
                                             </p>
                                             <p class="text-muted mb-1">
                                                 <i class="fas fa-money-bill-wave me-2"></i>
@@ -288,11 +288,10 @@
                                         <h6><i class="fas fa-university me-2"></i>Thông tin ngân hàng:</h6>
                                         <div class="row">
                                             <div class="col-md-6">
-                                                <p class="mb-1"><strong>Ngân hàng:</strong> <span th:text="${refund.bankName}">Bank Name</span></p>
-                                                <p class="mb-1"><strong>Số tài khoản:</strong> <span th:text="${refund.customerBankAccount}">Account Number</span></p>
+                                                <p class="mb-1"><strong>Ngân hàng:</strong> <span th:text="${bankNameMap[refund.customerBankCode] ?: refund.customerBankCode}">Bank Name</span></p>
+                                                <p class="mb-1"><strong>Số tài khoản:</strong> <span th:text="${refund.customerAccountNumber}">Account Number</span></p>
                                             </div>
                                             <div class="col-md-6">
-                                                <p class="mb-1"><strong>Chủ tài khoản:</strong> <span th:text="${refund.customerAccountHolder}">Account Holder</span></p>
                                                 <p class="mb-1"><strong>Thời gian yêu cầu:</strong> <span th:text="${#temporals.format(refund.requestedAt, 'dd/MM/yyyy HH:mm')}">Date</span></p>
                                             </div>
                                         </div>
@@ -301,27 +300,56 @@
                                 
                                 <div class="col-md-4">
                                     <div class="text-center mb-3">
-                                        <h6><i class="fas fa-qrcode me-2"></i>QR Code:</h6>
-                                        <div th:if="${refund.qrCodeUrl != null}" class="mb-3">
-                                            <img th:src="${refund.qrCodeUrl}" class="qr-code img-fluid" alt="QR Code">
+                                        <h6><i class="fas fa-qrcode me-2"></i>VietQR:</h6>
+                                        <div th:if="${refund.vietqrUrl != null}" class="mb-3">
+                                            <img th:src="${refund.vietqrUrl}" 
+                                                 class="img-fluid border rounded" 
+                                                 style="max-width: 200px; max-height: 200px;"
+                                                 alt="VietQR Code">
+                                            <p class="text-muted mt-2 small">
+                                                Admin quét QR này để chuyển tiền cho customer
+                                            </p>
                                         </div>
-                                        <div th:unless="${refund.qrCodeUrl != null}" class="mb-3">
-                                            <div class="alert alert-warning">
-                                                <i class="fas fa-exclamation-triangle"></i>
-                                                QR Code không khả dụng
+                                        <div th:unless="${refund.vietqrUrl != null}" class="mb-3">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle"></i>
+                                                Chưa tạo VietQR
                                             </div>
                                         </div>
                                     </div>
                                     
                                     <div class="d-grid gap-2">
-                                        <button class="btn btn-complete" 
-                                                th:onclick="'completeRefund(' + ${refund.refundRequestId} + ')'">
-                                            <i class="fas fa-check me-2"></i>Hoàn thành
+                                        <!-- Nút Generate VietQR -->
+                                        <button th:if="${refund.vietqrUrl == null}" 
+                                                class="btn btn-primary" 
+                                                th:data-refund-id="${refund.refundRequestId}"
+                                                onclick="generateVietQR(this.dataset.refundId)">
+                                            <i class="fas fa-qrcode me-2"></i>Tạo VietQR
                                         </button>
-                                        <button class="btn btn-reject" 
-                                                th:onclick="'rejectRefund(' + ${refund.refundRequestId} + ')'">
+                                        
+                                        <!-- Nút Complete Refund (sau khi đã chuyển tiền) -->
+                                        <button th:if="${refund.vietqrUrl != null}" 
+                                                class="btn btn-success" 
+                                                th:data-refund-id="${refund.refundRequestId}"
+                                                onclick="completeRefund(this.dataset.refundId)">
+                                            <i class="fas fa-check-circle me-2"></i>Đã chuyển tiền
+                                        </button>
+                                        
+                                        <!-- Nút Reject chỉ hiện khi chưa có VietQR -->
+                                        <button th:if="${refund.vietqrUrl == null}" 
+                                                class="btn btn-reject" 
+                                                th:data-refund-id="${refund.refundRequestId}"
+                                                onclick="rejectRefund(this.dataset.refundId)">
                                             <i class="fas fa-times me-2"></i>Từ chối
                                         </button>
+                                        
+                                        <!-- Khi đã có VietQR thì hiển thị trạng thái -->
+                                        <div th:if="${refund.vietqrUrl != null}" class="text-center">
+                                            <div class="alert alert-success">
+                                                <i class="fas fa-qrcode me-2"></i>
+                                                VietQR đã tạo - Chờ admin chuyển tiền
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -344,11 +372,11 @@
                                         <div>
                                             <h5 class="mb-1">
                                                 <i class="fas fa-user me-2"></i>
-                                                <span th:text="${refund.customerName}">Customer Name</span>
+                                                <span th:text="${refund.customer.fullName}">Customer Name</span>
                                             </h5>
                                             <p class="text-muted mb-1">
                                                 <i class="fas fa-store me-2"></i>
-                                                <span th:text="${refund.restaurantName}">Restaurant Name</span>
+                                                <span th:text="${refund.restaurant.restaurantName}">Restaurant Name</span>
                                             </p>
                                             <p class="text-muted mb-1">
                                                 <i class="fas fa-money-bill-wave me-2"></i>
@@ -383,11 +411,11 @@
                                         <div>
                                             <h5 class="mb-1">
                                                 <i class="fas fa-user me-2"></i>
-                                                <span th:text="${refund.customerName}">Customer Name</span>
+                                                <span th:text="${refund.customer.fullName}">Customer Name</span>
                                             </h5>
                                             <p class="text-muted mb-1">
                                                 <i class="fas fa-store me-2"></i>
-                                                <span th:text="${refund.restaurantName}">Restaurant Name</span>
+                                                <span th:text="${refund.restaurant.restaurantName}">Restaurant Name</span>
                                             </p>
                                             <p class="text-muted mb-1">
                                                 <i class="fas fa-money-bill-wave me-2"></i>
@@ -409,44 +437,6 @@
             </div>
         </div>
     </main>
-    
-    <!-- Complete Refund Modal -->
-    <div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="completeForm" method="post">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="completeModalLabel">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            Hoàn thành Refund
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" name="refundRequestId" id="completeRefundRequestId" value="">
-                        <div class="alert alert-success">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Xác nhận rằng bạn đã chuyển tiền thành công cho khách hàng.</span>
-                        </div>
-                        <div class="mb-3">
-                            <label for="transferReference" class="form-label">Mã tham chiếu chuyển tiền</label>
-                            <input type="text" class="form-control" id="transferReference" name="transferReference" 
-                                   placeholder="Nhập mã tham chiếu từ ngân hàng" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="adminNote" class="form-label">Ghi chú (tùy chọn)</label>
-                            <textarea class="form-control" id="adminNote" name="adminNote" rows="3" 
-                                      placeholder="Ghi chú về việc chuyển tiền..."></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-success">Xác nhận hoàn thành</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
     
     <!-- Reject Refund Modal -->
     <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
@@ -485,47 +475,138 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        function completeRefund(refundRequestId) {
-            document.getElementById('completeRefundRequestId').value = refundRequestId;
-            const modal = new bootstrap.Modal(document.getElementById('completeModal'));
-            modal.show();
-        }
-        
         function rejectRefund(refundRequestId) {
             document.getElementById('rejectRefundRequestId').value = refundRequestId;
             const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
             modal.show();
         }
-        
-        // Handle form submissions
-        document.getElementById('completeForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const refundRequestId = formData.get('refundRequestId');
-            const transferReference = formData.get('transferReference');
-            const adminNote = formData.get('adminNote');
+
+        function generateVietQR(refundRequestId) {
+            console.log('generateVietQR called with refundRequestId:', refundRequestId);
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang tạo...';
+            button.disabled = true;
             
-            fetch(`/admin/refunds/${refundRequestId}/complete`, {
+            fetch(`/admin/refunds/${refundRequestId}/generate-vietqr`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: `transferReference=${encodeURIComponent(transferReference)}&adminNote=${encodeURIComponent(adminNote)}`
+                credentials: 'same-origin'
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Server returned HTML instead of JSON. Check authentication.');
+                    }
+                });
+            })
             .then(data => {
                 if (data.success) {
-                    alert('Refund request đã được hoàn thành!');
+                    alert("VietQR đã được tạo thành công! Admin có thể quét QR để chuyển tiền.");
                     location.reload();
                 } else {
-                    alert('Lỗi: ' + data.error);
+                    alert("Lỗi: " + data.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Lỗi khi hoàn thành refund request');
+                alert("Có lỗi xảy ra khi tạo VietQR: " + error.message);
+                button.innerHTML = originalText;
+                button.disabled = false;
             });
-        });
+        }
+
+        function completeRefund(refundRequestId) {
+            // Không cần mã tham chiếu - chỉ cần xác nhận
+            const adminNote = prompt("Nhập ghi chú (tùy chọn):") || "Admin đã hoàn tiền thủ công";
+            
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+            button.disabled = true;
+            
+            fetch(`/admin/refunds/${refundRequestId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    transferReference: "MANUAL_TRANSFER_" + Date.now(),
+                    adminNote: adminNote
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Server returned HTML instead of JSON. Check authentication.');
+                    }
+                });
+            })
+            .then(data => {
+                if (data.success) {
+                    alert("Hoàn tiền đã được hoàn thành thành công!");
+                    location.reload();
+                } else {
+                    alert("Lỗi: " + data.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Có lỗi xảy ra khi hoàn thành hoàn tiền: " + error.message);
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Show success message
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+                toast.style.top = '20px';
+                toast.style.right = '20px';
+                toast.style.zIndex = '9999';
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-check-circle me-2"></i>Đã copy URL vào clipboard!
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+                // Remove toast element after it's hidden
+                toast.addEventListener('hidden.bs.toast', function() {
+                    document.body.removeChild(toast);
+                });
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                alert('Không thể copy URL. Vui lòng copy thủ công.');
+            });
+        }
         
         document.getElementById('rejectForm').addEventListener('submit', function(e) {
             e.preventDefault();

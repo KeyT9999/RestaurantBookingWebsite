@@ -381,15 +381,14 @@
                                     </button>
                                 </form>
                                 
-                                <form th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" 
-                                      th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
-                                      method="post" style="display: inline;">
-                                    <input type="hidden" name="status" value="CANCELLED" />
-                                    <button type="submit" class="btn btn-danger small">
-                                        <i class="fas fa-times"></i>
-                                        Hủy
-                                    </button>
-                                </form>
+                                <!-- Cancel booking button with refund processing -->
+                                <button th:if="${booking.status.name() == 'PENDING' or booking.status.name() == 'CONFIRMED'}" 
+                                        class="btn btn-danger small" 
+                                        th:data-booking-id="${booking.bookingId}"
+                                        onclick="cancelBooking(this.dataset.bookingId)">
+                                    <i class="fas fa-times"></i>
+                                    Hủy booking
+                                </button>
                                 
                                 <form th:if="${booking.status.name() == 'CONFIRMED'}" 
                                       th:action="@{/restaurant-owner/bookings/{id}/status(id=${booking.bookingId})}" 
@@ -1649,6 +1648,188 @@ function populatePaymentInfo(booking) {
 
             // Populate actions
             populateBookingActions(booking);
+        }
+
+        // Cancel booking function with bank account info
+        function cancelBooking(bookingId) {
+            // Show modal for bank account info
+            showCancelBookingModal(bookingId);
+        }
+
+        function showCancelBookingModal(bookingId) {
+            // Create modal HTML
+            const modalHtml = `
+                <div class="modal fade" id="cancelBookingModal" tabindex="-1" aria-labelledby="cancelBookingModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="cancelBookingModalLabel">
+                                    <i class="fas fa-times-circle text-danger me-2"></i>Hủy Booking
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Lưu ý:</strong> Hủy booking sẽ tự động tạo refund request cho khách hàng.
+                                </div>
+                                
+                                <form id="cancelBookingForm">
+                                    <div class="mb-3">
+                                        <label for="cancelReason" class="form-label">
+                                            <i class="fas fa-comment me-1"></i>Lý do hủy booking <span class="text-danger">*</span>
+                                        </label>
+                                        <textarea class="form-control" id="cancelReason" name="cancelReason" rows="3" 
+                                                  placeholder="Nhập lý do hủy booking..." required></textarea>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="bankCode" class="form-label">
+                                            <i class="fas fa-university me-1"></i>Mã ngân hàng <span class="text-danger">*</span>
+                                        </label>
+                                        <select class="form-select" id="bankCode" name="bankCode" required>
+                                            <option value="">Đang tải danh sách ngân hàng...</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="accountNumber" class="form-label">
+                                            <i class="fas fa-credit-card me-1"></i>Số tài khoản <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="accountNumber" name="accountNumber" 
+                                               placeholder="Nhập số tài khoản..." required>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i>Hủy
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="submitCancelBooking(${bookingId})">
+                                    <i class="fas fa-check me-1"></i>Xác nhận hủy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('cancelBookingModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Load bank list from API
+            loadBankList();
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('cancelBookingModal'));
+            modal.show();
+        }
+        
+        // VietQR lookup removed: requires auth; we simplify by skipping lookup
+        
+        function loadBankList() {
+            const bankSelect = document.getElementById('bankCode');
+            if (!bankSelect) return;
+            
+            // Show loading state
+            bankSelect.innerHTML = '<option value="">Đang tải danh sách ngân hàng...</option>';
+            
+            fetch('/api/banks')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        // Clear loading option
+                        bankSelect.innerHTML = '<option value="">Chọn ngân hàng</option>';
+                        
+                        // Add bank options
+                        data.data.forEach(bank => {
+                            const option = document.createElement('option');
+                            option.value = bank.bin;
+                            
+                            // Chỉ hiển thị ngân hàng hỗ trợ lookup
+                            if (bank.lookupSupported) {
+                                option.textContent = `${bank.shortName} (${bank.bin})`;
+                                option.setAttribute('data-lookup-supported', 'true');
+                            } else {
+                                option.textContent = `${bank.shortName} (${bank.bin}) - Không hỗ trợ lookup`;
+                                option.setAttribute('data-lookup-supported', 'false');
+                            }
+                            
+                            bankSelect.appendChild(option);
+                        });
+                    } else {
+                        bankSelect.innerHTML = '<option value="">Lỗi tải danh sách ngân hàng</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading banks:', error);
+                    bankSelect.innerHTML = '<option value="">Lỗi tải danh sách ngân hàng</option>';
+                });
+        }
+
+        function submitCancelBooking(bookingId) {
+            const form = document.getElementById('cancelBookingForm');
+            const formData = new FormData(form);
+            
+            const cancelReason = formData.get('cancelReason');
+            const bankCode = formData.get('bankCode');
+            const accountNumber = formData.get('accountNumber');
+            
+            // Validate form
+            if (!cancelReason || !bankCode || !accountNumber) {
+                alert("Vui lòng điền đầy đủ thông tin!");
+                return;
+            }
+            
+            if (!confirm("Bạn có chắc chắn muốn hủy booking này? Hệ thống sẽ tự động tạo refund request cho khách hàng.")) {
+                return;
+            }
+
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang hủy...';
+            button.disabled = true;
+
+            fetch(`/restaurant-owner/api/bookings/${bookingId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: `cancelReason=${encodeURIComponent(cancelReason)}&bankCode=${encodeURIComponent(bankCode)}&accountNumber=${encodeURIComponent(accountNumber)}`
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert("Đã hủy booking và tạo refund request thành công!");
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('cancelBookingModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert("Lỗi: " + data.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Có lỗi xảy ra khi hủy booking: " + error.message);
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
         }
     </script>
     

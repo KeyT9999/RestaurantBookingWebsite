@@ -1,6 +1,7 @@
 package com.example.booking.service;
 
 import com.example.booking.common.enums.RefundStatus;
+import com.example.booking.common.enums.PaymentType;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Payment;
 import com.example.booking.domain.PaymentStatus;
@@ -8,8 +9,6 @@ import com.example.booking.domain.RefundRequest;
 import com.example.booking.domain.RestaurantBalance;
 import com.example.booking.repository.PaymentRepository;
 import com.example.booking.repository.RefundRequestRepository;
-import com.example.booking.web.dto.PayOSRefundRequest;
-import com.example.booking.web.dto.PayOSRefundResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,9 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,9 +33,7 @@ public class RefundService {
     
     @Autowired
     private PaymentRepository paymentRepository;
-    
-    @Autowired
-    private PayOsService payOsService;
+
     
     @Autowired
     private EnhancedRefundService enhancedRefundService;
@@ -66,44 +61,7 @@ public class RefundService {
         // Sử dụng EnhancedRefundService với logic mới
         return enhancedRefundService.processRefundWithCommissionDeduction(paymentId, refundAmount, reason);
     }
-    
-    /**
-     * Xử lý hoàn tiền PayOS
-     */
-    private boolean processPayOSRefund(Payment payment, BigDecimal refundAmount, String reason) {
-        try {
-            logger.info("🔄 Processing PayOS refund for orderCode: {}, amount: {}", 
-                       payment.getOrderCode(), refundAmount);
-            
-            // Validate orderCode
-            if (payment.getOrderCode() == null) {
-                throw new IllegalStateException("Payment orderCode is null");
-            }
-            
-            // Create refund request
-            PayOSRefundRequest refundRequest = new PayOSRefundRequest();
-            refundRequest.setOrderCode(payment.getOrderCode());
-            refundRequest.setAmount(refundAmount.longValue());
-            refundRequest.setReason(reason);
-            
-            // Call PayOS refund API
-            PayOSRefundResponse refundResponse = payOsService.processRefund(refundRequest);
-            
-            if (refundResponse != null && refundResponse.getCode() == 0) {
-                logger.info("✅ PayOS refund successful: {}", refundResponse.getDesc());
-                return true;
-            } else {
-                logger.error("❌ PayOS refund failed: {}", 
-                           refundResponse != null ? refundResponse.getDesc() : "Unknown error");
-                return false;
-            }
-            
-        } catch (Exception e) {
-            logger.error("❌ Error processing PayOS refund", e);
-            return false;
-        }
-    }
-    
+
     /**
      * Lấy danh sách payments có thể hoàn tiền
      */
@@ -144,6 +102,17 @@ public class RefundService {
     }
 
     /**
+     * Process refund với webhook approach (sử dụng EnhancedRefundService)
+     * Admin sẽ nhận 30% hoa hồng, PayOS sẽ xử lý refund tự động
+     */
+    public Payment processRefundWithWebhook(Integer paymentId, String reason) {
+        logger.info("🔄 Processing refund with webhook for paymentId: {}, reason: {}", paymentId, reason);
+
+        // Sử dụng EnhancedRefundService với logic đúng (30% commission)
+        return enhancedRefundService.processRefundWithCommissionDeduction(paymentId, null, reason);
+    }
+
+    /**
      * Process refund với manual transfer approach
      */
     public Payment processRefundWithManualTransfer(Integer paymentId, String reason,
@@ -163,15 +132,19 @@ public class RefundService {
         }
 
         try {
-            // 1. Trừ số dư available của nhà hàng (CHO PHÉP ÂM)
-            adjustRestaurantBalanceForRefund(payment.getBooking(), payment.getAmount());
+            // 1. Tính toán số tiền refund thực tế
+            BigDecimal actualRefundAmount = calculateActualRefundAmount(payment);
 
-            // 2. Tạo refund request cho admin
+            // 2. Trừ số dư available của nhà hàng (CHO PHÉP ÂM) - chỉ trừ số tiền refund
+            // thực tế
+            adjustRestaurantBalanceForRefund(payment.getBooking(), actualRefundAmount);
+
+            // 3. Tạo refund request cho admin
             RefundRequest refundRequest = createRefundRequest(payment, reason, bankCode, accountNumber);
 
-            // 3. Cập nhật payment status
+            // 4. Cập nhật payment status
             payment.setStatus(PaymentStatus.REFUND_PENDING);
-            payment.setRefundAmount(payment.getAmount());
+            payment.setRefundAmount(actualRefundAmount);
             payment.setRefundReason(reason);
             payment.setRefundRequestId(refundRequest.getRefundRequestId());
 
@@ -216,7 +189,11 @@ public class RefundService {
             String bankCode, String accountNumber) {
         RefundRequest refundRequest = new RefundRequest();
         refundRequest.setPayment(payment);
-        refundRequest.setAmount(payment.getAmount());
+
+        // FIX: Chỉ refund số tiền đặt cọc thực tế, không phải toàn bộ amount
+        BigDecimal actualRefundAmount = calculateActualRefundAmount(payment);
+        refundRequest.setAmount(actualRefundAmount);
+
         refundRequest.setReason(reason);
         refundRequest.setStatus(RefundStatus.PENDING);
         refundRequest.setRequestedAt(LocalDateTime.now());
@@ -236,67 +213,34 @@ public class RefundService {
             refundRequest.setCustomerAccountHolder(payment.getCustomer().getFullName());
         }
 
-        // Generate QR code data for admin using PayOS
-        String qrData = generatePayOSQRCodeData(refundRequest);
-        refundRequest.setQrCodeData(qrData);
+        // Không tạo PayOS payment link ngay lập tức
+        // Chỉ tạo khi admin click vào refund request (giống như thanh toán booking)
 
         return refundRequestRepository.save(refundRequest);
     }
 
-    private String generatePayOSQRCodeData(RefundRequest refundRequest) {
-        try {
-            // Sử dụng PayOS để tạo QR code chuyển tiền
-            String description = String.format("Refund booking %s - %s",
-                    refundRequest.getPayment().getBooking().getBookingId(),
-                    refundRequest.getReason());
+    /**
+     * Tính toán số tiền refund thực tế dựa trên payment type
+     * - DEPOSIT: refund toàn bộ payment amount (đã là 10% của tổng)
+     * - FULL_PAYMENT: refund toàn bộ payment amount
+     */
+    private BigDecimal calculateActualRefundAmount(Payment payment) {
+        logger.info("💰 Calculating actual refund amount for paymentId: {}, paymentType: {}, paymentAmount: {}",
+                payment.getPaymentId(), payment.getPaymentType(), payment.getAmount());
 
-            // Tạo QR code data với PayOS
-            String qrCodeData = payOsService.createTransferQRCode(
-                    refundRequest.getAmount(),
-                    refundRequest.getCustomerAccountNumber(),
-                    bankAccountService.getBankName(refundRequest.getCustomerBankCode()),
-                    refundRequest.getCustomerAccountHolder(),
-                    description);
+        // Payment amount đã được tính đúng theo payment type:
+        // - DEPOSIT: 10% của tổng booking
+        // - FULL_PAYMENT: 100% của tổng booking
+        // Vậy chỉ cần refund payment.getAmount() là đúng
 
-            // Tạo QR code URL (nếu PayOS có API)
-            String qrCodeUrl = payOsService.createTransferQRCodeUrl(
-                    refundRequest.getAmount(),
-                    refundRequest.getCustomerAccountNumber(),
-                    bankAccountService.getBankName(refundRequest.getCustomerBankCode()),
-                    refundRequest.getCustomerAccountHolder(),
-                    description);
+        BigDecimal refundAmount = payment.getAmount();
 
-            refundRequest.setQrCodeUrl(qrCodeUrl);
+        logger.info("✅ Actual refund amount: {} (payment was {}% of total booking)",
+                refundAmount, payment.getPaymentType() == PaymentType.DEPOSIT ? "10" : "100");
 
-            return qrCodeData;
-
-        } catch (Exception e) {
-            logger.error("Failed to generate PayOS QR code data", e);
-            // Fallback: tạo QR code data đơn giản
-            return generateSimpleQRCodeData(refundRequest);
-        }
+        return refundAmount;
     }
 
-    private String generateSimpleQRCodeData(RefundRequest refundRequest) {
-        // Generate simple QR code data as fallback
-        Map<String, Object> qrData = new HashMap<>();
-        qrData.put("refundRequestId", refundRequest.getRefundRequestId());
-        qrData.put("amount", refundRequest.getAmount());
-        qrData.put("customerName", refundRequest.getCustomer().getFullName());
-        qrData.put("restaurantName", refundRequest.getRestaurant().getRestaurantName());
-        qrData.put("reason", refundRequest.getReason());
-        qrData.put("bankAccount", refundRequest.getCustomerAccountNumber());
-        qrData.put("bankName", bankAccountService.getBankName(refundRequest.getCustomerBankCode()));
-        qrData.put("bankCode", refundRequest.getCustomerBankCode());
-        qrData.put("accountHolder", refundRequest.getCustomerAccountHolder());
-
-        try {
-            return qrData.toString();
-        } catch (Exception e) {
-            logger.error("Failed to generate simple QR code data", e);
-            return "Refund Request ID: " + refundRequest.getRefundRequestId();
-        }
-    }
 
     private void sendRefundRequestNotification(RefundRequest refundRequest) {
         // TODO: Implement notification logic
@@ -326,6 +270,12 @@ public class RefundService {
         Payment payment = refundRequest.getPayment();
         payment.setStatus(PaymentStatus.REFUNDED);
         payment.setRefundedAt(LocalDateTime.now());
+
+        // Cập nhật booking status: move to CANCELLED when refund done
+        Booking booking = payment.getBooking();
+        if (booking != null) {
+            booking.setStatus(com.example.booking.common.enums.BookingStatus.CANCELLED);
+        }
 
         // Cập nhật restaurant balance
         updateRestaurantBalanceOnRefundComplete(refundRequest);
@@ -388,6 +338,12 @@ public class RefundService {
         payment.setStatus(PaymentStatus.COMPLETED);
         payment.setRefundRequestId(null); // Clear refund request ID
 
+        // Cập nhật booking status: revert to CONFIRMED when refund is rejected
+        Booking booking = payment.getBooking();
+        if (booking != null) {
+            booking.setStatus(com.example.booking.common.enums.BookingStatus.CONFIRMED);
+        }
+
         refundRequestRepository.save(refundRequest);
         paymentRepository.save(payment);
 
@@ -411,6 +367,75 @@ public class RefundService {
 
         logger.info("Restaurant balance restored on refund reject: restaurantId={}, amount={}",
                 refundRequest.getRestaurant().getRestaurantId(), refundRequest.getAmount());
+    }
+
+    /**
+     * Generate VietQR cho refund (admin chuyển tiền cho customer)
+     */
+    @Transactional
+    public String generateVietQRForRefund(Integer refundRequestId) {
+        logger.info("🔄 Generating VietQR for refund: {}", refundRequestId);
+
+        RefundRequest refundRequest = refundRequestRepository.findById(refundRequestId)
+                .orElseThrow(() -> new IllegalArgumentException("Refund request not found: " + refundRequestId));
+
+        // Kiểm tra đã có VietQR chưa
+        if (refundRequest.getVietqrUrl() != null) {
+            logger.info("✅ VietQR already exists for refund: {}", refundRequestId);
+            return refundRequest.getVietqrUrl();
+        }
+
+        try {
+            // Thông tin tài khoản CUSTOMER (từ RefundRequest)
+            String customerBankCode = refundRequest.getCustomerBankCode();
+            String customerAccountNumber = refundRequest.getCustomerAccountNumber();
+            String customerAccountName = refundRequest.getCustomerAccountHolder();
+
+            // Validate customer bank info
+            if (customerBankCode == null || customerAccountNumber == null || customerAccountName == null) {
+                throw new IllegalStateException(
+                        "Customer bank information is missing. Please provide bank code, account number, and account holder name.");
+            }
+
+            // Tạo description cho refund
+            String bookingId = "UNKNOWN";
+            if (refundRequest.getPayment() != null &&
+                    refundRequest.getPayment().getBooking() != null &&
+                    refundRequest.getPayment().getBooking().getBookingId() != null) {
+                bookingId = refundRequest.getPayment().getBooking().getBookingId().toString();
+            }
+
+            String description = String.format("Refund #%s", bookingId);
+            if (description.length() > 25) {
+                description = "Refund #" + bookingId.substring(0, Math.min(bookingId.length(), 18));
+            }
+
+            // Tạo VietQR URL
+            String vietqrUrl = String.format(
+                    "https://img.vietqr.io/image/%s-%s-compact2.png?amount=%d&addInfo=%s&accountName=%s",
+                    customerBankCode,
+                    customerAccountNumber,
+                    refundRequest.getAmount().longValue(),
+                    description,
+                    customerAccountName);
+
+            // Lưu VietQR URL vào RefundRequest
+            refundRequest.setVietqrUrl(vietqrUrl);
+            refundRequestRepository.save(refundRequest);
+
+            logger.info("✅ VietQR generated successfully for CUSTOMER!");
+            logger.info("   - VietQR URL: {}", vietqrUrl);
+            logger.info("   - Customer Bank: {} - {}", customerBankCode, customerAccountNumber);
+            logger.info("   - Customer Name: {}", customerAccountName);
+            logger.info("   - Amount: {}", refundRequest.getAmount());
+            logger.info("   - Description: {}", description);
+
+            return vietqrUrl;
+
+        } catch (Exception e) {
+            logger.error("❌ Error generating VietQR for refund", e);
+            throw new RuntimeException("Failed to generate VietQR: " + e.getMessage(), e);
+        }
     }
 
     /**

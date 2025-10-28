@@ -1,6 +1,9 @@
 package com.example.booking.web.controller;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +21,6 @@ import com.example.booking.service.RestaurantBalanceService;
 import com.example.booking.service.RefundService;
 import com.example.booking.domain.RefundRequest;
 import com.example.booking.common.enums.RefundStatus;
-import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * Controller for Admin Dashboard
@@ -124,6 +125,18 @@ public class AdminDashboardController {
             model.addAttribute("completedCount", completedCount);
             model.addAttribute("rejectedCount", rejectedCount);
             model.addAttribute("totalAmount", totalAmount);
+
+            // Add bank name mapping for template
+            Map<String, String> bankNameMap = new HashMap<>();
+            bankNameMap.put("970422", "MB Bank");
+            bankNameMap.put("970436", "Vietcombank");
+            bankNameMap.put("970415", "Techcombank");
+            bankNameMap.put("970416", "VietinBank");
+            bankNameMap.put("970423", "Agribank");
+            bankNameMap.put("970427", "ACB");
+            bankNameMap.put("970418", "Sacombank");
+            bankNameMap.put("970419", "BIDV");
+            model.addAttribute("bankNameMap", bankNameMap);
 
             logger.info("Refund requests page loaded successfully");
 

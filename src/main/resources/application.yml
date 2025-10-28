@@ -53,6 +53,8 @@ payment:
     return-url: ${app.base-url}/payment/payos/return
     cancel-url: ${app.base-url}/payment/payos/cancel
     webhook-url: ${app.base-url}/payment/api/payos/webhook
+    # Payment link expiration time in minutes (default: 15, max recommended: 1440 = 24 hours)
+    expiration-minutes: 1440
 
 # AI Configuration - Simplified for MVP
 ai:

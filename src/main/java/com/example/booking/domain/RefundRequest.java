@@ -18,6 +18,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Entity for refund requests
@@ -64,13 +66,7 @@ public class RefundRequest {
     
     @Column(name = "transfer_reference")
     private String transferReference;
-    
-    @Column(name = "qr_code_data", columnDefinition = "TEXT")
-    private String qrCodeData;
-    
-    @Column(name = "qr_code_url")
-    private String qrCodeUrl;
-    
+
     @Column(name = "customer_bank_code")
     private String customerBankCode;
     
@@ -82,7 +78,16 @@ public class RefundRequest {
     
     @Column(name = "admin_note", length = 500)
     private String adminNote;
-    
+
+    // VietQR fields
+    @Column(name = "vietqr_url", columnDefinition = "TEXT")
+    private String vietqrUrl;
+
+    // Webhook data storage
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "ipn_raw", columnDefinition = "jsonb")
+    private String ipnRaw;
+
     // Constructors
     public RefundRequest() {
         this.requestedAt = LocalDateTime.now();
@@ -176,23 +181,7 @@ public class RefundRequest {
     public void setTransferReference(String transferReference) {
         this.transferReference = transferReference;
     }
-    
-    public String getQrCodeData() {
-        return qrCodeData;
-    }
-    
-    public void setQrCodeData(String qrCodeData) {
-        this.qrCodeData = qrCodeData;
-    }
-    
-    public String getQrCodeUrl() {
-        return qrCodeUrl;
-    }
-    
-    public void setQrCodeUrl(String qrCodeUrl) {
-        this.qrCodeUrl = qrCodeUrl;
-    }
-    
+
     public String getCustomerBankCode() {
         return customerBankCode;
     }
@@ -223,5 +212,24 @@ public class RefundRequest {
     
     public void setAdminNote(String adminNote) {
         this.adminNote = adminNote;
+    }
+
+    // PayOS getters and setters
+
+    public String getIpnRaw() {
+        return ipnRaw;
+    }
+
+    public void setIpnRaw(String ipnRaw) {
+        this.ipnRaw = ipnRaw;
+    }
+
+    // VietQR getters and setters
+    public String getVietqrUrl() {
+        return vietqrUrl;
+    }
+
+    public void setVietqrUrl(String vietqrUrl) {
+        this.vietqrUrl = vietqrUrl;
     }
 }

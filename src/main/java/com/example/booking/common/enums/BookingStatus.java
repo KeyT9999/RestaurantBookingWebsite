@@ -4,6 +4,7 @@ public enum BookingStatus {
     PENDING("pending", "Chờ xác nhận"),
     CONFIRMED("confirmed", "Đã xác nhận"),
     COMPLETED("completed", "Hoàn thành"),
+    PENDING_CANCEL("pending_cancel", "Chờ hủy (đang xử lý hoàn tiền)"),
     CANCELLED("cancelled", "Đã hủy"),
     NO_SHOW("no_show", "Không đến");
 
