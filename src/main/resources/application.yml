@@ -61,6 +61,19 @@ payment:
     return-url: ${app.base-url}/payment/payos/return
     cancel-url: ${app.base-url}/payment/payos/cancel
     webhook-url: ${app.base-url}/payment/api/payos/webhook
+    # Payment link expiration time in minutes (default: 15, max recommended: 1440 = 24 hours)
+    expiration-minutes: 1440
+
+# AI Configuration - Simplified for MVP
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
+    timeout-ms: ${OPENAI_TIMEOUT_MS:800}
+  
+  features:
+    enabled: ${AI_ENABLED:true}
+    search-enabled: ${AI_SEARCH_ENABLED:true} 
 
 # AI Server Configuration
 ai:

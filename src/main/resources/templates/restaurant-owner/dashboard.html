@@ -1,655 +1,546 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title th:text="${pageTitle} ?: 'Dashboard - Quản lý Nhà hàng'">Dashboard - Quản lý Nhà hàng</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Restaurant Management Dashboard</title>
     
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- CSS -->
-    <link rel="stylesheet" th:href="@{/css/restaurant-admin.css}" />
-    
-    <style>
-        /* Dashboard Specific Styles */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            transition: all 0.2s ease;
-            border-left: 4px solid;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-        
-        .stat-card.primary { border-left-color: #6366f1; }
-        .stat-card.success { border-left-color: #10b981; }
-        .stat-card.warning { border-left-color: #f59e0b; }
-        .stat-card.danger { border-left-color: #ef4444; }
-        
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin-bottom: 1rem;
-        }
-        
-        .stat-card.primary .stat-icon { background: rgba(99, 102, 241, 0.1); }
-        .stat-card.success .stat-icon { background: rgba(16, 185, 129, 0.1); }
-        .stat-card.warning .stat-icon { background: rgba(245, 158, 11, 0.1); }
-        .stat-card.danger .stat-icon { background: rgba(239, 68, 68, 0.1); }
-        
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.25rem;
-        }
-        
-        .stat-label {
-            color: #64748b;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .booking-item {
-            background: white;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin-bottom: 0.75rem;
-            border-left: 3px solid #6366f1;
-            transition: all 0.2s ease;
-        }
-        
-        .booking-item:hover {
-            background: #f8fafc;
-            transform: translateX(4px);
-        }
-        
-        .booking-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        
-        .booking-name {
-            font-weight: 600;
-            color: #1e293b;
-        }
-        
-        .booking-time {
-            color: #6366f1;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-        
-        .booking-details {
-            display: flex;
-            gap: 1rem;
-            color: #64748b;
-            font-size: 0.85rem;
-        }
-        
-        .table-card {
-            background: white;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-        
-        .table-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .table-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-        
-        .table-capacity {
-            color: #64748b;
-            font-size: 0.9rem;
-            margin-bottom: 0.75rem;
-        }
-        
-        .table-status {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
-        .table-status.available {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .table-status.occupied {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .table-status.reserved {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        
-        /* Waitlist Styles */
-        .waitlist-sections {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-        }
-        
-        .waitlist-section {
-            background: #f8fafc;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .waitlist-item {
-            background: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.75rem;
-            border-left: 3px solid #6366f1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-        }
-        
-        .waitlist-item:hover {
-            background: #f8fafc;
-            transform: translateX(4px);
-        }
-        
-        .waitlist-item.called {
-            border-left-color: #10b981;
-        }
-        
-        .waitlist-info {
-            flex: 1;
-        }
-        
-        .customer-name {
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.25rem;
-        }
-        
-        .waitlist-details {
-            display: flex;
-            gap: 1rem;
-            font-size: 0.9rem;
-            color: #64748b;
-        }
-        
-        .queue-position {
-            background: #6366f1;
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            font-weight: 600;
-        }
-        
-        .waitlist-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-        
-        .card-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        
-        .quick-action-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 1rem;
-            text-align: center;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            border: none;
-            cursor: pointer;
-        }
-        
-        .quick-action-btn:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-        }
-        
-        .quick-action-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #94a3b8;
-        }
-        
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.3;
-        }
-    </style>
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
 </head>
 <body>
-    <!-- Navigation Breadcrumb -->
-    <nav class="page-switch">
-        <div class="nav-breadcrumb">
-            <a th:href="@{/}" class="nav-btn">← Trang chủ</a>
-            <span class="nav-separator">|</span>
-            <span class="nav-current">📊 Dashboard Quản lý</span>
-        </div>
-    </nav>
-
-    <div class="container">
-        <!-- Header -->
-        <header class="nav">
-            <div class="nav-left">
-                <h1 class="h1">🏪 Dashboard Quản lý Nhà hàng</h1>
-                <p class="muted">Tổng quan và quản lý nhanh các hoạt động của nhà hàng</p>
-            </div>
-            <div class="tabs">
-                <a th:href="@{/restaurant-owner/dashboard}" class="tab is-active">Dashboard</a>
-                <a th:href="@{/restaurant-owner/profile}" class="tab">Hồ sơ</a>
-                <a th:href="@{/restaurant-owner/tables}" class="tab">Bàn</a>
-                <a th:href="@{/restaurant-owner/bookings}" class="tab">Tất cả Booking</a>
-                <a th:href="@{/restaurant-owner/waitlist}" class="tab">Waitlist</a>
-                <a th:href="@{/restaurant-owner/media}" class="tab">Media</a>
-<<<<<<< HEAD
-                <a th:href="@{/restaurant-owner/withdrawal}" class="tab" style="background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 600;">💰 Rút tiền</a>
-=======
-                <a th:href="@{/restaurant-owner/vouchers}" class="tab">Vouchers</a>
->>>>>>> 3e1c874e76144cce813ae67106401784f94bc87f
-            </div>
-        </header>
-
-        <!-- Error Message -->
-        <div th:if="${error != null}" class="card" style="background: #f8d7da; border-color: #f5c6cb;">
-            <h2 class="h2" style="color: #721c24;">⚠️ Lỗi</h2>
-            <p th:text="${error}" style="color: #721c24;">Có lỗi xảy ra</p>
-            <div class="actions">
-                <a href="/restaurant-owner/profile" class="btn">Tạo nhà hàng</a>
-            </div>
-        </div>
-
-        <!-- Restaurant Management -->
-        <div th:if="${error == null and restaurants != null and !restaurants.empty}" class="card">
-            <h2 class="h2">Quản lý Nhà hàng</h2>
-            <div class="grid grid-3">
-                <div th:each="restaurant : ${restaurants}" class="card" style="padding: 1rem;">
-                    <h3 class="h3" th:text="${restaurant.restaurantName}">Nhà hàng ABC</h3>
-                    <p class="muted" th:text="${restaurant.cuisineType ?: 'Chưa có thông tin'}">Việt Nam</p>
-                    <div class="actions">
-                        <a th:href="@{/restaurant-owner/restaurants/{id}/bookings(id=${restaurant.restaurantId})}" 
-                           class="btn small">📋 Booking</a>
-                        <a th:href="@{/restaurant-owner/restaurants/{id}/services(id=${restaurant.restaurantId})}" 
-                           class="btn small">🔧 Dịch vụ</a>
-                        <a th:href="@{/restaurant-owner/profile/{id}(id=${restaurant.restaurantId})}" 
-                           class="btn btn-ghost small">⚙️ Quản lý</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Statistics Cards -->
-        <div class="stats-grid" th:if="${error == null}">
-            <div class="stat-card primary">
-                <div class="stat-icon">📅</div>
-                <div class="stat-value" th:text="${todayBookings != null ? todayBookings.size() : 0}">0</div>
-                <div class="stat-label">Booking Hôm nay</div>
-                </div>
-            
-            <div class="stat-card success">
-                <div class="stat-icon">✅</div>
-                <div class="stat-value" th:text="${availableTables != null ? availableTables.size() : 0}">0</div>
-                <div class="stat-label">Bàn Trống</div>
-            </div>
-            
-            <div class="stat-card warning">
-                <div class="stat-icon">🍽️</div>
-                <div class="stat-value" th:text="${occupiedTables != null ? occupiedTables.size() : 0}">0</div>
-                <div class="stat-label">Bàn Đang Dùng</div>
-            </div>
-            
-            <div class="stat-card danger">
-                <div class="stat-icon">👥</div>
-                <div class="stat-value" th:text="${waitingCustomers != null ? waitingCustomers.size() : 0}">0</div>
-                <div class="stat-label">Khách Hàng Chờ</div>
-            </div>
-            
-            <!-- Financial Card -->
-            <div class="stat-card" style="border-left-color: #8b5cf6; background: linear-gradient(135deg, #f3f4f6, #e5e7eb);">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">💰</div>
-                <div class="stat-value" style="color: #8b5cf6; font-size: 1.5rem;">Số dư</div>
-                <div class="stat-label" style="color: #6b7280;">Tài khoản nhà hàng</div>
-                <div class="actions" style="margin-top: 1rem;">
-                    <a th:href="@{/restaurant-owner/withdrawal}" class="btn" style="background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 600; padding: 0.5rem 1rem; font-size: 0.875rem;">
-                        💸 Rút tiền ngay
-                    </a>
-                </div>
-            </div>
-            
-            <div class="stat-card primary">
-                <div class="stat-icon">📞</div>
-                <div class="stat-value" th:text="${calledCustomers != null ? calledCustomers.size() : 0}">0</div>
-                <div class="stat-label">Đã Gọi</div>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="card">
-            <h2 class="h2">⚡ Thao tác Nhanh</h2>
-            <div class="quick-actions">
-                <a th:href="@{/restaurant-owner/withdrawal}" class="quick-action-btn" style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
-                    <div class="quick-action-icon">💰</div>
-                    <div style="font-weight: 600;">Quản lý Rút Tiền</div>
-                </a>
-                <a th:href="@{/restaurant-owner/bookings/create}" class="quick-action-btn">
-                    <div class="quick-action-icon">📝</div>
-                    <div>Tạo Booking Mới</div>
-                </a>
-                <a th:href="@{/restaurant-owner/tables/create}" class="quick-action-btn">
-                    <div class="quick-action-icon">➕</div>
-                    <div>Thêm Bàn Mới</div>
-                </a>
-                <a th:href="@{/restaurant-owner/dishes/create}" class="quick-action-btn">
-                    <div class="quick-action-icon">🍴</div>
-                    <div>Thêm Món Ăn</div>
-                </a>
-                <a th:href="@{/restaurant-owner/media}" class="quick-action-btn">
-                    <div class="quick-action-icon">📸</div>
-                    <div>Upload Media</div>
-                </a>
-                <a th:href="@{/restaurant-owner/vouchers}" class="quick-action-btn">
-                    <div class="quick-action-icon">🎫</div>
-                    <div>Voucher Management</div>
-                </a>
-                        </div>
-                    </div>
-
-        <!-- Two Column Layout -->
-        <div class="grid grid-2">
-            <!-- Today's Bookings -->
-            <div class="card">
-                <h2 class="h2">📅 Booking Hôm Nay</h2>
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
                 
-                <div th:if="${todayBookings != null and !todayBookings.isEmpty()}">
-                    <div th:each="booking : ${todayBookings}" class="booking-item">
-                        <div class="booking-header">
-                            <span class="booking-name" th:text="${booking.customer?.fullName ?: 'Khách hàng'}">Nguyễn Văn A</span>
-                            <span class="booking-time" th:text="${#temporals.format(booking.bookingTime, 'HH:mm')}">18:00</span>
+                <!-- Restaurant Selector -->
+                <div class="restaurant-selector" th:if="${restaurants != null and !restaurants.empty}">
+                    <div class="restaurant-dropdown" onclick="toggleRestaurantMenu()">
+                        <div class="restaurant-info">
+                            <div class="restaurant-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="restaurant-details">
+                                <h4 th:text="${selectedRestaurant.restaurantName}">Nhà hàng mặc định</h4>
+                                <p th:text="${selectedRestaurant.address}">Địa chỉ nhà hàng</p>
+                            </div>
                         </div>
-                        <div class="booking-details">
-                            <span>👥 <span th:text="${booking.numberOfGuests}">4</span> khách</span>
-                            <span>📱 <span th:text="${booking.customer?.phone ?: 'N/A'}">0123456789</span></span>
-                            <span class="badge badge-info" th:text="${booking.status}">PENDING</span>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    
+                    <div class="restaurant-menu" id="restaurantMenu">
+                        <div th:each="restaurant, iterStat : ${restaurants}" 
+                             class="restaurant-item" 
+                             th:classappend="${restaurant.restaurantId == selectedRestaurantId ? 'active' : ''}"
+                             th:onclick="'selectRestaurant(' + ${restaurant.restaurantId} + ')'">
+                            <div class="restaurant-info">
+                                <div class="restaurant-icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="restaurant-details">
+                                    <h4 th:text="${restaurant.restaurantName}">Tên nhà hàng</h4>
+                                    <p th:text="${restaurant.address}">Địa chỉ</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div th:if="${todayBookings == null or todayBookings.isEmpty()}" class="empty-state">
-                    <div class="empty-state-icon">📭</div>
-                    <p>Chưa có booking nào hôm nay</p>
-                    <a th:href="@{/restaurant-owner/bookings/create}" class="btn">Tạo Booking Mới</a>
-                        </div>
-                    </div>
-
-            <!-- Available Tables -->
-            <div class="card">
-                <h2 class="h2">✅ Bàn Đang Trống</h2>
-                
-                <div th:if="${availableTables != null and !availableTables.isEmpty()}" class="grid grid-2">
-                    <div th:each="table : ${availableTables}" class="table-card">
-                        <div class="table-name" th:text="${table.tableName}">T1</div>
-                        <div class="table-capacity">
-                            👥 <span th:text="${table.capacity}">4</span> chỗ ngồi
-                        </div>
-                        <span class="table-status available">Trống</span>
-                    </div>
-                </div>
-
-                <div th:if="${availableTables == null or availableTables.isEmpty()}" class="empty-state">
-                    <div class="empty-state-icon">🪑</div>
-                    <p>Không có bàn trống</p>
-                    <a th:href="@{/restaurant-owner/tables}" class="btn">Quản lý Bàn</a>
-                </div>
-            </div>
-                </div>
-
-        <!-- Waitlist Management -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="h2">⏰ Quản lý Danh sách Chờ</h2>
-                <div class="card-actions">
-                    <button type="button" class="btn btn-primary" onclick="callNextCustomer()">
-                        <i class="fas fa-phone"></i> Gọi Khách Tiếp Theo
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="refreshWaitlist()">
-                        <i class="fas fa-sync"></i> Làm Mới
-                    </button>
                 </div>
             </div>
             
-            <div class="waitlist-sections">
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
+                </div>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <h3>Dashboard</h3>
+                        <p>V 1.0</p>
+                    </div>
+                </div>
+                
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/restaurant-owner/dashboard" class="active">
+                            <i class="fas fa-chart-line"></i>
+                            Tổng quan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/bookings" th:href="${selectedRestaurantId != null ? '/restaurant-owner/bookings?restaurantId=' + selectedRestaurantId : '/restaurant-owner/bookings'}">
+                            <i class="fas fa-calendar-check"></i>
+                            Booking
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/tables">
+                            <i class="fas fa-chair"></i>
+                            Quản lý bàn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/profile">
+                            <i class="fas fa-store"></i>
+                            Hồ sơ nhà hàng
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/menu">
+                            <i class="fas fa-utensils"></i>
+                            Thực đơn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/payments">
+                            <i class="fas fa-credit-card"></i>
+                            Thanh toán
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/messages">
+                            <i class="fas fa-envelope"></i>
+                            Tin nhắn
+                            <span class="menu-badge">6</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/reports">
+                            <i class="fas fa-chart-bar"></i>
+                            Báo cáo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1 class="content-title">Restaurant Management Dashboard</h1>
+                <p class="content-subtitle">Quản lý và theo dõi hoạt động nhà hàng của bạn</p>
+            </div>
+
+            <!-- Error Message -->
+            <div th:if="${error}" class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span th:text="${error}">Có lỗi xảy ra</span>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="kpi-trend" 
+                             th:classappend="${dashboardStats.bookingChangePercent >= 0} ? 'positive' : 'negative'">
+                            <i th:classappend="${dashboardStats.bookingChangePercent >= 0} ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                            <span th:text="${#numbers.formatDecimal(dashboardStats.bookingChangePercent, 1, 1)} + '%'">+12.5%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value" th:text="${dashboardStats.todayBookings}">125</div>
+                    <div class="kpi-label">Booking hôm nay</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="kpi-trend" 
+                             th:classappend="${dashboardStats.availableTableChangePercent >= 0} ? 'positive' : 'negative'">
+                            <i th:classappend="${dashboardStats.availableTableChangePercent >= 0} ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                            <span th:text="${#numbers.formatDecimal(dashboardStats.availableTableChangePercent, 1, 1)} + '%'">+8.2%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value" th:text="${dashboardStats.availableTables}">80</div>
+                    <div class="kpi-label">Bàn trống</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="kpi-trend" 
+                             th:classappend="${dashboardStats.occupiedTableChangePercent >= 0} ? 'positive' : 'negative'">
+                            <i th:classappend="${dashboardStats.occupiedTableChangePercent >= 0} ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                            <span th:text="${#numbers.formatDecimal(dashboardStats.occupiedTableChangePercent, 1, 1)} + '%'">-3.1%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value" th:text="${dashboardStats.occupiedTables}">25</div>
+                    <div class="kpi-label">Bàn đã đặt</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-header">
+                        <div class="kpi-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="kpi-trend" 
+                             th:classappend="${dashboardStats.revenueChangePercent >= 0} ? 'positive' : 'negative'">
+                            <i th:classappend="${dashboardStats.revenueChangePercent >= 0} ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                            <span th:text="${#numbers.formatDecimal(dashboardStats.revenueChangePercent, 1, 1)} + '%'">+15.3%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-value" th:text="${#numbers.formatDecimal(dashboardStats.todayRevenue, 0, 'COMMA', 0, 'POINT')} + '₫'">15,000,000₫</div>
+                    <div class="kpi-label">Doanh thu hôm nay</div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-grid">
+                <!-- Revenue Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Doanh thu theo thời gian</h3>
+                        <div class="chart-filters">
+                            <button class="filter-btn" 
+                                    th:classappend="${currentPeriod == 'week'} ? 'active' : ''"
+                                    data-period="week" onclick="filterRevenueChart('week')">Tuần này</button>
+                            <button class="filter-btn" 
+                                    th:classappend="${currentPeriod == 'month'} ? 'active' : ''"
+                                    data-period="month" onclick="filterRevenueChart('month')">Tháng này</button>
+                            <button class="filter-btn" 
+                                    th:classappend="${currentPeriod == 'year'} ? 'active' : ''"
+                                    data-period="year" onclick="filterRevenueChart('year')">Năm này</button>
+                            <button class="filter-btn" 
+                                    th:classappend="${currentPeriod == 'custom'} ? 'active' : ''"
+                                    data-period="custom" onclick="filterRevenueChart('custom')">Tùy chọn</button>
+                        </div>
+                    </div>
+                    <div class="chart-content">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Popular Dishes Chart -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Món ăn bán chạy</h3>
+                        <div class="chart-period">Tháng này</div>
+                    </div>
+                    <div class="chart-content">
+                        <canvas id="popularDishesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lists Section -->
+            <div class="lists-grid">
+                <!-- Recent Bookings -->
+                <div class="list-card">
+                    <div class="list-header">
+                        <h3 class="list-title">Booking gần đây</h3>
+                        <a href="/restaurant-owner/bookings" class="list-see-all">Xem tất cả</a>
+                    </div>
+                    <div th:if="${param.debug != null}" style="background:#FFFB91;padding:6px 10px;border-radius:4px;margin-bottom:8px;font-size:0.85rem;">
+                        <div>DEBUG: Total bookings = <span th:text="${#lists.size(recentBookings)}">0</span></div>
+                        <div th:each="booking, iterStat : ${recentBookings}" style="font-size:0.75rem;margin-top:2px;">
+                            Booking <span th:text="${iterStat.index}">0</span>: 
+                            ID=<span th:text="${booking.bookingId}">0</span>, 
+                            Customer=<span th:text="${booking.customer != null and booking.customer.user != null ? booking.customer.user.fullName : 'NULL'}">NULL</span>,
+                            Time=<span th:text="${booking.bookingTime}">NULL</span>,
+                            Status=<span th:text="${booking.status}">NULL</span>
+                        </div>
+                    </div>
+                    <div th:if="${recentBookings != null and !recentBookings.empty}">
+                        <div id="be-recent-bookings" class="dashboard-booking-list">
+                        <div th:each="booking : ${recentBookings}" class="dashboard-booking-item">
+                            <div class="dashboard-booking-icon">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="dashboard-booking-content">
+                                <div class="dashboard-booking-title">
+                                    <span th:text="${booking.customer != null and booking.customer.user != null and booking.customer.user.fullName != null ? booking.customer.user.fullName : 'Khách hàng không xác định'}">Tên khách hàng</span>
+                                </div>
+                                <div class="dashboard-booking-subtitle">
+                                    <span th:if="${booking.bookingTime != null}" 
+                                          th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}">25/12/2024 14:00</span>
+                                    <span th:unless="${booking.bookingTime != null}" 
+                                          th:text="'Thời gian không xác định'">Thời gian không xác định</span>
+                                    <span th:if="${booking.bookingTables != null and !booking.bookingTables.empty}" 
+                                          class="dashboard-table-info">
+                                        - Bàn: <span th:text="${#strings.listJoin(booking.bookingTables.![table.tableName], ', ')}">A1, A2</span>
+                                    </span>
+                                </div>
+                                <div class="dashboard-booking-meta">
+                                    <span class="chip" 
+                                          th:if="${booking.status != null}"
+                                          th:classappend="${booking.status.name() == 'PENDING'} ? 'chip-pending' : 
+                                                         ${booking.status.name() == 'CONFIRMED'} ? 'chip-confirmed' : 
+                                                         ${booking.status.name() == 'CANCELLED'} ? 'chip-cancelled' : 
+                                                         ${booking.status.name() == 'COMPLETED'} ? 'chip-completed' : 'chip-default'"
+                                          th:text="${booking.status.name()}">CONFIRMED</span>
+                                    <span th:unless="${booking.status != null}" 
+                                          class="chip chip-default"
+                                          th:text="'UNKNOWN'">UNKNOWN</span>
+                                    <span th:if="${booking.note != null and !booking.note.empty}" 
+                                          class="dashboard-note-info">
+                                        <i class="fas fa-sticky-note"></i>
+                                        <span th:text="${booking.note}">Ghi chú</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="dashboard-booking-value">
+                                <div class="dashboard-guest-count" 
+                                     th:text="${booking.numberOfGuests != null ? (booking.numberOfGuests + ' người') : 'Số khách không xác định'}">4 người</div>
+                                <div class="dashboard-deposit-amount" 
+                                     th:text="${booking.depositAmount != null ? (#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + '₫') : 'Chưa đặt cọc'}">500,000₫</div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    <div th:if="${recentBookings == null or recentBookings.empty}" class="text-center text-muted py-3">
+                        <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                        <p>Chưa có booking nào</p>
+                    </div>
+                </div>
+
                 <!-- Waiting Customers -->
-                <div class="waitlist-section">
-                    <h3 class="h3">👥 Khách Đang Chờ (<span th:text="${waitingCustomers != null ? waitingCustomers.size() : 0}">0</span>)</h3>
-                    
-                    <div th:if="${waitingCustomers != null and !waitingCustomers.isEmpty()}">
-                        <div th:each="waitlist, iterStat : ${waitingCustomers}" class="waitlist-item">
-                            <div class="waitlist-info">
-                                <div class="customer-name" th:text="${waitlist.customer.user.fullName}">Nguyễn Văn A</div>
-                                <div class="waitlist-details">
-                                    <span>👥 <span th:text="${waitlist.partySize}">4</span> khách</span>
-                                    <span>⏰ <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:00</span></span>
-                                    <span class="queue-position">#<span th:text="${iterStat.index + 1}">1</span></span>
-                                </div>
+                <div class="list-card">
+                    <div class="list-header">
+                        <h3 class="list-title">Khách chờ</h3>
+                        <a href="/restaurant-owner/waitlist" class="list-see-all">Xem tất cả</a>
+                    </div>
+                    <div th:if="${waitingCustomers != null and !waitingCustomers.empty}">
+                        <div th:each="customer : ${waitingCustomers}" class="list-item">
+                            <div class="list-item-icon">
+                                <i class="fas fa-user-clock"></i>
                             </div>
-                            <div class="waitlist-actions">
-                                <button type="button" class="btn btn-sm btn-success" 
-                                        th:onclick="'callCustomer(' + ${waitlist.waitlistId} + ')'">
-                                    <i class="fas fa-phone"></i> Gọi
-                                </button>
-                                <button type="button" class="btn btn-sm btn-danger" 
-                                        th:onclick="'cancelWaitlist(' + ${waitlist.waitlistId} + ')'">
-                                    <i class="fas fa-times"></i> Hủy
-                                </button>
+                            <div class="list-item-content">
+                                <div class="list-item-title" th:text="${customer.customer.fullName}">Tên khách hàng</div>
+                                <div class="list-item-subtitle" th:text="${customer.partySize} + ' người'">2 người</div>
                             </div>
+                            <div class="list-item-value" th:text="${customer.estimatedWaitTime} + ' phút'">15 phút</div>
                         </div>
                     </div>
-                    
-                    <div th:if="${waitingCustomers == null or waitingCustomers.isEmpty()}" class="empty-state">
-                        <div class="empty-state-icon">👥</div>
-                        <p>Không có khách hàng nào đang chờ</p>
-                    </div>
-                </div>
-                
-                <!-- Called Customers -->
-                <div class="waitlist-section">
-                    <h3 class="h3">📞 Khách Đã Gọi (<span th:text="${calledCustomers != null ? calledCustomers.size() : 0}">0</span>)</h3>
-                    
-                    <div th:if="${calledCustomers != null and !calledCustomers.isEmpty()}">
-                        <div th:each="waitlist : ${calledCustomers}" class="waitlist-item called">
-                            <div class="waitlist-info">
-                                <div class="customer-name" th:text="${waitlist.customer.user.fullName}">Nguyễn Văn A</div>
-                                <div class="waitlist-details">
-                                    <span>👥 <span th:text="${waitlist.partySize}">4</span> khách</span>
-                                    <span>📞 Đã gọi lúc <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:00</span></span>
-                                </div>
-                            </div>
-                            <div class="waitlist-actions">
-                                <button type="button" class="btn btn-sm btn-primary" 
-                                        th:onclick="'seatCustomer(' + ${waitlist.waitlistId} + ')'">
-                                    <i class="fas fa-chair"></i> Xếp Chỗ
-                                </button>
-                                <button type="button" class="btn btn-sm btn-danger" 
-                                        th:onclick="'cancelWaitlist(' + ${waitlist.waitlistId} + ')'">
-                                    <i class="fas fa-times"></i> Hủy
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div th:if="${calledCustomers == null or calledCustomers.isEmpty()}" class="empty-state">
-                        <div class="empty-state-icon">📞</div>
-                        <p>Không có khách hàng nào đã được gọi</p>
+                    <div th:if="${waitingCustomers == null or waitingCustomers.empty}" class="text-center text-muted py-3">
+                        <i class="fas fa-user-check fa-2x mb-2"></i>
+                        <p>Không có khách chờ</p>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Occupied Tables -->
-        <div class="card" th:if="${occupiedTables != null and !occupiedTables.isEmpty()}">
-            <h2 class="h2">🍽️ Bàn Đang Sử Dụng</h2>
-            
-            <div class="grid grid-4">
-                <div th:each="table : ${occupiedTables}" class="table-card">
-                    <div class="table-name" th:text="${table.tableName}">T2</div>
-                    <div class="table-capacity">
-                        👥 <span th:text="${table.capacity}">2</span> chỗ ngồi
-                    </div>
-                    <span class="table-status occupied">Đang dùng</span>
-                </div>
-            </div>
-                    </div>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>© 2025 Restaurant Management System | Made with ❤️</p>
-        </footer>
+        </main>
     </div>
 
-    <!-- JavaScript -->
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        // Auto refresh every 60 seconds
-        setTimeout(function() {
-            location.reload();
-        }, 60000);
+        // Restaurant Selector
+        function toggleRestaurantMenu() {
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            
+            menu.classList.toggle('show');
+            dropdown.classList.toggle('active');
+        }
+
+        function selectRestaurant(restaurantId) {
+            // Update UI to show selected restaurant immediately
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            const selectedItem = event.target.closest('.restaurant-item');
+            
+            // Get restaurant info from selected item
+            const restaurantName = selectedItem.querySelector('h4').textContent;
+            const restaurantAddress = selectedItem.querySelector('p').textContent;
+            
+            // Update dropdown display
+            const dropdownInfo = dropdown.querySelector('.restaurant-details');
+            dropdownInfo.querySelector('h4').textContent = restaurantName;
+            dropdownInfo.querySelector('p').textContent = restaurantAddress;
+            
+            // Remove active class from all items
+            document.querySelectorAll('.restaurant-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to selected item
+            selectedItem.classList.add('active');
+            
+            // Close menu
+            menu.classList.remove('show');
+            dropdown.classList.remove('active');
+            
+            // Reload page with selected restaurant
+            window.location.href = '/restaurant-owner/dashboard?restaurantId=' + restaurantId;
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const selector = document.querySelector('.restaurant-selector');
+            if (!selector.contains(event.target)) {
+                const menu = document.getElementById('restaurantMenu');
+                const dropdown = document.querySelector('.restaurant-dropdown');
+                menu.classList.remove('show');
+                dropdown.classList.remove('active');
+            }
+        });
+
+        // Charts with real data
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const dailyRevenueData = /*[[${dailyRevenueData}]]*/ [];
+        const currentPeriod = /*[[${currentPeriod}]]*/ 'week';
         
-        // Add smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        let revenueChart;
+        
+        function updateRevenueChart() {
+            const revenueLabels = dailyRevenueData.map(data => {
+                const date = new Date(data.date);
+                if (currentPeriod === 'year') {
+                    return date.toLocaleDateString('vi-VN', { month: 'short' });
+                } else {
+                    return date.toLocaleDateString('vi-VN', { weekday: 'short' });
                 }
             });
-        });
-        
-        // Waitlist Management Functions
-        function callNextCustomer() {
-            if (confirm('Bạn có chắc muốn gọi khách hàng tiếp theo?')) {
-                // Get restaurant ID from template
-                const restaurantId = '[[${restaurants != null and !restaurants.empty ? restaurants[0].restaurantId : ''}]]';
-                if (!restaurantId) {
-                    alert('Không tìm thấy nhà hàng!');
-                    return;
+            const revenueValues = dailyRevenueData.map(data => data.revenue);
+            
+            if (revenueChart) {
+                revenueChart.destroy();
+            }
+            
+            revenueChart = new Chart(revenueCtx, {
+                type: 'bar',
+                data: {
+                    labels: revenueLabels,
+                    datasets: [{
+                        label: 'Doanh thu (₫)',
+                        data: revenueValues,
+                        backgroundColor: '#374151',
+                        borderColor: '#374151',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(0) + 'M';
+                                }
+                            }
+                        }
+                    }
                 }
-                
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/restaurant-owner/waitlist/call-next';
-                
-                const restaurantIdInput = document.createElement('input');
-                restaurantIdInput.type = 'hidden';
-                restaurantIdInput.name = 'restaurantId';
-                restaurantIdInput.value = restaurantId;
-                
-                form.appendChild(restaurantIdInput);
-                document.body.appendChild(form);
-                form.submit();
+            });
+        }
+        
+        // Filter function
+        function filterRevenueChart(period) {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-period="${period}"]`).classList.add('active');
+            
+            // Reload page with new period
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('period', period);
+            window.location.href = currentUrl.toString();
+        }
+        
+        // Initialize chart
+        updateRevenueChart();
+
+        // Popular Dishes Chart
+        const dishesCtx = document.getElementById('popularDishesChart').getContext('2d');
+        const popularDishesData = /*[[${popularDishesData}]]*/ [];
+        const dishLabels = popularDishesData.map(dish => dish.dishName);
+        const dishValues = popularDishesData.map(dish => dish.quantitySold);
+        
+        new Chart(dishesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: dishLabels,
+                datasets: [{
+                    data: dishValues,
+                    backgroundColor: [
+                        '#374151',
+                        '#6B7280',
+                        '#9CA3AF',
+                        '#D1D5DB',
+                        '#F3F4F6'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    }
+                }
             }
-        }
-        
-        function callCustomer(waitlistId) {
-            if (confirm('Bạn có chắc muốn gọi khách hàng này?')) {
-                // For individual customer calling, we'll use the same endpoint
-                callNextCustomer();
-            }
-        }
-        
-        function seatCustomer(waitlistId) {
-            if (confirm('Bạn có chắc muốn xếp chỗ cho khách hàng này?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/restaurant-owner/waitlist/seat/' + waitlistId;
-                
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
-        
-        function cancelWaitlist(waitlistId) {
-            if (confirm('Bạn có chắc muốn hủy danh sách chờ này?')) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/restaurant-owner/waitlist/cancel/' + waitlistId;
-                
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
-        
-        function refreshWaitlist() {
-            // Reload the page to refresh waitlist data
-            location.reload();
-        }
-        
-        // Auto-refresh waitlist every 30 seconds
-        setInterval(function() {
-            // You can implement AJAX refresh here if needed
-            // For now, we'll just reload the page
-            // refreshWaitlist();
-        }, 30000);
+        });
     </script>
 </body>
 </html>

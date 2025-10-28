@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Modal Component</title>
+</head>
+<body>
+    <!-- Login Modal Component -->
+    <div th:fragment="login-modal" class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-md modal-dialog-centered">
+            <div class="modal-content login-modal-content">
+                <!-- Login Form Only -->
+                <div class="login-form-only">
+                        <div class="login-form-container">
+                            <!-- Close Button -->
+                            <button type="button" class="btn-close login-close" data-bs-dismiss="modal" aria-label="Close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            
+                            <!-- Logo and Title -->
+                            <div class="login-header">
+                                <div class="login-logo">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <h3 class="login-brand">Book Eat</h3>
+                                <p class="login-welcome">Đăng nhập để tiếp tục hành trình ẩm thực của bạn</p>
+                            </div>
+                            
+                            <!-- Login Form -->
+                            <form th:action="@{/login}" method="post" class="login-form">
+                                <div class="login-field-group">
+                                    <label for="username" class="login-label">
+                                        <i class="fas fa-user"></i>
+                                        Tên đăng nhập
+                                    </label>
+                                    <input type="text" 
+                                           id="username" 
+                                           name="username" 
+                                           class="login-input" 
+                                           placeholder="Nhập tên đăng nhập"
+                                           required>
+                                </div>
+                                
+                                <div class="login-field-group">
+                                    <label for="password" class="login-label">
+                                        <i class="fas fa-lock"></i>
+                                        Mật khẩu
+                                    </label>
+                                    <input type="password" 
+                                           id="password" 
+                                           name="password" 
+                                           class="login-input" 
+                                           placeholder="Nhập mật khẩu"
+                                           required>
+                                </div>
+                                
+                                <div class="login-options">
+                                    <div class="login-remember">
+                                        <input type="checkbox" id="remember-me" name="remember-me">
+                                        <label for="remember-me">Ghi nhớ tôi</label>
+                                    </div>
+                                    <a href="#" class="login-forgot">Quên mật khẩu?</a>
+                                </div>
+                                
+                                <button type="submit" class="login-btn-primary">
+                                    Đăng nhập
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                                
+                                <div class="login-separator">
+                                    <span>HOẶC</span>
+                                </div>
+                                
+                                <a href="/oauth2/authorization/google" class="login-btn-google">
+                                    <i class="fab fa-google"></i>
+                                    Đăng nhập với Google
+                                </a>
+                                
+                                <div class="login-register">
+                                    <span>Chưa có tài khoản?</span>
+                                    <a href="#" class="login-register-link" onclick="closeLoginModal(); openRegisterModal();">Đăng ký ngay.</a>
+                                </div>
+                            </form>
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

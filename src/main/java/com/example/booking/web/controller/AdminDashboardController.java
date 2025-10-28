@@ -1,12 +1,14 @@
 package com.example.booking.web.controller;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -14,13 +16,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.example.booking.dto.admin.RestaurantBalanceInfoDto;
-import com.example.booking.dto.admin.WithdrawalStatsDto;
 import com.example.booking.service.RestaurantApprovalService;
 import com.example.booking.service.RestaurantBalanceService;
-import com.example.booking.service.ReviewReportService;
-import com.example.booking.service.WithdrawalService;
+import com.example.booking.service.RefundService;
+import com.example.booking.domain.RefundRequest;
+import com.example.booking.common.enums.RefundStatus;
 
 /**
  * Controller for Admin Dashboard
@@ -33,17 +35,14 @@ public class AdminDashboardController {
     private static final Logger logger = LoggerFactory.getLogger(AdminDashboardController.class);
     
     @Autowired
-    private WithdrawalService withdrawalService;
-    
-    @Autowired
     private RestaurantBalanceService balanceService;
-
-    @Autowired
-    private ReviewReportService reviewReportService;
     
     @Autowired
     private RestaurantApprovalService restaurantApprovalService;
     
+    @Autowired
+    private RefundService refundService;
+
     /**
      * Add common model attributes for admin pages
      */
@@ -72,44 +71,21 @@ public class AdminDashboardController {
     public String adminDashboard(Model model) {
         try {
             logger.info("Loading admin dashboard");
-            
-            // Get withdrawal statistics
-            WithdrawalStatsDto withdrawalStats = withdrawalService.getWithdrawalStats();
-            model.addAttribute("withdrawalStats", withdrawalStats);
-            
-            // Get total pending amount
-            BigDecimal totalPendingAmount = withdrawalService.getTotalPendingAmount();
-            model.addAttribute("totalPendingAmount", totalPendingAmount);
-            
-            // Get total withdrawn amount
-            BigDecimal totalWithdrawnAmount = withdrawalService.getTotalWithdrawnAmount();
-            model.addAttribute("totalWithdrawnAmount", totalWithdrawnAmount);
-            
-            // Get top restaurants by withdrawal amount
-            List<RestaurantBalanceInfoDto> topRestaurants = withdrawalService.getTopRestaurantsByWithdrawal(10);
-            model.addAttribute("topRestaurants", topRestaurants);
-            
-            // Get monthly withdrawal statistics for chart
-            Map<String, Object> monthlyStats = withdrawalService.getMonthlyWithdrawalStats();
-            model.addAttribute("monthlyStats", monthlyStats);
-            
-            // Get total commission earned
-            BigDecimal totalCommission = withdrawalService.getTotalCommissionEarned();
-            model.addAttribute("totalCommission", totalCommission);
-            
-            // Get restaurant approval statistics
-            long pendingRestaurants = restaurantApprovalService.getPendingRestaurantCount();
-            long approvedRestaurants = restaurantApprovalService.getApprovedRestaurantCount();
-            long rejectedRestaurants = restaurantApprovalService.getRejectedRestaurantCount();
-            long suspendedRestaurants = restaurantApprovalService.getSuspendedRestaurantCount();
-            
-            model.addAttribute("pendingRestaurants", pendingRestaurants);
-            model.addAttribute("approvedRestaurants", approvedRestaurants);
-            model.addAttribute("rejectedRestaurants", rejectedRestaurants);
-            model.addAttribute("suspendedRestaurants", suspendedRestaurants);
 
-            long pendingReviewReports = reviewReportService.countPendingReports();
-            model.addAttribute("pendingReviewReports", pendingReviewReports);
+            BigDecimal commissionToday = balanceService.getCommissionToday();
+            BigDecimal weeklyCommission = balanceService.getWeeklyCommission();
+            BigDecimal monthlyCommission = balanceService.getMonthlyCommission();
+            BigDecimal totalCommission = balanceService.getTotalCommission();
+            BigDecimal avgCommissionPerBooking = balanceService.getAverageCommissionPerBooking();
+            long todayBookings = balanceService.getCompletedBookingsToday();
+
+            model.addAttribute("commissionToday", commissionToday);
+            model.addAttribute("commissionRate", balanceService.getCommissionRate());
+            model.addAttribute("todayBookings", todayBookings);
+            model.addAttribute("avgCommissionPerBooking", avgCommissionPerBooking);
+            model.addAttribute("weeklyCommission", weeklyCommission);
+            model.addAttribute("monthlyCommission", monthlyCommission);
+            model.addAttribute("totalCommission", totalCommission);
             
             logger.info("Admin dashboard loaded successfully");
             
@@ -119,6 +95,121 @@ public class AdminDashboardController {
             logger.error("Error loading admin dashboard", e);
             model.addAttribute("error", "Lỗi khi tải dashboard: " + e.getMessage());
             return "admin/dashboard";
+        }
+    }
+
+    /**
+     * GET /admin/refund-requests
+     */
+    @GetMapping("/refund-requests")
+    public String refundRequests(Model model) {
+        try {
+            logger.info("Loading refund requests page");
+
+            // Get all refund requests by status
+            List<RefundRequest> pendingRefunds = refundService.getPendingRefunds();
+            List<RefundRequest> completedRefunds = refundService.getRefundsByStatus(RefundStatus.COMPLETED);
+            List<RefundRequest> rejectedRefunds = refundService.getRefundsByStatus(RefundStatus.REJECTED);
+
+            // Calculate statistics
+            long pendingCount = pendingRefunds.size();
+            long completedCount = completedRefunds.size();
+            long rejectedCount = rejectedRefunds.size();
+
+            // Totals
+            BigDecimal pendingTotal = pendingRefunds.stream()
+                    .map(RefundRequest::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal completedTotal = completedRefunds.stream()
+                    .map(RefundRequest::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            model.addAttribute("pendingRefunds", pendingRefunds);
+            model.addAttribute("completedRefunds", completedRefunds);
+            model.addAttribute("rejectedRefunds", rejectedRefunds);
+            model.addAttribute("pendingCount", pendingCount);
+            model.addAttribute("completedCount", completedCount);
+            model.addAttribute("rejectedCount", rejectedCount);
+            model.addAttribute("pendingTotal", pendingTotal);
+            model.addAttribute("completedTotal", completedTotal);
+
+            // Add bank name mapping for template
+            Map<String, String> bankNameMap = new HashMap<>();
+            bankNameMap.put("970422", "MB Bank");
+            bankNameMap.put("970436", "Vietcombank");
+            bankNameMap.put("970415", "Techcombank");
+            bankNameMap.put("970416", "VietinBank");
+            bankNameMap.put("970423", "Agribank");
+            bankNameMap.put("970427", "ACB");
+            bankNameMap.put("970418", "Sacombank");
+            bankNameMap.put("970419", "BIDV");
+            model.addAttribute("bankNameMap", bankNameMap);
+
+            logger.info("Refund requests page loaded successfully");
+
+            return "admin/refund-requests";
+
+        } catch (Exception e) {
+            logger.error("Error loading refund requests page", e);
+            model.addAttribute("error", "Lỗi khi tải trang refund requests: " + e.getMessage());
+            return "admin/refund-requests";
+        }
+    }
+
+    /**
+     * GET /admin/api/statistics
+     * API endpoint to get admin dashboard statistics
+     */
+    @GetMapping("/api/statistics")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getStatistics() {
+        try {
+            logger.info("Fetching admin dashboard statistics");
+
+            Map<String, Object> stats = new HashMap<>();
+
+            // Get commission statistics
+            BigDecimal commissionToday = balanceService.getCommissionToday();
+            BigDecimal weeklyCommission = balanceService.getWeeklyCommission();
+            BigDecimal monthlyCommission = balanceService.getMonthlyCommission();
+            BigDecimal totalCommission = balanceService.getTotalCommission();
+            
+            // Get booking statistics
+            long completedBookingsToday = balanceService.getCompletedBookingsToday();
+            
+            // Get pending restaurants count
+            long pendingRestaurants = restaurantApprovalService.getPendingRestaurantCount();
+            
+            // Get refund statistics
+            List<RefundRequest> pendingRefunds = refundService.getPendingRefunds();
+            long pendingRefundCount = pendingRefunds.size();
+            BigDecimal totalPendingRefundAmount = pendingRefunds.stream()
+                    .map(RefundRequest::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Build response
+            stats.put("commissionToday", commissionToday);
+            stats.put("weeklyCommission", weeklyCommission);
+            stats.put("monthlyCommission", monthlyCommission);
+            stats.put("totalCommission", totalCommission);
+            stats.put("todayBookings", completedBookingsToday);
+            stats.put("pendingRestaurants", pendingRestaurants);
+            stats.put("pendingRefunds", pendingRefundCount);
+            stats.put("totalPendingRefundAmount", totalPendingRefundAmount);
+
+            logger.info("Admin dashboard statistics fetched successfully");
+            
+            return ResponseEntity.ok(stats);
+
+        } catch (Exception e) {
+            logger.error("Error fetching admin dashboard statistics", e);
+            
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to fetch statistics");
+            errorResponse.put("message", e.getMessage());
+            
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 }

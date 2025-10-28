@@ -67,4 +67,18 @@ public interface RestaurantMediaRepository extends JpaRepository<RestaurantMedia
     @Query("SELECT rm FROM RestaurantMedia rm WHERE rm.restaurant = :restaurant AND rm.type = 'service' AND rm.url LIKE %:serviceIdPattern% ORDER BY rm.createdAt DESC")
     List<RestaurantMedia> findServiceImagesByRestaurantAndServiceId(@Param("restaurant") RestaurantProfile restaurant,
             @Param("serviceIdPattern") String serviceIdPattern);
+
+    /**
+     * ===== PERFORMANCE OPTIMIZATION: Batch query to fix N+1 =====
+     * Find media by multiple restaurants and type (batch query)
+     * Used to fetch cover images for a list of restaurants in a single query
+     * instead of N separate queries
+     */
+    @Query("SELECT rm FROM RestaurantMedia rm " +
+           "WHERE rm.restaurant IN :restaurants " +
+           "AND rm.type = :type " +
+           "ORDER BY rm.restaurant.restaurantId, rm.createdAt DESC")
+    List<RestaurantMedia> findByRestaurantsAndType(
+            @Param("restaurants") List<RestaurantProfile> restaurants,
+            @Param("type") String type);
 }

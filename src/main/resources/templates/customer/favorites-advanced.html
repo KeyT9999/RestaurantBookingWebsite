@@ -6,26 +6,35 @@
     <title>Nhà hàng yêu thích - BookEat</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--ds-primary-white);
+            color: var(--ds-neutral-900);
+        }
+
         .favorite-card {
             transition: all 0.3s ease;
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid var(--ds-neutral-300);
+            border-radius: var(--ds-radius-xl);
+            box-shadow: var(--ds-shadow-sm);
         }
         
         .favorite-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transform: translateY(-4px);
+            box-shadow: var(--ds-shadow-lg);
         }
         
         .restaurant-image {
-            height: 200px;
+            height: 220px;
             object-fit: cover;
-            border-radius: 8px 8px 0 0;
+            border-radius: var(--ds-radius-xl) var(--ds-radius-xl) 0 0;
         }
         
         .heart-icon {
-            color: #e74c3c;
+            color: var(--ds-error);
             font-size: 1.5rem;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -46,40 +55,46 @@
         }
         
         .rating-stars {
-            color: #ffc107;
+            color: var(--ds-warning);
         }
         
         .cuisine-badge {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            background: var(--ds-primary-black);
+            color: var(--ds-primary-white);
+            padding: var(--ds-space-1) var(--ds-space-3);
+            border-radius: var(--ds-radius-full);
+            font-size: var(--ds-font-size-xs);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
         
         .price-range {
-            color: #27ae60;
-            font-weight: bold;
+            color: var(--ds-success);
+            font-weight: var(--ds-font-weight-semibold);
         }
         
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
-            color: #6c757d;
+            padding: var(--ds-space-16) var(--ds-space-6);
+            color: var(--ds-neutral-500);
+            background: var(--ds-neutral-50);
+            border-radius: var(--ds-radius-xl);
+            border: 1px dashed var(--ds-neutral-300);
         }
         
         .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            color: #dee2e6;
+            font-size: 3.5rem;
+            margin-bottom: var(--ds-space-4);
+            color: var(--ds-neutral-300);
         }
         
         .filter-section {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 1px solid #dee2e6;
+            background: var(--ds-primary-white);
+            border-radius: var(--ds-radius-xl);
+            padding: var(--ds-space-6);
+            margin-bottom: var(--ds-space-6);
+            border: 1px solid var(--ds-neutral-300);
+            box-shadow: var(--ds-shadow-sm);
         }
         
         .sort-dropdown {
@@ -87,20 +102,22 @@
         }
         
         .pagination-custom .page-link {
-            border-radius: 8px;
+            border-radius: var(--ds-radius-md);
             margin: 0 2px;
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--ds-neutral-300);
+            color: var(--ds-neutral-700);
         }
         
         .pagination-custom .page-item.active .page-link {
-            background-color: #007bff;
-            border-color: #007bff;
+            background-color: var(--ds-primary-black);
+            border-color: var(--ds-primary-black);
+            color: var(--ds-primary-white);
         }
         
         .loading-spinner {
             display: none;
             text-align: center;
-            padding: 40px;
+            padding: var(--ds-space-10);
         }
         
         .toast-container {
@@ -111,111 +128,122 @@
         }
         
         .filter-chip {
-            background: linear-gradient(45deg, #007bff, #0056b3);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin: 2px;
+            background: var(--ds-primary-black);
+            color: var(--ds-primary-white);
+            padding: var(--ds-space-1) var(--ds-space-3);
+            border-radius: var(--ds-radius-full);
+            font-size: var(--ds-font-size-sm);
+            margin: var(--ds-space-1) var(--ds-space-1) var(--ds-space-1) 0;
             display: inline-block;
         }
         
         .filter-chip .remove {
             cursor: pointer;
             margin-left: 8px;
-            font-weight: bold;
+            font-weight: var(--ds-font-weight-semibold);
         }
         
         .advanced-toggle {
-            background: linear-gradient(45deg, #28a745, #20c997);
+            background: linear-gradient(45deg, var(--ds-success), #20c997);
             border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
+            color: var(--ds-primary-white);
+            padding: var(--ds-space-2) var(--ds-space-5);
+            border-radius: var(--ds-radius-full);
             transition: all 0.3s ease;
         }
         
         .advanced-toggle:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 6px 18px rgba(32, 201, 151, 0.25);
         }
         
         .filter-group {
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid #e9ecef;
+            background: var(--ds-primary-white);
+            border-radius: var(--ds-radius-lg);
+            padding: var(--ds-space-4);
+            margin-bottom: var(--ds-space-4);
+            border: 1px solid var(--ds-neutral-300);
         }
         
         .quick-filter-btn {
-            background: white;
-            border: 2px solid #e9ecef;
-            color: #6c757d;
-            padding: 8px 16px;
-            border-radius: 20px;
-            margin: 2px;
+            background: var(--ds-primary-white);
+            border: 2px solid var(--ds-neutral-300);
+            color: var(--ds-neutral-500);
+            padding: var(--ds-space-2) var(--ds-space-4);
+            border-radius: var(--ds-radius-full);
+            margin: var(--ds-space-1);
             transition: all 0.3s ease;
+            font-size: var(--ds-font-size-sm);
         }
         
         .quick-filter-btn:hover {
-            border-color: #007bff;
-            color: #007bff;
+            border-color: var(--ds-primary-black);
+            color: var(--ds-primary-black);
             transform: translateY(-1px);
         }
         
         .quick-filter-btn.active {
-            background: #007bff;
-            border-color: #007bff;
-            color: white;
+            background: var(--ds-primary-black);
+            border-color: var(--ds-primary-black);
+            color: var(--ds-primary-white);
         }
         
         .results-summary {
-            background: linear-gradient(45deg, #17a2b8, #138496);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            background: var(--ds-primary-black);
+            color: var(--ds-primary-white);
+            padding: var(--ds-space-5) var(--ds-space-6);
+            border-radius: var(--ds-radius-xl);
+            margin-bottom: var(--ds-space-6);
+            box-shadow: var(--ds-shadow-lg);
+        }
+
+        .summary-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--ds-space-2);
+            background: var(--ds-primary-black);
+            color: var(--ds-primary-white);
+            padding: var(--ds-space-2) var(--ds-space-4);
+            border-radius: var(--ds-radius-full);
+            font-size: var(--ds-font-size-sm);
+            font-weight: var(--ds-font-weight-medium);
+            box-shadow: var(--ds-shadow-sm);
         }
     </style>
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-utensils me-2"></i>BookEat
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/restaurants">
-                    <i class="fas fa-search me-1"></i>Tìm nhà hàng
-                </a>
-                <a class="nav-link active" href="/customer/favorites">
-                    <i class="fas fa-heart me-1"></i>Yêu thích
-                </a>
-                <a class="nav-link" href="/booking/my">
-                    <i class="fas fa-calendar me-1"></i>Đặt bàn
-                </a>
-            </div>
-        </div>
-    </nav>
+<body class="ds-bg-white">
+    <div th:with="activeNav='favorites'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
-    <div class="container mt-4">
-        <!-- Header -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <h2 class="mb-3">
-                    <i class="fas fa-heart text-danger me-2"></i>
-                    Nhà hàng yêu thích
-                </h2>
-                <p class="text-muted">
-                    <span th:text="${totalElements}">0</span> nhà hàng đã được thêm vào danh sách yêu thích
-                </p>
+    <main>
+        <section class="ds-bg-gray-50" style="padding: var(--ds-space-16) 0;">
+            <div class="ds-container">
+                <div class="ds-flex ds-flex-col ds-items-center ds-text-center ds-gap-4">
+                    <h1 class="ds-heading-2 ds-flex ds-items-center ds-gap-3">
+                        <i class="fas fa-star ds-text-warning"></i>
+                        Nhà hàng yêu thích
+                    </h1>
+                    <p class="ds-text-large ds-text-secondary" style="max-width: 760px;">
+                        Quản lý những điểm đến ẩm thực bạn yêu thích và khám phá gợi ý mới phù hợp với khẩu vị riêng.
+                    </p>
+                    <div class="ds-flex ds-gap-4 ds-flex-wrap ds-justify-center">
+                        <span class="summary-badge">
+                            <i class="fas fa-star"></i>
+                            <span th:text="${totalElements}">0</span> nhà hàng đã lưu
+                        </span>
+                        <a th:href="@{/customer/restaurants}" class="ds-btn ds-btn-secondary ds-btn-sm">
+                            <i class="fas fa-search"></i>
+                            Khám phá thêm
+                        </a>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
 
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container">
         <!-- Results Summary -->
-        <div class="results-summary">
+        <div class="results-summary ds-card ds-card-body">
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h5 class="mb-1">
@@ -380,7 +408,7 @@
                     <div class="col-md-3">
                         <div class="filter-group">
                             <h6 class="mb-3">
-                                <i class="fas fa-heart me-2"></i>Mức độ yêu thích
+                                <i class="fas fa-star me-2"></i>Mức độ yêu thích
                             </h6>
                             <select class="form-select" id="popularityFilter">
                                 <option value="">Tất cả</option>
@@ -455,7 +483,7 @@
                                onclick="toggleFavorite(this)"
                                title="Bỏ yêu thích"></i>
                         </div>
-                        <div class="position-absolute top-0 start-0 p-2">
+                        <div class="position-absolute bottom-0 start-0 p-2">
                             <span class="cuisine-badge" th:text="${favorite.cuisineType}">Cuisine</span>
                         </div>
                     </div>
@@ -519,12 +547,15 @@
                 </ul>
             </nav>
         </div>
-    </div>
+            </div>
+        </section>
+    </main>
 
-    <!-- Toast Container -->
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+
     <div class="toast-container"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
     <script>
         // Global variables
         let currentFilters = {};
@@ -798,7 +829,8 @@
             
             // Prepare request
             const request = {
-                restaurantId: parseInt(restaurantId)
+                restaurantId: parseInt(restaurantId),
+                isFavorited: false
             };
             
             // Send AJAX request
@@ -814,9 +846,12 @@
                 if (data.success) {
                     showToast(data.message, 'success');
                     // Remove card from grid if unfavorited
-                    if (!isCurrentlyFavorited) {
-                        heartIcon.closest('.col-md-6').remove();
-                        updateResultsCount();
+                    if (!data.isFavorited) {
+                        const cardElement = heartIcon.closest('.col-md-6');
+                        if (cardElement) {
+                            cardElement.remove();
+                            updateResultsCount();
+                        }
                     }
                 } else {
                     // Revert UI change on error
@@ -844,6 +879,104 @@
                 heartIcon.style.opacity = '1';
                 heartIcon.style.animation = '';
             });
+        }
+
+        // Remove favorite
+        function removeFavorite(button) {
+            const restaurantId = button.dataset.restaurantId;
+            const cardWrapper = button.closest('.col-md-6');
+
+            console.log('=== REMOVE FAVORITE ===');
+            console.log('Restaurant ID:', restaurantId);
+            console.log('Card Wrapper found:', !!cardWrapper);
+
+            // Disable the button during request
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const request = {
+                restaurantId: parseInt(restaurantId, 10),
+                isFavorited: false
+            };
+
+            fetch('/customer/favorites/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(request)
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    
+                    if (data.success) {
+                        showToast(data.message || 'Đã xóa khỏi danh sách yêu thích', 'success');
+                        
+                        // Remove card immediately
+                        if (cardWrapper) {
+                            console.log('Removing card:', cardWrapper);
+                            cardWrapper.remove();
+                            updateResultsCount();
+                            
+                            // Check if no more favorites left
+                            const remainingCards = document.querySelectorAll('.favorite-card');
+                            console.log('Remaining cards:', remainingCards.length);
+                            if (remainingCards.length === 0) {
+                                showEmptyState();
+                            }
+                        } else {
+                            console.log('Card wrapper not found, trying to find by restaurant ID:', data.restaurantId);
+                            // Fallback: find card by restaurant ID from response
+                            if (data.restaurantId) {
+                                const cardByRestaurantId = document.querySelector(`[data-restaurant-id="${data.restaurantId}"]`)?.closest('.col-md-6');
+                                if (cardByRestaurantId) {
+                                    console.log('Found card by restaurant ID, removing:', cardByRestaurantId);
+                                    cardByRestaurantId.remove();
+                                    updateResultsCount();
+                                    
+                                    // Check if no more favorites left
+                                    const remainingCards = document.querySelectorAll('.favorite-card');
+                                    if (remainingCards.length === 0) {
+                                        showEmptyState();
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        showToast(data.message || 'Có lỗi xảy ra', 'error');
+                        // Re-enable button
+                        button.disabled = false;
+                        button.innerHTML = '<i class="fas fa-trash"></i>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
+                    // Re-enable button
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-trash"></i>';
+                });
+        }
+
+        // Show empty state
+        function showEmptyState() {
+            const restaurantGrid = document.getElementById('restaurantGrid');
+            restaurantGrid.innerHTML = `
+                <div class="col-12">
+                    <div class="empty-state">
+                        <i class="fas fa-heart-broken"></i>
+                        <h4>Chưa có nhà hàng yêu thích</h4>
+                        <p>Hãy khám phá và thêm những nhà hàng bạn yêu thích vào danh sách!</p>
+                        <a href="/restaurants" class="btn btn-primary">
+                            <i class="fas fa-search me-1"></i>Khám phá nhà hàng
+                        </a>
+                    </div>
+                </div>
+            `;
         }
 
         // Show toast notification

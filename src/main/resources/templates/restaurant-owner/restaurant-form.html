@@ -5,6 +5,38 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title th:text="${pageTitle}">Tạo nhà hàng mới</title>
     <link rel="stylesheet" th:href="@{/css/restaurant-admin.css}" />
+    <style>
+        .form-section {
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid rgba(90, 108, 125, 0.12);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+
+        .form-section:first-of-type {
+            margin-top: 0;
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .form-section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .form-section-header p {
+            color: var(--gray-500);
+            max-width: 720px;
+        }
+
+        .form-item textarea.long-text {
+            min-height: 160px;
+            resize: vertical;
+        }
+    </style>
 </head>
 <body>
     <!-- Breadcrumb Navigation -->
@@ -77,6 +109,182 @@
                         <span class="form-label">Mô tả ngắn</span>
                         <textarea th:field="*{description}" rows="3" placeholder="Mô tả ngắn gọn về nhà hàng..."></textarea>
                     </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Giá thấp nhất (VNĐ)</span>
+                        <input type="number" th:field="*{priceRangeMin}" placeholder="80000" min="0" step="1000" />
+                    </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Giá cao nhất (VNĐ)</span>
+                        <input type="number" th:field="*{priceRangeMax}" placeholder="290000" min="0" step="1000" />
+                    </label>
+                    
+                    <label class="form-item">
+                        <span class="form-label">Thông báo trạng thái mở cửa</span>
+                        <input type="text" th:field="*{statusMessage}" placeholder="Đang mở cửa: 10:30 - 22:00" />
+                    </label>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h2>Thiết lập hiển thị &amp; liên hệ</h2>
+                        <p>Điền thông tin hero và hotline để khách hàng nhanh chóng nắm bắt thông tin quan trọng của nhà hàng.</p>
+                    </div>
+                    <div class="grid grid-3">
+                        <label class="form-item">
+                            <span class="form-label">Thành phố hiển thị</span>
+                            <input type="text" th:field="*{heroCity}" placeholder="Đà Nẵng" />
+                        </label>
+                        
+                        <label class="form-item">
+                            <span class="form-label">Tiêu đề hero</span>
+                            <input type="text" th:field="*{heroHeadline}" placeholder="Bạn muốn đặt chỗ đến đâu" />
+                        </label>
+                        
+                        <label class="form-item">
+                            <span class="form-label">Thông điệp bổ sung</span>
+                            <input type="text" th:field="*{heroSubheadline}" placeholder="Khám phá những trải nghiệm ẩm thực tốt nhất" />
+                        </label>
+                        
+                        <label class="form-item">
+                            <span class="form-label">Placeholder ô tìm kiếm</span>
+                            <input type="text" th:field="*{heroSearchPlaceholder}" placeholder="Tìm kiếm nhà hàng, món ăn, ưu đãi..." />
+                        </label>
+                        
+                        <label class="form-item">
+                            <span class="form-label">Hotline đặt chỗ</span>
+                            <input type="text" th:field="*{contactHotline}" placeholder="1900 6005" />
+                        </label>
+                        
+                        <label class="form-item">
+                            <span class="form-label">Điện thoại liên hệ bổ sung</span>
+                            <input type="text" th:field="*{contactSecondaryPhone}" placeholder="085 805 2718" />
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h2>Thông tin đặt chỗ &amp; ưu đãi</h2>
+                        <p>Giải thích rõ quy trình đặt bàn, quy định giữ bàn và các chương trình ưu đãi đang áp dụng.</p>
+                    </div>
+                    <div class="grid grid-2">
+                        <label class="form-item full">
+                            <span class="form-label">Thông tin đặt chỗ chi tiết</span>
+                            <textarea th:field="*{bookingInformation}" class="long-text" placeholder="I. Đặt chỗ PasGo: Tư vấn - Giữ chỗ&#10;- Quý khách vui lòng đặt chỗ trước ít nhất 01 tiếng..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Ghi chú đặt chỗ / chính sách</span>
+                            <textarea th:field="*{bookingNotes}" class="long-text" placeholder="Nhà hàng xin giữ bàn trong vòng 15 phút..."></textarea>
+                        </label>
+                        
+                        <label class="form-item">
+                            <span class="form-label">Ưu đãi chung</span>
+                            <textarea th:field="*{generalPromotions}" class="long-text" placeholder="Ưu đãi 1: Giảm 15% từ thứ 2..."></textarea>
+                        </label>
+                        
+                        <label class="form-item">
+                            <span class="form-label">Ưu đãi dành cho nhóm</span>
+                            <textarea th:field="*{groupPromotions}" class="long-text" placeholder="Ưu đãi 2: Giảm 10% cho nhóm từ 10 người..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Ghi chú về ưu đãi</span>
+                            <textarea th:field="*{promotionNotes}" class="long-text" placeholder="*Ưu đãi được phép cộng dồn..."></textarea>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h2>Tổng quan &amp; điểm nổi bật</h2>
+                        <p>Mô tả điểm mạnh, món nổi bật và không gian của nhà hàng để tăng sức thuyết phục.</p>
+                    </div>
+                    <div class="grid grid-2">
+                        <label class="form-item full">
+                            <span class="form-label">Tóm tắt nhà hàng</span>
+                            <textarea th:field="*{summaryHighlights}" class="long-text" placeholder="Tóm tắt Thai Market - Yên Bái..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Phù hợp với</span>
+                            <textarea th:field="*{suitableFor}" class="long-text" placeholder="- Tất cả các loại tiệc, ăn gia đình..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Món đặc sắc</span>
+                            <textarea th:field="*{signatureDishes}" class="long-text" placeholder="- Pad Thai, Canh Tomyum, Gỏi đu đủ Somtam..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Không gian &amp; thiết kế</span>
+                            <textarea th:field="*{spaceDescriptionDetail}" class="long-text" placeholder="- Truyền thống kết hợp hiện đại, sức chứa 127 khách..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Điểm đặc trưng</span>
+                            <textarea th:field="*{uniqueFeatures}" class="long-text" placeholder="- Khám phá ẩm thực đậm vị Thái..."></textarea>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h2>Giá, menu &amp; quy định</h2>
+                        <p>Cung cấp chi tiết bảng giá, menu nổi bật và các quy định quan trọng cho khách hàng.</p>
+                    </div>
+                    <div class="grid grid-2">
+                        <label class="form-item full">
+                            <span class="form-label">Bảng giá chi tiết</span>
+                            <textarea th:field="*{pricingDetails}" class="long-text" placeholder="Bảng giá Thai Market Restaurant - Yên Bái..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Menu nổi bật</span>
+                            <textarea th:field="*{menuHighlights}" class="long-text" placeholder="Menu Thai Market - Danh sách món..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Quy định &amp; chính sách</span>
+                            <textarea th:field="*{policyRules}" class="long-text" placeholder="1. Quy định về đặt cọc..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Tiện ích &amp; dịch vụ</span>
+                            <textarea th:field="*{amenities}" class="long-text" placeholder="Tiện ích: Wifi, Hóa đơn VAT, Ghế trẻ em..."></textarea>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h2>Di chuyển, chỗ đỗ xe &amp; giờ hoạt động</h2>
+                        <p>Giúp khách hàng dễ dàng lên kế hoạch di chuyển và biết rõ thời gian phục vụ.</p>
+                    </div>
+                    <div class="grid grid-2">
+                        <label class="form-item full">
+                            <span class="form-label">Thông tin chỗ đỗ xe</span>
+                            <textarea th:field="*{parkingDetails}" class="long-text" placeholder="Xe máy: để trước cửa... Xe ô tô: đỗ dọc đường Yên Bái..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Ghi chú thư viện ảnh</span>
+                            <textarea th:field="*{galleryNotes}" class="long-text" placeholder="Hình ảnh Thai Market Restaurant - bộ sưu tập..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Chỉ đường</span>
+                            <textarea th:field="*{directionInfo}" class="long-text" placeholder="Số 124 Đường Yên Bái, Phước Ninh, Hải Châu..."></textarea>
+                        </label>
+                        
+                        <label class="form-item full">
+                            <span class="form-label">Giờ hoạt động chi tiết</span>
+                            <textarea th:field="*{operatingSchedule}" class="long-text" placeholder="Thứ hai: 10:30 - 22:00&#10;Thứ ba: 10:30 - 22:00..."></textarea>
+                        </label>
+                    </div>
+                </div>
                     
                     <!-- Media Upload -->
                     <div class="form-item full">

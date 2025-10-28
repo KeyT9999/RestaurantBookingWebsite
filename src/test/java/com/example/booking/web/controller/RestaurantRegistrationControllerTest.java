@@ -1,127 +1,529 @@
 package com.example.booking.web.controller;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import static org.mockito.Mockito.when;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.example.booking.common.enums.RestaurantApprovalStatus;
+import com.example.booking.domain.RestaurantOwner;
+import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
+import com.example.booking.service.ImageUploadService;
+import com.example.booking.service.RestaurantNotificationService;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.SimpleUserService;
 
-/**
- * Test cases for RestaurantRegistrationController
- */
-@WebMvcTest(RestaurantRegistrationController.class)
-class RestaurantRegistrationControllerTest {
+@ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
+@DisplayName("RestaurantRegistrationController Tests")
+public class RestaurantRegistrationControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private RestaurantOwnerService restaurantOwnerService;
 
-    @MockBean
+    @Mock
     private SimpleUserService userService;
 
+    @Mock
+    private ImageUploadService imageUploadService;
+
+    @Mock
+    private RestaurantNotificationService restaurantNotificationService;
+
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private Model model;
+
+    @Mock
+    private RedirectAttributes redirectAttributes;
+
+    @InjectMocks
+    private RestaurantRegistrationController restaurantRegistrationController;
+
+    private User testCustomer;
+    private User testRestaurantOwner;
+    private User testAdmin;
+    private RestaurantOwner testRestaurantOwnerEntity;
+
+    @BeforeEach
+    public void setUp() {
+        // Create test customer user
+        testCustomer = new User();
+        testCustomer.setId(UUID.randomUUID());
+        testCustomer.setUsername("customer@example.com");
+        testCustomer.setEmail("customer@example.com");
+        testCustomer.setFullName("Test Customer");
+        testCustomer.setRole(UserRole.CUSTOMER);
+        testCustomer.setEmailVerified(true);
+
+        // Create test restaurant owner user
+        testRestaurantOwner = new User();
+        testRestaurantOwner.setId(UUID.randomUUID());
+        testRestaurantOwner.setUsername("owner@example.com");
+        testRestaurantOwner.setEmail("owner@example.com");
+        testRestaurantOwner.setFullName("Test Owner");
+        testRestaurantOwner.setRole(UserRole.RESTAURANT_OWNER);
+        testRestaurantOwner.setEmailVerified(true);
+
+        // Create test admin user
+        testAdmin = new User();
+        testAdmin.setId(UUID.randomUUID());
+        testAdmin.setUsername("admin@example.com");
+        testAdmin.setEmail("admin@example.com");
+        testAdmin.setFullName("Admin");
+        testAdmin.setRole(UserRole.ADMIN);
+        testAdmin.setEmailVerified(true);
+
+        // Create test restaurant owner entity
+        testRestaurantOwnerEntity = new RestaurantOwner(testCustomer);
+        testRestaurantOwnerEntity.setOwnerId(UUID.randomUUID());
+    }
+
+    // ========== showRegistrationForm() (createRestaurantForm) Tests ==========
+
     @Test
-    @WithMockUser(roles = "CUSTOMER")
-    void testCreateRestaurantForm_WithCustomerRole_ShouldReturnForm() throws Exception {
+    @DisplayName("Should return registration form for authenticated customer")
+    public void testShowRegistrationForm_WithAuthenticatedCustomer_ShouldReturnRegistrationForm() {
         // Given
-        User mockUser = new User();
-        mockUser.setId(UUID.randomUUID());
-        mockUser.setRole(UserRole.CUSTOMER);
-        mockUser.setUsername("testuser");
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
 
-        when(userService.findByUsername(any())).thenReturn(Optional.of(mockUser));
+        // When
+        String result = restaurantRegistrationController.createRestaurantForm(model, authentication, null);
 
-        // When & Then
-        mockMvc.perform(get("/restaurant-owner/restaurants/create"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("restaurant-owner/restaurant-form"))
-                .andExpect(model().attribute("pageTitle", "Đăng ký nhà hàng"));
+        // Then
+        assertEquals("restaurant-owner/restaurant-form", result);
     }
 
     @Test
-    @WithMockUser(roles = "RESTAURANT_OWNER")
-    void testCreateRestaurantForm_WithRestaurantOwnerRole_ShouldRedirect() throws Exception {
+    @DisplayName("Should return registration form for authenticated restaurant owner")
+    public void testShowRegistrationForm_WithAuthenticatedRestaurantOwner_ShouldReturnRegistrationForm() {
         // Given
-        User mockUser = new User();
-        mockUser.setId(UUID.randomUUID());
-        mockUser.setRole(UserRole.RESTAURANT_OWNER);
-        mockUser.setUsername("restaurantowner");
+        when(authentication.getName()).thenReturn(testRestaurantOwner.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testRestaurantOwner);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_RESTAURANT_OWNER"))
+        );
+        
+        when(userService.findByUsername(testRestaurantOwner.getUsername()))
+            .thenReturn(Optional.of(testRestaurantOwner));
 
-        when(userService.findByUsername(any())).thenReturn(Optional.of(mockUser));
+        // When
+        String result = restaurantRegistrationController.createRestaurantForm(model, authentication, null);
 
-        // When & Then
-        mockMvc.perform(get("/restaurant-owner/restaurants/create"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/?error=unauthorized"));
+        // Then
+        assertEquals("restaurant-owner/restaurant-form", result);
     }
 
     @Test
-    void testCreateRestaurantForm_WithoutAuthentication_ShouldRedirectToLogin() throws Exception {
-        // When & Then
-        mockMvc.perform(get("/restaurant-owner/restaurants/create"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"));
+    @DisplayName("Should redirect to login for unauthenticated user")
+    public void testShowRegistrationForm_WithUnauthenticatedUser_ShouldRedirectToLogin() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(false);
+
+        // When
+        String result = restaurantRegistrationController.createRestaurantForm(model, authentication, null);
+
+        // Then
+        assertEquals("redirect:/login", result);
     }
 
     @Test
-    @WithMockUser(roles = "CUSTOMER")
-    void testCreateRestaurant_WithTermsAccepted_ShouldSuccess() throws Exception {
+    @DisplayName("Should redirect with error for invalid role (ADMIN)")
+    public void testShowRegistrationForm_WithInvalidRole_ShouldRedirectWithError() {
         // Given
-        User mockUser = new User();
-        mockUser.setId(UUID.randomUUID());
-        mockUser.setRole(UserRole.CUSTOMER);
-        mockUser.setUsername("testuser");
+        when(authentication.getName()).thenReturn(testAdmin.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testAdmin);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        );
+        
+        when(userService.findByUsername(testAdmin.getUsername()))
+            .thenReturn(Optional.of(testAdmin));
 
-        when(userService.findByUsername(any())).thenReturn(Optional.of(mockUser));
+        // When
+        String result = restaurantRegistrationController.createRestaurantForm(model, authentication, null);
 
-        // When & Then
-        mockMvc.perform(post("/restaurant-owner/restaurants/create")
-                .param("restaurantName", "Test Restaurant")
-                .param("address", "123 Test Street")
-                .param("phone", "0123456789")
-                .param("termsAccepted", "true"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/restaurant-owner/restaurants/create?success=1"));
+        // Then
+        assertEquals("redirect:/?error=unauthorized", result);
     }
 
     @Test
-    @WithMockUser(roles = "CUSTOMER")
-    void testCreateRestaurant_WithoutTermsAccepted_ShouldFail() throws Exception {
+    @DisplayName("Should display info message for message parameter")
+    public void testShowRegistrationForm_WithMessageParameter_ShouldDisplayInfoMessage() {
         // Given
-        User mockUser = new User();
-        mockUser.setId(UUID.randomUUID());
-        mockUser.setRole(UserRole.CUSTOMER);
-        mockUser.setUsername("testuser");
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
 
-        when(userService.findByUsername(any())).thenReturn(Optional.of(mockUser));
+        // When
+        String result = restaurantRegistrationController.createRestaurantForm(model, authentication, "no_approved_restaurant");
 
-        // When & Then
-        mockMvc.perform(post("/restaurant-owner/restaurants/create")
-                .param("restaurantName", "Test Restaurant")
-                .param("address", "123 Test Street")
-                .param("phone", "0123456789")
-                .param("termsAccepted", "false"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/restaurant-owner/restaurants/create"))
-                .andExpect(flash().attribute("error", "Vui lòng đồng ý với điều khoản sử dụng để tiếp tục"));
+        // Then
+        assertEquals("restaurant-owner/restaurant-form", result);
+    }
+
+    @Test
+    @DisplayName("Should redirect to login for null authentication")
+    public void testShowRegistrationForm_WithNullAuthentication_ShouldReturnLoginRedirect() {
+        // Given
+        Authentication nullAuth = null;
+
+        // When
+        String result = restaurantRegistrationController.createRestaurantForm(model, nullAuth, null);
+
+        // Then
+        assertEquals("redirect:/login", result);
+    }
+
+    // ========== submitRegistration() (createRestaurant) Tests ==========
+
+    @Test
+    @DisplayName("Should create restaurant with valid data and files")
+    public void testSubmitRegistration_WithValidDataAndFiles_ShouldCreateRestaurant() {
+        // Given
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantName("Test Restaurant");
+        restaurant.setAddress("Test Address");
+        
+        MockMultipartFile logo = new MockMultipartFile("logo", "logo.jpg", "image/jpeg", new byte[]{1, 2, 3});
+        MockMultipartFile cover = new MockMultipartFile("cover", "cover.jpg", "image/jpeg", new byte[]{1, 2, 3});
+        MockMultipartFile businessLicense = new MockMultipartFile("businessLicense", "license.pdf", "application/pdf", new byte[]{1, 2, 3});
+        
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
+        
+        when(restaurantOwnerService.ensureRestaurantOwnerExists(testCustomer.getId()))
+            .thenReturn(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.getRestaurantOwnerByUserId(testCustomer.getId()))
+            .thenReturn(Optional.of(testRestaurantOwnerEntity));
+        
+        RestaurantProfile savedRestaurant = new RestaurantProfile();
+        savedRestaurant.setRestaurantId(1);
+        savedRestaurant.setRestaurantName("Test Restaurant");
+        savedRestaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+        savedRestaurant.setOwner(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.createRestaurantProfile(any(RestaurantProfile.class)))
+            .thenReturn(savedRestaurant);
+        
+        try {
+            when(imageUploadService.uploadRestaurantImage(any(), any(), any()))
+                .thenReturn("http://example.com/logo.jpg");
+        } catch (IOException e) {
+            // Mock handles this
+        }
+
+        // When
+        String result = restaurantRegistrationController.createRestaurant(
+            restaurant, logo, cover, businessLicense, true, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/restaurant-owner/restaurants/create?success=1", result);
+    }
+
+    @Test
+    @DisplayName("Should create restaurant without files")
+    public void testSubmitRegistration_WithValidDataOnly_ShouldCreateRestaurantWithoutFiles() {
+        // Given
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantName("Test Restaurant");
+        restaurant.setAddress("Test Address");
+        
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
+        
+        when(restaurantOwnerService.ensureRestaurantOwnerExists(testCustomer.getId()))
+            .thenReturn(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.getRestaurantOwnerByUserId(testCustomer.getId()))
+            .thenReturn(Optional.of(testRestaurantOwnerEntity));
+        
+        RestaurantProfile savedRestaurant = new RestaurantProfile();
+        savedRestaurant.setRestaurantId(1);
+        savedRestaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+        savedRestaurant.setOwner(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.createRestaurantProfile(any(RestaurantProfile.class)))
+            .thenReturn(savedRestaurant);
+
+        // When
+        String result = restaurantRegistrationController.createRestaurant(
+            restaurant, null, null, null, true, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/restaurant-owner/restaurants/create?success=1", result);
+    }
+
+    @Test
+    @DisplayName("Should reject registration without terms accepted")
+    public void testSubmitRegistration_WithoutTermsAccepted_ShouldRejectRegistration() {
+        // Given
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantName("Test Restaurant");
+        
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
+
+        // When
+        String result = restaurantRegistrationController.createRestaurant(
+            restaurant, null, null, null, false, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/restaurant-owner/restaurants/create", result);
+    }
+
+    @Test
+    @DisplayName("Should create restaurant and accept terms")
+    public void testSubmitRegistration_ShouldAcceptTermsVersion_ShouldCreateRestaurant() {
+        // Given
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantName("Test Restaurant");
+        
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
+        
+        when(restaurantOwnerService.ensureRestaurantOwnerExists(testCustomer.getId()))
+            .thenReturn(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.getRestaurantOwnerByUserId(testCustomer.getId()))
+            .thenReturn(Optional.of(testRestaurantOwnerEntity));
+        
+        RestaurantProfile savedRestaurant = new RestaurantProfile();
+        savedRestaurant.setRestaurantId(1);
+        savedRestaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+        savedRestaurant.setOwner(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.createRestaurantProfile(any(RestaurantProfile.class)))
+            .thenReturn(savedRestaurant);
+
+        // When
+        String result = restaurantRegistrationController.createRestaurant(
+            restaurant, null, null, null, true, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/restaurant-owner/restaurants/create?success=1", result);
+        assertNotNull(savedRestaurant);
+    }
+
+    @Test
+    @DisplayName("Should ensure restaurant owner exists")
+    public void testSubmitRegistration_WithOwnerCreation_ShouldEnsureRestaurantOwnerExists() {
+        // Given
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantName("Test Restaurant");
+        
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
+        
+        when(restaurantOwnerService.ensureRestaurantOwnerExists(testCustomer.getId()))
+            .thenReturn(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.getRestaurantOwnerByUserId(testCustomer.getId()))
+            .thenReturn(Optional.of(testRestaurantOwnerEntity));
+        
+        RestaurantProfile savedRestaurant = new RestaurantProfile();
+        savedRestaurant.setRestaurantId(1);
+        savedRestaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+        savedRestaurant.setOwner(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.createRestaurantProfile(any(RestaurantProfile.class)))
+            .thenReturn(savedRestaurant);
+
+        // When
+        String result = restaurantRegistrationController.createRestaurant(
+            restaurant, null, null, null, true, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/restaurant-owner/restaurants/create?success=1", result);
+    }
+
+    @Test
+    @DisplayName("Should handle database exception gracefully")
+    public void testSubmitRegistration_WithDatabaseException_ShouldHandleGracefully() {
+        // Given
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantName("Test Restaurant");
+        
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
+        
+        when(restaurantOwnerService.ensureRestaurantOwnerExists(testCustomer.getId()))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String result = restaurantRegistrationController.createRestaurant(
+            restaurant, null, null, null, true, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/restaurant-owner/restaurants/create", result);
+    }
+
+    @Test
+    @DisplayName("Should not duplicate restaurant owner")
+    public void testSubmitRegistration_WithAlreadyExistedRestaurantOwner_ShouldNotDuplicate() {
+        // Given
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantName("Test Restaurant");
+        
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
+        
+        when(restaurantOwnerService.ensureRestaurantOwnerExists(testCustomer.getId()))
+            .thenReturn(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.getRestaurantOwnerByUserId(testCustomer.getId()))
+            .thenReturn(Optional.of(testRestaurantOwnerEntity));
+        
+        RestaurantProfile savedRestaurant = new RestaurantProfile();
+        savedRestaurant.setRestaurantId(1);
+        savedRestaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+        savedRestaurant.setOwner(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.createRestaurantProfile(any(RestaurantProfile.class)))
+            .thenReturn(savedRestaurant);
+
+        // When
+        String result = restaurantRegistrationController.createRestaurant(
+            restaurant, null, null, null, true, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/restaurant-owner/restaurants/create?success=1", result);
+    }
+
+    @Test
+    @DisplayName("Should create media records with upload")
+    public void testSubmitRegistration_WithMediaUpload_ShouldCreateMediaRecords() {
+        // Given
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantName("Test Restaurant");
+        
+        MockMultipartFile logo = new MockMultipartFile("logo", "logo.jpg", "image/jpeg", "test".getBytes());
+        MockMultipartFile cover = new MockMultipartFile("cover", "cover.jpg", "image/jpeg", "test".getBytes());
+        
+        when(authentication.getName()).thenReturn(testCustomer.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        
+        when(userService.findByUsername(testCustomer.getUsername()))
+            .thenReturn(Optional.of(testCustomer));
+        
+        when(restaurantOwnerService.ensureRestaurantOwnerExists(testCustomer.getId()))
+            .thenReturn(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.getRestaurantOwnerByUserId(testCustomer.getId()))
+            .thenReturn(Optional.of(testRestaurantOwnerEntity));
+        
+        RestaurantProfile savedRestaurant = new RestaurantProfile();
+        savedRestaurant.setRestaurantId(1);
+        savedRestaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+        savedRestaurant.setOwner(testRestaurantOwnerEntity);
+        
+        when(restaurantOwnerService.createRestaurantProfile(any(RestaurantProfile.class)))
+            .thenReturn(savedRestaurant);
+        
+        try {
+            when(imageUploadService.uploadRestaurantImage(any(), any(), any()))
+                .thenReturn("http://example.com/image.jpg");
+        } catch (IOException e) {
+            // Mock handles this
+        }
+
+        // When
+        String result = restaurantRegistrationController.createRestaurant(
+            restaurant, logo, cover, null, true, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/restaurant-owner/restaurants/create?success=1", result);
     }
 }

@@ -1,326 +1,814 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nhà hàng - Book Eat – Đặt bàn online, giữ chỗ ngay</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap 5 CSS -->
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
-    
-    <!-- Heart Toggle Styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+
     <style>
         .heart-toggle {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: var(--ds-space-3);
+            right: var(--ds-space-3);
             z-index: 10;
         }
-        
+
         .heart-icon {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.85);
             font-size: 1.5rem;
             cursor: pointer;
+            transition: all var(--ds-transition-base);
+            background: rgba(0, 0, 0, 0.35);
+            padding: var(--ds-space-2);
+            border-radius: var(--ds-radius-full);
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .heart-icon:hover {
+            color: var(--ds-error);
+            background: rgba(255, 255, 255, 0.95);
+            transform: scale(1.08);
+        }
+
+        .heart-icon.favorited {
+            color: var(--ds-error);
+            background: rgba(255, 255, 255, 0.95);
+            animation: heartbeat 0.6s ease-in-out;
+        }
+
+        @keyframes heartbeat {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.25);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: var(--ds-z-toast);
+        }
+
+        .ds-restaurant-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .ds-restaurant-image {
+            position: relative;
+            height: 220px;
+        }
+
+        .ds-restaurant-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .ds-restaurant-overlay {
+            position: absolute;
+            bottom: var(--ds-space-4);
+            left: var(--ds-space-4);
+            display: flex;
+            gap: var(--ds-space-3);
+            opacity: 0;
+            transform: translateY(6px);
+            transition: all var(--ds-transition-base);
+        }
+
+        .ds-restaurant-card:hover .ds-restaurant-overlay {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .ds-restaurant-overlay {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .filter-item {
+            min-width: 180px;
+            flex: 1;
+        }
+        
+        .filter-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        /* Compact breadcrumb */
+        .ds-breadcrumb {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        
+        .ds-breadcrumb-list {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .ds-breadcrumb-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .ds-breadcrumb-item:not(:last-child)::after {
+            content: '/';
+            margin-left: 0.5rem;
+            color: #6b7280;
+        }
+        
+        /* Restaurant List Layout */
+        .restaurant-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .ds-restaurant-card {
+            display: flex;
+            flex-direction: row;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
             transition: all 0.3s ease;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 8px;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            border: 2px solid #d1d5db;
+            cursor: pointer;
+        }
+        
+        .ds-restaurant-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+            border-color: #9ca3af;
+        }
+        
+        .ds-restaurant-image {
+            flex: 0 0 250px;
+            position: relative;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
-        .heart-icon:hover {
-            color: #e74c3c;
+        .ds-restaurant-photo {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            object-position: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .ds-restaurant-card:hover .ds-restaurant-photo {
+            transform: scale(1.05);
+        }
+        
+        /* Perfect centering for heart icon */
+        .heart-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10;
+        }
+        
+        .heart-icon {
             background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            color: #ef4444;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .heart-icon:hover {
+            background: white;
             transform: scale(1.1);
         }
         
-        .heart-icon.favorited {
-            color: #e74c3c;
-            background: rgba(255, 255, 255, 0.9);
-            animation: heartbeat 0.6s ease-in-out;
+        /* Perfect centering for overlay buttons */
+        .ds-restaurant-overlay {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
         }
         
-        @keyframes heartbeat {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.3); }
-            100% { transform: scale(1); }
+        .ds-restaurant-overlay .ds-btn {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
         
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1055;
+        .ds-restaurant-overlay .ds-btn:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translateY(-1px);
         }
         
-        .filter-section {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 30px;
+        .ds-restaurant-info {
+            flex: 1;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         
-        .sort-dropdown {
-            min-width: 150px;
+        /* Perfect icon alignment for OCD */
+        .ds-restaurant-info .ds-flex {
+            align-items: center;
+            line-height: 1.5;
         }
         
-        .pagination-custom .page-link {
-            border-radius: 8px;
-            margin: 0 2px;
-            border: 1px solid #dee2e6;
+        .ds-restaurant-info i {
+            width: 16px;
+            text-align: center;
+            font-size: 0.875rem;
+            color: #6b7280;
+            flex-shrink: 0;
         }
         
-        .pagination-custom .page-item.active .page-link {
-            background-color: #007bff;
-            border-color: #007bff;
+        .ds-restaurant-info span {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.5;
+        }
+        
+        .ds-restaurant-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        
+        /* Restaurant Header with NEW Badge */
+        .restaurant-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .new-badge {
+            background: #ef4444;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+        
+        /* Rating Stars */
+        .restaurant-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stars {
+            display: flex;
+            gap: 0.125rem;
+        }
+        
+        .stars .fa-star {
+            font-size: 0.875rem;
+        }
+        
+        .star-filled {
+            color: #fbbf24;
+        }
+        
+        .star-empty {
+            color: #d1d5db;
+        }
+        
+        .rating-text {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        /* Restaurant Details */
+        .restaurant-details {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .price-indicator {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .cuisine-type {
+            font-weight: 500;
+        }
+        
+        .location {
+            color: #6b7280;
+        }
+        
+        /* Availability Status */
+        .availability-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            color: #059669;
+        }
+        
+        .availability-status .fa-clock {
+            color: #ef4444;
+        }
+        
+        /* Time Slots */
+        .time-slots {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .time-slot-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .time-slot-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+        
+        .time-slot-btn:first-child {
+            background: #dc2626;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Button optimization */
+        .ds-restaurant-info .ds-btn {
+            margin-top: 0.75rem;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        /* Perfect spacing for OCD */
+        .ds-restaurant-info > *:not(:last-child) {
+            margin-bottom: 0.5rem;
+        }
+        
+        .ds-restaurant-info > *:last-child {
+            margin-bottom: 0;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-row .filter-item {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: end;
+            flex-shrink: 0;
+        }
+        
+        /* Compact form styling */
+        .ds-form-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.125rem;
+        }
+        
+        .ds-form-input,
+        .ds-form-select {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+            height: 2.25rem;
+        }
+        
+        .ds-btn {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            height: 2.25rem;
+        }
+        
+        /* Remove default form group margins */
+        .ds-form-group {
+            margin-bottom: 0;
+        }
+        
+        .ds-form-group .ds-form-label {
+            margin-bottom: 0.125rem;
+        }
+        
+        @media (max-width: 1200px) {
+            .filter-row {
+                flex-wrap: wrap;
+            }
+            
+            .filter-item {
+                min-width: 140px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .filter-row {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .filter-item {
+                min-width: 100%;
+            }
+            
+            .filter-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+            
+            .filter-actions button {
+                flex: 1;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .filter-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .filter-actions button {
+                width: 100%;
+            }
+        }
+        
+        /* Restaurant List Responsive */
+        @media (max-width: 768px) {
+            .ds-restaurant-card {
+                flex-direction: column;
+            }
+            
+            .ds-restaurant-image {
+                flex: none;
+                height: 200px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .ds-restaurant-photo {
+                height: 200px;
+                object-fit: cover;
+                object-position: center;
+            }
+            
+            .ds-restaurant-info {
+                padding: 1rem;
+            }
+            
+            .ds-restaurant-name {
+                font-size: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .ds-restaurant-info .ds-flex {
+                margin-bottom: 0.5rem;
+            }
+            
+            .restaurant-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .time-slots {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .time-slot-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .restaurant-list {
+                gap: 1rem;
+            }
+            
+            .ds-restaurant-info {
+                padding: 0.75rem;
+            }
         }
     </style>
 </head>
-<body>
-    <!-- Header -->
-    <div th:replace="~{fragments/header :: site-header}"></div>
-    
-    <main class="main-content">
-        <section class="restaurants">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12 text-center mb-5">
-                        <h2 class="section__title">Hệ thống nhà hàng</h2>
-                        <p class="section__subtitle">Khám phá các địa điểm ẩm thực đẳng cấp</p>
-                    </div>
-                </div>
+<body class="ds-bg-white">
+    <div th:with="activeNav='restaurants'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
-                <!-- Filters and Sort -->
-                <div class="filter-section">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <label class="form-label">Tìm kiếm:</label>
-                            <input type="text" class="form-control" id="searchInput" 
-                                   th:value="${search}" placeholder="Tên nhà hàng...">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Loại ẩm thực:</label>
-                            <select class="form-select" id="cuisineFilter">
-                                <option value="">Tất cả</option>
-                                <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
-                                <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
-                                <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
-                                <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
-                                <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
-                                <option value="American" th:selected="${cuisineType == 'American'}">Mỹ</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Khoảng giá:</label>
-                            <select class="form-select" id="priceFilter">
-                                <option value="">Tất cả</option>
-                                <option value="under-50k" th:selected="${priceRange == 'under-50k'}">Dưới 50k</option>
-                                <option value="50k-100k" th:selected="${priceRange == '50k-100k'}">50k - 100k</option>
-                                <option value="100k-200k" th:selected="${priceRange == '100k-200k'}">100k - 200k</option>
-                                <option value="over-200k" th:selected="${priceRange == 'over-200k'}">Trên 200k</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Đánh giá:</label>
-                            <select class="form-select" id="ratingFilter">
-                                <option value="">Tất cả</option>
-                                <option value="5-star" th:selected="${ratingFilter == '5-star'}">5 sao</option>
-                                <option value="4-star" th:selected="${ratingFilter == '4-star'}">4 sao trở lên</option>
-                                <option value="3-star" th:selected="${ratingFilter == '3-star'}">3 sao trở lên</option>
-                                <option value="2-star" th:selected="${ratingFilter == '2-star'}">2 sao trở lên</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Sắp xếp:</label>
-                            <select class="form-select sort-dropdown" id="sortSelect">
-                                <option value="restaurantName-asc" th:selected="${sortBy == 'restaurantName' && sortDir == 'asc'}">Tên A-Z</option>
-                                <option value="restaurantName-desc" th:selected="${sortBy == 'restaurantName' && sortDir == 'desc'}">Tên Z-A</option>
-                                <option value="averagePrice-asc" th:selected="${sortBy == 'averagePrice' && sortDir == 'asc'}">Giá thấp</option>
-                                <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' && sortDir == 'desc'}">Giá cao</option>
-                                <option value="averageRating-desc" th:selected="${sortBy == 'averageRating' && sortDir == 'desc'}">Đánh giá cao</option>
-                                <option value="averageRating-asc" th:selected="${sortBy == 'averageRating' && sortDir == 'asc'}">Đánh giá thấp</option>
-                            </select>
-                        </div>
-                        <div class="col-md-1">
-                            <label class="form-label">&nbsp;</label>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-primary" onclick="applyFilters()">
-                                    <i class="fas fa-filter me-1"></i>Lọc
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-12">
-                            <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
-                                <i class="fas fa-times me-1"></i>Xóa bộ lọc
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <!-- Dynamic Restaurant Cards from Database -->
-                    <div class="col-lg-4 col-md-6 mb-4" th:each="restaurant : ${restaurants.content}">
-                        <div class="restaurant-card">
-                            <div class="restaurant-card__image">
-                                <img th:if="${restaurant.mainImageUrl != null and !restaurant.mainImageUrl.isEmpty()}" 
-                                     th:src="${restaurant.mainImageUrl}" 
-                                     th:alt="${restaurant.restaurantName}" 
-                                     class="img-fluid"
-                                     loading="lazy"
-                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                <img th:unless="${restaurant.mainImageUrl != null and !restaurant.mainImageUrl.isEmpty()}" 
-                                     src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
-                                     th:alt="${restaurant.restaurantName}" 
-                                     class="img-fluid"
-                                     loading="lazy">
-                                
-                                <!-- Heart Toggle Button -->
-                                <div class="heart-toggle" sec:authorize="hasRole('CUSTOMER')">
-                                    <i class="fas fa-heart heart-icon" 
-                                       th:data-restaurant-id="${restaurant.restaurantId}"
-                                       onclick="toggleFavorite(this)"
-                                       title="Thêm vào yêu thích"></i>
-                                </div>
-                                
-                                <div class="restaurant-card__overlay">
-                                    <a th:href="@{/booking/new}" class="btn btn--gold btn--small" sec:authorize="!hasRole('RESTAURANT_OWNER')">Đặt bàn</a>
-                                    <a th:href="@{/restaurant-owner/dashboard}" class="btn btn--gold btn--small" sec:authorize="hasRole('RESTAURANT_OWNER')">Quản lý</a>
-                                </div>
-                            </div>
-                            <div class="restaurant-card__content">
-                                <h4 class="restaurant-card__title" th:text="${restaurant.restaurantName}">Restaurant Name</h4>
-                                <p class="restaurant-card__location">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <span th:text="${restaurant.address}">Address</span>
-                                </p>
-                                <p class="restaurant-card__cuisine" th:if="${restaurant.cuisineType != null}">
-                                    <i class="fas fa-utensils"></i>
-                                    <span th:text="${restaurant.cuisineType}">Cuisine</span>
-                                </p>
-                                <p class="restaurant-card__price" th:if="${restaurant.averagePrice != null}">
-                                    <i class="fas fa-tag"></i>
-                                    <span th:text="${#numbers.formatDecimal(restaurant.averagePrice, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">Price</span>
-                                </p>
-                                <div class="restaurant-card__rating">
-                                    <div class="stars">
-                                        <span th:each="i : ${#numbers.sequence(1, restaurant.averageRating)}">
-                                            <i class="fas fa-star"></i>
-                                        </span>
-                                        <span th:each="i : ${#numbers.sequence(restaurant.averageRating + 1, 5)}">
-                                            <i class="far fa-star"></i>
-                                        </span>
-                                    </div>
-                                    <span class="rating-text" th:text="|${restaurant.formattedAverageRating} (${restaurant.reviewCount} đánh giá)|">4.8 (0 đánh giá)</span>
-                                </div>
-                                <!-- View Detail Button -->
-                                <div class="mt-3">
-                                    <a th:href="@{'/restaurants/' + ${restaurant.restaurantId}}" class="btn btn-info w-100">
-                                        <i class="fas fa-eye"></i> Xem chi tiết
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Show message if no restaurants found -->
-                    <div class="col-12 text-center" th:if="${restaurants.empty}">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            <h4>Không tìm thấy nhà hàng</h4>
-                            <p>Không có nhà hàng nào phù hợp với bộ lọc của bạn. Hãy thử điều chỉnh các tiêu chí tìm kiếm.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pagination -->
-                <nav th:if="${totalPages > 1}" aria-label="Pagination" class="mt-4">
-                    <ul class="pagination pagination-custom justify-content-center">
-                        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-                            <a class="page-link" th:href="@{/restaurants(page=${currentPage - 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
+    <main>
+        <section class="ds-bg-gray-50" style="padding: var(--ds-space-4) 0;">
+            <div class="ds-container">
+                <nav class="ds-breadcrumb" aria-label="breadcrumb" style="margin: 0; padding: 0.5rem 0;">
+                    <ol class="ds-breadcrumb-list" style="margin: 0; padding: 0;">
+                        <li class="ds-breadcrumb-item">
+                            <a th:href="@{/}">Trang chủ</a>
                         </li>
-                        
-                        <li th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}" 
-                            class="page-item" 
-                            th:classappend="${pageNum == currentPage} ? 'active'">
-                            <a class="page-link" 
-                               th:href="@{/restaurants(page=${pageNum}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}"
-                               th:text="${pageNum + 1}">1</a>
+                        <li class="ds-breadcrumb-item active">
+                            <span>Nhà hàng</span>
                         </li>
-                        
-                        <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled'">
-                            <a class="page-link" th:href="@{/restaurants(page=${currentPage + 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
-                                <i class="fas fa-chevron-right"></i>
-                            </a>
-                        </li>
-                    </ul>
+                    </ol>
                 </nav>
-                
-                <div class="row">
-                    <div class="col-12 text-center mt-4">
-                        <a th:href="@{/booking/new}" class="btn btn--gold btn--large me-3">
-                            <i class="fas fa-calendar-plus"></i>
-                            <span>Đặt bàn ngay</span>
-                        </a>
-                        <a th:href="@{/}" class="btn btn--outline btn--large">
-                            <i class="fas fa-home"></i>
-                            <span>Về trang chủ</span>
-                        </a>
+            </div>
+        </section>
+
+        <section style="padding: var(--ds-space-6) 0;">
+            <div class="ds-container">
+                <article class="ds-card ds-mb-4">
+                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-2" style="padding: 1rem;">
+                        <div class="filter-container">
+                            <div class="filter-row">
+                            <div class="ds-form-group filter-item">
+                                <label class="ds-form-label" for="searchInput">Tìm kiếm</label>
+                                <input type="text" id="searchInput"
+                                       class="ds-form-input"
+                                       th:value="${search}"
+                                       placeholder="Tên nhà hàng...">
+                            </div>
+                            <div class="ds-form-group filter-item">
+                                <label class="ds-form-label" for="cuisineFilter">Loại ẩm thực</label>
+                                <select id="cuisineFilter" class="ds-form-select">
+                                    <option value="">Tất cả</option>
+                                    <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
+                                    <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
+                                    <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
+                                    <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
+                                    <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
+                                    <option value="American" th:selected="${cuisineType == 'American'}">Mỹ</option>
+                                </select>
+                            </div>
+                            <div class="ds-form-group filter-item">
+                                <label class="ds-form-label" for="priceFilter">Khoảng giá</label>
+                                <select id="priceFilter" class="ds-form-select">
+                                    <option value="">Tất cả</option>
+                                        <option value="low" th:selected="${priceRange == 'low'}">Dưới 200k</option>
+                                        <option value="medium" th:selected="${priceRange == 'medium'}">200k - 500k</option>
+                                        <option value="high" th:selected="${priceRange == 'high'}">Trên 500k</option>
+                                </select>
+                            </div>
+                            <div class="ds-form-group filter-item">
+                                <label class="ds-form-label" for="sortSelect">Sắp xếp</label>
+                                <select id="sortSelect" class="ds-form-select">
+                                    <option value="restaurantName-asc" th:selected="${sortBy == 'restaurantName' and sortDir == 'asc'}">Tên (A-Z)</option>
+                                    <option value="restaurantName-desc" th:selected="${sortBy == 'restaurantName' and sortDir == 'desc'}">Tên (Z-A)</option>
+                                    <option value="averageRating-desc" th:selected="${sortBy == 'averageRating' and sortDir == 'desc'}">Đánh giá cao nhất</option>
+                                    <option value="averagePrice-asc" th:selected="${sortBy == 'averagePrice' and sortDir == 'asc'}">Giá thấp nhất</option>
+                                    <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' and sortDir == 'desc'}">Giá cao nhất</option>
+                                </select>
+                            </div>
+                                <div class="filter-actions">
+                                    <button type="button" id="filterActions"
+                                            class="ds-btn ds-btn-primary"
+                                            onclick="applyFilters()">
+                                        <i class="fas fa-filter"></i>
+                                        Lọc
+                                    </button>
+                                    <button type="button" id="clearFilters"
+                                            class="ds-btn ds-btn-secondary"
+                                            onclick="clearFilters()">
+                                        <i class="fas fa-times"></i>
+                                        Xóa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
+                </article>
+
+                <div class="restaurant-list">
+                    <article class="ds-restaurant-card"
+                             th:each="restaurant : ${restaurants.content}"
+                             th:onclick="|window.location.href='/restaurants/' + ${restaurant.restaurantId}|"
+                             style="cursor: pointer;">
+                        <div class="ds-restaurant-image">
+                            <img th:if="${restaurant.mainImageUrl != null and !restaurant.mainImageUrl.isEmpty()}"
+                                 th:src="${restaurant.mainImageUrl}"
+                                 th:alt="${restaurant.restaurantName}"
+                                 class="ds-restaurant-photo"
+                                 loading="lazy"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <img th:unless="${restaurant.mainImageUrl != null and !restaurant.mainImageUrl.isEmpty()}"
+                                 src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+                                 th:alt="${restaurant.restaurantName}"
+                                 class="ds-restaurant-photo"
+                                 loading="lazy">
+
+                            <div class="heart-toggle" sec:authorize="hasRole('CUSTOMER')">
+                                <i class="fas fa-heart heart-icon"
+                                   th:data-restaurant-id="${restaurant.restaurantId}"
+                                   onclick="event.stopPropagation(); toggleFavorite(this)"
+                                   title="Thêm vào yêu thích"></i>
+                            </div>
+
+                            <div class="ds-restaurant-overlay">
+                                <a th:href="@{/booking/new(restaurantId=${restaurant.restaurantId})}"
+                                   class="ds-btn ds-btn-primary ds-btn-sm"
+                                   sec:authorize="!hasRole('RESTAURANT_OWNER')"
+                                   onclick="event.stopPropagation()">
+                                    Đặt bàn
+                                </a>
+                                <a th:href="@{/restaurant-owner/dashboard}"
+                                   class="ds-btn ds-btn-primary ds-btn-sm"
+                                   sec:authorize="hasRole('RESTAURANT_OWNER')"
+                                   onclick="event.stopPropagation()">
+                                    Quản lý
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="ds-restaurant-info ds-flex ds-flex-col ds-gap-3">
+                            <!-- Restaurant Name with NEW Badge -->
+                            <div class="restaurant-header">
+                            <h3 class="ds-restaurant-name" th:text="${restaurant.restaurantName}">Restaurant Name</h3>
+                                <span class="new-badge">NEW</span>
+                            </div>
+
+                            <!-- Rating Stars -->
+                            <div class="restaurant-rating">
+                                <div class="stars">
+                                    <i class="fas fa-star" th:each="i : ${#numbers.sequence(1, 5)}" 
+                                       th:classappend="${i <= restaurant.averageRating} ? 'star-filled' : 'star-empty'"></i>
+                                </div>
+                                <span class="rating-text" th:text="|${restaurant.formattedAverageRating} (${restaurant.reviewCount})|">4.5 (11)</span>
+                            </div>
+
+                            <!-- Price and Details -->
+                            <div class="restaurant-details">
+                                <span class="price-indicator">$$$$</span>
+                                <span class="cuisine-type" th:text="${restaurant.cuisineType}">Vietnamese</span>
+                                <span class="location" th:text="${restaurant.address}">Hoi An</span>
+                            </div>
+
+                            <!-- Availability Status -->
+                            <div class="availability-status">
+                                <i class="fas fa-clock"></i>
+                                <span>You're in luck! We still have 3 timeslots left</span>
+                            </div>
+
+                            <!-- Time Slots -->
+                            <div class="time-slots">
+                                <button class="time-slot-btn">7:00 PM*</button>
+                                <button class="time-slot-btn">7:15 PM*</button>
+                                <button class="time-slot-btn">7:30 PM*</button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="ds-mt-6"
+                     th:if="${restaurants.empty}">
+                    <div class="ds-alert ds-alert-info ds-flex ds-flex-col ds-gap-2 ds-text-center">
+                        <i class="fas fa-info-circle"></i>
+                        <h4 class="ds-heading-5 ds-m-0">Không tìm thấy nhà hàng</h4>
+                        <p class="ds-text-base ds-text-secondary ds-m-0">
+                            Không có nhà hàng nào phù hợp với bộ lọc của bạn. Hãy thử điều chỉnh các tiêu chí tìm kiếm.
+                        </p>
+                    </div>
+                </div>
+
+                <nav th:if="${totalPages > 1}"
+                     aria-label="Pagination"
+                     class="ds-mt-8">
+                    <div class="ds-pagination">
+                        <ul class="ds-pagination-list">
+                            <li class="ds-pagination-item"
+                                th:classappend="${currentPage == 0} ? ' disabled'">
+                                <a class="ds-pagination-link"
+                                   th:href="@{/restaurants(page=${currentPage - 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            <li th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}"
+                                class="ds-pagination-item"
+                                th:classappend="${pageNum == currentPage} ? ' active'">
+                                <a class="ds-pagination-link"
+                                   th:href="@{/restaurants(page=${pageNum}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}"
+                                   th:text="${pageNum + 1}">1</a>
+                            </li>
+
+                            <li class="ds-pagination-item"
+                                th:classappend="${currentPage == totalPages - 1} ? ' disabled'">
+                                <a class="ds-pagination-link"
+                                   th:href="@{/restaurants(page=${currentPage + 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+
+                <div class="ds-flex ds-justify-center ds-gap-4 ds-flex-wrap ds-mt-8">
+                    <a th:href="@{/}"
+                       class="ds-btn ds-btn-secondary ds-btn-lg">
+                        <i class="fas fa-home"></i>
+                        Về trang chủ
+                    </a>
                 </div>
             </div>
         </section>
     </main>
-    
-    <!-- Footer -->
-    <div th:replace="~{fragments/footer :: site-footer}"></div>
-    
-    <!-- Toast Container -->
+
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+
     <div class="toast-container">
         <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="toast-header">
                 <i class="fas fa-heart text-danger me-2"></i>
                 <strong class="me-auto">Thông báo</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Đóng"></button>
             </div>
-            <div class="toast-body" id="toastMessage">
-                <!-- Message will be inserted here -->
-            </div>
+            <div class="toast-body" id="toastMessage"></div>
         </div>
     </div>
-    
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Heart Toggle JavaScript -->
+
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+
     <script>
-        // Load favorite status on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             loadFavoriteStatus();
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function (event) {
+                    if (event.key === 'Enter') {
+                        applyFilters();
+                    }
+                });
+            }
         });
-        
-        // Load favorite status for all restaurants
+
         function loadFavoriteStatus() {
             fetch('/customer/favorites/ids')
                 .then(response => {
                     if (!response.ok) {
-                        // If not authenticated or other error, skip silently
                         if (response.status === 401 || response.status === 403) {
-                            console.log('User not authenticated, skipping favorite status load');
                             return [];
                         }
                         throw new Error('Failed to fetch favorite restaurant IDs');
@@ -328,109 +816,95 @@
                     return response.json();
                 })
                 .then(restaurantIds => {
-                    console.log('Loaded favorite restaurant IDs:', restaurantIds);
-                    
                     restaurantIds.forEach(restaurantId => {
                         const heartIcon = document.querySelector(`.heart-icon[data-restaurant-id="${restaurantId}"]`);
                         if (heartIcon) {
                             heartIcon.classList.add('favorited');
-                            console.log(`Marked restaurant ${restaurantId} as favorited`);
                         }
                     });
                 })
-                .catch(error => {
-                    console.error('Error loading favorite status:', error);
-                });
+                .catch(error => console.error('Error loading favorites:', error));
         }
-        
-        // Toggle favorite function
+
         function toggleFavorite(heartIcon) {
-            const restaurantId = heartIcon.dataset.restaurantId;
-            const isCurrentlyFavorited = heartIcon.classList.contains('favorited');
-            
-            // Update UI immediately for instant feedback
-            if (isCurrentlyFavorited) {
+            const restaurantId = heartIcon.getAttribute('data-restaurant-id');
+            const wasFavorited = heartIcon.classList.contains('favorited');
+
+            if (!restaurantId) {
+                return;
+            }
+
+            heartIcon.style.pointerEvents = 'none';
+            heartIcon.style.opacity = '0.6';
+
+            if (wasFavorited) {
                 heartIcon.classList.remove('favorited');
             } else {
                 heartIcon.classList.add('favorited');
-                // Add pulse animation for instant visual feedback
                 heartIcon.style.animation = 'heartbeat 0.6s ease-in-out';
             }
-            
-            // Disable button during request
-            heartIcon.style.pointerEvents = 'none';
-            heartIcon.style.opacity = '0.6';
-            
-            // Prepare request - backend will auto-toggle based on current state
+
             const request = {
-                restaurantId: parseInt(restaurantId)
+                restaurantId: restaurantId,
+                favorited: !wasFavorited
             };
-            
-            // Send AJAX request
+
             fetch('/customer/favorites/toggle', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(request)
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // UI already updated, just show message
-                    showToast(data.message, 'success');
-                } else {
-                    // Revert UI change on error
-                    if (isCurrentlyFavorited) {
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                    } else {
+                        if (wasFavorited) {
+                            heartIcon.classList.add('favorited');
+                        } else {
+                            heartIcon.classList.remove('favorited');
+                        }
+                        showToast(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    if (wasFavorited) {
                         heartIcon.classList.add('favorited');
                     } else {
                         heartIcon.classList.remove('favorited');
                     }
-                    showToast(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Revert UI change on error
-                if (isCurrentlyFavorited) {
-                    heartIcon.classList.add('favorited');
-                } else {
-                    heartIcon.classList.remove('favorited');
-                }
-                showToast('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
-            })
-            .finally(() => {
-                // Re-enable button
-                heartIcon.style.pointerEvents = 'auto';
-                heartIcon.style.opacity = '1';
-                // Reset animation
-                heartIcon.style.animation = '';
-            });
+                    showToast('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
+                })
+                .finally(() => {
+                    heartIcon.style.pointerEvents = 'auto';
+                    heartIcon.style.opacity = '1';
+                    heartIcon.style.animation = '';
+                });
         }
-        
-        // Show toast notification
+
         function showToast(message, type) {
             const toastElement = document.getElementById('toast');
             const toastMessage = document.getElementById('toastMessage');
-            
+
             toastMessage.textContent = message;
-            
+
             if (type === 'success') {
                 toastElement.classList.add('bg-success', 'text-white');
             } else if (type === 'error') {
                 toastElement.classList.add('bg-danger', 'text-white');
             }
-            
+
             const toast = new bootstrap.Toast(toastElement);
             toast.show();
-            
-            // Remove classes after toast is hidden
-            toastElement.addEventListener('hidden.bs.toast', function() {
+
+            toastElement.addEventListener('hidden.bs.toast', function () {
                 toastElement.classList.remove('bg-success', 'bg-danger', 'text-white');
-            });
+            }, { once: true });
         }
-        
-        // Apply filters
+
         function applyFilters() {
             const search = document.getElementById('searchInput').value;
             const cuisineType = document.getElementById('cuisineFilter').value;
@@ -438,7 +912,7 @@
             const ratingFilter = document.getElementById('ratingFilter').value;
             const sortValue = document.getElementById('sortSelect').value;
             const [sortBy, sortDir] = sortValue.split('-');
-            
+
             const url = new URL(window.location);
             url.searchParams.set('search', search);
             url.searchParams.set('cuisineType', cuisineType);
@@ -446,19 +920,18 @@
             url.searchParams.set('ratingFilter', ratingFilter);
             url.searchParams.set('sortBy', sortBy);
             url.searchParams.set('sortDir', sortDir);
-            url.searchParams.set('page', '0'); // Reset to first page when filtering
-            
+            url.searchParams.set('page', '0');
+
             window.location.href = url.toString();
         }
-        
-        // Clear filters
+
         function clearFilters() {
             document.getElementById('searchInput').value = '';
             document.getElementById('cuisineFilter').value = '';
             document.getElementById('priceFilter').value = '';
             document.getElementById('ratingFilter').value = '';
             document.getElementById('sortSelect').value = 'restaurantName-asc';
-            
+
             const url = new URL(window.location);
             url.searchParams.delete('search');
             url.searchParams.delete('cuisineType');
@@ -467,21 +940,9 @@
             url.searchParams.set('sortBy', 'restaurantName');
             url.searchParams.set('sortDir', 'asc');
             url.searchParams.set('page', '0');
-            
+
             window.location.href = url.toString();
         }
-        
-        // Auto-submit on Enter key in search input
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        applyFilters();
-                    }
-                });
-            }
-        });
     </script>
 </body>
 </html>

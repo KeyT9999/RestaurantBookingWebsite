@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,1869 +16,688 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Luxury CSS -->
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    <!-- Design System CSS -->
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
     
     <style>
-        :root {
-            --primary: #4A90E2;
-            --secondary: #357ABD;
+        /* Override all conflicts with !important */
+        .restaurant-detail-page__reservation-widget {
+            background: white !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 12px !important;
+            padding: 1.5rem !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+            position: sticky !important;
+            top: 2rem !important;
+            display: block !important;
+            width: 100% !important;
+            margin: 0 !important;
         }
         
-        .cover-section {
+        .restaurant-detail-page__reservation-title {
+            font-size: 1.25rem !important;
+            font-weight: 600 !important;
+            color: #1f2937 !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        .restaurant-detail-page__form-group {
+            margin-bottom: 1rem !important;
+        }
+        
+        .restaurant-detail-page__form-label {
+            display: block !important;
+            font-weight: 500 !important;
+            color: #374151 !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .restaurant-detail-page__input-group {
+            position: relative !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        
+        .restaurant-detail-page__input-icon {
+            position: absolute !important;
+            left: 12px !important;
+            color: #6b7280 !important;
+            z-index: 10 !important;
+        }
+        
+        .restaurant-detail-page__form-control {
+            width: 100% !important;
+            padding: 12px 12px 12px 40px !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 8px !important;
+            font-size: 14px !important;
+            background: white !important;
+            color: #1f2937 !important;
+        }
+        
+        .restaurant-detail-page__form-control:focus {
+            outline: none !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+        
+        .restaurant-detail-page__btn-book {
+            width: 100% !important;
+            background: #1f2937 !important;
+            color: white !important;
+            border: none !important;
+            padding: 12px !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            transition: background-color 0.2s !important;
+        }
+        
+        .restaurant-detail-page__btn-book:hover {
+            background: #374151 !important;
+        }
+        
+        .restaurant-detail-page__cancellation-policy {
+            margin-top: 0.75rem !important;
+            font-size: 12px !important;
+            color: #6b7280 !important;
+            text-align: center !important;
+        }
+        
+        /* Debug styles - remove these later */
+        .debug-red {
+            background: red !important;
+            color: white !important;
+            padding: 10px !important;
+            margin-bottom: 10px !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+        }
+
+        .reservation-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        .form-control:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+            outline: none;
+        }
+
+        .input-group {
             position: relative;
-            height: 400px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            margin-bottom: 2rem;
-            overflow: hidden;
         }
-        
-        .cover-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            opacity: 0.9;
+
+        .input-group .form-control {
+            padding-left: 2.5rem;
         }
-        
-        .cover-overlay {
+
+        .input-icon {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            padding: 3rem 0 2rem;
-        }
-        
-        .restaurant-logo {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 4px solid white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            object-fit: contain;
-            background: white;
-        }
-        
-        .restaurant-name {
-            color: white;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 1rem 0 0.5rem;
-        }
-        
-        .info-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-        
-        .info-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .info-item:last-child {
-            border-bottom: none;
-        }
-        
-        .info-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-        }
-        
-        /* Carousel Styles */
-        .carousel {
-            border-radius: 1rem;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            margin-top: 2rem;
-        }
-        
-        .carousel-image {
-            height: 500px;
-            object-fit: contain;
-            width: 100%;
-        }
-        
-        .carousel-indicators {
-            margin-bottom: 1rem;
-        }
-        
-        .carousel-indicators [data-bs-target] {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.5);
-            border: 2px solid white;
-            margin: 0 5px;
-            transition: all 0.3s ease;
-        }
-        
-        .carousel-indicators .active {
-            background-color: var(--primary);
-            transform: scale(1.2);
-        }
-        
-        .carousel-control-prev,
-        .carousel-control-next {
-            width: 50px;
-            height: 50px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
+            left: 0.75rem;
             top: 50%;
             transform: translateY(-50%);
-            transition: all 0.3s ease;
+            color: #9ca3af;
+            z-index: 3;
         }
-        
-        .carousel-control-prev {
-            left: 20px;
-        }
-        
-        .carousel-control-next {
-            right: 20px;
-        }
-        
-        .carousel-control-prev:hover,
-        .carousel-control-next:hover {
-            background-color: rgba(0, 0, 0, 0.7);
-            transform: translateY(-50%) scale(1.1);
-        }
-        
-        .carousel-caption {
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            border-radius: 0 0 1rem 1rem;
-            padding: 2rem 1rem 1rem;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
-        
-        .carousel-caption h5 {
+
+        .btn-book {
+            background: #1f2937;
             color: white;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        .carousel-caption p {
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 0;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-        }
-        
-        /* Responsive carousel */
-        @media (max-width: 768px) {
-            .carousel-image {
-                height: 300px;
-            }
-            
-            .carousel-control-prev,
-            .carousel-control-next {
-                width: 40px;
-                height: 40px;
-            }
-            
-            .carousel-control-prev {
-                left: 10px;
-            }
-            
-            .carousel-control-next {
-                right: 10px;
-            }
-            
-            .carousel-caption {
-                padding: 1rem 0.5rem 0.5rem;
-            }
-            
-            .carousel-caption h5 {
-                font-size: 1rem;
-            }
-            
-            .carousel-caption p {
-                font-size: 0.8rem;
-            }
-        }
-        
-        /* Modal Styles */
-        .modal-xl {
-            max-width: 90%;
-        }
-        
-        .modal-body {
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-        
-        /* Menu Item Styles */
-        .menu-item-card {
-            background: white;
-            border-radius: 1rem;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            margin-bottom: 1.5rem;
-            height: 100%;
-        }
-        
-        .menu-item-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-        }
-        
-        .menu-item-image {
-            width: 100%;
-            height: 200px;
-            object-fit: contain;
-            background: #f8f9fa;
-        }
-        
-        .menu-item-content {
-            padding: 1.5rem;
-        }
-        
-        .menu-item-name {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-        
-        .menu-item-price {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        
-        .menu-item-category {
-            background: var(--primary);
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        
-        /* Table Item Styles */
-        .table-item-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            margin-bottom: 1.5rem;
-            height: 100%;
-            cursor: pointer;
-        }
-        
-        .table-item-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-        
-        .table-item-image {
-            width: 100%;
-            height: 200px;
-            object-fit: contain;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            background: #f8f9fa;
-        }
-        
-        .table-item-name {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
-        
-        .table-item-capacity {
-            color: #6c757d;
-            margin-bottom: 1rem;
-        }
-        
-        .table-item-status {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 999px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        
-        .table-item-status.available {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .table-item-status.occupied {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        /* Pagination Styles */
-        .pagination .page-link {
-            color: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        .pagination .page-item.active .page-link {
-            background-color: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        .pagination .page-link:hover {
-            color: var(--secondary);
-            background-color: rgba(74, 144, 226, 0.1);
-            border-color: var(--primary);
-        }
-        
-        /* View Toggle Button Styles */
-        .btn-group .btn {
-            flex: 1;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-group .btn.active {
-            background-color: var(--bs-btn-active-bg);
-            border-color: var(--bs-btn-active-border-color);
-            color: var(--bs-btn-active-color);
-        }
-        
-        .btn-group .btn-outline-info.active {
-            background-color: #17a2b8;
-            border-color: #17a2b8;
-            color: white;
-        }
-        
-        .btn-group .btn-outline-success.active {
-            background-color: #198754;
-            border-color: #198754;
-            color: white;
-        }
-        
-        .view-content {
-            min-height: 400px;
-        }
-        
-        /* Search Box Styles */
-        .input-group .form-control {
-            border-radius: 0.5rem 0 0 0.5rem;
-        }
-        
-        .input-group .btn {
-            border-radius: 0 0.5rem 0.5rem 0;
-        }
-        
-        .input-group-text {
-            background-color: #f8f9fa;
-            border-color: #dee2e6;
-        }
-        
-        .form-control:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
-        }
-        
-        .dish-card {
-            background: white;
-            border-radius: 1rem;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            margin-bottom: 1.5rem;
-        }
-        
-        .dish-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-        }
-        
-        .dish-image {
-            width: 100%;
-            height: 200px;
-            object-fit: contain;
-        }
-        
-        .dish-content {
-            padding: 1.5rem;
-        }
-        
-        .dish-name {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .dish-price {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        
-        .table-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .table-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-        
-        .table-name {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        
-        .badge-status {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 999px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        
-        .badge-available {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .badge-occupied {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .section-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            position: relative;
-            padding-bottom: 1rem;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 80px;
-            height: 4px;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            border-radius: 2px;
-        }
-        
-        .cta-section {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            padding: 3rem;
-            border-radius: 1rem;
-            text-align: center;
-            margin: 3rem 0;
-        }
-        
-        .btn-book-now {
-            background: white;
-            color: var(--primary);
-            padding: 1rem 3rem;
-            font-size: 1.25rem;
-            font-weight: 700;
-            border-radius: 999px;
             border: none;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-book-now:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-        }
-        
-        /* Review Section Styles */
-        .review-stats-card {
-            
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .average-rating-display {
-            text-align: center;
-        }
-        
-        .rating-number {
-            font-size: 3rem;
-            font-weight: bold;
-            color: var(--luxury-gold);
-            margin-bottom: 0.5rem;
-        }
-        
-        .star-display {
-            color: var(--luxury-gold);
-            font-size: 1.2rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .total-reviews {
-            color: var(--luxury-gray);
-            font-size: 1rem;
-        }
-        
-        .rating-breakdown {
-            margin-top: 1rem;
-        }
-        
-        .rating-bar {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        
-        .rating-label {
-            width: 60px;
-            color: var(--luxury-white);
-            font-size: 0.9rem;
-        }
-        
-        .progress-bar-container {
-            flex: 1;
-            height: 8px;
-            background: rgba(212, 175, 55, 0.2);
-            border-radius: 4px;
-            margin: 0 0.5rem;
-            overflow: hidden;
-        }
-        
-        .progress-bar-fill {
-            height: 100%;
-            background: var(--luxury-gold);
-            transition: width 0.3s ease;
-        }
-        
-        .rating-count {
-            width: 40px;
-            color: var(--luxury-gray);
-            font-size: 0.9rem;
-            text-align: right;
-        }
-        
-        .review-form-card {
-            
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .rating-input-section {
-            text-align: center;
-        }
-        
-        .star-rating-input {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .star-rating-input .star {
-            font-size: 2rem;
-            color: #ddd;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            padding: 0.3rem;
-            border-radius: 50%;
-            width: 2.5rem;
-            height: 2.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .star-rating-input .star:hover {
-            background-color: rgba(255, 193, 7, 0.1);
-        }
-        
-        .star-rating-input .star.active {
-            background-color: #ffc107;
-            color: white;
-        }
-        
-        .rating-text {
-            color: var(--luxury-gray);
-            font-size: 1rem;
-            margin-top: 0.5rem;
-        }
-        
-        .character-count {
-            text-align: right;
-            font-size: 0.9rem;
-            color: var(--luxury-gray);
-            margin-top: 0.25rem;
-        }
-        
-        .btn-review {
-            background: var(--luxury-gold);
-            color: var(--luxury-black);
-            border: none;
-            padding: 0.75rem 1.5rem;
+            padding: 0.75rem 2rem;
             border-radius: 8px;
             font-weight: 600;
+            width: 100%;
             transition: all 0.3s ease;
         }
         
-        .btn-review:hover {
-            background: #d4af37;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
+        .btn-book:hover {
+            background: #111827;
+            transform: translateY(-1px);
         }
-        
-        .btn-outline-review {
-            background: transparent;
-            color: var(--luxury-gold);
-            border: 1px solid var(--luxury-gold);
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .btn-outline-review:hover {
-            background: var(--luxury-gold);
-            color: var(--luxury-black);
-        }
-        
-        .customer-review-card {
-            
-            border: 2px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .review-content {
+
+        .cancellation-policy {
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-align: center;
             margin-top: 1rem;
-        }
-        
-        .star-rating-display {
-            color: var(--luxury-gold);
-            font-size: 1.2rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .review-comment {
-            color: var(--luxury-white);
-            line-height: 1.6;
-            margin-bottom: 0.5rem;
-        }
-        
-        .review-date {
-            color: var(--luxury-gray);
-            font-size: 0.9rem;
-        }
-        
-        .recent-reviews-section {
-            margin-top: 2rem;
-        }
-        
-        .reviews-list {
-            margin-bottom: 2rem;
-        }
-        
-        .review-item {
-            
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .review-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.2);
-        }
-        
-        .review-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-        
-        .reviewer-info {
-            display: flex;
-            align-items: center;
-        }
-        
-        .reviewer-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--luxury-gold), #d4af37);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--luxury-black);
-            font-weight: bold;
-            margin-right: 1rem;
-        }
-        
-        .reviewer-name {
-            color: var(--luxury-white);
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-        
-        .no-reviews-message {
-            color: var(--luxury-gray);
         }
     </style>
 </head>
+
 <body>
     <!-- Header -->
-    <div th:insert="fragments/header :: site-header"></div>
-    
-    <!-- Cover Section -->
-    <div class="cover-section">
-        <img th:if="${cover != null}" th:src="${cover.url}" class="cover-image" alt="Cover">
-        <div class="cover-overlay">
-            <div class="container">
-                <div class="d-flex align-items-center">
-                    <img th:if="${logo != null}" th:src="${logo.url}" class="restaurant-logo" alt="Logo">
-                    <img th:unless="${logo != null}" src="https://via.placeholder.com/120" class="restaurant-logo" alt="Logo">
-                    <div class="ms-4">
-                        <h1 class="restaurant-name" th:text="${restaurant.restaurantName}">Tên Nhà hàng</h1>
-                        <p class="text-white mb-0">
-                            <i class="fas fa-map-marker-alt me-2"></i>
-                            <span th:text="${restaurant.address}">Địa chỉ</span>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="container mb-5">
-        <div class="row">
-            <!-- Left Column - Info & Description -->
-            <div class="col-lg-8">
-                <!-- Description -->
-                <div class="info-card">
-                    <h2 class="section-title">Giới thiệu</h2>
-                    <p class="lead" th:text="${restaurant.description}">Mô tả nhà hàng</p>
-                </div>
-                
-                <!-- Media Carousel -->
-                <div class="info-card" th:if="${(gallery != null and !gallery.isEmpty()) or (exterior != null and !exterior.isEmpty()) or (interior != null and !interior.isEmpty())}">
-                    <h2 class="section-title">Thư viện Ảnh</h2>
-                    
-                    <!-- Carousel -->
-                    <div id="restaurantCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-indicators">
-                            <!-- Cover Image Indicator -->
-                            <button th:if="${cover != null}" type="button" data-bs-target="#restaurantCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Cover Image"></button>
-                            
-                            <!-- Gallery Indicators -->
-                            <button th:each="image, iterStat : ${gallery}" 
-                                    th:if="${gallery != null and !gallery.isEmpty()}"
-                                    type="button" 
-                                    data-bs-target="#restaurantCarousel" 
-                                    th:data-bs-slide-to="${cover != null ? iterStat.index + 1 : iterStat.index}"
-                                    th:class="${cover == null and iterStat.index == 0 ? 'active' : ''}"
-                                    th:aria-current="${cover == null and iterStat.index == 0 ? 'true' : ''}"
-                                    th:aria-label="${'Gallery Image ' + (iterStat.index + 1)}"></button>
-                            
-                            <!-- Exterior Indicators -->
-                            <button th:each="image, iterStat : ${exterior}" 
-                                    th:if="${exterior != null and !exterior.isEmpty()}"
-                                    type="button" 
-                                    data-bs-target="#restaurantCarousel" 
-                                    th:data-bs-slide-to="${(cover != null ? 1 : 0) + (gallery != null ? gallery.size() : 0) + iterStat.index}"
-                                    th:aria-label="${'Exterior Image ' + (iterStat.index + 1)}"></button>
-                            
-                            <!-- Interior Indicators -->
-                            <button th:each="image, iterStat : ${interior}" 
-                                    th:if="${interior != null and !interior.isEmpty()}"
-                                    type="button" 
-                                    data-bs-target="#restaurantCarousel" 
-                                    th:data-bs-slide-to="${(cover != null ? 1 : 0) + (gallery != null ? gallery.size() : 0) + (exterior != null ? exterior.size() : 0) + iterStat.index}"
-                                    th:aria-label="${'Interior Image ' + (iterStat.index + 1)}"></button>
-                        </div>
-                        
-                        <div class="carousel-inner">
-                            <!-- Cover Image -->
-                            <div th:if="${cover != null}" class="carousel-item active">
-                                <img th:src="${cover.url}" class="d-block w-100 carousel-image" alt="Cover Image">
-                                <div class="carousel-caption d-none d-md-block">
-                                    <h5>Ảnh bìa nhà hàng</h5>
-                                </div>
-                            </div>
-                            
-                            <!-- Gallery Images -->
-                            <div th:each="image, iterStat : ${gallery}" 
-                                 th:if="${gallery != null and !gallery.isEmpty()}"
-                                 th:class="${cover == null and iterStat.index == 0 ? 'carousel-item active' : 'carousel-item'}">
-                                <img th:src="${image.url}" class="d-block w-100 carousel-image" th:alt="${'Gallery Image ' + (iterStat.index + 1)}">
-                                <div class="carousel-caption d-none d-md-block">
-                                    <h5>Thư viện ảnh</h5>
-                                    <p>Ảnh thứ [[${iterStat.index + 1}]]</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Exterior Images -->
-                            <div th:each="image, iterStat : ${exterior}" 
-                                 th:if="${exterior != null and !exterior.isEmpty()}"
-                                 class="carousel-item">
-                                <img th:src="${image.url}" class="d-block w-100 carousel-image" th:alt="${'Exterior Image ' + (iterStat.index + 1)}">
-                                <div class="carousel-caption d-none d-md-block">
-                                    <h5>Không gian bên ngoài</h5>
-                                    <p>Ảnh thứ [[${iterStat.index + 1}]]</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Interior Images -->
-                            <div th:each="image, iterStat : ${interior}" 
-                                 th:if="${interior != null and !interior.isEmpty()}"
-                                 class="carousel-item">
-                                <img th:src="${image.url}" class="d-block w-100 carousel-image" th:alt="${'Interior Image ' + (iterStat.index + 1)}">
-                                <div class="carousel-caption d-none d-md-block">
-                                    <h5>Không gian bên trong</h5>
-                                    <p>Ảnh thứ [[${iterStat.index + 1}]]</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <button class="carousel-control-prev" type="button" data-bs-target="#restaurantCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#restaurantCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Menu & Tables Buttons -->
-                <div class="info-card">
-                    <h2 class="section-title">Thực đơn & Bàn ăn</h2>
-                    <div class="row">
-                        <!-- Menu Button -->
-                        <div class="col-md-6 mb-3" th:if="${dishes != null and !dishes.isEmpty()}">
-                            <button type="button" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" 
-                                    data-bs-toggle="modal" data-bs-target="#menuModal" style="min-height: 150px;">
-                                <i class="fas fa-utensils fa-3x mb-3 text-primary"></i>
-                                <h4 class="mb-2">Thực đơn</h4>
-                                <p class="text-muted mb-0">
-                                    <span th:text="${dishes.size()}">0</span> món ăn
-                                </p>
-                            </button>
-                        </div>
-                        
-                        <!-- Tables Button -->
-                        <div class="col-md-6 mb-3" th:if="${tables != null and !tables.isEmpty()}">
-                            <button type="button" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4" 
-                                    data-bs-toggle="modal" data-bs-target="#tablesModal" style="min-height: 150px;">
-                                <i class="fas fa-chair fa-3x mb-3 text-success"></i>
-                                <h4 class="mb-2">Bàn ăn</h4>
-                                <p class="text-muted mb-0">
-                                    <span th:text="${tables.size()}">0</span> bàn
-                                </p>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Reviews Section -->
-                <div class="info-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2 class="section-title mb-0">Đánh giá</h2>
-                        <a th:href="@{/reviews/restaurant/{id}(id=${restaurant.restaurantId})}" 
-                           class="btn btn-outline-primary">
-                            <i class="fas fa-comments me-2"></i>
-                            Xem tất cả đánh giá
-                        </a>
-                    </div>
-                    
-                    <!-- Rating Summary -->
-                    <div class="row mb-4" th:if="${restaurant.hasReviews()}">
-                        <div class="col-md-4 text-center">
-                            <div class="display-4 text-warning fw-bold" th:text="${restaurant.formattedAverageRating}">4.5</div>
-                            <div class="text-muted" th:text="|${restaurant.reviewCount} đánh giá|">150 đánh giá</div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="rating-breakdown">
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="me-2">5</span>
-                                    <i class="fas fa-star text-warning me-2"></i>
-                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                        <div class="progress-bar bg-warning" style="width: 80%"></div>
-                                    </div>
-                                    <span class="text-muted">120</span>
-                                </div>
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="me-2">4</span>
-                                    <i class="fas fa-star text-warning me-2"></i>
-                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                        <div class="progress-bar bg-warning" style="width: 15%"></div>
-                                    </div>
-                                    <span class="text-muted">20</span>
-                                </div>
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="me-2">3</span>
-                                    <i class="fas fa-star text-warning me-2"></i>
-                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                        <div class="progress-bar bg-warning" style="width: 5%"></div>
-                                    </div>
-                                    <span class="text-muted">8</span>
-                                </div>
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="me-2">2</span>
-                                    <i class="fas fa-star text-warning me-2"></i>
-                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                        <div class="progress-bar bg-warning" style="width: 1%"></div>
-                                    </div>
-                                    <span class="text-muted">2</span>
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <span class="me-2">1</span>
-                                    <i class="fas fa-star text-warning me-2"></i>
-                                    <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                                        <div class="progress-bar bg-warning" style="width: 0%"></div>
-                                    </div>
-                                    <span class="text-muted">0</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Recent Reviews -->
-                    <div th:if="${recentReviews != null and !recentReviews.isEmpty()}">
-                        <h5 class="mb-3">Đánh giá gần đây</h5>
-                        <div th:each="review : ${recentReviews}" class="review-item mb-3 p-3 border rounded">
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="me-3">
-                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
-                                         style="width: 40px; height: 40px;">
-                                        <i class="fas fa-user text-white"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold" th:text="${review.customerName}">Tên khách hàng</div>
-                                    <div class="text-muted small" th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy')}">29/01/2025</div>
-                                </div>
-                                <div class="text-warning">
-                                    <span th:each="i : ${#numbers.sequence(1, review.rating)}">
-                                        <i class="fas fa-star"></i>
-                                    </span>
-                                    <span th:each="i : ${#numbers.sequence(review.rating + 1, 5)}">
-                                        <i class="far fa-star"></i>
-                                    </span>
-                                </div>
-                            </div>
-                            <p class="text-muted mb-0" th:text="${review.comment}">Bình luận của khách hàng</p>
-                        </div>
-                        
-                        <!-- View All Reviews Button -->
-                        <div class="text-center mt-3" th:if="${totalReviews > recentReviews.size()}">
-                            <a th:href="@{/reviews/restaurant/{id}(id=${restaurant.restaurantId})}" 
-                               class="btn btn-outline-primary">
-                                <i class="fas fa-comments me-2"></i>
-                                Xem tất cả <span th:text="${totalReviews}">0</span> đánh giá
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <!-- Review Form for Authenticated Users -->
-                    <div sec:authorize="isAuthenticated() and !hasRole('RESTAURANT_OWNER')" class="mt-4">
-                        <div th:if="${!hasReviewed}" class="border rounded p-4">
-                            <h5 class="mb-3">
-                                <i class="fas fa-star me-2"></i>
-                                Viết đánh giá của bạn
-                            </h5>
-                            
-                            <form th:action="@{/reviews}" th:object="${reviewForm}" method="post" id="reviewForm">
-                                <input type="hidden" th:field="*{restaurantId}" th:value="${restaurant.restaurantId}">
-                                
-                                <!-- Rating Input -->
-                                <div class="mb-3">
-                                    <label class="form-label">Đánh giá của bạn <span class="text-danger">*</span></label>
-                                    <div class="star-rating-input d-flex gap-1 mb-2">
-                                        <i class="far fa-star star" data-rating="1" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
-                                        <i class="far fa-star star" data-rating="2" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
-                                        <i class="far fa-star star" data-rating="3" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
-                                        <i class="far fa-star star" data-rating="4" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
-                                        <i class="far fa-star star" data-rating="5" style="font-size: 1.5rem; color: #ddd; cursor: pointer;"></i>
-                                        <input type="hidden" th:field="*{rating}" id="ratingInput" required>
-                                    </div>
-                                    <div class="rating-text text-muted small" id="ratingText">Chọn số sao đánh giá</div>
-                                </div>
-                                
-                                <!-- Comment Input -->
-                                <div class="mb-3">
-                                    <label for="comment" class="form-label">Bình luận</label>
-                                    <textarea th:field="*{comment}" id="comment" class="form-control" rows="3" 
-                                              placeholder="Chia sẻ trải nghiệm của bạn về nhà hàng này..."></textarea>
-                                    <div class="character-count text-muted small mt-1" id="charCount">0/1000 ký tự</div>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane me-2"></i>
-                                    Gửi đánh giá
-                                </button>
-                            </form>
-                        </div>
-                        
-                        <!-- Customer's Existing Review -->
-                        <div th:if="${hasReviewed and customerReview != null}" class="border rounded p-4 mt-4">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-user-check me-2"></i>
-                                    Đánh giá của bạn
-                                </h5>
-                                <a th:href="@{/reviews/edit/{id}(id=${customerReview.reviewId})}" 
-                                   class="btn btn-outline-primary btn-sm" th:if="${customerReview.editable}">
-                                    <i class="fas fa-edit"></i> Chỉnh sửa
-                                </a>
-                            </div>
-                            
-                            <div class="d-flex align-items-center mb-2">
-                                <div class="text-warning me-3">
-                                    <span th:each="i : ${#numbers.sequence(1, customerReview.rating)}">
-                                        <i class="fas fa-star"></i>
-                                    </span>
-                                    <span th:each="i : ${#numbers.sequence(customerReview.rating + 1, 5)}">
-                                        <i class="far fa-star"></i>
-                                    </span>
-                                </div>
-                                <div class="text-muted small" th:text="${#temporals.format(customerReview.createdAt, 'dd/MM/yyyy HH:mm')}">29/01/2025 18:30</div>
-                            </div>
-                            <p class="text-muted mb-0" th:text="${customerReview.comment}">Bình luận của bạn</p>
-                        </div>
-                    </div>
-                    
-                    <!-- No Reviews Message -->
-                    <div th:unless="${restaurant.hasReviews()}" class="text-center py-4">
-                        <i class="fas fa-comment-slash text-muted" style="font-size: 3rem;"></i>
-                        <h5 class="text-muted mt-3">Chưa có đánh giá nào</h5>
-                        <p class="text-muted">Hãy là người đầu tiên đánh giá nhà hàng này!</p>
-                        <a th:href="@{/reviews/create/{id}(id=${restaurant.restaurantId})}" 
-                           class="btn btn-primary" 
-                           sec:authorize="isAuthenticated()">
-                            <i class="fas fa-star me-2"></i>
-                            Viết đánh giá đầu tiên
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Right Column - Contact Info & CTA -->
-            <div class="col-lg-4">
-                <!-- Contact Info -->
-                <div class="info-card sticky-top" style="top: 20px;">
-                    <h3 class="h4 mb-4">Thông tin Liên hệ</h3>
-                    
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <i class="fas fa-phone"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">Điện thoại</div>
-                            <div class="fw-bold" th:text="${restaurant.phone}">0123 456 789</div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">Giờ mở cửa</div>
-                            <div class="fw-bold" th:text="${restaurant.openingHours}">10:00 - 22:00</div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <i class="fas fa-utensils"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">Loại ẩm thực</div>
-                            <div class="fw-bold" th:text="${restaurant.cuisineType}">Vietnamese</div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item" th:if="${restaurant.averagePrice != null}">
-                        <div class="info-icon">
-                            <i class="fas fa-tag"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">Giá trung bình</div>
-                            <div class="fw-bold" th:text="${#numbers.formatDecimal(restaurant.averagePrice, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">150.000 VNĐ</div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item" th:if="${restaurant.websiteUrl != null}">
-                        <div class="info-icon">
-                            <i class="fas fa-globe"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">Website</div>
-                            <a th:href="${restaurant.websiteUrl}" target="_blank" class="fw-bold text-decoration-none">Truy cập website</a>
-                        </div>
-                    </div>
-                    
-                    <!-- Rating Section -->
-                    <div class="info-item" th:if="${restaurant.hasReviews()}">
-                        <div class="info-icon">
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">Đánh giá trung bình</div>
-                            <div class="fw-bold">
-                                <span th:text="${restaurant.formattedAverageRating}">4.5</span>
-                                <span class="text-warning ms-1">
-                                    <i class="fas fa-star"></i>
-                                    <i class="fas fa-star"></i>
-                                    <i class="fas fa-star"></i>
-                                    <i class="fas fa-star"></i>
-                                    <i class="fas fa-star"></i>
-                                </span>
-                                <br>
-                                <small class="text-muted" th:text="|${restaurant.reviewCount} đánh giá|">150 đánh giá</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Book Button -->
-                    <div class="mt-4" sec:authorize="!hasRole('RESTAURANT_OWNER')">
-                        <a th:href="@{/booking/new}" class="btn btn-book-now w-100">
-                            <i class="fas fa-calendar-check me-2"></i>
-                            Đặt Bàn Ngay
-                        </a>
-                    </div>
-                    
-                    <!-- Owner Dashboard Link -->
-                    <div class="mt-4" sec:authorize="hasRole('RESTAURANT_OWNER')">
-                        <a th:href="@{/restaurant-owner/dashboard}" class="btn btn-book-now w-100" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
-                            <i class="fas fa-tachometer-alt me-2"></i>
-                            Quản lý Dashboard
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- CTA Section -->
-    <div class="container" sec:authorize="!hasRole('RESTAURANT_OWNER')">
-        <div class="cta-section">
-            <h2 class="mb-3">Sẵn sàng đặt bàn?</h2>
-            <p class="mb-4 fs-5">Trải nghiệm ẩm thực tuyệt vời đang chờ đón bạn!</p>
-            <a th:href="@{/booking/new}" class="btn btn-book-now">
-                <i class="fas fa-calendar-plus me-2"></i>
-                Đặt Bàn Ngay
-            </a>
-        </div>
-    </div>
-    
-    <!-- Menu Modal -->
-    <div class="modal fade" id="menuModal" tabindex="-1" aria-labelledby="menuModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="menuModalLabel">
-                        <i class="fas fa-utensils me-2"></i>
-                        Thực đơn - <span th:text="${restaurant.restaurantName}">Nhà hàng</span>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Menu Search -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <div class="input-group">
-                                <span class="input-group-text">
-                                    <i class="fas fa-search"></i>
-                                </span>
-                                <input type="text" class="form-control" id="menuSearchInput" 
-                                       placeholder="Tìm kiếm món ăn..." onkeyup="searchMenu()">
-                                <button class="btn btn-outline-secondary" type="button" onclick="clearMenuSearch()">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Menu Pagination -->
-                    <div id="menuPagination" class="d-flex justify-content-center mb-4">
-                        <nav aria-label="Menu pagination">
-                            <ul class="pagination" id="menuPaginationList">
-                                <!-- Pagination items will be generated by JavaScript -->
-                            </ul>
-                        </nav>
-                    </div>
-                    
-                    <!-- Menu Grid -->
-                    <div class="row" id="menuGrid">
-                        <!-- Menu items will be populated by JavaScript -->
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Tables Modal -->
-    <div class="modal fade" id="tablesModal" tabindex="-1" aria-labelledby="tablesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="tablesModalLabel">
-                        <i class="fas fa-chair me-2"></i>
-                        Bàn ăn - <span th:text="${restaurant.restaurantName}">Nhà hàng</span>
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- View Toggle Buttons -->
-                    <div class="row mb-4" th:if="${tableLayouts != null and !tableLayouts.isEmpty()}">
-                        <div class="col-12">
-                            <div class="btn-group w-100" role="group" aria-label="View toggle">
-                                <button type="button" class="btn btn-outline-info btn-lg active" 
-                                        id="layoutViewBtn" onclick="switchToLayoutView()">
-                                    <i class="fas fa-map me-2"></i>
-                                    Sơ đồ bàn ăn
-                                </button>
-                                <button type="button" class="btn btn-outline-success btn-lg" 
-                                        id="tablesViewBtn" onclick="switchToTablesView()">
-                                    <i class="fas fa-chair me-2"></i>
-                                    Danh sách bàn
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Layout View -->
-                    <div id="layoutView" class="view-content">
-                        <div id="tableLayoutCarousel" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-indicators" id="tableLayoutIndicators">
-                                <!-- Indicators will be generated by JavaScript -->
-                            </div>
-                            
-                            <div class="carousel-inner" id="tableLayoutInner">
-                                <!-- Carousel items will be generated by JavaScript -->
-                            </div>
-                            
-                            <button class="carousel-control-prev" type="button" data-bs-target="#tableLayoutCarousel" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#tableLayoutCarousel" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Tables View -->
-                    <div id="tablesView" class="view-content" style="display: none;">
-                        <!-- Tables Search -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="fas fa-search"></i>
-                                    </span>
-                                    <input type="text" class="form-control" id="tablesSearchInput" 
-                                           placeholder="Tìm kiếm bàn ăn..." onkeyup="searchTables()">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="clearTablesSearch()">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row" id="tablesGrid">
-                            <!-- Table items will be populated by JavaScript -->
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Table Images Modal -->
-    <div class="modal fade" id="tableImagesModal" tabindex="-1" aria-labelledby="tableImagesModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="tableImagesModalLabel">
-                        <i class="fas fa-images me-2"></i>
-                        Hình ảnh bàn
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Table Images Carousel -->
-                    <div id="tableImagesCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-indicators" id="tableImagesIndicators">
-                            <!-- Indicators will be generated by JavaScript -->
-                        </div>
-                        
-                        <div class="carousel-inner" id="tableImagesInner">
-                            <!-- Carousel items will be generated by JavaScript -->
-                        </div>
-                        
-                        <button class="carousel-control-prev" type="button" data-bs-target="#tableImagesCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#tableImagesCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
+    <div th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
+    <!-- Restaurant Header -->
+    <header class="restaurant-detail-page__header" role="banner">
+            <div class="container">
+            <div class="restaurant-detail-page__info">
+                <img th:if="${logo != null}" th:src="${logo.url}" class="restaurant-detail-page__logo"
+                    alt="Logo nhà hàng" loading="lazy">
+                <img th:unless="${logo != null}" src="https://via.placeholder.com/120"
+                    class="restaurant-detail-page__logo" alt="Logo nhà hàng" loading="lazy">
+                <div class="restaurant-detail-page__details">
+                    <h1 th:text="${restaurant.restaurantName}">Tên Nhà hàng</h1>
+                    <div class="restaurant-detail-page__meta" role="list">
+                        <span class="restaurant-detail-page__cuisine-tag" th:text="${restaurant.cuisineType}"
+                            role="listitem">Contemporary Italian</span>
+                        <div class="restaurant-detail-page__meta-item" role="listitem">
+                            <i class="fas fa-star text-warning" aria-hidden="true"></i>
+                            <span
+                                th:text="${restaurant.formattedAverageRating} + ' (' + ${restaurant.reviewCount} + ' reviews)'">4.7
+                                (207 reviews)</span>
+                    </div>
+                        <div class="restaurant-detail-page__meta-item" role="listitem">
+                            <i class="fas fa-dollar-sign" aria-hidden="true"></i>
+                            <span>$$$ - Upscale Dining</span>
+                </div>
+                        <div class="restaurant-detail-page__meta-item" role="listitem">
+                            <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                            <span th:text="${restaurant.address}">123 Gourmet Street, Downtown District</span>
+            </div>
+                        <div class="restaurant-detail-page__meta-item" role="listitem">
+                            <i class="fas fa-phone" aria-hidden="true"></i>
+                            <span th:text="${restaurant.phone}">+1 (555) 123-4567</span>
+        </div>
+                        <div class="restaurant-detail-page__meta-item" role="listitem">
+                            <i class="fas fa-clock" aria-hidden="true"></i>
+                            <span>Mon-Thu: 11AM-10PM, Fri-Sat: 11AM-11PM, Sun: 12PM-9PM</span>
+    </div>
+                </div>
+                        </div>
+                                </div>
+                            </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <!-- Left Column - Main Content -->
+            <div class="col-lg-8">
+                <!-- Navigation Tabs -->
+                <nav class="restaurant-detail-page__nav-tabs" role="tablist" aria-label="Restaurant information tabs">
+                    <ul class="nav nav-tabs" id="restaurantTabs">
+                        <li class="nav-item" role="presentation">
+                            <button
+                                class="nav-link restaurant-detail-page__nav-link restaurant-detail-page__nav-link--active"
+                                id="about-tab" data-bs-toggle="tab" data-bs-target="#about" type="button" role="tab"
+                                aria-controls="about" aria-selected="true" aria-label="About restaurant information">
+                                About
+                        </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link restaurant-detail-page__nav-link" id="menu-tab" data-bs-toggle="tab"
+                                data-bs-target="#menu" type="button" role="tab" aria-controls="menu"
+                                aria-selected="false" aria-label="Restaurant menu">
+                                Menu
+                        </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link restaurant-detail-page__nav-link" id="tables-tab"
+                                data-bs-toggle="tab" data-bs-target="#tables" type="button" role="tab"
+                                aria-controls="tables" aria-selected="false" aria-label="Table layout and availability">
+                                Tables
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link restaurant-detail-page__nav-link" id="reviews-tab"
+                                data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab"
+                                aria-controls="reviews" aria-selected="false" aria-label="Customer reviews and ratings">
+                                Reviews
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Tab Content -->
+                <div class="tab-content restaurant-detail-page__tab-content" id="restaurantTabContent">
+                    <!-- About Tab -->
+                    <section class="tab-pane fade show active restaurant-detail-page__tab-pane" id="about"
+                        role="tabpanel" aria-labelledby="about-tab">
+                        <div class="restaurant-detail-page__about-section">
+                            <h2 class="restaurant-detail-page__section-title">About Our Restaurant</h2>
+                            <p class="restaurant-detail-page__section-subtitle">Discover our story and what makes us
+                                special</p>
+
+                            <article class="restaurant-detail-page__story-card">
+                                <h3>Our Story</h3>
+                                <p th:text="${restaurant.description}">Founded in 2014, our restaurant has been a
+                                    cornerstone of fine dining in the heart of the city. We believe that great food
+                                    brings people together and creates unforgettable memories.</p>
+                                <p>Our passionate team of chefs combines traditional cooking techniques with innovative
+                                    culinary concepts to deliver a unique dining experience. Every dish is crafted with
+                                    attention to detail and a deep respect for quality ingredients.</p>
+                                <p>Whether you're celebrating a special occasion or enjoying a casual evening out, we
+                                    strive to make every visit memorable with exceptional food, warm hospitality, and an
+                                    inviting atmosphere.</p>
+                            </article>
+
+                            <section class="restaurant-detail-page__cuisine-types" aria-labelledby="cuisine-heading">
+                                <h3 id="cuisine-heading">Cuisine Types</h3>
+                                <ul class="restaurant-detail-page__cuisine-tags" role="list">
+                                    <li role="listitem">
+                                        <span class="restaurant-detail-page__cuisine-tag-item"
+                                            th:text="${restaurant.cuisineType}" tabindex="0" role="button"
+                                            aria-label="Primary cuisine type">Italian</span>
+                                    </li>
+                                    <li role="listitem" th:if="${restaurant.cuisineType != 'Mediterranean'}">
+                                        <span class="restaurant-detail-page__cuisine-tag-item" tabindex="0"
+                                            role="button" aria-label="Mediterranean cuisine">Mediterranean</span>
+                                    </li>
+                                    <li role="listitem" th:if="${restaurant.cuisineType != 'Contemporary'}">
+                                        <span class="restaurant-detail-page__cuisine-tag-item" tabindex="0"
+                                            role="button" aria-label="Contemporary cuisine">Contemporary</span>
+                                    </li>
+                                    <li role="listitem" th:if="${restaurant.cuisineType != 'Seafood'}">
+                                        <span class="restaurant-detail-page__cuisine-tag-item" tabindex="0"
+                                            role="button" aria-label="Seafood cuisine">Seafood</span>
+                                    </li>
+                                    <li role="listitem" th:if="${restaurant.cuisineType != 'Steakhouse'}">
+                                        <span class="restaurant-detail-page__cuisine-tag-item" tabindex="0"
+                                            role="button" aria-label="Steakhouse cuisine">Steakhouse</span>
+                                    </li>
+                                </ul>
+                            </section>
+
+                            <section class="restaurant-detail-page__highlights" aria-labelledby="highlights-heading">
+                                <h3 id="highlights-heading">What Sets Us Apart</h3>
+                                <div class="restaurant-detail-page__highlights-grid" role="list">
+                                    <article class="restaurant-detail-page__highlight-card" role="listitem">
+                                        <div class="restaurant-detail-page__highlight-icon restaurant-detail-page__highlight-icon--ingredients"
+                                            aria-hidden="true">
+                                            <i class="fas fa-leaf"></i>
+                                    </div>
+                                        <h4>Fresh Ingredients</h4>
+                                        <p>We source locally and use only the freshest seasonal ingredients</p>
+                                    </article>
+                                    <article class="restaurant-detail-page__highlight-card" role="listitem">
+                                        <div class="restaurant-detail-page__highlight-icon restaurant-detail-page__highlight-icon--award"
+                                            aria-hidden="true">
+                                            <i class="fas fa-award"></i>
+                                </div>
+                                        <h4>Award Winning</h4>
+                                        <p>Recognized by Michelin Guide and Top Restaurant Awards</p>
+                                    </article>
+                                    <article class="restaurant-detail-page__highlight-card" role="listitem">
+                                        <div class="restaurant-detail-page__highlight-icon restaurant-detail-page__highlight-icon--sustainable"
+                                            aria-hidden="true">
+                                            <i class="fas fa-leaf"></i>
+                                </div>
+                                        <h4>Sustainable</h4>
+                                        <p>Committed to eco-friendly practices and sustainable sourcing</p>
+                                    </article>
+                                    <article class="restaurant-detail-page__highlight-card" role="listitem">
+                                        <div class="restaurant-detail-page__highlight-icon restaurant-detail-page__highlight-icon--experience"
+                                            aria-hidden="true">
+                                            <i class="fas fa-clock"></i>
+                                </div>
+                                        <h4>10+ Years</h4>
+                                        <p>Over a decade of culinary excellence and service</p>
+                                    </article>
+                            </div>
+                            </section>
+                        </div>
+                    </section>
+
+                    <!-- Menu Tab -->
+                    <section class="tab-pane fade restaurant-detail-page__tab-pane" id="menu" role="tabpanel"
+                        aria-labelledby="menu-tab">
+                        <div class="restaurant-detail-page__menu-section">
+                            <h2 class="restaurant-detail-page__section-title">Our Menu</h2>
+                            <p class="restaurant-detail-page__section-subtitle">Explore our selection of carefully
+                                crafted dishes</p>
+
+                            <nav class="restaurant-detail-page__menu-filters" role="tablist" aria-label="Menu filters">
+                                <button
+                                    class="restaurant-detail-page__filter-btn restaurant-detail-page__filter-btn--active"
+                                    data-filter="all" role="tab" aria-selected="true"
+                                    aria-controls="menu-items">All</button>
+                                <button class="restaurant-detail-page__filter-btn" data-filter="appetizers" role="tab"
+                                    aria-selected="false" aria-controls="menu-items">Appetizers</button>
+                                <button class="restaurant-detail-page__filter-btn" data-filter="main" role="tab"
+                                    aria-selected="false" aria-controls="menu-items">Main Courses</button>
+                                <button class="restaurant-detail-page__filter-btn" data-filter="desserts" role="tab"
+                                    aria-selected="false" aria-controls="menu-items">Desserts</button>
+                            </nav>
+
+                            <div class="restaurant-detail-page__menu-items" id="menu-items" role="tabpanel">
+                                <article class="restaurant-detail-page__menu-item" th:each="dish : ${dishes}"
+                                    role="listitem">
+                                    <div class="restaurant-detail-page__menu-item-info">
+                                        <h3 class="restaurant-detail-page__menu-item-name" th:text="${dish.name}">
+                                            Grilled Salmon</h3>
+                                        <p class="restaurant-detail-page__menu-item-description"
+                                            th:text="${dish.description}">Fresh Atlantic salmon with herbs, served with
+                                            seasonal vegetables and lemon butter sauce</p>
+                                        <div class="restaurant-detail-page__menu-item-tags">
+                                            <span
+                                                class="restaurant-detail-page__menu-tag restaurant-detail-page__menu-tag--popular"
+                                                th:if="${#strings.containsIgnoreCase(dish.name, 'popular') or #strings.containsIgnoreCase(dish.description, 'popular')}"
+                                                aria-label="Popular dish">Popular</span>
+                                            <span
+                                                class="restaurant-detail-page__menu-tag restaurant-detail-page__menu-tag--vegetarian"
+                                                th:if="${#strings.containsIgnoreCase(dish.name, 'vegetarian') or #strings.containsIgnoreCase(dish.description, 'vegetarian') or #strings.containsIgnoreCase(dish.category, 'vegetarian')}"
+                                                aria-label="Vegetarian dish">Vegetarian</span>
+                                            <span
+                                                class="restaurant-detail-page__menu-tag restaurant-detail-page__menu-tag--spicy"
+                                                th:if="${#strings.containsIgnoreCase(dish.name, 'spicy') or #strings.containsIgnoreCase(dish.description, 'spicy') or #strings.containsIgnoreCase(dish.name, 'hot') or #strings.containsIgnoreCase(dish.description, 'hot')}"
+                                                aria-label="Spicy dish">Spicy</span>
+                                    </div>
+                                </div>
+                                    <div class="restaurant-detail-page__menu-item-price" th:text="'$' + ${dish.price}">
+                                        $28.99</div>
+                                </article>
+                                </div>
+                        </div>
+                    </section>
+
+                    <!-- Tables Tab -->
+                    <div class="tab-pane fade" id="tables" role="tabpanel">
+                        <div class="tables-section">
+                            <h2 class="section-title">Restaurant Layout</h2>
+                            <p class="section-subtitle">View our table arrangement and choose your preferred seating
+                                location</p>
+
+                            <div class="table-legend">
+                                <div class="legend-item">
+                                    <div class="legend-dot available"></div>
+                                    <span>Available</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-dot reserved"></div>
+                                    <span>Reserved</span>
+                        </div>
+                    </div>
+                    
+                            <div class="restaurant-layout" id="restaurantLayout">
+                                <div class="layout-area windows">Windows</div>
+                                <div class="layout-area kitchen">Kitchen</div>
+                                <div class="layout-area entrance">Entrance</div>
+
+                                <!-- Tables will be positioned here -->
+                                <div class="table-item available" style="top: 100px; left: 50px;" data-table="T1">
+                                    T1<br>2p</div>
+                                <div class="table-item reserved" style="top: 100px; left: 120px;" data-table="T6">
+                                    T6<br>2p</div>
+                                <div class="table-item available" style="top: 100px; left: 190px;" data-table="T2">
+                                    T2<br>2p</div>
+                                <div class="table-item reserved" style="top: 200px; left: 100px;" data-table="T3">
+                                    T3<br>4p</div>
+                                <div class="table-item available" style="top: 200px; left: 170px;" data-table="T4">
+                                    T4<br>4p</div>
+                                <div class="table-item available" style="top: 300px; left: 50px;" data-table="T5">
+                                    T5<br>6p</div>
+                                <div class="table-item available" style="top: 300px; left: 120px;" data-table="T7">
+                                    T7<br>4p</div>
+                                <div class="table-item available" style="top: 300px; left: 190px;" data-table="T8">
+                                    T8<br>8p</div>
+                        </div>
+
+                        <div>
+                                <h3>Table Views</h3>
+                                <div class="table-views">
+                                    <div class="table-view-card">
+                                        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+                                            class="table-view-image" alt="Window Tables">
+                                        <div class="table-view-info">
+                                            <div class="table-view-title">Window Tables</div>
+                                            <div class="table-view-description">2-4 seats, great views</div>
+                        </div>
+                    </div>
+                                    <div class="table-view-card">
+                                        <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+                                            class="table-view-image" alt="Center Tables">
+                                        <div class="table-view-info">
+                                            <div class="table-view-title">Center Tables</div>
+                                            <div class="table-view-description">4-6 seats, lively atmosphere</div>
+                        </div>
+                        </div>
+                                    <div class="table-view-card">
+                                        <img src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+                                            class="table-view-image" alt="Private Room">
+                                        <div class="table-view-info">
+                                            <div class="table-view-title">Private Room</div>
+                                            <div class="table-view-description">6-8 seats, intimate setting</div>
+                    </div>
+                        </div>
+                        </div>
+                    </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reviews Tab -->
+                    <div class="tab-pane fade" id="reviews" role="tabpanel">
+                        <div class="reviews-section">
+                            <h2 class="section-title">Customer Reviews</h2>
+                            <p class="section-subtitle">See what our guests are saying about their experience</p>
+
+                            <div class="rating-summary">
+                                <div class="rating-number" th:text="${restaurant.formattedAverageRating}">4.7</div>
+                        <div>
+                                    <div class="rating-stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                        </div>
+                                    <div class="rating-text"
+                                        th:text="'Based on ' + ${restaurant.reviewCount} + ' reviews'">Based on 207
+                                        reviews</div>
+                    </div>
+                                <div class="rating-breakdown" th:if="${statistics != null}">
+                                    <div class="rating-bar" th:each="i : ${#numbers.sequence(5, 1)}">
+                                        <span class="rating-label" th:text="${i} + '★'">5★</span>
+                                        <div class="rating-progress">
+                                            <div class="rating-fill"
+                                                th:style="'width: ' + ${statistics.getPercentageForRating(i)} + '%'">
+                        </div>
+                            </div>
+                                        <span class="rating-count"
+                                            th:text="${statistics.getCountForRating(i)}">156</span>
+                        </div>
+                    </div>
+                    
+                                <div class="rating-breakdown" th:if="${statistics == null}">
+                                    <div class="text-center text-muted">
+                                        <p>Chưa có dữ liệu đánh giá</p>
+                    </div>
+                    </div>
+                </div>
+
+                            <div class="reviews-list" th:if="${recentReviews != null and !recentReviews.isEmpty()}">
+                                <div class="review-item" th:each="review : ${recentReviews}">
+                                    <div class="review-header">
+                                        <div class="review-avatar"
+                                            th:text="${#strings.substring(review.customerName, 0, 2)}">SJ</div>
+                                        <div class="review-info">
+                                            <div class="review-name" th:text="${review.customerName}">Sarah Johnson
+            </div>
+                                            <div class="review-meta">
+                                                <div class="rating-stars">
+                                                    <i class="fas fa-star" th:each="i : ${#numbers.sequence(1, 5)}"
+                                                        th:classappend="${i <= review.rating} ? ' text-warning' : ' text-muted'"></i>
+        </div>
+                                                <span th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy')}">2
+                                                    days ago</span>
+    </div>
+        </div>
+    </div>
+                                    <div class="review-content" th:text="${review.comment}">
+                                        The food was absolutely incredible. We had the grilled salmon and beef
+                                        tenderloin - both cooked to perfection. The service was attentive without being
+                                        intrusive. The ambiance is perfect for a romantic dinner.
+                            </div>
+                        </div>
+                    </div>
+                    
+                            <div class="reviews-list" th:if="${recentReviews == null or recentReviews.isEmpty()}">
+                                <div class="review-item">
+                                    <div class="review-content text-center text-muted">
+                                        <i class="fas fa-comment-slash fa-2x mb-3"></i>
+                                        <p>Chưa có đánh giá nào cho nhà hàng này.</p>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+            <!-- Right Column - Reservation Widget -->
+            <aside class="col-lg-4" role="complementary" aria-label="Reservation widget">
+                <!-- Debug: This should be visible -->
+                <div class="restaurant-detail-page__reservation-widget">
+                    <h3 class="restaurant-detail-page__reservation-title">Make a Reservation</h3>
+
+                    <form th:action="@{/booking/new}" method="get" role="form" aria-label="Reservation form">
+                        <input type="hidden" name="restaurantId" th:value="${restaurant.restaurantId}">
+                        <input type="hidden" name="prefill" value="true">
+
+                        <div class="restaurant-detail-page__form-group">
+                            <label class="restaurant-detail-page__form-label" for="reservation-date">Select Date</label>
+                            <div class="restaurant-detail-page__input-group">
+                                <i class="fas fa-calendar restaurant-detail-page__input-icon" aria-hidden="true"></i>
+                                <input type="date" class="restaurant-detail-page__form-control" name="prefillDate"
+                                    id="reservation-date" required aria-describedby="date-help">
+                        </div>
+                    </div>
+                    
+                        <div class="restaurant-detail-page__form-group">
+                            <label class="restaurant-detail-page__form-label" for="reservation-time">Select Time</label>
+                            <div class="restaurant-detail-page__input-group">
+                                <i class="fas fa-clock restaurant-detail-page__input-icon" aria-hidden="true"></i>
+                                <select class="restaurant-detail-page__form-control" name="prefillTime" id="reservation-time"
+                                    required aria-describedby="time-help">
+                                    <option value="">Choose time</option>
+                                    <option value="17:00">5:00 PM</option>
+                                    <option value="17:30">5:30 PM</option>
+                                    <option value="18:00">6:00 PM</option>
+                                    <option value="18:30">6:30 PM</option>
+                                    <option value="19:00">7:00 PM</option>
+                                    <option value="19:30">7:30 PM</option>
+                                    <option value="20:00">8:00 PM</option>
+                                    <option value="20:30">8:30 PM</option>
+                                    <option value="21:00">9:00 PM</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="restaurant-detail-page__form-group">
+                            <label class="restaurant-detail-page__form-label" for="reservation-guests">Number of
+                                Guests</label>
+                            <div class="restaurant-detail-page__input-group">
+                                <i class="fas fa-user restaurant-detail-page__input-icon" aria-hidden="true"></i>
+                                <select class="restaurant-detail-page__form-control" name="prefillGuests"
+                                    id="reservation-guests" required aria-describedby="guests-help">
+                                    <option value="">Select guests</option>
+                                    <option value="1">1 Guest</option>
+                                    <option value="2">2 Guests</option>
+                                    <option value="3">3 Guests</option>
+                                    <option value="4">4 Guests</option>
+                                    <option value="5">5 Guests</option>
+                                    <option value="6">6 Guests</option>
+                                    <option value="7">7 Guests</option>
+                                    <option value="8">8 Guests</option>
+                                </select>
+        </div>
+    </div>
+    
+                        <button type="submit" class="restaurant-detail-page__btn-book" aria-describedby="booking-help"
+                            onclick="return validateReservationForm()">
+                            <i class="fas fa-calendar-check me-2"></i>
+                            Book Now
+                        </button>
+
+                        <div class="restaurant-detail-page__cancellation-policy" id="booking-help">
+                            <i class="fas fa-info-circle me-1"></i>
+                            You can cancel or modify your booking up to 24 hours before your reservation
+                        </div>
+                    </form>
+                    </div>
+            </aside>
+        </div>
+    </div>
+    
     <!-- Footer -->
-    <div th:insert="fragments/footer :: site-footer"></div>
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Menu and Tables JavaScript -->
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        // Get data from Thymeleaf - create simple objects to avoid Hibernate proxy issues
-        const dishes = [
-            /*[# th:each="dish : ${dishes}"]*/
-            {
-                dishId: /*[[${dish.dishId}]]*/ 0,
-                name: /*[[${dish.name}]]*/ '',
-                description: /*[[${dish.description}]]*/ '',
-                price: /*[[${dish.price}]]*/ 0,
-                category: /*[[${dish.category}]]*/ '',
-                imageUrl: /*[[${dish.imageUrl}]]*/ null
-            }/*[# th:unless="${dishStat.last}"]*/,/*[/]*/
-            /*[/]*/
-        ];
-        
-        const tables = [
-            /*[# th:each="table : ${tables}"]*/
-            {
-                tableId: /*[[${table.tableId}]]*/ 0,
-                tableName: /*[[${table.tableName}]]*/ '',
-                capacity: /*[[${table.capacity}]]*/ 0,
-                status: /*[[${table.status}]]*/ '',
-                mainImage: /*[[${table.getMainTableImage()}]]*/ null,
-                images: [
-                    /*[# th:each="image : ${table.getTableImages()}"]*/
-                    {
-                        url: /*[[${image.url}]]*/ '',
-                        mediaId: /*[[${image.mediaId}]]*/ 0
-                    }/*[# th:unless="${imageStat.last}"]*/,/*[/]*/
-                    /*[/]*/
-                ]
-            }/*[# th:unless="${tableStat.last}"]*/,/*[/]*/
-            /*[/]*/
-        ];
-        
-        const tableLayouts = [
-            /*[# th:each="layout : ${tableLayouts}"]*/
-            {
-                mediaId: /*[[${layout.mediaId}]]*/ 0,
-                url: /*[[${layout.url}]]*/ '',
-                createdAt: /*[[${layout.createdAt}]]*/ ''
-            }/*[# th:unless="${layoutStat.last}"]*/,/*[/]*/
-            /*[/]*/
-        ];
-        
-        // Menu pagination variables
-        let currentMenuPage = 1;
-        const itemsPerPage = 6;
-        let filteredDishes = dishes; // For search functionality
-        let filteredTables = tables; // For search functionality
-        
-        // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeMenuModal();
-            initializeTablesModal();
-        });
-        
-        // Initialize Menu Modal
-        function initializeMenuModal() {
-            const menuModal = document.getElementById('menuModal');
-            if (menuModal) {
-                menuModal.addEventListener('show.bs.modal', function() {
-                    renderMenuPage(1);
-                });
-            }
-        }
-        
-        // Initialize Tables Modal
-        function initializeTablesModal() {
-            const tablesModal = document.getElementById('tablesModal');
-            if (tablesModal) {
-                tablesModal.addEventListener('show.bs.modal', function() {
-                    // Default to layout view if table layouts exist
-                    if (tableLayouts.length > 0) {
-                        switchToLayoutView();
-                    } else {
-                        switchToTablesView();
-                    }
-                });
-            }
-        }
-        
-        // Switch to Layout View
-        function switchToLayoutView() {
-            // Update button states
-            document.getElementById('layoutViewBtn').classList.add('active');
-            document.getElementById('tablesViewBtn').classList.remove('active');
-            
-            // Show/hide views
-            document.getElementById('layoutView').style.display = 'block';
-            document.getElementById('tablesView').style.display = 'none';
-            
-            // Initialize layout carousel if not already done
-            if (tableLayouts.length > 0 && document.getElementById('tableLayoutInner').children.length === 0) {
-                showTableLayout();
-            }
-        }
-        
-        // Switch to Tables View
-        function switchToTablesView() {
-            // Update button states
-            document.getElementById('layoutViewBtn').classList.remove('active');
-            document.getElementById('tablesViewBtn').classList.add('active');
-            
-            // Show/hide views
-            document.getElementById('layoutView').style.display = 'none';
-            document.getElementById('tablesView').style.display = 'block';
-            
-            // Render tables if not already done
-            if (document.getElementById('tablesGrid').children.length === 0) {
-                renderTables();
-            }
-        }
-        
-        // Render Menu Page
-        function renderMenuPage(page) {
-            currentMenuPage = page;
-            const startIndex = (page - 1) * itemsPerPage;
-            const endIndex = startIndex + itemsPerPage;
-            const pageDishes = filteredDishes.slice(startIndex, endIndex);
-            
-            // Render menu items
-            const menuGrid = document.getElementById('menuGrid');
-            if (menuGrid) {
-                menuGrid.innerHTML = '';
-                pageDishes.forEach(dish => {
-                    const dishCard = createDishCard(dish);
-                    menuGrid.appendChild(dishCard);
-                });
-            }
-            
-            // Render pagination
-            renderMenuPagination();
-        }
-        
-        // Search Menu
-        function searchMenu() {
-            const searchTerm = document.getElementById('menuSearchInput').value.toLowerCase();
-            filteredDishes = dishes.filter(dish => 
-                dish.name.toLowerCase().includes(searchTerm) ||
-                dish.description.toLowerCase().includes(searchTerm) ||
-                dish.category.toLowerCase().includes(searchTerm)
-            );
-            currentMenuPage = 1;
-            renderMenuPage(1);
-        }
-        
-        // Clear Menu Search
-        function clearMenuSearch() {
-            document.getElementById('menuSearchInput').value = '';
-            filteredDishes = dishes;
-            currentMenuPage = 1;
-            renderMenuPage(1);
-        }
-        
-        // Search Tables
-        function searchTables() {
-            const searchTerm = document.getElementById('tablesSearchInput').value.toLowerCase();
-            filteredTables = tables.filter(table => 
-                table.tableName.toLowerCase().includes(searchTerm) ||
-                table.capacity.toString().includes(searchTerm) ||
-                table.status.toLowerCase().includes(searchTerm)
-            );
-            renderTables();
-        }
-        
-        // Clear Tables Search
-        function clearTablesSearch() {
-            document.getElementById('tablesSearchInput').value = '';
-            filteredTables = tables;
-            renderTables();
-        }
-        
-        // Create Dish Card
-        function createDishCard(dish) {
-            const col = document.createElement('div');
-            col.className = 'col-md-4 col-sm-6';
-            
-            const imageUrl = dish.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image';
-            const price = new Intl.NumberFormat('vi-VN').format(dish.price) + ' VNĐ';
-            
-            col.innerHTML = `
-                <div class="menu-item-card">
-                    <img src="${imageUrl}" class="menu-item-image" alt="${dish.name}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
-                    <div class="menu-item-content">
-                        <h3 class="menu-item-name">${dish.name}</h3>
-                        <p class="text-muted mb-2">${dish.description || 'Không có mô tả'}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="menu-item-price">${price}</span>
-                            <span class="menu-item-category">${dish.category || 'Khác'}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            return col;
-        }
-        
-        // Render Menu Pagination
-        function renderMenuPagination() {
-            const totalPages = Math.ceil(filteredDishes.length / itemsPerPage);
-            const paginationList = document.getElementById('menuPaginationList');
-            
-            if (paginationList && totalPages > 1) {
-                paginationList.innerHTML = '';
-                
-                // Previous button
-                const prevLi = document.createElement('li');
-                prevLi.className = `page-item ${currentMenuPage === 1 ? 'disabled' : ''}`;
-                prevLi.innerHTML = `<a class="page-link" href="#" onclick="renderMenuPage(${currentMenuPage - 1}); return false;">Trước</a>`;
-                paginationList.appendChild(prevLi);
-                
-                // Page numbers
-                for (let i = 1; i <= totalPages; i++) {
-                    const li = document.createElement('li');
-                    li.className = `page-item ${i === currentMenuPage ? 'active' : ''}`;
-                    li.innerHTML = `<a class="page-link" href="#" onclick="renderMenuPage(${i}); return false;">${i}</a>`;
-                    paginationList.appendChild(li);
-                }
-                
-                // Next button
-                const nextLi = document.createElement('li');
-                nextLi.className = `page-item ${currentMenuPage === totalPages ? 'disabled' : ''}`;
-                nextLi.innerHTML = `<a class="page-link" href="#" onclick="renderMenuPage(${currentMenuPage + 1}); return false;">Sau</a>`;
-                paginationList.appendChild(nextLi);
-            }
-        }
-        
-        // Render Tables
-        function renderTables() {
-            const tablesGrid = document.getElementById('tablesGrid');
-            if (tablesGrid) {
-                tablesGrid.innerHTML = '';
-                filteredTables.forEach(table => {
-                    const tableCard = createTableCard(table);
-                    tablesGrid.appendChild(tableCard);
-                });
-            }
-        }
-        
-        // Create Table Card
-        function createTableCard(table) {
-            const col = document.createElement('div');
-            col.className = 'col-md-4 col-sm-6';
-            
-            const imageUrl = table.mainImage || 'https://via.placeholder.com/300x200?text=No+Image';
-            // Determine status class and text based on table status (support both upper and lowercase)
-            let statusClass, statusText;
-            const status = table.status ? table.status.toLowerCase() : '';
-            
-            switch(status) {
-                case 'available':
-                    statusClass = 'available';
-                    statusText = 'Có sẵn';
-                    break;
-                case 'occupied':
-                    statusClass = 'occupied';
-                    statusText = 'Đang sử dụng';
-                    break;
-                case 'reserved':
-                    statusClass = 'occupied';
-                    statusText = 'Đã đặt';
-                    break;
-                case 'cleaning':
-                    statusClass = 'occupied';
-                    statusText = 'Đang dọn dẹp';
-                    break;
-                case 'maintenance':
-                    statusClass = 'occupied';
-                    statusText = 'Bảo trì';
-                    break;
-                default:
-                    statusClass = 'occupied';
-                    statusText = 'Không khả dụng';
-            }
-            
-            col.innerHTML = `
-                <div class="table-item-card" onclick="showTableImages(${table.tableId})">
-                    <img src="${imageUrl}" class="table-item-image" alt="Bàn ${table.tableName}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
-                    <div class="table-item-name">${table.tableName}</div>
-                    <div class="table-item-capacity">
-                        <i class="fas fa-users me-1"></i>
-                        ${table.capacity} chỗ ngồi
-                    </div>
-                    <span class="table-item-status ${statusClass}">${statusText}</span>
-                </div>
-            `;
-            
-            return col;
-        }
-        
-        // Show Table Images Modal
-        function showTableImages(tableId) {
-            const table = tables.find(t => t.tableId === tableId);
-            if (!table) return;
-            
-            const tableImages = table.images;
-            if (tableImages.length === 0) {
-                alert('Bàn này chưa có hình ảnh');
-                return;
-            }
-            
-            // Update modal title
-            const modalTitle = document.getElementById('tableImagesModalLabel');
-            modalTitle.innerHTML = `<i class="fas fa-images me-2"></i>Hình ảnh bàn ${table.tableName}`;
-            
-            // Render carousel indicators
-            const indicators = document.getElementById('tableImagesIndicators');
-            indicators.innerHTML = '';
-            tableImages.forEach((image, index) => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.setAttribute('data-bs-target', '#tableImagesCarousel');
-                button.setAttribute('data-bs-slide-to', index);
-                button.setAttribute('aria-label', `Slide ${index + 1}`);
-                if (index === 0) {
-                    button.className = 'active';
-                    button.setAttribute('aria-current', 'true');
-                }
-                indicators.appendChild(button);
-            });
-            
-            // Render carousel items
-            const carouselInner = document.getElementById('tableImagesInner');
-            carouselInner.innerHTML = '';
-            tableImages.forEach((image, index) => {
-                const item = document.createElement('div');
-                item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-                item.innerHTML = `
-                    <img src="${image.url}" class="d-block w-100 carousel-image" alt="Bàn ${table.tableName} - Ảnh ${index + 1}">
-                    <div class="carousel-caption d-none d-md-block">
-                        <h5>Bàn ${table.tableName}</h5>
-                        <p>Ảnh ${index + 1}/${tableImages.length}</p>
-                    </div>
-                `;
-                carouselInner.appendChild(item);
-            });
-            
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('tableImagesModal'));
-            modal.show();
-        }
-        
-        // Show Table Layout (within Tables Modal)
-        function showTableLayout() {
-            if (tableLayouts.length === 0) {
-                alert('Nhà hàng này chưa có sơ đồ bàn ăn');
-                return;
-            }
-            
-            // Render carousel indicators
-            const indicators = document.getElementById('tableLayoutIndicators');
-            indicators.innerHTML = '';
-            tableLayouts.forEach((layout, index) => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.setAttribute('data-bs-target', '#tableLayoutCarousel');
-                button.setAttribute('data-bs-slide-to', index);
-                button.setAttribute('aria-label', `Layout ${index + 1}`);
-                if (index === 0) {
-                    button.className = 'active';
-                    button.setAttribute('aria-current', 'true');
-                }
-                indicators.appendChild(button);
-            });
-            
-            // Render carousel items
-            const carouselInner = document.getElementById('tableLayoutInner');
-            carouselInner.innerHTML = '';
-            tableLayouts.forEach((layout, index) => {
-                const item = document.createElement('div');
-                item.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-                item.innerHTML = `
-                    <img src="${layout.url}" class="d-block w-100 carousel-image" alt="Sơ đồ bàn ăn ${index + 1}" style="max-height: 70vh; object-fit: contain;">
-                    <div class="carousel-caption d-none d-md-block">
-                        <h5>Sơ đồ bàn ăn</h5>
-                        <p>Layout ${index + 1}/${tableLayouts.length}</p>
-                    </div>
-                `;
-                carouselInner.appendChild(item);
-            });
-        }
-        /*]]>*/
-    </script>
-    
-    <!-- Review Form JavaScript -->
+    <!-- Restaurant Detail JS -->
+    <script th:src="@{/js/restaurant-detail.js}" defer></script>
+
+    <!-- Additional validation for reservation form -->
     <script>
+        function validateReservationForm() {
+            const dateInput = document.querySelector('input[name="prefillDate"]');
+            const timeSelect = document.querySelector('select[name="prefillTime"]');
+            const guestsSelect = document.querySelector('select[name="prefillGuests"]');
+
+            // Check if all fields are filled
+            if (!dateInput.value || !timeSelect.value || !guestsSelect.value) {
+                alert('Vui lòng điền đầy đủ thông tin đặt bàn.');
+                return false;
+            }
+
+            // Check if date is not in the past
+            const selectedDate = new Date(dateInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate < today) {
+                alert('Không thể đặt bàn trong quá khứ. Vui lòng chọn ngày khác.');
+                return false;
+            }
+
+            // Check if time is valid for today
+            if (selectedDate.toDateString() === today.toDateString()) {
+                const [hours, minutes] = timeSelect.value.split(':').map(Number);
+                const selectedTime = hours * 60 + minutes;
+                const currentTime = today.getHours() * 60 + today.getMinutes();
+
+                if (selectedTime <= currentTime + 30) { // 30 minutes buffer
+                    alert('Giờ đặt bàn không hợp lệ. Vui lòng chọn giờ trong tương lai.');
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Set default date to tomorrow
         document.addEventListener('DOMContentLoaded', function() {
-            // Star rating functionality
-            const stars = document.querySelectorAll('.star-rating-input .star');
-            const ratingInput = document.getElementById('ratingInput');
-            const ratingText = document.getElementById('ratingText');
-            const commentTextarea = document.getElementById('comment');
-            const charCount = document.getElementById('charCount');
-            
-            if (stars.length > 0 && ratingInput && ratingText) {
-                // Rating text mapping
-                const ratingTexts = {
-                    1: 'Rất không hài lòng',
-                    2: 'Không hài lòng',
-                    3: 'Bình thường',
-                    4: 'Hài lòng',
-                    5: 'Rất hài lòng'
-                };
-                
-                // Initialize rating if editing
-                const initialRating = ratingInput.value;
-                if (initialRating) {
-                    setRating(parseInt(initialRating));
-                }
-                
-                // Star click handler
-                stars.forEach(star => {
-                    star.addEventListener('click', function() {
-                        const rating = parseInt(this.dataset.rating);
-                        setRating(rating);
-                    });
-                    
-                    star.addEventListener('mouseenter', function() {
-                        const rating = parseInt(this.dataset.rating);
-                        highlightStars(rating);
-                    });
-                });
-                
-                // Star rating container mouse leave
-                document.querySelector('.star-rating-input').addEventListener('mouseleave', function() {
-                    const currentRating = parseInt(ratingInput.value) || 0;
-                    highlightStars(currentRating);
-                });
-                
-                function setRating(rating) {
-                    ratingInput.value = rating;
-                    ratingText.textContent = ratingTexts[rating];
-                    highlightStars(rating);
-                }
-                
-                function highlightStars(rating) {
-                    stars.forEach((star, index) => {
-                        if (index < rating) {
-                            star.classList.add('active');
-                        } else {
-                            star.classList.remove('active');
-                        }
-                    });
-                }
-            }
-            
-            // Comment character count
-            if (commentTextarea && charCount) {
-                commentTextarea.addEventListener('input', function() {
-                    const length = this.value.length;
-                    charCount.textContent = length + '/1000 ký tự';
-                    
-                    if (length > 800) {
-                        charCount.className = 'character-count danger';
-                    } else if (length > 600) {
-                        charCount.className = 'character-count warning';
-                    } else {
-                        charCount.className = 'character-count';
-                    }
-                });
-                
-                // Initialize character count
-                const initialLength = commentTextarea.value.length;
-                charCount.textContent = initialLength + '/1000 ký tự';
-                if (initialLength > 800) {
-                    charCount.className = 'character-count danger';
-                } else if (initialLength > 600) {
-                    charCount.className = 'character-count warning';
-                }
-            }
-            
-            // Form validation
-            const reviewForm = document.getElementById('reviewForm');
-            if (reviewForm) {
-                reviewForm.addEventListener('submit', function(e) {
-                    const rating = parseInt(ratingInput.value);
-                    const comment = commentTextarea ? commentTextarea.value.trim() : '';
-                    
-                    if (!rating) {
-                        e.preventDefault();
-                        alert('Vui lòng chọn số sao đánh giá');
-                        return false;
-                    }
-                    
-                    if (!comment) {
-                        e.preventDefault();
-                        alert('Vui lòng nhập bình luận');
-                        return false;
-                    }
-                    
-                    if (comment.length < 10) {
-                        e.preventDefault();
-                        alert('Bình luận phải có ít nhất 10 ký tự');
-                        return false;
-                    }
-                });
+            const dateInput = document.getElementById('reservation-date');
+            if (dateInput) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                dateInput.value = tomorrow.toISOString().split('T')[0];
             }
         });
     </script>
 </body>
-</html>
 
+</html>

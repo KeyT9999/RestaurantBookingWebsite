@@ -5,7 +5,19 @@ import java.time.LocalDateTime;
 
 import com.example.booking.common.enums.CommissionType;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 /**
  * Số dư và thống kê tài chính của nhà hàng
@@ -32,7 +44,7 @@ public class RestaurantBalance {
     
     // Commission configuration
     @Column(name = "commission_rate", precision = 5, scale = 2)
-    private BigDecimal commissionRate = new BigDecimal("7.50"); // 7.5%
+    private BigDecimal commissionRate = new BigDecimal("30.00"); // 30%
     
     @Enumerated(EnumType.STRING)
     @Column(name = "commission_type", length = 20)
@@ -54,6 +66,13 @@ public class RestaurantBalance {
     @Column(name = "total_withdrawal_requests")
     private Integer totalWithdrawalRequests = 0;
     
+    // Refund tracking
+    @Column(name = "pending_refund", precision = 18, scale = 2)
+    private BigDecimal pendingRefund = BigDecimal.ZERO;
+
+    @Column(name = "total_refunded", precision = 18, scale = 2)
+    private BigDecimal totalRefunded = BigDecimal.ZERO;
+
     // Calculated balance
     @Column(name = "available_balance", precision = 18, scale = 2)
     private BigDecimal availableBalance = BigDecimal.ZERO;
@@ -99,14 +118,15 @@ public class RestaurantBalance {
     }
     
     /**
-     * Tính toán và cập nhật số dư khả dụng
+     * Tính toán và cập nhật số dư khả dụng (CHO PHÉP ÂM)
      */
     public void recalculateAvailableBalance() {
         this.totalCommission = calculateCommission();
         this.availableBalance = this.totalRevenue
             .subtract(this.totalCommission)
             .subtract(this.totalWithdrawn)
-            .subtract(this.pendingWithdrawal);
+                .subtract(this.pendingWithdrawal)
+                .subtract(this.pendingRefund); // Trừ pending refund
         this.lastCalculatedAt = LocalDateTime.now();
     }
     
@@ -248,6 +268,22 @@ public class RestaurantBalance {
         this.totalWithdrawalRequests = totalWithdrawalRequests;
     }
     
+    public BigDecimal getPendingRefund() {
+        return pendingRefund != null ? pendingRefund : BigDecimal.ZERO;
+    }
+
+    public void setPendingRefund(BigDecimal pendingRefund) {
+        this.pendingRefund = pendingRefund;
+    }
+
+    public BigDecimal getTotalRefunded() {
+        return totalRefunded != null ? totalRefunded : BigDecimal.ZERO;
+    }
+
+    public void setTotalRefunded(BigDecimal totalRefunded) {
+        this.totalRefunded = totalRefunded;
+    }
+
     public BigDecimal getAvailableBalance() {
         return availableBalance;
     }

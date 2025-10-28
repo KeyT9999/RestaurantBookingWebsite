@@ -1,6 +1,7 @@
 package com.example.booking.web.controller.api;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,15 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantTable;
-import com.example.booking.domain.Dish;
 import com.example.booking.dto.RestaurantServiceDto;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.User;
 import com.example.booking.dto.BookingDetailsDto;
 import com.example.booking.dto.BookingDishDto;
 import com.example.booking.dto.BookingServiceDto;
-import com.example.booking.dto.RestaurantTableDto;
-import com.example.booking.dto.DishDto;
+import com.example.booking.dto.DishWithImageDto;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.SimpleUserService;
 import java.util.Map;
@@ -34,6 +33,9 @@ import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
 import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.dto.RestaurantDto;
+import com.example.booking.dto.NearbyRestaurantDto;
+import com.example.booking.util.GeoUtils;
+import com.example.booking.util.CityGeoResolver;
 
 @RestController
 @RequestMapping("/api/booking")
@@ -50,6 +52,8 @@ public class BookingApiController {
 
     @Autowired
     private SimpleUserService userService;
+
+    private final CityGeoResolver cityGeoResolver = new CityGeoResolver();
     
     /**
      * API endpoint để lấy table layouts theo nhà hàng
@@ -100,28 +104,38 @@ public class BookingApiController {
 
             System.out.println("✅ API: Found " + tables.size() + " tables");
 
-            // Convert to Map to include table images
-            List<Map<String, Object>> tableMaps = tables.stream()
-                    .map(table -> {
-                        Map<String, Object> tableMap = new HashMap<>();
-                        tableMap.put("tableId", table.getTableId());
-                        tableMap.put("tableName", table.getTableName());
-                        tableMap.put("capacity", table.getCapacity());
-                        tableMap.put("status", table.getStatus());
-                        tableMap.put("depositAmount", table.getDepositAmount());
-                        tableMap.put("restaurantId", table.getRestaurant().getRestaurantId());
-                        tableMap.put("mainImage", table.getMainTableImage());
-                        tableMap.put("images", table.getTableImages().stream()
-                                .map(img -> {
-                                    Map<String, Object> imgMap = new HashMap<>();
-                                    imgMap.put("url", img.getUrl());
-                                    imgMap.put("mediaId", img.getMediaId());
-                                    return imgMap;
-                                })
-                                .collect(Collectors.toList()));
-                        return tableMap;
-                    })
-                    .collect(Collectors.toList());
+            List<Map<String, Object>> tableMaps = new ArrayList<>();
+            for (RestaurantTable table : tables) {
+                Map<String, Object> tableMap = new HashMap<>();
+                tableMap.put("tableId", table.getTableId());
+                tableMap.put("tableName", table.getTableName());
+                tableMap.put("capacity", table.getCapacity());
+                tableMap.put("status", table.getStatus());
+                tableMap.put("depositAmount", table.getDepositAmount());
+                tableMap.put("restaurantId", table.getRestaurant().getRestaurantId());
+
+                try {
+                    String mainImage = table.getMainTableImage();
+                    List<Map<String, Object>> images = table.getTableImages().stream()
+                            .map(img -> {
+                                Map<String, Object> imgMap = new HashMap<>();
+                                imgMap.put("url", img.getUrl());
+                                imgMap.put("mediaId", img.getMediaId());
+                                return imgMap;
+                            })
+                            .collect(Collectors.toList());
+
+                    tableMap.put("mainImage", mainImage);
+                    tableMap.put("images", images);
+                } catch (Exception mediaEx) {
+                    System.err.println("⚠️ Unable to load images for table ID "
+                            + table.getTableId() + ": " + mediaEx.getMessage());
+                    tableMap.put("mainImage", null);
+                    tableMap.put("images", java.util.Collections.emptyList());
+                }
+
+                tableMaps.add(tableMap);
+            }
 
             System.out.println("✅ API: Returning " + tableMaps.size() + " table maps");
 
@@ -203,30 +217,67 @@ public class BookingApiController {
     }
 
     /**
-     * API endpoint để lấy danh sách món ăn theo nhà hàng
+     * API: Get restaurants near a given location (approximate, city-level)
+     * Example: /api/booking/restaurants/nearby?lat=10.77&lng=106.70&radius=3000&limit=10
+     * radius in meters (default 3000m). Uses city-center approximation derived from address.
+     */
+    @GetMapping("/restaurants/nearby")
+    public ResponseEntity<List<NearbyRestaurantDto>> getNearbyRestaurants(
+            @org.springframework.web.bind.annotation.RequestParam("lat") double lat,
+            @org.springframework.web.bind.annotation.RequestParam("lng") double lng,
+            @org.springframework.web.bind.annotation.RequestParam(value = "radius", required = false, defaultValue = "3000") int radiusMeters,
+            @org.springframework.web.bind.annotation.RequestParam(value = "limit", required = false, defaultValue = "10") int limit
+    ) {
+        try {
+            List<?> restaurants = restaurantService.findAllRestaurants();
+
+            double radiusKm = Math.max(0, radiusMeters) / 1000.0;
+
+            List<NearbyRestaurantDto> results = restaurants.stream()
+                .map(r -> (com.example.booking.domain.RestaurantProfile) r)
+                .map(r -> {
+                    CityGeoResolver.LatLng approx = cityGeoResolver.resolveFromAddress(r.getAddress());
+                    if (approx == null) return null; // skip unknown city in MVP
+                    double distKm = GeoUtils.haversineKm(lat, lng, approx.lat, approx.lng);
+                    return new NearbyRestaurantDto(
+                        r.getRestaurantId(),
+                        r.getRestaurantName(),
+                        r.getAddress(),
+                        r.getCuisineType(),
+                        r.getAveragePrice(),
+                        r.getMainImageUrl(),
+                        distKm,
+                        r.getCreatedAt()
+                    );
+                })
+                .filter(java.util.Objects::nonNull)
+                .filter(d -> d.getDistanceKm() <= radiusKm)
+                .sorted(java.util.Comparator.comparingDouble(NearbyRestaurantDto::getDistanceKm))
+                .limit(Math.max(1, limit))
+                .collect(java.util.stream.Collectors.toList());
+
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            System.err.println("\uFFFD?O API Error (nearby): " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
+     * API endpoint để lấy danh sách món ăn theo nhà hàng (với ảnh)
      */
     @GetMapping("/restaurants/{restaurantId}/dishes")
-    public ResponseEntity<List<DishDto>> getDishesByRestaurant(@PathVariable("restaurantId") Integer restaurantId) {
+    public ResponseEntity<List<DishWithImageDto>> getDishesByRestaurant(
+            @PathVariable("restaurantId") Integer restaurantId) {
         try {
-            System.out.println("🔍 API: Getting dishes for restaurant ID: " + restaurantId);
+            System.out.println("🔍 API: Getting dishes with images for restaurant ID: " + restaurantId);
 
-            List<Dish> dishes = restaurantService.findDishesByRestaurant(restaurantId);
-            System.out.println("✅ API: Found " + dishes.size() + " dishes");
+            List<DishWithImageDto> dishesWithImages = restaurantService.getDishesByRestaurantWithImages(restaurantId);
+            System.out.println("✅ API: Found " + dishesWithImages.size() + " dishes with images");
 
-            // Convert to DTO to avoid Hibernate proxy issues
-            List<DishDto> dishDtos = dishes.stream()
-                    .map(dish -> new DishDto(
-                            dish.getDishId(),
-                            dish.getName(),
-                            dish.getDescription(),
-                            dish.getPrice(),
-                            dish.getCategory(),
-                            dish.getStatus() != null ? dish.getStatus().toString() : "UNKNOWN",
-                            dish.getRestaurant() != null ? dish.getRestaurant().getRestaurantId() : null))
-                    .collect(Collectors.toList());
-
-            System.out.println("✅ API: Returning " + dishDtos.size() + " dish DTOs");
-            return ResponseEntity.ok(dishDtos);
+            System.out.println("✅ API: Returning " + dishesWithImages.size() + " dish DTOs with images");
+            return ResponseEntity.ok(dishesWithImages);
         } catch (Exception e) {
             System.err.println("❌ API Error: " + e.getMessage());
             e.printStackTrace();

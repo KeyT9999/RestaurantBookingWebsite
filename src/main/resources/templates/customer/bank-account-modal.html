@@ -1,0 +1,323 @@
+<!-- Bank Account Modal for Customer -->
+<div th:fragment="bank-account-modal">
+<div class="modal fade" id="bankAccountModal" tabindex="-1" aria-labelledby="bankAccountModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ds-card">
+            <div class="modal-header ds-card-header">
+                <h5 class="modal-title ds-heading-4" id="bankAccountModalLabel">
+                    <i class="fas fa-university ds-icon"></i> Thông tin tài khoản ngân hàng
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="bankAccountForm">
+                <style>
+                    .bank-form-body {
+                        display: flex;
+                        flex-direction: column;
+                        gap: var(--ds-space-4);
+                    }
+                    .bank-field {
+                        display: flex;
+                        flex-direction: column;
+                        gap: var(--ds-space-2);
+                    }
+                    .bank-field__label {
+                        font-weight: var(--ds-font-weight-medium);
+                        color: var(--ds-neutral-800);
+                    }
+                    .bank-input-wrapper {
+                        display: flex;
+                        align-items: center;
+                        gap: var(--ds-space-2);
+                        padding: 0 var(--ds-space-3);
+                        border: 1px solid var(--ds-neutral-200);
+                        border-radius: var(--ds-radius-lg);
+                        background-color: var(--ds-primary-white);
+                        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+                    }
+                    .bank-input-wrapper:focus-within {
+                        border-color: var(--ds-primary-500);
+                        box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.12);
+                    }
+                    .bank-input-icon {
+                        color: var(--ds-neutral-500);
+                        font-size: 0.95rem;
+                    }
+                    .bank-input-wrapper select,
+                    .bank-input-wrapper input,
+                    .bank-input-wrapper textarea {
+                        border: none;
+                        outline: none;
+                        background: transparent;
+                        padding: var(--ds-space-3) 0;
+                        width: 100%;
+                        font-size: var(--ds-font-size-base);
+                        color: var(--ds-neutral-900);
+                    }
+                    .bank-input-wrapper textarea {
+                        resize: vertical;
+                        min-height: 120px;
+                    }
+                    .bank-input-helper {
+                        font-size: var(--ds-font-size-sm);
+                        color: var(--ds-neutral-500);
+                    }
+                    @media (max-width: 576px) {
+                        .bank-input-wrapper {
+                            padding: 0 var(--ds-space-2);
+                        }
+                    }
+                </style>
+                <div class="modal-body ds-card-body bank-form-body">
+                    <!-- Hidden input to store booking ID -->
+                    <input type="hidden" id="modalBookingIdForBank" name="bookingId" value="">
+                    
+                    <div class="ds-alert ds-alert-info">
+                        <i class="fas fa-info-circle ds-icon"></i>
+                        Vui lòng nhập thông tin tài khoản ngân hàng để nhận tiền hoàn trả.
+                    </div>
+                    
+                    <div class="bank-field">
+                        <label for="bankCode" class="bank-field__label">Ngân hàng <span class="ds-text-error">*</span></label>
+                        <div class="bank-input-wrapper">
+                            <i class="fas fa-building-columns bank-input-icon"></i>
+                            <select class="ds-select" id="bankCode" name="bankCode" required>
+                                <option value="">Đang tải danh sách ngân hàng...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="bank-field">
+                        <label for="accountNumber" class="bank-field__label">Số tài khoản <span class="ds-text-error">*</span></label>
+                        <div class="bank-input-wrapper">
+                            <i class="fas fa-credit-card bank-input-icon"></i>
+                            <input type="text" class="ds-input" id="accountNumber" name="accountNumber" 
+                                   placeholder="Nhập số tài khoản" required>
+                        </div>
+                        <div class="bank-input-helper">Số tài khoản phải từ 8-15 số.</div>
+                    </div>
+                    
+                    <!-- Removed account holder name field as it's not needed for QR refund -->
+                    
+                    <div class="bank-field">
+                        <label for="cancelReason" class="bank-field__label">Lý do hủy booking <span class="ds-text-error">*</span></label>
+                        <div class="bank-input-wrapper">
+                            <i class="fas fa-pen-to-square bank-input-icon"></i>
+                            <textarea class="ds-textarea" id="cancelReason" name="cancelReason" rows="3" 
+                                      placeholder="Nhập lý do hủy booking..." required></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ds-card-footer">
+                    <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="ds-btn ds-btn-primary" id="submitCancelBtn" disabled>
+                        <i class="fas fa-check-circle ds-icon"></i> Hủy booking và tạo refund request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const bankAccountModal = document.getElementById('bankAccountModal');
+    const bankAccountForm = document.getElementById('bankAccountForm');
+    const accountNumberInput = document.getElementById('accountNumber');
+    const bankCodeSelect = document.getElementById('bankCode');
+    const submitBtn = document.getElementById('submitCancelBtn');
+    
+    let currentBookingId = null;
+    
+    // Load banks when modal is shown
+    window.showBankAccountModal = function(bookingId) {
+        currentBookingId = bookingId;
+        bankAccountForm.reset();
+        submitBtn.disabled = true;
+        
+        // Load banks list
+        loadBanksList();
+        
+        const modal = new bootstrap.Modal(bankAccountModal);
+        modal.show();
+    };
+    
+    // Load banks from API
+    function loadBanksList() {
+        fetch('/api/v2/banks')
+            .then(response => response.json())
+            .then(data => {
+                console.log('📋 Banks API response data:', data);
+                
+                // Check for success response (code can be "00" or 0)
+                if ((data.code === 0 || data.code === "00") && data.data && data.data.length > 0) {
+                    console.log('✅ Using banks from API, count:', data.data.length);
+                    // Clear existing options
+                    bankCodeSelect.innerHTML = '<option value="">Chọn ngân hàng</option>';
+                    
+                    // Add bank options - filter only banks that support transfer
+                    data.data.forEach(bank => {
+                        // Only show banks that support transfer (transferSupported: 1 or isTransfer: 1)
+                        if (bank.transferSupported === 1 || bank.isTransfer === 1) {
+                            const option = document.createElement('option');
+                            option.value = bank.bin;
+                            option.textContent = bank.shortName || bank.name;
+                            bankCodeSelect.appendChild(option);
+                        }
+                    });
+                    console.log('✅ Banks loaded successfully from API');
+                } else {
+                    console.log('⚠️ API response format not as expected, using fallback');
+                    console.log('📋 API code:', data.code, 'Data length:', data.data ? data.data.length : 'no data');
+                    // Fallback to hardcoded banks if API fails
+                    bankCodeSelect.innerHTML = `
+                        <option value="">Chọn ngân hàng</option>
+                        <option value="970422">MB Bank</option>
+                        <option value="970436">Vietcombank</option>
+                        <option value="970407">Techcombank</option>
+                        <option value="970415">VietinBank</option>
+                        <option value="970405">Agribank</option>
+                        <option value="970416">ACB</option>
+                        <option value="970403">Sacombank</option>
+                        <option value="970418">BIDV</option>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading banks:', error);
+                // Fallback to hardcoded banks
+                bankCodeSelect.innerHTML = `
+                    <option value="">Chọn ngân hàng</option>
+                    <option value="970422">MB Bank</option>
+                    <option value="970436">Vietcombank</option>
+                    <option value="970407">Techcombank</option>
+                    <option value="970415">VietinBank</option>
+                    <option value="970405">Agribank</option>
+                    <option value="970416">ACB</option>
+                    <option value="970403">Sacombank</option>
+                    <option value="970418">BIDV</option>
+                `;
+            });
+    }
+    
+    // Update submit button state when form changes
+    function updateSubmitButton() {
+        const bankCode = bankCodeSelect.value;
+        const accountNumber = accountNumberInput.value;
+        const cancelReason = document.getElementById('cancelReason').value;
+        
+        const isValid = bankCode && accountNumber && cancelReason && accountNumber.length >= 8;
+        submitBtn.disabled = !isValid;
+    }
+    
+    // Add event listeners for form validation
+    accountNumberInput.addEventListener('input', updateSubmitButton);
+    bankCodeSelect.addEventListener('change', updateSubmitButton);
+    document.getElementById('cancelReason').addEventListener('input', updateSubmitButton);
+    
+    // Submit form
+    bankAccountForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!currentBookingId) {
+            alert('Lỗi: Không tìm thấy ID booking');
+            return;
+        }
+        
+        const formData = new FormData(this);
+        const cancelReason = formData.get('cancelReason');
+        const bankCode = formData.get('bankCode');
+        const accountNumber = formData.get('accountNumber');
+        
+        if (!cancelReason || !bankCode || !accountNumber) {
+            alert('Vui lòng điền đầy đủ thông tin');
+            return;
+        }
+        
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin ds-icon"></i> Đang xử lý...';
+        
+        // Get booking ID from hidden input first, then from global variable as fallback
+        let bookingId = document.getElementById('modalBookingIdForBank').value;
+        console.log('🔍 Raw booking ID from input:', bookingId);
+        
+        // If input is empty, try global variables
+        if (!bookingId || bookingId.trim() === '') {
+            bookingId = window.currentBookingIdForCancel || window.currentBookingId;
+            console.log('🔍 Booking ID from global variables:', {
+                currentBookingIdForCancel: window.currentBookingIdForCancel,
+                currentBookingId: window.currentBookingId,
+                final: bookingId
+            });
+        }
+        
+        console.log('🔍 Final booking ID:', bookingId);
+        console.log('🔍 Booking ID type:', typeof bookingId);
+        console.log('🔍 Booking ID length:', bookingId ? bookingId.length : 'null/undefined');
+        
+        // Validate booking ID
+        if (!bookingId || bookingId.trim() === '') {
+            console.error('❌ Booking ID is empty or null!');
+            alert('Lỗi: Không tìm thấy ID booking. Vui lòng thử lại.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check-circle ds-icon"></i> Hủy booking và tạo refund request';
+            return;
+        }
+        
+    // Create and submit form instead of using AJAX
+    console.log('🔄 Creating form for cancel booking request...');
+    console.log('📋 Booking ID:', bookingId);
+    console.log('📋 Cancel Reason:', cancelReason);
+    console.log('📋 Bank Code:', bankCode);
+    console.log('📋 Account Number:', accountNumber);
+    
+    // Create a form element
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/booking/api/cancel/${bookingId}`;
+    form.style.display = 'none'; // Hide the form
+    
+    console.log('🔗 Form action URL:', form.action);
+    console.log('🔗 Current location:', window.location.href);
+    
+    // Add form fields
+    const cancelReasonInput = document.createElement('input');
+    cancelReasonInput.type = 'hidden';
+    cancelReasonInput.name = 'cancelReason';
+    cancelReasonInput.value = cancelReason;
+    form.appendChild(cancelReasonInput);
+    
+    const bankCodeInput = document.createElement('input');
+    bankCodeInput.type = 'hidden';
+    bankCodeInput.name = 'bankCode';
+    bankCodeInput.value = bankCode;
+    form.appendChild(bankCodeInput);
+    
+    const accountNumberInput = document.createElement('input');
+    accountNumberInput.type = 'hidden';
+    accountNumberInput.name = 'accountNumber';
+    accountNumberInput.value = accountNumber;
+    form.appendChild(accountNumberInput);
+    
+    // Add CSRF token if available
+    const csrfMeta = document.querySelector('meta[name="_csrf"]');
+    if (csrfMeta) {
+        const csrfToken = csrfMeta.getAttribute('content');
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_csrf';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        console.log('🔐 CSRF Token added to form:', csrfToken);
+    } else {
+        console.warn('⚠️ CSRF token not found, form submission may fail');
+    }
+    
+    // Append form to body and submit
+    document.body.appendChild(form);
+    form.submit();
+    });
+});
+</script>
+</div>

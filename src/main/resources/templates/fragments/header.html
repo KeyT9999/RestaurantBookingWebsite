@@ -26,7 +26,7 @@
                                 <span>Home</span>
                             </a>
                         </li>
-                        <li class="nav-item dropdown" sec:authorize="hasRole('ADMIN')">
+                        <li class="nav-item dropdown dropdown-hover" sec:authorize="hasRole('ADMIN')">
                             <a class="nav-link dropdown-toggle" href="#" id="adminDashboardDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" th:classappend="${#strings.startsWith(currentPath, '/admin')} ? 'active' : ''">
                                 <i class="fas fa-tachometer-alt nav-icon"></i>
                                 <span>Dashboard</span>
@@ -97,12 +97,6 @@
                             </a>
                         </li>
                         <li class="nav-item" sec:authorize="hasRole('CUSTOMER')">
-                            <a class="nav-link" th:href="@{/customer/favorites}" th:classappend="${#strings.startsWith(currentPath, '/customer/favorites')} ? 'active' : ''">
-                                <i class="fas fa-heart nav-icon"></i>
-                                <span>Favorites</span>
-                            </a>
-                        </li>
-                        <li class="nav-item" sec:authorize="hasRole('CUSTOMER')">
                             <a class="nav-link" th:href="@{/reviews/my-reviews}" th:classappend="${#strings.startsWith(currentPath, '/reviews')} ? 'active' : ''">
                                 <i class="fas fa-star nav-icon"></i>
                                 <span>My Reviews</span>
@@ -112,12 +106,6 @@
                             <a class="nav-link" th:href="@{/restaurant-owner/reviews}" th:classappend="${#strings.startsWith(currentPath, '/restaurant-owner/reviews')} ? 'active' : ''">
                                 <i class="fas fa-comments nav-icon"></i>
                                 <span>Reviews</span>
-                            </a>
-                        </li>
-                        <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER')">
-                            <a class="nav-link" th:href="@{/restaurant-owner/favorites}" th:classappend="${#strings.startsWith(currentPath, '/restaurant-owner/favorites')} ? 'active' : ''">
-                                <i class="fas fa-heart nav-icon"></i>
-                                <span>Thống kê yêu thích</span>
                             </a>
                         </li>
                         <li class="nav-item" sec:authorize="hasRole('RESTAURANT_OWNER')">
@@ -138,10 +126,10 @@
                     <ul class="navbar-nav">
                         <!-- Guest Buttons -->
                         <li class="nav-item" sec:authorize="!isAuthenticated()">
-                            <a th:href="@{/login}" class="btn btn--outline me-2">
+                            <button type="button" class="btn btn--outline me-2" data-bs-toggle="modal" data-bs-target="#loginModal">
                                 <i class="fas fa-sign-in-alt"></i>
                                 <span>Sign In</span>
-                            </a>
+                            </button>
                         </li>
                         <li class="nav-item" sec:authorize="!isAuthenticated()">
                             <a th:href="@{/auth/register}" class="btn btn--outline me-2">
@@ -150,8 +138,8 @@
                             </a>
                         </li>
                         
-                        <!-- Notification Bell (for authenticated non-admin users) -->
-                        <li class="nav-item" sec:authorize="isAuthenticated() and !hasRole('ADMIN')">
+                        <!-- Notification Bell (all authenticated roles) -->
+                        <li class="nav-item" sec:authorize="isAuthenticated()">
                             <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
                         </li>
                         
@@ -171,7 +159,7 @@
                                 </li>
                                 <li sec:authorize="hasRole('CUSTOMER')">
                                     <a class="dropdown-item" th:href="@{/customer/favorites}">
-                                        <i class="fas fa-heart luxury-icon"></i>
+                                        <i class="fas fa-star luxury-icon"></i>
                                         My Favorites
                                     </a>
                                 </li>
@@ -239,12 +227,6 @@
                                         Voucher Management
                                     </a>
                                 </li>
-                                <li sec:authorize="hasRole('RESTAURANT_OWNER')">
-                                    <a class="dropdown-item" th:href="@{/restaurant-owner/favorites}">
-                                        <i class="fas fa-heart luxury-icon"></i>
-                                        Thống kê yêu thích
-                                    </a>
-                                </li>
 
                                 <li sec:authorize="hasRole('ADMIN')">
                                     <a class="dropdown-item" th:href="@{/admin/chat}">
@@ -294,59 +276,6 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 // Admin Dashboard Dropdown Hover
-                const adminDropdownToggle = document.getElementById('adminDashboardDropdown');
-                const adminDropdownMenu = adminDropdownToggle?.nextElementSibling;
-                
-                if (adminDropdownToggle && adminDropdownMenu) {
-                    setupDropdownHover(adminDropdownToggle, adminDropdownMenu);
-                }
-                
-                // User Dropdown Hover
-                const userDropdownToggle = document.querySelector('.user-dropdown');
-                const userDropdownMenu = userDropdownToggle?.nextElementSibling;
-                
-                if (userDropdownToggle && userDropdownMenu) {
-                    setupDropdownHover(userDropdownToggle, userDropdownMenu);
-                }
-                
-                function setupDropdownHover(toggle, menu) {
-                    let hoverTimeout;
-                    
-                    // Show dropdown on mouse enter
-                    toggle.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                        const bsDropdown = new bootstrap.Dropdown(toggle, {
-                            autoClose: false,
-                            display: 'dynamic'
-                        });
-                        bsDropdown.show();
-                    });
-                    
-                    // Hide dropdown on mouse leave with delay
-                    toggle.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(function() {
-                            const bsDropdown = bootstrap.Dropdown.getInstance(toggle);
-                            if (bsDropdown) {
-                                bsDropdown.hide();
-                            }
-                        }, 150);
-                    });
-                    
-                    // Keep dropdown open when hovering over menu
-                    menu.addEventListener('mouseenter', function() {
-                        clearTimeout(hoverTimeout);
-                    });
-                    
-                    // Hide dropdown when leaving menu
-                    menu.addEventListener('mouseleave', function() {
-                        hoverTimeout = setTimeout(function() {
-                            const bsDropdown = bootstrap.Dropdown.getInstance(toggle);
-                            if (bsDropdown) {
-                                bsDropdown.hide();
-                            }
-                        }, 150);
-                    });
-                }
             });
         </script>
         

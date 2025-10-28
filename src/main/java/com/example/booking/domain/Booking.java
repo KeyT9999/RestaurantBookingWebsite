@@ -49,7 +49,7 @@ public class Booking {
     
     @Column(name = "number_of_guests", nullable = false)
     @Min(value = 1, message = "Số khách tối thiểu là 1")
-    @Max(value = 20, message = "Số khách tối đa là 20")
+    @Max(value = 100, message = "Số khách tối đa là 100")
     private Integer numberOfGuests;
     
     @Enumerated(EnumType.STRING)
@@ -62,6 +62,15 @@ public class Booking {
     
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
+
+    @Column(name = "cancel_reason", columnDefinition = "TEXT")
+    private String cancelReason;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
+
+    @Column(name = "cancelled_by")
+    private java.util.UUID cancelledBy;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -249,5 +258,30 @@ public class Booking {
             return bookingTables.get(0).getTable();
         }
         return null;
+    }
+
+    // Cancel-related getters and setters
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
+    }
+
+    public LocalDateTime getCancelledAt() {
+        return cancelledAt;
+    }
+
+    public void setCancelledAt(LocalDateTime cancelledAt) {
+        this.cancelledAt = cancelledAt;
+    }
+
+    public java.util.UUID getCancelledBy() {
+        return cancelledBy;
+    }
+
+    public void setCancelledBy(java.util.UUID cancelledBy) {
+        this.cancelledBy = cancelledBy;
     }
 } 

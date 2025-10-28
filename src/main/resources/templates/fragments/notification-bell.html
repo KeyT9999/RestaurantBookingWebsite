@@ -1,48 +1,59 @@
 <!-- Notification Bell Fragment -->
-<div th:fragment="notification-bell" class="notification-bell">
-    	<div class="dropdown">
-		<button class="btn btn-link position-relative" type="button" id="notificationDropdown" 
-				data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications">
-			<i class="fas fa-bell nav-icon" style="color: var(--primary-blue);"></i>
-			<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-				  id="notificationBadge" th:text="${unreadCount}" 
-				  th:if="${unreadCount != null and unreadCount > 0}">0</span>
-		</button>
-        
-        		<ul class="dropdown-menu dropdown-menu-end luxury-dropdown" aria-labelledby="notificationDropdown" 
-			style="min-width: 320px; max-height: 400px; overflow-y: auto; background: var(--background-white); border:1px solid var(--border-light); box-shadow: var(--shadow-hover);">
-            			<li>
-				<h6 class="dropdown-header d-flex justify-content-between align-items-center" style="color: var(--text-dark);">
-					<a href="/notifications" class="text-decoration-none" style="color: var(--text-dark);">
-						<i class="fas fa-bell me-2" style="color: var(--primary-blue);"></i>Thông báo
-					</a>
-					<span class="badge bg-primary" th:text="${unreadCount}" 
-					      th:if="${unreadCount != null and unreadCount > 0}">0</span>
-				</h6>
-			</li>
+<div th:fragment="notification-bell"
+     th:with="dropdownId=${#ids.seq('notificationDropdown')}, badgeId=${#ids.seq('notificationBadge')}"
+     class="notification-bell-container">
+    <div class="dropdown notification-bell" data-notification-bell>
+        <button class="btn btn-link position-relative notification-bell__trigger"
+                type="button"
+                th:id="${dropdownId}"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                aria-label="Notifications">
+            <i class="fas fa-bell nav-icon notification-bell__icon" style="color: var(--primary-blue, var(--ds-primary-black));"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-bell__badge"
+                  th:id="${badgeId}"
+                  th:text="${unreadCount != null ? unreadCount : 0}"
+                  th:classappend="${unreadCount == null or unreadCount == 0} ? ' d-none' : ''">0</span>
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end luxury-dropdown notification-bell__menu"
+            th:attr="aria-labelledby=${dropdownId}"
+            style="min-width: 320px; max-height: 400px; overflow-y: auto; background: #ffffff !important; border:1px solid var(--border-light); box-shadow: var(--shadow-hover);">
+            <li>
+                <h6 class="dropdown-header d-flex justify-content-between align-items-center" style="color: var(--text-dark);">
+                    <a href="/notifications" class="text-decoration-none notification-bell__all-link" style="color: var(--text-dark);">
+                        <i class="fas fa-bell me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Thông báo
+                    </a>
+                    <span class="badge bg-primary notification-bell__badge-summary"
+                          th:text="${unreadCount != null ? unreadCount : 0}"
+                          th:classappend="${unreadCount == null or unreadCount == 0} ? ' d-none' : ''">0</span>
+                </h6>
+            </li>
             <li><hr class="dropdown-divider" style="border-color: rgba(212,175,55,.3);"></li>
-            
+
             <!-- Latest notifications -->
-            <div id="latestNotifications">
-                <li th:each="notification : ${latestNotifications}" class="dropdown-item-text px-3 py-2">
-                    <div class="d-flex align-items-start">
-                        				<div class="flex-grow-1">
-					<div class="fw-bold" style="color: var(--text-dark);" th:text="${notification.title}">Title</div>
-					<div class="small" style="color: var(--text-light);" th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy HH:mm')}">Time</div>
-				</div>
-				<div th:if="${notification.unread}" class="ms-2" style="color: var(--primary-blue);">
-					<i class="fas fa-circle" style="font-size: 8px;"></i>
-				</div>
-                    </div>
+            <div th:id="${dropdownId + '-list'}" class="notification-bell__list">
+                <li th:each="notification, iterStat : ${latestNotifications}"
+                    th:if="${iterStat.count <= 5}">
+                    <a th:href="@{/notifications/{id}(id=${notification.id})}"
+                       class="dropdown-item d-flex align-items-start notification-bell__link">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold" style="color: var(--text-dark);" th:text="${notification.title}">Title</div>
+                            <div class="small" style="color: var(--text-light);" th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy HH:mm')}">Time</div>
+                        </div>
+                        <div th:if="${notification.unread}" class="ms-2 notification-bell__status" style="color: var(--primary-blue, var(--ds-primary-black));">
+                            <i class="fas fa-circle" style="font-size: 8px;"></i>
+                        </div>
+                    </a>
                 </li>
-                			<li th:if="${#lists.isEmpty(latestNotifications)}" class="dropdown-item-text text-center" style="color: var(--text-light);">
-				<i class="fas fa-bell-slash me-2" style="color: var(--primary-blue);"></i>Không có thông báo mới
-			</li>
+                <li th:if="${#lists.isEmpty(latestNotifications)}" class="dropdown-item-text text-center" style="color: var(--text-light);">
+                    <i class="fas fa-bell-slash me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Không có thông báo mới
+                </li>
             </div>
-            
+
             <li><hr class="dropdown-divider" style="border-color: rgba(212,175,55,.3);"></li>
             <li>
-                <a class="dropdown-item text-center text-white" href="/notifications">
+                <a class="dropdown-item text-center text-white notification-bell__view-all" href="/notifications">
                     <i class="fas fa-list me-2"></i>Xem tất cả thông báo
                 </a>
             </li>
@@ -50,20 +61,205 @@
     </div>
 </div>
 
-<script>
-// Auto refresh notification count every 30 seconds
-setInterval(function() {
-    fetch('/notifications/api/unread-count')
-        .then(response => response.json())
-        .then(count => {
-            const badge = document.getElementById('notificationBadge');
+<script th:inline="javascript">
+/*<![CDATA[*/
+(function() {
+    const dropdownId = /*[[${dropdownId}]]*/ 'notificationDropdown';
+    const badgeId = /*[[${badgeId}]]*/ 'notificationBadge';
+    const trigger = document.getElementById(dropdownId);
+    if (!trigger) {
+        return;
+    }
+    const badgeEl = document.getElementById(badgeId);
+    const container = trigger.closest('[data-notification-bell]');
+    const summaryBadge = container ? container.querySelector('.notification-bell__badge-summary') : null;
+    const menu = container ? container.querySelector('.notification-bell__menu') : null;
+    const listContainer = document.getElementById(dropdownId + '-list');
+    const hoverDelay = 200;
+    let hideTimeout = null;
+    let lastLatestFetch = 0;
+    const latestRefreshInterval = 15000;
+
+    function updateBadge(count) {
+        if (badgeEl) {
             if (count > 0) {
-                badge.textContent = count;
-                badge.style.display = 'inline';
+                badgeEl.textContent = count;
+                badgeEl.classList.remove('d-none');
             } else {
-                badge.style.display = 'none';
+                badgeEl.classList.add('d-none');
             }
-        })
-        .catch(error => console.log('Error fetching notification count:', error));
-}, 30000);
-</script> 
+        }
+        if (summaryBadge) {
+            if (count > 0) {
+                summaryBadge.textContent = count;
+                summaryBadge.classList.remove('d-none');
+            } else {
+                summaryBadge.classList.add('d-none');
+            }
+        }
+    }
+
+    function formatTimestamp(isoString) {
+        if (!isoString) {
+            return '';
+        }
+        const date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) {
+            return isoString;
+        }
+        return date.toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+    }
+
+    function renderLatestNotifications(notifications) {
+        if (!listContainer) {
+            return;
+        }
+        listContainer.innerHTML = '';
+
+        if (!Array.isArray(notifications) || notifications.length === 0) {
+            const emptyItem = document.createElement('li');
+            emptyItem.className = 'dropdown-item-text text-center';
+            emptyItem.style.color = 'var(--text-light)';
+            emptyItem.innerHTML = '<i class="fas fa-bell-slash me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Không có thông báo mới';
+            listContainer.appendChild(emptyItem);
+            return;
+        }
+
+        notifications.slice(0, 5).forEach(function(notification) {
+            const li = document.createElement('li');
+
+            const link = document.createElement('a');
+            link.className = 'dropdown-item d-flex align-items-start notification-bell__link';
+            link.href = '/notifications/' + notification.id;
+
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'flex-grow-1';
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'fw-bold';
+            titleEl.style.color = 'var(--text-dark)';
+            titleEl.textContent = notification.title || 'Thông báo';
+
+            const timeEl = document.createElement('div');
+            timeEl.className = 'small';
+            timeEl.style.color = 'var(--text-light)';
+            timeEl.textContent = formatTimestamp(notification.publishAt);
+
+            contentWrapper.appendChild(titleEl);
+            contentWrapper.appendChild(timeEl);
+            link.appendChild(contentWrapper);
+
+            if (notification.unread) {
+                const statusEl = document.createElement('div');
+                statusEl.className = 'ms-2 notification-bell__status';
+                statusEl.style.color = 'var(--primary-blue, var(--ds-primary-black))';
+                statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 8px;"></i>';
+                link.appendChild(statusEl);
+            }
+
+            li.appendChild(link);
+            listContainer.appendChild(li);
+        });
+    }
+
+    function refreshLatestNotifications(force) {
+        if (!listContainer) {
+            return;
+        }
+        const now = Date.now();
+        if (!force && now - lastLatestFetch < latestRefreshInterval) {
+            return;
+        }
+        lastLatestFetch = now;
+        fetch('/notifications/api/latest')
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch latest notifications');
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                renderLatestNotifications(data);
+            })
+            .catch(function(error) {
+                console.log('Error fetching latest notifications:', error);
+            });
+    }
+
+    function refreshUnreadCount() {
+        fetch('/notifications/api/unread-count')
+            .then(function(response) { return response.json(); })
+            .then(function(count) {
+                updateBadge(count);
+                if (count > 0) {
+                    refreshLatestNotifications(false);
+                }
+            })
+            .catch(function(error) { console.log('Error fetching notification count:', error); });
+    }
+
+    if (typeof bootstrap !== 'undefined' && container) {
+        const dropdownInstance = bootstrap.Dropdown.getOrCreateInstance(trigger);
+
+        const showDropdown = function() {
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+            dropdownInstance.show();
+        };
+
+        const scheduleHide = function() {
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+            }
+            hideTimeout = setTimeout(function() {
+                dropdownInstance.hide();
+            }, hoverDelay);
+        };
+
+        container.addEventListener('mouseenter', function() {
+            showDropdown();
+        });
+
+        container.addEventListener('mouseleave', function() {
+            scheduleHide();
+        });
+
+        if (menu) {
+            menu.addEventListener('mouseenter', function() {
+                if (hideTimeout) {
+                    clearTimeout(hideTimeout);
+                    hideTimeout = null;
+                }
+            });
+            menu.addEventListener('mouseleave', function() {
+                scheduleHide();
+            });
+        }
+
+        trigger.addEventListener('click', function() {
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+        });
+
+        trigger.addEventListener('show.bs.dropdown', function() {
+            refreshLatestNotifications(true);
+        });
+    }
+
+    refreshUnreadCount();
+    refreshLatestNotifications(true);
+    setInterval(refreshUnreadCount, 30000);
+})();
+/*]]>*/
+</script>

@@ -444,6 +444,41 @@ a:hover {
     justify-content: center;
 }
 
+.notification-bell__trigger {
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-dark);
+}
+
+.notification-bell__trigger:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.notification-bell__icon {
+    font-size: 1.2rem;
+}
+
+.notification-bell__badge {
+    min-width: 20px;
+    font-size: 0.7rem;
+}
+
+.notification-bell__list li {
+    list-style: none;
+}
+
+.notification-bell__link {
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+.notification-bell__link:hover {
+    background-color: rgba(74, 144, 226, 0.08);
+}
+
 /* Prevent layout shift */
 .nav-item {
     height: 36px;
@@ -1987,4 +2022,49 @@ section {
 .table-status-unknown {
     background-color: #e5e7eb;
     color: #374151;
-} 
+}
+
+/* ========================================
+   NOTIFICATION BELL STYLES
+   ======================================== */
+
+/* Ensure notification dropdown has solid white background */
+.notification-bell__menu,
+.luxury-dropdown.notification-bell__menu,
+.dropdown-menu.notification-bell__menu {
+    background-color: #ffffff !important;
+    backdrop-filter: none !important;
+    opacity: 1 !important;
+}
+
+/* Ensure notification items are readable */
+.notification-bell__menu .dropdown-item {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+.notification-bell__menu .dropdown-item:hover {
+    background-color: #f8f9fa !important;
+    color: #333333 !important;
+}
+
+/* Ensure notification header is readable */
+.notification-bell__menu .dropdown-header {
+    background-color: #f8f9fa !important;
+    color: #333333 !important;
+    border-bottom: 1px solid #e0e0e0 !important;
+}
+
+/* Ensure notification content is readable */
+.notification-bell__menu .notification-bell__content {
+    color: #333333 !important;
+}
+
+.notification-bell__menu .notification-bell__title {
+    color: #333333 !important;
+    font-weight: 600 !important;
+}
+
+.notification-bell__menu .notification-bell__time {
+    color: #666666 !important;
+}

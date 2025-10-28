@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Booking Flow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            background: #e7f3ff;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            word-break: break-all;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐛 Debug Booking Flow</h1>
+    
+    <div class="debug-section">
+        <h2>1. Restaurant Detail Form (Simulation)</h2>
+        <p>This simulates the exact form from restaurant-detail.html:</p>
+        
+        <form id="reservationForm" action="http://localhost:8080/booking/new" method="get">
+            <input type="hidden" name="restaurantId" value="123">
+            <input type="hidden" name="prefill" value="true">
+            
+            <div class="form-group">
+                <label for="prefillDate">Select Date:</label>
+                <input type="date" id="prefillDate" name="prefillDate" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="prefillTime">Select Time:</label>
+                <select id="prefillTime" name="prefillTime" required>
+                    <option value="">Choose time</option>
+                    <option value="17:00">5:00 PM</option>
+                    <option value="18:00">6:00 PM</option>
+                    <option value="19:00">7:00 PM</option>
+                    <option value="20:00">8:00 PM</option>
+                    <option value="21:00">9:00 PM</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="prefillGuests">Number of Guests:</label>
+                <select id="prefillGuests" name="prefillGuests" required>
+                    <option value="">Select guests</option>
+                    <option value="1">1 Guest</option>
+                    <option value="2">2 Guests</option>
+                    <option value="3">3 Guests</option>
+                    <option value="4">4 Guests</option>
+                    <option value="5">5 Guests</option>
+                    <option value="6">6 Guests</option>
+                </select>
+            </div>
+            
+            <button type="submit">Book Now</button>
+        </form>
+    </div>
+    
+    <div class="debug-section">
+        <h2>2. Debug Information</h2>
+        <div id="debugInfo" class="result">
+            Fill out the form above to see debug information
+        </div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>3. Expected URL Format</h2>
+        <p>The URL should look like this:</p>
+        <pre>http://localhost:8080/booking/new?restaurantId=123&prefill=true&prefillDate=2025-10-25&prefillTime=19:00&prefillGuests=4</pre>
+    </div>
+
+    <script>
+        // Set default date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('prefillDate').value = tomorrow.toISOString().split('T')[0];
+        
+        document.getElementById('reservationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const params = new URLSearchParams();
+            
+            console.log('🔍 DEBUG: Form submission data:');
+            
+            // Add all form data to URLSearchParams
+            for (let [key, value] of formData.entries()) {
+                if (value) {
+                    params.append(key, value);
+                    console.log(`  ${key}: ${value}`);
+                }
+            }
+            
+            const url = this.action + '?' + params.toString();
+            
+            console.log('🔍 DEBUG: Generated URL:', url);
+            
+            // Show debug information
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML = `
+                <h3>Form Data:</h3>
+                <ul>
+                    ${Array.from(formData.entries()).map(([key, value]) => 
+                        `<li><strong>${key}:</strong> ${value || '(empty)'}</li>`
+                    ).join('')}
+                </ul>
+                <h3>Generated URL:</h3>
+                <pre>${url}</pre>
+                <h3>Next Steps:</h3>
+                <ol>
+                    <li>Copy the URL above</li>
+                    <li>Open it in a new tab</li>
+                    <li>Check browser console for JavaScript debug logs</li>
+                    <li>Check server console for Java debug logs</li>
+                </ol>
+            `;
+            debugInfo.classList.add('success');
+            
+            // Open the URL in a new tab for testing
+            setTimeout(() => {
+                window.open(url, '_blank');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

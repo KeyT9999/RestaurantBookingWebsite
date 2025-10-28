@@ -14,7 +14,7 @@ public class BookingForm {
     
     @NotNull(message = "Số khách không được để trống")
     @Min(value = 1, message = "Số khách tối thiểu là 1")
-    @Max(value = 20, message = "Số khách tối đa là 20")
+    @Max(value = 100, message = "Số khách tối đa là 100")
     private Integer guestCount;
     
     @NotNull(message = "Thời gian đặt bàn không được để trống")
@@ -23,7 +23,7 @@ public class BookingForm {
     @DecimalMin(value = "0.0", message = "Số tiền đặt cọc không được âm")
     private BigDecimal depositAmount = BigDecimal.ZERO;
     
-    @Size(max = 500, message = "Ghi chú không được vượt quá 500 ký tự")
+    @Size(max = 2000, message = "Ghi chú không được vượt quá 2000 ký tự")
     private String note;
 
     @Size(max = 50, message = "Mã voucher không hợp lệ")

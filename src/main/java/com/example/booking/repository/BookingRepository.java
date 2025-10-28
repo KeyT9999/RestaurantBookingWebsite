@@ -1,7 +1,10 @@
 package com.example.booking.repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -35,6 +38,14 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     long countByStatusAndBookingTimeBetween(BookingStatus status, LocalDateTime startDate, LocalDateTime endDate);
 
+    @Query("SELECT COALESCE(SUM(b.depositAmount), 0) FROM Booking b WHERE b.status = :status AND b.createdAt >= :start AND b.createdAt < :end")
+    BigDecimal sumDepositByStatusAndCreatedBetween(@Param("status") BookingStatus status,
+                                                   @Param("start") LocalDateTime start,
+                                                   @Param("end") LocalDateTime end);
+
+    @Query("SELECT COALESCE(SUM(b.depositAmount), 0) FROM Booking b WHERE b.status = :status")
+    BigDecimal sumDepositByStatus(@Param("status") BookingStatus status);
+
     List<Booking> findByCustomerAndStatusIn(Customer customer, List<BookingStatus> statuses);
 
     /**
@@ -42,6 +53,9 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      */
     List<Booking> findByCustomerAndBookingTimeBetween(Customer customer, LocalDateTime startTime,
                   LocalDateTime endTime);
+
+    @Query("SELECT b.customer.user.id, COUNT(b) FROM Booking b WHERE b.customer.user.id IN :userIds GROUP BY b.customer.user.id")
+    List<Object[]> countBookingsByUserIds(@Param("userIds") Collection<UUID> userIds);
 
     @Query("SELECT CAST(b.bookingTime AS date) as bookingDate, COUNT(b) as bookingCount " +
                   "FROM Booking b " +
@@ -114,6 +128,24 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      */
     List<Booking> findByRestaurantAndBookingTimeBetween(RestaurantProfile restaurant, LocalDateTime startTime,
                   LocalDateTime endTime);
+    
+    /**
+     * Find bookings by restaurant ID and booking time range
+     */
+    List<Booking> findByRestaurantRestaurantIdAndBookingTimeBetween(Integer restaurantId, LocalDateTime startTime,
+                  LocalDateTime endTime);
+    
+    /**
+     * Find bookings by restaurant ID ordered by booking time desc with eager loading
+     */
+    @Query("SELECT DISTINCT b FROM Booking b " +
+           "LEFT JOIN FETCH b.customer c " +
+           "LEFT JOIN FETCH c.user u " +
+           "LEFT JOIN FETCH b.bookingTables bt " +
+           "LEFT JOIN FETCH bt.table t " +
+           "WHERE b.restaurant.restaurantId = :restaurantId " +
+           "ORDER BY b.bookingTime DESC")
+    List<Booking> findByRestaurantRestaurantIdOrderByBookingTimeDesc(@Param("restaurantId") Integer restaurantId);
 
     /**
      * Find bookings by restaurant, status and booking time range

@@ -30,5 +30,13 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
      * @param restaurantId The restaurant ID
      * @return List of Dish entities
      */
+    List<Dish> findByRestaurantRestaurantId(Integer restaurantId);
+
+    /**
+     * Find dishes by restaurant ID ordered by name ascending
+     * 
+     * @param restaurantId The restaurant ID
+     * @return List of Dish entities ordered by name
+     */
     List<Dish> findByRestaurantRestaurantIdOrderByNameAsc(Integer restaurantId);
 }

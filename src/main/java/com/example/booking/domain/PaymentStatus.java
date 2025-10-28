@@ -6,6 +6,7 @@ public enum PaymentStatus {
     COMPLETED("Hoàn thành"),
     FAILED("Thất bại"),
     REFUNDED("Hoàn tiền"),
+    REFUND_PENDING("Chờ hoàn tiền"),
     CANCELLED("Đã hủy");
 
     private final String displayName;

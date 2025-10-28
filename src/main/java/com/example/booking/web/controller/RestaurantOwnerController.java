@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.FOHManagementService;
 import com.example.booking.service.ImageUploadService;
+import com.example.booking.service.RestaurantDashboardService;
 import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.Dish;
 import com.example.booking.domain.DishStatus;
@@ -37,9 +42,22 @@ import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Waitlist;
 import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.User;
+import com.example.booking.domain.BookingTable;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.common.enums.BookingStatus;
+import com.example.booking.dto.BookingDetailModalDto;
+import com.example.booking.dto.BookingDishDto;
+import com.example.booking.dto.BookingServiceDto;
 import com.example.booking.dto.WaitlistDetailDto;
+import com.example.booking.dto.InternalNoteDto;
+import com.example.booking.dto.CommunicationHistoryDto;
+import com.example.booking.entity.InternalNote;
+import com.example.booking.entity.CommunicationHistory;
+import com.example.booking.repository.InternalNoteRepository;
+import com.example.booking.repository.CommunicationHistoryRepository;
+import com.example.booking.repository.RestaurantTableRepository;
+import com.example.booking.repository.BookingRepository;
+import com.example.booking.repository.BookingTableRepository;
 
 import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
@@ -47,10 +65,10 @@ import org.springframework.security.core.Authentication;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -73,6 +91,12 @@ public class RestaurantOwnerController {
     private final RestaurantManagementService restaurantService;
     private final SimpleUserService userService;
     private final ImageUploadService imageUploadService;
+    private final RestaurantDashboardService dashboardService;
+    private final InternalNoteRepository internalNoteRepository;
+    private final CommunicationHistoryRepository communicationHistoryRepository;
+    private final RestaurantTableRepository restaurantTableRepository;
+    private final BookingRepository bookingRepository;
+    private final BookingTableRepository bookingTableRepository;
 
     @Autowired
     public RestaurantOwnerController(RestaurantOwnerService restaurantOwnerService,
@@ -81,7 +105,13 @@ public class RestaurantOwnerController {
             BookingService bookingService,
             RestaurantManagementService restaurantService,
             SimpleUserService userService,
-            ImageUploadService imageUploadService) {
+            ImageUploadService imageUploadService,
+            RestaurantDashboardService dashboardService,
+            InternalNoteRepository internalNoteRepository,
+            CommunicationHistoryRepository communicationHistoryRepository,
+            RestaurantTableRepository restaurantTableRepository,
+            BookingRepository bookingRepository,
+            BookingTableRepository bookingTableRepository) {
         this.restaurantOwnerService = restaurantOwnerService;
         this.fohManagementService = fohManagementService;
         this.waitlistService = waitlistService;
@@ -89,6 +119,12 @@ public class RestaurantOwnerController {
         this.restaurantService = restaurantService;
         this.userService = userService;
         this.imageUploadService = imageUploadService;
+        this.dashboardService = dashboardService;
+        this.internalNoteRepository = internalNoteRepository;
+        this.communicationHistoryRepository = communicationHistoryRepository;
+        this.restaurantTableRepository = restaurantTableRepository;
+        this.bookingRepository = bookingRepository;
+        this.bookingTableRepository = bookingTableRepository;
     }
 
     /**
@@ -96,13 +132,15 @@ public class RestaurantOwnerController {
      * Main interface for managing waitlist, tables, and floor operations
      */
     @GetMapping("/dashboard")
-    public String dashboard(Authentication authentication, Model model) {
+    public String dashboard(Authentication authentication, Model model, 
+                          @RequestParam(value = "restaurantId", required = false) Integer restaurantId,
+                          @RequestParam(value = "period", required = false, defaultValue = "week") String period) {
         // Kiểm tra user có thể truy cập dashboard không (có ít nhất 1 restaurant approved)
         if (!canAccessDashboard(authentication)) {
             // Redirect đến trang tạo restaurant nếu chưa có restaurant nào
             return "redirect:/restaurant-owner/restaurants/create?message=no_approved_restaurant";
         }
-        model.addAttribute("pageTitle", "FOH Dashboard - Quản lý sàn");
+        model.addAttribute("pageTitle", "Restaurant Management Dashboard");
         
         try {
             // Get all restaurants owned by current user
@@ -113,25 +151,65 @@ public class RestaurantOwnerController {
                 return "restaurant-owner/dashboard";
             }
 
-            // Use first restaurant for FOH data (can be enhanced to support multiple
-            // restaurants)
-            Integer restaurantId = restaurants.get(0).getRestaurantId();
+            // Determine which restaurant to show data for
+            Integer finalSelectedRestaurantId;
+            if (restaurantId == null) {
+                // Use first restaurant as default
+                finalSelectedRestaurantId = restaurants.get(0).getRestaurantId();
+            } else {
+                // Verify the restaurant belongs to the current user
+                boolean restaurantBelongsToUser = restaurants.stream()
+                    .anyMatch(r -> r.getRestaurantId().equals(restaurantId));
+                
+                if (!restaurantBelongsToUser) {
+                    model.addAttribute("error", "Bạn không có quyền truy cập nhà hàng này.");
+                    finalSelectedRestaurantId = restaurants.get(0).getRestaurantId();
+                } else {
+                    finalSelectedRestaurantId = restaurantId;
+                }
+            }
 
-            // Get real data from database
-            List<Booking> todayBookings = fohManagementService.getTodayBookings(restaurantId);
-            List<RestaurantTable> availableTables = fohManagementService.getAvailableTables(restaurantId);
-            List<RestaurantTable> occupiedTables = fohManagementService.getOccupiedTables(restaurantId);
+            // Get dashboard statistics using new service
+            RestaurantDashboardService.DashboardStats dashboardStats = dashboardService.getDashboardStats(finalSelectedRestaurantId);
+            
+               // Get additional data for charts and lists
+               List<RestaurantDashboardService.DailyRevenueData> dailyRevenueData = dashboardService.getRevenueDataByPeriod(finalSelectedRestaurantId, period);
+               List<RestaurantDashboardService.PopularDishData> popularDishesData = dashboardService.getPopularDishesData(finalSelectedRestaurantId);
+               // Recent bookings: show latest from selected restaurant only
+               List<Booking> recentBookings = bookingService.getBookingsByRestaurant(finalSelectedRestaurantId)
+                   .stream()
+                   .sorted((b1, b2) -> b2.getBookingTime().compareTo(b1.getBookingTime()))
+                   .limit(5)
+                   .collect(Collectors.toList());
+               List<Waitlist> waitingCustomers = dashboardService.getWaitingCustomers(finalSelectedRestaurantId);
 
-            // Get waitlist data
-            List<Waitlist> waitingCustomers = waitlistService.getWaitlistByRestaurant(restaurantId);
-            List<Waitlist> calledCustomers = waitlistService.getCalledCustomers(restaurantId);
+               System.out.println("[Dashboard] recentBookings size = " + recentBookings.size());
+               for (int i = 0; i < recentBookings.size(); i++) {
+                   Booking b = recentBookings.get(i);
+                   System.out.println("[Dashboard] Booking " + i + ": ID=" + b.getBookingId() + 
+                                     ", Customer=" + (b.getCustomer() != null ? b.getCustomer().getUser().getFullName() : "NULL") +
+                                     ", Time=" + b.getBookingTime() + 
+                                     ", Status=" + b.getStatus());
+               }
+
+               // Find selected restaurant for display
+            RestaurantProfile selectedRestaurant = restaurants.stream()
+                .filter(r -> r.getRestaurantId().equals(finalSelectedRestaurantId))
+                .findFirst()
+                .orElse(restaurants.get(0));
 
             model.addAttribute("restaurants", restaurants);
-            model.addAttribute("todayBookings", todayBookings);
-            model.addAttribute("availableTables", availableTables);
-            model.addAttribute("occupiedTables", occupiedTables);
-            model.addAttribute("waitingCustomers", waitingCustomers);
-            model.addAttribute("calledCustomers", calledCustomers);
+            model.addAttribute("selectedRestaurant", selectedRestaurant);
+            model.addAttribute("selectedRestaurantId", finalSelectedRestaurantId);
+            model.addAttribute("currentPeriod", period);
+            
+               // Dashboard statistics
+               model.addAttribute("dashboardStats", dashboardStats);
+               model.addAttribute("dailyRevenueData", dailyRevenueData);
+               model.addAttribute("popularDishesData", popularDishesData);
+               model.addAttribute("recentBookings", recentBookings);
+               model.addAttribute("waitingCustomers", waitingCustomers);
+
 
         } catch (Exception e) {
             model.addAttribute("error", "Lỗi khi tải dữ liệu: " + e.getMessage());
@@ -934,6 +1012,7 @@ public class RestaurantOwnerController {
     @GetMapping("/bookings")
     public String viewAllBookings(@RequestParam(required = false) String status,
             @RequestParam(required = false) String date,
+            @RequestParam(required = false) Integer restaurantId,
             Authentication authentication,
             Model model) {
         model.addAttribute("pageTitle", "Quản lý Booking - Tất cả nhà hàng");
@@ -947,11 +1026,37 @@ public class RestaurantOwnerController {
                 return "restaurant-owner/bookings";
             }
 
-            // Get all bookings from all restaurants
-            List<Booking> allBookings = new ArrayList<>();
-            for (RestaurantProfile restaurant : restaurants) {
-                List<Booking> restaurantBookings = bookingService.getBookingsByRestaurant(restaurant.getRestaurantId());
-                allBookings.addAll(restaurantBookings);
+            // Determine which restaurant to show
+            RestaurantProfile selectedRestaurant = null;
+            boolean isAllRestaurants = true;
+            
+            if (restaurantId != null) {
+                // Find the selected restaurant
+                Optional<RestaurantProfile> foundRestaurant = restaurants.stream()
+                    .filter(r -> r.getRestaurantId().equals(restaurantId))
+                    .findFirst();
+                
+                if (foundRestaurant.isPresent()) {
+                    selectedRestaurant = foundRestaurant.get();
+                    isAllRestaurants = false;
+                }
+            }
+
+            // Get bookings based on selection
+            List<Booking> allBookings;
+            if (selectedRestaurant != null) {
+                // Get bookings for specific restaurant
+                allBookings = bookingService.getBookingsByRestaurant(selectedRestaurant.getRestaurantId());
+                model.addAttribute("currentRestaurant", selectedRestaurant);
+                model.addAttribute("restaurantId", selectedRestaurant.getRestaurantId());
+            } else {
+                // Get all bookings from all restaurants
+                allBookings = new ArrayList<>();
+                for (RestaurantProfile restaurant : restaurants) {
+                    List<Booking> restaurantBookings = bookingService.getBookingsByRestaurant(restaurant.getRestaurantId());
+                    allBookings.addAll(restaurantBookings);
+                }
+                model.addAttribute("restaurantId", null);
             }
 
             // Sort by booking time desc
@@ -983,7 +1088,7 @@ public class RestaurantOwnerController {
             model.addAttribute("cancelledBookings", cancelledBookings);
             model.addAttribute("selectedStatus", status);
             model.addAttribute("selectedDate", date);
-            model.addAttribute("isAllRestaurants", true);
+            model.addAttribute("isAllRestaurants", isAllRestaurants);
 
         } catch (Exception e) {
             model.addAttribute("error", "Lỗi khi tải dữ liệu: " + e.getMessage());
@@ -1138,9 +1243,9 @@ public class RestaurantOwnerController {
      * Update booking status (confirm, cancel, complete)
      */
     @PostMapping("/bookings/{id}/status")
-    public String updateBookingStatus(@PathVariable Integer id,
-                                     @RequestParam String status,
-                                     RedirectAttributes redirectAttributes) {
+    @ResponseBody
+    public ResponseEntity<?> updateBookingStatus(@PathVariable Integer id,
+                                                @RequestParam String status) {
         try {
             // Convert string to BookingStatus enum
             BookingStatus newStatus = BookingStatus.valueOf(status.toUpperCase());
@@ -1148,17 +1253,507 @@ public class RestaurantOwnerController {
             // Update booking status
             bookingService.updateBookingStatus(id, newStatus);
             
-            redirectAttributes.addFlashAttribute("success", "Cập nhật trạng thái thành công!");
+            return ResponseEntity.ok().body(Map.of(
+                "success", true,
+                "message", "Cập nhật trạng thái thành công!"
+            ));
             
         } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("error", "Trạng thái không hợp lệ: " + status);
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Trạng thái không hợp lệ: " + status
+            ));
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi cập nhật: " + e.getMessage());
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Lỗi khi cập nhật: " + e.getMessage()
+            ));
         }
-        
-        return "redirect:/restaurant-owner/bookings";
+    }
+
+    /**
+     * Get booking detail as JSON for modal
+     */
+    @GetMapping("/bookings/{id}/api")
+    @ResponseBody
+    public ResponseEntity<?> getBookingDetailJson(@PathVariable Integer id) {
+        System.out.println("🚀 API called: /restaurant-owner/bookings/" + id + "/api");
+        try {
+            var booking = bookingService.getBookingDetailById(id);
+            System.out.println("📋 Booking found: " + booking.isPresent());
+            if (!booking.isPresent()) {
+                System.out.println("❌ Booking not found for ID: " + id);
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Không tìm thấy booking"
+                ));
+            }
+            
+            // Convert to DTO to avoid Hibernate proxy issues
+            BookingDetailModalDto dto = convertToModalDto(booking.get());
+            
+            System.out.println("✅ Returning booking data for ID: " + id);
+            return ResponseEntity.ok().body(Map.of(
+                "success", true,
+                "booking", dto
+            ));
+        } catch (Exception e) {
+            System.out.println("❌ Error in getBookingDetailJson: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Lỗi khi tải thông tin booking: " + e.getMessage()
+            ));
+        }
     }
     
+    /**
+     * Convert Booking entity to BookingDetailModalDto
+     */
+    private BookingDetailModalDto convertToModalDto(Booking booking) {
+        BookingDetailModalDto dto = new BookingDetailModalDto();
+        
+        // Basic booking info
+        dto.setBookingId(booking.getBookingId());
+        dto.setStatus(booking.getStatus());
+        dto.setBookingTime(booking.getBookingTime());
+        dto.setNumberOfGuests(booking.getNumberOfGuests());
+        dto.setNote(booking.getNote());
+        dto.setDepositAmount(booking.getDepositAmount());
+        dto.setCreatedAt(booking.getCreatedAt());
+        dto.setUpdatedAt(booking.getUpdatedAt());
+        
+        // Customer info
+        if (booking.getCustomer() != null) {
+            BookingDetailModalDto.CustomerInfo customerInfo = new BookingDetailModalDto.CustomerInfo();
+            customerInfo.setCustomerId(booking.getCustomer().getCustomerId().toString());
+            
+            if (booking.getCustomer().getUser() != null) {
+                customerInfo.setFullName(booking.getCustomer().getUser().getFullName());
+                customerInfo.setPhoneNumber(booking.getCustomer().getUser().getPhoneNumber());
+                customerInfo.setEmail(booking.getCustomer().getUser().getEmail());
+                customerInfo.setAddress(booking.getCustomer().getUser().getAddress());
+            }
+            dto.setCustomer(customerInfo);
+        }
+        
+        // Restaurant info
+        if (booking.getRestaurant() != null) {
+            BookingDetailModalDto.RestaurantInfo restaurantInfo = new BookingDetailModalDto.RestaurantInfo();
+            restaurantInfo.setRestaurantId(booking.getRestaurant().getRestaurantId());
+            restaurantInfo.setRestaurantName(booking.getRestaurant().getRestaurantName());
+            dto.setRestaurant(restaurantInfo);
+        }
+        
+        // Booking tables
+        if (booking.getBookingTables() != null && !booking.getBookingTables().isEmpty()) {
+            List<BookingDetailModalDto.BookingTableInfo> tableInfos = booking.getBookingTables().stream()
+                .map(bt -> {
+                    BookingDetailModalDto.BookingTableInfo tableInfo = new BookingDetailModalDto.BookingTableInfo();
+                    tableInfo.setBookingTableId(bt.getBookingTableId());
+                    tableInfo.setTableName(bt.getTable().getTableName());
+                    tableInfo.setAssignedAt(bt.getAssignedAt());
+                    return tableInfo;
+                })
+                .collect(Collectors.toList());
+            dto.setBookingTables(tableInfos);
+        }
+        
+        // Booking dishes
+        if (booking.getBookingDishes() != null && !booking.getBookingDishes().isEmpty()) {
+            List<BookingDishDto> dishDtos = booking.getBookingDishes().stream()
+                .map(bd -> {
+                    BookingDishDto dishDto = new BookingDishDto();
+                    dishDto.setDishId(bd.getDish().getDishId());
+                    dishDto.setDishName(bd.getDish().getName());
+                    dishDto.setDescription(bd.getDish().getDescription());
+                    dishDto.setQuantity(bd.getQuantity());
+                    dishDto.setPrice(bd.getDish().getPrice());
+                    dishDto.setTotalPrice(bd.getTotalPrice());
+                    return dishDto;
+                })
+                .collect(Collectors.toList());
+            dto.setBookingDishes(dishDtos);
+        }
+        
+        // Booking services
+        if (booking.getBookingServices() != null && !booking.getBookingServices().isEmpty()) {
+            List<BookingServiceDto> serviceDtos = booking.getBookingServices().stream()
+                .map(bs -> {
+                    BookingServiceDto serviceDto = new BookingServiceDto();
+                    serviceDto.setServiceId(bs.getService().getServiceId());
+                    serviceDto.setServiceName(bs.getService().getName());
+                    serviceDto.setDescription(bs.getService().getDescription());
+                    serviceDto.setQuantity(bs.getQuantity());
+                    serviceDto.setPrice(bs.getService().getPrice());
+                    serviceDto.setTotalPrice(bs.getTotalPrice());
+                    return serviceDto;
+                })
+                .collect(Collectors.toList());
+            dto.setBookingServices(serviceDtos);
+        }
+        
+        // Internal notes
+        List<InternalNote> internalNotes = internalNoteRepository.findByBookingIdOrderByCreatedAtDesc(booking.getBookingId());
+        if (internalNotes != null && !internalNotes.isEmpty()) {
+            List<InternalNoteDto> noteDtos = internalNotes.stream()
+                .map(note -> {
+                    InternalNoteDto noteDto = new InternalNoteDto();
+                    noteDto.setId(note.getId());
+                    noteDto.setContent(note.getContent());
+                    noteDto.setAuthor(note.getAuthor());
+                    noteDto.setCreatedAt(note.getCreatedAt());
+                    noteDto.setUpdatedAt(note.getUpdatedAt());
+                    return noteDto;
+                })
+                .collect(Collectors.toList());
+            dto.setInternalNotes(noteDtos);
+        }
+        
+        // Communication history
+        List<CommunicationHistory> communicationHistory = communicationHistoryRepository.findByBookingIdOrderByTimestampDesc(booking.getBookingId());
+        if (communicationHistory != null && !communicationHistory.isEmpty()) {
+            List<CommunicationHistoryDto> commDtos = communicationHistory.stream()
+                .map(comm -> {
+                    CommunicationHistoryDto commDto = new CommunicationHistoryDto();
+                    commDto.setId(comm.getId());
+                    commDto.setType(comm.getType().name());
+                    commDto.setContent(comm.getContent());
+                    commDto.setDirection(comm.getDirection().name());
+                    commDto.setTimestamp(comm.getTimestamp());
+                    commDto.setAuthor(comm.getAuthor());
+                    commDto.setStatus(comm.getStatus() != null ? comm.getStatus().name() : null);
+                    return commDto;
+                })
+                .collect(Collectors.toList());
+            dto.setCommunicationHistory(commDtos);
+        }
+        
+        return dto;
+    }
+    
+    /**
+     * Get available tables for booking
+     */
+    @GetMapping("/bookings/{id}/available-tables")
+    @ResponseBody
+    public ResponseEntity<?> getAvailableTables(@PathVariable Integer id) {
+        try {
+            var booking = bookingService.getBookingDetailById(id);
+            if (!booking.isPresent()) {
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Không tìm thấy booking"
+                ));
+            }
+            
+            // Get restaurant ID from booking
+            Integer restaurantId = booking.get().getRestaurant().getRestaurantId();
+            
+            // Get all tables for the restaurant
+            List<RestaurantTable> allTables = restaurantTableRepository.findByRestaurantRestaurantId(restaurantId);
+            
+            // Get currently assigned table IDs for this booking
+            Set<Integer> assignedTableIds = booking.get().getBookingTables().stream()
+                .map(bt -> bt.getTable().getTableId())
+                .collect(Collectors.toSet());
+            
+            // Filter available tables (exclude currently assigned ones)
+            List<Map<String, Object>> availableTables = allTables.stream()
+                .filter(table -> !assignedTableIds.contains(table.getTableId()))
+                .map(table -> {
+                    Map<String, Object> tableMap = new HashMap<>();
+                    tableMap.put("id", table.getTableId());
+                    tableMap.put("name", table.getTableName());
+                    tableMap.put("capacity", table.getCapacity());
+                    tableMap.put("status", table.getStatus().name());
+                    return tableMap;
+                })
+                .collect(Collectors.toList());
+            
+            return ResponseEntity.ok().body(Map.of(
+                "success", true,
+                "availableTables", availableTables
+            ));
+        } catch (Exception e) {
+            System.out.println("❌ Error in getAvailableTables: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Lỗi khi lấy danh sách bàn: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Debug endpoint to check internal notes table
+     */
+    @GetMapping("/debug/internal-notes/{bookingId}")
+    @ResponseBody
+    public ResponseEntity<?> debugInternalNotes(@PathVariable Integer bookingId) {
+        try {
+            // Check if table exists and has data
+            List<InternalNote> notes = internalNoteRepository.findByBookingIdOrderByCreatedAtDesc(bookingId);
+            
+            Map<String, Object> result = Map.of(
+                "bookingId", bookingId,
+                "totalNotes", notes.size(),
+                "notes", notes.stream().map(note -> Map.of(
+                    "id", note.getId(),
+                    "content", note.getContent(),
+                    "author", note.getAuthor(),
+                    "createdAt", note.getCreatedAt()
+                )).toList()
+            );
+            
+            return ResponseEntity.ok().body(result);
+            
+        } catch (Exception e) {
+            return ResponseEntity.ok().body(Map.of(
+                "error", e.getMessage(),
+                "bookingId", bookingId
+            ));
+        }
+    }
+
+    /**
+     * Change table for booking
+     */
+    @PostMapping("/bookings/{id}/change-table")
+    @ResponseBody
+    @Transactional
+    public ResponseEntity<?> changeTable(@PathVariable Integer id, @RequestParam Integer newTableId) {
+        try {
+            var booking = bookingService.getBookingDetailById(id);
+            if (!booking.isPresent()) {
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Không tìm thấy booking"
+                ));
+            }
+            
+            Booking bookingEntity = booking.get();
+            Integer restaurantId = bookingEntity.getRestaurant().getRestaurantId();
+            
+            List<RestaurantTable> restaurantTables = restaurantTableRepository.findByRestaurantRestaurantId(restaurantId);
+            boolean tableExists = restaurantTables.stream()
+                .anyMatch(table -> table.getTableId().equals(newTableId));
+            
+            if (!tableExists) {
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Bàn không tồn tại hoặc không thuộc nhà hàng này"
+                ));
+            }
+            
+            RestaurantTable newTable = restaurantTables.stream()
+                .filter(table -> table.getTableId().equals(newTableId))
+                .findFirst()
+                .orElse(null);
+            
+            if (newTable == null) {
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Không thể tìm thấy bàn mới"
+                ));
+            }
+            
+            // Remove current table assignments from database
+            bookingTableRepository.deleteByBooking(bookingEntity);
+            
+            // Create new booking table assignment
+            BookingTable newBookingTable = new BookingTable();
+            newBookingTable.setBooking(bookingEntity);
+            newBookingTable.setTable(newTable);
+            newBookingTable.setAssignedAt(LocalDateTime.now());
+            
+            // Save the new booking table assignment
+            bookingTableRepository.save(newBookingTable);
+            
+            // Update booking timestamp
+            bookingEntity.setUpdatedAt(LocalDateTime.now());
+            bookingRepository.save(bookingEntity);
+            
+            // Log the change for debugging
+            System.out.println("✅ Table changed for booking " + id + " to table " + newTable.getTableName());
+            
+            return ResponseEntity.ok().body(Map.of(
+                "success", true,
+                "message", "Đã đổi bàn thành công sang bàn " + newTable.getTableName()
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error in changeTable: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Lỗi khi đổi bàn: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Add internal note to booking
+     */
+    @PostMapping("/bookings/{id}/add-note")
+    @ResponseBody
+    @Transactional
+    public ResponseEntity<?> addInternalNote(@PathVariable Integer id, @RequestParam String content) {
+        try {
+            var booking = bookingService.getBookingDetailById(id);
+            if (!booking.isPresent()) {
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Không tìm thấy booking"
+                ));
+            }
+            
+            // Create new internal note
+            InternalNote newNote = new InternalNote();
+            newNote.setBookingId(id);
+            newNote.setContent(content);
+            newNote.setAuthor("Admin"); // TODO: Get from authentication
+            newNote.setCreatedAt(LocalDateTime.now());
+            newNote.setUpdatedAt(LocalDateTime.now());
+            
+            // Save the note
+            InternalNote savedNote = internalNoteRepository.save(newNote);
+            
+            System.out.println("✅ Added internal note for booking " + id + ": " + content);
+            
+            return ResponseEntity.ok().body(Map.of(
+                "success", true,
+                "message", "Đã thêm ghi chú thành công",
+                "note", Map.of(
+                    "id", savedNote.getId(),
+                    "content", savedNote.getContent(),
+                    "author", savedNote.getAuthor(),
+                    "createdAt", savedNote.getCreatedAt()
+                )
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error adding internal note: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Lỗi khi thêm ghi chú: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Delete internal note
+     */
+    @PostMapping("/bookings/{id}/delete-note")
+    @ResponseBody
+    @Transactional
+    public ResponseEntity<?> deleteInternalNote(@PathVariable Integer id, @RequestParam Long noteId) {
+        try {
+            // Check if note exists and belongs to the booking
+            var note = internalNoteRepository.findById(noteId);
+            if (!note.isPresent()) {
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Không tìm thấy ghi chú"
+                ));
+            }
+            
+            InternalNote noteEntity = note.get();
+            if (!noteEntity.getBookingId().equals(id)) {
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Ghi chú không thuộc booking này"
+                ));
+            }
+            
+            // Delete the note
+            internalNoteRepository.delete(noteEntity);
+            
+            System.out.println("✅ Deleted internal note " + noteId + " for booking " + id);
+            
+            return ResponseEntity.ok().body(Map.of(
+                "success", true,
+                "message", "Đã xóa ghi chú thành công"
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error deleting internal note: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Lỗi khi xóa ghi chú: " + e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * Cancel booking (Restaurant Owner)
+     */
+    @PostMapping("/bookings/{id}/cancel")
+    public String cancelBooking(@PathVariable Integer id,
+            @RequestParam String cancelReason,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+        try {
+            // Get current restaurant owner
+            User user = getUserFromAuthentication(authentication);
+            UUID restaurantOwnerId = user.getId();
+
+            // Cancel booking with refund processing
+            bookingService.cancelBookingByRestaurant(id, restaurantOwnerId, cancelReason);
+
+            redirectAttributes.addFlashAttribute("success", "Đã hủy booking và tạo refund request!");
+
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", "Không thể hủy booking: " + e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi hủy booking: " + e.getMessage());
+        }
+
+        return "redirect:/restaurant-owner/bookings";
+    }
+
+    /**
+     * API endpoint để cancel booking (Restaurant Owner)
+     */
+    @PostMapping("/api/bookings/{id}/cancel")
+    @ResponseBody
+    public ResponseEntity<?> cancelBookingApi(@PathVariable Integer id,
+            @RequestParam String cancelReason,
+            @RequestParam(required = false) String bankCode,
+            @RequestParam(required = false) String accountNumber,
+            Authentication authentication) {
+        try {
+            // Get current restaurant owner
+            User user = getUserFromAuthentication(authentication);
+            UUID restaurantOwnerId = user.getId();
+
+            // Cancel booking with refund processing and bank account info
+            bookingService.cancelBookingByRestaurant(id, restaurantOwnerId, cancelReason, bankCode, accountNumber);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Đã hủy booking và tạo refund request!");
+            response.put("bookingId", id);
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Không thể hủy booking: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            logger.error("Error cancelling booking for restaurant owner", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Lỗi khi hủy booking: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+
     /**
      * Show edit booking form for restaurant owner
      */
@@ -2183,6 +2778,165 @@ public class RestaurantOwnerController {
         } catch (Exception e) {
             logger.error("Error deleting service image: {}", e.getMessage(), e);
             return "redirect:/restaurant-owner/restaurants/" + restaurantId + "/services?error=image_delete_failed";
+        }
+    }
+
+    // ==================== COMMUNICATION HISTORY APIs ====================
+    
+    /**
+     * Add new communication history entry
+     */
+    @PostMapping("/bookings/{id}/add-communication")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> addCommunicationHistory(
+            @PathVariable Integer id,
+            @RequestParam String type,
+            @RequestParam String content,
+            @RequestParam String direction,
+            @RequestParam(required = false) String status,
+            Authentication authentication) {
+        
+        try {
+            System.out.println("🚀 Adding communication history for booking ID: " + id);
+            
+            // Get current user
+            String username = authentication.getName();
+            
+            // Create new communication history entry
+            CommunicationHistory newComm = new CommunicationHistory();
+            newComm.setBookingId(id);
+            newComm.setType(CommunicationHistory.CommunicationType.valueOf(type.toUpperCase()));
+            newComm.setContent(content);
+            newComm.setDirection(CommunicationHistory.CommunicationDirection.valueOf(direction.toUpperCase()));
+            newComm.setAuthor(username);
+            newComm.setTimestamp(LocalDateTime.now());
+            
+            if (status != null && !status.isEmpty()) {
+                newComm.setStatus(CommunicationHistory.CommunicationStatus.valueOf(status.toUpperCase()));
+            } else {
+                newComm.setStatus(CommunicationHistory.CommunicationStatus.SENT);
+            }
+            
+            // Save to database
+            CommunicationHistory savedComm = communicationHistoryRepository.save(newComm);
+            
+            System.out.println("✅ Communication history added successfully: " + savedComm.getId());
+            
+            return ResponseEntity.ok().body(Map.of(
+                "success", true,
+                "message", "Thêm lịch sử liên lạc thành công",
+                "communication", Map.of(
+                    "id", savedComm.getId(),
+                    "type", savedComm.getType().name(),
+                    "content", savedComm.getContent(),
+                    "direction", savedComm.getDirection().name(),
+                    "author", savedComm.getAuthor(),
+                    "timestamp", savedComm.getTimestamp(),
+                    "status", savedComm.getStatus() != null ? savedComm.getStatus().name() : null
+                )
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error adding communication history: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Lỗi khi thêm lịch sử liên lạc: " + e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * Delete communication history entry
+     */
+    @PostMapping("/bookings/{id}/delete-communication")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteCommunicationHistory(
+            @PathVariable Integer id,
+            @RequestParam Long communicationId,
+            Authentication authentication) {
+        
+        try {
+            System.out.println("🚀 Deleting communication history ID: " + communicationId + " for booking: " + id);
+            
+            // Check if communication exists and belongs to the booking
+            Optional<CommunicationHistory> commOpt = communicationHistoryRepository.findById(communicationId);
+            if (!commOpt.isPresent()) {
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Không tìm thấy lịch sử liên lạc"
+                ));
+            }
+            
+            CommunicationHistory comm = commOpt.get();
+            if (!comm.getBookingId().equals(id)) {
+                return ResponseEntity.ok().body(Map.of(
+                    "success", false,
+                    "message", "Lịch sử liên lạc không thuộc về booking này"
+                ));
+            }
+            
+            // Delete from database
+            communicationHistoryRepository.delete(comm);
+            
+            System.out.println("✅ Communication history deleted successfully: " + communicationId);
+            
+            return ResponseEntity.ok().body(Map.of(
+                "success", true,
+                "message", "Xóa lịch sử liên lạc thành công"
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error deleting communication history: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Lỗi khi xóa lịch sử liên lạc: " + e.getMessage()
+            ));
+        }
+    }
+    
+    /**
+     * Get communication history for a booking
+     */
+    @GetMapping("/bookings/{id}/communication-history")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getCommunicationHistory(@PathVariable Integer id) {
+        
+        try {
+            System.out.println("🚀 Getting communication history for booking ID: " + id);
+            
+            // Get communication history
+            List<CommunicationHistory> commHistory = communicationHistoryRepository.findByBookingIdOrderByTimestampDesc(id);
+            
+            List<Map<String, Object>> commDtos = commHistory.stream()
+                .map(comm -> {
+                    Map<String, Object> commMap = new HashMap<>();
+                    commMap.put("id", comm.getId());
+                    commMap.put("type", comm.getType().name());
+                    commMap.put("content", comm.getContent());
+                    commMap.put("direction", comm.getDirection().name());
+                    commMap.put("author", comm.getAuthor());
+                    commMap.put("timestamp", comm.getTimestamp());
+                    commMap.put("status", comm.getStatus() != null ? comm.getStatus().name() : null);
+                    return commMap;
+                })
+                .collect(Collectors.toList());
+            
+            System.out.println("✅ Found " + commDtos.size() + " communication history entries");
+            
+            return ResponseEntity.ok().body(Map.of(
+                "success", true,
+                "communicationHistory", commDtos
+            ));
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error getting communication history: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok().body(Map.of(
+                "success", false,
+                "message", "Lỗi khi lấy lịch sử liên lạc: " + e.getMessage()
+            ));
         }
     }
 }

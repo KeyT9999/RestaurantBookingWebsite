@@ -1,21 +1,25 @@
 package com.example.booking.service;
 
-import com.example.booking.domain.RateLimitStatistics;
-import com.example.booking.repository.RateLimitStatisticsRepository;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.booking.domain.RateLimitStatistics;
+import com.example.booking.domain.RequestPattern;
+import com.example.booking.domain.SuspiciousActivity;
+import com.example.booking.repository.RateLimitStatisticsRepository;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Advanced Rate Limiting Service with intelligent threat detection
@@ -310,75 +314,168 @@ public class AdvancedRateLimitingService {
     }
     
     /**
-     * Inner class to track request patterns
+     * Check rate limit for IP and operation type
+     * Returns true if allowed, false if blocked
      */
-    private static class RequestPattern {
-        private final List<RequestInfo> requests = new ArrayList<>();
-        private LocalDateTime lastRequestTime = LocalDateTime.now();
+    public boolean checkRateLimit(String clientIp, String operationType) {
+        if (clientIp == null) {
+            logger.error("❌ NULL IP - Cannot check rate limit");
+            return false;
+        }
         
-        public void addRequest(String path, String userAgent, LocalDateTime timestamp) {
-            requests.add(new RequestInfo(path, userAgent, timestamp));
-            this.lastRequestTime = timestamp;
+        logger.info("🔍 CHECK RATE LIMIT - IP: {}, Operation: {}, Time: {}", 
+                clientIp, operationType, LocalDateTime.now().format(formatter));
+        
+        // Get or create statistics
+        RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
+                .orElse(new RateLimitStatistics(clientIp));
+        
+        // Increment total requests
+        stats.incrementTotalRequests();
+        stats.setLastRequestAt(LocalDateTime.now());
+        
+        // Check if IP is currently blocked
+        if (stats.isCurrentlyBlocked()) {
+            stats.incrementBlockedCount();
+            stats.incrementFailedRequests();
+            statisticsRepository.save(stats);
             
-            // Keep only last 100 requests
-            if (requests.size() > 100) {
-                requests.remove(0);
-            }
+            logger.warn("🚫 IP BLOCKED - IP: {}, Until: {}", 
+                    clientIp, stats.getBlockedUntil());
+            return false;
         }
         
-        public int getRequestsInLastMinute() {
-            LocalDateTime oneMinuteAgo = LocalDateTime.now().minusMinutes(1);
-            return (int) requests.stream()
-                    .filter(r -> r.getTimestamp().isAfter(oneMinuteAgo))
-                    .count();
-        }
+        // Check basic rate limit
+        boolean allowed = checkBasicRateLimit(stats, operationType);
         
-        public boolean hasUnusualPattern() {
-            // Check for patterns like repeated requests to same endpoint
-            Map<String, Long> pathCounts = requests.stream()
-                    .collect(java.util.stream.Collectors.groupingBy(
-                            RequestInfo::getPath, 
-                            java.util.stream.Collectors.counting()));
+        if (!allowed) {
+            stats.incrementBlockedCount();
+            stats.incrementFailedRequests();
             
-            return pathCounts.values().stream().anyMatch(count -> count > 20);
-        }
-        
-        public LocalDateTime getLastRequestTime() {
-            return lastRequestTime;
-        }
-        
-        private static class RequestInfo {
-            private final String path;
-            private final String userAgent;
-            private final LocalDateTime timestamp;
-            
-            public RequestInfo(String path, String userAgent, LocalDateTime timestamp) {
-                this.path = path;
-                this.userAgent = userAgent;
-                this.timestamp = timestamp;
+            // Create alert if threshold exceeded
+            if (stats.getBlockedCount() >= alertThreshold) {
+                if (monitoringEnabled) {
+                    monitoringService.logBlockedRequest(clientIp, operationType, "Rate limit exceeded");
+                }
             }
             
-            public String getPath() { return path; }
-            public LocalDateTime getTimestamp() { return timestamp; }
+            logger.warn("🚫 RATE LIMIT EXCEEDED - IP: {}, Operation: {}, Blocked Count: {}", 
+                    clientIp, operationType, stats.getBlockedCount());
+        } else {
+            stats.incrementSuccessfulRequests();
+            logger.info("✅ RATE LIMIT OK - IP: {}, Operation: {}", clientIp, operationType);
+        }
+        
+        stats.calculateRiskScore();
+        stats.updateSuspiciousFlag();
+        statisticsRepository.save(stats);
+        
+        return allowed;
+    }
+    
+    /**
+     * Reset rate limit for IP and operation type
+     * Clears all buckets and statistics
+     */
+    public void resetRateLimit(String clientIp, String operationType) {
+        if (clientIp == null) {
+            logger.error("❌ NULL IP - Cannot reset rate limit");
+            return;
+        }
+        
+        logger.info("🔄 RESET RATE LIMIT - IP: {}, Operation: {}, Time: {}", 
+                clientIp, operationType, LocalDateTime.now().format(formatter));
+        
+        // Reset statistics
+        RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp).orElse(null);
+        if (stats != null) {
+            if (operationType == null || operationType.isEmpty()) {
+                // Reset all operations
+                stats.resetBlockedCount();
+                stats.setBlockedUntil(null);
+                stats.setLastBlockedAt(null);
+                logger.info("✅ RESET ALL OPERATIONS - IP: {}", clientIp);
+            } else {
+                // Reset specific operation (adjust bucket only)
+                logger.info("✅ RESET OPERATION - IP: {}, Operation: {}", clientIp, operationType);
+            }
+            
+            stats.calculateRiskScore();
+            stats.updateSuspiciousFlag();
+            statisticsRepository.save(stats);
+        }
+        
+        // Clear request patterns
+        requestPatterns.remove(clientIp);
+        
+        // Resolve alerts if exists
+        if (monitoringEnabled) {
+            databaseService.resetRateLimitForIp(clientIp);
         }
     }
     
     /**
-     * Inner class to track suspicious activity
+     * Get rate limit statistics for IP
+     * Returns comprehensive stats including blocked count, success rate, risk score
      */
-    private static class SuspiciousActivity {
-        private final String type;
-        private final String details;
-        private final LocalDateTime timestamp;
-        
-        public SuspiciousActivity(String type, String details) {
-            this.type = type;
-            this.details = details;
-            this.timestamp = LocalDateTime.now();
+    public Map<String, Object> getRateLimitStats(String clientIp) {
+        if (clientIp == null) {
+            logger.error("❌ NULL IP - Cannot get stats");
+            return new HashMap<>();
         }
         
-        public String getType() { return type; }
-        public String getDetails() { return details; }
-        public LocalDateTime getTimestamp() { return timestamp; }
+        logger.info("📊 GET RATE LIMIT STATS - IP: {}, Time: {}", 
+                clientIp, LocalDateTime.now().format(formatter));
+        
+        Map<String, Object> stats = new HashMap<>();
+        
+        // Get statistics from database
+        RateLimitStatistics dbStats = statisticsRepository.findByIpAddress(clientIp).orElse(null);
+        if (dbStats != null) {
+            stats.put("ipAddress", dbStats.getIpAddress());
+            stats.put("totalRequests", dbStats.getTotalRequests());
+            stats.put("successfulRequests", dbStats.getSuccessfulRequests());
+            stats.put("failedRequests", dbStats.getFailedRequests());
+            stats.put("blockedCount", dbStats.getBlockedCount());
+            stats.put("successRate", dbStats.getFormattedSuccessRate());
+            stats.put("failureRate", dbStats.getFormattedFailureRate());
+            stats.put("riskScore", dbStats.getRiskScore());
+            stats.put("riskLevel", dbStats.getRiskLevel());
+            stats.put("isSuspicious", dbStats.getIsSuspicious());
+            stats.put("isCurrentlyBlocked", dbStats.isCurrentlyBlocked());
+            stats.put("lastRequestAt", dbStats.getLastRequestAt());
+            stats.put("lastBlockedAt", dbStats.getLastBlockedAt());
+            stats.put("blockedUntil", dbStats.getBlockedUntil());
+            stats.put("timeUntilUnblock", dbStats.getTimeUntilUnblock());
+        }
+        
+        // Get request pattern info
+        RequestPattern pattern = requestPatterns.get(clientIp);
+        if (pattern != null) {
+            stats.put("requestsInLastMinute", pattern.getRequestsInLastMinute());
+            stats.put("hasUnusualPattern", pattern.hasUnusualPattern());
+        }
+        
+        // Get chat bucket info (login, booking, chat operations)
+        Map<String, Object> bucketInfo = new HashMap<>();
+        bucketInfo.put("login", getOperationBucketInfo(clientIp, "login"));
+        bucketInfo.put("booking", getOperationBucketInfo(clientIp, "booking"));
+        bucketInfo.put("chat", getOperationBucketInfo(clientIp, "chat"));
+        stats.put("buckets", bucketInfo);
+        
+        logger.info("✅ STATS RETRIEVED - IP: {}, Total Requests: {}, Blocked: {}", 
+                clientIp, stats.get("totalRequests"), stats.get("blockedCount"));
+        
+        return stats;
+    }
+    
+    /**
+     * Helper method to get bucket info for specific operation
+     */
+    private Map<String, Object> getOperationBucketInfo(String clientIp, String operationType) {
+        Map<String, Object> info = new HashMap<>();
+        info.put("operation", operationType);
+        info.put("ip", clientIp);
+        return info;
     }
 }

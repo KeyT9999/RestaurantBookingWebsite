@@ -1,0 +1,136 @@
+/* ================================================
+   BOOKING DETAIL PAGE - MONOCHROME THEME
+   Custom styles for booking detail page with black/white theme
+   ================================================ */
+
+/* Override design system colors for monochrome theme */
+.booking-detail-page {
+    /* Ensure monochrome color scheme */
+    --ds-primary-black: #000000;
+    --ds-primary-white: #FFFFFF;
+    --ds-neutral-900: #000000;
+    --ds-neutral-700: #333333;
+    --ds-neutral-500: #666666;
+    --ds-neutral-200: #E5E5E5;
+    --ds-neutral-100: #F5F5F5;
+    --ds-neutral-50: #FAFAFA;
+}
+
+/* Feature icons - monochrome style */
+.booking-detail-page .ds-feature-icon {
+    background: var(--ds-neutral-100);
+    color: var(--ds-neutral-900);
+    border: 2px solid var(--ds-neutral-200);
+}
+
+/* Cards with subtle borders */
+.booking-detail-page .ds-card {
+    border: 1px solid var(--ds-neutral-200);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Status badges - monochrome variants */
+.booking-detail-page .ds-badge-warning {
+    background: var(--ds-neutral-100);
+    color: var(--ds-neutral-900);
+    border: 1px solid var(--ds-neutral-500);
+}
+
+.booking-detail-page .ds-badge-success {
+    background: var(--ds-neutral-50);
+    color: var(--ds-neutral-900);
+    border: 1px solid var(--ds-neutral-300);
+}
+
+.booking-detail-page .ds-badge-error {
+    background: var(--ds-neutral-100);
+    color: var(--ds-neutral-900);
+    border: 1px solid var(--ds-neutral-700);
+}
+
+.booking-detail-page .ds-badge-info {
+    background: var(--ds-neutral-50);
+    color: var(--ds-neutral-900);
+    border: 1px solid var(--ds-neutral-400);
+}
+
+/* Payment summary highlight */
+.booking-detail-page .ds-bg-primary {
+    background: var(--ds-neutral-900) !important;
+    color: var(--ds-primary-white) !important;
+}
+
+/* Timeline markers */
+.booking-detail-page .ds-bg-primary.ds-rounded-full {
+    background: var(--ds-neutral-900) !important;
+}
+
+/* Buttons - monochrome style */
+.booking-detail-page .ds-btn-primary {
+    background: var(--ds-neutral-900);
+    color: var(--ds-primary-white);
+    border: 1px solid var(--ds-neutral-900);
+}
+
+.booking-detail-page .ds-btn-primary:hover {
+    background: var(--ds-neutral-700);
+    border-color: var(--ds-neutral-700);
+}
+
+.booking-detail-page .ds-btn-secondary {
+    background: var(--ds-primary-white);
+    color: var(--ds-neutral-900);
+    border: 1px solid var(--ds-neutral-300);
+}
+
+.booking-detail-page .ds-btn-secondary:hover {
+    background: var(--ds-neutral-50);
+    border-color: var(--ds-neutral-500);
+}
+
+.booking-detail-page .ds-btn-outline {
+    background: transparent;
+    color: var(--ds-neutral-900);
+    border: 1px solid var(--ds-neutral-300);
+}
+
+.booking-detail-page .ds-btn-outline:hover {
+    background: var(--ds-neutral-50);
+    border-color: var(--ds-neutral-500);
+}
+
+/* Text colors */
+.booking-detail-page .ds-text-primary {
+    color: var(--ds-neutral-900) !important;
+}
+
+.booking-detail-page .ds-text-secondary {
+    color: var(--ds-neutral-500) !important;
+}
+
+/* Background sections */
+.booking-detail-page .ds-bg-gray-50 {
+    background: var(--ds-neutral-50) !important;
+}
+
+/* Item backgrounds */
+.booking-detail-page .ds-bg-gray-50.ds-rounded {
+    background: var(--ds-neutral-100) !important;
+    border: 1px solid var(--ds-neutral-200);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .booking-detail-page .ds-grid-auto {
+        grid-template-columns: 1fr;
+    }
+    
+    .booking-detail-page .ds-flex-wrap {
+        flex-wrap: wrap;
+    }
+    
+    .booking-detail-page .ds-btn-lg {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}

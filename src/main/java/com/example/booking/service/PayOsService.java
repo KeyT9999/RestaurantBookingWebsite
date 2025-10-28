@@ -1,7 +1,9 @@
 package com.example.booking.service;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,15 +24,16 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.example.booking.web.dto.PayOSRefundRequest;
-import com.example.booking.web.dto.PayOSRefundResponse;
 
 @Service
 public class PayOsService {
     private static final Logger logger = LoggerFactory.getLogger(PayOsService.class);
 
+    @Value("${payment.payos.expiration-minutes:15}")
+    private int expirationMinutes; // reserved for future use
+
     @Value("${payment.payos.client-id}")
-    private String clientId; // reserved for future use
+    private String clientId;
     
     @Value("${payment.payos.api-key}")
     private String apiKey;
@@ -41,6 +44,10 @@ public class PayOsService {
     @Value("${payment.payos.endpoint}")
     private String endpoint;
     
+    // Alias fields for compatibility
+    private String secretKey;
+    private String baseUrl;
+
     @Value("${payment.payos.return-url}")
     private String returnUrl;
     
@@ -55,7 +62,33 @@ public class PayOsService {
         this.objectMapper = objectMapper;
     }
 
+    // Initialize alias fields
+    public void initAliasFields() {
+        this.secretKey = this.checksumKey;
+        this.baseUrl = this.endpoint;
+    }
+
     public CreateLinkResponse createPaymentLink(long orderCode, long amount, String description) {
+        return createPaymentLinkInternal(orderCode, amount, description, returnUrl, cancelUrl);
+    }
+
+    /**
+     * Create PayOS payment link specifically for refunds with custom URLs
+     */
+    public CreateLinkResponse createRefundPaymentLink(long orderCode, long amount, String description) {
+        // Use refund-specific URLs
+        String refundReturnUrl = returnUrl.replace("/payment/payos/return", "/refund/payos/return");
+        String refundCancelUrl = cancelUrl.replace("/payment/payos/cancel", "/refund/payos/cancel");
+
+        logger.info("🔄 Creating PayOS refund payment link with custom URLs:");
+        logger.info("   - Refund Return URL: {}", refundReturnUrl);
+        logger.info("   - Refund Cancel URL: {}", refundCancelUrl);
+
+        return createPaymentLinkInternal(orderCode, amount, description, refundReturnUrl, refundCancelUrl);
+    }
+
+    private CreateLinkResponse createPaymentLinkInternal(long orderCode, long amount, String description,
+            String customReturnUrl, String customCancelUrl) {
         try {
             // Validate PayOS configuration first
             if (clientId == null || clientId.trim().isEmpty()) {
@@ -83,19 +116,20 @@ public class PayOsService {
             logger.info("   - OrderCode: {}", orderCode);
             logger.info("   - Amount: {}", amount);
             logger.info("   - Description: {}", description);
-            logger.info("   - CancelUrl: {}", cancelUrl);
-            logger.info("   - ReturnUrl: {}", returnUrl);
+            logger.info("   - CancelUrl: {}", customCancelUrl);
+            logger.info("   - ReturnUrl: {}", customReturnUrl);
+            logger.info("   - ExpirationMinutes: {}", expirationMinutes);
             
-            String signature = signCreate(amount, cancelUrl, description, orderCode, returnUrl);
+            String signature = signCreate(amount, customCancelUrl, description, orderCode, customReturnUrl);
             logger.info("   - Signature: {}...", signature.substring(0, 16));
 
             Map<String, Object> payload = new HashMap<>();
             payload.put("orderCode", orderCode);
             payload.put("amount", amount);
             payload.put("description", description);
-            payload.put("cancelUrl", cancelUrl);
-            payload.put("returnUrl", returnUrl);
-            payload.put("expiredAt", Instant.now().plusSeconds(15 * 60).getEpochSecond());
+            payload.put("cancelUrl", customCancelUrl);
+            payload.put("returnUrl", customReturnUrl);
+            payload.put("expiredAt", Instant.now().plusSeconds(expirationMinutes * 60).getEpochSecond());
             payload.put("signature", signature);
 
             HttpHeaders headers = new HttpHeaders();
@@ -268,56 +302,6 @@ public class PayOsService {
         }
     }
 
-    /**
-     * Xử lý hoàn tiền PayOS
-     */
-    public PayOSRefundResponse processRefund(PayOSRefundRequest refundRequest) {
-        try {
-            logger.info("🔄 Processing PayOS refund for orderCode: {}, amount: {}, reason: {}", 
-                       refundRequest.getOrderCode(), refundRequest.getAmount(), refundRequest.getReason());
-            
-            // Validate refund request
-            if (refundRequest.getOrderCode() == null) {
-                throw new IllegalArgumentException("OrderCode cannot be null");
-            }
-            
-            if (refundRequest.getAmount() == null || refundRequest.getAmount() <= 0) {
-                throw new IllegalArgumentException("Refund amount must be positive");
-            }
-            
-            // Create signature for refund
-            String signature = signRefund(refundRequest.getOrderCode(), refundRequest.getAmount(), refundRequest.getReason());
-            
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("orderCode", refundRequest.getOrderCode());
-            payload.put("amount", refundRequest.getAmount());
-            payload.put("reason", refundRequest.getReason());
-            payload.put("signature", signature);
-            
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.add("x-client-id", clientId);
-            headers.add("x-api-key", apiKey);
-            
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
-            String url = endpoint + "/v2/refunds";
-            
-            logger.info("📡 Calling PayOS refund API: POST {}", url);
-            ResponseEntity<PayOSRefundResponse> resp = restTemplate.exchange(
-                URI.create(url), HttpMethod.POST, entity, PayOSRefundResponse.class);
-            
-            PayOSRefundResponse response = resp.getBody();
-            if (response != null) {
-                logger.info("✅ PayOS refund response: code={}, desc={}", response.getCode(), response.getDesc());
-            }
-            
-            return response;
-            
-        } catch (Exception e) {
-            logger.error("❌ Error processing PayOS refund", e);
-            throw new RuntimeException("Failed to process PayOS refund: " + e.getMessage(), e);
-        }
-    }
 
     public boolean verifyWebhook(String body, String signature) {
         try {
@@ -549,6 +533,113 @@ public class PayOsService {
             public String getAccountName() { return accountName; }
             public String getName() { return name; }
             public String getShortName() { return shortName; }
+        }
+    }
+
+    /**
+     * Tạo QR code chuyển tiền cho refund
+     */
+    public String createTransferQRCode(BigDecimal amount, String bankAccount, String bankName, String accountHolder,
+            String description) {
+        try {
+            logger.info("🔄 Creating transfer QR code for refund");
+            logger.info("   Amount: {}", amount);
+            logger.info("   Bank Account: {}", bankAccount);
+            logger.info("   Bank Name: {}", bankName);
+            logger.info("   Account Holder: {}", accountHolder);
+
+            // Tạo dữ liệu QR code theo format PayOS
+            Map<String, Object> qrData = new HashMap<>();
+            qrData.put("type", "transfer");
+            qrData.put("amount", amount.toString());
+            qrData.put("bankAccount", bankAccount);
+            qrData.put("bankName", bankName);
+            qrData.put("accountHolder", accountHolder);
+            qrData.put("description", description);
+            qrData.put("timestamp", System.currentTimeMillis());
+
+            // Tạo signature cho QR code
+            String dataString = String.format("%s|%s|%s|%s|%s",
+                    amount.toString(), bankAccount, bankName, accountHolder, description);
+            String signature = signTransferQR(dataString);
+            qrData.put("signature", signature);
+
+            // Chuyển đổi thành JSON string
+            String qrCodeData = objectMapper.writeValueAsString(qrData);
+
+            logger.info("✅ Transfer QR code created successfully");
+            return qrCodeData;
+
+        } catch (Exception e) {
+            logger.error("❌ Error creating transfer QR code", e);
+            return null;
+        }
+    }
+
+    /**
+     * Tạo signature cho transfer QR code
+     */
+    private String signTransferQR(String data) {
+        try {
+            // Sử dụng HMAC SHA256 với secret key
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA256");
+            mac.init(secretKeySpec);
+
+            byte[] signature = mac.doFinal(data.getBytes());
+            return Base64.getEncoder().encodeToString(signature);
+
+        } catch (Exception e) {
+            logger.error("Error signing transfer QR data", e);
+            return null;
+        }
+    }
+
+    /**
+     * Tạo URL QR code từ PayOS (nếu có API)
+     */
+    public String createTransferQRCodeUrl(BigDecimal amount, String bankAccount, String bankName, String accountHolder,
+            String description) {
+        try {
+            logger.info("🔄 Creating transfer QR code URL from PayOS");
+
+            // Tạo dữ liệu cho PayOS API
+            Map<String, Object> requestData = new HashMap<>();
+            requestData.put("amount", amount.multiply(new BigDecimal("100")).intValue()); // PayOS sử dụng đơn vị nhỏ
+                                                                                          // nhất
+            requestData.put("description", description);
+            requestData.put("bankAccount", bankAccount);
+            requestData.put("bankName", bankName);
+            requestData.put("accountHolder", accountHolder);
+
+            // Gọi PayOS API để tạo QR code
+            String url = baseUrl + "/v2/payment/transfer-qr";
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + secretKey);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestData, headers);
+
+            @SuppressWarnings("unchecked")
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    URI.create(url), HttpMethod.POST, entity,
+                    (Class<Map<String, Object>>) (Class<?>) Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Map<String, Object> responseBody = response.getBody();
+                if (responseBody != null) {
+                    String qrCodeUrl = (String) responseBody.get("qrCodeUrl");
+                    logger.info("✅ Transfer QR code URL created: {}", qrCodeUrl);
+                    return qrCodeUrl;
+                }
+            }
+            logger.error("❌ PayOS API returned error: {}", response.getBody());
+            return null;
+
+        } catch (Exception e) {
+            logger.error("❌ Error creating transfer QR code URL", e);
+            // Fallback: tạo QR code data thay vì URL
+            return createTransferQRCode(amount, bankAccount, bankName, accountHolder, description);
         }
     }
 }

@@ -7,6 +7,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+	<link th:href="@{/css/design-system.css}" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
 	
 	<style>
@@ -106,7 +107,8 @@
 </head>
 <body class="admin-page">
 	<!-- Site Header -->
-	<div th:replace="~{fragments/header :: site-header}"></div>
+	<div th:with="activeNav='admin-users'"
+	     th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
 	<!-- Admin Content -->
 	<div class="admin-content">
@@ -286,7 +288,8 @@
 	</div>
 
 	<!-- Site Footer -->
-	<div th:replace="~{fragments/footer :: site-footer}"></div>
+	<div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+	<div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
 	
 	<!-- Bootstrap JS -->
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

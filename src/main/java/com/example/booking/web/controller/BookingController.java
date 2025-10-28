@@ -10,10 +10,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.time.LocalDateTime;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -27,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
@@ -53,6 +59,8 @@ import jakarta.validation.Valid;
 // @PreAuthorize("!hasRole('RESTAURANT_OWNER')") // Block restaurant owners from
 // public booking
 public class BookingController {
+
+    private static final Logger logger = LoggerFactory.getLogger(BookingController.class);
 
     static {
         System.out.println("🚀🚀🚀 BookingController class loaded! 🚀🚀🚀");
@@ -84,10 +92,39 @@ public class BookingController {
      * Show booking form - Only for customers and guests
      */
     @GetMapping("/new")
-    public String showBookingForm(Model model, Authentication authentication) {
-        if (authentication != null && authentication.getAuthorities().stream()
+    public String showBookingForm(@RequestParam(value = "restaurantId", required = false) Integer restaurantId,
+            @RequestParam(value = "prefillDate", required = false) String prefillDate,
+            @RequestParam(value = "prefillTime", required = false) String prefillTime,
+            @RequestParam(value = "prefillGuests", required = false) Integer prefillGuests,
+            Model model, Authentication authentication) {
+        Authentication auth = authentication != null ? authentication : SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:http://localhost/oauth2/authorization/google";
+        }
+        Object principal = auth.getPrincipal();
+        if (principal == null || (principal instanceof String && "anonymousUser".equals(principal))) {
+            return "redirect:http://localhost/oauth2/authorization/google";
+        }
+        
+        // Debug logging
+        System.out.println("🔍 DEBUG: BookingController /new called with:");
+        System.out.println("  restaurantId: " + restaurantId);
+        System.out.println("  prefillDate: " + prefillDate);
+        System.out.println("  prefillTime: " + prefillTime);
+        System.out.println("  prefillGuests: " + prefillGuests);
+        
+        // Pass parameters to view for JavaScript to handle
+        model.addAttribute("prefillRestaurantId", restaurantId);
+        model.addAttribute("prefillDate", prefillDate);
+        model.addAttribute("prefillTime", prefillTime);
+        model.addAttribute("prefillGuests", prefillGuests);
+        if (auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_RESTAURANT_OWNER"))) {
             return "redirect:/restaurant-owner/dashboard?error=cannot_book_public";
+        }
+        if (auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return "redirect:/admin/dashboard?error=cannot_book_public";
         }
         
         List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
@@ -98,9 +135,29 @@ public class BookingController {
             System.out.println("❌ NO RESTAURANTS FOUND! This could be the problem.");
         }
 
+        BookingForm bookingForm;
+        if (model.containsAttribute("bookingForm")) {
+            bookingForm = (BookingForm) model.asMap().get("bookingForm");
+        } else {
+            bookingForm = new BookingForm();
+            // Pre-select restaurant if provided
+            if (restaurantId != null) {
+                bookingForm.setRestaurantId(restaurantId);
+            }
+            
+            // Note: Pre-filling is now handled by JavaScript to avoid Thymeleaf conflicts
+            System.out.println("ℹ️ DEBUG: Pre-filling will be handled by JavaScript");
+        }
+
         model.addAttribute("restaurants", restaurants);
-        model.addAttribute("bookingForm", new BookingForm());
-        model.addAttribute("tables", List.of()); // Empty initially
+        model.addAttribute("bookingForm", bookingForm);
+
+        if (bookingForm.getRestaurantId() != null) {
+            List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(bookingForm.getRestaurantId());
+            model.addAttribute("tables", tables);
+        } else {
+            model.addAttribute("tables", List.of()); // Empty initially
+        }
         model.addAttribute("pageTitle", "Đặt bàn - Book Table");
 
         return "booking/form";
@@ -135,19 +192,10 @@ public class BookingController {
                 System.out.println("   - " + error.getDefaultMessage());
             });
 
-            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
-            model.addAttribute("restaurants", restaurants);
-            model.addAttribute("bookingForm", form); // Keep the form data
-
-            // Load tables if restaurant is selected
-            if (form.getRestaurantId() != null) {
-                List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
-                model.addAttribute("tables", tables);
-            } else {
-                model.addAttribute("tables", List.of());
-            }
-
-            return "booking/form";
+            redirectAttributes.addFlashAttribute("bookingForm", form);
+            redirectAttributes.addFlashAttribute("org.springframework.validation.BindingResult.bookingForm", bindingResult);
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng kiểm tra lại thông tin đặt bàn.");
+            return "redirect:/booking/new";
         }
 
         try {
@@ -170,32 +218,33 @@ public class BookingController {
 
             // Booking created successfully, redirect to payment
             java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
-            java.math.BigDecimal depositAmount = totalAmount.multiply(new java.math.BigDecimal("0.1"));
+            if (totalAmount == null || totalAmount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                totalAmount = booking.getDepositAmount() != null ? booking.getDepositAmount() : java.math.BigDecimal.ZERO;
+            }
+            java.math.BigDecimal depositAmount;
+            if (totalAmount.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                depositAmount = totalAmount.multiply(new java.math.BigDecimal("0.1"));
+            } else {
+                depositAmount = booking.getDepositAmount() != null ? booking.getDepositAmount() : java.math.BigDecimal.ZERO;
+            }
             String formattedDeposit = String.format("%,.0f", depositAmount);
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Đặt bàn thành công! Vui lòng đặt cọc " + formattedDeposit + " VNĐ để xác nhận.");
             return "redirect:/payment/" + booking.getBookingId();
 
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để đặt bàn.");
+            return "redirect:http://localhost/oauth2/authorization/google";
+
         } catch (BookingConflictException e) {
             System.err.println("❌ Booking conflict detected: " + e.getMessage());
             System.err.println("❌ Conflict type: " + e.getConflictType());
 
             // Keep form data and reload form with error message
-            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
-            model.addAttribute("restaurants", restaurants);
-            model.addAttribute("bookingForm", form); // Keep the form data
-
-            // Load tables if restaurant is selected
-            if (form.getRestaurantId() != null) {
-                List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
-                model.addAttribute("tables", tables);
-            } else {
-                model.addAttribute("tables", List.of());
-            }
-
-            model.addAttribute("errorMessage", "Booking conflict: " + e.getMessage());
-            return "booking/form";
+            redirectAttributes.addFlashAttribute("bookingForm", form);
+            redirectAttributes.addFlashAttribute("errorMessage", "Booking conflict: " + e.getMessage());
+            return "redirect:/booking/new";
 
         } catch (Exception e) {
             System.err.println("❌ Error creating booking: " + e.getMessage());
@@ -203,20 +252,9 @@ public class BookingController {
             e.printStackTrace();
 
             // Keep form data and reload form with error message
-            List<RestaurantProfile> restaurants = restaurantService.findAllRestaurants();
-            model.addAttribute("restaurants", restaurants);
-            model.addAttribute("bookingForm", form); // Keep the form data
-
-            // Load tables if restaurant is selected
-            if (form.getRestaurantId() != null) {
-                List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(form.getRestaurantId());
-                model.addAttribute("tables", tables);
-            } else {
-                model.addAttribute("tables", List.of());
-            }
-
-            model.addAttribute("errorMessage", "Error creating booking: " + e.getMessage());
-            return "booking/form";
+            redirectAttributes.addFlashAttribute("bookingForm", form);
+            redirectAttributes.addFlashAttribute("errorMessage", "Error creating booking: " + e.getMessage());
+            return "redirect:/booking/new";
         }
     }
 
@@ -428,46 +466,55 @@ public class BookingController {
      */
     @GetMapping("/my")
     public String showMyBookings(Model model, Authentication authentication,
-            @RequestParam(required = false) String filter) {
-        UUID customerId = getCurrentCustomerId(authentication);
-        System.out.println("🔍 Getting bookings for customer ID: " + customerId);
+            @RequestParam(required = false) String filter, CsrfToken csrfToken) {
+        try {
+            UUID customerId = getCurrentCustomerId(authentication);
+            System.out.println("🔍 Getting bookings for customer ID: " + customerId);
 
-        // Get regular bookings
-        List<Booking> allBookings = bookingService.findBookingsByCustomer(customerId);
-        System.out.println("📋 Found " + allBookings.size() + " bookings for customer");
+            // Get regular bookings
+            List<Booking> allBookings = bookingService.findBookingsByCustomer(customerId);
+            System.out.println("📋 Found " + allBookings.size() + " bookings for customer");
 
-        // Get waitlist entries
-        List<Waitlist> allWaitlistEntries = waitlistService.getWaitlistByCustomer(customerId);
-        System.out.println("📋 Found " + allWaitlistEntries.size() + " waitlist entries for customer");
+            // Get waitlist entries
+            List<Waitlist> allWaitlistEntries = waitlistService.getWaitlistByCustomer(customerId);
+            System.out.println("📋 Found " + allWaitlistEntries.size() + " waitlist entries for customer");
 
-        // Calculate estimated wait time for each waitlist entry
-        for (Waitlist waitlist : allWaitlistEntries) {
-            int estimatedWaitTime = waitlistService.calculateEstimatedWaitTimeForCustomer(waitlist.getWaitlistId());
-            waitlist.setEstimatedWaitTime(estimatedWaitTime);
+            // Calculate estimated wait time for each waitlist entry
+            for (Waitlist waitlist : allWaitlistEntries) {
+                int estimatedWaitTime = waitlistService.calculateEstimatedWaitTimeForCustomer(waitlist.getWaitlistId());
+                waitlist.setEstimatedWaitTime(estimatedWaitTime);
+            }
+
+            // Store original counts before filtering
+            int totalBookingsCount = allBookings.size();
+            int totalWaitlistCount = allWaitlistEntries.size();
+
+            // Apply filter to display lists
+            List<Booking> bookings = allBookings;
+            List<Waitlist> waitlistEntries = allWaitlistEntries;
+
+            if ("bookings".equals(filter)) {
+                waitlistEntries = new ArrayList<>(); // Hide waitlist
+            } else if ("waitlist".equals(filter)) {
+                bookings = new ArrayList<>(); // Hide bookings
+            }
+            // If filter is null or "all", show both
+
+            model.addAttribute("bookings", bookings);
+            model.addAttribute("waitlistEntries", waitlistEntries);
+            model.addAttribute("currentFilter", filter != null ? filter : "all");
+            model.addAttribute("totalBookings", totalBookingsCount); // Use original count
+            model.addAttribute("totalWaitlist", totalWaitlistCount); // Use original count
+
+            // Add CSRF token to model
+            if (csrfToken != null) {
+                model.addAttribute("_csrf", csrfToken);
+            }
+
+            return "booking/list";
+        } catch (IllegalStateException e) {
+            return "redirect:http://localhost/oauth2/authorization/google";
         }
-
-        // Store original counts before filtering
-        int totalBookingsCount = allBookings.size();
-        int totalWaitlistCount = allWaitlistEntries.size();
-
-        // Apply filter to display lists
-        List<Booking> bookings = allBookings;
-        List<Waitlist> waitlistEntries = allWaitlistEntries;
-
-        if ("bookings".equals(filter)) {
-            waitlistEntries = new ArrayList<>(); // Hide waitlist
-        } else if ("waitlist".equals(filter)) {
-            bookings = new ArrayList<>(); // Hide bookings
-        }
-        // If filter is null or "all", show both
-
-        model.addAttribute("bookings", bookings);
-        model.addAttribute("waitlistEntries", waitlistEntries);
-        model.addAttribute("currentFilter", filter != null ? filter : "all");
-        model.addAttribute("totalBookings", totalBookingsCount); // Use original count
-        model.addAttribute("totalWaitlist", totalWaitlistCount); // Use original count
-
-        return "booking/list";
     }
 
     /**
@@ -493,6 +540,12 @@ public class BookingController {
             response.put("estimatedWaitTime", waitlistService.calculateEstimatedWaitTime(form.getRestaurantId()));
 
             return ResponseEntity.ok(response);
+
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Authentication required");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -526,6 +579,12 @@ public class BookingController {
 
             return ResponseEntity.ok(response);
 
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Authentication required");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -552,6 +611,12 @@ public class BookingController {
             response.put("waitlist", waitlistService.getWaitlistDetail(waitlistId));
 
             return ResponseEntity.ok(response);
+
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Authentication required");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -586,6 +651,12 @@ public class BookingController {
             response.put("message", "Waitlist updated successfully");
 
             return ResponseEntity.ok(response);
+
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Authentication required");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -630,6 +701,10 @@ public class BookingController {
                     "Booking updated successfully!");
             return "redirect:/booking/my";
 
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để cập nhật booking");
+            return "redirect:http://localhost/oauth2/authorization/google";
+
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Error updating booking: " + e.getMessage());
@@ -638,7 +713,7 @@ public class BookingController {
     }
 
     /**
-     * Hủy booking
+     * Hủy booking (old method - disabled)
      */
     @PostMapping("/{id}/cancel")
     public String cancelBooking(@PathVariable("id") Integer bookingId,
@@ -647,17 +722,69 @@ public class BookingController {
 
         try {
             UUID customerId = getCurrentCustomerId(authentication);
-            bookingService.cancelBooking(bookingId, customerId);
+            // This method will be called from the modal with bank account info
+            // For now, just redirect to booking list
+            redirectAttributes.addFlashAttribute("errorMessage", "Please use the cancel button in the booking list");
 
             redirectAttributes.addFlashAttribute("successMessage",
                     "Booking cancelled successfully!");
             return "redirect:/booking/my";
+
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để hủy booking");
+            return "redirect:http://localhost/oauth2/authorization/google";
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Error cancelling booking: " + e.getMessage());
             return "redirect:/booking/my";
         }
+    }
+
+    /**
+     * API endpoint để cancel booking với bank account info
+     */
+    @PostMapping("/api/cancel/{bookingId}")
+    public String cancelBookingWithBankAccount(@PathVariable Integer bookingId,
+            @RequestParam String cancelReason,
+            @RequestParam String bankCode,
+            @RequestParam String accountNumber,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes) {
+
+        logger.info("🔄 Cancel booking API called for bookingId: {}", bookingId);
+        logger.info("📋 Cancel reason: {}", cancelReason);
+        logger.info("📋 Bank code: {}", bankCode);
+        logger.info("📋 Account number: {}", accountNumber);
+        logger.info("📋 Authentication: {}", authentication != null ? "authenticated" : "null");
+
+        try {
+            UUID customerId = getCurrentCustomerId(authentication);
+            logger.info("📋 Customer ID: {}", customerId);
+
+            // Cancel booking với bank account info
+            Booking cancelledBooking = bookingService.cancelBooking(bookingId, customerId, cancelReason, bankCode,
+                    accountNumber);
+
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Đã hủy booking và tạo refund request thành công!");
+            logger.info("✅ Booking cancelled successfully: {}", cancelledBooking.getBookingId());
+
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để hủy booking");
+            return "redirect:http://localhost/oauth2/authorization/google";
+
+        } catch (Exception e) {
+            logger.error("❌ Error cancelling booking with bank account", e);
+            logger.error("❌ Error details: {}", e.getMessage());
+            logger.error("❌ Stack trace: ", e);
+
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Lỗi khi hủy booking: " + e.getMessage());
+        }
+
+        logger.info("🔄 Redirecting to /booking/my");
+        return "redirect:/booking/my";
     }
 
     /**
@@ -676,7 +803,22 @@ public class BookingController {
      */
     private UUID getCurrentCustomerId(Authentication authentication) {
         System.out.println("🔍 getCurrentCustomerId called");
-        String username = authentication.getName();
+        Authentication auth = authentication;
+        if (auth == null) {
+            auth = SecurityContextHolder.getContext().getAuthentication();
+        }
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new IllegalStateException("User is not authenticated");
+        }
+        Object principal = auth.getPrincipal();
+        if (principal == null) {
+            throw new IllegalStateException("User principal is not available");
+        }
+        if (principal instanceof String && "anonymousUser".equals(principal)) {
+            throw new IllegalStateException("Anonymous users are not allowed");
+        }
+
+        String username = auth.getName();
         System.out.println("   Username: " + username);
 
         // Tìm customer theo username
@@ -692,7 +834,7 @@ public class BookingController {
         // Nếu chưa có Customer record, tạo mới
         System.out.println("ℹ️ Customer not found, creating new customer...");
         // Lấy User từ authentication - xử lý cả User và OAuth2User
-        User user = getUserFromAuthentication(authentication);
+        User user = getUserFromAuthentication(auth);
         System.out.println("✅ User found: " + user.getUsername());
 
         // Tạo Customer mới

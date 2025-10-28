@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- This fragment is for inclusion only -->
+</head>
+<body>
+    <!-- Resy Style Footer Fragment -->
+    <footer th:fragment="resy-footer" class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Book Eat</h4>
+                    <p style="color: var(--resy-gray); font-size: 14px; margin-bottom: 1rem;">
+                        Nền tảng đặt bàn nhà hàng hàng đầu Việt Nam. 
+                        Kết nối khách hàng với những nhà hàng tốt nhất.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h4>Khám phá</h4>
+                    <ul>
+                        <li><a th:href="@{/restaurants}">Nhà hàng gần đây</a></li>
+                        <li><a th:href="@{/restaurants}">Nhà hàng phổ biến</a></li>
+                        <li><a th:href="@{/restaurants}">Nhà hàng mới</a></li>
+                        <li><a th:href="@{/restaurants}">Ưu đãi đặc biệt</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Hỗ trợ</h4>
+                    <ul>
+                        <li><a th:href="@{/contact}">Trung tâm trợ giúp</a></li>
+                        <li><a th:href="@{/terms-of-service}">Điều khoản sử dụng</a></li>
+                        <li><a th:href="@{/terms-of-service}">Chính sách bảo mật</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Liên hệ</h4>
+                    <ul>
+                        <li><a href="tel:19001234">📞 1900 1234</a></li>
+                        <li><a href="mailto:support@bookeat.vn">✉️ support@bookeat.vn</a></li>
+                        <li><a href="#contact">📍 Đà Nẵng, Việt Nam</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Book Eat. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
