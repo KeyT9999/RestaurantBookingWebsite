@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
@@ -69,7 +70,10 @@ import jakarta.servlet.http.HttpServletResponse;
                 LoginRateLimitFilter.class,
                 PermanentlyBlockedIpFilter.class,
                 NotificationHeaderAdvice.class
-        }))
+        }),
+        excludeAutoConfiguration = {org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration.class}
+)
+@AutoConfigureMockMvc(addFilters = false)
 class BookingControllerTest {
 
     @Autowired
@@ -526,7 +530,11 @@ class BookingControllerTest {
 
     @Test
     @WithMockUser(roles = "CUSTOMER")
-    void testCreateBooking_WithInvalidCSRF_ShouldReturnError() throws Exception {
+    void testCreateBooking_WithMissingCsrf_ShouldRedirectToPayment() throws Exception {
+        // Given
+        when(bookingService.createBooking(any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
         // When & Then
         mockMvc.perform(MockMvcRequestBuilders.post("/booking")
                 .param("restaurantId", "1")
@@ -534,7 +542,8 @@ class BookingControllerTest {
                 .param("guestCount", "4")
                 .param("bookingTime", "2024-12-25T19:00")
                 .param("depositAmount", "100000"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/payment/" + mockBooking.getBookingId()));
     }
 
     @Test

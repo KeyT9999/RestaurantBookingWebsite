@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
@@ -95,6 +97,14 @@ public class BookingController {
             @RequestParam(value = "prefillTime", required = false) String prefillTime,
             @RequestParam(value = "prefillGuests", required = false) Integer prefillGuests,
             Model model, Authentication authentication) {
+        Authentication auth = authentication != null ? authentication : SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return "redirect:http://localhost/oauth2/authorization/google";
+        }
+        Object principal = auth.getPrincipal();
+        if (principal == null || (principal instanceof String && "anonymousUser".equals(principal))) {
+            return "redirect:http://localhost/oauth2/authorization/google";
+        }
         
         // Debug logging
         System.out.println("🔍 DEBUG: BookingController /new called with:");
@@ -108,11 +118,11 @@ public class BookingController {
         model.addAttribute("prefillDate", prefillDate);
         model.addAttribute("prefillTime", prefillTime);
         model.addAttribute("prefillGuests", prefillGuests);
-        if (authentication != null && authentication.getAuthorities().stream()
+        if (auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_RESTAURANT_OWNER"))) {
             return "redirect:/restaurant-owner/dashboard?error=cannot_book_public";
         }
-        if (authentication != null && authentication.getAuthorities().stream()
+        if (auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
             return "redirect:/admin/dashboard?error=cannot_book_public";
         }
@@ -195,11 +205,6 @@ public class BookingController {
                     ", guestCount=" + form.getGuestCount() +
                     ", bookingTime=" + form.getBookingTime());
 
-            if (authentication == null || !authentication.isAuthenticated()) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để đặt bàn.");
-                return "redirect:http://localhost/oauth2/authorization/google";
-            }
-
             UUID customerId = getCurrentCustomerId(authentication);
 
             // Voucher integration is now handled in BookingService.createBooking()
@@ -227,6 +232,10 @@ public class BookingController {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Đặt bàn thành công! Vui lòng đặt cọc " + formattedDeposit + " VNĐ để xác nhận.");
             return "redirect:/payment/" + booking.getBookingId();
+
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để đặt bàn.");
+            return "redirect:http://localhost/oauth2/authorization/google";
 
         } catch (BookingConflictException e) {
             System.err.println("❌ Booking conflict detected: " + e.getMessage());
@@ -458,50 +467,54 @@ public class BookingController {
     @GetMapping("/my")
     public String showMyBookings(Model model, Authentication authentication,
             @RequestParam(required = false) String filter, CsrfToken csrfToken) {
-        UUID customerId = getCurrentCustomerId(authentication);
-        System.out.println("🔍 Getting bookings for customer ID: " + customerId);
+        try {
+            UUID customerId = getCurrentCustomerId(authentication);
+            System.out.println("🔍 Getting bookings for customer ID: " + customerId);
 
-        // Get regular bookings
-        List<Booking> allBookings = bookingService.findBookingsByCustomer(customerId);
-        System.out.println("📋 Found " + allBookings.size() + " bookings for customer");
+            // Get regular bookings
+            List<Booking> allBookings = bookingService.findBookingsByCustomer(customerId);
+            System.out.println("📋 Found " + allBookings.size() + " bookings for customer");
 
-        // Get waitlist entries
-        List<Waitlist> allWaitlistEntries = waitlistService.getWaitlistByCustomer(customerId);
-        System.out.println("📋 Found " + allWaitlistEntries.size() + " waitlist entries for customer");
+            // Get waitlist entries
+            List<Waitlist> allWaitlistEntries = waitlistService.getWaitlistByCustomer(customerId);
+            System.out.println("📋 Found " + allWaitlistEntries.size() + " waitlist entries for customer");
 
-        // Calculate estimated wait time for each waitlist entry
-        for (Waitlist waitlist : allWaitlistEntries) {
-            int estimatedWaitTime = waitlistService.calculateEstimatedWaitTimeForCustomer(waitlist.getWaitlistId());
-            waitlist.setEstimatedWaitTime(estimatedWaitTime);
+            // Calculate estimated wait time for each waitlist entry
+            for (Waitlist waitlist : allWaitlistEntries) {
+                int estimatedWaitTime = waitlistService.calculateEstimatedWaitTimeForCustomer(waitlist.getWaitlistId());
+                waitlist.setEstimatedWaitTime(estimatedWaitTime);
+            }
+
+            // Store original counts before filtering
+            int totalBookingsCount = allBookings.size();
+            int totalWaitlistCount = allWaitlistEntries.size();
+
+            // Apply filter to display lists
+            List<Booking> bookings = allBookings;
+            List<Waitlist> waitlistEntries = allWaitlistEntries;
+
+            if ("bookings".equals(filter)) {
+                waitlistEntries = new ArrayList<>(); // Hide waitlist
+            } else if ("waitlist".equals(filter)) {
+                bookings = new ArrayList<>(); // Hide bookings
+            }
+            // If filter is null or "all", show both
+
+            model.addAttribute("bookings", bookings);
+            model.addAttribute("waitlistEntries", waitlistEntries);
+            model.addAttribute("currentFilter", filter != null ? filter : "all");
+            model.addAttribute("totalBookings", totalBookingsCount); // Use original count
+            model.addAttribute("totalWaitlist", totalWaitlistCount); // Use original count
+
+            // Add CSRF token to model
+            if (csrfToken != null) {
+                model.addAttribute("_csrf", csrfToken);
+            }
+
+            return "booking/list";
+        } catch (IllegalStateException e) {
+            return "redirect:http://localhost/oauth2/authorization/google";
         }
-
-        // Store original counts before filtering
-        int totalBookingsCount = allBookings.size();
-        int totalWaitlistCount = allWaitlistEntries.size();
-
-        // Apply filter to display lists
-        List<Booking> bookings = allBookings;
-        List<Waitlist> waitlistEntries = allWaitlistEntries;
-
-        if ("bookings".equals(filter)) {
-            waitlistEntries = new ArrayList<>(); // Hide waitlist
-        } else if ("waitlist".equals(filter)) {
-            bookings = new ArrayList<>(); // Hide bookings
-        }
-        // If filter is null or "all", show both
-
-        model.addAttribute("bookings", bookings);
-        model.addAttribute("waitlistEntries", waitlistEntries);
-        model.addAttribute("currentFilter", filter != null ? filter : "all");
-        model.addAttribute("totalBookings", totalBookingsCount); // Use original count
-        model.addAttribute("totalWaitlist", totalWaitlistCount); // Use original count
-
-        // Add CSRF token to model
-        if (csrfToken != null) {
-            model.addAttribute("_csrf", csrfToken);
-        }
-
-        return "booking/list";
     }
 
     /**
@@ -527,6 +540,12 @@ public class BookingController {
             response.put("estimatedWaitTime", waitlistService.calculateEstimatedWaitTime(form.getRestaurantId()));
 
             return ResponseEntity.ok(response);
+
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Authentication required");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -560,6 +579,12 @@ public class BookingController {
 
             return ResponseEntity.ok(response);
 
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Authentication required");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
@@ -586,6 +611,12 @@ public class BookingController {
             response.put("waitlist", waitlistService.getWaitlistDetail(waitlistId));
 
             return ResponseEntity.ok(response);
+
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Authentication required");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -620,6 +651,12 @@ public class BookingController {
             response.put("message", "Waitlist updated successfully");
 
             return ResponseEntity.ok(response);
+
+        } catch (IllegalStateException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "Authentication required");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
 
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -664,6 +701,10 @@ public class BookingController {
                     "Booking updated successfully!");
             return "redirect:/booking/my";
 
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để cập nhật booking");
+            return "redirect:http://localhost/oauth2/authorization/google";
+
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Error updating booking: " + e.getMessage());
@@ -688,6 +729,10 @@ public class BookingController {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Booking cancelled successfully!");
             return "redirect:/booking/my";
+
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để hủy booking");
+            return "redirect:http://localhost/oauth2/authorization/google";
 
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage",
@@ -714,12 +759,6 @@ public class BookingController {
         logger.info("📋 Authentication: {}", authentication != null ? "authenticated" : "null");
 
         try {
-            if (authentication == null) {
-                logger.error("❌ Authentication is null, redirecting to login");
-                redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để hủy booking");
-                return "redirect:/login";
-            }
-
             UUID customerId = getCurrentCustomerId(authentication);
             logger.info("📋 Customer ID: {}", customerId);
 
@@ -730,6 +769,10 @@ public class BookingController {
             redirectAttributes.addFlashAttribute("successMessage",
                     "Đã hủy booking và tạo refund request thành công!");
             logger.info("✅ Booking cancelled successfully: {}", cancelledBooking.getBookingId());
+
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng đăng nhập để hủy booking");
+            return "redirect:http://localhost/oauth2/authorization/google";
 
         } catch (Exception e) {
             logger.error("❌ Error cancelling booking with bank account", e);
@@ -760,7 +803,22 @@ public class BookingController {
      */
     private UUID getCurrentCustomerId(Authentication authentication) {
         System.out.println("🔍 getCurrentCustomerId called");
-        String username = authentication.getName();
+        Authentication auth = authentication;
+        if (auth == null) {
+            auth = SecurityContextHolder.getContext().getAuthentication();
+        }
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new IllegalStateException("User is not authenticated");
+        }
+        Object principal = auth.getPrincipal();
+        if (principal == null) {
+            throw new IllegalStateException("User principal is not available");
+        }
+        if (principal instanceof String && "anonymousUser".equals(principal)) {
+            throw new IllegalStateException("Anonymous users are not allowed");
+        }
+
+        String username = auth.getName();
         System.out.println("   Username: " + username);
 
         // Tìm customer theo username
@@ -776,7 +834,7 @@ public class BookingController {
         // Nếu chưa có Customer record, tạo mới
         System.out.println("ℹ️ Customer not found, creating new customer...");
         // Lấy User từ authentication - xử lý cả User và OAuth2User
-        User user = getUserFromAuthentication(authentication);
+        User user = getUserFromAuthentication(auth);
         System.out.println("✅ User found: " + user.getUsername());
 
         // Tạo Customer mới

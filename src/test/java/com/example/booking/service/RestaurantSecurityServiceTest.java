@@ -74,6 +74,7 @@ class RestaurantSecurityServiceTest {
     @Test
     void testIsUserActiveAndApproved_WithValidUserAndApprovedRestaurant_ShouldReturnTrue() {
         // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getName()).thenReturn(mockUser.getId().toString());
         when(userService.findById(any(UUID.class))).thenReturn(mockUser);
         when(restaurantOwnerService.getRestaurantOwnerByUserId(any(UUID.class)))
@@ -91,6 +92,7 @@ class RestaurantSecurityServiceTest {
     @Test
     void testIsUserActiveAndApproved_WithInactiveUser_ShouldReturnFalse() {
         // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
         mockUser.setActive(false);
         when(authentication.getName()).thenReturn(mockUser.getId().toString());
         when(userService.findById(any(UUID.class))).thenReturn(mockUser);
@@ -105,6 +107,7 @@ class RestaurantSecurityServiceTest {
     @Test
     void testIsUserActiveAndApproved_WithCustomerRole_ShouldReturnFalse() {
         // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
         mockUser.setRole(UserRole.CUSTOMER);
         when(authentication.getName()).thenReturn(mockUser.getId().toString());
         when(userService.findById(any(UUID.class))).thenReturn(mockUser);
@@ -119,6 +122,7 @@ class RestaurantSecurityServiceTest {
     @Test
     void testIsUserActiveAndApproved_WithNoApprovedRestaurants_ShouldReturnFalse() {
         // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
         RestaurantProfile pendingOnly = new RestaurantProfile();
         pendingOnly.setApprovalStatus(RestaurantApprovalStatus.PENDING);
         List<RestaurantProfile> pendingOnlyList = List.of(pendingOnly);
@@ -149,8 +153,9 @@ class RestaurantSecurityServiceTest {
     @Test
     void testIsUserActiveAndApproved_WithUserNotFound_ShouldReturnFalse() {
         // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getName()).thenReturn("nonexistent");
-        when(userService.findById(any(UUID.class))).thenReturn(null);
+        when(userService.findByUsername("nonexistent")).thenReturn(Optional.empty());
 
         // When
         boolean result = restaurantSecurityService.isUserActiveAndApproved(authentication);
