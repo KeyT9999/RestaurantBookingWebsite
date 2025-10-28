@@ -1,10 +1,14 @@
 package com.example.booking.web.controller;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -12,14 +16,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.booking.service.RestaurantApprovalService;
 import com.example.booking.service.RestaurantBalanceService;
 import com.example.booking.service.RefundService;
 import com.example.booking.domain.RefundRequest;
 import com.example.booking.common.enums.RefundStatus;
-import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * Controller for Admin Dashboard
@@ -133,6 +136,63 @@ public class AdminDashboardController {
             logger.error("Error loading refund requests page", e);
             model.addAttribute("error", "Lỗi khi tải trang refund requests: " + e.getMessage());
             return "admin/refund-requests";
+        }
+    }
+
+    /**
+     * GET /admin/api/statistics
+     * API endpoint to get admin dashboard statistics
+     */
+    @GetMapping("/api/statistics")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getStatistics() {
+        try {
+            logger.info("Fetching admin dashboard statistics");
+
+            Map<String, Object> stats = new HashMap<>();
+
+            // Get commission statistics
+            BigDecimal commissionToday = balanceService.getCommissionToday();
+            BigDecimal weeklyCommission = balanceService.getWeeklyCommission();
+            BigDecimal monthlyCommission = balanceService.getMonthlyCommission();
+            BigDecimal totalCommission = balanceService.getTotalCommission();
+            
+            // Get booking statistics
+            long completedBookingsToday = balanceService.getCompletedBookingsToday();
+            
+            // Get pending restaurants count
+            long pendingRestaurants = restaurantApprovalService.getPendingRestaurantCount();
+            
+            // Get refund statistics
+            List<RefundRequest> pendingRefunds = refundService.getPendingRefunds();
+            long pendingRefundCount = pendingRefunds.size();
+            BigDecimal totalPendingRefundAmount = pendingRefunds.stream()
+                    .map(RefundRequest::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Build response
+            stats.put("commissionToday", commissionToday);
+            stats.put("weeklyCommission", weeklyCommission);
+            stats.put("monthlyCommission", monthlyCommission);
+            stats.put("totalCommission", totalCommission);
+            stats.put("todayBookings", completedBookingsToday);
+            stats.put("pendingRestaurants", pendingRestaurants);
+            stats.put("pendingRefunds", pendingRefundCount);
+            stats.put("totalPendingRefundAmount", totalPendingRefundAmount);
+
+            logger.info("Admin dashboard statistics fetched successfully");
+            
+            return ResponseEntity.ok(stats);
+
+        } catch (Exception e) {
+            logger.error("Error fetching admin dashboard statistics", e);
+            
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to fetch statistics");
+            errorResponse.put("message", e.getMessage());
+            
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 }
