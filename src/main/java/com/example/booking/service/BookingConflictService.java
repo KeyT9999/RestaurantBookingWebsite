@@ -1,5 +1,6 @@
 package com.example.booking.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -209,6 +210,9 @@ public class BookingConflictService {
      */
     private void validateRestaurantHours(RestaurantProfile restaurant, LocalDateTime bookingTime, List<String> conflicts) {
         LocalTime bookingTimeOfDay = bookingTime.toLocalTime();
+        LocalDate bookingDate = bookingTime.toLocalDate();
+        LocalTime nowTime = LocalTime.now();
+        LocalDate today = LocalDate.now();
         
         // Parse opening hours from restaurant profile
         String openingHours = restaurant.getOpeningHours();
@@ -219,35 +223,62 @@ public class BookingConflictService {
                 if (hours.length == 2) {
                     LocalTime openTime = LocalTime.parse(hours[0]);
                     LocalTime closeTime = LocalTime.parse(hours[1]);
-                    
+
+                    if (isAllowablePreOpenSameDay(bookingDate, bookingTimeOfDay, today, nowTime, openTime)
+                            || isAllowableDistantPreOpen(bookingDate, bookingTimeOfDay, today, openTime)) {
+                        return;
+                    }
+
                     if (bookingTimeOfDay.isBefore(openTime) || bookingTimeOfDay.isAfter(closeTime)) {
                         conflicts.add("Nhà hàng chỉ hoạt động từ " + openTime + " đến " + closeTime);
                     }
                 } else {
                     // Fallback to default hours if parsing fails
-                    validateRestaurantHoursDefault(bookingTimeOfDay, conflicts);
+                    validateRestaurantHoursDefault(bookingTime, conflicts);
                 }
             } catch (Exception e) {
                 // Fallback to default hours if parsing fails
                 System.err.println("Error parsing opening hours: " + openingHours + ", using default hours");
-                validateRestaurantHoursDefault(bookingTimeOfDay, conflicts);
+                validateRestaurantHoursDefault(bookingTime, conflicts);
             }
         } else {
             // Use default hours if no opening hours specified
-            validateRestaurantHoursDefault(bookingTimeOfDay, conflicts);
+            validateRestaurantHoursDefault(bookingTime, conflicts);
         }
     }
     
     /**
      * Default restaurant hours validation (fallback)
      */
-    private void validateRestaurantHoursDefault(LocalTime bookingTimeOfDay, List<String> conflicts) {
+    private void validateRestaurantHoursDefault(LocalDateTime bookingTime, List<String> conflicts) {
+        LocalTime bookingTimeOfDay = bookingTime.toLocalTime();
+        LocalDate bookingDate = bookingTime.toLocalDate();
+        LocalTime nowTime = LocalTime.now();
+        LocalDate today = LocalDate.now();
         LocalTime openTime = LocalTime.of(10, 0);
         LocalTime closeTime = LocalTime.of(22, 0);
-        
+
+        if (isAllowablePreOpenSameDay(bookingDate, bookingTimeOfDay, today, nowTime, openTime)
+                || isAllowableDistantPreOpen(bookingDate, bookingTimeOfDay, today, openTime)) {
+            return;
+        }
+
         if (bookingTimeOfDay.isBefore(openTime) || bookingTimeOfDay.isAfter(closeTime)) {
             conflicts.add("Nhà hàng chỉ hoạt động từ " + openTime + " đến " + closeTime);
         }
+    }
+
+    private boolean isAllowablePreOpenSameDay(LocalDate bookingDate, LocalTime bookingTimeOfDay,
+                                              LocalDate today, LocalTime nowTime, LocalTime openTime) {
+        return bookingDate.isEqual(today)
+                && bookingTimeOfDay.isBefore(openTime)
+                && nowTime.isBefore(openTime);
+    }
+
+    private boolean isAllowableDistantPreOpen(LocalDate bookingDate, LocalTime bookingTimeOfDay,
+                                              LocalDate today, LocalTime openTime) {
+        return bookingDate.isAfter(today.plusDays(1))
+                && bookingTimeOfDay.isBefore(openTime);
     }
     
     /**

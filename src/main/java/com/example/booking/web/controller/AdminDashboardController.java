@@ -123,7 +123,6 @@ public class AdminDashboardController {
             BigDecimal completedTotal = completedRefunds.stream()
                     .map(RefundRequest::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-
             model.addAttribute("pendingRefunds", pendingRefunds);
             model.addAttribute("completedRefunds", completedRefunds);
             model.addAttribute("rejectedRefunds", rejectedRefunds);
@@ -132,6 +131,7 @@ public class AdminDashboardController {
             model.addAttribute("rejectedCount", rejectedCount);
             model.addAttribute("pendingTotal", pendingTotal);
             model.addAttribute("completedTotal", completedTotal);
+            model.addAttribute("totalAmount", pendingTotal);
 
             // Add bank name mapping for template
             Map<String, String> bankNameMap = new HashMap<>();

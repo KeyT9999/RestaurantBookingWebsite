@@ -30,7 +30,7 @@ public class PayOsService {
     private static final Logger logger = LoggerFactory.getLogger(PayOsService.class);
 
     @Value("${payment.payos.expiration-minutes:15}")
-    private int expirationMinutes; // reserved for future use
+    private int expirationMinutes = 15;
 
     @Value("${payment.payos.client-id}")
     private String clientId;
@@ -66,6 +66,15 @@ public class PayOsService {
     public void initAliasFields() {
         this.secretKey = this.checksumKey;
         this.baseUrl = this.endpoint;
+    }
+
+    private void ensureAliasFieldsInitialized() {
+        if (this.secretKey == null) {
+            this.secretKey = this.checksumKey;
+        }
+        if (this.baseUrl == null) {
+            this.baseUrl = this.endpoint;
+        }
     }
 
     public CreateLinkResponse createPaymentLink(long orderCode, long amount, String description) {
@@ -119,6 +128,8 @@ public class PayOsService {
             logger.info("   - CancelUrl: {}", customCancelUrl);
             logger.info("   - ReturnUrl: {}", customReturnUrl);
             logger.info("   - ExpirationMinutes: {}", expirationMinutes);
+
+            ensureAliasFieldsInitialized();
             
             String signature = signCreate(amount, customCancelUrl, description, orderCode, customReturnUrl);
             logger.info("   - Signature: {}...", signature.substring(0, 16));
@@ -542,6 +553,7 @@ public class PayOsService {
     public String createTransferQRCode(BigDecimal amount, String bankAccount, String bankName, String accountHolder,
             String description) {
         try {
+            ensureAliasFieldsInitialized();
             logger.info("🔄 Creating transfer QR code for refund");
             logger.info("   Amount: {}", amount);
             logger.info("   Bank Account: {}", bankAccount);
@@ -601,6 +613,7 @@ public class PayOsService {
     public String createTransferQRCodeUrl(BigDecimal amount, String bankAccount, String bankName, String accountHolder,
             String description) {
         try {
+            ensureAliasFieldsInitialized();
             logger.info("🔄 Creating transfer QR code URL from PayOS");
 
             // Tạo dữ liệu cho PayOS API
