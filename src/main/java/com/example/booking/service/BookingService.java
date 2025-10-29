@@ -537,8 +537,8 @@ public class BookingService {
         // Process refund
         processRefundForCancelledBooking(booking, cancelReason, bankCode, accountNumber);
 
-        // Update booking status: move to PENDING_CANCEL until refund completes
-        booking.setStatus(BookingStatus.PENDING_CANCEL);
+        // Update booking status: mark as CANCELLED immediately after initiating refund
+        booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelReason(cancelReason);
         booking.setCancelledAt(LocalDateTime.now());
         booking.setCancelledBy(customerId);
@@ -563,8 +563,8 @@ public class BookingService {
         // Process refund with bank account info
         processRefundForCancelledBooking(booking, cancelReason, bankCode, accountNumber);
 
-        // Update booking status: move to PENDING_CANCEL until refund completes
-        booking.setStatus(BookingStatus.PENDING_CANCEL);
+        // Update booking status: mark as CANCELLED immediately after initiating refund
+        booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelReason(cancelReason);
         booking.setCancelledAt(LocalDateTime.now());
         booking.setCancelledBy(restaurantOwnerId);
