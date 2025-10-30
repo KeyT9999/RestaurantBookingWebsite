@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -604,5 +607,257 @@ public class RefundServiceTest {
 
         // Then
         assertNotNull(testRefundRequest.getProcessedAt());
+    }
+
+    // ========== completeRefund() Tests ==========
+
+    @Test
+    @DisplayName("Happy Path: Should complete refund with pending status successfully")
+    public void testCompleteRefund_WithPendingRefundRequest_ShouldCompleteSuccessfully() {
+        // Given: PENDING refund request, admin completes it
+        Integer refundRequestId = 1;
+        UUID adminId = UUID.randomUUID();
+        String transferReference = "REF123456";
+        String adminNote = "Completed successfully";
+
+        testRefundRequest.setStatus(RefundStatus.PENDING);
+        testPayment.setStatus(PaymentStatus.REFUND_PENDING);
+        
+        when(refundRequestRepository.findById(refundRequestId))
+            .thenReturn(Optional.of(testRefundRequest));
+        when(refundRequestRepository.save(any(RefundRequest.class))).thenReturn(testRefundRequest);
+        when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
+        when(restaurantBalanceService.getBalanceByRestaurantId(anyInt()))
+            .thenReturn(testBalance);
+        when(restaurantBalanceService.saveBalance(any(RestaurantBalance.class))).thenReturn(testBalance);
+
+        // When
+        refundService.completeRefund(refundRequestId, adminId, transferReference, adminNote);
+
+        // Then
+        assertEquals(RefundStatus.COMPLETED, testRefundRequest.getStatus());
+        assertEquals(adminId, testRefundRequest.getProcessedBy());
+        assertEquals(transferReference, testRefundRequest.getTransferReference());
+        assertEquals(adminNote, testRefundRequest.getAdminNote());
+        assertNotNull(testRefundRequest.getProcessedAt());
+        assertEquals(PaymentStatus.REFUNDED, testPayment.getStatus());
+        assertNotNull(testPayment.getRefundedAt());
+        verify(refundRequestRepository, times(1)).save(testRefundRequest);
+        verify(paymentRepository, times(1)).save(testPayment);
+    }
+
+    @Test
+    @DisplayName("Error Scenario: Should throw exception for non-pending refund request")
+    public void testCompleteRefund_WithNonPendingStatus_ShouldThrowException() {
+        // Given: COMPLETED refund request
+        Integer refundRequestId = 1;
+        UUID adminId = UUID.randomUUID();
+
+        testRefundRequest.setStatus(RefundStatus.COMPLETED);
+
+        when(refundRequestRepository.findById(refundRequestId))
+            .thenReturn(Optional.of(testRefundRequest));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            refundService.completeRefund(refundRequestId, adminId, "REF123", "Note")
+        );
+        assertEquals("Refund request is not pending", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Error Scenario: Should throw exception for non-existent refund request")
+    public void testCompleteRefund_WithNonexistentId_ShouldThrowException() {
+        // Given: Invalid refund request ID
+        Integer refundRequestId = 99999;
+        UUID adminId = UUID.randomUUID();
+
+        when(refundRequestRepository.findById(refundRequestId))
+            .thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () ->
+            refundService.completeRefund(refundRequestId, adminId, "REF123", "Note")
+        );
+    }
+
+    // ========== generateVietQRForRefund() Tests ==========
+
+    @Test
+    @DisplayName("Happy Path: Should generate VietQR for refund successfully")
+    public void testGenerateVietQRForRefund_WithValidData_ShouldGenerateQR() {
+        // Given: Valid refund request with bank info
+        Integer refundRequestId = 1;
+        
+        testRefundRequest.setVietqrUrl(null); // No existing QR
+        testRefundRequest.setCustomerBankCode("VCB");
+        testRefundRequest.setCustomerAccountNumber("1234567890");
+        testRefundRequest.setCustomerAccountHolder("Test Customer");
+
+        when(refundRequestRepository.findById(refundRequestId))
+            .thenReturn(Optional.of(testRefundRequest));
+        when(refundRequestRepository.save(any(RefundRequest.class))).thenReturn(testRefundRequest);
+
+        // When
+        String qrUrl = refundService.generateVietQRForRefund(refundRequestId);
+
+        // Then
+        assertNotNull(qrUrl);
+        assertTrue(qrUrl.contains("vietqr.io"));
+        assertTrue(qrUrl.contains("VCB"));
+        assertTrue(qrUrl.contains("1234567890"));
+        verify(refundRequestRepository, times(1)).save(testRefundRequest);
+    }
+
+    @Test
+    @DisplayName("Edge Case: Should return existing QR if already exists")
+    public void testGenerateVietQRForRefund_WithExistingQR_ShouldReturnExisting() {
+        // Given: Refund request already has QR
+        Integer refundRequestId = 1;
+        String existingQr = "https://img.vietqr.io/image/VCB-1234567890-compact2.png";
+
+        testRefundRequest.setVietqrUrl(existingQr);
+
+        when(refundRequestRepository.findById(refundRequestId))
+            .thenReturn(Optional.of(testRefundRequest));
+
+        // When
+        String qrUrl = refundService.generateVietQRForRefund(refundRequestId);
+
+        // Then
+        assertEquals(existingQr, qrUrl);
+        verify(refundRequestRepository, never()).save(any(RefundRequest.class));
+    }
+
+    @Test
+    @DisplayName("Error Scenario: Should throw exception when bank info missing")
+    public void testGenerateVietQRForRefund_WithMissingBankInfo_ShouldThrowException() {
+        // Given: Missing bank code
+        Integer refundRequestId = 1;
+        
+        testRefundRequest.setVietqrUrl(null);
+        testRefundRequest.setCustomerBankCode(null);
+        testRefundRequest.setCustomerAccountNumber("1234567890");
+        testRefundRequest.setCustomerAccountHolder("Test Customer");
+
+        when(refundRequestRepository.findById(refundRequestId))
+            .thenReturn(Optional.of(testRefundRequest));
+
+        // When & Then
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+            refundService.generateVietQRForRefund(refundRequestId)
+        );
+        assertTrue(exception.getMessage().contains("Customer bank information is missing"));
+    }
+
+    // ========== processRefundWithManualTransfer() Additional Tests ==========
+
+    @Test
+    @DisplayName("Error Scenario: Should throw exception when payment not found")
+    public void testProcessRefundWithManualTransfer_WithNonexistentPayment_ShouldThrowException() {
+        // Given: Payment ID not found
+        Integer paymentId = 99999;
+        String bankCode = "VCB";
+        String accountNumber = "1234567890";
+        String reason = "Test reason";
+
+        when(paymentRepository.findById(paymentId))
+            .thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () ->
+            refundService.processRefundWithManualTransfer(paymentId, reason, bankCode, accountNumber)
+        );
+    }
+
+    @Test
+    @DisplayName("Error Scenario: Should throw exception when payment already refunded")
+    public void testProcessRefundWithManualTransfer_WithAlreadyRefunded_ShouldThrowException() {
+        // Given: Payment already refunded
+        testPayment.setRefundedAt(LocalDateTime.now());
+        String bankCode = "VCB";
+        String accountNumber = "1234567890";
+        String reason = "Test reason";
+
+        when(paymentRepository.findById(testPayment.getPaymentId()))
+            .thenReturn(Optional.of(testPayment));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            refundService.processRefundWithManualTransfer(testPayment.getPaymentId(), reason, bankCode, accountNumber)
+        );
+        assertEquals("Payment has already been refunded", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Edge Case: Should allow negative balance on refund")
+    public void testProcessRefundWithManualTransfer_AllowsNegativeBalance() {
+        // Given: Restaurant balance below refund amount
+        String bankCode = "VCB";
+        String accountNumber = "1234567890";
+        String reason = "Test reason";
+        
+        testBalance.setAvailableBalance(new BigDecimal("100000")); // Less than 500000 refund
+
+        when(paymentRepository.findById(testPayment.getPaymentId()))
+            .thenReturn(Optional.of(testPayment));
+        when(bankAccountService.getAccountHolderName(accountNumber, bankCode)).thenReturn("Test Customer");
+        when(bankAccountService.getBankName(bankCode)).thenReturn("Vietcombank");
+        when(payOsService.createTransferQRCode(any(), any(), any(), any(), any())).thenReturn("qr-data");
+        when(payOsService.createTransferQRCodeUrl(any(), any(), any(), any(), any())).thenReturn("qr-url");
+        when(refundRequestRepository.save(any(RefundRequest.class))).thenAnswer(invocation -> {
+            RefundRequest req = invocation.getArgument(0);
+            req.setRefundRequestId(1);
+            return req;
+        });
+        when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
+        when(restaurantBalanceService.getBalanceByRestaurantId(anyInt())).thenReturn(testBalance);
+        when(restaurantBalanceService.saveBalance(any(RestaurantBalance.class))).thenReturn(testBalance);
+
+        // When
+        Payment result = refundService.processRefundWithManualTransfer(
+            testPayment.getPaymentId(), reason, bankCode, accountNumber
+        );
+
+        // Then: Should succeed even with negative balance
+        assertNotNull(result);
+        verify(restaurantBalanceService).saveBalance(any(RestaurantBalance.class));
+        // Balance becomes -400000 (100000 - 500000)
+        assertEquals(1, testBalance.getAvailableBalance().compareTo(new BigDecimal("0")) < 0 ? -1 : 0);
+    }
+
+    @Test
+    @DisplayName("State Verification: Should update payment status to REFUND_PENDING")
+    public void testProcessRefundWithManualTransfer_ShouldUpdatePaymentStatus() {
+        // Given
+        String bankCode = "VCB";
+        String accountNumber = "1234567890";
+        String reason = "Test reason";
+        
+        testPayment.setStatus(PaymentStatus.COMPLETED);
+
+        when(paymentRepository.findById(testPayment.getPaymentId()))
+            .thenReturn(Optional.of(testPayment));
+        when(bankAccountService.getAccountHolderName(accountNumber, bankCode)).thenReturn("Test Customer");
+        when(bankAccountService.getBankName(bankCode)).thenReturn("Vietcombank");
+        when(payOsService.createTransferQRCode(any(), any(), any(), any(), any())).thenReturn("qr-data");
+        when(payOsService.createTransferQRCodeUrl(any(), any(), any(), any(), any())).thenReturn("qr-url");
+        when(refundRequestRepository.save(any(RefundRequest.class))).thenAnswer(invocation -> {
+            RefundRequest req = invocation.getArgument(0);
+            req.setRefundRequestId(1);
+            return req;
+        });
+        when(paymentRepository.save(any(Payment.class))).thenReturn(testPayment);
+        when(restaurantBalanceService.getBalanceByRestaurantId(anyInt())).thenReturn(testBalance);
+        when(restaurantBalanceService.saveBalance(any(RestaurantBalance.class))).thenReturn(testBalance);
+
+        // When
+        Payment result = refundService.processRefundWithManualTransfer(
+            testPayment.getPaymentId(), reason, bankCode, accountNumber
+        );
+
+        // Then
+        assertEquals(PaymentStatus.REFUND_PENDING, result.getStatus());
+        verify(paymentRepository).save(testPayment);
     }
 }

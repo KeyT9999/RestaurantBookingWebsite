@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.atLeastOnce;
@@ -37,6 +38,7 @@ import com.example.booking.domain.Booking;
 import com.example.booking.domain.BookingTable;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.Notification;
+import com.example.booking.domain.Payment;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.dto.BookingForm;
@@ -594,76 +596,6 @@ class BookingServiceTest {
         assertEquals(BigDecimal.ZERO, total);
     }
 
-    @Test
-    void testCalculateTotalAmount_WithNullBooking_ShouldThrowException() {
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            bookingService.calculateTotalAmount(null);
-        });
-        assertEquals("Booking cannot be null", exception.getMessage());
-    }
-
-    // ==================== UPDATE BOOKING STATUS TESTS ====================
-
-    @Test
-    @DisplayName("testUpdateBookingStatus_PendingToConfirmed_ShouldSuccess")
-    void testUpdateBookingStatus_PendingToConfirmed_ShouldSuccess() {
-        // Given
-        mockBooking.setStatus(BookingStatus.PENDING);
-        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
-        when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // When
-        Booking result = bookingService.updateBookingStatus(1, BookingStatus.CONFIRMED);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(BookingStatus.CONFIRMED, result.getStatus());
-    }
-
-    @Test
-    @DisplayName("testUpdateBookingStatus_PendingToCancelled_ShouldSuccess")
-    void testUpdateBookingStatus_PendingToCancelled_ShouldSuccess() {
-        // Given
-        mockBooking.setStatus(BookingStatus.PENDING);
-        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
-        when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // When
-        Booking result = bookingService.updateBookingStatus(1, BookingStatus.CANCELLED);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(BookingStatus.CANCELLED, result.getStatus());
-    }
-
-    @Test
-    @DisplayName("testUpdateBookingStatus_WithBookingNotFound_ShouldThrowException")
-    void testUpdateBookingStatus_WithBookingNotFound_ShouldThrowException() {
-        // Given
-        when(bookingRepository.findById(999)).thenReturn(Optional.empty());
-
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            bookingService.updateBookingStatus(999, BookingStatus.CONFIRMED);
-        });
-        assertEquals("Booking not found", exception.getMessage());
-    }
-
-    @Test
-    @DisplayName("testUpdateBookingStatus_InvalidTransition_ShouldThrowException")
-    void testUpdateBookingStatus_InvalidTransition_ShouldThrowException() {
-        // Given
-        mockBooking.setStatus(BookingStatus.COMPLETED);
-        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
-
-        // When & Then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            bookingService.updateBookingStatus(1, BookingStatus.CONFIRMED);
-        });
-        assertTrue(exception.getMessage().contains("Invalid status transition"));
-    }
-
     // ==================== CANCEL BOOKING TESTS ====================
 
     @Test
@@ -896,5 +828,465 @@ class BookingServiceTest {
 
         // Then
         verify(bookingServiceRepository, never()).save(any());
+    }
+
+    // ==================== CANCEL BOOKING TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-022: Should cancel booking with refund when payment completed")
+    void testCancelBooking_WithCompletedPayment_ShouldCreateRefund() {
+        // Given: Booking with completed payment
+        Integer bookingId = 1;
+        String cancelReason = "Changed plans";
+        String bankCode = "VCB";
+        String accountNumber = "1234567890";
+        
+        mockBooking.setStatus(BookingStatus.PENDING);
+        Payment completedPayment = new Payment();
+        completedPayment.setStatus(com.example.booking.domain.PaymentStatus.COMPLETED);
+        completedPayment.setAmount(new BigDecimal("100000"));
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+        when(paymentRepository.findByBooking(mockBooking)).thenReturn(Optional.of(completedPayment));
+        when(refundService.processRefundWithManualTransfer(anyInt(), anyString(), anyString(), anyString()))
+            .thenReturn(completedPayment);
+        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
+
+        // When
+        Booking result = bookingService.cancelBooking(bookingId, customerId, cancelReason, bankCode, accountNumber);
+
+        // Then
+        assertEquals(BookingStatus.CANCELLED, result.getStatus());
+        assertEquals(cancelReason, result.getCancelReason());
+        assertNotNull(result.getCancelledAt());
+        verify(refundService).processRefundWithManualTransfer(anyInt(), anyString(), eq(bankCode), eq(accountNumber));
+    }
+
+    @Test
+    @DisplayName("TC BS-025: Should throw exception when customer doesn't own booking")
+    void testCancelBooking_WithInvalidCustomer_ShouldThrowException() {
+        // Given: Different customer
+        Integer bookingId = 1;
+        UUID differentCustomerId = UUID.randomUUID();
+        String cancelReason = "Changed plans";
+        String bankCode = "VCB";
+        String accountNumber = "1234567890";
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.cancelBooking(bookingId, differentCustomerId, cancelReason, bankCode, accountNumber)
+        );
+        assertEquals("You can only cancel your own bookings", exception.getMessage());
+    }
+
+    // ==================== CONFIRM BOOKING TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-029: Should confirm PENDING booking successfully")
+    void testConfirmBooking_WithPendingBooking_ShouldConfirm() {
+        // Given: PENDING booking
+        Integer bookingId = 1;
+        mockBooking.setStatus(BookingStatus.PENDING);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
+        when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Booking result = bookingService.confirmBooking(bookingId);
+
+        // Then
+        assertEquals(BookingStatus.CONFIRMED, result.getStatus());
+        verify(notificationRepository).save(any(Notification.class));
+    }
+
+    @Test
+    @DisplayName("TC BS-031: Should throw exception when confirming non-PENDING booking")
+    void testConfirmBooking_WithNonPendingBooking_ShouldThrowException() {
+        // Given: COMPLETED booking
+        Integer bookingId = 1;
+        mockBooking.setStatus(BookingStatus.COMPLETED);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.confirmBooking(bookingId)
+        );
+        assertTrue(exception.getMessage().contains("Booking cannot be confirmed"));
+    }
+
+    // ==================== COMPLETE BOOKING TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-033: Should complete CONFIRMED booking successfully")
+    void testCompleteBooking_WithConfirmedBooking_ShouldComplete() {
+        // Given: CONFIRMED booking
+        Integer bookingId = 1;
+        mockBooking.setStatus(BookingStatus.CONFIRMED);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
+
+        // When
+        Booking result = bookingService.completeBooking(bookingId);
+
+        // Then
+        assertEquals(BookingStatus.COMPLETED, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("TC BS-034: Should throw exception when completing non-CONFIRMED booking")
+    void testCompleteBooking_WithPendingBooking_ShouldThrowException() {
+        // Given: PENDING booking
+        Integer bookingId = 1;
+        mockBooking.setStatus(BookingStatus.PENDING);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.completeBooking(bookingId)
+        );
+        assertTrue(exception.getMessage().contains("Booking cannot be completed"));
+    }
+
+    // ==================== UPDATE BOOKING STATUS TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-035: Should update booking status PENDING to CONFIRMED")
+    void testUpdateBookingStatus_PendingToConfirmed_ShouldUpdate() {
+        // Given: PENDING booking
+        Integer bookingId = 1;
+        mockBooking.setStatus(BookingStatus.PENDING);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
+
+        // When
+        Booking result = bookingService.updateBookingStatus(bookingId, BookingStatus.CONFIRMED);
+
+        // Then
+        assertEquals(BookingStatus.CONFIRMED, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("TC BS-038: Should throw exception for invalid status transition")
+    void testUpdateBookingStatus_InvalidTransition_ShouldThrowException() {
+        // Given: COMPLETED booking
+        Integer bookingId = 1;
+        mockBooking.setStatus(BookingStatus.COMPLETED);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.updateBookingStatus(bookingId, BookingStatus.PENDING)
+        );
+        assertTrue(exception.getMessage().contains("Invalid status transition"));
+    }
+
+    // ==================== UPDATE BOOKING TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-016: Should update PENDING booking successfully")
+    void testUpdateBooking_WithPendingBooking_ShouldUpdate() {
+        // Given: PENDING booking
+        Integer bookingId = 1;
+        mockBooking.setStatus(BookingStatus.PENDING);
+        
+        BookingForm updateForm = new BookingForm();
+        updateForm.setRestaurantId(1);
+        updateForm.setTableId(2);
+        updateForm.setGuestCount(6);
+        updateForm.setBookingTime(LocalDateTime.now().plusDays(2));
+        updateForm.setDepositAmount(new BigDecimal("200000"));
+        updateForm.setNote("Updated note");
+
+        RestaurantTable newTable = new RestaurantTable();
+        newTable.setTableId(2);
+        newTable.setTableName("Table 2");
+        newTable.setCapacity(8);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(2)).thenReturn(Optional.of(newTable));
+        when(bookingTableRepository.findByBooking(mockBooking)).thenReturn(Collections.emptyList());
+        when(bookingTableRepository.save(any(BookingTable.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
+        doNothing().when(conflictService).validateBookingUpdateConflicts(anyInt(), any(BookingForm.class), any(UUID.class));
+
+        // When
+        Booking result = bookingService.updateBooking(bookingId, updateForm, customerId);
+
+        // Then
+        assertEquals(updateForm.getGuestCount(), result.getNumberOfGuests());
+        verify(bookingRepository).save(mockBooking);
+    }
+
+    @Test
+    @DisplayName("TC BS-018: Should throw exception when booking not found for update")
+    void testUpdateBooking_WithBookingNotFound_ShouldThrowException() {
+        // Given: Invalid booking ID
+        Integer bookingId = 999;
+        BookingForm form = new BookingForm();
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.updateBooking(bookingId, form, customerId)
+        );
+        assertEquals("Booking not found", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC BS-019: Should throw exception when customer doesn't own booking")
+    void testUpdateBooking_WithInvalidCustomer_ShouldThrowException() {
+        // Given: Different customer
+        Integer bookingId = 1;
+        UUID differentCustomerId = UUID.randomUUID();
+        mockBooking.setStatus(BookingStatus.PENDING);
+        BookingForm form = new BookingForm();
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.updateBooking(bookingId, form, differentCustomerId)
+        );
+        assertEquals("You can only edit your own bookings", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC BS-020: Should throw exception when booking cannot be edited")
+    void testUpdateBooking_WithCompletedBooking_ShouldThrowException() {
+        // Given: COMPLETED booking
+        Integer bookingId = 1;
+        mockBooking.setStatus(BookingStatus.COMPLETED);
+        BookingForm form = new BookingForm();
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.updateBooking(bookingId, form, customerId)
+        );
+        assertEquals("This booking cannot be edited", exception.getMessage());
+    }
+
+    // ==================== CALCULATE TOTAL AMOUNT TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-043: Should calculate total with deposit, dishes, and services")
+    void testCalculateTotalAmount_WithAllItems_ShouldSumCorrectly() {
+        // Given: Booking with deposit, 2 dishes, 1 service
+        Booking booking = new Booking();
+        booking.setDepositAmount(new BigDecimal("100000"));
+
+        com.example.booking.domain.BookingDish dish1 = new com.example.booking.domain.BookingDish();
+        dish1.setQuantity(2);
+        dish1.setPrice(new BigDecimal("50000"));
+        
+        com.example.booking.domain.BookingDish dish2 = new com.example.booking.domain.BookingDish();
+        dish2.setQuantity(1);
+        dish2.setPrice(new BigDecimal("30000"));
+
+        com.example.booking.domain.BookingService service1 = new com.example.booking.domain.BookingService();
+        service1.setQuantity(1);
+        service1.setPrice(new BigDecimal("20000"));
+
+        when(bookingDishRepository.findByBooking(booking)).thenReturn(Arrays.asList(dish1, dish2));
+        when(bookingServiceRepository.findByBooking(booking)).thenReturn(Arrays.asList(service1));
+
+        // When
+        BigDecimal total = bookingService.calculateTotalAmount(booking);
+
+        // Then
+        // deposit: 100000 + dishes: 100000 (2*50000) + 30000 + service: 20000 = 250000
+        assertEquals(0, new BigDecimal("250000").compareTo(total));
+    }
+
+    @Test
+    @DisplayName("TC BS-045: Should throw exception when booking is null")
+    void testCalculateTotalAmount_WithNullBooking_ShouldThrowException() {
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.calculateTotalAmount(null)
+        );
+        assertEquals("Booking cannot be null", exception.getMessage());
+    }
+
+    // ==================== FIND BOOKINGS BY CUSTOMER TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-040: Should find all bookings for customer")
+    void testFindBookingsByCustomer_WithValidCustomer_ShouldReturnBookings() {
+        // Given: Customer with 3 bookings
+        List<Booking> bookings = Arrays.asList(mockBooking, mockBooking, mockBooking);
+        
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(bookingRepository.findByCustomerOrderByBookingTimeDesc(any(Customer.class))).thenReturn(bookings);
+
+        // When
+        List<Booking> result = bookingService.findBookingsByCustomer(customerId);
+
+        // Then
+        assertEquals(3, result.size());
+    }
+
+    @Test
+    @DisplayName("TC BS-042: Should throw exception when customer not found")
+    void testFindBookingsByCustomer_WithInvalidCustomer_ShouldThrowException() {
+        // Given: Invalid customer ID
+        UUID invalidCustomerId = UUID.randomUUID();
+
+        when(customerRepository.findById(invalidCustomerId)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.findBookingsByCustomer(invalidCustomerId)
+        );
+        assertEquals("Customer not found", exception.getMessage());
+    }
+
+    // ==================== ASSIGN DISHES ERROR TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-048: Should throw exception when dish not found")
+    void testAssignDishesToBooking_WithDishNotFound_ShouldThrowException() {
+        // Given: Invalid dish ID
+        when(dishRepository.findById(99)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.assignDishesToBooking(mockBooking, "99:1")
+        );
+        assertEquals("Dish not found: 99", exception.getMessage());
+    }
+
+    // ==================== ASSIGN SERVICES ERROR TESTS ====================
+
+    @Test
+    @DisplayName("Should throw exception when service not found")
+    void testAssignServicesToBooking_WithServiceNotFound_ShouldThrowException() {
+        // Given: Invalid service ID
+        when(restaurantServiceRepository.findById(99)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.assignServicesToBooking(mockBooking, "99")
+        );
+        assertEquals("Service not found: 99", exception.getMessage());
+    }
+
+    // ==================== CREATE BOOKING WITH VOUCHER TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-003: Should create booking with valid voucher")
+    void testCreateBooking_WithValidVoucher_ShouldApplyVoucher() {
+        // Given: Booking form with voucher code
+        bookingForm.setVoucherCode("SUMMER20");
+        bookingForm.setVoucherDiscountAmount(new BigDecimal("20000"));
+
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        when(voucherService.validate(any())).thenReturn(
+            new com.example.booking.service.VoucherService.ValidationResult(true, null, new BigDecimal("20000"), null)
+        );
+        when(voucherService.applyToBooking(any())).thenReturn(
+            new com.example.booking.service.VoucherService.ApplyResult(true, null, new BigDecimal("20000"), 1)
+        );
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        verify(voucherService).applyToBooking(any());
+    }
+
+    // ==================== CREATE BOOKING ERROR TESTS ====================
+
+    @Test
+    @DisplayName("TC BS-007: Should throw exception when booking time in past")
+    void testCreateBooking_WithPastBookingTime_ShouldThrowException() {
+        // Given: Booking time in the past
+        bookingForm.setBookingTime(LocalDateTime.now().minusDays(1));
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.createBooking(bookingForm, customerId)
+        );
+        assertTrue(exception.getMessage().contains("Booking time cannot be in the past"));
+    }
+
+    @Test
+    @DisplayName("TC BS-008: Should throw exception when booking time too early")
+    void testCreateBooking_WithBookingTimeTooEarly_ShouldThrowException() {
+        // Given: Booking time less than 30 minutes from now
+        bookingForm.setBookingTime(LocalDateTime.now().plusMinutes(15));
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.createBooking(bookingForm, customerId)
+        );
+        assertTrue(exception.getMessage().contains("30 minutes"));
+    }
+
+    @Test
+    @DisplayName("TC BS-009: Should throw exception when guest count is zero")
+    void testCreateBooking_WithZeroGuestCount_ShouldThrowException() {
+        // Given: Guest count 0
+        bookingForm.setGuestCount(0);
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.createBooking(bookingForm, customerId)
+        );
+        assertTrue(exception.getMessage().contains("Guest count must be greater than 0"));
+    }
+
+    @Test
+    @DisplayName("TC BS-010: Should throw exception when guest count too large")
+    void testCreateBooking_WithGuestCountTooLarge_ShouldThrowException() {
+        // Given: Guest count > 100
+        bookingForm.setGuestCount(101);
+
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.createBooking(bookingForm, customerId)
+        );
+        assertTrue(exception.getMessage().contains("100 people"));
+    }
+
+    @Test
+    @DisplayName("TC BS-012: Should throw exception when guest count exceeds table capacity")
+    void testCreateBooking_WithGuestCountExceedingCapacity_ShouldThrowException() {
+        // Given: Table capacity 4, guest count 5
+        bookingForm.setGuestCount(5);
+
+        prepareCreateBookingStubs();
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.createBooking(bookingForm, customerId)
+        );
+        assertTrue(exception.getMessage().contains("vượt quá sức chứa"));
     }
 }

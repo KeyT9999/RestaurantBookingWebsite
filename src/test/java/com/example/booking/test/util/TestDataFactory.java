@@ -4,14 +4,23 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import java.time.LocalDate;
+
 import com.example.booking.common.enums.BookingStatus;
+import com.example.booking.common.enums.PaymentType;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.Dish;
+import com.example.booking.domain.DiscountType;
+import com.example.booking.domain.Payment;
+import com.example.booking.domain.PaymentStatus;
+import com.example.booking.domain.RefundRequest;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
+import com.example.booking.domain.Voucher;
+import com.example.booking.domain.VoucherStatus;
 import com.example.booking.dto.BookingForm;
 
 /**
@@ -140,5 +149,69 @@ public class TestDataFactory {
 
     public static UUID createRandomUUID() {
         return UUID.randomUUID();
+    }
+
+    // ==================== VOUCHER FACTORY ====================
+
+    public static Voucher createTestVoucher() {
+        Voucher voucher = new Voucher();
+        voucher.setVoucherId(1);
+        voucher.setCode("TEST20");
+        voucher.setDescription("Test voucher 20% off");
+        voucher.setDiscountType(DiscountType.PERCENT);
+        voucher.setDiscountValue(new BigDecimal("20"));
+        voucher.setStartDate(LocalDate.now().minusDays(1));
+        voucher.setEndDate(LocalDate.now().plusDays(30));
+        voucher.setGlobalUsageLimit(100);
+        voucher.setPerCustomerLimit(3);
+        voucher.setMinOrderAmount(new BigDecimal("100000"));
+        voucher.setMaxDiscountAmount(new BigDecimal("50000"));
+        voucher.setStatus(VoucherStatus.ACTIVE);
+        return voucher;
+    }
+
+    public static Voucher createTestVoucher(String code, DiscountType discountType) {
+        Voucher voucher = createTestVoucher();
+        voucher.setCode(code);
+        voucher.setDiscountType(discountType);
+        return voucher;
+    }
+
+    // ==================== PAYMENT FACTORY ====================
+
+    public static Payment createTestPayment() {
+        Payment payment = new Payment();
+        payment.setPaymentId(1);
+        payment.setOrderCode(1001L);
+        payment.setAmount(new BigDecimal("100000"));
+        payment.setStatus(PaymentStatus.COMPLETED);
+        payment.setPaymentType(PaymentType.DEPOSIT);
+        return payment;
+    }
+
+    public static Payment createTestPayment(PaymentStatus status, PaymentType paymentType) {
+        Payment payment = createTestPayment();
+        payment.setStatus(status);
+        payment.setPaymentType(paymentType);
+        return payment;
+    }
+
+    // ==================== REFUND REQUEST FACTORY ====================
+
+    public static RefundRequest createTestRefundRequest() {
+        RefundRequest refundRequest = new RefundRequest();
+        refundRequest.setRefundRequestId(1);
+        refundRequest.setAmount(new BigDecimal("100000"));
+        refundRequest.setReason("Customer cancelled");
+        refundRequest.setCustomerBankCode("VCB");
+        refundRequest.setCustomerAccountNumber("1234567890");
+        refundRequest.setCustomerAccountHolder("Test Customer");
+        return refundRequest;
+    }
+
+    public static RefundRequest createTestRefundRequest(BigDecimal amount) {
+        RefundRequest refundRequest = createTestRefundRequest();
+        refundRequest.setAmount(amount);
+        return refundRequest;
     }
 }
