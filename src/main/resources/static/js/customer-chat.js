@@ -13,6 +13,13 @@ class CustomerChatManager {
     this.isConnected = false;
     this.typingTimer = null;
     this.reconnectAttempts = 0;
+    
+    // Infinite scroll properties
+    this.currentPage = 0;
+    this.pageSize = 100;
+    this.hasMoreMessages = true;
+    this.isLoadingMessages = false;
+    this.allMessages = [];
 
     this.init();
   }
@@ -22,6 +29,7 @@ class CustomerChatManager {
     this.initWebSocket();
     this.setupEventListeners();
     this.setupRoomClickHandlers();
+    this.setupInfiniteScroll();
     this.loadAvailableRestaurants(); // Load restaurant list on page load
   }
 
@@ -204,10 +212,66 @@ class CustomerChatManager {
       return;
     }
 
-    restaurants.forEach((restaurant) => {
+    // Separate AI restaurant from others
+    const aiRestaurant = restaurants.find((r) => r.restaurantId === 37);
+    const otherRestaurants = restaurants.filter((r) => r.restaurantId !== 37);
+
+    // Add AI restaurant first with special container
+    if (aiRestaurant) {
+      const aiContainer = this.createAIContainer(aiRestaurant);
+      restaurantList.appendChild(aiContainer);
+    }
+
+    // Add other restaurants
+    otherRestaurants.forEach((restaurant) => {
       const restaurantItem = this.createRestaurantItem(restaurant);
       restaurantList.appendChild(restaurantItem);
     });
+  }
+
+  // Create special AI container
+  createAIContainer(restaurant) {
+    const container = document.createElement("div");
+    container.className = "ai-restaurant-container";
+
+    container.innerHTML = `
+      <div class="ai-restaurant-header">
+        <h6 class="ai-section-title">
+          <i class="fas fa-robot text-gold"></i>
+          Trợ lý AI
+        </h6>
+      </div>
+      <div class="ai-restaurant-item" data-restaurant-id="37">
+        <div class="ai-restaurant-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="ai-restaurant-info">
+          <div class="ai-restaurant-name">AI Assistant</div>
+          <div class="ai-restaurant-description">Trợ lý thông minh của bạn</div>
+          <div class="ai-restaurant-status">
+            <span class="status-dot ai-status"></span>
+            <span>Luôn sẵn sàng</span>
+          </div>
+        </div>
+        <div class="ai-restaurant-actions">
+          <button class="btn btn-gold btn-sm start-ai-chat-btn">
+            <i class="fas fa-comments"></i>
+            Chat
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Add click handler for AI restaurant
+    const aiChatBtn = container.querySelector(".start-ai-chat-btn");
+    if (aiChatBtn) {
+      aiChatBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.startChatWithAI();
+      });
+    }
+
+    return container;
   }
 
   // Create restaurant item element
@@ -226,6 +290,7 @@ class CustomerChatManager {
     if (restaurant.roomId) {
       restaurantItem.dataset.roomId = restaurant.roomId;
     }
+
     nameElement.textContent = restaurant.restaurantName || "Nhà hàng";
     addressElement.textContent = restaurant.address || "Địa chỉ không xác định";
 
@@ -243,6 +308,30 @@ class CustomerChatManager {
     });
 
     return item;
+  }
+
+  // Start chat with AI
+  async startChatWithAI() {
+    try {
+      const response = await fetch("/api/chat/rooms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `restaurantId=37`, // AI restaurant ID
+      });
+
+      if (response.ok) {
+        const room = await response.json();
+        this.joinRoom(room.roomId);
+      } else {
+        const error = await response.json();
+        this.showError(error.message || "Không thể tạo cuộc trò chuyện với AI");
+      }
+    } catch (error) {
+      console.error("Error starting chat with AI:", error);
+      this.showError("Lỗi khi tạo cuộc trò chuyện với AI");
+    }
   }
 
   // Start chat with restaurant
@@ -292,19 +381,18 @@ class CustomerChatManager {
         console.warn("⚠️ WebSocket not connected, cannot join room");
       }
 
+      // Reset pagination for new room
+      this.currentPage = 0;
+      this.hasMoreMessages = true;
+      this.allMessages = [];
+      
       // Load room messages
-      const response = await fetch(`/api/chat/rooms/${roomId}/messages`);
-      if (response.ok) {
-        const messages = await response.json();
-        this.displayMessages(messages);
-        this.showChatInterface();
-        this.updateRoomSelection(roomId);
+      await this.loadMessages(roomId);
+      this.showChatInterface();
+      this.updateRoomSelection(roomId);
 
-        // Mark messages as read after loading
-        await this.markMessagesAsRead(roomId);
-      } else {
-        this.showError("Không thể tải tin nhắn");
-      }
+      // Mark messages as read after loading
+      await this.markMessagesAsRead(roomId);
     } catch (error) {
       console.error("Error joining room:", error);
       this.showError("Lỗi khi tham gia cuộc trò chuyện");
@@ -350,6 +438,131 @@ class CustomerChatManager {
 
     // Scroll to bottom
     this.scrollToBottom();
+  }
+
+  // Setup infinite scroll listener
+  setupInfiniteScroll() {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    messagesContainer.addEventListener('scroll', () => {
+      if (messagesContainer.scrollTop === 0 && this.hasMoreMessages && !this.isLoadingMessages) {
+        this.loadMoreMessages();
+      }
+    });
+  }
+
+  // Load messages for current room
+  async loadMessages(roomId) {
+    if (this.isLoadingMessages) return;
+    
+    this.isLoadingMessages = true;
+    this.showLoadingState();
+
+    try {
+      const response = await fetch(`/api/chat/rooms/${roomId}/messages?page=${this.currentPage}&size=${this.pageSize}`);
+      if (response.ok) {
+        const messages = await response.json();
+        
+        if (this.currentPage === 0) {
+          // First load - replace all messages
+          this.allMessages = messages;
+          this.displayMessages(messages);
+        } else {
+          // Load more - prepend to existing messages
+          this.allMessages = [...messages, ...this.allMessages];
+          this.prependMessages(messages);
+        }
+        
+        // Check if there are more messages
+        this.hasMoreMessages = messages.length === this.pageSize;
+        this.currentPage++;
+        
+      } else {
+        this.showError("Không thể tải tin nhắn");
+      }
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      this.showError("Lỗi khi tải tin nhắn");
+    } finally {
+      this.isLoadingMessages = false;
+    }
+  }
+
+  // Load more messages (infinite scroll)
+  async loadMoreMessages() {
+    if (!this.currentRoomId || this.isLoadingMessages || !this.hasMoreMessages) return;
+    
+    this.isLoadingMessages = true;
+    this.showLoadMoreIndicator();
+
+    try {
+      const response = await fetch(`/api/chat/rooms/${this.currentRoomId}/messages?page=${this.currentPage}&size=${this.pageSize}`);
+      if (response.ok) {
+        const messages = await response.json();
+        
+        if (messages.length > 0) {
+          // Store current scroll position
+          const messagesContainer = document.getElementById("messages-container");
+          const scrollHeight = messagesContainer.scrollHeight;
+          
+          // Prepend new messages
+          this.allMessages = [...messages, ...this.allMessages];
+          this.prependMessages(messages);
+          
+          // Restore scroll position
+          const newScrollHeight = messagesContainer.scrollHeight;
+          messagesContainer.scrollTop = newScrollHeight - scrollHeight;
+        }
+        
+        // Check if there are more messages
+        this.hasMoreMessages = messages.length === this.pageSize;
+        this.currentPage++;
+        
+      }
+    } catch (error) {
+      console.error("Error loading more messages:", error);
+    } finally {
+      this.isLoadingMessages = false;
+      this.hideLoadMoreIndicator();
+    }
+  }
+
+  // Prepend messages to the top of the container
+  prependMessages(messages) {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    messages.reverse().forEach((message) => {
+      const messageElement = this.createMessageElement(message);
+      messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+    });
+  }
+
+  // Show load more indicator
+  showLoadMoreIndicator() {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    const loadMoreIndicator = document.createElement('div');
+    loadMoreIndicator.id = 'load-more-indicator';
+    loadMoreIndicator.className = 'text-center text-muted py-2';
+    loadMoreIndicator.innerHTML = `
+      <div class="spinner-border spinner-border-sm text-gold" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <small>Đang tải thêm tin nhắn...</small>
+    `;
+    
+    messagesContainer.insertBefore(loadMoreIndicator, messagesContainer.firstChild);
+  }
+
+  // Hide load more indicator
+  hideLoadMoreIndicator() {
+    const loadMoreIndicator = document.getElementById('load-more-indicator');
+    if (loadMoreIndicator) {
+      loadMoreIndicator.remove();
+    }
   }
 
   // Create message element

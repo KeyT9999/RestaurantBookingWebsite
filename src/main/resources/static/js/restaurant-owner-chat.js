@@ -13,6 +13,13 @@ class RestaurantOwnerChatManager {
     this.isConnected = false;
     this.typingTimer = null;
     this.reconnectAttempts = 0;
+    
+    // Infinite scroll properties
+    this.currentPage = 0;
+    this.pageSize = 100;
+    this.hasMoreMessages = true;
+    this.isLoadingMessages = false;
+    this.allMessages = [];
 
     try {
       this.init();
@@ -27,6 +34,7 @@ class RestaurantOwnerChatManager {
       this.initWebSocket();
       this.setupEventListeners();
       this.setupRoomClickHandlers();
+      this.setupInfiniteScroll();
       this.loadAvailableAdmins(); // Load admin list on page load
     } catch (error) {
       console.error("Error in init method:", error);
@@ -203,6 +211,11 @@ class RestaurantOwnerChatManager {
       console.warn("Chat interface element not found");
     }
 
+    // Reset pagination for new room
+    this.currentPage = 0;
+    this.hasMoreMessages = true;
+    this.allMessages = [];
+    
     // Load messages
     await this.loadMessages(roomId);
 
@@ -218,16 +231,37 @@ class RestaurantOwnerChatManager {
 
   // Load messages for a room
   async loadMessages(roomId) {
+    if (this.isLoadingMessages) return;
+    
+    this.isLoadingMessages = true;
+    this.showLoadingState();
+
     try {
       const response = await fetch(
-        `/api/chat/rooms/${roomId}/messages?page=0&size=50`
+        `/api/chat/rooms/${roomId}/messages?page=${this.currentPage}&size=${this.pageSize}`
       );
       if (response.ok) {
         const messages = await response.json();
-        this.displayMessages(messages);
+        
+        if (this.currentPage === 0) {
+          // First load - replace all messages
+          this.allMessages = messages;
+          this.displayMessages(messages);
+        } else {
+          // Load more - prepend to existing messages
+          this.allMessages = [...messages, ...this.allMessages];
+          this.prependMessages(messages);
+        }
+        
+        // Check if there are more messages
+        this.hasMoreMessages = messages.length === this.pageSize;
+        this.currentPage++;
+        
       }
     } catch (error) {
       console.error("Failed to load messages:", error);
+    } finally {
+      this.isLoadingMessages = false;
     }
   }
 
@@ -242,6 +276,111 @@ class RestaurantOwnerChatManager {
     });
 
     this.scrollToBottom();
+  }
+
+  // Setup infinite scroll listener
+  setupInfiniteScroll() {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    messagesContainer.addEventListener('scroll', () => {
+      if (messagesContainer.scrollTop === 0 && this.hasMoreMessages && !this.isLoadingMessages) {
+        this.loadMoreMessages();
+      }
+    });
+  }
+
+  // Load more messages (infinite scroll)
+  async loadMoreMessages() {
+    if (!this.currentRoomId || this.isLoadingMessages || !this.hasMoreMessages) return;
+    
+    this.isLoadingMessages = true;
+    this.showLoadMoreIndicator();
+
+    try {
+      const response = await fetch(
+        `/api/chat/rooms/${this.currentRoomId}/messages?page=${this.currentPage}&size=${this.pageSize}`
+      );
+      if (response.ok) {
+        const messages = await response.json();
+        
+        if (messages.length > 0) {
+          // Store current scroll position
+          const messagesContainer = document.getElementById("messages-container");
+          const scrollHeight = messagesContainer.scrollHeight;
+          
+          // Prepend new messages
+          this.allMessages = [...messages, ...this.allMessages];
+          this.prependMessages(messages);
+          
+          // Restore scroll position
+          const newScrollHeight = messagesContainer.scrollHeight;
+          messagesContainer.scrollTop = newScrollHeight - scrollHeight;
+        }
+        
+        // Check if there are more messages
+        this.hasMoreMessages = messages.length === this.pageSize;
+        this.currentPage++;
+        
+      }
+    } catch (error) {
+      console.error("Error loading more messages:", error);
+    } finally {
+      this.isLoadingMessages = false;
+      this.hideLoadMoreIndicator();
+    }
+  }
+
+  // Prepend messages to the top of the container
+  prependMessages(messages) {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    messages.reverse().forEach((message) => {
+      const messageElement = this.createMessageElement(message);
+      messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+    });
+  }
+
+  // Show load more indicator
+  showLoadMoreIndicator() {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    const loadMoreIndicator = document.createElement('div');
+    loadMoreIndicator.id = 'load-more-indicator';
+    loadMoreIndicator.className = 'text-center text-muted py-2';
+    loadMoreIndicator.innerHTML = `
+      <div class="spinner-border spinner-border-sm text-gold" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <small>Đang tải thêm tin nhắn...</small>
+    `;
+    
+    messagesContainer.insertBefore(loadMoreIndicator, messagesContainer.firstChild);
+  }
+
+  // Hide load more indicator
+  hideLoadMoreIndicator() {
+    const loadMoreIndicator = document.getElementById('load-more-indicator');
+    if (loadMoreIndicator) {
+      loadMoreIndicator.remove();
+    }
+  }
+
+  // Show loading state
+  showLoadingState() {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    messagesContainer.innerHTML = `
+      <div class="text-center text-muted">
+        <div class="spinner-border spinner-border-sm text-gold" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <small>Đang tải...</small>
+      </div>
+    `;
   }
 
   // Create message element from template

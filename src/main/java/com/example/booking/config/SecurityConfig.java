@@ -98,6 +98,8 @@ public class SecurityConfig {
 				.requestMatchers("/admin-setup/**").permitAll()
 				.requestMatchers("/api/admin/create-admin").permitAll()
             .requestMatchers("/api/booking/restaurants/**").permitAll()
+						.requestMatchers("/api/booking/availability-check").permitAll()
+						.requestMatchers("/api/ai/actions").hasRole("CUSTOMER")
             .requestMatchers("/api/restaurant/withdrawal/**").hasRole("RESTAURANT_OWNER")
             .requestMatchers("/api/admin/withdrawal/**").hasRole("ADMIN")
             .requestMatchers("/restaurant-owner/withdrawal/**").hasRole("RESTAURANT_OWNER")

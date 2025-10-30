@@ -564,6 +564,24 @@ public class ChatService {
         return false;
     }
     
+    /**
+     * Get chat room by ID
+     */
+    public ChatRoom getRoomById(String roomId) {
+        return chatRoomRepository.findById(roomId).orElse(null);
+    }
+
+    /**
+     * Get AI restaurant owner user ID
+     */
+    public UUID getAIRestaurantOwnerId() {
+        RestaurantProfile aiRestaurant = restaurantProfileRepository.findById(37).orElse(null);
+        if (aiRestaurant != null && aiRestaurant.getOwner() != null) {
+            return aiRestaurant.getOwner().getUser().getId();
+        }
+        return null;
+    }
+
     public ChatRoomDto convertToDto(ChatRoom room) {
         return convertToDto(room, null);
     }

@@ -3,6 +3,7 @@ package com.example.booking.web.controller.api;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
+import java.lang.IllegalArgumentException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +53,27 @@ public class SmartWaitlistApiController {
             System.out.println("   Guest Count: " + guestCount);
             System.out.println("   Selected Table IDs: " + selectedTableIds);
             
-            LocalDateTime bookingDateTime = LocalDateTime.parse(bookingTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            // Parse booking time - handle both ISO format and URL encoded format
+            LocalDateTime bookingDateTime;
+            try {
+                // First try ISO format (2024-01-01T19:00)
+                bookingDateTime = LocalDateTime.parse(bookingTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            } catch (Exception e) {
+                try {
+                    // Try URL encoded format (2024-01-01+19:00) - replace + with T
+                    String normalizedTime = bookingTime.replace("+", "T");
+                    bookingDateTime = LocalDateTime.parse(normalizedTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                } catch (Exception e2) {
+                    // Try other common formats
+                    try {
+                        bookingDateTime = LocalDateTime.parse(bookingTime,
+                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                    } catch (Exception e3) {
+                        System.err.println("❌ Cannot parse booking time: " + bookingTime);
+                        throw new IllegalArgumentException("Invalid booking time format: " + bookingTime);
+                    }
+                }
+            }
             
             AvailabilityCheckResponse response;
             
