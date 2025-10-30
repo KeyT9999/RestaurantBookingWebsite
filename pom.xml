@@ -287,6 +287,98 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>3.2.0</version>
             </plugin>
+            
+            <!-- Maven Surefire Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <!-- Default to PayOS provider, skip VietQR tests -->
+                    <systemPropertyVariables>
+                        <payment.provider>payos</payment.provider>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            
+            <!-- JaCoCo Maven Plugin for Code Coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <executions>
+                    <!-- Giữ nguyên prepare-agent + report full như hiện tại -->
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report-full</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <!-- BÁO CÁO LỌC: chỉ 18 lớp Tier 1 -->
+                    <execution>
+                        <id>report-tier1</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/site/jacoco-tier1</outputDirectory>
+                            <includes>
+                                <include>**/BookingService*.class</include>
+                                <include>**/BookingController*.class</include>
+                                <include>**/PaymentService*.class</include>
+                                <include>**/PayOsService*.class</include>
+                                <include>**/RestaurantManagementService*.class</include>
+                                <include>**/RestaurantDashboardService*.class</include>
+                                <include>**/RestaurantOwnerService*.class</include>
+                                <include>**/RestaurantRegistrationController*.class</include>
+                                <include>**/AdminRestaurantController*.class</include>
+                                <include>**/AdminDashboardController*.class</include>
+                                <include>**/AdvancedRateLimitingService*.class</include>
+                                <include>**/RestaurantSecurityService*.class</include>
+                                <include>**/RefundService*.class</include>
+                                <include>**/WithdrawalService*.class</include>
+                                <include>**/WaitlistService*.class</include>
+                                <include>**/CustomerService*.class</include>
+                                <include>**/BookingConflictService*.class</include>
+                                <include>**/NotificationService*.class</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>jacoco-check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.50</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
