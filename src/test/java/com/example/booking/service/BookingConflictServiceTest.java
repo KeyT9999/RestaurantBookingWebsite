@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -79,6 +80,17 @@ public class BookingConflictServiceTest {
     private Integer testRestaurantId;
     private Integer testTableId;
 
+    private LocalDateTime defaultFutureBookingTime() {
+        return tomorrowAt(18, 0);
+    }
+
+    private LocalDateTime tomorrowAt(int hour, int minute) {
+        return LocalDate.now()
+                .plusDays(1)
+                .atTime(hour, minute, 0)
+                .withNano(0);
+    }
+
     @BeforeEach
     void setUp() {
         testCustomerId = UUID.randomUUID();
@@ -117,7 +129,7 @@ public class BookingConflictServiceTest {
         validBookingForm.setRestaurantId(testRestaurantId);
         validBookingForm.setTableId(testTableId);
         validBookingForm.setGuestCount(2);
-        validBookingForm.setBookingTime(LocalDateTime.now().plusHours(2)); // 2 hours from now
+        validBookingForm.setBookingTime(defaultFutureBookingTime());
     }
 
     // ==================== 1. validateBookingConflicts() - 15 Test Cases ====================
@@ -397,7 +409,7 @@ public class BookingConflictServiceTest {
             existingBooking = new Booking();
             existingBooking.setBookingId(testBookingId);
             existingBooking.setCustomer(testCustomer);
-            existingBooking.setBookingTime(LocalDateTime.now().plusHours(3));
+            existingBooking.setBookingTime(defaultFutureBookingTime().plusHours(1));
         }
 
         @Test
@@ -561,8 +573,8 @@ public class BookingConflictServiceTest {
         @Test
         @DisplayName("Happy Path: testValidateBookingTime_WithValidFutureTime_ShouldPass")
         void testValidateBookingTime_WithValidFutureTime_ShouldPass() {
-            // Given: bookingTime=now+2 hours, within range
-            validBookingForm.setBookingTime(LocalDateTime.now().plusHours(2));
+            // Given: bookingTime within restaurant operating hours
+            validBookingForm.setBookingTime(defaultFutureBookingTime());
             when(customerRepository.findById(testCustomerId)).thenReturn(Optional.of(testCustomer));
             when(restaurantProfileRepository.findById(testRestaurantId)).thenReturn(Optional.of(testRestaurant));
             when(restaurantTableRepository.findById(testTableId)).thenReturn(Optional.of(testTable));
@@ -630,8 +642,9 @@ public class BookingConflictServiceTest {
         @Test
         @DisplayName("Validation: testValidateBookingTime_WithExactMinimumTime_ShouldPass")
         void testValidateBookingTime_WithExactMinimumTime_ShouldPass() {
-            // Given: bookingTime=now+30 days
-            validBookingForm.setBookingTime(LocalDateTime.now().plusDays(30));
+            // Given: bookingTime exactly 30 days ahead during operating hours
+            LocalDate bookingDate = LocalDate.now().plusDays(30);
+            validBookingForm.setBookingTime(bookingDate.atTime(18, 0));
             when(customerRepository.findById(testCustomerId)).thenReturn(Optional.of(testCustomer));
             when(restaurantProfileRepository.findById(testRestaurantId)).thenReturn(Optional.of(testRestaurant));
             when(restaurantTableRepository.findById(testTableId)).thenReturn(Optional.of(testTable));
@@ -645,8 +658,8 @@ public class BookingConflictServiceTest {
         @Test
         @DisplayName("Business Logic: testValidateBookingTime_WithExactMaximumTime_ShouldPass")
         void testValidateBookingTime_WithExactMaximumTime_ShouldPass() {
-            // Given: bookingTime=now+30 days
-            validBookingForm.setBookingTime(LocalDateTime.now().plusDays(30).minusHours(1));
+        // Given: bookingTime=now+30 days at 18:00 (inside 10:00-22:00)
+        validBookingForm.setBookingTime(LocalDateTime.now().plusDays(30).withHour(18).withMinute(0).withSecond(0).withNano(0));
             when(customerRepository.findById(testCustomerId)).thenReturn(Optional.of(testCustomer));
             when(restaurantProfileRepository.findById(testRestaurantId)).thenReturn(Optional.of(testRestaurant));
             when(restaurantTableRepository.findById(testTableId)).thenReturn(Optional.of(testTable));
@@ -1162,5 +1175,5 @@ public class BookingConflictServiceTest {
             verify(restaurantTableRepository, times(1)).findById(testTableId);
         }
     }
-}
 
+}

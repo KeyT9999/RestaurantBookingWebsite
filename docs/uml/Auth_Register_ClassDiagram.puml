@@ -1,0 +1,133 @@
+@startuml Auth_Register_ClassDiagram
+title Authentication - Register Module Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+package "Auth (Web)" {
+  class AuthController {
+    +String registerUser(registerForm: RegisterForm, bindingResult, model, redirectAttributes)
+    +String showRegister()
+    +String showRegisterSuccess()
+    +String registerRestaurant(registerForm: RegisterForm, ...)
+    +String verifyEmail(token: String)
+  }
+}
+
+package "DTO" {
+  class RegisterForm {
+    -username: String
+    -email: String
+    -password: String
+    -confirmPassword: String
+    -fullName: String
+    -phoneNumber: String
+    -address: String
+    -accountType: String
+    +isPasswordMatching(): boolean
+  }
+}
+
+package "Service (Business)" {
+  class SimpleUserService implements UserDetailsService {
+    -userRepository: UserRepository
+    -passwordEncoder: PasswordEncoder
+    -emailService: EmailService
+    -restaurantOwnerRepository: RestaurantOwnerRepository
+    +loadUserByUsername(username: String): UserDetails
+    +registerUser(form: RegisterForm): User
+    +registerUser(form: RegisterForm, role: UserRole): User
+    +verifyEmail(token: String): boolean
+  }
+
+  interface EmailService {
+    +sendVerificationEmail(user: User): void
+  }
+
+  class AuthRateLimitingService {
+    +resetRegisterRateLimit(clientIp: String): void
+  }
+}
+
+package "Domain (Entities)" {
+  class User {
+    -id: Long
+    -username: String
+    -email: String
+    -password: String
+    -fullName: String
+    -phoneNumber: String
+    -address: String
+    -role: UserRole
+    -active: boolean
+    -emailVerified: boolean
+    -emailVerificationToken: String
+  }
+
+  enum UserRole {
+    CUSTOMER
+    RESTAURANT_OWNER
+    ADMIN
+  }
+}
+
+package "Repository (DAL)" {
+  interface UserRepository {
+    +findByUsernameIgnoreCase(username: String): Optional<User>
+    +existsByUsernameIgnoreCase(username: String): boolean
+    +existsByEmailIgnoreCase(email: String): boolean
+    +save(user: User): User
+  }
+
+  interface RestaurantOwnerRepository {
+    +save(...)
+  }
+}
+
+package "Security / Config" {
+  interface PasswordEncoder {
+    +encode(rawPassword: String): String
+    +matches(rawPassword: String, encodedPassword: String): boolean
+  }
+
+  class SecurityConfig {
+    +passwordEncoder(): PasswordEncoder
+  }
+}
+
+' Relationships
+AuthController --> RegisterForm : uses
+AuthController --> SimpleUserService : calls
+AuthController --> AuthRateLimitingService : resets rate limit
+SimpleUserService --> UserRepository : persists/queries
+SimpleUserService --> PasswordEncoder : encodes password
+SimpleUserService --> EmailService : send verification email
+SimpleUserService --> RestaurantOwnerRepository : create owner record (when role is RESTAURANT_OWNER)
+SimpleUserService ..> User : creates
+User "1" o-- "1" UserRole : has
+SecurityConfig ..> PasswordEncoder : provides bean
+
+' Notes for flow
+note right of AuthController
+POST /auth/register
+1) Validate RegisterForm
+2) userService.registerUser(form)
+3) authRateLimitingService.resetRegisterRateLimit(ip)
+4) Redirect to /auth/register-success
+end note
+
+note right of SimpleUserService
+registerUser(form)
+- Validate: password match, unique username/email
+- Create User, encode password
+- Set role, flags (active/emailVerified)
+- Generate verification token
+- Save User
+- Send verification email
+end note
+
+@enduml
+
+
