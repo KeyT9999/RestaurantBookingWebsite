@@ -47,6 +47,9 @@ public class RefundService {
     @Autowired
     private BankAccountService bankAccountService;
 
+    @Autowired
+    private PayOsService payOsService;
+
     /**
      * Hoàn tiền cho một payment với logic mới:
      * - Trừ 30% hoa hồng từ ví nhà hàng
@@ -213,10 +216,53 @@ public class RefundService {
             refundRequest.setCustomerAccountHolder(payment.getCustomer().getFullName());
         }
 
-        // Không tạo PayOS payment link ngay lập tức
-        // Chỉ tạo khi admin click vào refund request (giống như thanh toán booking)
+        // Fetch bank name for display/logging
+        String bankName = bankAccountService.getBankName(bankCode);
+        if (bankName == null || bankName.trim().isEmpty()) {
+            bankName = bankCode;
+        }
+
+        // Generate VietQR details upfront to keep legacy behaviour for manual refunds
+        String description = buildRefundTransferDescription(payment, reason);
+        String qrData = payOsService.createTransferQRCode(
+                actualRefundAmount,
+                accountNumber,
+                bankName,
+                refundRequest.getCustomerAccountHolder(),
+                description
+        );
+
+        String qrUrl = payOsService.createTransferQRCodeUrl(
+                actualRefundAmount,
+                accountNumber,
+                bankName,
+                refundRequest.getCustomerAccountHolder(),
+                description
+        );
+
+        if (qrUrl != null && !qrUrl.trim().isEmpty()) {
+            refundRequest.setVietqrUrl(qrUrl);
+        } else if (qrData != null && !qrData.trim().isEmpty()) {
+            // Fallback: store raw QR data so admin can still access instructions
+            refundRequest.setVietqrUrl(qrData);
+        }
 
         return refundRequestRepository.save(refundRequest);
+    }
+
+    private String buildRefundTransferDescription(Payment payment, String reason) {
+        StringBuilder builder = new StringBuilder("Refund");
+        if (payment.getBooking() != null && payment.getBooking().getBookingId() != null) {
+            builder.append(" booking #").append(payment.getBooking().getBookingId());
+        } else if (payment.getOrderCode() != null) {
+            builder.append(" order #").append(payment.getOrderCode());
+        }
+
+        if (reason != null && !reason.trim().isEmpty()) {
+            builder.append(" - ").append(reason.trim());
+        }
+
+        return builder.toString();
     }
 
     /**
