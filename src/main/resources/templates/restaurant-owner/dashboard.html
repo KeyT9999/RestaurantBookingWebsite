@@ -43,7 +43,7 @@
                     <div class="restaurant-menu" id="restaurantMenu">
                         <div th:each="restaurant, iterStat : ${restaurants}" 
                              class="restaurant-item" 
-                             th:classappend="${restaurant.restaurantId == selectedRestaurantId ? 'active' : ''}"
+                             th:classappend="${restaurant.restaurantId == restaurantId ? 'active' : ''}"
                              th:onclick="'selectRestaurant(' + ${restaurant.restaurantId} + ')'">
                             <div class="restaurant-info">
                                 <div class="restaurant-icon">
@@ -118,13 +118,13 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/restaurant-owner/bookings" th:href="${selectedRestaurantId != null ? '/restaurant-owner/bookings?restaurantId=' + selectedRestaurantId : '/restaurant-owner/bookings'}">
+                        <a href="/restaurant-owner/bookings" th:href="${restaurantId != null ? '/restaurant-owner/bookings?restaurantId=' + restaurantId : '/restaurant-owner/bookings'}">
                             <i class="fas fa-calendar-check"></i>
                             Booking
                         </a>
                     </li>
                     <li>
-                        <a href="/restaurant-owner/tables">
+                        <a href="/restaurant-owner/tables" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/tables' : '/restaurant-owner/tables'}">
                             <i class="fas fa-chair"></i>
                             Quản lý bàn
                         </a>
@@ -136,7 +136,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/restaurant-owner/menu">
+                        <a href="/restaurant-owner/menu" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/dishes' : '/restaurant-owner/menu'}">
                             <i class="fas fa-utensils"></i>
                             Thực đơn
                         </a>
@@ -284,7 +284,7 @@
                 <div class="list-card">
                     <div class="list-header">
                         <h3 class="list-title">Booking gần đây</h3>
-                        <a href="/restaurant-owner/bookings" class="list-see-all">Xem tất cả</a>
+                        <a href="/restaurant-owner/bookings" th:href="${restaurantId != null ? '/restaurant-owner/bookings?restaurantId=' + restaurantId : '/restaurant-owner/bookings'}" class="list-see-all">Xem tất cả</a>
                     </div>
                     <div th:if="${param.debug != null}" style="background:#FFFB91;padding:6px 10px;border-radius:4px;margin-bottom:8px;font-size:0.85rem;">
                         <div>DEBUG: Total bookings = <span th:text="${#lists.size(recentBookings)}">0</span></div>
@@ -353,7 +353,7 @@
                 <div class="list-card">
                     <div class="list-header">
                         <h3 class="list-title">Khách chờ</h3>
-                        <a href="/restaurant-owner/waitlist" class="list-see-all">Xem tất cả</a>
+                        <a href="/restaurant-owner/waitlist" th:href="${restaurantId != null ? '/restaurant-owner/waitlist?restaurantId=' + restaurantId : '/restaurant-owner/waitlist'}" class="list-see-all">Xem tất cả</a>
                     </div>
                     <div th:if="${waitingCustomers != null and !waitingCustomers.empty}">
                         <div th:each="customer : ${waitingCustomers}" class="list-item">

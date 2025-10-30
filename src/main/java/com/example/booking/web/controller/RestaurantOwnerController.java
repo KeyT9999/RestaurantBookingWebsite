@@ -130,6 +130,7 @@ public class RestaurantOwnerController {
     /**
      * FOH Floor Management Dashboard
      * Main interface for managing waitlist, tables, and floor operations
+     * Supports both old query param format and new PATH variable format
      */
     @GetMapping("/dashboard")
     public String dashboard(Authentication authentication, Model model, 
@@ -200,7 +201,7 @@ public class RestaurantOwnerController {
 
             model.addAttribute("restaurants", restaurants);
             model.addAttribute("selectedRestaurant", selectedRestaurant);
-            model.addAttribute("selectedRestaurantId", finalSelectedRestaurantId);
+            model.addAttribute("restaurantId", finalSelectedRestaurantId);
             model.addAttribute("currentPeriod", period);
             
                // Dashboard statistics

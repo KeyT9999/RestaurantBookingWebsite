@@ -12,6 +12,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,7 +31,10 @@ public class AuditService {
     
     @Autowired
     private AuditLogRepository auditLogRepository;
-    
+
+    @Autowired
+    private AiSyncEventPublisher aiSyncEventPublisher;
+
     // Thread-local flag to prevent recursive audit logging
     private static final ThreadLocal<Boolean> AUDIT_IN_PROGRESS = new ThreadLocal<>();
     
@@ -62,6 +67,7 @@ public class AuditService {
             
             // Save to database
             auditLogRepository.save(auditLog);
+            scheduleAiSync(event);
             
             logger.debug("✅ Audit event logged successfully: {}", auditLog.getAuditId());
             
@@ -101,6 +107,7 @@ public class AuditService {
             
             // Save to database
             auditLogRepository.save(auditLog);
+            scheduleAiSync(event);
             
             logger.debug("✅ Audit event logged successfully (sync): {}", auditLog.getAuditId());
             
@@ -309,5 +316,25 @@ public class AuditService {
         
         List<AuditLog> logs = auditLogRepository.findByFilters(username, action, resourceType, fromDate, toDate);
         return logs.stream().limit(limit).toList();
+    }
+    
+    private void scheduleAiSync(AuditEvent event) {
+        if (event == null) {
+            return;
+        }
+        try {
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        aiSyncEventPublisher.publish(event);
+                    }
+                });
+            } else {
+                aiSyncEventPublisher.publish(event);
+            }
+        } catch (Exception ex) {
+            logger.error("Failed to schedule AI sync for event {}", event, ex);
+        }
     }
 }

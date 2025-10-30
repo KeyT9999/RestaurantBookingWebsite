@@ -47,6 +47,9 @@ public class ChatMessageController {
     @Autowired
     private com.example.booking.service.AIService aiService;
 
+    @Autowired
+    private com.example.booking.service.AIResponseProcessorService aiResponseProcessorService;
+
     /**
      * Handle incoming chat messages - Optimized and safe version
      */
@@ -613,7 +616,7 @@ public class ChatMessageController {
     }
 
     /**
-     * Process AI response asynchronously
+     * Process AI response asynchronously with action execution
      */
     @org.springframework.scheduling.annotation.Async
     public void processAIResponse(String roomId, String message, UUID userId) {
@@ -624,27 +627,34 @@ public class ChatMessageController {
             messagingTemplate.convertAndSend("/topic/room/" + roomId + "/typing",
                     new TypingResponse("AI Assistant", true));
 
-            // Call AI service
+            // Get user object for action processing
+            User user = getUserFromUserId(userId);
+
+            // Call AI service to get initial response
             String aiResponse = aiService.sendMessageToAI(message, userId.toString());
+
+            // Process AI response and execute any detected actions
+            String processedResponse = aiResponseProcessorService.processAIResponse(
+                    aiResponse, user, message);
 
             // Hide typing indicator
             messagingTemplate.convertAndSend("/topic/room/" + roomId + "/typing",
                     new TypingResponse("AI Assistant", false));
 
-            // Create AI message
+            // Create AI message with processed response
             UUID aiUserId = chatService.getAIRestaurantOwnerId();
             if (aiUserId != null) {
                 Message aiMessage = chatService.sendMessage(
                         roomId,
                         aiUserId,
-                        aiResponse,
+                        processedResponse,
                         MessageType.TEXT);
 
                 // Broadcast AI response
                 messagingTemplate.convertAndSend("/topic/room/" + roomId,
                         new ChatMessageResponse(aiMessage));
 
-                System.out.println("AI response sent successfully");
+                System.out.println("AI response with actions processed successfully");
 
                 // Update unread counts
                 broadcastUnreadCountUpdates(roomId, aiUserId);
@@ -672,6 +682,18 @@ public class ChatMessageController {
             } catch (Exception ex) {
                 System.err.println("Error sending error message: " + ex.getMessage());
             }
+        }
+    }
+
+    /**
+     * Helper method to get User from user ID
+     */
+    private User getUserFromUserId(UUID userId) {
+        try {
+            return userService.findById(userId);
+        } catch (Exception e) {
+            System.err.println("Error getting user by ID: " + e.getMessage());
+            throw new RuntimeException("User not found for ID: " + userId);
         }
     }
 

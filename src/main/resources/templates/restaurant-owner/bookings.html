@@ -109,7 +109,7 @@
                 
                 <ul class="sidebar-menu">
                     <li>
-                        <a href="/restaurant-owner/dashboard" th:href="${restaurantId != null ? '/restaurant-owner/dashboard?restaurantId=' + restaurantId : '/restaurant-owner/dashboard'}">
+                        <a href="/restaurant-owner/dashboard" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/dashboard' : '/restaurant-owner/dashboard'}">
                             <i class="fas fa-chart-line"></i>
                             Tổng quan
                         </a>
@@ -121,7 +121,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/restaurant-owner/tables">
+                        <a href="/restaurant-owner/tables" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/tables' : '/restaurant-owner/tables'}">
                             <i class="fas fa-chair"></i>
                             Quản lý bàn
                         </a>
@@ -133,7 +133,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/restaurant-owner/menu">
+                        <a href="/restaurant-owner/menu" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/dishes' : '/restaurant-owner/menu'}">
                             <i class="fas fa-utensils"></i>
                             Thực đơn
                         </a>

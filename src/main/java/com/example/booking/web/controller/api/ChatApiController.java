@@ -257,7 +257,7 @@ public class ChatApiController {
     @GetMapping("/rooms/{roomId}/messages")
     public ResponseEntity<?> getMessages(@PathVariable String roomId,
                                        @RequestParam(defaultValue = "0") int page,
-                                       @RequestParam(defaultValue = "50") int size,
+            @RequestParam(defaultValue = "200") int size,
                                        Authentication authentication) {
         try {
             User user = getUserFromAuthentication(authentication);

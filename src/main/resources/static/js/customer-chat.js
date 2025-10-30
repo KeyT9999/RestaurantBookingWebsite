@@ -13,6 +13,13 @@ class CustomerChatManager {
     this.isConnected = false;
     this.typingTimer = null;
     this.reconnectAttempts = 0;
+    
+    // Infinite scroll properties
+    this.currentPage = 0;
+    this.pageSize = 100;
+    this.hasMoreMessages = true;
+    this.isLoadingMessages = false;
+    this.allMessages = [];
 
     this.init();
   }
@@ -22,6 +29,7 @@ class CustomerChatManager {
     this.initWebSocket();
     this.setupEventListeners();
     this.setupRoomClickHandlers();
+    this.setupInfiniteScroll();
     this.loadAvailableRestaurants(); // Load restaurant list on page load
   }
 
@@ -373,19 +381,18 @@ class CustomerChatManager {
         console.warn("⚠️ WebSocket not connected, cannot join room");
       }
 
+      // Reset pagination for new room
+      this.currentPage = 0;
+      this.hasMoreMessages = true;
+      this.allMessages = [];
+      
       // Load room messages
-      const response = await fetch(`/api/chat/rooms/${roomId}/messages`);
-      if (response.ok) {
-        const messages = await response.json();
-        this.displayMessages(messages);
-        this.showChatInterface();
-        this.updateRoomSelection(roomId);
+      await this.loadMessages(roomId);
+      this.showChatInterface();
+      this.updateRoomSelection(roomId);
 
-        // Mark messages as read after loading
-        await this.markMessagesAsRead(roomId);
-      } else {
-        this.showError("Không thể tải tin nhắn");
-      }
+      // Mark messages as read after loading
+      await this.markMessagesAsRead(roomId);
     } catch (error) {
       console.error("Error joining room:", error);
       this.showError("Lỗi khi tham gia cuộc trò chuyện");
@@ -431,6 +438,131 @@ class CustomerChatManager {
 
     // Scroll to bottom
     this.scrollToBottom();
+  }
+
+  // Setup infinite scroll listener
+  setupInfiniteScroll() {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    messagesContainer.addEventListener('scroll', () => {
+      if (messagesContainer.scrollTop === 0 && this.hasMoreMessages && !this.isLoadingMessages) {
+        this.loadMoreMessages();
+      }
+    });
+  }
+
+  // Load messages for current room
+  async loadMessages(roomId) {
+    if (this.isLoadingMessages) return;
+    
+    this.isLoadingMessages = true;
+    this.showLoadingState();
+
+    try {
+      const response = await fetch(`/api/chat/rooms/${roomId}/messages?page=${this.currentPage}&size=${this.pageSize}`);
+      if (response.ok) {
+        const messages = await response.json();
+        
+        if (this.currentPage === 0) {
+          // First load - replace all messages
+          this.allMessages = messages;
+          this.displayMessages(messages);
+        } else {
+          // Load more - prepend to existing messages
+          this.allMessages = [...messages, ...this.allMessages];
+          this.prependMessages(messages);
+        }
+        
+        // Check if there are more messages
+        this.hasMoreMessages = messages.length === this.pageSize;
+        this.currentPage++;
+        
+      } else {
+        this.showError("Không thể tải tin nhắn");
+      }
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      this.showError("Lỗi khi tải tin nhắn");
+    } finally {
+      this.isLoadingMessages = false;
+    }
+  }
+
+  // Load more messages (infinite scroll)
+  async loadMoreMessages() {
+    if (!this.currentRoomId || this.isLoadingMessages || !this.hasMoreMessages) return;
+    
+    this.isLoadingMessages = true;
+    this.showLoadMoreIndicator();
+
+    try {
+      const response = await fetch(`/api/chat/rooms/${this.currentRoomId}/messages?page=${this.currentPage}&size=${this.pageSize}`);
+      if (response.ok) {
+        const messages = await response.json();
+        
+        if (messages.length > 0) {
+          // Store current scroll position
+          const messagesContainer = document.getElementById("messages-container");
+          const scrollHeight = messagesContainer.scrollHeight;
+          
+          // Prepend new messages
+          this.allMessages = [...messages, ...this.allMessages];
+          this.prependMessages(messages);
+          
+          // Restore scroll position
+          const newScrollHeight = messagesContainer.scrollHeight;
+          messagesContainer.scrollTop = newScrollHeight - scrollHeight;
+        }
+        
+        // Check if there are more messages
+        this.hasMoreMessages = messages.length === this.pageSize;
+        this.currentPage++;
+        
+      }
+    } catch (error) {
+      console.error("Error loading more messages:", error);
+    } finally {
+      this.isLoadingMessages = false;
+      this.hideLoadMoreIndicator();
+    }
+  }
+
+  // Prepend messages to the top of the container
+  prependMessages(messages) {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    messages.reverse().forEach((message) => {
+      const messageElement = this.createMessageElement(message);
+      messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+    });
+  }
+
+  // Show load more indicator
+  showLoadMoreIndicator() {
+    const messagesContainer = document.getElementById("messages-container");
+    if (!messagesContainer) return;
+
+    const loadMoreIndicator = document.createElement('div');
+    loadMoreIndicator.id = 'load-more-indicator';
+    loadMoreIndicator.className = 'text-center text-muted py-2';
+    loadMoreIndicator.innerHTML = `
+      <div class="spinner-border spinner-border-sm text-gold" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <small>Đang tải thêm tin nhắn...</small>
+    `;
+    
+    messagesContainer.insertBefore(loadMoreIndicator, messagesContainer.firstChild);
+  }
+
+  // Hide load more indicator
+  hideLoadMoreIndicator() {
+    const loadMoreIndicator = document.getElementById('load-more-indicator');
+    if (loadMoreIndicator) {
+      loadMoreIndicator.remove();
+    }
   }
 
   // Create message element

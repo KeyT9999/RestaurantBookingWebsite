@@ -3,6 +3,7 @@ package com.example.booking.aspect;
 import com.example.booking.audit.AuditAction;
 import com.example.booking.audit.AuditEvent;
 import com.example.booking.audit.Auditable;
+import com.example.booking.repository.DishRepository;
 import com.example.booking.service.AuditService;
 
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -20,6 +21,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +39,10 @@ public class AuditAspect {
     
     @Autowired
     private AuditService auditService;
-    
+
+    @Autowired(required = false)
+    private DishRepository dishRepository;
+
     /**
      * Around advice for methods annotated with @Auditable
      */
@@ -57,7 +62,7 @@ public class AuditAspect {
         } finally {
             // Log audit event
             long executionTime = System.currentTimeMillis() - startTime;
-            logAuditEvent(joinPoint, auditable, result, exception, executionTime);
+            logAuditEvent(joinPoint, auditable, result, exception, executionTime, Collections.emptyMap());
         }
     }
     
@@ -72,6 +77,8 @@ public class AuditAspect {
         long startTime = System.currentTimeMillis();
         Object result = null;
         Throwable exception = null;
+        AuditAction action = detectAuditAction(joinPoint);
+        Map<String, Object> extraMetadata = buildServiceExtraMetadata(joinPoint, action);
         
         try {
             result = joinPoint.proceed();
@@ -81,10 +88,9 @@ public class AuditAspect {
             throw e;
         } finally {
             // Auto-detect audit action based on method name
-            AuditAction action = detectAuditAction(joinPoint);
             if (action != null) {
                 long executionTime = System.currentTimeMillis() - startTime;
-                logAuditEvent(joinPoint, action, result, exception, executionTime);
+                logAuditEvent(joinPoint, action, result, exception, executionTime, extraMetadata);
             }
         }
     }
@@ -100,6 +106,8 @@ public class AuditAspect {
         long startTime = System.currentTimeMillis();
         Object result = null;
         Throwable exception = null;
+        AuditAction action = detectRepositoryAction(joinPoint);
+        Map<String, Object> extraMetadata = buildRepositoryExtraMetadata(joinPoint, action);
         
         try {
             result = joinPoint.proceed();
@@ -109,9 +117,8 @@ public class AuditAspect {
             throw e;
         } finally {
             long executionTime = System.currentTimeMillis() - startTime;
-            AuditAction action = detectRepositoryAction(joinPoint);
             if (action != null) {
-                logAuditEvent(joinPoint, action, result, exception, executionTime);
+                logAuditEvent(joinPoint, action, result, exception, executionTime, extraMetadata);
             }
         }
     }
@@ -120,10 +127,11 @@ public class AuditAspect {
      * Log audit event for @Auditable annotation
      */
     private void logAuditEvent(ProceedingJoinPoint joinPoint, Auditable auditable, 
-                              Object result, Throwable exception, long executionTime) {
+            Object result, Throwable exception, long executionTime,
+            Map<String, Object> extraMetadata) {
         try {
             AuditEvent event = createAuditEvent(joinPoint, auditable.action(), 
-                                              auditable.resourceType(), result, exception, executionTime);
+                    auditable.resourceType(), result, exception, executionTime, extraMetadata);
             auditService.logAuditEvent(event);
         } catch (Exception e) {
             logger.error("Failed to log audit event for @Auditable method", e);
@@ -134,10 +142,12 @@ public class AuditAspect {
      * Log audit event for detected action
      */
     private void logAuditEvent(ProceedingJoinPoint joinPoint, AuditAction action, 
-                              Object result, Throwable exception, long executionTime) {
+            Object result, Throwable exception, long executionTime,
+            Map<String, Object> extraMetadata) {
         try {
             String resourceType = detectResourceType(joinPoint);
-            AuditEvent event = createAuditEvent(joinPoint, action, resourceType, result, exception, executionTime);
+            AuditEvent event = createAuditEvent(joinPoint, action, resourceType, result, exception, executionTime,
+                    extraMetadata);
             auditService.logAuditEvent(event);
         } catch (Exception e) {
             logger.error("Failed to log audit event for detected action", e);
@@ -149,7 +159,7 @@ public class AuditAspect {
      */
     private AuditEvent createAuditEvent(ProceedingJoinPoint joinPoint, AuditAction action, 
                                        String resourceType, Object result, Throwable exception, 
-                                       long executionTime) {
+            long executionTime, Map<String, Object> extraMetadata) {
         
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
@@ -169,7 +179,8 @@ public class AuditAspect {
         
         // Detect resource ID and restaurant ID
         String resourceId = detectResourceId(args, result);
-        Integer restaurantId = detectRestaurantId(args, result);
+        resourceId = sanitizeResourceId(resourceId);
+        Integer restaurantId = detectRestaurantId(resourceType, args, result, extraMetadata);
         
         // Create old and new values
         Map<String, Object> oldValues = null;
@@ -188,6 +199,9 @@ public class AuditAspect {
         metadata.put("method", method.getName());
         metadata.put("className", joinPoint.getTarget().getClass().getSimpleName());
         metadata.put("package", joinPoint.getTarget().getClass().getPackage().getName());
+        if (extraMetadata != null && !extraMetadata.isEmpty()) {
+            metadata.putAll(extraMetadata);
+        }
         
         return AuditEvent.builder()
             .action(action)
@@ -264,6 +278,8 @@ public class AuditAspect {
             return "BOOKING";
         } else if (className.contains("Restaurant")) {
             return "RESTAURANT";
+        } else if (className.contains("Dish") || className.contains("Menu")) {
+            return "MENU";
         } else if (className.contains("User") || className.contains("Customer")) {
             return "USER";
         } else if (className.contains("Voucher")) {
@@ -282,62 +298,79 @@ public class AuditAspect {
         // Try to extract ID from first argument
         if (args.length > 0 && args[0] != null) {
             Object firstArg = args[0];
-            
-            // If it's an entity with getId method
+
+            // If it's a collection/array, avoid huge toString
             try {
-                Method getIdMethod = firstArg.getClass().getMethod("getId");
-                Object id = getIdMethod.invoke(firstArg);
-                return id != null ? id.toString() : null;
-            } catch (Exception e) {
-                // Try to get ID from common field names
+                if (firstArg instanceof java.util.Collection<?>) {
+                    int size = ((java.util.Collection<?>) firstArg).size();
+                    return "list:size=" + size;
+                }
+                if (firstArg.getClass().isArray()) {
+                    int size = java.lang.reflect.Array.getLength(firstArg);
+                    return "array:size=" + size;
+                }
+            } catch (Exception ignored) {
+                // fall through
+            }
+
+            // Try common ID getter names
+            String[] methodNames = { "getId", "getPaymentId", "getBookingId", "getDishId" };
+            for (String methodName : methodNames) {
                 try {
-                    Method getIdMethod = firstArg.getClass().getMethod("getPaymentId");
+                    Method getIdMethod = firstArg.getClass().getMethod(methodName);
                     Object id = getIdMethod.invoke(firstArg);
-                    return id != null ? id.toString() : null;
-                } catch (Exception e2) {
-                    try {
-                        Method getIdMethod = firstArg.getClass().getMethod("getBookingId");
-                        Object id = getIdMethod.invoke(firstArg);
-                        return id != null ? id.toString() : null;
-                    } catch (Exception e3) {
-                        // Return string representation of first argument
-                        return firstArg.toString();
-                    }
+                    if (id != null)
+                        return id.toString();
+                } catch (Exception ignored) {
+                    // try next
                 }
             }
+
+            // If all fail, use string representation
+            return firstArg.toString();
         }
-        
+
         // Try to extract ID from result
         if (result != null) {
-            try {
-                Method getIdMethod = result.getClass().getMethod("getId");
-                Object id = getIdMethod.invoke(result);
-                return id != null ? id.toString() : null;
-            } catch (Exception e) {
-                // Try other common ID methods
+            String[] methodNames = { "getId", "getPaymentId", "getBookingId", "getDishId" };
+            for (String methodName : methodNames) {
                 try {
-                    Method getIdMethod = result.getClass().getMethod("getPaymentId");
+                    Method getIdMethod = result.getClass().getMethod(methodName);
                     Object id = getIdMethod.invoke(result);
-                    return id != null ? id.toString() : null;
-                } catch (Exception e2) {
-                    try {
-                        Method getIdMethod = result.getClass().getMethod("getBookingId");
-                        Object id = getIdMethod.invoke(result);
-                        return id != null ? id.toString() : null;
-                    } catch (Exception e3) {
-                        return result.toString();
-                    }
+                    if (id != null)
+                        return id.toString();
+                } catch (Exception ignored) {
+                    // try next
                 }
             }
+
+            // Fallback to toString
+            return result.toString();
         }
-        
+
         return null;
+    }
+
+    /**
+     * Ensure resourceId fits into DB column (e.g., VARCHAR(100)) and is safe.
+     */
+    private String sanitizeResourceId(String resourceId) {
+        if (resourceId == null) {
+            return null;
+        }
+        // Hard cap at 100 chars to satisfy schema constraints
+        final int MAX_LEN = 100;
+        if (resourceId.length() <= MAX_LEN) {
+            return resourceId;
+        }
+        return resourceId.substring(0, MAX_LEN);
     }
     
     /**
      * Detect restaurant ID from arguments or result
      */
-    private Integer detectRestaurantId(Object[] args, Object result) {
+    private Integer detectRestaurantId(String resourceType, Object[] args, Object result,
+            Map<String, Object> extraMetadata) {
         // Try to extract restaurant ID from arguments
         for (Object arg : args) {
             if (arg != null) {
@@ -348,6 +381,20 @@ public class AuditAspect {
                         return (Integer) restaurantId;
                     }
                 } catch (Exception e) {
+                    // Try nested restaurant
+                    try {
+                        Method getRestaurantMethod = arg.getClass().getMethod("getRestaurant");
+                        Object restaurant = getRestaurantMethod.invoke(arg);
+                        if (restaurant != null) {
+                            Method getRestaurantIdMethod = restaurant.getClass().getMethod("getRestaurantId");
+                            Object restaurantId = getRestaurantIdMethod.invoke(restaurant);
+                            if (restaurantId instanceof Integer) {
+                                return (Integer) restaurantId;
+                            }
+                        }
+                    } catch (Exception ignored) {
+                        // Continue
+                    }
                     // Continue to next argument
                 }
             }
@@ -365,8 +412,84 @@ public class AuditAspect {
                 // No restaurant ID found
             }
         }
-        
+
+        if ("MENU".equalsIgnoreCase(resourceType) && extraMetadata != null) {
+            Object restaurantId = extraMetadata.get("dishRestaurantId");
+            if (restaurantId instanceof Number number) {
+                return number.intValue();
+            }
+        }
+
         return null;
+    }
+
+    private Map<String, Object> buildServiceExtraMetadata(ProceedingJoinPoint joinPoint, AuditAction action) {
+        if (action != AuditAction.DELETE || dishRepository == null) {
+            return Collections.emptyMap();
+        }
+
+        String methodName = joinPoint.getSignature().getName().toLowerCase();
+        if (methodName.contains("dish") && joinPoint.getArgs().length > 0) {
+            Integer dishId = extractInteger(joinPoint.getArgs()[0]);
+            if (dishId != null) {
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("dishId", dishId);
+                try {
+                    dishRepository.findById(dishId).ifPresent(dish -> {
+                        if (dish.getRestaurant() != null) {
+                            metadata.put("dishRestaurantId", dish.getRestaurant().getRestaurantId());
+                        }
+                    });
+                } catch (Exception ex) {
+                    logger.debug("Failed to load dish {} for metadata extraction: {}", dishId, ex.getMessage());
+                }
+                return metadata;
+            }
+        }
+        return Collections.emptyMap();
+    }
+
+    private Map<String, Object> buildRepositoryExtraMetadata(ProceedingJoinPoint joinPoint, AuditAction action) {
+        if (action != AuditAction.DELETE || dishRepository == null) {
+            return Collections.emptyMap();
+        }
+
+        Object target = joinPoint.getTarget();
+        if (target != null && target.getClass().getSimpleName().toLowerCase().contains("dish")) {
+            if (joinPoint.getArgs().length > 0) {
+                Integer dishId = extractInteger(joinPoint.getArgs()[0]);
+                if (dishId != null) {
+                    Map<String, Object> metadata = new HashMap<>();
+                    metadata.put("dishId", dishId);
+                    try {
+                        dishRepository.findById(dishId).ifPresent(dish -> {
+                            if (dish.getRestaurant() != null) {
+                                metadata.put("dishRestaurantId", dish.getRestaurant().getRestaurantId());
+                            }
+                        });
+                    } catch (Exception ex) {
+                        logger.debug("Failed to load dish {} for repository metadata extraction: {}", dishId,
+                                ex.getMessage());
+                    }
+                    return metadata;
+                }
+            }
+        }
+        return Collections.emptyMap();
+    }
+
+    private Integer extractInteger(Object value) {
+        if (value instanceof Integer) {
+            return (Integer) value;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (Exception e) {
+            return null;
+        }
     }
     
     /**

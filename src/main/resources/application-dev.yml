@@ -49,6 +49,16 @@ ai:
     url: http://localhost:8000
     timeout: 30000
 
+ai-sync:
+  enabled: ${AI_SYNC_ENABLED:true}
+  url: ${AI_SYNC_URL:http://localhost:8000/sync/event}
+  secret: ${AI_SYNC_SECRET:}
+  api-key: ${AI_SYNC_API_KEY:}
+  timeout-ms: ${AI_SYNC_TIMEOUT_MS:2000}
+  retry:
+    max-attempts: ${AI_SYNC_RETRY_ATTEMPTS:3}
+    backoff-ms: ${AI_SYNC_RETRY_BACKOFF_MS:30000}
+
 logging:
   level:
     org.hibernate.SQL: DEBUG
