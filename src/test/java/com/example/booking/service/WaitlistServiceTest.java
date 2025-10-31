@@ -1048,5 +1048,311 @@ public class WaitlistServiceTest {
             assertTrue(exception.getMessage().contains("not found"));
         }
     }
+
+    // ==================== Additional Coverage Tests ====================
+
+    @Nested
+    @DisplayName("6. addToWaitlist() - Additional Coverage Tests")
+    class AddToWaitlistAdditionalTests {
+
+        @Test
+        @DisplayName("Validation: Null Restaurant ID, Should Throw Exception")
+        void testAddToWaitlist_WithNullRestaurantId_ShouldThrowException() {
+            // When & Then
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+                waitlistService.addToWaitlist(null, partySize, customerId);
+            });
+
+            assertTrue(exception.getMessage().contains("required"));
+        }
+
+        @Test
+        @DisplayName("Validation: Null Party Size, Should Throw Exception")
+        void testAddToWaitlist_WithNullPartySize_ShouldThrowException() {
+            // When & Then
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+                waitlistService.addToWaitlist(restaurantId, null, customerId);
+            });
+
+            assertTrue(exception.getMessage().contains("required"));
+        }
+
+        @Test
+        @DisplayName("Validation: Null Customer ID, Should Throw Exception")
+        void testAddToWaitlist_WithNullCustomerId_ShouldThrowException() {
+            // When & Then
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+                waitlistService.addToWaitlist(restaurantId, partySize, null);
+            });
+
+            assertTrue(exception.getMessage().contains("required"));
+        }
+
+        @Test
+        @DisplayName("Validation: Customer Not Found, Should Throw Exception")
+        void testAddToWaitlist_WithCustomerNotFound_ShouldThrowException() {
+            // Given
+            when(customerService.findById(customerId)).thenReturn(Optional.empty());
+
+            // When & Then
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+                waitlistService.addToWaitlist(restaurantId, partySize, customerId);
+            });
+
+            assertTrue(exception.getMessage().contains("Customer not found"));
+        }
+
+        @Test
+        @DisplayName("Validation: Restaurant Not Found, Should Throw Exception")
+        void testAddToWaitlist_WithRestaurantNotFound_ShouldThrowException() {
+            // Given
+            when(customerService.findById(customerId)).thenReturn(Optional.of(customer));
+            when(restaurantService.findRestaurantById(restaurantId)).thenReturn(Optional.empty());
+
+            // When & Then
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+                waitlistService.addToWaitlist(restaurantId, partySize, customerId);
+            });
+
+            assertTrue(exception.getMessage().contains("Restaurant not found"));
+        }
+    }
+
+    @Nested
+    @DisplayName("7. callNextFromWaitlist() - Coverage Tests")
+    class CallNextFromWaitlistTests {
+
+        @Test
+        @DisplayName("Should call next customer when available")
+        void testCallNextFromWaitlist_WithNextCustomer_ShouldReturnWaitlist() {
+            // Given
+            waitlist.setStatus(WaitlistStatus.WAITING);
+            when(waitlistRepository.findFirstByRestaurantIdAndStatusOrderByJoinTimeAsc(
+                    restaurantId, WaitlistStatus.WAITING)).thenReturn(Optional.of(waitlist));
+            when(waitlistRepository.save(waitlist)).thenReturn(waitlist);
+
+            // When
+            Waitlist result = waitlistService.callNextFromWaitlist(restaurantId);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(WaitlistStatus.CALLED, result.getStatus());
+            verify(waitlistRepository).save(waitlist);
+        }
+
+        @Test
+        @DisplayName("Should return null when no next customer")
+        void testCallNextFromWaitlist_WithNoNextCustomer_ShouldReturnNull() {
+            // Given
+            when(waitlistRepository.findFirstByRestaurantIdAndStatusOrderByJoinTimeAsc(
+                    restaurantId, WaitlistStatus.WAITING)).thenReturn(Optional.empty());
+
+            // When
+            Waitlist result = waitlistService.callNextFromWaitlist(restaurantId);
+
+            // Then
+            assertNull(result);
+            verify(waitlistRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("8. getQueuePosition() - Edge Case Tests")
+    class GetQueuePositionTests {
+
+        @Test
+        @DisplayName("Should return 1 when waitlistId not in earlierEntries")
+        void testGetQueuePosition_WithWaitlistIdNotInEarlierEntries_ShouldReturn1() {
+            // Given
+            waitlist.setWaitlistId(waitlistId);
+
+            Waitlist w1 = new Waitlist(customer, restaurant, 2, WaitlistStatus.WAITING);
+            w1.setWaitlistId(98);
+            Waitlist w2 = new Waitlist(customer, restaurant, 3, WaitlistStatus.WAITING);
+            w2.setWaitlistId(99);
+
+            List<Waitlist> earlierEntries = new ArrayList<>();
+            earlierEntries.add(w1);
+            earlierEntries.add(w2);
+            // waitlist with waitlistId is NOT in this list
+
+            when(waitlistRepository.findById(waitlistId)).thenReturn(Optional.of(waitlist));
+            when(waitlistRepository.findByRestaurantIdAndStatusOrderByJoinTimeAsc(restaurantId, WaitlistStatus.WAITING))
+                    .thenReturn(earlierEntries);
+
+            // When
+            Integer result = waitlistService.getQueuePosition(waitlistId);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result); // Edge case: should return 1 when not found in list
+        }
+    }
+
+    @Nested
+    @DisplayName("9. Compatibility Methods - Coverage Tests")
+    class CompatibilityMethodsTests {
+
+        @Test
+        @DisplayName("Should get restaurant waitlist")
+        void testGetRestaurantWaitlist_ShouldReturnWaitlist() {
+            // Given
+            List<Waitlist> waitlists = List.of(waitlist);
+            when(waitlistRepository.findByRestaurantIdAndStatusOrderByJoinTimeAsc(restaurantId, WaitlistStatus.WAITING))
+                    .thenReturn(waitlists);
+
+            // When
+            List<Waitlist> result = waitlistService.getRestaurantWaitlist(restaurantId);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+        }
+
+        @Test
+        @DisplayName("Should get all waitlist by restaurant")
+        void testGetAllWaitlistByRestaurant_ShouldReturnWaitlist() {
+            // Given
+            List<Waitlist> waitlists = List.of(waitlist);
+            when(waitlistRepository.findByRestaurantIdAndStatusOrderByJoinTimeAsc(restaurantId, WaitlistStatus.WAITING))
+                    .thenReturn(waitlists);
+
+            // When
+            List<Waitlist> result = waitlistService.getAllWaitlistByRestaurant(restaurantId);
+
+            // Then
+            assertNotNull(result);
+        }
+
+        @Test
+        @DisplayName("Should get waitlist by restaurant")
+        void testGetWaitlistByRestaurant_ShouldReturnWaitlist() {
+            // Given
+            List<Waitlist> waitlists = List.of(waitlist);
+            when(waitlistRepository.findByRestaurantIdAndStatusOrderByJoinTimeAsc(restaurantId, WaitlistStatus.WAITING))
+                    .thenReturn(waitlists);
+
+            // When
+            List<Waitlist> result = waitlistService.getWaitlistByRestaurant(restaurantId);
+
+            // Then
+            assertNotNull(result);
+        }
+
+        @Test
+        @DisplayName("Should get called customers")
+        void testGetCalledCustomers_ShouldReturnCalledWaitlists() {
+            // Given
+            waitlist.setStatus(WaitlistStatus.CALLED);
+            List<Waitlist> calledWaitlists = List.of(waitlist);
+            when(waitlistRepository.findByRestaurantIdAndStatusOrderByJoinTimeAsc(restaurantId, WaitlistStatus.CALLED))
+                    .thenReturn(calledWaitlists);
+
+            // When
+            List<Waitlist> result = waitlistService.getCalledCustomers(restaurantId);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(1, result.size());
+        }
+
+        @Test
+        @DisplayName("Should calculate estimated wait time for customer")
+        void testCalculateEstimatedWaitTimeForCustomer_ShouldReturnTime() {
+            // Given
+            when(waitlistRepository.countByRestaurantIdAndStatus(restaurantId, WaitlistStatus.WAITING))
+                    .thenReturn(3L);
+
+            // When
+            Integer result = waitlistService.calculateEstimatedWaitTimeForCustomer(restaurantId);
+
+            // Then
+            assertNotNull(result);
+            assertEquals(90, result); // 3 * 30 = 90
+        }
+    }
+
+    @Nested
+    @DisplayName("10. calculateTotalAmount() - Coverage Tests")
+    class CalculateTotalAmountTests {
+
+        private LocalDateTime confirmedBookingTime;
+
+        @BeforeEach
+        void setUpCalculateTotalTests() {
+            confirmedBookingTime = LocalDateTime.now().plusHours(2);
+        }
+
+        @Test
+        @DisplayName("Should calculate total with BookingDish items")
+        void testConfirmWaitlistToBooking_WithBookingDishes_ShouldCalculateTotal() {
+            // Given
+            waitlist.setStatus(WaitlistStatus.WAITING);
+            when(waitlistRepository.findById(waitlistId)).thenReturn(Optional.of(waitlist));
+            doNothing().when(conflictService).validateBookingConflicts(any(BookingForm.class), eq(customerId));
+
+            Booking savedBooking = new Booking();
+            savedBooking.setBookingId(1);
+            savedBooking.setStatus(BookingStatus.CONFIRMED);
+
+            when(bookingRepository.save(any(Booking.class))).thenReturn(savedBooking);
+
+            // Create BookingDish items
+            List<com.example.booking.domain.BookingDish> bookingDishes = new ArrayList<>();
+            com.example.booking.domain.BookingDish dish1 = new com.example.booking.domain.BookingDish();
+            dish1.setPrice(BigDecimal.valueOf(100000));
+            dish1.setQuantity(2);
+            bookingDishes.add(dish1);
+
+            com.example.booking.domain.BookingDish dish2 = new com.example.booking.domain.BookingDish();
+            dish2.setPrice(BigDecimal.valueOf(150000));
+            dish2.setQuantity(1);
+            bookingDishes.add(dish2);
+
+            when(bookingDishRepository.findByBooking(any(Booking.class))).thenReturn(bookingDishes);
+            when(bookingServiceRepository.findByBooking(any(Booking.class))).thenReturn(new ArrayList<>());
+
+            // When
+            Booking result = waitlistService.confirmWaitlistToBooking(waitlistId, confirmedBookingTime, restaurantId);
+
+            // Then
+            assertNotNull(result);
+            // Total should be: (100000 * 2) + (150000 * 1) = 350000
+            verify(bookingDishRepository, atLeastOnce()).findByBooking(any(Booking.class));
+        }
+
+        @Test
+        @DisplayName("Should calculate total with BookingService items")
+        void testConfirmWaitlistToBooking_WithBookingServices_ShouldCalculateTotal() {
+            // Given
+            waitlist.setStatus(WaitlistStatus.WAITING);
+            when(waitlistRepository.findById(waitlistId)).thenReturn(Optional.of(waitlist));
+            doNothing().when(conflictService).validateBookingConflicts(any(BookingForm.class), eq(customerId));
+
+            Booking savedBooking = new Booking();
+            savedBooking.setBookingId(1);
+            savedBooking.setStatus(BookingStatus.CONFIRMED);
+
+            when(bookingRepository.save(any(Booking.class))).thenReturn(savedBooking);
+            when(bookingDishRepository.findByBooking(any(Booking.class))).thenReturn(new ArrayList<>());
+
+            // Create BookingService items
+            List<com.example.booking.domain.BookingService> bookingServices = new ArrayList<>();
+            com.example.booking.domain.BookingService service1 = new com.example.booking.domain.BookingService();
+            service1.setPrice(BigDecimal.valueOf(50000));
+            service1.setQuantity(3);
+            bookingServices.add(service1);
+
+            when(bookingServiceRepository.findByBooking(any(Booking.class))).thenReturn(bookingServices);
+
+            // When
+            Booking result = waitlistService.confirmWaitlistToBooking(waitlistId, confirmedBookingTime, restaurantId);
+
+            // Then
+            assertNotNull(result);
+            // Total should be: 50000 * 3 = 150000
+            verify(bookingServiceRepository, atLeastOnce()).findByBooking(any(Booking.class));
+        }
+    }
 }
 

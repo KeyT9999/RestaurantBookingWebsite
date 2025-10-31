@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,6 +29,7 @@ import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.User;
 import com.example.booking.domain.WithdrawalRequest;
 import com.example.booking.dto.payout.CreateWithdrawalRequestDto;
+import com.example.booking.dto.payout.ManualPayDto;
 import com.example.booking.dto.payout.WithdrawalRequestDto;
 import com.example.booking.exception.BadRequestException;
 import com.example.booking.exception.ResourceNotFoundException;
@@ -221,6 +221,8 @@ public class WithdrawalServiceTest {
             balance.setPendingWithdrawal(BigDecimal.ZERO);
             balance.setTotalRevenue(new BigDecimal("50000"));
             
+            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(bankAccountRepository.findById(bankAccountId)).thenReturn(Optional.of(bankAccount));
             when(balanceService.getOrCreateBalance(restaurantId)).thenReturn(balance);
             
             // Act & Assert
@@ -230,7 +232,58 @@ public class WithdrawalServiceTest {
             
             assertTrue(exception.getMessage().contains("Số dư không đủ"));
         }
-        
+
+        @Test
+        @DisplayName("Test 4b: Validation - Wrong Restaurant (Bank Account), Should Throw Exception")
+        void testRequestWithdrawal_WithWrongRestaurant_ShouldThrowException() {
+            // Arrange
+            RestaurantProfile otherRestaurant = new RestaurantProfile();
+            otherRestaurant.setRestaurantId(999);
+
+            RestaurantBankAccount wrongBankAccount = new RestaurantBankAccount();
+            wrongBankAccount.setAccountId(bankAccountId);
+            wrongBankAccount.setRestaurant(otherRestaurant); // Bank account belongs to different restaurant
+
+            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(bankAccountRepository.findById(bankAccountId)).thenReturn(Optional.of(wrongBankAccount));
+
+            // Act & Assert
+            BadRequestException exception = assertThrows(BadRequestException.class, () -> {
+                withdrawalService.createWithdrawal(restaurantId, createDto);
+            });
+
+            assertTrue(exception.getMessage().contains("không thuộc nhà hàng này"));
+        }
+
+        @Test
+        @DisplayName("Test 4c: Validation - Bank Account Not Found, Should Throw Exception")
+        void testRequestWithdrawal_WithBankAccountNotFound_ShouldThrowException() {
+            // Arrange
+            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+            when(bankAccountRepository.findById(bankAccountId)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+                withdrawalService.createWithdrawal(restaurantId, createDto);
+            });
+
+            assertTrue(exception.getMessage().contains("tài khoản ngân hàng"));
+        }
+
+        @Test
+        @DisplayName("Test 4d: Validation - Restaurant Not Found, Should Throw Exception")
+        void testRequestWithdrawal_WithRestaurantNotFound_ShouldThrowException() {
+            // Arrange
+            when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+                withdrawalService.createWithdrawal(restaurantId, createDto);
+            });
+
+            assertTrue(exception.getMessage().contains("nhà hàng"));
+        }
+
         @Test
         @DisplayName("Test 5: Validation - Below Minimum Amount, Should Throw Exception")
         void testRequestWithdrawal_BelowMinimumAmount_ShouldThrowException() {
@@ -557,10 +610,119 @@ public class WithdrawalServiceTest {
         }
     }
     
-    // ==================== 4. getWithdrawalHistory() - 3+ Cases ====================
+    // ==================== 4. markWithdrawalPaid() - Additional Coverage
+    // ====================
+
+    @Nested
+    @DisplayName("4. markWithdrawalPaid() - Mark Withdrawal Paid Tests")
+    class MarkWithdrawalPaidTests {
+
+        @Test
+        @DisplayName("Test 30: Happy Path - Should mark withdrawal as paid successfully")
+        void testMarkWithdrawalPaid_WithValidRequest_ShouldMarkAsPaid() {
+            // Arrange
+            Integer requestId = 1;
+            ManualPayDto dto = new ManualPayDto();
+            dto.setTransferRef("TRANSFER123");
+            dto.setNote("Manual transfer");
+            dto.setProofUrl("https://proof.url");
+
+            when(withdrawalRepository.findByIdForUpdate(requestId)).thenReturn(Optional.of(withdrawalRequest));
+            when(balanceRepository.findByRestaurantIdForUpdate(restaurantId)).thenReturn(Optional.of(balance));
+            when(withdrawalRepository.save(any(WithdrawalRequest.class))).thenReturn(withdrawalRequest);
+            doNothing().when(notificationService).notifyWithdrawalSucceeded(any(WithdrawalRequest.class));
+
+            // Act
+            withdrawalService.markWithdrawalPaid(requestId, adminUserId, dto);
+
+            // Assert
+            verify(withdrawalRepository).save(any(WithdrawalRequest.class));
+            verify(notificationService).notifyWithdrawalSucceeded(any(WithdrawalRequest.class));
+        }
+
+        @Test
+        @DisplayName("Test 31: Validation - Withdrawal Not Found, Should Throw Exception")
+        void testMarkWithdrawalPaid_WithWithdrawalNotFound_ShouldThrowException() {
+            // Arrange
+            Integer requestId = 999;
+            ManualPayDto dto = new ManualPayDto();
+
+            when(withdrawalRepository.findByIdForUpdate(requestId)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+                withdrawalService.markWithdrawalPaid(requestId, adminUserId, dto);
+            });
+
+            assertTrue(exception.getMessage().contains("yêu cầu rút tiền"));
+        }
+
+        @Test
+        @DisplayName("Test 32: Validation - Insufficient Balance, Should Throw Exception")
+        void testMarkWithdrawalPaid_WithInsufficientBalance_ShouldThrowException() {
+            // Arrange
+            Integer requestId = 1;
+            ManualPayDto dto = new ManualPayDto();
+            dto.setTransferRef("TRANSFER123");
+
+            balance.setAvailableBalance(new BigDecimal("30000")); // Less than withdrawal amount (500k)
+
+            when(withdrawalRepository.findByIdForUpdate(requestId)).thenReturn(Optional.of(withdrawalRequest));
+            when(balanceRepository.findByRestaurantIdForUpdate(restaurantId)).thenReturn(Optional.of(balance));
+
+            // Act & Assert
+            BadRequestException exception = assertThrows(BadRequestException.class, () -> {
+                withdrawalService.markWithdrawalPaid(requestId, adminUserId, dto);
+            });
+
+            assertTrue(exception.getMessage().contains("Số dư không đủ"));
+        }
+
+        @Test
+        @DisplayName("Test 33: Validation - Invalid Status, Should Throw Exception")
+        void testMarkWithdrawalPaid_WithInvalidStatus_ShouldThrowException() {
+            // Arrange
+            Integer requestId = 1;
+            ManualPayDto dto = new ManualPayDto();
+            dto.setTransferRef("TRANSFER123");
+
+            withdrawalRequest.setStatus(WithdrawalStatus.REJECTED); // Cannot mark REJECTED as paid
+
+            when(withdrawalRepository.findByIdForUpdate(requestId)).thenReturn(Optional.of(withdrawalRequest));
+
+            // Act & Assert
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+                withdrawalService.markWithdrawalPaid(requestId, adminUserId, dto);
+            });
+
+            assertTrue(exception.getMessage().contains("không ở trạng thái có thể đánh dấu đã chi"));
+        }
+
+        @Test
+        @DisplayName("Test 34: Validation - Balance Not Found, Should Throw Exception")
+        void testMarkWithdrawalPaid_WithBalanceNotFound_ShouldThrowException() {
+            // Arrange
+            Integer requestId = 1;
+            ManualPayDto dto = new ManualPayDto();
+            dto.setTransferRef("TRANSFER123");
+
+            when(withdrawalRepository.findByIdForUpdate(requestId)).thenReturn(Optional.of(withdrawalRequest));
+            when(balanceRepository.findByRestaurantIdForUpdate(restaurantId)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+                withdrawalService.markWithdrawalPaid(requestId, adminUserId, dto);
+            });
+
+            assertTrue(exception.getMessage().contains("số dư nhà hàng"));
+        }
+    }
+
+    // ==================== 5. getWithdrawalHistory() - 3+ Cases
+    // ====================
     
     @Nested
-    @DisplayName("4. getWithdrawalHistory() (getWithdrawalsByRestaurant) - Get Withdrawal History Tests")
+    @DisplayName("5. getWithdrawalHistory() (getWithdrawalsByRestaurant) - Get Withdrawal History Tests")
     class GetWithdrawalHistoryTests {
         
         @Test
@@ -646,6 +808,119 @@ public class WithdrawalServiceTest {
             assertNotNull(result);
             assertTrue(result.isEmpty());
             assertEquals(0, result.getTotalElements());
+        }
+    }
+
+    // ==================== 5. getWithdrawalStats() Tests ====================
+
+    @Nested
+    @DisplayName("5. getWithdrawalStats() - Get Withdrawal Statistics Tests")
+    class GetWithdrawalStatsTests {
+
+        @Test
+        @DisplayName("Test 31: Happy Path - Should Return Statistics")
+        void testGetWithdrawalStats_ShouldReturnStatistics() {
+            // Arrange
+            when(withdrawalRepository.countByStatus(WithdrawalStatus.PENDING)).thenReturn(5L);
+            when(withdrawalRepository.countByStatus(WithdrawalStatus.SUCCEEDED)).thenReturn(10L);
+            when(withdrawalRepository.countByStatus(WithdrawalStatus.REJECTED)).thenReturn(2L);
+            when(withdrawalRepository.sumAmountByStatus(WithdrawalStatus.PENDING))
+                    .thenReturn(new BigDecimal("1000000"));
+            when(withdrawalRepository.sumAmountByStatus(WithdrawalStatus.SUCCEEDED))
+                    .thenReturn(new BigDecimal("5000000"));
+            when(withdrawalRepository.sumCommissionByStatus(WithdrawalStatus.SUCCEEDED))
+                    .thenReturn(new BigDecimal("500000"));
+            when(withdrawalRepository.calculateAverageProcessingTimeHours()).thenReturn(2.5);
+
+            // Act
+            com.example.booking.dto.admin.WithdrawalStatsDto result = withdrawalService.getWithdrawalStats();
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(5L, result.getPendingCount());
+            assertEquals(10L, result.getSucceededCount());
+            assertEquals(2L, result.getRejectedCount());
+            assertEquals(new BigDecimal("1000000"), result.getPendingAmount());
+            assertEquals(new BigDecimal("5000000"), result.getSucceededAmount());
+            assertNotNull(result.getSuccessRate());
+        }
+    }
+
+    // ==================== 6. getTotalCommissionEarned() Tests ====================
+
+    @Nested
+    @DisplayName("6. getTotalCommissionEarned() - Get Total Commission Tests")
+    class GetTotalCommissionEarnedTests {
+
+        @Test
+        @DisplayName("Test 32: Happy Path - Should Return Total Commission")
+        void testGetTotalCommissionEarned_ShouldReturnTotalCommission() {
+            // Arrange
+            BigDecimal expectedCommission = new BigDecimal("1000000");
+            when(balanceRepository.getTotalCommissionEarned()).thenReturn(expectedCommission);
+
+            // Act
+            BigDecimal result = withdrawalService.getTotalCommissionEarned();
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(expectedCommission, result);
+            verify(balanceRepository).getTotalCommissionEarned();
+        }
+
+        @Test
+        @DisplayName("Test 33: Should Return Zero When No Commission")
+        void testGetTotalCommissionEarned_ShouldReturnZeroWhenNoCommission() {
+            // Arrange
+            when(balanceRepository.getTotalCommissionEarned()).thenReturn(BigDecimal.ZERO);
+
+            // Act
+            BigDecimal result = withdrawalService.getTotalCommissionEarned();
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(BigDecimal.ZERO, result);
+        }
+    }
+
+    // ==================== 7. convertToRestaurantBalanceInfoDto() Tests
+    // ====================
+
+    @Nested
+    @DisplayName("7. convertToRestaurantBalanceInfoDto() - Convert Balance to DTO Tests")
+    class ConvertToRestaurantBalanceInfoDtoTests {
+
+        @Test
+        @DisplayName("Test 34: Happy Path - Should Convert Balance to DTO")
+        void testConvertToRestaurantBalanceInfoDto_ShouldConvertSuccessfully() {
+            // Arrange
+            RestaurantBalance testBalance = new RestaurantBalance();
+            testBalance.setBalanceId(1);
+            testBalance.setRestaurant(restaurant);
+            testBalance.setTotalRevenue(new BigDecimal("2000000"));
+            testBalance.setAvailableBalance(new BigDecimal("1500000"));
+            testBalance.setPendingWithdrawal(new BigDecimal("300000"));
+            testBalance.setTotalWithdrawn(new BigDecimal("200000"));
+            testBalance.setTotalCommission(new BigDecimal("100000"));
+            testBalance.setTotalBookingsCompleted(50);
+            testBalance.setTotalWithdrawalRequests(5);
+
+            // This method is private, so we test it through getAllRestaurantBalances
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+            when(balanceRepository.findAll(pageable))
+                    .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.Arrays.asList(testBalance)));
+
+            // Act
+            org.springframework.data.domain.Page<com.example.booking.dto.admin.RestaurantBalanceInfoDto> result = withdrawalService
+                    .getAllRestaurantBalances(null, pageable);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(1, result.getContent().size());
+            com.example.booking.dto.admin.RestaurantBalanceInfoDto dto = result.getContent().get(0);
+            assertEquals(restaurantId, dto.getRestaurantId());
+            assertEquals(new BigDecimal("2000000"), dto.getTotalRevenue());
+            assertEquals(new BigDecimal("1500000"), dto.getAvailableBalance());
         }
     }
 }

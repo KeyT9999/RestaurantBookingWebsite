@@ -90,6 +90,78 @@ public class RestaurantBankAccountServiceTest {
     }
 
     @Test
+    @DisplayName("shouldReturnNull_whenNoDefaultAccount")
+    void shouldReturnNull_whenNoDefaultAccount() {
+        // Given
+        when(bankAccountRepository.findByRestaurantIdAndIsDefaultTrue(restaurantId))
+                .thenReturn(Optional.empty());
+
+        // When
+        RestaurantBankAccountDto result = bankAccountService.getDefaultBankAccount(restaurantId);
+
+        // Then
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenAccountNumberExists")
+    void shouldThrowException_whenAccountNumberExists() {
+        // Given
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(restaurantId, accountDto.getAccountNumber()))
+                .thenReturn(true);
+
+        // When & Then
+        BadRequestException exception = assertThrows(BadRequestException.class, () -> {
+            bankAccountService.addBankAccount(restaurantId, accountDto);
+        });
+
+        assertTrue(exception.getMessage().contains("Số tài khoản này đã tồn tại"));
+    }
+
+    @Test
+    @DisplayName("shouldSetAsDefault_whenFirstAccount")
+    void shouldSetAsDefault_whenFirstAccount() {
+        // Given
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(restaurantId, accountDto.getAccountNumber()))
+                .thenReturn(false);
+        when(bankAccountRepository.countByRestaurantId(restaurantId)).thenReturn(0L);
+        when(bankAccountRepository.save(any(RestaurantBankAccount.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        RestaurantBankAccountDto result = bankAccountService.addBankAccount(restaurantId, accountDto);
+
+        // Then - First account should be default
+        assertNotNull(result);
+        assertTrue(result.getIsDefault());
+        verify(bankAccountRepository).save(any(RestaurantBankAccount.class));
+    }
+
+    @Test
+    @DisplayName("shouldKeepExistingDefault_whenIsDefaultIsNull")
+    void shouldKeepExistingDefault_whenIsDefaultIsNull() {
+        // Given
+        account.setIsDefault(true);
+        accountDto.setIsDefault(null); // Null means keep existing
+
+        when(bankAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(bankAccountRepository.existsByRestaurantIdAndAccountNumberAndAccountIdNot(
+                restaurantId, accountDto.getAccountNumber(), accountId)).thenReturn(false);
+        when(bankAccountRepository.save(any(RestaurantBankAccount.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        RestaurantBankAccountDto result = bankAccountService.updateBankAccount(restaurantId, accountId, accountDto);
+
+        // Then - Should keep existing default value
+        assertNotNull(result);
+        assertTrue(result.getIsDefault()); // Should keep true
+        verify(bankAccountRepository, never()).unsetDefaultForRestaurant(restaurantId);
+    }
+
+    @Test
     @DisplayName("shouldReturnEmptyList_whenNoAccounts")
     void shouldReturnEmptyList_whenNoAccounts() {
         // Given
@@ -154,16 +226,17 @@ public class RestaurantBankAccountServiceTest {
     }
 
     @Test
-    @DisplayName("shouldThrowException_whenAccountNumberExists")
-    void shouldThrowException_whenAccountNumberExists() {
-        // Given
-        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
-        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(restaurantId, "1234567890"))
+    @DisplayName("shouldThrowException_whenAccountNumberExists_Update")
+    void shouldThrowException_whenAccountNumberExists_Update() {
+        // Given - duplicate account number for update
+        when(bankAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(bankAccountRepository.existsByRestaurantIdAndAccountNumberAndAccountIdNot(restaurantId, "1234567890",
+                accountId))
             .thenReturn(true);
 
         // When & Then
         assertThrows(BadRequestException.class, () -> {
-            bankAccountService.addBankAccount(restaurantId, accountDto);
+            bankAccountService.updateBankAccount(restaurantId, accountId, accountDto);
         });
     }
 
@@ -247,8 +320,8 @@ public class RestaurantBankAccountServiceTest {
     }
 
     @Test
-    @DisplayName("shouldReturnNull_whenNoDefaultAccount")
-    void shouldReturnNull_whenNoDefaultAccount() {
+    @DisplayName("shouldReturnNull_whenNoDefaultAccount_Duplicate")
+    void shouldReturnNull_whenNoDefaultAccount_Duplicate() {
         // Given
         when(bankAccountRepository.findByRestaurantIdAndIsDefaultTrue(restaurantId))
             .thenReturn(Optional.empty());
@@ -350,6 +423,95 @@ public class RestaurantBankAccountServiceTest {
         assertThrows(BadRequestException.class, () -> {
             bankAccountService.updateBankAccount(restaurantId, accountId, accountDto);
         });
+    }
+
+    // ========== convertToDto() - Mask Account Number Tests ==========
+
+    @Test
+    @DisplayName("shouldMaskAccountNumber_whenAccountNumberLengthGreaterThan4")
+    void shouldMaskAccountNumber_whenAccountNumberLengthGreaterThan4() {
+        // Given
+        account.setAccountNumber("1234567890"); // 10 characters
+        when(bankAccountRepository.findByRestaurantId(restaurantId))
+                .thenReturn(java.util.Arrays.asList(account));
+
+        // When
+        List<RestaurantBankAccountDto> result = bankAccountService.getBankAccounts(restaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertNotNull(result.get(0).getMaskedAccountNumber());
+        assertEquals("******7890", result.get(0).getMaskedAccountNumber());
+    }
+
+    @Test
+    @DisplayName("shouldNotMaskAccountNumber_whenAccountNumberLengthIs4OrLess")
+    void shouldNotMaskAccountNumber_whenAccountNumberLengthIs4OrLess() {
+        // Given
+        account.setAccountNumber("1234"); // Exactly 4 characters
+        when(bankAccountRepository.findByRestaurantId(restaurantId))
+                .thenReturn(java.util.Arrays.asList(account));
+
+        // When
+        List<RestaurantBankAccountDto> result = bankAccountService.getBankAccounts(restaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertNull(result.get(0).getMaskedAccountNumber());
+    }
+
+    @Test
+    @DisplayName("shouldNotMaskAccountNumber_whenAccountNumberIsNull")
+    void shouldNotMaskAccountNumber_whenAccountNumberIsNull() {
+        // Given
+        account.setAccountNumber(null);
+        when(bankAccountRepository.findByRestaurantId(restaurantId))
+                .thenReturn(java.util.Arrays.asList(account));
+
+        // When
+        List<RestaurantBankAccountDto> result = bankAccountService.getBankAccounts(restaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertNull(result.get(0).getMaskedAccountNumber());
+    }
+
+    @Test
+    @DisplayName("shouldNotMaskAccountNumber_whenAccountNumberIsEmpty")
+    void shouldNotMaskAccountNumber_whenAccountNumberIsEmpty() {
+        // Given
+        account.setAccountNumber("");
+        when(bankAccountRepository.findByRestaurantId(restaurantId))
+                .thenReturn(java.util.Arrays.asList(account));
+
+        // When
+        List<RestaurantBankAccountDto> result = bankAccountService.getBankAccounts(restaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertNull(result.get(0).getMaskedAccountNumber());
+    }
+
+    // ========== getRestaurantBankAccountById() Tests ==========
+    // Note: This method doesn't exist in the service, but we test
+    // getDefaultBankAccount exception case
+
+    @Test
+    @DisplayName("shouldHandleException_whenGettingDefaultBankAccount")
+    void shouldHandleException_whenGettingDefaultBankAccount() {
+        // Given
+        when(bankAccountRepository.findByRestaurantIdAndIsDefaultTrue(restaurantId))
+                .thenReturn(Optional.empty());
+
+        // When
+        RestaurantBankAccountDto result = bankAccountService.getDefaultBankAccount(restaurantId);
+
+        // Then
+        assertNull(result);
     }
 }
 

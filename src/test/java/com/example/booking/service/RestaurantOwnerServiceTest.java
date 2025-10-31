@@ -539,6 +539,76 @@ public class RestaurantOwnerServiceTest {
         assertEquals(2, stats.getAvailableTables());
     }
 
+    @Nested
+    @DisplayName("RestaurantStats Getters and Setters Tests")
+    class RestaurantStatsGettersSettersTests {
+
+        @Test
+        @DisplayName("Should test all RestaurantStats getters and setters")
+        void testRestaurantStats_GettersAndSetters() {
+            // Given
+            RestaurantOwnerService.RestaurantStats stats = new RestaurantOwnerService.RestaurantStats();
+            
+            // When & Then - Test all getters and setters
+            stats.setTotalBookings(5L);
+            assertEquals(5L, stats.getTotalBookings());
+            
+            stats.setActiveBookings(3L);
+            assertEquals(3L, stats.getActiveBookings());
+            
+            stats.setTotalTables(10L);
+            assertEquals(10L, stats.getTotalTables());
+            
+            stats.setAvailableTables(7L);
+            assertEquals(7L, stats.getAvailableTables());
+            
+            stats.setAverageRating(4.5);
+            assertEquals(4.5, stats.getAverageRating(), 0.01);
+        }
+
+        @Test
+        @DisplayName("Should test RestaurantStats with zero values")
+        void testRestaurantStats_WithZeroValues() {
+            // Given
+            RestaurantOwnerService.RestaurantStats stats = new RestaurantOwnerService.RestaurantStats();
+            
+            // When
+            stats.setTotalBookings(0L);
+            stats.setActiveBookings(0L);
+            stats.setTotalTables(0L);
+            stats.setAvailableTables(0L);
+            stats.setAverageRating(0.0);
+            
+            // Then
+            assertEquals(0L, stats.getTotalBookings());
+            assertEquals(0L, stats.getActiveBookings());
+            assertEquals(0L, stats.getTotalTables());
+            assertEquals(0L, stats.getAvailableTables());
+            assertEquals(0.0, stats.getAverageRating(), 0.01);
+        }
+
+        @Test
+        @DisplayName("Should test RestaurantStats with large values")
+        void testRestaurantStats_WithLargeValues() {
+            // Given
+            RestaurantOwnerService.RestaurantStats stats = new RestaurantOwnerService.RestaurantStats();
+            
+            // When
+            stats.setTotalBookings(Long.MAX_VALUE);
+            stats.setActiveBookings(Long.MAX_VALUE);
+            stats.setTotalTables(Long.MAX_VALUE);
+            stats.setAvailableTables(Long.MAX_VALUE);
+            stats.setAverageRating(5.0);
+            
+            // Then
+            assertEquals(Long.MAX_VALUE, stats.getTotalBookings());
+            assertEquals(Long.MAX_VALUE, stats.getActiveBookings());
+            assertEquals(Long.MAX_VALUE, stats.getTotalTables());
+            assertEquals(Long.MAX_VALUE, stats.getAvailableTables());
+            assertEquals(5.0, stats.getAverageRating(), 0.01);
+        }
+    }
+
     // ========== TABLE MANAGEMENT Tests ==========
 
     @Nested
@@ -872,6 +942,293 @@ public class RestaurantOwnerServiceTest {
         service.setRestaurant(testRestaurant);
         service.setStatus(ServiceStatus.AVAILABLE);
         return service;
+    }
+
+    // ========== getRestaurantIdByOwnerId() - Additional Coverage Tests ==========
+
+    @Test
+    @DisplayName("Should return null when ownerId is null and restaurant list is empty")
+    public void getRestaurantIdByOwnerId_withNullOwnerIdAndEmptyList_shouldReturnNull() {
+        // Given
+        when(restaurantRepository.findAll()).thenReturn(new ArrayList<>());
+
+        // When
+        Integer result = restaurantOwnerService.getRestaurantIdByOwnerId(null);
+
+        // Then
+        assertNull(result);
+    }
+
+    // ========== getRestaurantsByCurrentUser() - Additional Coverage Tests ==========
+
+    @Test
+    @DisplayName("Should return restaurants when authentication.getName() is not UUID format")
+    public void getRestaurantsByCurrentUser_withNonUuidUsername_shouldReturnRestaurants() {
+        // Given
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("testuser"); // Not a UUID
+        
+        User user = new User();
+        user.setId(testUserId);
+        user.setUsername("testuser");
+        
+        when(userService.loadUserByUsername("testuser")).thenReturn(user);
+        when(restaurantOwnerRepository.findByUserId(testUserId))
+                .thenReturn(Optional.of(testOwner));
+        when(restaurantProfileRepository.findByOwnerOwnerId(testOwnerId))
+                .thenReturn(List.of(testRestaurant));
+
+        // When
+        List<RestaurantProfile> result = restaurantOwnerService.getRestaurantsByCurrentUser(authentication);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    @DisplayName("Should return empty list when authentication.getName() is non-UUID and user not found")
+    public void getRestaurantsByCurrentUser_withNonUuidUsernameNotFound_shouldReturnEmptyList() {
+        // Given
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("nonexistentuser");
+        
+        doThrow(new RuntimeException("User not found"))
+                .when(userService).loadUserByUsername("nonexistentuser");
+
+        // When
+        List<RestaurantProfile> result = restaurantOwnerService.getRestaurantsByCurrentUser(authentication);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    // ========== getAllRestaurants() Tests ==========
+
+    @Test
+    @DisplayName("Should return all restaurants")
+    public void getAllRestaurants_shouldReturnAllRestaurants() {
+        // Given
+        List<RestaurantProfile> restaurants = List.of(testRestaurant);
+        when(restaurantRepository.findAll()).thenReturn(restaurants);
+
+        // When
+        List<RestaurantProfile> result = restaurantOwnerService.getAllRestaurants();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(restaurantRepository).findAll();
+    }
+
+    // ========== Media Management Tests ==========
+
+    @Nested
+    @DisplayName("Media Management Tests")
+    class MediaManagementTests {
+
+        @Test
+        @DisplayName("Should create media successfully")
+        public void createMedia_withValidMedia_shouldCreateMedia() {
+            // Given
+            com.example.booking.domain.RestaurantMedia media = new com.example.booking.domain.RestaurantMedia();
+            media.setMediaId(1);
+            media.setType("gallery");
+            media.setUrl("http://example.com/image.jpg");
+            media.setRestaurant(testRestaurant);
+
+            when(restaurantMediaRepository.save(any(com.example.booking.domain.RestaurantMedia.class)))
+                    .thenReturn(media);
+
+            // When
+            com.example.booking.domain.RestaurantMedia result = restaurantOwnerService.createMedia(media);
+
+            // Then
+            assertNotNull(result);
+            verify(restaurantMediaRepository).save(media);
+        }
+
+        @Test
+        @DisplayName("Should update media successfully")
+        public void updateMedia_withValidMedia_shouldUpdateMedia() {
+            // Given
+            com.example.booking.domain.RestaurantMedia media = new com.example.booking.domain.RestaurantMedia();
+            media.setMediaId(1);
+            media.setType("gallery");
+            media.setUrl("http://example.com/new-image.jpg");
+            media.setRestaurant(testRestaurant);
+
+            when(restaurantMediaRepository.save(any(com.example.booking.domain.RestaurantMedia.class)))
+                    .thenReturn(media);
+
+            // When
+            com.example.booking.domain.RestaurantMedia result = restaurantOwnerService.updateMedia(media);
+
+            // Then
+            assertNotNull(result);
+            verify(restaurantMediaRepository).save(media);
+        }
+
+        @Test
+        @DisplayName("Should delete media successfully")
+        public void deleteMedia_withValidId_shouldDeleteMedia() {
+            // Given
+            doNothing().when(restaurantMediaRepository).deleteById(1);
+
+            // When
+            assertDoesNotThrow(() -> restaurantOwnerService.deleteMedia(1));
+
+            // Then
+            verify(restaurantMediaRepository).deleteById(1);
+        }
+
+        @Test
+        @DisplayName("Should get media by ID")
+        public void getMediaById_withValidId_shouldReturnMedia() {
+            // Given
+            com.example.booking.domain.RestaurantMedia media = new com.example.booking.domain.RestaurantMedia();
+            media.setMediaId(1);
+            media.setType("gallery");
+            media.setUrl("http://example.com/image.jpg");
+
+            when(restaurantMediaRepository.findById(1))
+                    .thenReturn(Optional.of(media));
+
+            // When
+            Optional<com.example.booking.domain.RestaurantMedia> result = restaurantOwnerService.getMediaById(1);
+
+            // Then
+            assertTrue(result.isPresent());
+            assertEquals(media, result.get());
+        }
+    }
+
+    // ========== Service Image Management Tests ==========
+
+    @Nested
+    @DisplayName("Service Image Management Tests")
+    class ServiceImageManagementTests {
+
+        @Test
+        @DisplayName("Should upload service image successfully")
+        public void uploadServiceImage_withValidFile_shouldUploadSuccessfully() throws Exception {
+            // Given
+            org.springframework.web.multipart.MultipartFile imageFile = mock(org.springframework.web.multipart.MultipartFile.class);
+            when(imageFile.isEmpty()).thenReturn(false);
+            
+            when(restaurantProfileRepository.findById(1))
+                    .thenReturn(Optional.of(testRestaurant));
+            when(restaurantMediaRepository.findServiceImagesByRestaurantAndServiceId(any(), anyString()))
+                    .thenReturn(new ArrayList<>());
+            when(imageUploadService.uploadServiceImage(any(), eq(1), eq(10)))
+                    .thenReturn("http://example.com/service_image.jpg");
+            when(restaurantMediaRepository.save(any(com.example.booking.domain.RestaurantMedia.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            // When
+            String result = restaurantOwnerService.uploadServiceImage(1, 10, imageFile);
+
+            // Then
+            assertNotNull(result);
+            assertTrue(result.contains("service_image"));
+            verify(imageUploadService).uploadServiceImage(any(), eq(1), eq(10));
+        }
+
+        @Test
+        @DisplayName("Should handle IOException when uploading service image")
+        public void uploadServiceImage_withIOException_shouldThrowException() throws Exception {
+            // Given
+            org.springframework.web.multipart.MultipartFile imageFile = mock(org.springframework.web.multipart.MultipartFile.class);
+            when(imageFile.isEmpty()).thenReturn(false);
+            
+            when(restaurantProfileRepository.findById(1))
+                    .thenReturn(Optional.of(testRestaurant));
+            when(restaurantMediaRepository.findServiceImagesByRestaurantAndServiceId(any(), anyString()))
+                    .thenReturn(new ArrayList<>());
+            when(imageUploadService.uploadServiceImage(any(), eq(1), eq(10)))
+                    .thenThrow(new java.io.IOException("Upload failed"));
+
+            // When & Then
+            assertThrows(java.io.IOException.class, () -> {
+                restaurantOwnerService.uploadServiceImage(1, 10, imageFile);
+            });
+        }
+
+        @Test
+        @DisplayName("Should get service image URL when found")
+        public void getServiceImageUrl_withExistingImage_shouldReturnUrl() {
+            // Given
+            com.example.booking.domain.RestaurantMedia media = new com.example.booking.domain.RestaurantMedia();
+            media.setMediaId(1);
+            media.setUrl("http://example.com/service_10_image.jpg");
+
+            when(restaurantProfileRepository.findById(1))
+                    .thenReturn(Optional.of(testRestaurant));
+            when(restaurantMediaRepository.findServiceImagesByRestaurantAndServiceId(any(), anyString()))
+                    .thenReturn(List.of(media));
+
+            // When
+            String result = restaurantOwnerService.getServiceImageUrl(1, 10);
+
+            // Then
+            assertNotNull(result);
+            assertTrue(result.contains("service_10"));
+        }
+
+        @Test
+        @DisplayName("Should return null when service image not found")
+        public void getServiceImageUrl_withNoImage_shouldReturnNull() {
+            // Given
+            when(restaurantProfileRepository.findById(1))
+                    .thenReturn(Optional.of(testRestaurant));
+            when(restaurantMediaRepository.findServiceImagesByRestaurantAndServiceId(any(), anyString()))
+                    .thenReturn(new ArrayList<>());
+
+            // When
+            String result = restaurantOwnerService.getServiceImageUrl(1, 10);
+
+            // Then
+            assertNull(result);
+        }
+
+        @Test
+        @DisplayName("Should delete service image when restaurant found")
+        public void deleteServiceImage_withValidIds_shouldDeleteImage() {
+            // Given
+            com.example.booking.domain.RestaurantMedia media = new com.example.booking.domain.RestaurantMedia();
+            media.setMediaId(1);
+            media.setUrl("http://example.com/service_10_image.jpg");
+
+            when(restaurantProfileRepository.findById(1))
+                    .thenReturn(Optional.of(testRestaurant));
+            when(restaurantMediaRepository.findServiceImagesByRestaurantAndServiceId(any(), anyString()))
+                    .thenReturn(List.of(media));
+            doNothing().when(imageUploadService).deleteImage(anyString());
+            doNothing().when(restaurantMediaRepository).delete(any(com.example.booking.domain.RestaurantMedia.class));
+
+            // When
+            assertDoesNotThrow(() -> restaurantOwnerService.deleteServiceImage(1, 10));
+
+            // Then
+            verify(imageUploadService).deleteImage(anyString());
+            verify(restaurantMediaRepository).delete(any(com.example.booking.domain.RestaurantMedia.class));
+        }
+    }
+
+    // ========== deleteDishImage() - Additional Coverage ==========
+
+    @Test
+    @DisplayName("Should handle deleteDishImage when restaurant not found")
+    public void deleteDishImage_withRestaurantNotFound_shouldHandleGracefully() {
+        // Given
+        when(restaurantRepository.findById(1))
+                .thenReturn(Optional.empty());
+
+        // When - should not throw exception
+        assertDoesNotThrow(() -> restaurantOwnerService.deleteDishImage(1, 10));
+
+        // Then - method should handle gracefully
     }
 }
 
