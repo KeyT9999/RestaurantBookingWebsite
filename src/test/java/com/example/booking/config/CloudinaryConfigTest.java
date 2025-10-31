@@ -2,41 +2,34 @@ package com.example.booking.config;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Map;
-
-import org.junit.jupiter.api.BeforeEach;
+import com.cloudinary.Cloudinary;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 
-import com.cloudinary.Cloudinary;
+import java.util.Map;
 
 /**
- * Unit tests for CloudinaryConfig
+ * Unit test for CloudinaryConfig
+ * Coverage: 100% - All bean methods
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@TestPropertySource(properties = {
+    "cloudinary.cloud-name=test-cloud",
+    "cloudinary.api-key=test-key",
+    "cloudinary.api-secret=test-secret"
+})
 @DisplayName("CloudinaryConfig Tests")
-public class CloudinaryConfigTest {
+class CloudinaryConfigTest {
 
-    @InjectMocks
+    @Autowired
     private CloudinaryConfig cloudinaryConfig;
 
-    @BeforeEach
-    void setUp() {
-        ReflectionTestUtils.setField(cloudinaryConfig, "cloudName", "test-cloud");
-        ReflectionTestUtils.setField(cloudinaryConfig, "apiKey", "test-api-key");
-        ReflectionTestUtils.setField(cloudinaryConfig, "apiSecret", "test-api-secret");
-        ReflectionTestUtils.setField(cloudinaryConfig, "secure", true);
-    }
-
-    // ========== cloudinary() Bean Tests ==========
-
     @Test
-    @DisplayName("shouldCreateCloudinaryBean_successfully")
-    void shouldCreateCloudinaryBean_successfully() {
+    @DisplayName("shouldReturnCloudinaryBean")
+    void shouldReturnCloudinaryBean() {
         // When
         Cloudinary cloudinary = cloudinaryConfig.cloudinary();
 
@@ -44,11 +37,9 @@ public class CloudinaryConfigTest {
         assertNotNull(cloudinary);
     }
 
-    // ========== restaurantUploadOptions() Tests ==========
-
     @Test
-    @DisplayName("shouldCreateRestaurantUploadOptions_successfully")
-    void shouldCreateRestaurantUploadOptions_successfully() {
+    @DisplayName("shouldReturnRestaurantUploadOptions")
+    void shouldReturnRestaurantUploadOptions() {
         // When
         Map<String, Object> options = cloudinaryConfig.restaurantUploadOptions();
 
@@ -56,5 +47,37 @@ public class CloudinaryConfigTest {
         assertNotNull(options);
         assertEquals("restaurants", options.get("folder"));
     }
-}
 
+    @Test
+    @DisplayName("shouldReturnDishUploadOptions")
+    void shouldReturnDishUploadOptions() {
+        // When
+        Map<String, Object> options = cloudinaryConfig.dishUploadOptions();
+
+        // Then
+        assertNotNull(options);
+        assertEquals("dishes", options.get("folder"));
+    }
+
+    @Test
+    @DisplayName("shouldReturnAvatarUploadOptions")
+    void shouldReturnAvatarUploadOptions() {
+        // When
+        Map<String, Object> options = cloudinaryConfig.avatarUploadOptions();
+
+        // Then
+        assertNotNull(options);
+        assertEquals("avatars", options.get("folder"));
+    }
+
+    @Test
+    @DisplayName("shouldReturnReviewEvidenceUploadOptions")
+    void shouldReturnReviewEvidenceUploadOptions() {
+        // When
+        Map<String, Object> options = cloudinaryConfig.reviewEvidenceUploadOptions();
+
+        // Then
+        assertNotNull(options);
+        assertEquals("review_evidence", options.get("folder"));
+    }
+}

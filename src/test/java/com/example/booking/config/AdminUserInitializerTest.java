@@ -71,7 +71,7 @@ public class AdminUserInitializerTest {
             assertEquals("admin", user.getUsername());
             assertEquals("admin@bookeat.vn", user.getEmail());
             assertEquals(UserRole.ADMIN, user.getRole());
-            assertTrue(user.getActive());
+            assertTrue(Boolean.TRUE.equals(user.getActive()));
             assertNotNull(user.getPassword());
             return savedUser;
         });
