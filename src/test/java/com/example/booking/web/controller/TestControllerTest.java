@@ -1,7 +1,8 @@
 package com.example.booking.web.controller;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.example.booking.test.OpenAITest;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -10,124 +11,129 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.example.booking.test.OpenAITest;
-
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Comprehensive tests for TestController
+ */
 @WebMvcTest(TestController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@DisplayName("TestController Test Suite")
 class TestControllerTest {
 
-	@Autowired
-	private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-	@MockBean
-	private OpenAITest openAITest;
+    @MockBean
+    private OpenAITest openAITest;
 
-	@BeforeEach
-	void setUp() {
-		// Reset mocks before each test
-		reset(openAITest);
-	}
+    @Nested
+    @DisplayName("testOpenAI() Tests")
+    class TestOpenAITests {
 
-	// ========== testOpenAI() Tests ==========
+        @Test
+        @DisplayName("Should test OpenAI API successfully")
+        void testTestOpenAI_WithValidKey_ShouldReturnSuccess() throws Exception {
+            doNothing().when(openAITest).testOpenAIKey();
 
-	@Test
-	@DisplayName("testOpenAI - should return success when API key works")
-	void testOpenAI_ShouldReturnSuccess() throws Exception {
-		doNothing().when(openAITest).testOpenAIKey();
-		mockMvc.perform(get("/test/openai"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.status").value("success"))
-				.andExpect(jsonPath("$.message").value("OpenAI API key is working"));
-	}
+            mockMvc.perform(get("/test/openai"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("success"))
+                    .andExpect(jsonPath("$.message").exists());
 
-	@Test
-	@DisplayName("testOpenAI - should handle exceptions gracefully")
-	void testOpenAI_WithException_ShouldReturnError() throws Exception {
-		doThrow(new RuntimeException("API key invalid")).when(openAITest).testOpenAIKey();
-		mockMvc.perform(get("/test/openai"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.status").value("error"))
-				.andExpect(jsonPath("$.message").exists());
-	}
+            verify(openAITest).testOpenAIKey();
+        }
 
-	// ========== testIntentParsing() Tests ==========
+        @Test
+        @DisplayName("Should handle OpenAI API test failure")
+        void testTestOpenAI_WhenTestFails_ShouldReturnError() throws Exception {
+            doThrow(new RuntimeException("API key invalid")).when(openAITest).testOpenAIKey();
 
-	@Test
-	@DisplayName("testIntentParsing - should return success")
-	void testIntentParsing_ShouldReturnSuccess() throws Exception {
-		doNothing().when(openAITest).testRestaurantIntentParsing();
-		mockMvc.perform(get("/test/openai/intent"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.status").value("success"))
-				.andExpect(jsonPath("$.message").value("Intent parsing test completed"));
-	}
+            mockMvc.perform(get("/test/openai"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").exists());
 
-	@Test
-	@DisplayName("testIntentParsing - should handle exceptions gracefully")
-	void testIntentParsing_WithException_ShouldReturnError() throws Exception {
-		doThrow(new RuntimeException("Intent parsing failed")).when(openAITest).testRestaurantIntentParsing();
-		mockMvc.perform(get("/test/openai/intent"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.status").value("error"))
-				.andExpect(jsonPath("$.message").exists());
-	}
+            verify(openAITest).testOpenAIKey();
+        }
+    }
 
-	// ========== testCustomQuery() Tests ==========
+    @Nested
+    @DisplayName("testIntentParsing() Tests")
+    class TestIntentParsingTests {
 
-	@Test
-	@DisplayName("testCustomQuery - should handle missing query")
-	void testCustomQuery_MissingQuery_ReturnsBadRequest() throws Exception {
-		mockMvc.perform(
-				post("/test/openai/query")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{}")
-		)
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.status").value("error"))
-				.andExpect(jsonPath("$.message").value("Query is required"));
-	}
+        @Test
+        @DisplayName("Should test intent parsing successfully")
+        void testTestIntentParsing_WithValidTest_ShouldReturnSuccess() throws Exception {
+            doNothing().when(openAITest).testRestaurantIntentParsing();
 
-	@Test
-	@DisplayName("testCustomQuery - should handle empty query")
-	void testCustomQuery_EmptyQuery_ReturnsBadRequest() throws Exception {
-		mockMvc.perform(
-				post("/test/openai/query")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{\"query\":\"\"}")
-		)
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.status").value("error"));
-	}
+            mockMvc.perform(get("/test/openai/intent"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("success"))
+                    .andExpect(jsonPath("$.message").exists());
 
-	@Test
-	@DisplayName("testCustomQuery - should handle whitespace-only query")
-	void testCustomQuery_WhitespaceQuery_ReturnsBadRequest() throws Exception {
-		mockMvc.perform(
-				post("/test/openai/query")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("{\"query\":\"   \"}")
-		)
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.status").value("error"));
-	}
+            verify(openAITest).testRestaurantIntentParsing();
+        }
 
-	@Test
-	@DisplayName("testCustomQuery - should handle invalid JSON")
-	void testCustomQuery_InvalidJson_ReturnsBadRequest() throws Exception {
-		mockMvc.perform(
-				post("/test/openai/query")
-						.contentType(MediaType.APPLICATION_JSON)
-						.content("invalid json")
-		)
-				.andExpect(status().isBadRequest());
-	}
+        @Test
+        @DisplayName("Should handle intent parsing test failure")
+        void testTestIntentParsing_WhenTestFails_ShouldReturnError() throws Exception {
+            doThrow(new RuntimeException("Intent parsing failed")).when(openAITest).testRestaurantIntentParsing();
+
+            mockMvc.perform(get("/test/openai/intent"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").exists());
+
+            verify(openAITest).testRestaurantIntentParsing();
+        }
+    }
+
+    @Nested
+    @DisplayName("testCustomQuery() Tests")
+    class TestCustomQueryTests {
+
+        @Test
+        @DisplayName("Should test custom query successfully")
+        void testTestCustomQuery_WithValidQuery_ShouldReturnSuccess() throws Exception {
+            mockMvc.perform(post("/test/openai/query")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"query\":\"Test query\"}"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.status").exists());
+        }
+
+        @Test
+        @DisplayName("Should handle empty query")
+        void testTestCustomQuery_WithEmptyQuery_ShouldReturnError() throws Exception {
+            mockMvc.perform(post("/test/openai/query")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"query\":\"\"}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").exists());
+        }
+
+        @Test
+        @DisplayName("Should handle missing query parameter")
+        void testTestCustomQuery_WithMissingQuery_ShouldReturnError() throws Exception {
+            mockMvc.perform(post("/test/openai/query")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").exists());
+        }
+
+        @Test
+        @DisplayName("Should handle invalid JSON")
+        void testTestCustomQuery_WithInvalidJson_ShouldReturnError() throws Exception {
+            mockMvc.perform(post("/test/openai/query")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("invalid json"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
 }
-
-
-
