@@ -1,27 +1,22 @@
 package com.example.booking.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,7 +25,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.example.booking.domain.ChatRoom;
 import com.example.booking.domain.Customer;
@@ -99,7 +93,17 @@ class ChatServiceTest {
         testRestaurant.setRestaurantId(testRestaurantId);
         testRestaurant.setRestaurantName("Test Restaurant");
         
+        RestaurantOwner owner = new RestaurantOwner();
+        owner.setUser(testUser);
+        testRestaurant.setOwner(owner);
+        
         testChatRoom = new ChatRoom(testRoomId, testCustomer, testRestaurant);
+        
+        // Initialize restaurants list for owner
+        if (owner.getRestaurants() == null) {
+            owner.setRestaurants(new ArrayList<>());
+        }
+        owner.getRestaurants().add(testRestaurant);
     }
 
     @Test
@@ -271,6 +275,481 @@ class ChatServiceTest {
         assertThrows(NullPointerException.class, () -> {
             chatService.getUserChatRooms(testUserId, invalidRole);
         });
+    }
+
+    // ========== createAdminRestaurantRoom() Tests ==========
+
+    @Test
+    @DisplayName("Should create admin restaurant room successfully")
+    void createAdminRestaurantRoom_withValidData_shouldCreateRoom() {
+        // Given
+        UUID adminId = UUID.randomUUID();
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setRole(UserRole.ADMIN);
+        
+        when(chatRoomRepository.findByAdminAndRestaurant(adminId, testRestaurantId))
+                .thenReturn(Optional.empty());
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(restaurantProfileRepository.findById(testRestaurantId))
+                .thenReturn(Optional.of(testRestaurant));
+        when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(testChatRoom);
+
+        // When
+        ChatRoom result = chatService.createAdminRestaurantRoom(adminId, testRestaurantId);
+
+        // Then
+        assertNotNull(result);
+        verify(chatRoomRepository).save(any(ChatRoom.class));
+    }
+
+    @Test
+    @DisplayName("Should return existing room when already exists")
+    void createAdminRestaurantRoom_withExistingRoom_shouldReturnExisting() {
+        // Given
+        UUID adminId = UUID.randomUUID();
+        when(chatRoomRepository.findByAdminAndRestaurant(adminId, testRestaurantId))
+                .thenReturn(Optional.of(testChatRoom));
+
+        // When
+        ChatRoom result = chatService.createAdminRestaurantRoom(adminId, testRestaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(testChatRoom, result);
+        verify(chatRoomRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when restaurant has no owner")
+    void createAdminRestaurantRoom_withRestaurantNoOwner_shouldThrowException() {
+        // Given
+        UUID adminId = UUID.randomUUID();
+        User admin = new User();
+        admin.setId(adminId);
+        
+        testRestaurant.setOwner(null);
+        when(chatRoomRepository.findByAdminAndRestaurant(adminId, testRestaurantId))
+                .thenReturn(Optional.empty());
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(restaurantProfileRepository.findById(testRestaurantId))
+                .thenReturn(Optional.of(testRestaurant));
+
+        // When & Then
+        assertThrows(RuntimeException.class, () ->
+                chatService.createAdminRestaurantRoom(adminId, testRestaurantId)
+        );
+    }
+
+    // ========== createRestaurantOwnerAdminRoom() Tests ==========
+
+    @Test
+    @DisplayName("Should create restaurant owner admin room successfully")
+    void createRestaurantOwnerAdminRoom_withValidData_shouldCreateRoom() {
+        // Given
+        UUID ownerUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        Long restaurantIdLong = 1L;
+        
+        RestaurantOwner owner = new RestaurantOwner();
+        owner.setUser(testUser);
+        owner.getRestaurants().add(testRestaurant);
+        
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setRole(UserRole.ADMIN);
+        
+        when(restaurantOwnerRepository.findByUserId(ownerUserId))
+                .thenReturn(Optional.of(owner));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(chatRoomRepository.findByAdminAndRestaurant(adminId, testRestaurantId))
+                .thenReturn(Optional.empty());
+        when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(testChatRoom);
+
+        // When
+        ChatRoom result = chatService.createRestaurantOwnerAdminRoom(ownerUserId, adminId, restaurantIdLong);
+
+        // Then
+        assertNotNull(result);
+        verify(chatRoomRepository).save(any(ChatRoom.class));
+    }
+
+    // ========== getUnreadMessageCount() Tests ==========
+
+    @Test
+    @DisplayName("Should return unread message count for user")
+    void getUnreadMessageCount_withValidUserId_shouldReturnCount() {
+        // Given
+        when(messageRepository.countTotalUnreadMessagesByUserId(testUserId)).thenReturn(5L);
+
+        // When
+        long result = chatService.getUnreadMessageCount(testUserId);
+
+        // Then
+        assertEquals(5L, result);
+        verify(messageRepository).countTotalUnreadMessagesByUserId(testUserId);
+    }
+
+    @Test
+    @DisplayName("Should return zero when no unread messages")
+    void getUnreadMessageCount_withNoUnreadMessages_shouldReturnZero() {
+        // Given
+        when(messageRepository.countTotalUnreadMessagesByUserId(testUserId)).thenReturn(0L);
+
+        // When
+        long result = chatService.getUnreadMessageCount(testUserId);
+
+        // Then
+        assertEquals(0L, result);
+    }
+
+    // ========== getUnreadMessageCountForRoom() Tests ==========
+
+    @Test
+    @DisplayName("Should return unread message count for specific room")
+    void getUnreadMessageCountForRoom_withValidData_shouldReturnCount() {
+        // Given
+        when(messageRepository.countUnreadMessagesByRoomIdAndUserId(testRoomId, testUserId))
+                .thenReturn(3L);
+
+        // When
+        long result = chatService.getUnreadMessageCountForRoom(testRoomId, testUserId);
+
+        // Then
+        assertEquals(3L, result);
+        verify(messageRepository).countUnreadMessagesByRoomIdAndUserId(testRoomId, testUserId);
+    }
+
+    // ========== getChatRoomById() Tests ==========
+
+    @Test
+    @DisplayName("Should return chat room by ID")
+    void getChatRoomById_withValidId_shouldReturnRoom() {
+        // Given
+        when(chatRoomRepository.findById(testRoomId)).thenReturn(Optional.of(testChatRoom));
+
+        // When
+        Optional<ChatRoom> result = chatService.getChatRoomById(testRoomId);
+
+        // Then
+        assertTrue(result.isPresent());
+        assertEquals(testChatRoom, result.get());
+    }
+
+    @Test
+    @DisplayName("Should return empty when room not found")
+    void getChatRoomById_withInvalidId_shouldReturnEmpty() {
+        // Given
+        when(chatRoomRepository.findById(testRoomId)).thenReturn(Optional.empty());
+
+        // When
+        Optional<ChatRoom> result = chatService.getChatRoomById(testRoomId);
+
+        // Then
+        assertTrue(result.isEmpty());
+    }
+
+    // ========== archiveChatRoom() Tests ==========
+
+    @Test
+    @DisplayName("Should archive chat room successfully")
+    void archiveChatRoom_withValidId_shouldArchiveRoom() {
+        // Given
+        testChatRoom.setIsActive(true);
+        when(chatRoomRepository.findById(testRoomId)).thenReturn(Optional.of(testChatRoom));
+        when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(testChatRoom);
+
+        // When
+        chatService.archiveChatRoom(testRoomId);
+
+        // Then
+        verify(chatRoomRepository).save(any(ChatRoom.class));
+    }
+
+    @Test
+    @DisplayName("Should handle archiving non-existent room gracefully")
+    void archiveChatRoom_withInvalidId_shouldHandleGracefully() {
+        // Given
+        when(chatRoomRepository.findById(testRoomId)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertDoesNotThrow(() -> chatService.archiveChatRoom(testRoomId));
+    }
+
+    // ========== getChatStatistics() Tests ==========
+
+    @Test
+    @DisplayName("Should return chat statistics")
+    void getChatStatistics_shouldReturnStats() {
+        // Given
+        when(chatRoomRepository.count()).thenReturn(10L);
+        when(chatRoomRepository.countActiveRooms()).thenReturn(8L);
+        when(messageRepository.count()).thenReturn(50L);
+        when(messageRepository.countUnreadMessages()).thenReturn(5L);
+
+        // When
+        Map<String, Object> result = chatService.getChatStatistics();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(10L, result.get("totalRooms"));
+        assertEquals(8L, result.get("activeRooms"));
+        assertEquals(50L, result.get("totalMessages"));
+        assertEquals(5L, result.get("unreadMessages"));
+        verify(chatRoomRepository).count();
+        verify(chatRoomRepository).countActiveRooms();
+    }
+
+    // ========== canUserChatWithRestaurant() Tests ==========
+
+    @Test
+    @DisplayName("Should return true for customer role")
+    void canUserChatWithRestaurant_withCustomerRole_shouldReturnTrue() {
+        // When
+        boolean result = chatService.canUserChatWithRestaurant(testUserId, UserRole.CUSTOMER, testRestaurantId);
+
+        // Then
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("Should return true for admin role")
+    void canUserChatWithRestaurant_withAdminRole_shouldReturnTrue() {
+        // When
+        boolean result = chatService.canUserChatWithRestaurant(testUserId, UserRole.ADMIN, testRestaurantId);
+
+        // Then
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("Should check ownership for restaurant owner role")
+    void canUserChatWithRestaurant_withRestaurantOwnerRole_shouldCheckOwnership() {
+        // Given
+        List<RestaurantProfile> restaurants = List.of(testRestaurant);
+        when(restaurantProfileRepository.findByOwnerUserId(testUserId)).thenReturn(restaurants);
+
+        // When
+        boolean result = chatService.canUserChatWithRestaurant(testUserId, UserRole.RESTAURANT_OWNER, testRestaurantId);
+
+        // Then
+        assertTrue(result);
+        verify(restaurantProfileRepository).findByOwnerUserId(testUserId);
+    }
+
+    // ========== getAvailableAdmins() Tests ==========
+
+    @Test
+    @DisplayName("Should return available admin users")
+    void getAvailableAdmins_shouldReturnAdmins() {
+        // Given
+        User admin1 = new User();
+        admin1.setId(UUID.randomUUID());
+        admin1.setRole(UserRole.ADMIN);
+        User admin2 = new User();
+        admin2.setId(UUID.randomUUID());
+        admin2.setRole(UserRole.ADMIN);
+        
+        Page<User> adminPage = new PageImpl<>(List.of(admin1, admin2));
+        when(userRepository.findByRole(eq(UserRole.ADMIN), any())).thenReturn(adminPage);
+
+        // When
+        List<User> result = chatService.getAvailableAdmins();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+    }
+
+    // ========== getAvailableRestaurants() Tests ==========
+
+    @Test
+    @DisplayName("Should return available restaurants")
+    void getAvailableRestaurants_shouldReturnRestaurants() {
+        // Given
+        List<RestaurantProfile> restaurants = List.of(testRestaurant);
+        when(restaurantProfileRepository.findAll()).thenReturn(restaurants);
+
+        // When
+        List<com.example.booking.dto.RestaurantChatDto> result = chatService.getAvailableRestaurants();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(restaurantProfileRepository).findAll();
+    }
+
+    // ========== getUnreadCountForRoom() Tests ==========
+
+    @Test
+    @DisplayName("Should return unread count map for room")
+    void getUnreadCountForRoom_shouldReturnCountMap() {
+        // Given
+        when(messageRepository.countUnreadMessagesByRoomIdAndUserId(testRoomId, testUserId))
+                .thenReturn(3L);
+
+        // When
+        Map<String, Object> result = chatService.getUnreadCountForRoom(testRoomId, testUserId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(testRoomId, result.get("roomId"));
+        assertEquals(testUserId, result.get("userId"));
+        assertEquals(3L, result.get("unreadCount"));
+    }
+
+    // ========== getTotalUnreadCountForUser() Tests ==========
+
+    @Test
+    @DisplayName("Should return total unread count map for user")
+    void getTotalUnreadCountForUser_shouldReturnTotalCountMap() {
+        // Given
+        when(messageRepository.countTotalUnreadMessagesByUserId(testUserId)).thenReturn(10L);
+
+        // When
+        Map<String, Object> result = chatService.getTotalUnreadCountForUser(testUserId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(testUserId, result.get("userId"));
+        assertEquals(10L, result.get("totalUnreadCount"));
+    }
+
+    // ========== getExistingRoomId() Tests ==========
+
+    @Test
+    @DisplayName("Should return existing room ID when room exists")
+    void getExistingRoomId_withExistingRoom_shouldReturnRoomId() {
+        // Given
+        when(chatRoomRepository.findExistingRoom(testUserId, testRestaurantId))
+                .thenReturn(Optional.of(testChatRoom));
+
+        // When
+        String result = chatService.getExistingRoomId(testUserId, UserRole.CUSTOMER, testRestaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(testRoomId, result);
+    }
+
+    @Test
+    @DisplayName("Should return null when room does not exist")
+    void getExistingRoomId_withNoExistingRoom_shouldReturnNull() {
+        // Given
+        when(chatRoomRepository.findExistingRoom(testUserId, testRestaurantId))
+                .thenReturn(Optional.empty());
+
+        // When
+        String result = chatService.getExistingRoomId(testUserId, UserRole.CUSTOMER, testRestaurantId);
+
+        // Then
+        assertNull(result);
+    }
+
+    // ========== getRoomId() Tests ==========
+
+    @Test
+    @DisplayName("Should return room ID for customer role")
+    void getRoomId_withCustomerRole_shouldReturnRoomId() {
+        // Given
+        when(chatRoomRepository.findByCustomerAndRestaurant(testUserId, testRestaurantId))
+                .thenReturn(Optional.of(testChatRoom));
+
+        // When
+        String result = chatService.getRoomId(testUserId, UserRole.CUSTOMER, testRestaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(testRoomId, result);
+    }
+
+    @Test
+    @DisplayName("Should return room ID for admin role")
+    void getRoomId_withAdminRole_shouldReturnRoomId() {
+        // Given
+        UUID adminId = UUID.randomUUID();
+        when(chatRoomRepository.findByAdminAndRestaurant(adminId, testRestaurantId))
+                .thenReturn(Optional.of(testChatRoom));
+
+        // When
+        String result = chatService.getRoomId(adminId, UserRole.ADMIN, testRestaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(testRoomId, result);
+    }
+
+    // ========== getRestaurantOwnerId() Tests ==========
+
+    @Test
+    @DisplayName("Should return restaurant owner ID")
+    void getRestaurantOwnerId_withValidRestaurant_shouldReturnOwnerId() {
+        // Given
+        UUID ownerUserId = UUID.randomUUID();
+        RestaurantOwner owner = new RestaurantOwner();
+        owner.setOwnerId(UUID.randomUUID());
+        User ownerUser = new User();
+        ownerUser.setId(ownerUserId);
+        owner.setUser(ownerUser);
+        testRestaurant.setOwner(owner);
+        
+        when(restaurantProfileRepository.findById(testRestaurantId))
+                .thenReturn(Optional.of(testRestaurant));
+
+        // When
+        UUID result = chatService.getRestaurantOwnerId(testRestaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(ownerUserId, result);
+    }
+
+    @Test
+    @DisplayName("Should return null when restaurant not found")
+    void getRestaurantOwnerId_withInvalidRestaurant_shouldReturnNull() {
+        // Given
+        when(restaurantProfileRepository.findById(testRestaurantId))
+                .thenReturn(Optional.empty());
+
+        // When
+        UUID result = chatService.getRestaurantOwnerId(testRestaurantId);
+
+        // Then
+        assertNull(result);
+    }
+
+    // ========== getUserChatRooms() - Additional Tests ==========
+
+    @Test
+    @DisplayName("Should return chat rooms for restaurant owner role")
+    void getUserChatRooms_withRestaurantOwnerRole_shouldReturnRooms() {
+        // Given
+        List<ChatRoom> rooms = List.of(testChatRoom);
+        when(chatRoomRepository.findByRestaurantOwnerId(testUserId)).thenReturn(rooms);
+
+        // When
+        List<ChatRoomDto> result = chatService.getUserChatRooms(testUserId, UserRole.RESTAURANT_OWNER);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(chatRoomRepository).findByRestaurantOwnerId(testUserId);
+    }
+
+    @Test
+    @DisplayName("Should return chat rooms for admin role")
+    void getUserChatRooms_withAdminRole_shouldReturnRooms() {
+        // Given
+        List<ChatRoom> rooms = List.of(testChatRoom);
+        when(chatRoomRepository.findByAdminId(testUserId)).thenReturn(rooms);
+
+        // When
+        List<ChatRoomDto> result = chatService.getUserChatRooms(testUserId, UserRole.ADMIN);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(chatRoomRepository).findByAdminId(testUserId);
     }
 }
 
