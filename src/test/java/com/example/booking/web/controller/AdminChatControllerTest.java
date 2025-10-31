@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -131,6 +132,60 @@ class AdminChatControllerTest {
 				.principal(token))
 				.andExpect(status().is3xxRedirection())
 				.andExpect(redirectedUrl("/error?message=Error loading admin chat: Database error"));
+	}
+
+	@Test
+	@DisplayName("adminChatPage - should handle unsupported authentication type")
+	void adminChatPage_WithUnsupportedAuth_ShouldRedirectError() throws Exception {
+		// Create a token with unsupported principal type
+		UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+				new Object(), null, Collections.emptyList());
+
+		mockMvc.perform(get("/admin/chat")
+				.principal(token))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrlPattern("*/error*"));
+	}
+
+	@Test
+	@DisplayName("adminChatPage - should handle user not found in repository")
+	void adminChatPage_WithUserNotFound_ShouldRedirectError() throws Exception {
+		UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+				"nonexistent@example.com", null, Collections.emptyList());
+		
+		when(userRepository.findByEmail("nonexistent@example.com"))
+				.thenReturn(Optional.empty());
+
+		mockMvc.perform(get("/admin/chat")
+				.principal(token))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrlPattern("*/error*"));
+	}
+
+	@Test
+	@DisplayName("adminChatPage - should handle admin role (lowercase)")
+	void adminChatPage_WithAdminRoleLowercase_ShouldRenderView() throws Exception {
+		User admin = new User();
+		admin.setId(UUID.randomUUID());
+		admin.setUsername("admin@example.com");
+		admin.setEmail("admin@example.com");
+		admin.setFullName("Admin User");
+		admin.setRole(UserRole.admin); // lowercase admin
+
+		mockMvc.perform(get("/admin/chat")
+				.principal(new UsernamePasswordAuthenticationToken(admin, null, admin.getAuthorities())))
+				.andExpect(status().isOk())
+				.andExpect(view().name("admin/chat"));
+	}
+
+	@Test
+	@DisplayName("adminChatPage - should handle authentication token principal")
+	void adminChatPage_WithAuthTokenPrincipal_ShouldHandleCorrectly() throws Exception {
+		// Test when principal is a User object directly
+		mockMvc.perform(get("/admin/chat")
+				.principal(new UsernamePasswordAuthenticationToken(testAdmin, null, testAdmin.getAuthorities())))
+				.andExpect(status().isOk())
+				.andExpect(view().name("admin/chat"));
 	}
 }
 

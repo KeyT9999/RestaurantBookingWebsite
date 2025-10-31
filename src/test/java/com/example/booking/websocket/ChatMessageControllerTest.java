@@ -1,9 +1,12 @@
 package com.example.booking.websocket;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,7 +39,6 @@ import com.example.booking.util.InputSanitizer;
 
 import com.example.booking.websocket.ChatMessageController.ChatMessageRequest;
 import com.example.booking.websocket.ChatMessageController.TypingRequest;
-import com.example.booking.websocket.ChatMessageController.TypingResponse;
 import com.example.booking.websocket.ChatMessageController.JoinRoomRequest;
 
 @ExtendWith(MockitoExtension.class)
@@ -306,9 +308,12 @@ class ChatMessageControllerTest {
         when(userService.findById(testUserId)).thenReturn(user);
         when(chatService.getAIRestaurantOwnerId()).thenReturn(aiUserId);
         
-        // When - Simplified test, actual async processing would require more setup
-        // The method is @Async, so we're just verifying it compiles
-        assertNotNull(controller);
+        // When
+        controller.sendMessage(request, headerAccessor);
+        
+        // Then - Verify message was sent and broadcasted
+        verify(chatService, times(1)).sendMessage(anyString(), eq(testUserId), eq("Hello AI"), any(MessageType.class));
+        verify(messagingTemplate, atLeastOnce()).convertAndSend(anyString(), any(Object.class));
     }
 
     @Test
@@ -421,5 +426,6 @@ class ChatMessageControllerTest {
         verify(messagingTemplate, times(1)).convertAndSendToUser(eq("testuser"), eq("/queue/errors"), any());
         verify(chatService, never()).markMessagesAsRead(anyString(), any(UUID.class));
     }
+
 }
 

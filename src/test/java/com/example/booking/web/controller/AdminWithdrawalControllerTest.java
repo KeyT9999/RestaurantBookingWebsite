@@ -112,4 +112,131 @@ public class AdminWithdrawalControllerTest {
         assertEquals("redirect:/admin/withdrawal?status=REJECTED", view);
         verify(withdrawalService, times(1)).rejectWithdrawal(eq(1), any(UUID.class), eq(reason));
     }
+
+    @Test
+    @DisplayName("shouldRejectWithdrawal_withNote_successfully")
+    void shouldRejectWithdrawal_withNote_successfully() {
+        // Given
+        String reason = "Invalid bank account";
+        String note = "Additional note";
+        String fullReason = reason + " - " + note;
+        when(withdrawalService.rejectWithdrawal(eq(1), any(UUID.class), eq(fullReason)))
+                .thenReturn(new com.example.booking.dto.payout.WithdrawalRequestDto());
+
+        // When
+        String view = controller.rejectWithdrawal(1, reason, note, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/withdrawal?status=REJECTED", view);
+        verify(withdrawalService, times(1)).rejectWithdrawal(eq(1), any(UUID.class), eq(fullReason));
+    }
+
+    @Test
+    @DisplayName("shouldRejectWithdrawal_handleException")
+    void shouldRejectWithdrawal_handleException() {
+        // Given
+        String reason = "Invalid bank account";
+        when(withdrawalService.rejectWithdrawal(eq(1), any(UUID.class), eq(reason)))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String view = controller.rejectWithdrawal(1, reason, null, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/withdrawal?status=REJECTED", view);
+        verify(redirectAttributes).addFlashAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldApproveWithdrawal_handleException")
+    void shouldApproveWithdrawal_handleException() {
+        // Given
+        when(withdrawalService.approveWithdrawal(eq(1), any(UUID.class), anyString()))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String view = controller.approveWithdrawal(1, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/withdrawal?status=PENDING", view);
+        verify(redirectAttributes).addFlashAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldListWithdrawals_withStatusFilter")
+    void shouldListWithdrawals_withStatusFilter() {
+        // Given
+        List<com.example.booking.dto.payout.WithdrawalRequestDto> withdrawals = new ArrayList<>();
+        when(withdrawalService.getWithdrawalsByStatus(com.example.booking.common.enums.WithdrawalStatus.PENDING))
+                .thenReturn(withdrawals);
+        when(withdrawalService.getWithdrawalStats()).thenReturn(new com.example.booking.dto.admin.WithdrawalStatsDto());
+
+        // When
+        String view = controller.withdrawalManagement("PENDING", model);
+
+        // Then
+        assertEquals("admin/withdrawal-management", view);
+        verify(model).addAttribute("filter", "PENDING");
+    }
+
+    @Test
+    @DisplayName("shouldListWithdrawals_withAllStatus")
+    void shouldListWithdrawals_withAllStatus() {
+        // Given
+        List<com.example.booking.dto.payout.WithdrawalRequestDto> withdrawals = new ArrayList<>();
+        when(withdrawalService.getAllWithdrawals(any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(withdrawals));
+        when(withdrawalService.getWithdrawalStats()).thenReturn(new com.example.booking.dto.admin.WithdrawalStatsDto());
+
+        // When
+        String view = controller.withdrawalManagement("ALL", model);
+
+        // Then
+        assertEquals("admin/withdrawal-management", view);
+        verify(model).addAttribute("filter", "ALL");
+    }
+
+    @Test
+    @DisplayName("shouldListWithdrawals_handleException")
+    void shouldListWithdrawals_handleException() {
+        // Given
+        when(withdrawalService.getWithdrawalStats())
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String view = controller.withdrawalManagement(null, model);
+
+        // Then
+        assertEquals("admin/withdrawal-management", view);
+        verify(model).addAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldMarkWithdrawalPaid_successfully")
+    void shouldMarkWithdrawalPaid_successfully() {
+        // Given
+        doNothing().when(withdrawalService).markWithdrawalPaid(eq(1), any(UUID.class), any());
+
+        // When
+        String view = controller.markWithdrawalPaid(1, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/withdrawal?status=SUCCEEDED", view);
+        verify(withdrawalService, times(1)).markWithdrawalPaid(eq(1), any(UUID.class), any());
+    }
+
+    @Test
+    @DisplayName("shouldMarkWithdrawalPaid_handleException")
+    void shouldMarkWithdrawalPaid_handleException() {
+        // Given
+        doThrow(new RuntimeException("Database error"))
+                .when(withdrawalService).markWithdrawalPaid(eq(1), any(UUID.class), any());
+
+        // When
+        String view = controller.markWithdrawalPaid(1, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/withdrawal?status=SUCCEEDED", view);
+        verify(redirectAttributes).addFlashAttribute(eq("error"), anyString());
+    }
 }

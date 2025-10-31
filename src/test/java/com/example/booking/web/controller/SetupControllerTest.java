@@ -88,6 +88,38 @@ class SetupControllerTest {
 				.andExpect(redirectedUrl("/setup/restaurant-owner"))
 				.andExpect(flash().attributeExists("successMessage"));
 	}
+
+	@Test
+	void postRestaurantOwner_restaurantNotFound_shouldRedirectWithSuccessMessage() throws Exception {
+		User user = new User("owner", "o@example.com", "password123", "Owner Name");
+		user.setId(UUID.randomUUID());
+		Page<User> page = new PageImpl<>(java.util.List.of(user));
+		when(userRepository.findByRole(eq(UserRole.RESTAURANT_OWNER), any(Pageable.class)))
+				.thenReturn(page);
+
+		RestaurantOwner savedOwner = new RestaurantOwner();
+		savedOwner.setOwnerId(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
+		savedOwner.setUser(user);
+		when(restaurantOwnerRepository.save(any(RestaurantOwner.class))).thenReturn(savedOwner);
+
+		when(restaurantProfileRepository.findById(eq(1))).thenReturn(Optional.empty());
+
+		mockMvc.perform(post("/setup/restaurant-owner"))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/setup/restaurant-owner"))
+				.andExpect(flash().attributeExists("successMessage"));
+	}
+
+	@Test
+	void postRestaurantOwner_exception_shouldRedirectWithErrorMessage() throws Exception {
+		when(userRepository.findByRole(eq(UserRole.RESTAURANT_OWNER), any(Pageable.class)))
+				.thenThrow(new RuntimeException("Database error"));
+
+		mockMvc.perform(post("/setup/restaurant-owner"))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/setup/restaurant-owner"))
+				.andExpect(flash().attributeExists("errorMessage"));
+	}
 }
 
 

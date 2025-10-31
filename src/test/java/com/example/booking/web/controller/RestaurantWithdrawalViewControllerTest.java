@@ -248,6 +248,268 @@ class RestaurantWithdrawalViewControllerTest {
             .andExpect(flash().attributeExists("error"));
     }
 
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("GET /restaurant-owner/withdrawal?status=ALL - Should show all withdrawals")
+    void testWithdrawalManagement_WithAllStatus() throws Exception {
+        RestaurantBalanceDto balance = new RestaurantBalanceDto();
+        balance.setAvailableBalance(BigDecimal.valueOf(1000000));
+
+        when(restaurantRepository.findById(restaurantId))
+            .thenReturn(Optional.of(restaurant));
+        when(balanceService.getBalance(restaurantId))
+            .thenReturn(balance);
+        when(bankAccountService.getBankAccounts(restaurantId))
+            .thenReturn(Collections.emptyList());
+        when(withdrawalService.getAllWithdrawals(any(Pageable.class)))
+            .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        mockMvc.perform(get("/restaurant-owner/withdrawal")
+                .param("status", "ALL")
+                .principal(principal))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("filter", "ALL"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("GET /restaurant-owner/withdrawal - Should handle exception")
+    void testWithdrawalManagement_ShouldHandleException() throws Exception {
+        when(restaurantRepository.findById(restaurantId))
+            .thenThrow(new RuntimeException("Database error"));
+
+        mockMvc.perform(get("/restaurant-owner/withdrawal")
+                .principal(principal))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("error"))
+            .andExpect(model().attributeExists("balance"))
+            .andExpect(model().attributeExists("bankAccounts"))
+            .andExpect(model().attributeExists("withdrawals"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("POST /restaurant-owner/withdrawal/request - Should handle null description")
+    void testCreateWithdrawalRequest_WithNullDescription() throws Exception {
+        WithdrawalRequestDto result = new WithdrawalRequestDto();
+        result.setRequestId(1);
+        result.setRestaurantId(restaurantId);
+
+        when(withdrawalService.createWithdrawal(eq(restaurantId), any(CreateWithdrawalRequestDto.class)))
+            .thenReturn(result);
+
+        mockMvc.perform(post("/restaurant-owner/withdrawal/request")
+                .param("amount", "500000")
+                .param("bankAccountId", "1")
+                .principal(principal))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/restaurant-owner/withdrawal"))
+            .andExpect(flash().attributeExists("success"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("GET /restaurant-owner/withdrawal/fix-balance - Should handle error")
+    void testFixBalance_ShouldHandleError() throws Exception {
+        doThrow(new RuntimeException("Balance fix failed"))
+            .when(balanceService).fixBalanceFromWithdrawals(restaurantId);
+
+        mockMvc.perform(get("/restaurant-owner/withdrawal/fix-balance")
+                .principal(principal))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/restaurant-owner/withdrawal"))
+            .andExpect(flash().attributeExists("error"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("GET /restaurant-owner/withdrawal/recalculate-balance - Should handle error")
+    void testRecalculateBalance_ShouldHandleError() throws Exception {
+        doThrow(new RuntimeException("Recalculation failed"))
+            .when(balanceService).recalculateAll();
+
+        mockMvc.perform(get("/restaurant-owner/withdrawal/recalculate-balance")
+                .principal(principal))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/restaurant-owner/withdrawal"))
+            .andExpect(flash().attributeExists("error"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("GET /restaurant-owner/withdrawal - Should filter withdrawals by restaurant")
+    void testWithdrawalManagement_ShouldFilterByRestaurant() throws Exception {
+        RestaurantBalanceDto balance = new RestaurantBalanceDto();
+        balance.setAvailableBalance(BigDecimal.valueOf(1000000));
+
+        WithdrawalRequestDto withdrawal1 = new WithdrawalRequestDto();
+        withdrawal1.setRequestId(1);
+        withdrawal1.setRestaurantId(restaurantId);
+
+        WithdrawalRequestDto withdrawal2 = new WithdrawalRequestDto();
+        withdrawal2.setRequestId(2);
+        withdrawal2.setRestaurantId(999); // Different restaurant
+
+        when(restaurantRepository.findById(restaurantId))
+            .thenReturn(Optional.of(restaurant));
+        when(balanceService.getBalance(restaurantId))
+            .thenReturn(balance);
+        when(bankAccountService.getBankAccounts(restaurantId))
+            .thenReturn(Collections.emptyList());
+        when(withdrawalService.getAllWithdrawals(any(Pageable.class)))
+            .thenReturn(new PageImpl<>(Arrays.asList(withdrawal1, withdrawal2)));
+
+        mockMvc.perform(get("/restaurant-owner/withdrawal")
+                .principal(principal))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("withdrawals"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("GET /restaurant-owner/withdrawal - Should handle empty status string")
+    void testWithdrawalManagement_WithEmptyStatus() throws Exception {
+        RestaurantBalanceDto balance = new RestaurantBalanceDto();
+        balance.setAvailableBalance(BigDecimal.valueOf(1000000));
+
+        when(restaurantRepository.findById(restaurantId))
+            .thenReturn(Optional.of(restaurant));
+        when(balanceService.getBalance(restaurantId))
+            .thenReturn(balance);
+        when(bankAccountService.getBankAccounts(restaurantId))
+            .thenReturn(Collections.emptyList());
+        when(withdrawalService.getAllWithdrawals(any(Pageable.class)))
+            .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        mockMvc.perform(get("/restaurant-owner/withdrawal")
+                .param("status", "")
+                .principal(principal))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("filter", "ALL"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("GET /restaurant-owner/withdrawal - Should handle getRestaurantId exception")
+    void testWithdrawalManagement_WithGetRestaurantIdException() throws Exception {
+        when(restaurantRepository.findByOwnerUsername("testuser"))
+            .thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/restaurant-owner/withdrawal")
+                .principal(principal))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("error"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("POST /restaurant-owner/withdrawal/request - Should handle empty description")
+    void testCreateWithdrawalRequest_WithEmptyDescription() throws Exception {
+        WithdrawalRequestDto result = new WithdrawalRequestDto();
+        result.setRequestId(1);
+        result.setRestaurantId(restaurantId);
+
+        when(withdrawalService.createWithdrawal(eq(restaurantId), any(CreateWithdrawalRequestDto.class)))
+            .thenReturn(result);
+
+        mockMvc.perform(post("/restaurant-owner/withdrawal/request")
+                .param("amount", "500000")
+                .param("bankAccountId", "1")
+                .param("description", "")
+                .principal(principal))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/restaurant-owner/withdrawal"))
+            .andExpect(flash().attributeExists("success"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("POST /restaurant-owner/withdrawal/request - Should handle whitespace description")
+    void testCreateWithdrawalRequest_WithWhitespaceDescription() throws Exception {
+        WithdrawalRequestDto result = new WithdrawalRequestDto();
+        result.setRequestId(1);
+        result.setRestaurantId(restaurantId);
+
+        when(withdrawalService.createWithdrawal(eq(restaurantId), any(CreateWithdrawalRequestDto.class)))
+            .thenReturn(result);
+
+        mockMvc.perform(post("/restaurant-owner/withdrawal/request")
+                .param("amount", "500000")
+                .param("bankAccountId", "1")
+                .param("description", "   ")
+                .principal(principal))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/restaurant-owner/withdrawal"))
+            .andExpect(flash().attributeExists("success"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("POST /restaurant-owner/withdrawal/bank-accounts - Should handle null isDefault")
+    void testAddBankAccount_WithNullIsDefault() throws Exception {
+        RestaurantBankAccountDto result = createBankAccount(1, "VCB", "1234567890");
+
+        when(bankAccountService.addBankAccount(eq(restaurantId), any(RestaurantBankAccountDto.class)))
+            .thenReturn(result);
+
+        mockMvc.perform(post("/restaurant-owner/withdrawal/bank-accounts")
+                .param("bankCode", "VCB")
+                .param("accountNumber", "1234567890")
+                .param("accountHolderName", "Test Owner")
+                .principal(principal))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/restaurant-owner/withdrawal#bank-accounts"))
+            .andExpect(flash().attributeExists("success"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("GET /restaurant-owner/withdrawal?status=SUCCEEDED - Should filter by SUCCEEDED status")
+    void testWithdrawalManagement_WithSucceededStatus() throws Exception {
+        RestaurantBalanceDto balance = new RestaurantBalanceDto();
+        balance.setAvailableBalance(BigDecimal.valueOf(1000000));
+
+        WithdrawalRequestDto withdrawal = new WithdrawalRequestDto();
+        withdrawal.setRequestId(1);
+        withdrawal.setRestaurantId(restaurantId);
+        withdrawal.setStatus(WithdrawalStatus.SUCCEEDED);
+
+        when(restaurantRepository.findById(restaurantId))
+            .thenReturn(Optional.of(restaurant));
+        when(balanceService.getBalance(restaurantId))
+            .thenReturn(balance);
+        when(bankAccountService.getBankAccounts(restaurantId))
+            .thenReturn(Collections.emptyList());
+        when(withdrawalService.getWithdrawalsByStatus(WithdrawalStatus.SUCCEEDED))
+            .thenReturn(Arrays.asList(withdrawal));
+
+        mockMvc.perform(get("/restaurant-owner/withdrawal")
+                .param("status", "SUCCEEDED")
+                .principal(principal))
+            .andExpect(status().isOk())
+            .andExpect(model().attribute("filter", "SUCCEEDED"));
+    }
+
+    @Test
+    @WithMockUser(roles = "RESTAURANT_OWNER")
+    @DisplayName("POST /restaurant-owner/withdrawal/bank-accounts - Should handle false isDefault")
+    void testAddBankAccount_WithFalseIsDefault() throws Exception {
+        RestaurantBankAccountDto result = createBankAccount(1, "VCB", "1234567890");
+
+        when(bankAccountService.addBankAccount(eq(restaurantId), any(RestaurantBankAccountDto.class)))
+            .thenReturn(result);
+
+        mockMvc.perform(post("/restaurant-owner/withdrawal/bank-accounts")
+                .param("bankCode", "VCB")
+                .param("accountNumber", "1234567890")
+                .param("accountHolderName", "Test Owner")
+                .param("isDefault", "false")
+                .principal(principal))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/restaurant-owner/withdrawal#bank-accounts"))
+            .andExpect(flash().attributeExists("success"));
+    }
+
     private RestaurantBankAccountDto createBankAccount(Integer accountId, String bankCode, String accountNumber) {
         RestaurantBankAccountDto dto = new RestaurantBankAccountDto();
         dto.setAccountId(accountId);
