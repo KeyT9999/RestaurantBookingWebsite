@@ -302,6 +302,15 @@
                 <version>3.2.0</version>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <!-- Vẫn generate report dù có test fail -->
+                    <testFailureIgnore>false</testFailureIgnore>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.11</version>
@@ -317,6 +326,49 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <!-- Chỉ report coverage cho 18 file được chỉ định -->
+                            <!-- Sử dụng wildcard pattern để match các class -->
+                            <includes>
+                                <!-- Service Layer (14 files) -->
+                                <include>**/service/BookingService*</include>
+                                <include>**/service/PaymentService*</include>
+                                <include>**/service/PayOsService*</include>
+                                <include>**/service/RestaurantManagementService*</include>
+                                <include>**/service/RestaurantDashboardService*</include>
+                                <include>**/service/RestaurantOwnerService*</include>
+                                <include>**/service/AdvancedRateLimitingService*</include>
+                                <include>**/service/RestaurantSecurityService*</include>
+                                <include>**/service/RefundService*</include>
+                                <include>**/service/WithdrawalService*</include>
+                                <include>**/service/WaitlistService*</include>
+                                <include>**/service/CustomerService*</include>
+                                <include>**/service/BookingConflictService*</include>
+                                <include>**/service/NotificationService*</include>
+                                <include>**/service/impl/NotificationServiceImpl*</include>
+                                <!-- Controller Layer (4 files) -->
+                                <include>**/controller/BookingController*</include>
+                                <include>**/controller/RestaurantRegistrationController*</include>
+                                <include>**/controller/AdminRestaurantController*</include>
+                                <include>**/controller/AdminDashboardController*</include>
+                            </includes>
+                            <!-- Loại trừ các package khác (không loại trừ service/controller vì đã include cụ thể) -->
+                            <excludes>
+                                <exclude>**/domain/**</exclude>
+                                <exclude>**/dto/**</exclude>
+                                <exclude>**/repository/**</exclude>
+                                <exclude>**/exception/**</exclude>
+                                <exclude>**/config/**</exclude>
+                                <exclude>**/aspect/**</exclude>
+                                <exclude>**/websocket/**</exclude>
+                                <exclude>**/advice/**</exclude>
+                                <exclude>**/converter/**</exclude>
+                                <exclude>**/util/**</exclude>
+                                <exclude>**/integration/**</exclude>
+                                <exclude>**/scheduler/**</exclude>
+                                <exclude>**/test/**</exclude>
+                            </excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
