@@ -12,17 +12,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = EnvTestController.class,
+@WebMvcTest(controllers = AdminLoginController.class,
     excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = {
         com.example.booking.config.AuthRateLimitFilter.class,
         com.example.booking.config.GeneralRateLimitFilter.class,
         com.example.booking.config.LoginRateLimitFilter.class,
         com.example.booking.config.PermanentlyBlockedIpFilter.class,
         com.example.booking.web.advice.NotificationHeaderAdvice.class
-    }))
+    }),
+    excludeAutoConfiguration = {org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration.class})
 @AutoConfigureMockMvc(addFilters = false)
-@DisplayName("EnvTestController WebMvc Tests")
-class EnvTestControllerWebMvcTest {
+@DisplayName("AdminLoginController WebMvc Tests")
+class AdminLoginControllerWebMvcTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -34,11 +35,11 @@ class EnvTestControllerWebMvcTest {
     private com.example.booking.service.GeneralRateLimitingService generalRateLimitingService;
 
     @Test
-    @DisplayName("GET /test/env/check - should check environment variables")
-    void testCheckEnvVariables() throws Exception {
-        mockMvc.perform(get("/test/env/check"))
+    @DisplayName("GET /admin-login - should return admin/login view")
+    void testAdminLogin() throws Exception {
+        mockMvc.perform(get("/admin-login"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$").exists());
+            .andExpect(view().name("admin/login"));
     }
 }
 

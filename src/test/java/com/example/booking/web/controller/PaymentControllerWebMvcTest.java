@@ -50,7 +50,7 @@ class PaymentControllerWebMvcTest {
     private PaymentService paymentService;
 
     @MockBean
-    private BookingService bookingService;
+    private com.example.booking.service.BookingService bookingService;
 
     @MockBean
     private CustomerService customerService;
@@ -396,7 +396,7 @@ class PaymentControllerWebMvcTest {
     void testCheckPayOSStatus_Success() throws Exception {
         // Given
         when(paymentService.findById(1)).thenReturn(Optional.of(payment));
-        PayOsService.GetPaymentInfoResponse mockResponse = mock(PayOsService.GetPaymentInfoResponse.class);
+        PayOsService.PaymentInfoResponse mockResponse = mock(PayOsService.PaymentInfoResponse.class);
         when(mockResponse.getCode()).thenReturn("00");
         when(payOsService.getPaymentInfo(anyLong())).thenReturn(mockResponse);
 
@@ -431,7 +431,7 @@ class PaymentControllerWebMvcTest {
     @DisplayName("POST /payment/api/payos/confirm-webhook - should confirm webhook")
     void testConfirmWebhook_Success() throws Exception {
         // Given
-        PayOsService.ConfirmWebhookResponse mockResponse = mock(PayOsService.ConfirmWebhookResponse.class);
+        PayOsService.WebhookConfirmResponse mockResponse = mock(PayOsService.WebhookConfirmResponse.class);
         when(mockResponse.getCode()).thenReturn("00");
         when(payOsService.confirmWebhook(anyString())).thenReturn(mockResponse);
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -451,8 +451,8 @@ class PaymentControllerWebMvcTest {
     void testSyncPayOSStatus_Success() throws Exception {
         // Given
         when(paymentService.findById(1)).thenReturn(Optional.of(payment));
-        PayOsService.GetPaymentInfoResponse mockResponse = mock(PayOsService.GetPaymentInfoResponse.class);
-        PayOsService.GetPaymentInfoResponse.Data mockData = mock(PayOsService.GetPaymentInfoResponse.Data.class);
+        PayOsService.PaymentInfoResponse mockResponse = mock(PayOsService.PaymentInfoResponse.class);
+        PayOsService.PaymentInfoResponse.PaymentInfoData mockData = mock(PayOsService.PaymentInfoResponse.PaymentInfoData.class);
         when(mockResponse.getCode()).thenReturn("00");
         when(mockResponse.getData()).thenReturn(mockData);
         when(mockData.getStatus()).thenReturn("PAID");
@@ -476,9 +476,9 @@ class PaymentControllerWebMvcTest {
         // Given
         payment.setStatus(PaymentStatus.COMPLETED);
         when(paymentService.findByOrderCode(123456L)).thenReturn(Optional.of(payment));
-        PayOsService.GetInvoiceInfoResponse mockInvoiceInfo = mock(PayOsService.GetInvoiceInfoResponse.class);
-        PayOsService.GetInvoiceInfoResponse.Data mockInvoiceData = mock(PayOsService.GetInvoiceInfoResponse.Data.class);
-        PayOsService.GetInvoiceInfoResponse.Invoice mockInvoice = mock(PayOsService.GetInvoiceInfoResponse.Invoice.class);
+        PayOsService.InvoiceInfoResponse mockInvoiceInfo = mock(PayOsService.InvoiceInfoResponse.class);
+        PayOsService.InvoiceInfoResponse.InvoiceData mockInvoiceData = mock(PayOsService.InvoiceInfoResponse.InvoiceData.class);
+        PayOsService.InvoiceInfoResponse.InvoiceData.Invoice mockInvoice = mock(PayOsService.InvoiceInfoResponse.InvoiceData.Invoice.class);
         when(mockInvoiceInfo.getData()).thenReturn(mockInvoiceData);
         when(mockInvoiceData.getInvoices()).thenReturn(Arrays.asList(mockInvoice));
         when(mockInvoice.getInvoiceId()).thenReturn("invoice-123");
@@ -748,7 +748,7 @@ class PaymentControllerWebMvcTest {
     void testGetPaymentHistory_Success() throws Exception {
         // Given
         when(customerService.findById(any())).thenReturn(Optional.of(customer));
-        when(paymentService.getPaymentsByCustomer(any())).thenReturn(Collections.singletonList(payment));
+        when(paymentService.findByCustomer(any(Customer.class))).thenReturn(Collections.singletonList(payment));
 
         // When & Then
         mockMvc.perform(get("/payment/api/history"))
@@ -765,6 +765,7 @@ class PaymentControllerWebMvcTest {
         PayOsService.CreateLinkResponse.Data mockData = mock(PayOsService.CreateLinkResponse.Data.class);
         when(mockResponse.getData()).thenReturn(mockData);
         when(mockData.getCheckoutUrl()).thenReturn("https://payos.vn/test");
+        when(mockData.getQrCode()).thenReturn("qr-code-data");
         when(payOsService.createPaymentLink(anyLong(), anyLong(), anyString())).thenReturn(mockResponse);
 
         // When & Then
@@ -774,5 +775,201 @@ class PaymentControllerWebMvcTest {
                 .param("description", "Test")
                 .with(csrf()))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /payment/api/payos/test-create - should handle null response")
+    void testTestCreatePayOSLink_NullResponse() throws Exception {
+        // Given
+        when(payOsService.createPaymentLink(anyLong(), anyLong(), anyString())).thenReturn(null);
+
+        // When & Then
+        mockMvc.perform(post("/payment/api/payos/test-create")
+                .param("orderCode", "999999")
+                .param("amount", "100000")
+                .param("description", "Test")
+                .with(csrf()))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /payment/api/payos/test-create - should handle exception")
+    void testTestCreatePayOSLink_Exception() throws Exception {
+        // Given
+        when(payOsService.createPaymentLink(anyLong(), anyLong(), anyString()))
+            .thenThrow(new RuntimeException("PayOS error"));
+
+        // When & Then
+        mockMvc.perform(post("/payment/api/payos/test-create")
+                .param("orderCode", "999999")
+                .param("amount", "100000")
+                .param("description", "Test")
+                .with(csrf()))
+            .andExpect(status().is(500));
+    }
+
+    // ========== GET /payment/debug/sync-payos/{paymentId} ==========
+
+    @Test
+    @DisplayName("GET /payment/debug/sync-payos/1 - should return payment not found")
+    void testSyncPayOSStatus_PaymentNotFound() throws Exception {
+        // Given
+        when(paymentService.findById(1)).thenReturn(Optional.empty());
+
+        // When & Then
+        mockMvc.perform(get("/payment/debug/sync-payos/1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /payment/debug/sync-payos/1 - should return not PayOS method")
+    void testSyncPayOSStatus_NotPayOS() throws Exception {
+        // Given
+        payment.setPaymentMethod(PaymentMethod.CASH);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+
+        // When & Then
+        mockMvc.perform(get("/payment/debug/sync-payos/1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /payment/debug/sync-payos/1 - should return already completed")
+    void testSyncPayOSStatus_AlreadyCompleted() throws Exception {
+        // Given
+        payment.setStatus(PaymentStatus.COMPLETED);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+
+        // When & Then
+        mockMvc.perform(get("/payment/debug/sync-payos/1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /payment/debug/sync-payos/1 - should handle PayOS response null")
+    void testSyncPayOSStatus_PayOSResponseNull() throws Exception {
+        // Given
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(payOsService.getPaymentInfo(anyLong())).thenReturn(null);
+
+        // When & Then
+        mockMvc.perform(get("/payment/debug/sync-payos/1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("GET /payment/debug/sync-payos/1 - should handle PayOS response code not 00")
+    void testSyncPayOSStatus_PayOSCodeNot00() throws Exception {
+        // Given
+        PayOsService.PaymentInfoResponse mockResponse = mock(PayOsService.PaymentInfoResponse.class);
+        when(mockResponse.getCode()).thenReturn("01");
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(payOsService.getPaymentInfo(anyLong())).thenReturn(mockResponse);
+
+        // When & Then
+        mockMvc.perform(get("/payment/debug/sync-payos/1"))
+            .andExpect(status().isOk());
+    }
+
+    // ========== GET /payment/api/payos/invoice/{orderCode}/download ==========
+
+    @Test
+    @WithMockUser(username = "customer")
+    @DisplayName("GET /payment/api/payos/invoice/123456/download - should return 403 when unauthorized")
+    void testDownloadPayOSInvoice_Unauthorized() throws Exception {
+        // Given
+        Payment otherPayment = new Payment();
+        otherPayment.setPaymentId(2);
+        Customer otherCustomer = new Customer();
+        otherCustomer.setCustomerId(UUID.randomUUID());
+        otherPayment.setCustomer(otherCustomer);
+
+        when(paymentService.findByOrderCode(123456L)).thenReturn(Optional.of(otherPayment));
+
+        // When & Then
+        mockMvc.perform(get("/payment/api/payos/invoice/123456/download"))
+            .andExpect(status().is(403));
+    }
+
+    @Test
+    @WithMockUser(username = "customer")
+    @DisplayName("GET /payment/api/payos/invoice/123456/download - should return 404 when payment not found")
+    void testDownloadPayOSInvoice_PaymentNotFound() throws Exception {
+        // Given
+        when(paymentService.findByOrderCode(123456L)).thenReturn(Optional.empty());
+
+        // When & Then
+        mockMvc.perform(get("/payment/api/payos/invoice/123456/download"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "customer")
+    @DisplayName("GET /payment/api/payos/invoice/123456/download - should return 400 when payment not completed")
+    void testDownloadPayOSInvoice_NotCompleted() throws Exception {
+        // Given
+        payment.setStatus(PaymentStatus.PENDING);
+        when(paymentService.findByOrderCode(123456L)).thenReturn(Optional.of(payment));
+
+        // When & Then
+        mockMvc.perform(get("/payment/api/payos/invoice/123456/download"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "customer")
+    @DisplayName("GET /payment/api/payos/invoice/123456/download - should return 404 when no invoice found")
+    void testDownloadPayOSInvoice_NoInvoice() throws Exception {
+        // Given
+        payment.setStatus(PaymentStatus.COMPLETED);
+        when(paymentService.findByOrderCode(123456L)).thenReturn(Optional.of(payment));
+        PayOsService.InvoiceInfoResponse mockInvoiceInfo = mock(PayOsService.InvoiceInfoResponse.class);
+        PayOsService.InvoiceInfoResponse.InvoiceData mockInvoiceData = mock(PayOsService.InvoiceInfoResponse.InvoiceData.class);
+        when(mockInvoiceInfo.getData()).thenReturn(mockInvoiceData);
+        when(mockInvoiceData.getInvoices()).thenReturn(Collections.emptyList());
+        when(payOsService.getInvoiceInfo(anyLong())).thenReturn(mockInvoiceInfo);
+
+        // When & Then
+        mockMvc.perform(get("/payment/api/payos/invoice/123456/download"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "customer")
+    @DisplayName("GET /payment/api/payos/invoice/123456/download - should return 500 on exception")
+    void testDownloadPayOSInvoice_Exception() throws Exception {
+        // Given
+        payment.setStatus(PaymentStatus.COMPLETED);
+        when(paymentService.findByOrderCode(123456L)).thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(get("/payment/api/payos/invoice/123456/download"))
+            .andExpect(status().is(500));
+    }
+
+    // ========== GET /payment/api/history ==========
+
+    @Test
+    @WithMockUser(username = "customer")
+    @DisplayName("GET /payment/api/history - should return 500 when customer not found")
+    void testGetPaymentHistory_CustomerNotFound() throws Exception {
+        // Given
+        when(customerService.findById(any())).thenReturn(Optional.empty());
+
+        // When & Then
+        mockMvc.perform(get("/payment/api/history"))
+            .andExpect(status().is(500));
+    }
+
+    @Test
+    @WithMockUser(username = "customer")
+    @DisplayName("GET /payment/api/history - should return 500 on exception")
+    void testGetPaymentHistory_Exception() throws Exception {
+        // Given
+        when(customerService.findById(any())).thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(get("/payment/api/history"))
+            .andExpect(status().is(500));
     }
 }

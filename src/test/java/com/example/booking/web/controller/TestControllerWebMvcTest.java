@@ -36,6 +36,12 @@ class TestControllerWebMvcTest {
     @MockBean
     private OpenAITest openAITest;
 
+    @MockBean
+    private com.example.booking.service.EndpointRateLimitingService endpointRateLimitingService;
+
+    @MockBean
+    private com.example.booking.service.GeneralRateLimitingService generalRateLimitingService;
+
     @Test
     @DisplayName("GET /test/openai - should test OpenAI API")
     void testTestOpenAI() throws Exception {
@@ -58,6 +64,68 @@ class TestControllerWebMvcTest {
         mockMvc.perform(get("/test/openai/intent"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("success"));
+    }
+
+    @Test
+    @DisplayName("GET /test/openai - should handle exception")
+    void testTestOpenAI_Exception() throws Exception {
+        // Given
+        doThrow(new RuntimeException("API key invalid")).when(openAITest).testOpenAIKey();
+
+        // When & Then
+        mockMvc.perform(get("/test/openai"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("error"))
+            .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("GET /test/openai/intent - should handle exception")
+    void testTestIntentParsing_Exception() throws Exception {
+        // Given
+        doThrow(new RuntimeException("Intent parsing failed")).when(openAITest).testRestaurantIntentParsing();
+
+        // When & Then
+        mockMvc.perform(get("/test/openai/intent"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("error"))
+            .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("POST /test/openai/query - should test custom query")
+    void testTestCustomQuery_Success() throws Exception {
+        // Given - Mock OpenAITest will be called inside but we can't easily mock OpenAI service
+        // This test will verify the endpoint structure
+        mockMvc.perform(post("/test/openai/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"query\":\"Test query\"}")
+                .with(csrf()))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("POST /test/openai/query - should return 400 when query is null")
+    void testTestCustomQuery_NullQuery() throws Exception {
+        mockMvc.perform(post("/test/openai/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}")
+                .with(csrf()))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value("error"))
+            .andExpect(jsonPath("$.message").value("Query is required"));
+    }
+
+    @Test
+    @DisplayName("POST /test/openai/query - should return 400 when query is empty")
+    void testTestCustomQuery_EmptyQuery() throws Exception {
+        mockMvc.perform(post("/test/openai/query")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"query\":\"   \"}")
+                .with(csrf()))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value("error"))
+            .andExpect(jsonPath("$.message").value("Query is required"));
     }
 }
 

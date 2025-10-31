@@ -33,6 +33,12 @@ class TestVoucherControllerTest {
 	@MockBean
 	private VoucherService voucherService;
 
+	@MockBean
+	private com.example.booking.service.EndpointRateLimitingService endpointRateLimitingService;
+
+	@MockBean
+	private com.example.booking.service.GeneralRateLimitingService generalRateLimitingService;
+
 	private Voucher testVoucher;
 
 	@BeforeEach

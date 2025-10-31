@@ -28,6 +28,12 @@ class TermsControllerWebMvcTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.example.booking.service.EndpointRateLimitingService endpointRateLimitingService;
+
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.example.booking.service.GeneralRateLimitingService generalRateLimitingService;
+
     @Test
     @DisplayName("GET /terms-of-service should return view successfully")
     void testTermsOfService() throws Exception {

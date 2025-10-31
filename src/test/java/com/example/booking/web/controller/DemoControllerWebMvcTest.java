@@ -28,6 +28,12 @@ class DemoControllerWebMvcTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.example.booking.service.EndpointRateLimitingService endpointRateLimitingService;
+
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.example.booking.service.GeneralRateLimitingService generalRateLimitingService;
+
     @Test
     @DisplayName("GET /demo/home-demo should return view successfully")
     void testHomeDemo() throws Exception {

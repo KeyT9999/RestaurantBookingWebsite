@@ -27,6 +27,12 @@ class FaviconControllerWebMvcTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.example.booking.service.EndpointRateLimitingService endpointRateLimitingService;
+
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.example.booking.service.GeneralRateLimitingService generalRateLimitingService;
+
     @Test
     @DisplayName("GET /favicon.ico should redirect to emoji icon")
     void testFavicon() throws Exception {

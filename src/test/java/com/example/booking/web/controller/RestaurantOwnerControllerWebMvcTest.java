@@ -3,7 +3,9 @@ package com.example.booking.web.controller;
 import com.example.booking.domain.*;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.service.*;
+import com.example.booking.service.BookingService;
 import com.example.booking.repository.*;
+import com.example.booking.entity.CommunicationHistory;
 import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.common.enums.RestaurantApprovalStatus;
 
@@ -57,7 +59,7 @@ class RestaurantOwnerControllerWebMvcTest {
     private WaitlistService waitlistService;
 
     @MockBean
-    private BookingService bookingService;
+    private com.example.booking.service.BookingService bookingService;
 
     @MockBean
     private RestaurantManagementService restaurantService;
@@ -121,8 +123,8 @@ class RestaurantOwnerControllerWebMvcTest {
         waitlist.setRestaurant(restaurant);
 
         when(userService.findById(any())).thenReturn(ownerUser);
-        when(restaurantOwnerService.findByUserId(any())).thenReturn(Optional.of(owner));
-        when(restaurantService.findAllRestaurantsByOwner(any())).thenReturn(Arrays.asList(restaurant));
+        when(restaurantOwnerService.getRestaurantOwnerByUserId(any())).thenReturn(Optional.of(owner));
+        when(restaurantOwnerService.getRestaurantsByUserId(any(UUID.class))).thenReturn(Arrays.asList(restaurant));
     }
 
     // ========== Dashboard Tests ==========
@@ -157,7 +159,7 @@ class RestaurantOwnerControllerWebMvcTest {
         RestaurantProfile pendingRestaurant = new RestaurantProfile();
         pendingRestaurant.setRestaurantId(2);
         pendingRestaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
-        when(restaurantService.findAllRestaurantsByOwner(any())).thenReturn(Arrays.asList(pendingRestaurant));
+        when(restaurantOwnerService.getRestaurantsByUserId(any(UUID.class))).thenReturn(Arrays.asList(pendingRestaurant));
 
         // When & Then
         mockMvc.perform(get("/restaurant-owner/dashboard"))
@@ -181,7 +183,7 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("GET /restaurant-owner/profile/1 - should show restaurant detail")
     void testRestaurantDetail() throws Exception {
-        when(restaurantService.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantService.findRestaurantById(1)).thenReturn(Optional.of(restaurant));
 
         mockMvc.perform(get("/restaurant-owner/profile/1"))
             .andExpect(status().isOk())
@@ -202,8 +204,8 @@ class RestaurantOwnerControllerWebMvcTest {
         MockMultipartFile qrCodeImage = new MockMultipartFile("qrCodeImage", "qr.jpg", 
             "image/jpeg", "test".getBytes());
 
-        when(restaurantService.findById(1)).thenReturn(Optional.of(restaurant));
-        when(restaurantService.updateRestaurant(any(), any(), any())).thenReturn(restaurant);
+        when(restaurantService.findRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.updateRestaurantProfile(any(RestaurantProfile.class))).thenReturn(restaurant);
 
         // When & Then
         mockMvc.perform(multipart("/restaurant-owner/restaurants/1/edit")
@@ -240,7 +242,7 @@ class RestaurantOwnerControllerWebMvcTest {
             "image/jpeg", "test".getBytes());
         Dish dish = new Dish();
         dish.setDishId(1);
-        when(restaurantService.createDish(any(), any(), any())).thenReturn(dish);
+        when(restaurantOwnerService.createDish(any(Dish.class))).thenReturn(dish);
 
         // When & Then
         mockMvc.perform(multipart("/restaurant-owner/restaurants/1/dishes/create")
@@ -256,7 +258,7 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("POST /restaurant-owner/restaurants/1/dishes/1/delete - should delete dish")
     void testDeleteDish() throws Exception {
-        when(restaurantService.deleteDish(1, 1)).thenReturn(true);
+        doNothing().when(restaurantOwnerService).deleteDish(1);
 
         mockMvc.perform(post("/restaurant-owner/restaurants/1/dishes/1/delete")
                 .with(csrf()))
@@ -287,7 +289,7 @@ class RestaurantOwnerControllerWebMvcTest {
         };
         RestaurantTable table = new RestaurantTable();
         table.setTableId(1);
-        when(restaurantService.createTable(any(), any(), any())).thenReturn(table);
+        when(restaurantOwnerService.createTable(any(RestaurantTable.class))).thenReturn(table);
 
         // When & Then
         mockMvc.perform(multipart("/restaurant-owner/restaurants/1/tables/create")
@@ -304,7 +306,7 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("GET /restaurant-owner/bookings - should list all bookings")
     void testViewAllBookings() throws Exception {
-        when(bookingService.getAllBookingsForOwner(any())).thenReturn(new ArrayList<>());
+        when(bookingService.getBookingsByRestaurant(anyInt())).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/restaurant-owner/bookings"))
             .andExpect(status().isOk())
@@ -328,7 +330,7 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("POST /restaurant-owner/bookings/1/status - should update booking status")
     void testUpdateBookingStatus() throws Exception {
-        when(bookingService.updateBookingStatus(1, "CONFIRMED")).thenReturn(booking);
+        when(bookingService.updateBookingStatus(1, BookingStatus.CONFIRMED)).thenReturn(booking);
 
         mockMvc.perform(post("/restaurant-owner/bookings/1/status")
                 .param("status", "CONFIRMED")
@@ -340,7 +342,7 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("POST /restaurant-owner/bookings/1/cancel - should cancel booking")
     void testCancelBooking() throws Exception {
-        when(bookingService.cancelBooking(1, "Owner cancelled")).thenReturn(booking);
+        when(bookingService.cancelBookingByRestaurant(eq(1), any(UUID.class), eq("Owner cancelled"))).thenReturn(booking);
 
         mockMvc.perform(post("/restaurant-owner/bookings/1/cancel")
                 .param("reason", "Owner cancelled")
@@ -354,7 +356,7 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("GET /restaurant-owner/waitlist - should show waitlist management")
     void testWaitlistManagement() throws Exception {
-        when(waitlistService.getAllWaitlistsForOwner(any())).thenReturn(new ArrayList<>());
+        when(waitlistService.getRestaurantWaitlist(anyInt())).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/restaurant-owner/waitlist"))
             .andExpect(status().isOk())
@@ -366,7 +368,7 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("POST /restaurant-owner/waitlist/call-next - should call next customer")
     void testCallNextFromWaitlist() throws Exception {
-        when(waitlistService.callNextCustomer(1)).thenReturn(waitlist);
+        when(waitlistService.callNextFromWaitlist(1)).thenReturn(waitlist);
 
         mockMvc.perform(post("/restaurant-owner/waitlist/call-next")
                 .param("restaurantId", "1")
@@ -430,7 +432,7 @@ class RestaurantOwnerControllerWebMvcTest {
             "image/jpeg", "test".getBytes());
         RestaurantService service = new RestaurantService();
         service.setServiceId(1);
-        when(restaurantService.createService(any(), any(), any())).thenReturn(service);
+        when(restaurantOwnerService.updateRestaurantService(any(RestaurantService.class))).thenReturn(service);
 
         // When & Then
         mockMvc.perform(multipart("/restaurant-owner/restaurants/1/services")

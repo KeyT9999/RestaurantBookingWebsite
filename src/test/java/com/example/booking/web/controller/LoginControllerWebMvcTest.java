@@ -28,6 +28,12 @@ class LoginControllerWebMvcTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.example.booking.service.EndpointRateLimitingService endpointRateLimitingService;
+
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.example.booking.service.GeneralRateLimitingService generalRateLimitingService;
+
     @Test
     @DisplayName("GET /login should redirect to home")
     void testLogin() throws Exception {

@@ -57,6 +57,12 @@ class SetupControllerWebMvcTest {
     @MockBean
     private RestaurantProfileRepository restaurantProfileRepository;
 
+    @MockBean
+    private com.example.booking.service.EndpointRateLimitingService endpointRateLimitingService;
+
+    @MockBean
+    private com.example.booking.service.GeneralRateLimitingService generalRateLimitingService;
+
     private User ownerUser;
     private RestaurantProfile restaurant;
 
@@ -101,6 +107,35 @@ class SetupControllerWebMvcTest {
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/setup/restaurant-owner"))
             .andExpect(flash().attributeExists("successMessage"));
+    }
+
+    @Test
+    @DisplayName("POST /setup/restaurant-owner - should handle no owner user found")
+    void testCreateRestaurantOwner_NoUserFound() throws Exception {
+        // Given
+        Page<User> emptyPage = new PageImpl<>(Arrays.asList());
+        when(userRepository.findByRole(eq(UserRole.RESTAURANT_OWNER), any(Pageable.class)))
+            .thenReturn(emptyPage);
+
+        // When & Then
+        mockMvc.perform(post("/setup/restaurant-owner").with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/setup/restaurant-owner"))
+            .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    @Test
+    @DisplayName("POST /setup/restaurant-owner - should handle exception")
+    void testCreateRestaurantOwner_Exception() throws Exception {
+        // Given
+        when(userRepository.findByRole(eq(UserRole.RESTAURANT_OWNER), any(Pageable.class)))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then
+        mockMvc.perform(post("/setup/restaurant-owner").with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/setup/restaurant-owner"))
+            .andExpect(flash().attributeExists("errorMessage"));
     }
 }
 
