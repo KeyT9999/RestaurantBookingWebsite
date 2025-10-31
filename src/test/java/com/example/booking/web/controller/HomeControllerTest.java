@@ -35,6 +35,7 @@ import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.User;
+import com.example.booking.domain.Review;
 import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.service.RestaurantManagementService;
@@ -788,5 +789,406 @@ public class HomeControllerTest {
         // Then
         assertEquals("public/restaurant-detail-simple", view);
         verify(model, atLeastOnce()).addAttribute(anyString(), any());
+    }
+
+    // ========== Additional Edge Case Tests for buildPopularRestaurantCards ==========
+
+    @Test
+    @DisplayName("shouldBuildPopularRestaurantCards_withIndex0_BadgeTopRated")
+    void shouldBuildPopularRestaurantCards_withIndex0_BadgeTopRated() {
+        // Given - Create reviews to make reviewCount >= 10
+        List<Review> reviews = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            Review review = new Review();
+            review.setReviewId(i + 1);
+            reviews.add(review);
+        }
+        restaurant.setReviews(reviews);
+        List<RestaurantProfile> topRestaurants = Arrays.asList(restaurant);
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(topRestaurants);
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(statistics);
+
+        // When
+        String view = controller.home(null, null, null, model, null);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model).addAttribute(eq("popularRestaurants"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldBuildPopularRestaurantCards_withIndex1_BadgeKhachYeuThich")
+    void shouldBuildPopularRestaurantCards_withIndex1_BadgeKhachYeuThich() {
+        // Given - Need 2 restaurants to test index 1
+        RestaurantProfile restaurant2 = new RestaurantProfile();
+        restaurant2.setRestaurantId(2);
+        restaurant2.setRestaurantName("Restaurant 2");
+        List<RestaurantProfile> topRestaurants = Arrays.asList(restaurant, restaurant2);
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(topRestaurants);
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(statistics);
+        when(reviewService.getRestaurantReviewStatistics(2)).thenReturn(statistics);
+
+        // When
+        String view = controller.home(null, null, null, model, null);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model).addAttribute(eq("popularRestaurants"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldBuildPopularRestaurantCards_withIndex2_BadgeDuocDatNhieu")
+    void shouldBuildPopularRestaurantCards_withIndex2_BadgeDuocDatNhieu() {
+        // Given - Need 3 restaurants to test index 2
+        RestaurantProfile restaurant2 = new RestaurantProfile();
+        restaurant2.setRestaurantId(2);
+        RestaurantProfile restaurant3 = new RestaurantProfile();
+        restaurant3.setRestaurantId(3);
+        List<RestaurantProfile> topRestaurants = Arrays.asList(restaurant, restaurant2, restaurant3);
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(topRestaurants);
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+        when(reviewService.getRestaurantReviewStatistics(anyInt())).thenReturn(statistics);
+
+        // When
+        String view = controller.home(null, null, null, model, null);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model).addAttribute(eq("popularRestaurants"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldBuildPopularRestaurantCards_withIndex3_ReviewCount10Plus_BadgeYeuThich")
+    void shouldBuildPopularRestaurantCards_withIndex3_ReviewCount10Plus_BadgeYeuThich() {
+        // Given - Need 4 restaurants, last one with reviewCount >= 10
+        RestaurantProfile restaurant2 = new RestaurantProfile();
+        restaurant2.setRestaurantId(2);
+        RestaurantProfile restaurant3 = new RestaurantProfile();
+        restaurant3.setRestaurantId(3);
+        RestaurantProfile restaurant4 = new RestaurantProfile();
+        restaurant4.setRestaurantId(4);
+        // Create reviews to make reviewCount >= 10
+        List<Review> reviews4 = new ArrayList<>();
+        for (int i = 0; i < 15; i++) {
+            Review review = new Review();
+            review.setReviewId(i + 1);
+            reviews4.add(review);
+        }
+        restaurant4.setReviews(reviews4); // >= 10
+        List<RestaurantProfile> topRestaurants = Arrays.asList(restaurant, restaurant2, restaurant3, restaurant4);
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(topRestaurants);
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+        when(reviewService.getRestaurantReviewStatistics(anyInt())).thenReturn(statistics);
+
+        // When
+        String view = controller.home(null, null, null, model, null);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model).addAttribute(eq("popularRestaurants"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldBuildPopularRestaurantCards_withIndex3_ReviewCountLessThan10_NoBadge")
+    void shouldBuildPopularRestaurantCards_withIndex3_ReviewCountLessThan10_NoBadge() {
+        // Given - Need 4 restaurants, last one with reviewCount < 10
+        RestaurantProfile restaurant2 = new RestaurantProfile();
+        restaurant2.setRestaurantId(2);
+        RestaurantProfile restaurant3 = new RestaurantProfile();
+        restaurant3.setRestaurantId(3);
+        RestaurantProfile restaurant4 = new RestaurantProfile();
+        restaurant4.setRestaurantId(4);
+        // Create reviews to make reviewCount < 10
+        List<Review> reviews4 = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            Review review = new Review();
+            review.setReviewId(i + 1);
+            reviews4.add(review);
+        }
+        restaurant4.setReviews(reviews4); // < 10
+        List<RestaurantProfile> topRestaurants = Arrays.asList(restaurant, restaurant2, restaurant3, restaurant4);
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(topRestaurants);
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+        when(reviewService.getRestaurantReviewStatistics(anyInt())).thenReturn(statistics);
+
+        // When
+        String view = controller.home(null, null, null, model, null);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model).addAttribute(eq("popularRestaurants"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldBuildPopularRestaurantCards_withNullAveragePrice_ShowsDefaultLabel")
+    void shouldBuildPopularRestaurantCards_withNullAveragePrice_ShowsDefaultLabel() {
+        // Given
+        restaurant.setAveragePrice(null);
+        List<RestaurantProfile> topRestaurants = Arrays.asList(restaurant);
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(topRestaurants);
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(statistics);
+
+        // When
+        String view = controller.home(null, null, null, model, null);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model).addAttribute(eq("popularRestaurants"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldBuildPopularRestaurantCards_withStatisticsException_usesRestaurantDefaults")
+    void shouldBuildPopularRestaurantCards_withStatisticsException_usesRestaurantDefaults() {
+        // Given
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(Arrays.asList(restaurant));
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+        when(reviewService.getRestaurantReviewStatistics(1))
+            .thenThrow(new RuntimeException("Stats error"));
+
+        // When
+        String view = controller.home(null, null, null, model, null);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model).addAttribute(eq("popularRestaurants"), anyList());
+    }
+
+    // ========== Additional Edge Case Tests for restaurantDetail ==========
+
+    @Test
+    @DisplayName("shouldLoadRestaurantDetail_withCustomerNotPresent")
+    void shouldLoadRestaurantDetail_withCustomerNotPresent() {
+        // Given
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(Collections.emptyList());
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(customerService.findByUserId(user.getId())).thenReturn(Optional.empty());
+        when(reviewService.getReviewsByRestaurant(eq(1), any(Pageable.class)))
+            .thenReturn(Page.empty());
+        when(reviewService.getRestaurantReviewStatistics(1))
+            .thenReturn(new ReviewStatisticsDto());
+
+        // When
+        String view = controller.restaurantDetail(1, model, authentication);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model).addAttribute(eq("hasReviewed"), eq(false));
+    }
+
+    @Test
+    @DisplayName("shouldLoadRestaurantDetail_withHasReviewedFalse")
+    void shouldLoadRestaurantDetail_withHasReviewedFalse() {
+        // Given
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(Collections.emptyList());
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
+        when(reviewService.hasCustomerReviewedRestaurant(customer.getCustomerId(), 1))
+            .thenReturn(false);
+        when(reviewService.getReviewsByRestaurant(eq(1), any(Pageable.class)))
+            .thenReturn(Page.empty());
+        when(reviewService.getRestaurantReviewStatistics(1))
+            .thenReturn(new ReviewStatisticsDto());
+
+        // When
+        String view = controller.restaurantDetail(1, model, authentication);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model).addAttribute(eq("hasReviewed"), eq(false));
+    }
+
+    @Test
+    @DisplayName("shouldLoadRestaurantDetail_withHasReviewedTrue_CustomerReviewFound")
+    void shouldLoadRestaurantDetail_withHasReviewedTrue_CustomerReviewFound() {
+        // Given
+        ReviewDto customerReviewDto = new ReviewDto();
+        customerReviewDto.setReviewId(1);
+        customerReviewDto.setRestaurantId(1);
+        
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(Collections.emptyList());
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
+        when(reviewService.hasCustomerReviewedRestaurant(customer.getCustomerId(), 1))
+            .thenReturn(true);
+        when(reviewService.getReviewsByCustomer(customer.getCustomerId()))
+            .thenReturn(Arrays.asList(customerReviewDto));
+        when(reviewService.getReviewsByRestaurant(eq(1), any(Pageable.class)))
+            .thenReturn(Page.empty());
+        when(reviewService.getRestaurantReviewStatistics(1))
+            .thenReturn(new ReviewStatisticsDto());
+
+        // When
+        String view = controller.restaurantDetail(1, model, authentication);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model).addAttribute(eq("hasReviewed"), eq(true));
+        verify(model).addAttribute(eq("customerReview"), eq(customerReviewDto));
+    }
+
+    @Test
+    @DisplayName("shouldLoadRestaurantDetail_withHasReviewedTrue_CustomerReviewNotFound")
+    void shouldLoadRestaurantDetail_withHasReviewedTrue_CustomerReviewNotFound() {
+        // Given
+        ReviewDto otherReview = new ReviewDto();
+        otherReview.setReviewId(1);
+        otherReview.setRestaurantId(2); // Different restaurant
+        
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(Collections.emptyList());
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
+        when(reviewService.hasCustomerReviewedRestaurant(customer.getCustomerId(), 1))
+            .thenReturn(true);
+        when(reviewService.getReviewsByCustomer(customer.getCustomerId()))
+            .thenReturn(Arrays.asList(otherReview)); // Different restaurant ID
+        when(reviewService.getReviewsByRestaurant(eq(1), any(Pageable.class)))
+            .thenReturn(Page.empty());
+        when(reviewService.getRestaurantReviewStatistics(1))
+            .thenReturn(new ReviewStatisticsDto());
+
+        // When
+        String view = controller.restaurantDetail(1, model, authentication);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model).addAttribute(eq("hasReviewed"), eq(true));
+        verify(model).addAttribute(eq("customerReview"), isNull());
+    }
+
+    @Test
+    @DisplayName("shouldLoadRestaurantDetail_withAllMediaTypes")
+    void shouldLoadRestaurantDetail_withAllMediaTypes() {
+        // Given
+        RestaurantMedia logoMedia = new RestaurantMedia();
+        logoMedia.setType("logo");
+        RestaurantMedia coverMedia = new RestaurantMedia();
+        coverMedia.setType("cover");
+        RestaurantMedia galleryMedia = new RestaurantMedia();
+        galleryMedia.setType("gallery");
+        RestaurantMedia exteriorMedia = new RestaurantMedia();
+        exteriorMedia.setType("exterior");
+        RestaurantMedia interiorMedia = new RestaurantMedia();
+        interiorMedia.setType("interior");
+        RestaurantMedia menuMedia = new RestaurantMedia();
+        menuMedia.setType("menu");
+        RestaurantMedia tableLayoutMedia = new RestaurantMedia();
+        tableLayoutMedia.setType("table_layout");
+        
+        List<RestaurantMedia> allMedia = Arrays.asList(
+            logoMedia, coverMedia, galleryMedia, exteriorMedia, 
+            interiorMedia, menuMedia, tableLayoutMedia
+        );
+        
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(allMedia);
+        when(reviewService.getReviewsByRestaurant(eq(1), any(Pageable.class)))
+            .thenReturn(Page.empty());
+        when(reviewService.getRestaurantReviewStatistics(1))
+            .thenReturn(new ReviewStatisticsDto());
+
+        // When
+        String view = controller.restaurantDetail(1, model, null);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model).addAttribute(eq("logo"), any());
+        verify(model).addAttribute(eq("cover"), any());
+        verify(model).addAttribute(eq("gallery"), anyList());
+        verify(model).addAttribute(eq("exterior"), anyList());
+        verify(model).addAttribute(eq("interior"), anyList());
+        verify(model).addAttribute(eq("menus"), anyList());
+        verify(model).addAttribute(eq("tableLayouts"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldLoadRestaurantDetail_withNullDishes")
+    void shouldLoadRestaurantDetail_withNullDishes() {
+        // Given
+        restaurant.setDishes(null);
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(Collections.emptyList());
+        when(reviewService.getReviewsByRestaurant(eq(1), any(Pageable.class)))
+            .thenReturn(Page.empty());
+        when(reviewService.getRestaurantReviewStatistics(1))
+            .thenReturn(new ReviewStatisticsDto());
+
+        // When
+        String view = controller.restaurantDetail(1, model, null);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model).addAttribute(eq("dishes"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldLoadRestaurantDetail_withNullTables")
+    void shouldLoadRestaurantDetail_withNullTables() {
+        // Given
+        restaurant.setTables(null);
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(Collections.emptyList());
+        when(reviewService.getReviewsByRestaurant(eq(1), any(Pageable.class)))
+            .thenReturn(Page.empty());
+        when(reviewService.getRestaurantReviewStatistics(1))
+            .thenReturn(new ReviewStatisticsDto());
+
+        // When
+        String view = controller.restaurantDetail(1, model, null);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model).addAttribute(eq("tables"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldHandleException_inRestaurantDetail_CatchBlock")
+    void shouldHandleException_inRestaurantDetail_CatchBlock() {
+        // Given
+        when(restaurantOwnerService.getRestaurantById(1))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String view = controller.restaurantDetail(1, model, null);
+
+        // Then
+        assertTrue(view.contains("redirect:/restaurants"));
+    }
+
+    @Test
+    @DisplayName("shouldLoadRestaurantDetail_withEmptyLogosAndCovers")
+    void shouldLoadRestaurantDetail_withEmptyLogosAndCovers() {
+        // Given
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(Collections.emptyList());
+        when(reviewService.getReviewsByRestaurant(eq(1), any(Pageable.class)))
+            .thenReturn(Page.empty());
+        when(reviewService.getRestaurantReviewStatistics(1))
+            .thenReturn(new ReviewStatisticsDto());
+
+        // When
+        String view = controller.restaurantDetail(1, model, null);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model).addAttribute(eq("logo"), isNull());
+        verify(model).addAttribute(eq("cover"), isNull());
     }
 }
