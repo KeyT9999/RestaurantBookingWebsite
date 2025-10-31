@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -525,5 +526,153 @@ public class RestaurantRegistrationControllerTest {
 
         // Then
         assertEquals("redirect:/restaurant-owner/restaurants/create?success=1", result);
+    }
+
+    // ========== editRestaurantForm() Tests ==========
+
+    @Test
+    @DisplayName("editRestaurantForm - should return edit form for valid restaurant")
+    void editRestaurantForm_WithValidId_ShouldReturnForm() {
+        // Given
+        Integer restaurantId = 1;
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantId(restaurantId);
+        restaurant.setRestaurantName("Test Restaurant");
+        restaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+        restaurant.setOwner(testRestaurantOwnerEntity);
+        testRestaurantOwnerEntity.getUser().setId(testCustomer.getId());
+
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        when(restaurantOwnerService.getRestaurantByIdForAdmin(restaurantId))
+                .thenReturn(Optional.of(restaurant));
+
+        // When
+        String result = restaurantRegistrationController.editRestaurantForm(restaurantId, model, authentication);
+
+        // Then
+        assertEquals("restaurant-owner/restaurant-form", result);
+    }
+
+    @Test
+    @DisplayName("editRestaurantForm - should redirect when restaurant not found")
+    void editRestaurantForm_RestaurantNotFound_ShouldRedirect() {
+        // Given
+        Integer restaurantId = 999;
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        when(restaurantOwnerService.getRestaurantByIdForAdmin(restaurantId))
+                .thenReturn(Optional.empty());
+
+        // When
+        String result = restaurantRegistrationController.editRestaurantForm(restaurantId, model, authentication);
+
+        // Then
+        assertEquals("redirect:/?error=restaurant_not_found", result);
+    }
+
+    @Test
+    @DisplayName("editRestaurantForm - should redirect when not owner")
+    void editRestaurantForm_NotOwner_ShouldRedirect() {
+        // Given
+        Integer restaurantId = 1;
+        UUID differentUserId = UUID.randomUUID();
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantId(restaurantId);
+        User differentUser = new User();
+        differentUser.setId(differentUserId);
+        RestaurantOwner differentOwner = new RestaurantOwner(differentUser);
+        restaurant.setOwner(differentOwner);
+
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        when(restaurantOwnerService.getRestaurantByIdForAdmin(restaurantId))
+                .thenReturn(Optional.of(restaurant));
+
+        // When
+        String result = restaurantRegistrationController.editRestaurantForm(restaurantId, model, authentication);
+
+        // Then
+        assertEquals("redirect:/?error=unauthorized", result);
+    }
+
+    @Test
+    @DisplayName("editRestaurantForm - should redirect when restaurant is approved")
+    void editRestaurantForm_ApprovedRestaurant_ShouldRedirect() {
+        // Given
+        Integer restaurantId = 1;
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantId(restaurantId);
+        restaurant.setApprovalStatus(RestaurantApprovalStatus.APPROVED);
+        restaurant.setOwner(testRestaurantOwnerEntity);
+        testRestaurantOwnerEntity.getUser().setId(testCustomer.getId());
+
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getAuthorities()).thenReturn(
+            (Collection) Arrays.asList(new SimpleGrantedAuthority("ROLE_CUSTOMER"))
+        );
+        when(restaurantOwnerService.getRestaurantByIdForAdmin(restaurantId))
+                .thenReturn(Optional.of(restaurant));
+
+        // When
+        String result = restaurantRegistrationController.editRestaurantForm(restaurantId, model, authentication);
+
+        // Then
+        assertTrue(result.contains("redirect"));
+    }
+
+    // ========== updateRestaurant() Tests ==========
+
+    @Test
+    @DisplayName("updateRestaurant - should update restaurant successfully")
+    void updateRestaurant_WithValidData_ShouldUpdate() {
+        // Given
+        Integer restaurantId = 1;
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantId(restaurantId);
+        restaurant.setRestaurantName("Updated Restaurant");
+        restaurant.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+        restaurant.setOwner(testRestaurantOwnerEntity);
+        testRestaurantOwnerEntity.getUser().setId(testCustomer.getId());
+
+        when(authentication.getPrincipal()).thenReturn(testCustomer);
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(restaurantOwnerService.getRestaurantByIdForAdmin(restaurantId))
+                .thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.updateRestaurantProfile(any(RestaurantProfile.class)))
+                .thenReturn(restaurant);
+
+        // When
+        String result = restaurantRegistrationController.updateRestaurant(
+                restaurantId, restaurant, null, null, null, authentication, redirectAttributes);
+
+        // Then
+        assertTrue(result.contains("redirect"));
+    }
+
+    @Test
+    @DisplayName("updateRestaurant - should redirect to login when unauthenticated")
+    void updateRestaurant_Unauthenticated_ShouldRedirectToLogin() {
+        // Given
+        Integer restaurantId = 1;
+        RestaurantProfile restaurant = new RestaurantProfile();
+        when(authentication.isAuthenticated()).thenReturn(false);
+
+        // When
+        String result = restaurantRegistrationController.updateRestaurant(
+                restaurantId, restaurant, null, null, null, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/login", result);
     }
 }
