@@ -1,32 +1,48 @@
 package com.example.booking.config;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.context.annotation.Import;
 
 /**
- * Comprehensive tests for AuditConfig
+ * Unit tests for AuditConfig
  */
 @SpringBootTest
-@DisplayName("AuditConfig Test Suite")
-class AuditConfigTest {
+@Import(AuditConfig.class)
+@DisplayName("AuditConfig Tests")
+public class AuditConfigTest {
 
     @Test
-    @DisplayName("Should load AuditConfig")
-    void testAuditConfigLoads() {
-        // AuditConfig is a configuration class (currently disabled)
-        // The test verifies that the configuration class exists
-        assertThat(AuditConfig.class).isNotNull();
+    @DisplayName("shouldLoadAuditConfig_successfully")
+    void shouldLoadAuditConfig_successfully() {
+        // Given
+        AuditConfig config = new AuditConfig();
+
+        // Then
+        assertNotNull(config);
     }
 
     @Test
-    @DisplayName("Should be a configuration class")
-    void testConfigurationAnnotation() {
-        org.springframework.context.annotation.Configuration annotation = 
-                AuditConfig.class.getAnnotation(org.springframework.context.annotation.Configuration.class);
-        assertThat(annotation).isNotNull();
+    @DisplayName("shouldBeConfigurationClass")
+    void shouldBeConfigurationClass() {
+        // Given
+        AuditConfig config = new AuditConfig();
+
+        // Then
+        assertTrue(config.getClass().isAnnotationPresent(org.springframework.context.annotation.Configuration.class));
+    }
+
+    @Test
+    @DisplayName("shouldNotEnableAspectJAutoProxy")
+    void shouldNotEnableAspectJAutoProxy() {
+        // Given
+        AuditConfig config = new AuditConfig();
+
+        // Then - AspectJAutoProxy is disabled (commented out)
+        assertFalse(config.getClass().isAnnotationPresent(org.springframework.context.annotation.EnableAspectJAutoProxy.class));
     }
 }
 

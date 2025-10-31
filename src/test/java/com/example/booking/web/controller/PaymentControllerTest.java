@@ -34,6 +34,13 @@ import com.example.booking.service.EmailService;
 import com.example.booking.service.PayOsService;
 import com.example.booking.service.PaymentService;
 import com.example.booking.service.RefundService;
+import com.example.booking.repository.VoucherRedemptionRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.ResponseEntity;
+import java.util.Arrays;
+import java.util.List;
+import com.example.booking.domain.VoucherRedemption;
+import com.example.booking.domain.Voucher;
 
 /**
  * Unit tests for PaymentController
@@ -62,6 +69,12 @@ public class PaymentControllerTest {
 
     @Mock
     private RefundService refundService;
+
+    @Mock
+    private VoucherRedemptionRepository voucherRedemptionRepository;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @Mock
     private Model model;
@@ -105,8 +118,11 @@ public class PaymentControllerTest {
         payment.setAmount(new BigDecimal("500000"));
         payment.setStatus(PaymentStatus.PENDING);
         payment.setPaymentMethod(PaymentMethod.PAYOS);
+        payment.setOrderCode(12345L);
+        payment.setCustomer(customer);
 
         when(authentication.getPrincipal()).thenReturn(user);
+        when(customerService.findByUsername(anyString())).thenReturn(Optional.of(customer));
     }
 
     // ========== showPaymentForm() Tests ==========
@@ -135,7 +151,563 @@ public class PaymentControllerTest {
         String view = paymentController.showPaymentForm(1, model, authentication);
 
         // Then
+        assertEquals("error/404", view);
+    }
+
+    @Test
+    @DisplayName("shouldReturn403_whenUnauthorizedCustomer")
+    void shouldReturn403_whenUnauthorizedCustomer() {
+        // Given
+        Customer otherCustomer = new Customer();
+        otherCustomer.setCustomerId(UUID.randomUUID());
+        booking.setCustomer(otherCustomer);
+        
+        when(bookingService.findBookingById(1)).thenReturn(Optional.of(booking));
+
+        // When
+        String view = paymentController.showPaymentForm(1, model, authentication);
+
+        // Then
+        assertEquals("error/403", view);
+    }
+
+    @Test
+    @DisplayName("shouldRedirect_whenPaymentAlreadyCompleted")
+    void shouldRedirect_whenPaymentAlreadyCompleted() {
+        // Given
+        Payment completedPayment = new Payment();
+        completedPayment.setPaymentId(2);
+        completedPayment.setStatus(PaymentStatus.COMPLETED);
+        
+        when(bookingService.findBookingById(1)).thenReturn(Optional.of(booking));
+        when(paymentService.findByBooking(any(Booking.class))).thenReturn(Optional.of(completedPayment));
+
+        // When
+        String view = paymentController.showPaymentForm(1, model, authentication);
+
+        // Then
+        assertTrue(view.contains("booking/my"));
+    }
+
+    @Test
+    @DisplayName("shouldHandleVoucherDiscount_whenVoucherApplied")
+    void shouldHandleVoucherDiscount_whenVoucherApplied() {
+        // Given
+        Voucher voucher = new Voucher();
+        voucher.setCode("DISCOUNT10");
+        
+        VoucherRedemption redemption = new VoucherRedemption();
+        redemption.setVoucher(voucher);
+        redemption.setDiscountApplied(new BigDecimal("100000"));
+        
+        when(bookingService.findBookingById(1)).thenReturn(Optional.of(booking));
+        when(paymentService.findByBooking(any(Booking.class))).thenReturn(Optional.empty());
+        when(bookingService.calculateTotalAmount(any(Booking.class))).thenReturn(new BigDecimal("1000000"));
+        when(voucherRedemptionRepository.findByBooking_BookingId(1)).thenReturn(Arrays.asList(redemption));
+
+        // When
+        String view = paymentController.showPaymentForm(1, model, authentication);
+
+        // Then
         assertNotNull(view);
+        verify(model, atLeastOnce()).addAttribute(anyString(), any());
+    }
+
+    // ========== handlePayOsReturn() Tests ==========
+
+    @Test
+    @DisplayName("shouldHandlePayOsReturn_successfully")
+    void shouldHandlePayOsReturn_successfully() {
+        // Given
+        when(paymentService.findByOrderCode(12345L)).thenReturn(Optional.of(payment));
+
+        // When
+        String view = paymentController.handlePayOsReturn("12345", "PAID", redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("payment/result") || view.contains("booking/my"));
+    }
+
+    @Test
+    @DisplayName("shouldHandlePayOsReturn_whenOrderCodeNull")
+    void shouldHandlePayOsReturn_whenOrderCodeNull() {
+        // When
+        String view = paymentController.handlePayOsReturn(null, "PAID", redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("booking/my"));
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("errorMessage"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldHandlePayOsReturn_whenPaymentNotFound")
+    void shouldHandlePayOsReturn_whenPaymentNotFound() {
+        // Given
+        when(paymentService.findByOrderCode(12345L)).thenReturn(Optional.empty());
+
+        // When
+        String view = paymentController.handlePayOsReturn("12345", "PAID", redirectAttributes);
+
+        // Then
+        assertTrue(view.contains("booking/my"));
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("errorMessage"), anyString());
+    }
+
+    // ========== handlePayOsCancel() Tests ==========
+
+    @Test
+    @DisplayName("shouldHandlePayOsCancel_successfully")
+    void shouldHandlePayOsCancel_successfully() {
+        // Given
+        when(paymentService.findByOrderCode(12345L)).thenReturn(Optional.of(payment));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // When
+        String view = paymentController.handlePayOsCancel("12345", redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("payment/") || view.contains("booking/my"));
+    }
+
+    // ========== processPayment() Tests ==========
+
+    @Test
+    @DisplayName("shouldProcessPayment_Cash_Successfully")
+    void shouldProcessPayment_Cash_Successfully() {
+        // Given
+        Payment cashPayment = new Payment();
+        cashPayment.setPaymentId(2);
+        cashPayment.setPaymentMethod(PaymentMethod.CASH);
+        cashPayment.setBooking(booking);
+        
+        when(paymentService.createPayment(eq(1), any(UUID.class), eq(PaymentMethod.CASH), eq(PaymentType.FULL_PAYMENT), isNull()))
+            .thenReturn(cashPayment);
+        doNothing().when(paymentService).processCashPayment(2);
+        when(bookingService.calculateTotalAmount(any(Booking.class))).thenReturn(new BigDecimal("1000000"));
+
+        // When
+        String view = paymentController.processPayment(1, PaymentMethod.CASH, PaymentType.FULL_PAYMENT, null, 
+            authentication, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("booking/my"));
+        verify(paymentService, times(1)).processCashPayment(2);
+    }
+
+    @Test
+    @DisplayName("shouldProcessPayment_PayOS_Successfully")
+    void shouldProcessPayment_PayOS_Successfully() {
+        // Given
+        PayOsService.CreateLinkResponse linkResponse = mock(PayOsService.CreateLinkResponse.class);
+        PayOsService.CreateLinkResponse.Data linkData = mock(PayOsService.CreateLinkResponse.Data.class);
+        
+        when(linkResponse.getData()).thenReturn(linkData);
+        when(linkData.getCheckoutUrl()).thenReturn("https://payos.vn/checkout");
+        when(paymentService.createPayment(eq(1), any(UUID.class), eq(PaymentMethod.PAYOS), any(PaymentType.class), isNull()))
+            .thenReturn(payment);
+        when(payOsService.createPaymentLink(anyLong(), anyLong(), anyString())).thenReturn(linkResponse);
+
+        // When
+        String view = paymentController.processPayment(1, PaymentMethod.PAYOS, PaymentType.DEPOSIT, null,
+            authentication, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        verify(payOsService, times(1)).createPaymentLink(anyLong(), anyLong(), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldReturnError_whenCashDepositNotAllowed")
+    void shouldReturnError_whenCashDepositNotAllowed() {
+        // Given
+        Payment cashPayment = new Payment();
+        cashPayment.setPaymentId(2);
+        cashPayment.setPaymentMethod(PaymentMethod.CASH);
+        
+        when(paymentService.createPayment(eq(1), any(UUID.class), eq(PaymentMethod.CASH), eq(PaymentType.DEPOSIT), isNull()))
+            .thenReturn(cashPayment);
+
+        // When
+        String view = paymentController.processPayment(1, PaymentMethod.CASH, PaymentType.DEPOSIT, null,
+            authentication, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("payment/"));
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("errorMessage"), anyString());
+        verify(paymentService, never()).processCashPayment(anyInt());
+    }
+
+    // ========== showPaymentResult() Tests ==========
+
+    @Test
+    @DisplayName("shouldShowPaymentResult_successfully")
+    void shouldShowPaymentResult_successfully() {
+        // Given
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(bookingService.calculateTotalAmount(any(Booking.class))).thenReturn(new BigDecimal("1000000"));
+
+        // When
+        String view = paymentController.showPaymentResult(1, model, authentication);
+
+        // Then
+        assertEquals("payment/result", view);
+        verify(model, atLeastOnce()).addAttribute(anyString(), any());
+    }
+
+    @Test
+    @DisplayName("shouldReturn404_whenPaymentNotFound")
+    void shouldReturn404_whenPaymentNotFound() {
+        // Given
+        when(paymentService.findById(999)).thenReturn(Optional.empty());
+
+        // When
+        String view = paymentController.showPaymentResult(999, model, authentication);
+
+        // Then
+        assertEquals("error/404", view);
+    }
+
+    // ========== createPayOSLink() Tests ==========
+
+    @Test
+    @DisplayName("shouldCreatePayOSLink_successfully")
+    void shouldCreatePayOSLink_successfully() {
+        // Given
+        PayOsService.CreateLinkResponse linkResponse = mock(PayOsService.CreateLinkResponse.class);
+        PayOsService.CreateLinkResponse.Data linkData = mock(PayOsService.CreateLinkResponse.Data.class);
+        
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(linkResponse.getData()).thenReturn(linkData);
+        when(linkData.getCheckoutUrl()).thenReturn("https://payos.vn/checkout");
+        when(payOsService.createPaymentLink(anyLong(), anyLong(), anyString())).thenReturn(linkResponse);
+
+        // When
+        ResponseEntity<?> response = paymentController.createPayOSLink(1, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturnError_whenPaymentNotFoundForPayOSLink")
+    void shouldReturnError_whenPaymentNotFoundForPayOSLink() {
+        // Given
+        when(paymentService.findById(999)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = paymentController.createPayOSLink(999, authentication);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    // ========== confirmCashPayment() Tests ==========
+
+    @Test
+    @DisplayName("shouldConfirmCashPayment_successfully")
+    void shouldConfirmCashPayment_successfully() {
+        // Given
+        Payment cashPayment = new Payment();
+        cashPayment.setPaymentId(2);
+        cashPayment.setPaymentMethod(PaymentMethod.CASH);
+        cashPayment.setStatus(PaymentStatus.PENDING);
+        cashPayment.setCustomer(customer);
+        
+        when(paymentService.findById(2)).thenReturn(Optional.of(cashPayment));
+        doNothing().when(paymentService).processCashPayment(2);
+
+        // When
+        ResponseEntity<?> response = paymentController.confirmCashPayment(2, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        verify(paymentService, times(1)).processCashPayment(2);
+    }
+
+    // ========== checkPayOSStatus() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckPayOSStatus_successfully")
+    void shouldCheckPayOSStatus_successfully() {
+        // Given
+        PayOsService.PaymentInfoResponse infoResponse = mock(PayOsService.PaymentInfoResponse.class);
+        PayOsService.PaymentInfoResponse.PaymentInfoData paymentData = mock(PayOsService.PaymentInfoResponse.PaymentInfoData.class);
+        
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(payOsService.getPaymentInfo(anyLong())).thenReturn(infoResponse);
+        when(infoResponse.getCode()).thenReturn("00");
+        when(infoResponse.getData()).thenReturn(paymentData);
+        when(paymentData.getStatus()).thenReturn("PAID");
+        when(paymentData.getAmountPaid()).thenReturn(500000L);
+        when(paymentData.getAmountRemaining()).thenReturn(0L);
+
+        // When
+        ResponseEntity<?> response = paymentController.checkPayOSStatus(1, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    // ========== cancelPayOSPayment() Tests ==========
+
+    @Test
+    @DisplayName("shouldCancelPayOSPayment_successfully")
+    void shouldCancelPayOSPayment_successfully() {
+        // Given
+        PayOsService.CancelPaymentResponse cancelResponse = mock(PayOsService.CancelPaymentResponse.class);
+        
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(payOsService.cancelPayment(anyLong(), isNull())).thenReturn(cancelResponse);
+        when(cancelResponse.getCode()).thenReturn("00");
+        doNothing().when(paymentService).cancelPayment(1);
+
+        // When
+        ResponseEntity<?> response = paymentController.cancelPayOSPayment(1, "test reason", authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        verify(paymentService, times(1)).cancelPayment(1);
+    }
+
+    // ========== handlePayOSWebhook() Tests ==========
+
+    @Test
+    @DisplayName("shouldHandlePayOSWebhook_successfully")
+    void shouldHandlePayOSWebhook_successfully() {
+        // Given
+        String webhookBody = "{\"code\":\"00\",\"data\":{}}";
+        when(payOsService.verifyWebhook(anyString(), anyString())).thenReturn(true);
+        when(paymentService.handlePayOsWebhook(anyString())).thenReturn(true);
+
+        // When
+        ResponseEntity<?> response = paymentController.handlePayOSWebhook(webhookBody, "valid-signature");
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        verify(paymentService, times(1)).handlePayOsWebhook(webhookBody);
+    }
+
+    @Test
+    @DisplayName("shouldReturnError_whenInvalidWebhookSignature")
+    void shouldReturnError_whenInvalidWebhookSignature() {
+        // Given
+        String webhookBody = "{\"code\":\"00\",\"data\":{}}";
+        when(payOsService.verifyWebhook(anyString(), anyString())).thenReturn(false);
+
+        // When
+        ResponseEntity<?> response = paymentController.handlePayOSWebhook(webhookBody, "invalid-signature");
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+        verify(paymentService, never()).handlePayOsWebhook(anyString());
+    }
+
+    // ========== getPaymentStatus() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetPaymentStatus_successfully")
+    void shouldGetPaymentStatus_successfully() {
+        // Given
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+
+        // When
+        ResponseEntity<Payment> response = paymentController.getPaymentStatus(1, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        Payment responseBody = response.getBody();
+        assertNotNull(responseBody);
+        assertEquals(1, responseBody.getPaymentId());
+    }
+
+    @Test
+    @DisplayName("shouldReturn404_whenPaymentNotFoundForStatus")
+    void shouldReturn404_whenPaymentNotFoundForStatus() {
+        // Given
+        when(paymentService.findById(999)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<Payment> response = paymentController.getPaymentStatus(999, authentication);
+
+        // Then
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+    // ========== getPaymentHistory() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetPaymentHistory_successfully")
+    void shouldGetPaymentHistory_successfully() {
+        // Given
+        List<Payment> payments = Arrays.asList(payment);
+        when(paymentService.findByCustomer(any(Customer.class))).thenReturn(payments);
+
+        // When
+        ResponseEntity<List<Payment>> response = paymentController.getPaymentHistory(authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        List<Payment> responseBody = response.getBody();
+        assertNotNull(responseBody);
+        assertEquals(1, responseBody.size());
+    }
+
+    // ========== cancelPayment() Tests ==========
+
+    @Test
+    @DisplayName("shouldCancelPayment_successfully")
+    void shouldCancelPayment_successfully() {
+        // Given
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(paymentService.cancelPayment(1)).thenReturn(payment);
+
+        // When
+        ResponseEntity<String> response = paymentController.cancelPayment(1, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        verify(paymentService, times(1)).cancelPayment(1);
+    }
+
+    // ========== processFullRefund() Tests ==========
+
+    @Test
+    @DisplayName("shouldProcessFullRefund_successfully")
+    void shouldProcessFullRefund_successfully() {
+        // Given
+        payment.setStatus(PaymentStatus.COMPLETED);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(refundService.processFullRefund(eq(1), anyString()))
+            .thenReturn(payment);
+
+        // When
+        ResponseEntity<?> response = paymentController.processFullRefund(1, "test reason", authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        verify(refundService, times(1)).processFullRefund(eq(1), anyString());
+    }
+
+    // ========== processPartialRefund() Tests ==========
+
+    @Test
+    @DisplayName("shouldProcessPartialRefund_successfully")
+    void shouldProcessPartialRefund_successfully() {
+        // Given
+        payment.setStatus(PaymentStatus.COMPLETED);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(refundService.processPartialRefund(eq(1), any(BigDecimal.class), anyString()))
+            .thenReturn(payment);
+
+        // When
+        ResponseEntity<?> response = paymentController.processPartialRefund(1, "200000", 
+            "test reason", authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        verify(refundService, times(1)).processPartialRefund(eq(1), any(BigDecimal.class), anyString());
+    }
+
+    // ========== checkRefundEligibility() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckRefundEligibility_successfully")
+    void shouldCheckRefundEligibility_successfully() {
+        // Given
+        payment.setStatus(PaymentStatus.COMPLETED);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(refundService.canRefund(1)).thenReturn(true);
+
+        // When
+        ResponseEntity<?> response = paymentController.checkRefundEligibility(1, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        verify(refundService, times(1)).canRefund(1);
+    }
+
+    // ========== getRefundablePayments() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetRefundablePayments_successfully")
+    void shouldGetRefundablePayments_successfully() {
+        // Given
+        List<Payment> refundablePayments = Arrays.asList(payment);
+        when(refundService.getRefundablePayments()).thenReturn(refundablePayments);
+
+        // When
+        ResponseEntity<?> response = paymentController.getRefundablePayments(authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    // ========== getRefundInfo() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetRefundInfo_successfully")
+    void shouldGetRefundInfo_successfully() {
+        // Given
+        payment.setRefundedAt(LocalDateTime.now());
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(refundService.getRefundInfo(1)).thenReturn(Optional.of(payment));
+
+        // When
+        ResponseEntity<?> response = paymentController.getRefundInfo(1, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        verify(refundService, times(1)).getRefundInfo(1);
+    }
+
+    // ========== Error Handling Tests ==========
+
+    @Test
+    @DisplayName("shouldHandleException_whenProcessPaymentFails")
+    void shouldHandleException_whenProcessPaymentFails() {
+        // Given
+        when(paymentService.createPayment(eq(1), any(UUID.class), any(PaymentMethod.class), any(PaymentType.class), isNull()))
+            .thenThrow(new RuntimeException("Payment creation failed"));
+
+        // When
+        String view = paymentController.processPayment(1, PaymentMethod.PAYOS, PaymentType.DEPOSIT, null,
+            authentication, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("payment/"));
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("errorMessage"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldHandleException_whenShowPaymentFormFails")
+    void shouldHandleException_whenShowPaymentFormFails() {
+        // Given
+        when(bookingService.findBookingById(1)).thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String view = paymentController.showPaymentForm(1, model, authentication);
+
+        // Then
+        assertEquals("error/500", view);
     }
 
     @Test

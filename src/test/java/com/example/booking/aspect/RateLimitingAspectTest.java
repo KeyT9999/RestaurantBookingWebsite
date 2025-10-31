@@ -146,5 +146,125 @@ public class RateLimitingAspectTest {
         assertEquals("success", result);
         verify(rateLimitingService, times(1)).isGeneralAllowed("10.0.0.1");
     }
+
+    @Test
+    @DisplayName("shouldHandleChatRateLimit")
+    void shouldHandleChatRateLimit() throws Throwable {
+        // Given
+        when(rateLimited.value()).thenReturn(OperationType.CHAT);
+        when(rateLimitingService.isChatAllowed("192.168.1.1")).thenReturn(true);
+        when(request.getRemoteAddr()).thenReturn("192.168.1.1");
+        RequestContextHolder.setRequestAttributes(requestAttributes);
+        when(requestAttributes.getRequest()).thenReturn(request);
+        when(joinPoint.proceed()).thenReturn("success");
+
+        // When
+        Object result = rateLimitingAspect.handleRateLimit(joinPoint, rateLimited);
+
+        // Then
+        assertEquals("success", result);
+        verify(rateLimitingService, times(1)).isChatAllowed("192.168.1.1");
+    }
+
+    @Test
+    @DisplayName("shouldHandleReviewRateLimit")
+    void shouldHandleReviewRateLimit() throws Throwable {
+        // Given
+        when(rateLimited.value()).thenReturn(OperationType.REVIEW);
+        when(rateLimitingService.isReviewAllowed("192.168.1.1")).thenReturn(true);
+        when(request.getRemoteAddr()).thenReturn("192.168.1.1");
+        RequestContextHolder.setRequestAttributes(requestAttributes);
+        when(requestAttributes.getRequest()).thenReturn(request);
+        when(joinPoint.proceed()).thenReturn("success");
+
+        // When
+        Object result = rateLimitingAspect.handleRateLimit(joinPoint, rateLimited);
+
+        // Then
+        assertEquals("success", result);
+        verify(rateLimitingService, times(1)).isReviewAllowed("192.168.1.1");
+    }
+
+    @Test
+    @DisplayName("shouldUseXRealIp_whenXForwardedForNotPresent")
+    void shouldUseXRealIp_whenXForwardedForNotPresent() throws Throwable {
+        // Given
+        when(rateLimited.value()).thenReturn(OperationType.GENERAL);
+        when(rateLimitingService.isGeneralAllowed("192.168.1.100")).thenReturn(true);
+        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+        when(request.getHeader("X-Real-IP")).thenReturn("192.168.1.100");
+        RequestContextHolder.setRequestAttributes(requestAttributes);
+        when(requestAttributes.getRequest()).thenReturn(request);
+        when(joinPoint.proceed()).thenReturn("success");
+
+        // When
+        Object result = rateLimitingAspect.handleRateLimit(joinPoint, rateLimited);
+
+        // Then
+        assertEquals("success", result);
+        verify(rateLimitingService, times(1)).isGeneralAllowed("192.168.1.100");
+    }
+
+    @Test
+    @DisplayName("shouldUseFirstIp_whenXForwardedForHasMultipleIps")
+    void shouldUseFirstIp_whenXForwardedForHasMultipleIps() throws Throwable {
+        // Given
+        when(rateLimited.value()).thenReturn(OperationType.GENERAL);
+        when(rateLimitingService.isGeneralAllowed("10.0.0.1")).thenReturn(true);
+        when(request.getHeader("X-Forwarded-For")).thenReturn("10.0.0.1, 192.168.1.1, 172.16.0.1");
+        RequestContextHolder.setRequestAttributes(requestAttributes);
+        when(requestAttributes.getRequest()).thenReturn(request);
+        when(joinPoint.proceed()).thenReturn("success");
+
+        // When
+        Object result = rateLimitingAspect.handleRateLimit(joinPoint, rateLimited);
+
+        // Then
+        assertEquals("success", result);
+        verify(rateLimitingService, times(1)).isGeneralAllowed("10.0.0.1");
+    }
+
+    @Test
+    @DisplayName("shouldUseRemoteAddr_whenNoHeadersPresent")
+    void shouldUseRemoteAddr_whenNoHeadersPresent() throws Throwable {
+        // Given
+        when(rateLimited.value()).thenReturn(OperationType.GENERAL);
+        when(rateLimitingService.isGeneralAllowed("127.0.0.1")).thenReturn(true);
+        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+        when(request.getHeader("X-Real-IP")).thenReturn(null);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        RequestContextHolder.setRequestAttributes(requestAttributes);
+        when(requestAttributes.getRequest()).thenReturn(request);
+        when(joinPoint.proceed()).thenReturn("success");
+
+        // When
+        Object result = rateLimitingAspect.handleRateLimit(joinPoint, rateLimited);
+
+        // Then
+        assertEquals("success", result);
+        verify(rateLimitingService, times(1)).isGeneralAllowed("127.0.0.1");
+    }
+
+    @Test
+    @DisplayName("shouldBlockChat_whenRateLimitExceeded")
+    void shouldBlockChat_whenRateLimitExceeded() throws Throwable {
+        // Given
+        when(rateLimited.value()).thenReturn(OperationType.CHAT);
+        when(rateLimited.message()).thenReturn("Chat rate limit exceeded");
+        when(rateLimitingService.isChatAllowed("192.168.1.1")).thenReturn(false);
+        when(request.getRemoteAddr()).thenReturn("192.168.1.1");
+        RequestContextHolder.setRequestAttributes(requestAttributes);
+        when(requestAttributes.getRequest()).thenReturn(request);
+
+        // When
+        Object result = rateLimitingAspect.handleRateLimit(joinPoint, rateLimited);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result instanceof ResponseEntity);
+        ResponseEntity<?> response = (ResponseEntity<?>) result;
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
+        verify(joinPoint, never()).proceed();
+    }
 }
 
