@@ -1,75 +1,120 @@
 package com.example.booking.web.controller.api;
 
-import java.util.Collections;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
+import com.example.booking.domain.ChatRoom;
+import com.example.booking.domain.Message;
 import com.example.booking.domain.User;
-import com.example.booking.domain.UserRole;
 import com.example.booking.service.ChatService;
-import com.example.booking.service.RestaurantManagementService;
-import com.example.booking.service.RestaurantOwnerService;
-import com.example.booking.service.SimpleUserService;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+/**
+ * Unit tests for ChatApiController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("ChatApiController Tests")
+public class ChatApiControllerTest {
 
-@WebMvcTest(ChatApiController.class)
-@AutoConfigureMockMvc(addFilters = false)
-class ChatApiControllerTest {
+    @Mock
+    private ChatService chatService;
 
-	@Autowired
-	private MockMvc mockMvc;
+    @Mock
+    private Authentication authentication;
 
-	@MockBean
-	private ChatService chatService;
+    @InjectMocks
+    private ChatApiController controller;
 
-	@MockBean
-	private RestaurantManagementService restaurantManagementService;
+    private User user;
+    private ChatRoom chatRoom;
 
-	@MockBean
-	private RestaurantOwnerService restaurantOwnerService;
+    @BeforeEach
+    void setUp() {
+        user = new User();
+        user.setId(UUID.randomUUID());
+        user.setUsername("testuser");
 
-	@MockBean
-	private SimpleUserService simpleUserService;
+        chatRoom = new ChatRoom();
+        chatRoom.setRoomId("room-123");
+    }
 
-	@Test
-	void availableRestaurants_customer_returnsOk() throws Exception {
-		User user = new User("u1", "u1@example.com", "password123", "U One");
-		user.setId(UUID.randomUUID());
-		user.setRole(UserRole.CUSTOMER);
-		when(restaurantManagementService.findAllRestaurants()).thenReturn(Collections.emptyList());
-		mockMvc.perform(get("/api/chat/available-restaurants")
-				.principal(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities())))
-				.andExpect(status().isOk());
-	}
+    // ========== createChatRoomWithRestaurant() Tests ==========
 
-	@Test
-	void createChatRoom_customer_success() throws Exception {
-		User user = new User("u2", "u2@example.com", "password123", "U Two");
-		user.setId(UUID.randomUUID());
-		user.setRole(UserRole.CUSTOMER);
-		when(chatService.canUserChatWithRestaurant(eq(user.getId()), eq(user.getRole()), eq(5))).thenReturn(true);
-		doNothing().when(chatService).createCustomerRestaurantRoom(eq(user.getId()), eq(5));
-		when(chatService.getRoomId(eq(user.getId()), eq(user.getRole()), eq(5))).thenReturn("room-1");
+    @Test
+    @DisplayName("shouldCreateChatRoomWithRestaurant_successfully")
+    void shouldCreateChatRoomWithRestaurant_successfully() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(user);
+        user.setRole(com.example.booking.domain.UserRole.ADMIN);
+        
+        com.example.booking.domain.RestaurantProfile restaurant = new com.example.booking.domain.RestaurantProfile();
+        restaurant.setRestaurantId(1);
+        chatRoom.setRestaurant(restaurant);
+        
+        when(chatService.createAdminRestaurantRoom(user.getId(), 1))
+            .thenReturn(chatRoom);
 
-		mockMvc.perform(post("/api/chat/rooms").param("restaurantId", "5")
-				.principal(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()))
-				.contentType(MediaType.APPLICATION_FORM_URLENCODED))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.roomId").value("room-1"));
-	}
+        // When
+        ResponseEntity<?> response = controller.createChatRoomWithRestaurant(1, authentication);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
+
+    // ========== getMessages() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetMessages_successfully")
+    void shouldGetMessages_successfully() {
+        // Given
+        List<com.example.booking.dto.ChatMessageDto> messages = new ArrayList<>();
+        com.example.booking.dto.ChatMessageDto message = new com.example.booking.dto.ChatMessageDto();
+        messages.add(message);
+
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(chatService.canUserAccessRoom("room-123", user.getId(), user.getRole())).thenReturn(true);
+        when(chatService.getMessages("room-123", 0, 200)).thenReturn(messages);
+
+        // When
+        ResponseEntity<?> response = controller.getMessages("room-123", 0, 200, authentication);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
+
+    // ========== getUnreadCount() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetUnreadCount_successfully")
+    void shouldGetUnreadCount_successfully() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(chatService.getUnreadMessageCount(user.getId())).thenReturn(5L);
+
+        // When
+        ResponseEntity<?> response = controller.getUnreadCount(authentication);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
 }

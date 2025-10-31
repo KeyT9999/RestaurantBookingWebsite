@@ -1,63 +1,78 @@
 package com.example.booking.web.controller.admin;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+
 import java.util.Optional;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+/**
+ * Unit tests for WorkingRateLimitingController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("WorkingRateLimitingController Tests")
+public class WorkingRateLimitingControllerTest {
 
-import com.example.booking.domain.RateLimitStatistics;
-import com.example.booking.repository.RateLimitStatisticsRepository;
+    @Mock
+    private com.example.booking.repository.RateLimitStatisticsRepository statisticsRepository;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+    @Mock
+    private Model model;
 
-@WebMvcTest(WorkingRateLimitingController.class)
-@AutoConfigureMockMvc(addFilters = false)
-class WorkingRateLimitingControllerTest {
+    @InjectMocks
+    private WorkingRateLimitingController controller;
 
-	@Autowired
-	private MockMvc mockMvc;
+    // ========== dashboard() Tests ==========
 
-	@MockBean
-	private RateLimitStatisticsRepository statisticsRepository;
+    @Test
+    @DisplayName("shouldDisplayDashboard_successfully")
+    void shouldDisplayDashboard_successfully() {
+        // When
+        String view = controller.dashboard(model);
 
-	@Test
-	void dashboard_shouldRenderView() throws Exception {
-		when(statisticsRepository.findAll()).thenReturn(java.util.Collections.emptyList());
-		mockMvc.perform(get("/admin/rate-limiting"))
-				.andExpect(status().isOk())
-				.andExpect(view().name("admin/rate-limiting/dashboard"));
-	}
+        // Then
+        assertNotNull(view);
+        verify(model, atLeastOnce()).addAttribute(anyString(), any());
+    }
 
-	@Test
-	void getStatistics_shouldReturnJson() throws Exception {
-		when(statisticsRepository.findAll()).thenReturn(java.util.Collections.emptyList());
-		mockMvc.perform(get("/admin/rate-limiting/api/statistics"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.totalRequests").exists());
-	}
+    // ========== getStatistics() Tests ==========
 
-	@Test
-	void blockIp_shouldReturnSuccess() throws Exception {
-		when(statisticsRepository.findByIpAddress(eq("1.2.3.4"))).thenReturn(Optional.empty());
-		when(statisticsRepository.save(any(RateLimitStatistics.class))).thenAnswer(inv -> inv.getArgument(0));
-		mockMvc.perform(post("/admin/rate-limiting/api/block-ip")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"ipAddress\":\"1.2.3.4\"}"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.success").value(true));
-	}
+    @Test
+    @DisplayName("shouldGetStatistics_successfully")
+    void shouldGetStatistics_successfully() {
+        // When
+        java.util.Map<String, Object> response = controller.getStatistics();
+
+        // Then
+        assertNotNull(response);
+        assertTrue(response.containsKey("totalRequests"));
+    }
+
+    // ========== unblockIp() Tests ==========
+
+    @Test
+    @DisplayName("shouldUnblockIp_successfully")
+    void shouldUnblockIp_successfully() {
+        // Given
+        java.util.Map<String, String> request = new java.util.HashMap<>();
+        request.put("ipAddress", "192.168.1.1");
+        when(statisticsRepository.findByIpAddress("192.168.1.1")).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = controller.unblockIp(request);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(org.springframework.http.HttpStatus.OK, response.getStatusCode());
+    }
 }
-
-

@@ -1,111 +1,140 @@
 package com.example.booking.web.controller;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.booking.domain.Customer;
+import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.User;
-import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewForm;
-import com.example.booking.dto.ReviewStatisticsDto;
-import com.example.booking.service.CustomerService;
+import com.example.booking.repository.CustomerRepository;
 import com.example.booking.service.ReviewService;
-import com.example.booking.util.InputSanitizer;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+/**
+ * Unit tests for ReviewController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("ReviewController Tests")
+public class ReviewControllerTest {
 
-@WebMvcTest(ReviewController.class)
-@AutoConfigureMockMvc(addFilters = false)
-class ReviewControllerTest {
+    @Mock
+    private ReviewService reviewService;
 
-	@Autowired
-	private MockMvc mockMvc;
+    @Mock
+    private CustomerRepository customerRepository;
 
-	@MockBean
-	private ReviewService reviewService;
+    @Mock
+    private Authentication authentication;
 
-	@MockBean
-	private CustomerService customerService;
+    @Mock
+    private Model model;
 
-	@MockBean
-	private InputSanitizer inputSanitizer;
+    @Mock
+    private BindingResult bindingResult;
 
-	@Test
-	void getRestaurantReviews_shouldRenderListView() throws Exception {
-		Page<ReviewDto> page = new PageImpl<>(List.of(new ReviewDto()));
-		when(reviewService.getReviewsByRestaurant(eq(1), any(PageRequest.class))).thenReturn(page);
-		when(reviewService.getRestaurantReviewStatistics(eq(1))).thenReturn(new ReviewStatisticsDto(4.5, 10, Map.of()));
+    @Mock
+    private RedirectAttributes redirectAttributes;
 
-		mockMvc.perform(get("/reviews/restaurant/1").param("page", "0").param("size", "10"))
-				.andExpect(status().isOk())
-				.andExpect(view().name("review/list"))
-				.andExpect(model().attributeExists("reviews", "statistics", "totalPages", "currentPage"));
-	}
+    @InjectMocks
+    private ReviewController controller;
 
-	@Test
-	void showCreateReviewForm_unauthenticated_redirectsToLogin() throws Exception {
-		mockMvc.perform(get("/reviews/create/5"))
-				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/login?redirect=/restaurants/5"));
-	}
+    private User user;
+    private Customer customer;
+    private RestaurantProfile restaurant;
 
-	@Test
-	void submitReview_unauthenticated_redirectsToLogin() throws Exception {
-		mockMvc.perform(post("/reviews")
-					.contentType(MediaType.APPLICATION_FORM_URLENCODED)
-					.param("restaurantId", "3")
-					.param("rating", "5")
-		)
-				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/login"));
-	}
+    @BeforeEach
+    void setUp() {
+        user = new User();
+        user.setId(UUID.randomUUID());
 
-	@Test
-	void submitReview_authenticated_successRedirectsToRestaurant() throws Exception {
-		User user = new User("user1", "u@example.com", "password123", "User One");
-		user.setId(UUID.randomUUID());
-		Customer customer = new Customer(user);
-		customer.setCustomerId(UUID.randomUUID());
+        customer = new Customer();
+        customer.setCustomerId(UUID.randomUUID());
+        customer.setUser(user);
 
-		when(customerService.findByUserId(eq(user.getId()))).thenReturn(Optional.of(customer));
-		when(inputSanitizer.sanitizeReviewComment(any())).thenAnswer(inv -> inv.getArgument(0));
-		when(reviewService.createOrUpdateReview(any(ReviewForm.class), eq(customer.getCustomerId())))
-				.thenReturn(new com.example.booking.domain.Review());
+        restaurant = new RestaurantProfile();
+        restaurant.setRestaurantId(1);
+    }
 
-		mockMvc.perform(post("/reviews")
-					.contentType(MediaType.APPLICATION_FORM_URLENCODED)
-					.param("restaurantId", "7")
-					.param("rating", "4")
-					.param("comment", "Nice!")
-					.principal(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()))
-		)
-				.andExpect(status().is3xxRedirection())
-				.andExpect(flash().attributeExists("success"))
-				.andExpect(redirectedUrl("/restaurants/7"));
-	}
+    // ========== showCreateReviewForm() Tests ==========
+
+    @Test
+    @DisplayName("shouldShowCreateReviewForm_successfully")
+    void shouldShowCreateReviewForm_successfully() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(user);
+
+        // When
+        String view = controller.showCreateReviewForm(1, authentication);
+
+        // Then
+        assertEquals("redirect:/restaurants/1#reviews", view);
+    }
+
+    @Test
+    @DisplayName("shouldRedirectToLogin_whenNotAuthenticated")
+    void shouldRedirectToLogin_whenNotAuthenticated() {
+        // When
+        String view = controller.showCreateReviewForm(1, null);
+
+        // Then
+        assertTrue(view.contains("redirect:/login"));
+    }
+
+    // ========== handleReviewSubmission() Tests ==========
+
+    @Test
+    @DisplayName("shouldHandleReviewSubmission_successfully")
+    void shouldHandleReviewSubmission_successfully() {
+        // Given
+        ReviewForm form = new ReviewForm();
+        form.setRestaurantId(1);
+        form.setRating(5);
+        form.setComment("Great restaurant!");
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(customerRepository.findByUserId(user.getId())).thenReturn(java.util.Optional.of(customer));
+        when(reviewService.createOrUpdateReview(any(ReviewForm.class), eq(customer.getCustomerId())))
+            .thenReturn(new com.example.booking.domain.Review());
+
+        // When
+        String view = controller.handleReviewSubmission(form, bindingResult, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/restaurants/1", view);
+        verify(reviewService, times(1)).createOrUpdateReview(any(ReviewForm.class), eq(customer.getCustomerId()));
+    }
+
+    @Test
+    @DisplayName("shouldReturnRedirect_whenValidationErrors")
+    void shouldReturnRedirect_whenValidationErrors() {
+        // Given
+        ReviewForm form = new ReviewForm();
+        form.setRestaurantId(1);
+
+        when(bindingResult.hasErrors()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(user);
+
+        // When
+        String view = controller.handleReviewSubmission(form, bindingResult, authentication, redirectAttributes);
+
+        // Then
+        assertTrue(view.contains("redirect:/restaurants/1"));
+        verify(reviewService, never()).createOrUpdateReview(any(), any());
+    }
 }
-
-

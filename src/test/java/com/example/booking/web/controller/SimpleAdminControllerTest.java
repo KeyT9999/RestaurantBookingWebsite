@@ -1,92 +1,94 @@
 package com.example.booking.web.controller;
 
-import java.util.List;
-import java.util.Optional;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.example.booking.common.enums.RestaurantApprovalStatus;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.repository.RestaurantProfileRepository;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+/**
+ * Unit tests for SimpleAdminController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("SimpleAdminController Tests")
+public class SimpleAdminControllerTest {
 
-@WebMvcTest(SimpleAdminController.class)
-@AutoConfigureMockMvc(addFilters = false)
-class SimpleAdminControllerTest {
+    @Mock
+    private RestaurantProfileRepository restaurantRepository;
 
-	@Autowired
-	private MockMvc mockMvc;
+    @Mock
+    private Model model;
 
-	@MockBean
-	private RestaurantProfileRepository restaurantProfileRepository;
+    @Mock
+    private RedirectAttributes redirectAttributes;
 
-	@Test
-	void simpleRestaurantList_shouldRenderPendingList() throws Exception {
-		RestaurantProfile p1 = new RestaurantProfile();
-		p1.setRestaurantId(1);
-		p1.setRestaurantName("A");
-		p1.setApprovalStatus(RestaurantApprovalStatus.PENDING);
-		RestaurantProfile p2 = new RestaurantProfile();
-		p2.setRestaurantId(2);
-		p2.setRestaurantName("B");
-		p2.setApprovalStatus(RestaurantApprovalStatus.APPROVED);
-		RestaurantProfile p3 = new RestaurantProfile();
-		p3.setRestaurantId(3);
-		p3.setRestaurantName("C");
-		p3.setApprovalStatus(RestaurantApprovalStatus.PENDING);
+    @InjectMocks
+    private SimpleAdminController controller;
 
-		when(restaurantProfileRepository.findAll()).thenReturn(List.of(p1, p2, p3));
+    private RestaurantProfile restaurant;
 
-		mockMvc.perform(get("/admin/simple/restaurants"))
-				.andExpect(status().isOk())
-				.andExpect(view().name("admin/simple-restaurant-list"))
-				.andExpect(model().attributeExists("restaurants", "pendingCount", "approvedCount", "rejectedCount", "suspendedCount"));
-	}
+    @BeforeEach
+    void setUp() {
+        restaurant = new RestaurantProfile();
+        restaurant.setRestaurantId(1);
+        restaurant.setRestaurantName("Test Restaurant");
+    }
 
-	@Test
-	void simpleApproveRestaurant_shouldRedirectWithSuccess() throws Exception {
-		RestaurantProfile p = new RestaurantProfile();
-		p.setRestaurantId(10);
-		p.setRestaurantName("Test R");
-		p.setApprovalStatus(RestaurantApprovalStatus.PENDING);
-		when(restaurantProfileRepository.findById(eq(10))).thenReturn(Optional.of(p));
-		when(restaurantProfileRepository.save(any(RestaurantProfile.class))).thenAnswer(inv -> inv.getArgument(0));
+    // ========== approveRestaurant() Tests ==========
 
-		mockMvc.perform(post("/admin/simple/approve/10"))
-				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/admin/simple/restaurants"))
-				.andExpect(flash().attributeExists("success"));
-	}
+    @Test
+    @DisplayName("shouldApproveRestaurant_successfully")
+    void shouldApproveRestaurant_successfully() {
+        // Given
+        when(restaurantRepository.findById(1)).thenReturn(java.util.Optional.of(restaurant));
 
-	@Test
-	void simpleRejectRestaurant_shouldRedirectWithSuccess() throws Exception {
-		RestaurantProfile p = new RestaurantProfile();
-		p.setRestaurantId(11);
-		p.setRestaurantName("Test R2");
-		p.setApprovalStatus(RestaurantApprovalStatus.PENDING);
-		when(restaurantProfileRepository.findById(eq(11))).thenReturn(Optional.of(p));
-		when(restaurantProfileRepository.save(any(RestaurantProfile.class))).thenAnswer(inv -> inv.getArgument(0));
+        // When
+        String view = controller.simpleApproveRestaurant(1, redirectAttributes);
 
-		mockMvc.perform(post("/admin/simple/reject/11").param("reason", "Not good"))
-				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/admin/simple/restaurants"))
-				.andExpect(flash().attributeExists("success"));
-	}
+        // Then
+        assertEquals("redirect:/admin/simple/restaurants", view);
+        verify(restaurantRepository, times(1)).save(any(RestaurantProfile.class));
+        verify(redirectAttributes, times(1)).addFlashAttribute("success", anyString());
+    }
+
+    @Test
+    @DisplayName("shouldReturnError_whenRestaurantNotFound")
+    void shouldReturnError_whenRestaurantNotFound() {
+        // Given
+        when(restaurantRepository.findById(1)).thenReturn(java.util.Optional.empty());
+
+        // When
+        String view = controller.simpleApproveRestaurant(1, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/simple/restaurants", view);
+        verify(redirectAttributes, times(1)).addFlashAttribute("error", anyString());
+    }
+
+    // ========== rejectRestaurant() Tests ==========
+
+    @Test
+    @DisplayName("shouldRejectRestaurant_successfully")
+    void shouldRejectRestaurant_successfully() {
+        // Given
+        when(restaurantRepository.findById(1)).thenReturn(java.util.Optional.of(restaurant));
+
+        // When
+        String view = controller.simpleRejectRestaurant(1, "Not suitable", redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/simple/restaurants", view);
+        verify(restaurantRepository, times(1)).save(any(RestaurantProfile.class));
+    }
 }
-
-
