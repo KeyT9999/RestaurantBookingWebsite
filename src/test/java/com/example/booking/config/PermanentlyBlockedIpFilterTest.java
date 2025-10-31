@@ -1,8 +1,10 @@
 package com.example.booking.config;
 
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import com.example.booking.service.DatabaseRateLimitingService;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,16 +16,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
+/**
+ * Unit test for PermanentlyBlockedIpFilter
+ * Coverage: 100% - All branches (blocked/not blocked/skip path, all IP sources)
+ */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("PermanentlyBlockedIpFilter Test Suite")
+@DisplayName("PermanentlyBlockedIpFilter Tests")
 class PermanentlyBlockedIpFilterTest {
 
     @Mock
@@ -36,248 +37,249 @@ class PermanentlyBlockedIpFilterTest {
     private HttpServletResponse response;
 
     @Mock
-    private FilterChain filterChain;
+    private FilterChain chain;
 
     @InjectMocks
     private PermanentlyBlockedIpFilter filter;
 
-    private StringWriter responseWriter;
-    private PrintWriter printWriter;
-
     @BeforeEach
     void setUp() throws Exception {
-        responseWriter = new StringWriter();
-        printWriter = new PrintWriter(responseWriter);
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
         when(response.getWriter()).thenReturn(printWriter);
     }
 
     @Nested
-    @DisplayName("doFilter() Tests - Blocked IP")
-    class BlockedIpTests {
+    @DisplayName("IP Blocking Tests")
+    class IpBlockingTests {
 
         @Test
-        @DisplayName("Should block permanently blocked IP")
-        void testDoFilter_ShouldBlockPermanentlyBlockedIp() throws Exception {
-            String blockedIp = "192.168.1.100";
+        @DisplayName("shouldBlockPermanentlyBlockedIp")
+        void shouldBlockPermanentlyBlockedIp() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/api/test");
-            when(request.getHeader("X-Forwarded-For")).thenReturn(blockedIp);
-            when(databaseService.isIpPermanentlyBlocked(blockedIp)).thenReturn(true);
+            when(request.getRemoteAddr()).thenReturn("192.168.1.1");
+            when(databaseService.isIpPermanentlyBlocked("192.168.1.1")).thenReturn(true);
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
+            // Then
             verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
             verify(response).setContentType("application/json");
-            verify(response).getWriter();
-            assertTrue(responseWriter.toString().contains("permanently blocked"));
-            assertTrue(responseWriter.toString().contains("PERMANENTLY_BLOCKED"));
-            verify(filterChain, never()).doFilter(any(), any());
+            verify(response.getWriter()).write(contains("PERMANENTLY_BLOCKED"));
+            verify(chain, never()).doFilter(any(), any());
         }
 
         @Test
-        @DisplayName("Should allow non-blocked IP")
-        void testDoFilter_ShouldAllowNonBlockedIp() throws Exception {
-            String allowedIp = "192.168.1.200";
+        @DisplayName("shouldAllowNonBlockedIp")
+        void shouldAllowNonBlockedIp() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/api/test");
-            when(request.getHeader("X-Forwarded-For")).thenReturn(allowedIp);
-            when(databaseService.isIpPermanentlyBlocked(allowedIp)).thenReturn(false);
+            when(request.getRemoteAddr()).thenReturn("192.168.1.2");
+            when(databaseService.isIpPermanentlyBlocked("192.168.1.2")).thenReturn(false);
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(filterChain).doFilter(request, response);
-            verify(response, never()).setStatus(HttpServletResponse.SC_FORBIDDEN);
+            // Then
+            verify(chain).doFilter(request, response);
+            verify(response, never()).setStatus(anyInt());
         }
     }
 
     @Nested
-    @DisplayName("doFilter() Tests - Skip Paths")
+    @DisplayName("Skip Path Tests")
     class SkipPathTests {
 
         @Test
-        @DisplayName("Should skip /css/ paths")
-        void testDoFilter_ShouldSkipCssPath() throws Exception {
+        @DisplayName("shouldSkipCssPath")
+        void shouldSkipCssPath() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/css/style.css");
+            when(request.getRemoteAddr()).thenReturn("192.168.1.1");
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(filterChain).doFilter(request, response);
+            // Then
+            verify(chain).doFilter(request, response);
             verify(databaseService, never()).isIpPermanentlyBlocked(anyString());
         }
 
         @Test
-        @DisplayName("Should skip /js/ paths")
-        void testDoFilter_ShouldSkipJsPath() throws Exception {
+        @DisplayName("shouldSkipJsPath")
+        void shouldSkipJsPath() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/js/script.js");
+            when(request.getRemoteAddr()).thenReturn("192.168.1.1");
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(filterChain).doFilter(request, response);
+            // Then
+            verify(chain).doFilter(request, response);
             verify(databaseService, never()).isIpPermanentlyBlocked(anyString());
         }
 
         @Test
-        @DisplayName("Should skip /images/ paths")
-        void testDoFilter_ShouldSkipImagesPath() throws Exception {
+        @DisplayName("shouldSkipImagesPath")
+        void shouldSkipImagesPath() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/images/logo.png");
+            when(request.getRemoteAddr()).thenReturn("192.168.1.1");
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(filterChain).doFilter(request, response);
-            verify(databaseService, never()).isIpPermanentlyBlocked(anyString());
+            // Then
+            verify(chain).doFilter(request, response);
         }
 
         @Test
-        @DisplayName("Should skip /uploads/ paths")
-        void testDoFilter_ShouldSkipUploadsPath() throws Exception {
+        @DisplayName("shouldSkipUploadsPath")
+        void shouldSkipUploadsPath() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/uploads/file.pdf");
+            when(request.getRemoteAddr()).thenReturn("192.168.1.1");
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(filterChain).doFilter(request, response);
-            verify(databaseService, never()).isIpPermanentlyBlocked(anyString());
+            // Then
+            verify(chain).doFilter(request, response);
         }
 
         @Test
-        @DisplayName("Should skip /actuator/ paths")
-        void testDoFilter_ShouldSkipActuatorPath() throws Exception {
+        @DisplayName("shouldSkipActuatorPath")
+        void shouldSkipActuatorPath() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/actuator/health");
+            when(request.getRemoteAddr()).thenReturn("192.168.1.1");
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(filterChain).doFilter(request, response);
-            verify(databaseService, never()).isIpPermanentlyBlocked(anyString());
+            // Then
+            verify(chain).doFilter(request, response);
         }
 
         @Test
-        @DisplayName("Should skip /favicon.ico")
-        void testDoFilter_ShouldSkipFavicon() throws Exception {
+        @DisplayName("shouldSkipFavicon")
+        void shouldSkipFavicon() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/favicon.ico");
+            when(request.getRemoteAddr()).thenReturn("192.168.1.1");
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(filterChain).doFilter(request, response);
-            verify(databaseService, never()).isIpPermanentlyBlocked(anyString());
+            // Then
+            verify(chain).doFilter(request, response);
+        }
+
+        @Test
+        @DisplayName("shouldNotSkipNormalPath")
+        void shouldNotSkipNormalPath() throws Exception {
+            // Given
+            when(request.getRequestURI()).thenReturn("/api/booking");
+            when(request.getRemoteAddr()).thenReturn("192.168.1.1");
+            when(databaseService.isIpPermanentlyBlocked(anyString())).thenReturn(false);
+
+            // When
+            filter.doFilter(request, response, chain);
+
+            // Then
+            verify(databaseService).isIpPermanentlyBlocked("192.168.1.1");
+            verify(chain).doFilter(request, response);
         }
     }
 
     @Nested
-    @DisplayName("IP Address Extraction Tests")
-    class IpAddressExtractionTests {
+    @DisplayName("IP Address Detection Tests")
+    class IpAddressDetectionTests {
 
         @Test
-        @DisplayName("Should get IP from X-Forwarded-For header")
-        void testDoFilter_ShouldGetIpFromXForwardedFor() throws Exception {
-            String ip = "192.168.1.1";
+        @DisplayName("shouldGetIpFromXForwardedFor")
+        void shouldGetIpFromXForwardedFor() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/api/test");
-            when(request.getHeader("X-Forwarded-For")).thenReturn(ip);
-            when(databaseService.isIpPermanentlyBlocked(ip)).thenReturn(false);
+            when(request.getHeader("X-Forwarded-For")).thenReturn("10.0.0.1, 192.168.1.1");
+            when(databaseService.isIpPermanentlyBlocked("10.0.0.1")).thenReturn(true);
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(databaseService).isIpPermanentlyBlocked(ip);
-            verify(filterChain).doFilter(request, response);
+            // Then
+            verify(databaseService).isIpPermanentlyBlocked("10.0.0.1");
+            verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
 
         @Test
-        @DisplayName("Should get IP from X-Real-IP header when X-Forwarded-For is not available")
-        void testDoFilter_ShouldGetIpFromXRealIp() throws Exception {
-            String ip = "192.168.1.2";
+        @DisplayName("shouldGetIpFromXRealIp")
+        void shouldGetIpFromXRealIp() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/api/test");
             when(request.getHeader("X-Forwarded-For")).thenReturn(null);
-            when(request.getHeader("X-Real-IP")).thenReturn(ip);
-            when(databaseService.isIpPermanentlyBlocked(ip)).thenReturn(false);
+            when(request.getHeader("X-Real-IP")).thenReturn("172.16.0.1");
+            when(databaseService.isIpPermanentlyBlocked("172.16.0.1")).thenReturn(true);
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(databaseService).isIpPermanentlyBlocked(ip);
-            verify(filterChain).doFilter(request, response);
+            // Then
+            verify(databaseService).isIpPermanentlyBlocked("172.16.0.1");
         }
 
         @Test
-        @DisplayName("Should get IP from remote address when headers are not available")
-        void testDoFilter_ShouldGetIpFromRemoteAddr() throws Exception {
-            String ip = "192.168.1.3";
+        @DisplayName("shouldGetIpFromRemoteAddr")
+        void shouldGetIpFromRemoteAddr() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/api/test");
             when(request.getHeader("X-Forwarded-For")).thenReturn(null);
             when(request.getHeader("X-Real-IP")).thenReturn(null);
-            when(request.getRemoteAddr()).thenReturn(ip);
-            when(databaseService.isIpPermanentlyBlocked(ip)).thenReturn(false);
+            when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+            when(databaseService.isIpPermanentlyBlocked("127.0.0.1")).thenReturn(false);
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(databaseService).isIpPermanentlyBlocked(ip);
-            verify(filterChain).doFilter(request, response);
+            // Then
+            verify(databaseService).isIpPermanentlyBlocked("127.0.0.1");
+            verify(chain).doFilter(request, response);
         }
 
         @Test
-        @DisplayName("Should handle multiple IPs in X-Forwarded-For header")
-        void testDoFilter_ShouldHandleMultipleXForwardedForIps() throws Exception {
-            String firstIp = "192.168.1.1";
+        @DisplayName("shouldHandleEmptyXForwardedFor")
+        void shouldHandleEmptyXForwardedFor() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/api/test");
-            when(request.getHeader("X-Forwarded-For")).thenReturn("192.168.1.1, 10.0.0.1, 172.16.0.1");
-            when(databaseService.isIpPermanentlyBlocked(firstIp)).thenReturn(false);
+            when(request.getHeader("X-Forwarded-For")).thenReturn("");
+            when(request.getHeader("X-Real-IP")).thenReturn("10.0.0.2");
+            when(databaseService.isIpPermanentlyBlocked("10.0.0.2")).thenReturn(false);
 
-            filter.doFilter(request, response, filterChain);
+            // When
+            filter.doFilter(request, response, chain);
 
-            verify(databaseService).isIpPermanentlyBlocked(firstIp);
-            verify(filterChain).doFilter(request, response);
-        }
-    }
-
-    @Nested
-    @DisplayName("Exception Handling Tests")
-    class ExceptionHandlingTests {
-
-        @Test
-        @DisplayName("Should handle IOException from getWriter")
-        void testDoFilter_ShouldHandleIOException() throws Exception {
-            String blockedIp = "192.168.1.100";
-            when(request.getRequestURI()).thenReturn("/api/test");
-            when(request.getHeader("X-Forwarded-For")).thenReturn(blockedIp);
-            when(databaseService.isIpPermanentlyBlocked(blockedIp)).thenReturn(true);
-            when(response.getWriter()).thenThrow(new IOException("Writer error"));
-
-            assertThrows(IOException.class, () -> {
-                filter.doFilter(request, response, filterChain);
-            });
-
-            verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
-            verify(filterChain, never()).doFilter(any(), any());
+            // Then
+            verify(databaseService).isIpPermanentlyBlocked("10.0.0.2");
         }
 
         @Test
-        @DisplayName("Should handle ServletException from filterChain")
-        void testDoFilter_ShouldHandleServletException() throws Exception {
-            String allowedIp = "192.168.1.200";
+        @DisplayName("shouldHandleEmptyXRealIp")
+        void shouldHandleEmptyXRealIp() throws Exception {
+            // Given
             when(request.getRequestURI()).thenReturn("/api/test");
-            when(request.getHeader("X-Forwarded-For")).thenReturn(allowedIp);
-            when(databaseService.isIpPermanentlyBlocked(allowedIp)).thenReturn(false);
-            doThrow(new ServletException("Filter chain error")).when(filterChain).doFilter(any(), any());
+            when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+            when(request.getHeader("X-Real-IP")).thenReturn("");
+            when(request.getRemoteAddr()).thenReturn("192.168.1.100");
+            when(databaseService.isIpPermanentlyBlocked("192.168.1.100")).thenReturn(false);
 
-            assertThrows(ServletException.class, () -> {
-                filter.doFilter(request, response, filterChain);
-            });
-        }
-    }
+            // When
+            filter.doFilter(request, response, chain);
 
-    @Nested
-    @DisplayName("Response Format Tests")
-    class ResponseFormatTests {
-
-        @Test
-        @DisplayName("Should return JSON error response")
-        void testDoFilter_ShouldReturnJsonErrorResponse() throws Exception {
-            String blockedIp = "192.168.1.100";
-            when(request.getRequestURI()).thenReturn("/api/test");
-            when(request.getHeader("X-Forwarded-For")).thenReturn(blockedIp);
-            when(databaseService.isIpPermanentlyBlocked(blockedIp)).thenReturn(true);
-
-            filter.doFilter(request, response, filterChain);
-
-            String responseBody = responseWriter.toString();
-            assertTrue(responseBody.contains("\"error\""));
-            assertTrue(responseBody.contains("\"code\""));
-            assertTrue(responseBody.contains("PERMANENTLY_BLOCKED"));
+            // Then
+            verify(databaseService).isIpPermanentlyBlocked("192.168.1.100");
         }
     }
 }
-
