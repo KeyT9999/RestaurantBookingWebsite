@@ -1,34 +1,66 @@
 package com.example.booking.common.api;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+public class ApiResponseTest {
 
-class ApiResponseTest {
+    @Test
+    void successFactoryWithDataShouldPopulateFields() {
+        ApiResponse<String> response = ApiResponse.success("Success", "payload");
 
-	@Test
-	void success_withData_shouldPopulateFields() {
-		ApiResponse<String> res = ApiResponse.success("ok", "data");
-		assertTrue(res.isSuccess());
-		assertEquals("ok", res.getMessage());
-		assertEquals("data", res.getData());
-	}
+        assertTrue(response.isSuccess());
+        assertEquals("Success", response.getMessage());
+        assertEquals("payload", response.getData());
+    }
 
-	@Test
-	void success_withoutData_shouldHaveNullData() {
-		ApiResponse<Void> res = ApiResponse.success("done");
-		assertTrue(res.isSuccess());
-		assertEquals("done", res.getMessage());
-		assertNull(res.getData());
-	}
+    @Test
+    void successFactoryWithoutDataShouldHaveNullData() {
+        ApiResponse<String> response = ApiResponse.success("Done");
 
-	@Test
-	void error_shouldSetSuccessFalse() {
-		ApiResponse<Void> res = ApiResponse.error("err");
-		assertFalse(res.isSuccess());
-		assertEquals("err", res.getMessage());
-		assertNull(res.getData());
-	}
+        assertTrue(response.isSuccess());
+        assertEquals("Done", response.getMessage());
+        assertNull(response.getData());
+    }
+
+    @Test
+    void errorFactoryShouldMarkFailure() {
+        ApiResponse<String> response = ApiResponse.error("Error occurred");
+
+        assertFalse(response.isSuccess());
+        assertEquals("Error occurred", response.getMessage());
+        assertNull(response.getData());
+    }
+
+    @Test
+    void settersShouldAllowManualConstruction() {
+        ApiResponse<Integer> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setMessage("Manual");
+        response.setData(42);
+
+        assertTrue(response.isSuccess());
+        assertEquals("Manual", response.getMessage());
+        assertEquals(42, response.getData());
+    }
+
+    @Test
+    void parameterizedConstructorShouldSetAllFields() {
+        ApiResponse<String> response = new ApiResponse<>(false, "Created", "body");
+
+        assertFalse(response.isSuccess());
+        assertEquals("Created", response.getMessage());
+        assertEquals("body", response.getData());
+
+        response.setSuccess(true);
+        response.setData("updated");
+
+        assertTrue(response.isSuccess());
+        assertEquals("updated", response.getData());
+    }
 }
-
 

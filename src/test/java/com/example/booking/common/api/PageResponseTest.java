@@ -1,15 +1,15 @@
 package com.example.booking.common.api;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class PageResponseTest {
+import org.junit.jupiter.api.Test;
 
-	@Test
-	void canInstantiate() {
-		assertNotNull(new PageResponse());
-	}
+public class PageResponseTest {
+
+    @Test
+    void shouldInstantiatePageResponse() {
+        PageResponse pageResponse = new PageResponse();
+        assertNotNull(pageResponse);
+    }
 }
-
 

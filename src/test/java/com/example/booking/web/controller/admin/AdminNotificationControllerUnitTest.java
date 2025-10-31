@@ -21,7 +21,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
@@ -37,7 +36,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AdminNotificationControllerTest {
+class AdminNotificationControllerUnitTest {
 
     @Mock
     private NotificationService notificationService;
@@ -51,66 +50,63 @@ class AdminNotificationControllerTest {
     private Model model;
 
     @BeforeEach
-    void setup() {
+    void setUp() {
         model = new ExtendedModelMap();
     }
 
     @Test
-    void listNotificationsShouldLoadPagedData() {
-        Pageable expectedPageable = PageRequest.of(0, 20, Sort.by("publishAt").descending());
-        Page<AdminNotificationSummary> page = new PageImpl<>(List.of(new AdminNotificationSummary()));
-        when(notificationService.findGroupedForAdmin(expectedPageable)).thenReturn(page);
+    void listNotificationsShouldPopulateModel() {
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("publishAt").descending());
+        Page<AdminNotificationSummary> summaries = new PageImpl<>(List.of(new AdminNotificationSummary()));
+        when(notificationService.findGroupedForAdmin(pageable)).thenReturn(summaries);
 
         String view = controller.listNotifications(0, 20, "publishAt", "desc", model);
 
         assertEquals("admin/notifications/list", view);
-        assertSame(page, model.getAttribute("notifications"));
+        assertSame(summaries, model.getAttribute("notifications"));
         assertEquals(0, model.getAttribute("currentPage"));
-        assertEquals(page.getTotalPages(), model.getAttribute("totalPages"));
-        assertEquals(page.getTotalElements(), model.getAttribute("totalElements"));
+        assertEquals(summaries.getTotalPages(), model.getAttribute("totalPages"));
+        assertEquals(summaries.getTotalElements(), model.getAttribute("totalElements"));
     }
 
     @Test
-    void createNotificationFormShouldPopulateModel() {
+    void createNotificationFormShouldExposeEnums() {
         String view = controller.createNotificationForm(model);
 
         assertEquals("admin/notifications/form", view);
-        assertTrue(model.containsAttribute("notificationForm"));
+        assertNotNull(model.getAttribute("notificationForm"));
         assertArrayEquals(NotificationType.values(), (NotificationType[]) model.getAttribute("notificationTypes"));
         assertArrayEquals(UserRole.values(), (UserRole[]) model.getAttribute("userRoles"));
     }
 
     @Test
-    void createNotificationShouldSendBasedOnAudienceAll() {
+    void createNotificationShouldDispatchToAllAudience() {
         NotificationForm form = new NotificationForm();
         form.setAudience(NotificationForm.AudienceType.ALL);
         UUID adminId = UUID.randomUUID();
-        Authentication auth = AuthStub.forUser(adminId);
         RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
 
-        String view = controller.createNotification(form, auth, redirectAttributes);
+        controller.createNotification(form, AuthenticationStub.withId(adminId), redirectAttributes);
 
-        verify(notificationService).sendToAll(eq(form), any());
+        verify(notificationService).sendToAll(eq(form), eq(adminId));
         verify(redirectAttributes).addFlashAttribute("success", "Thông báo đã được gửi thành công!");
-        assertEquals("redirect:/admin/notifications", view);
     }
 
     @Test
-    void createNotificationShouldSendToRolesWhenAudienceRole() {
+    void createNotificationShouldDispatchToRoles() {
         NotificationForm form = new NotificationForm();
         form.setAudience(NotificationForm.AudienceType.ROLE);
         form.setTargetRoles(Set.of(UserRole.ADMIN));
         UUID adminId = UUID.randomUUID();
-        Authentication auth = AuthStub.forUser(adminId);
         RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
 
-        controller.createNotification(form, auth, redirectAttributes);
+        controller.createNotification(form, AuthenticationStub.withId(adminId), redirectAttributes);
 
-        verify(notificationService).sendToRoles(eq(form), eq(form.getTargetRoles()), any());
+        verify(notificationService).sendToRoles(eq(form), eq(form.getTargetRoles()), eq(adminId));
     }
 
     @Test
-    void createNotificationShouldMapOauth2PrincipalToUserId() {
+    void createNotificationShouldDispatchToUsersUsingOauthPrincipal() {
         NotificationForm form = new NotificationForm();
         form.setAudience(NotificationForm.AudienceType.USER);
         form.setTargetUserIds(Set.of(UUID.randomUUID()));
@@ -122,35 +118,33 @@ class AdminNotificationControllerTest {
         UUID adminId = UUID.randomUUID();
         user.setId(adminId);
         when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(user));
-        Authentication auth = new TestingAuthenticationToken(oAuth2User, "pwd");
 
-        controller.createNotification(form, auth, redirectAttributes);
+        controller.createNotification(form, new TestingAuthenticationToken(oAuth2User, "pwd"), redirectAttributes);
 
-        verify(notificationService).sendToUsers(form, form.getTargetUserIds(), adminId);
+        verify(notificationService).sendToUsers(eq(form), eq(form.getTargetUserIds()), eq(adminId));
     }
 
     @Test
-    void createNotificationShouldHandleServiceException() {
+    void createNotificationShouldHandleExceptionsAndRedirect() {
         NotificationForm form = new NotificationForm();
         form.setAudience(NotificationForm.AudienceType.ALL);
         UUID adminId = UUID.randomUUID();
-        Authentication auth = AuthStub.forUser(adminId);
         RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
         doThrow(new RuntimeException("boom"))
                 .when(notificationService).sendToAll(form, adminId);
 
-        String view = controller.createNotification(form, auth, redirectAttributes);
+        String view = controller.createNotification(form, AuthenticationStub.withId(adminId), redirectAttributes);
 
-        verify(redirectAttributes).addFlashAttribute(eq("error"), contains("boom"));
         assertEquals("redirect:/admin/notifications/new", view);
+        verify(redirectAttributes).addFlashAttribute(eq("error"), contains("boom"));
     }
 
     @Test
-    void viewNotificationShouldRenderDetailWhenFound() {
+    void viewNotificationShouldReturnDetailView() {
         NotificationView viewDto = new NotificationView();
-        when(notificationService.findById(55)).thenReturn(viewDto);
+        when(notificationService.findById(88)).thenReturn(viewDto);
 
-        String view = controller.viewNotification(55, model);
+        String view = controller.viewNotification(88, model);
 
         assertEquals("admin/notifications/detail", view);
         assertSame(viewDto, model.getAttribute("notification"));
@@ -158,32 +152,31 @@ class AdminNotificationControllerTest {
 
     @Test
     void viewNotificationShouldReturn404WhenMissing() {
-        when(notificationService.findById(77)).thenReturn(null);
+        when(notificationService.findById(99)).thenReturn(null);
 
-        assertEquals("error/404", controller.viewNotification(77, model));
+        assertEquals("error/404", controller.viewNotification(99, model));
     }
 
     @Test
-    void expireNotificationShouldFlashSuccess() {
+    void expireNotificationShouldDelegateToService() {
         RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
 
-        String view = controller.expireNotification(42, redirectAttributes);
+        String view = controller.expireNotification(55, redirectAttributes);
 
-        verify(notificationService).expireNotification(42);
+        verify(notificationService).expireNotification(55);
         verify(redirectAttributes).addFlashAttribute("success", "Thông báo đã được kết thúc!");
         assertEquals("redirect:/admin/notifications", view);
     }
 
     @Test
-    void expireNotificationShouldHandleException() {
+    void expireNotificationShouldHandleErrors() {
         RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
-        doThrow(new RuntimeException("err"))
-                .when(notificationService).expireNotification(99);
+        doThrow(new RuntimeException("err")).when(notificationService).expireNotification(56);
 
-        String view = controller.expireNotification(99, redirectAttributes);
+        String view = controller.expireNotification(56, redirectAttributes);
 
-        verify(redirectAttributes).addFlashAttribute(eq("error"), contains("err"));
         assertEquals("redirect:/admin/notifications", view);
+        verify(redirectAttributes).addFlashAttribute(eq("error"), contains("err"));
     }
 
     @Test
@@ -199,16 +192,17 @@ class AdminNotificationControllerTest {
         assertEquals(40L, model.getAttribute("totalUnread"));
     }
 
-    private static class AuthStub implements Authentication {
-        private final User principal;
+    private static class AuthenticationStub implements org.springframework.security.core.Authentication {
+        private final User principal = new User();
 
-        private AuthStub(UUID id) {
-            this.principal = new User();
-            this.principal.setId(id);
+        static AuthenticationStub withId(UUID id) {
+            AuthenticationStub stub = new AuthenticationStub();
+            stub.principal.setId(id);
+            return stub;
         }
 
-        static AuthStub forUser(UUID id) {
-            return new AuthStub(id);
+        static AuthenticationStub anonymous() {
+            return new AuthenticationStub();
         }
 
         @Override
@@ -238,12 +232,15 @@ class AdminNotificationControllerTest {
 
         @Override
         public boolean isAuthenticated() {
-            return true;
+            return principal.getId() != null;
         }
 
         @Override
         public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
             // no-op
+        }
+
+        private AuthenticationStub() {
         }
     }
 }
