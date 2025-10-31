@@ -4,7 +4,12 @@ import com.example.booking.common.enums.PaymentType;
 import com.example.booking.domain.*;
 import com.example.booking.repository.PaymentRepository;
 import com.example.booking.repository.VoucherRedemptionRepository;
-import com.example.booking.service.*;
+import com.example.booking.service.BookingService;
+import com.example.booking.service.CustomerService;
+import com.example.booking.service.EmailService;
+import com.example.booking.service.PaymentService;
+import com.example.booking.service.PayOsService;
+import com.example.booking.service.RefundService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -396,7 +401,7 @@ class PaymentControllerWebMvcTest {
     void testCheckPayOSStatus_Success() throws Exception {
         // Given
         when(paymentService.findById(1)).thenReturn(Optional.of(payment));
-        PayOsService.GetPaymentInfoResponse mockResponse = mock(PayOsService.GetPaymentInfoResponse.class);
+        PayOsService.PaymentInfoResponse mockResponse = mock(PayOsService.PaymentInfoResponse.class);
         when(mockResponse.getCode()).thenReturn("00");
         when(payOsService.getPaymentInfo(anyLong())).thenReturn(mockResponse);
 
@@ -431,7 +436,7 @@ class PaymentControllerWebMvcTest {
     @DisplayName("POST /payment/api/payos/confirm-webhook - should confirm webhook")
     void testConfirmWebhook_Success() throws Exception {
         // Given
-        PayOsService.ConfirmWebhookResponse mockResponse = mock(PayOsService.ConfirmWebhookResponse.class);
+        PayOsService.WebhookConfirmResponse mockResponse = mock(PayOsService.WebhookConfirmResponse.class);
         when(mockResponse.getCode()).thenReturn("00");
         when(payOsService.confirmWebhook(anyString())).thenReturn(mockResponse);
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -451,8 +456,8 @@ class PaymentControllerWebMvcTest {
     void testSyncPayOSStatus_Success() throws Exception {
         // Given
         when(paymentService.findById(1)).thenReturn(Optional.of(payment));
-        PayOsService.GetPaymentInfoResponse mockResponse = mock(PayOsService.GetPaymentInfoResponse.class);
-        PayOsService.GetPaymentInfoResponse.Data mockData = mock(PayOsService.GetPaymentInfoResponse.Data.class);
+        PayOsService.PaymentInfoResponse mockResponse = mock(PayOsService.PaymentInfoResponse.class);
+        PayOsService.PaymentInfoResponse.PaymentInfoData mockData = mock(PayOsService.PaymentInfoResponse.PaymentInfoData.class);
         when(mockResponse.getCode()).thenReturn("00");
         when(mockResponse.getData()).thenReturn(mockData);
         when(mockData.getStatus()).thenReturn("PAID");
@@ -476,9 +481,9 @@ class PaymentControllerWebMvcTest {
         // Given
         payment.setStatus(PaymentStatus.COMPLETED);
         when(paymentService.findByOrderCode(123456L)).thenReturn(Optional.of(payment));
-        PayOsService.GetInvoiceInfoResponse mockInvoiceInfo = mock(PayOsService.GetInvoiceInfoResponse.class);
-        PayOsService.GetInvoiceInfoResponse.Data mockInvoiceData = mock(PayOsService.GetInvoiceInfoResponse.Data.class);
-        PayOsService.GetInvoiceInfoResponse.Invoice mockInvoice = mock(PayOsService.GetInvoiceInfoResponse.Invoice.class);
+        PayOsService.InvoiceInfoResponse mockInvoiceInfo = mock(PayOsService.InvoiceInfoResponse.class);
+        PayOsService.InvoiceInfoResponse.InvoiceData mockInvoiceData = mock(PayOsService.InvoiceInfoResponse.InvoiceData.class);
+        PayOsService.InvoiceInfoResponse.InvoiceData.Invoice mockInvoice = mock(PayOsService.InvoiceInfoResponse.InvoiceData.Invoice.class);
         when(mockInvoiceInfo.getData()).thenReturn(mockInvoiceData);
         when(mockInvoiceData.getInvoices()).thenReturn(Arrays.asList(mockInvoice));
         when(mockInvoice.getInvoiceId()).thenReturn("invoice-123");
@@ -748,7 +753,7 @@ class PaymentControllerWebMvcTest {
     void testGetPaymentHistory_Success() throws Exception {
         // Given
         when(customerService.findById(any())).thenReturn(Optional.of(customer));
-        when(paymentService.getPaymentsByCustomer(any())).thenReturn(Collections.singletonList(payment));
+        when(paymentService.findByCustomer(any(Customer.class))).thenReturn(Collections.singletonList(payment));
 
         // When & Then
         mockMvc.perform(get("/payment/api/history"))
