@@ -154,5 +154,94 @@ public class NotificationControllerTest {
         assertEquals(200, response.getStatusCodeValue());
         verify(notificationService, times(1)).markAllAsRead(userId);
     }
+
+    @Test
+    @DisplayName("shouldReturnUnauthorized_whenNotAuthenticated")
+    void shouldReturnUnauthorized_whenNotAuthenticated() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(null);
+
+        // When
+        ResponseEntity<String> response = notificationController.markAsRead(1, authentication);
+
+        // Then
+        assertEquals(401, response.getStatusCodeValue());
+    }
+
+    @Test
+    @DisplayName("shouldViewNotification_return404WhenNotFound")
+    void shouldViewNotification_return404WhenNotFound() {
+        // Given
+        when(notificationService.findById(999)).thenReturn(null);
+
+        // When
+        String view = notificationController.viewNotification(999, model, authentication);
+
+        // Then
+        assertEquals("error/404", view);
+    }
+
+    // ========== getUnreadCount() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetUnreadCount_successfully")
+    void shouldGetUnreadCount_successfully() {
+        // Given
+        when(notificationService.countUnreadByUserId(userId)).thenReturn(10L);
+
+        // When
+        ResponseEntity<Long> response = notificationController.getUnreadCount(authentication);
+
+        // Then
+        assertEquals(200, response.getStatusCodeValue());
+        assertEquals(10L, response.getBody());
+    }
+
+    @Test
+    @DisplayName("shouldGetUnreadCount_returnZeroWhenNotAuthenticated")
+    void shouldGetUnreadCount_returnZeroWhenNotAuthenticated() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(null);
+
+        // When
+        ResponseEntity<Long> response = notificationController.getUnreadCount(authentication);
+
+        // Then
+        assertEquals(401, response.getStatusCodeValue());
+        assertEquals(0L, response.getBody());
+    }
+
+    // ========== getLatestNotifications() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetLatestNotifications_successfully")
+    void shouldGetLatestNotifications_successfully() {
+        // Given
+        when(notificationService.getLatestNotifications(userId))
+            .thenReturn(java.util.Collections.emptyList());
+
+        // When
+        ResponseEntity<java.util.List<NotificationView>> response = 
+            notificationController.getLatestNotifications(authentication);
+
+        // Then
+        assertEquals(200, response.getStatusCodeValue());
+        assertNotNull(response.getBody());
+    }
+
+    @Test
+    @DisplayName("shouldGetLatestNotifications_returnEmptyWhenNotAuthenticated")
+    void shouldGetLatestNotifications_returnEmptyWhenNotAuthenticated() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(null);
+
+        // When
+        ResponseEntity<java.util.List<NotificationView>> response = 
+            notificationController.getLatestNotifications(authentication);
+
+        // Then
+        assertEquals(401, response.getStatusCodeValue());
+        assertEquals(java.util.List.of(), response.getBody());
+    }
 }
 
