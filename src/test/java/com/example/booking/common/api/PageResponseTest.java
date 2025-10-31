@@ -1,15 +1,32 @@
 package com.example.booking.common.api;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+/**
+ * Unit tests for PageResponse
+ */
+@DisplayName("PageResponse Tests")
+public class PageResponseTest {
 
-class PageResponseTest {
+    @Test
+    @DisplayName("shouldCreatePageResponse_successfully")
+    void shouldCreatePageResponse_successfully() {
+        // Given
+        List<String> data = new ArrayList<>();
+        data.add("item1");
+        data.add("item2");
 
-	@Test
-	void canInstantiate() {
-		assertNotNull(new PageResponse());
-	}
+        // When
+        PageResponse response = new PageResponse();
+
+        // Then
+        assertNotNull(response);
+    }
 }
-
 

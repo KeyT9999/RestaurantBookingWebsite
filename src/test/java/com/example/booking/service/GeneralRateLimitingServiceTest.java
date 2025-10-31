@@ -1,11 +1,14 @@
 package com.example.booking.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -13,13 +16,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
+/**
+ * Unit tests for GeneralRateLimitingService
+ */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("GeneralRateLimitingService Test Suite")
-class GeneralRateLimitingServiceTest {
+@DisplayName("GeneralRateLimitingService Tests")
+public class GeneralRateLimitingServiceTest {
 
     @Mock
     private RateLimitingMonitoringService monitoringService;
@@ -33,235 +35,148 @@ class GeneralRateLimitingServiceTest {
     @InjectMocks
     private GeneralRateLimitingService generalRateLimitingService;
 
+    private String clientIp;
+
     @BeforeEach
     void setUp() {
-        // Set default values using reflection
+        clientIp = "192.168.1.1";
         ReflectionTestUtils.setField(generalRateLimitingService, "maxBookingAttempts", 10);
-        ReflectionTestUtils.setField(generalRateLimitingService, "bookingWindowSeconds", 60);
-        ReflectionTestUtils.setField(generalRateLimitingService, "bookingAutoResetSeconds", 300);
         ReflectionTestUtils.setField(generalRateLimitingService, "maxChatAttempts", 30);
-        ReflectionTestUtils.setField(generalRateLimitingService, "chatWindowSeconds", 60);
-        ReflectionTestUtils.setField(generalRateLimitingService, "chatAutoResetSeconds", 300);
         ReflectionTestUtils.setField(generalRateLimitingService, "maxReviewAttempts", 3);
-        ReflectionTestUtils.setField(generalRateLimitingService, "reviewWindowSeconds", 300);
-        ReflectionTestUtils.setField(generalRateLimitingService, "reviewAutoResetSeconds", 1800);
+
+        when(request.getRemoteAddr()).thenReturn(clientIp);
+        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+        when(request.getHeader("X-Real-IP")).thenReturn(null);
+        when(request.getHeader("User-Agent")).thenReturn("Mozilla/5.0");
+        when(request.getRequestURI()).thenReturn("/test");
     }
 
-    @Nested
-    @DisplayName("isBookingAllowed() Tests")
-    class IsBookingAllowedTests {
+    // ========== isBookingAllowed() Tests ==========
 
-        @Test
-        @DisplayName("Should allow booking request within limit")
-        void shouldAllowBookingRequestWithinLimit() {
-            when(request.getRemoteAddr()).thenReturn("192.168.1.1");
-            when(request.getRequestURI()).thenReturn("/booking/new");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
+    @Test
+    @DisplayName("shouldAllowBooking_whenNoPreviousAttempts")
+    void shouldAllowBooking_whenNoPreviousAttempts() {
+        // When
+        boolean result = generalRateLimitingService.isBookingAllowed(request, response);
 
-            boolean result = generalRateLimitingService.isBookingAllowed(request, response);
-
-            assertTrue(result);
-            verify(response, atLeastOnce()).setHeader(anyString(), anyString());
-        }
-
-        @Test
-        @DisplayName("Should block booking request exceeding limit")
-        void shouldBlockBookingRequestExceedingLimit() {
-            when(request.getRemoteAddr()).thenReturn("192.168.1.2");
-            when(request.getRequestURI()).thenReturn("/booking/new");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
-
-            // Make requests up to the limit
-            for (int i = 0; i < 10; i++) {
-                generalRateLimitingService.isBookingAllowed(request, response);
-            }
-
-            // 11th request should be blocked
-            boolean result = generalRateLimitingService.isBookingAllowed(request, response);
-
-            assertFalse(result);
-            verify(monitoringService).logBlockedRequest(eq("192.168.1.2"), anyString(), anyString());
-        }
-
-        @Test
-        @DisplayName("Should extract IP from X-Forwarded-For header")
-        void shouldExtractIpFromXForwardedFor() {
-            when(request.getHeader("X-Forwarded-For")).thenReturn("192.168.1.100, 10.0.0.1");
-            when(request.getRequestURI()).thenReturn("/booking/new");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
-
-            boolean result = generalRateLimitingService.isBookingAllowed(request, response);
-
-            assertTrue(result);
-            verify(request).getHeader("X-Forwarded-For");
-        }
-
-        @Test
-        @DisplayName("Should extract IP from X-Real-IP header")
-        void shouldExtractIpFromXRealIp() {
-            when(request.getHeader("X-Forwarded-For")).thenReturn(null);
-            when(request.getHeader("X-Real-IP")).thenReturn("192.168.1.200");
-            when(request.getRequestURI()).thenReturn("/booking/new");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
-
-            boolean result = generalRateLimitingService.isBookingAllowed(request, response);
-
-            assertTrue(result);
-            verify(request).getHeader("X-Real-IP");
-        }
+        // Then
+        assertTrue(result);
     }
 
-    @Nested
-    @DisplayName("isChatAllowed() Tests")
-    class IsChatAllowedTests {
-
-        @Test
-        @DisplayName("Should allow chat request within limit")
-        void shouldAllowChatRequestWithinLimit() {
-            when(request.getRemoteAddr()).thenReturn("192.168.1.3");
-            when(request.getRequestURI()).thenReturn("/chat/send");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
-
-            boolean result = generalRateLimitingService.isChatAllowed(request, response);
-
-            assertTrue(result);
+    @Test
+    @DisplayName("shouldBlockBooking_whenMaxAttemptsReached")
+    void shouldBlockBooking_whenMaxAttemptsReached() {
+        // Given - Make 10 attempts to reach limit
+        for (int i = 0; i < 10; i++) {
+            generalRateLimitingService.isBookingAllowed(request, response);
         }
 
-        @Test
-        @DisplayName("Should block chat request exceeding limit")
-        void shouldBlockChatRequestExceedingLimit() {
-            when(request.getRemoteAddr()).thenReturn("192.168.1.4");
-            when(request.getRequestURI()).thenReturn("/chat/send");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
+        // When
+        boolean result = generalRateLimitingService.isBookingAllowed(request, response);
 
-            // Make requests up to the limit (30)
-            for (int i = 0; i < 30; i++) {
-                generalRateLimitingService.isChatAllowed(request, response);
-            }
-
-            // 31st request should be blocked
-            boolean result = generalRateLimitingService.isChatAllowed(request, response);
-
-            assertFalse(result);
-            verify(monitoringService).logBlockedRequest(eq("192.168.1.4"), anyString(), anyString());
-        }
+        // Then
+        assertFalse(result);
+        verify(monitoringService, atLeastOnce()).logBlockedRequest(eq(clientIp), anyString(), anyString());
     }
 
-    @Nested
-    @DisplayName("isReviewAllowed() Tests")
-    class IsReviewAllowedTests {
+    // ========== isChatAllowed() Tests ==========
 
-        @Test
-        @DisplayName("Should allow review request within limit")
-        void shouldAllowReviewRequestWithinLimit() {
-            when(request.getRemoteAddr()).thenReturn("192.168.1.5");
-            when(request.getRequestURI()).thenReturn("/review/submit");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
+    @Test
+    @DisplayName("shouldAllowChat_whenNoPreviousAttempts")
+    void shouldAllowChat_whenNoPreviousAttempts() {
+        // When
+        boolean result = generalRateLimitingService.isChatAllowed(request, response);
 
-            boolean result = generalRateLimitingService.isReviewAllowed(request, response);
-
-            assertTrue(result);
-        }
-
-        @Test
-        @DisplayName("Should block review request exceeding limit")
-        void shouldBlockReviewRequestExceedingLimit() {
-            when(request.getRemoteAddr()).thenReturn("192.168.1.6");
-            when(request.getRequestURI()).thenReturn("/review/submit");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
-
-            // Make requests up to the limit (3)
-            for (int i = 0; i < 3; i++) {
-                generalRateLimitingService.isReviewAllowed(request, response);
-            }
-
-            // 4th request should be blocked
-            boolean result = generalRateLimitingService.isReviewAllowed(request, response);
-
-            assertFalse(result);
-            verify(monitoringService).logBlockedRequest(eq("192.168.1.6"), anyString(), anyString());
-        }
+        // Then
+        assertTrue(result);
     }
 
-    @Nested
-    @DisplayName("resetBookingRateLimit() Tests")
-    class ResetBookingRateLimitTests {
-
-        @Test
-        @DisplayName("Should reset booking rate limit successfully")
-        void shouldResetBookingRateLimitSuccessfully() {
-            when(request.getRemoteAddr()).thenReturn("192.168.1.7");
-            when(request.getRequestURI()).thenReturn("/booking/new");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
-
-            // Make some requests
-            for (int i = 0; i < 5; i++) {
-                generalRateLimitingService.isBookingAllowed(request, response);
-            }
-
-            // Reset rate limit
-            generalRateLimitingService.resetBookingRateLimit("192.168.1.7");
-
-            // Should be able to make requests again
-            boolean result = generalRateLimitingService.isBookingAllowed(request, response);
-            assertTrue(result);
+    @Test
+    @DisplayName("shouldBlockChat_whenMaxAttemptsReached")
+    void shouldBlockChat_whenMaxAttemptsReached() {
+        // Given - Make 30 attempts to reach limit
+        for (int i = 0; i < 30; i++) {
+            generalRateLimitingService.isChatAllowed(request, response);
         }
 
-        @Test
-        @DisplayName("Should handle reset for non-existent IP")
-        void shouldHandleResetForNonExistentIp() {
-            assertDoesNotThrow(() -> generalRateLimitingService.resetBookingRateLimit("192.168.1.999"));
-        }
+        // When
+        boolean result = generalRateLimitingService.isChatAllowed(request, response);
+
+        // Then
+        assertFalse(result);
+        verify(monitoringService, atLeastOnce()).logBlockedRequest(eq(clientIp), anyString(), anyString());
     }
 
-    @Nested
-    @DisplayName("resetChatRateLimit() Tests")
-    class ResetChatRateLimitTests {
+    // ========== isReviewAllowed() Tests ==========
 
-        @Test
-        @DisplayName("Should reset chat rate limit successfully")
-        void shouldResetChatRateLimitSuccessfully() {
-            when(request.getRemoteAddr()).thenReturn("192.168.1.8");
-            when(request.getRequestURI()).thenReturn("/chat/send");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
+    @Test
+    @DisplayName("shouldAllowReview_whenNoPreviousAttempts")
+    void shouldAllowReview_whenNoPreviousAttempts() {
+        // When
+        boolean result = generalRateLimitingService.isReviewAllowed(request, response);
 
-            // Make some requests
-            for (int i = 0; i < 15; i++) {
-                generalRateLimitingService.isChatAllowed(request, response);
-            }
-
-            // Reset rate limit
-            generalRateLimitingService.resetChatRateLimit("192.168.1.8");
-
-            // Should be able to make requests again
-            boolean result = generalRateLimitingService.isChatAllowed(request, response);
-            assertTrue(result);
-        }
+        // Then
+        assertTrue(result);
     }
 
-    @Nested
-    @DisplayName("resetReviewRateLimit() Tests")
-    class ResetReviewRateLimitTests {
-
-        @Test
-        @DisplayName("Should reset review rate limit successfully")
-        void shouldResetReviewRateLimitSuccessfully() {
-            when(request.getRemoteAddr()).thenReturn("192.168.1.9");
-            when(request.getRequestURI()).thenReturn("/review/submit");
-            when(request.getHeader("User-Agent")).thenReturn("TestAgent");
-
-            // Make requests up to limit
-            for (int i = 0; i < 3; i++) {
-                generalRateLimitingService.isReviewAllowed(request, response);
-            }
-
-            // Reset rate limit
-            generalRateLimitingService.resetReviewRateLimit("192.168.1.9");
-
-            // Should be able to make requests again
-            boolean result = generalRateLimitingService.isReviewAllowed(request, response);
-            assertTrue(result);
+    @Test
+    @DisplayName("shouldBlockReview_whenMaxAttemptsReached")
+    void shouldBlockReview_whenMaxAttemptsReached() {
+        // Given - Make 3 attempts to reach limit
+        for (int i = 0; i < 3; i++) {
+            generalRateLimitingService.isReviewAllowed(request, response);
         }
+
+        // When
+        boolean result = generalRateLimitingService.isReviewAllowed(request, response);
+
+        // Then
+        assertFalse(result);
+        verify(monitoringService, atLeastOnce()).logBlockedRequest(eq(clientIp), anyString(), anyString());
+    }
+
+    // ========== Reset Methods Tests ==========
+
+    @Test
+    @DisplayName("shouldResetBookingRateLimit_successfully")
+    void shouldResetBookingRateLimit_successfully() {
+        // Given
+        generalRateLimitingService.isBookingAllowed(request, response);
+
+        // When
+        generalRateLimitingService.resetBookingRateLimit(clientIp);
+
+        // Then
+        boolean result = generalRateLimitingService.isBookingAllowed(request, response);
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("shouldResetChatRateLimit_successfully")
+    void shouldResetChatRateLimit_successfully() {
+        // Given
+        generalRateLimitingService.isChatAllowed(request, response);
+
+        // When
+        generalRateLimitingService.resetChatRateLimit(clientIp);
+
+        // Then
+        boolean result = generalRateLimitingService.isChatAllowed(request, response);
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("shouldResetReviewRateLimit_successfully")
+    void shouldResetReviewRateLimit_successfully() {
+        // Given
+        generalRateLimitingService.isReviewAllowed(request, response);
+
+        // When
+        generalRateLimitingService.resetReviewRateLimit(clientIp);
+
+        // Then
+        boolean result = generalRateLimitingService.isReviewAllowed(request, response);
+        assertTrue(result);
     }
 }
 

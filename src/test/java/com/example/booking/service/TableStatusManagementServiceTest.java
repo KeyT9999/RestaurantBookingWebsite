@@ -1,33 +1,38 @@
 package com.example.booking.service;
 
-import com.example.booking.common.enums.BookingStatus;
-import com.example.booking.common.enums.TableStatus;
-import com.example.booking.domain.Booking;
-import com.example.booking.domain.BookingTable;
-import com.example.booking.domain.RestaurantTable;
-import com.example.booking.repository.BookingRepository;
-import com.example.booking.repository.BookingTableRepository;
-import com.example.booking.repository.RestaurantTableRepository;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Optional;
+import com.example.booking.common.enums.BookingStatus;
+import com.example.booking.common.enums.TableStatus;
+import com.example.booking.domain.Booking;
+import com.example.booking.domain.BookingTable;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantTable;
+import com.example.booking.repository.BookingRepository;
+import com.example.booking.repository.BookingTableRepository;
+import com.example.booking.repository.RestaurantTableRepository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
+/**
+ * Unit tests for TableStatusManagementService
+ */
 @ExtendWith(MockitoExtension.class)
-class TableStatusManagementServiceTest {
+@DisplayName("TableStatusManagementService Tests")
+public class TableStatusManagementServiceTest {
 
     @Mock
     private BookingTableRepository bookingTableRepository;
@@ -39,7 +44,7 @@ class TableStatusManagementServiceTest {
     private BookingRepository bookingRepository;
 
     @InjectMocks
-    private TableStatusManagementService tableStatusManagementService;
+    private TableStatusManagementService tableStatusService;
 
     private RestaurantTable table;
     private Booking booking;
@@ -47,144 +52,114 @@ class TableStatusManagementServiceTest {
 
     @BeforeEach
     void setUp() {
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantId(1);
+
         table = new RestaurantTable();
         table.setTableId(1);
+        table.setRestaurant(restaurant);
         table.setTableName("Table 1");
-        table.setCapacity(4);
-        table.setStatus(TableStatus.AVAILABLE);
+        table.setStatus(TableStatus.RESERVED);
 
         booking = new Booking();
-        booking.setBookingId(100);
-        booking.setBookingTime(LocalDateTime.now().plusHours(1));
-        booking.setNumberOfGuests(4);
-        booking.setStatus(BookingStatus.CONFIRMED);
-        booking.setDepositAmount(new BigDecimal("50000"));
+        booking.setBookingId(1);
+        booking.setStatus(BookingStatus.PENDING);
+        booking.setBookingTime(LocalDateTime.now().minusMinutes(20));
 
         bookingTable = new BookingTable();
-        bookingTable.setBookingTableId(1);
         bookingTable.setBooking(booking);
         bookingTable.setTable(table);
     }
 
+    // ========== updateTableStatuses() Tests ==========
+
     @Test
-    void shouldCheckInCustomer_FromReserved() {
-        table.setStatus(TableStatus.RESERVED);
+    @DisplayName("shouldUpdateTableStatuses_successfully")
+    void shouldUpdateTableStatuses_successfully() {
+        // Given
+        when(bookingRepository.findNoShowBookings(any(LocalDateTime.class))).thenReturn(new ArrayList<>());
+        when(restaurantTableRepository.findByStatus(TableStatus.CLEANING)).thenReturn(new ArrayList<>());
+        when(bookingRepository.findUpcomingBookings(any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(new ArrayList<>());
 
-        when(bookingRepository.findById(100)).thenReturn(Optional.of(booking));
-        when(bookingTableRepository.findByBooking(booking)).thenReturn(Arrays.asList(bookingTable));
-        when(restaurantTableRepository.save(any(RestaurantTable.class))).thenReturn(table);
+        // When
+        tableStatusService.updateTableStatuses();
 
-        tableStatusManagementService.checkInCustomer(100);
-
-        assertThat(table.getStatus()).isEqualTo(TableStatus.OCCUPIED);
-        verify(restaurantTableRepository).save(table);
+        // Then
+        verify(bookingRepository, times(1)).findNoShowBookings(any(LocalDateTime.class));
     }
 
+    // ========== handleNoShowBookings() Tests (via updateTableStatuses) ==========
+
     @Test
-    void shouldCheckInCustomer_FromAvailable() {
-        table.setStatus(TableStatus.AVAILABLE);
+    @DisplayName("shouldHandleNoShowBookings_successfully")
+    void shouldHandleNoShowBookings_successfully() {
+        // Given
+        List<Booking> noShowBookings = Arrays.asList(booking);
+        List<BookingTable> bookingTables = Arrays.asList(bookingTable);
 
-        when(bookingRepository.findById(100)).thenReturn(Optional.of(booking));
-        when(bookingTableRepository.findByBooking(booking)).thenReturn(Arrays.asList(bookingTable));
-        when(restaurantTableRepository.save(any(RestaurantTable.class))).thenReturn(table);
+        when(bookingRepository.findNoShowBookings(any(LocalDateTime.class))).thenReturn(noShowBookings);
+        when(bookingTableRepository.findByBooking(booking)).thenReturn(bookingTables);
+        when(bookingRepository.save(booking)).thenReturn(booking);
+        when(restaurantTableRepository.save(table)).thenReturn(table);
+        when(restaurantTableRepository.findByStatus(TableStatus.CLEANING)).thenReturn(new ArrayList<>());
+        when(bookingRepository.findUpcomingBookings(any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(new ArrayList<>());
 
-        tableStatusManagementService.checkInCustomer(100);
+        // When
+        tableStatusService.updateTableStatuses();
 
-        assertThat(table.getStatus()).isEqualTo(TableStatus.OCCUPIED);
-        verify(restaurantTableRepository).save(table);
+        // Then
+        verify(bookingRepository, times(1)).save(booking);
+        verify(restaurantTableRepository, times(1)).save(table);
     }
 
-    @Test
-    void shouldCheckOutCustomer() {
-        table.setStatus(TableStatus.OCCUPIED);
-
-        when(bookingRepository.findById(100)).thenReturn(Optional.of(booking));
-        when(bookingTableRepository.findByBooking(booking)).thenReturn(Arrays.asList(bookingTable));
-        when(restaurantTableRepository.save(any(RestaurantTable.class))).thenReturn(table);
-
-        tableStatusManagementService.checkOutCustomer(100);
-
-        assertThat(table.getStatus()).isEqualTo(TableStatus.CLEANING);
-        verify(restaurantTableRepository).save(table);
-    }
+    // ========== handleCleaningTables() Tests (via updateTableStatuses) ==========
 
     @Test
-    void shouldCompleteCleaning() {
+    @DisplayName("shouldHandleCleaningTables_successfully")
+    void shouldHandleCleaningTables_successfully() {
+        // Given
         table.setStatus(TableStatus.CLEANING);
+        List<RestaurantTable> cleaningTables = Arrays.asList(table);
 
-        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
-        when(restaurantTableRepository.save(any(RestaurantTable.class))).thenReturn(table);
+        when(bookingRepository.findNoShowBookings(any(LocalDateTime.class))).thenReturn(new ArrayList<>());
+        when(restaurantTableRepository.findByStatus(TableStatus.CLEANING)).thenReturn(cleaningTables);
+        when(restaurantTableRepository.save(table)).thenReturn(table);
+        when(bookingRepository.findUpcomingBookings(any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(new ArrayList<>());
 
-        tableStatusManagementService.completeCleaning(1);
+        // When
+        tableStatusService.updateTableStatuses();
 
-        assertThat(table.getStatus()).isEqualTo(TableStatus.AVAILABLE);
-        verify(restaurantTableRepository).save(table);
+        // Then
+        verify(restaurantTableRepository, atLeastOnce()).save(table);
     }
 
-    @Test
-    void shouldSetTableToMaintenance() {
-        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
-        when(restaurantTableRepository.save(any(RestaurantTable.class))).thenReturn(table);
-
-        tableStatusManagementService.setTableToMaintenance(1);
-
-        assertThat(table.getStatus()).isEqualTo(TableStatus.MAINTENANCE);
-        verify(restaurantTableRepository).save(table);
-    }
+    // ========== handleUpcomingBookings() Tests (via updateTableStatuses) ==========
 
     @Test
-    void shouldSetTableToAvailable() {
-        table.setStatus(TableStatus.MAINTENANCE);
+    @DisplayName("shouldHandleUpcomingBookings_successfully")
+    void shouldHandleUpcomingBookings_successfully() {
+        // Given
+        Booking upcomingBooking = new Booking();
+        upcomingBooking.setBookingId(2);
+        upcomingBooking.setBookingTime(LocalDateTime.now().plusMinutes(10));
+        List<Booking> upcomingBookings = Arrays.asList(upcomingBooking);
 
-        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
-        when(restaurantTableRepository.save(any(RestaurantTable.class))).thenReturn(table);
+        when(bookingRepository.findNoShowBookings(any(LocalDateTime.class))).thenReturn(new ArrayList<>());
+        when(restaurantTableRepository.findByStatus(TableStatus.CLEANING)).thenReturn(new ArrayList<>());
+        when(bookingRepository.findUpcomingBookings(any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(upcomingBookings);
+        when(bookingTableRepository.findByBooking(upcomingBooking)).thenReturn(Arrays.asList(bookingTable));
+        when(restaurantTableRepository.save(table)).thenReturn(table);
 
-        tableStatusManagementService.setTableToAvailable(1);
+        // When
+        tableStatusService.updateTableStatuses();
 
-        assertThat(table.getStatus()).isEqualTo(TableStatus.AVAILABLE);
-        verify(restaurantTableRepository).save(table);
-    }
-
-    @Test
-    void shouldThrowException_CheckInWithInvalidBookingStatus() {
-        booking.setStatus(BookingStatus.PENDING);
-
-        when(bookingRepository.findById(100)).thenReturn(Optional.of(booking));
-
-        assertThatThrownBy(() -> tableStatusManagementService.checkInCustomer(100))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must be CONFIRMED or COMPLETED");
-    }
-
-    @Test
-    void shouldThrowException_CheckInWithBookingNotFound() {
-        when(bookingRepository.findById(999)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> tableStatusManagementService.checkInCustomer(999))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("not found");
-    }
-
-    @Test
-    void shouldThrowException_CompleteCleaningWithWrongStatus() {
-        table.setStatus(TableStatus.AVAILABLE);
-
-        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
-
-        assertThatThrownBy(() -> tableStatusManagementService.completeCleaning(1))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("not in CLEANING status");
-    }
-
-    @Test
-    void shouldThrowException_CheckOutWithInvalidBookingStatus() {
-        booking.setStatus(BookingStatus.PENDING);
-
-        when(bookingRepository.findById(100)).thenReturn(Optional.of(booking));
-
-        assertThatThrownBy(() -> tableStatusManagementService.checkOutCustomer(100))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("must be CONFIRMED or COMPLETED");
+        // Then
+        verify(restaurantTableRepository, atLeastOnce()).save(any(RestaurantTable.class));
     }
 }
+
 

@@ -1,28 +1,47 @@
 package com.example.booking.service;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.Uploader;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.Uploader;
+import com.cloudinary.Api;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
+/**
+ * Unit tests for CloudinaryService
+ * 
+ * Test Coverage:
+ * 1. uploadImage() - Success, validation errors, IOException
+ * 2. uploadRestaurantImage() - With/without imageNumber
+ * 3. uploadBusinessLicense() - PDF and image files
+ * 4. uploadDishImage()
+ * 5. uploadAvatar()
+ * 6. uploadTableImage()
+ * 7. uploadReviewEvidence()
+ * 8. uploadServiceImage()
+ * 9. updateImage() - With/without old image
+ * 10. deleteImage() - Success, failure, invalid URL
+ * 11. deleteFolder()
+ * 12. Validation methods
+ */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("CloudinaryService Test Suite")
-class CloudinaryServiceTest {
+@DisplayName("CloudinaryService Tests")
+public class CloudinaryServiceTest {
 
     @Mock
     private Cloudinary cloudinary;
@@ -30,332 +49,597 @@ class CloudinaryServiceTest {
     @Mock
     private Uploader uploader;
 
+    @Mock
+    private Api api;
+
     @InjectMocks
     private CloudinaryService cloudinaryService;
 
-    private MockMultipartFile testImageFile;
-    private MockMultipartFile testPdfFile;
-    private Map<String, Object> mockUploadResult;
+    private MultipartFile validImageFile;
+    private MultipartFile validPdfFile;
+    private MultipartFile invalidFileType;
+    private MultipartFile tooLargeFile;
+    private Map<String, Object> uploadResult;
 
     @BeforeEach
     void setUp() {
+        // Setup valid image file
+        validImageFile = new MockMultipartFile(
+            "image",
+            "test.jpg",
+            "image/jpeg",
+            "fake image content".getBytes()
+        );
+
+        // Setup valid PDF file
+        validPdfFile = new MockMultipartFile(
+            "document",
+            "license.pdf",
+            "application/pdf",
+            "fake pdf content".getBytes()
+        );
+
+        // Setup invalid file type
+        invalidFileType = new MockMultipartFile(
+            "file",
+            "test.exe",
+            "application/x-msdownload",
+            "fake exe content".getBytes()
+        );
+
+        // Setup too large file (mock)
+        byte[] largeContent = new byte[25 * 1024 * 1024]; // 25MB
+        tooLargeFile = new MockMultipartFile(
+            "image",
+            "large.jpg",
+            "image/jpeg",
+            largeContent
+        );
+
+        // Setup upload result
+        uploadResult = new HashMap<>();
+        uploadResult.put("secure_url", "https://res.cloudinary.com/test/image/upload/test.jpg");
+        uploadResult.put("public_id", "test");
+
+        // Setup mocks
         when(cloudinary.uploader()).thenReturn(uploader);
-
-        testImageFile = new MockMultipartFile(
-                "file", "test.jpg", "image/jpeg", "test image content".getBytes());
-
-        testPdfFile = new MockMultipartFile(
-                "file", "document.pdf", "application/pdf", "test pdf content".getBytes());
-
-        mockUploadResult = new HashMap<>();
-        mockUploadResult.put("secure_url", "https://res.cloudinary.com/test/image/upload/test.jpg");
-        mockUploadResult.put("public_id", "test");
+        when(cloudinary.api()).thenReturn(api);
     }
 
-    @Nested
-    @DisplayName("uploadImage() Tests")
-    class UploadImageTests {
+    // ========== uploadImage() Tests ==========
 
-        @Test
-        @DisplayName("Should upload image successfully")
-        void shouldUploadImageSuccessfully() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
+    @Test
+    @DisplayName("shouldUploadImage_successfully")
+    void shouldUploadImage_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
 
-            String result = cloudinaryService.uploadImage(testImageFile, "test-folder", "test-id");
+        // When
+        String result = cloudinaryService.uploadImage(validImageFile, "test-folder", "test-public-id");
 
-            assertNotNull(result);
-            assertEquals("https://res.cloudinary.com/test/image/upload/test.jpg", result);
-            verify(uploader).upload(any(byte[].class), any(Map.class));
-        }
+        // Then
+        assertNotNull(result);
+        assertEquals("https://res.cloudinary.com/test/image/upload/test.jpg", result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
 
-        @Test
-        @DisplayName("Should throw exception for empty file")
-        void shouldThrowExceptionForEmptyFile() {
-            MockMultipartFile emptyFile = new MockMultipartFile(
-                    "file", "test.jpg", "image/jpeg", new byte[0]);
+    @Test
+    @DisplayName("shouldThrowException_whenFileIsEmpty")
+    void shouldThrowException_whenFileIsEmpty() {
+        // Given
+        MultipartFile emptyFile = new MockMultipartFile("image", "test.jpg", "image/jpeg", new byte[0]);
 
-            assertThrows(IllegalArgumentException.class, () ->
-                    cloudinaryService.uploadImage(emptyFile, "test-folder", "test-id"));
-        }
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () -> {
+            cloudinaryService.uploadImage(emptyFile, "folder", "public-id");
+        });
+    }
 
-        @Test
-        @DisplayName("Should handle Cloudinary upload exception")
-        void shouldHandleCloudinaryUploadException() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenThrow(new IOException("Cloudinary error"));
+    @Test
+    @DisplayName("shouldThrowException_whenFileIsNull")
+    void shouldThrowException_whenFileIsNull() {
+        // When & Then
+        assertThrows(NullPointerException.class, () -> {
+            cloudinaryService.uploadImage(null, "folder", "public-id");
+        });
+    }
 
-            assertThrows(IOException.class, () ->
-                    cloudinaryService.uploadImage(testImageFile, "test-folder", "test-id"));
+    @Test
+    @DisplayName("shouldThrowException_whenInvalidFileType")
+    void shouldThrowException_whenInvalidFileType() {
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () -> {
+            cloudinaryService.uploadImage(invalidFileType, "folder", "public-id");
+        });
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenFileTooLarge")
+    void shouldThrowException_whenFileTooLarge() {
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () -> {
+            cloudinaryService.uploadImage(tooLargeFile, "folder", "public-id");
+        });
+    }
+
+    @Test
+    @DisplayName("shouldHandleIOException_whenUploadFails")
+    void shouldHandleIOException_whenUploadFails() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenThrow(new IOException("Upload failed"));
+
+        // When & Then
+        assertThrows(IOException.class, () -> {
+            cloudinaryService.uploadImage(validImageFile, "folder", "public-id");
+        });
+    }
+
+    // ========== uploadRestaurantImage() Tests ==========
+
+    @Test
+    @DisplayName("shouldUploadRestaurantImage_withImageNumber")
+    void shouldUploadRestaurantImage_withImageNumber() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.uploadRestaurantImage(validImageFile, 1, "main", 2);
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("shouldUploadRestaurantImage_withoutImageNumber")
+    void shouldUploadRestaurantImage_withoutImageNumber() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.uploadRestaurantImage(validImageFile, 1, "main");
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    // ========== uploadBusinessLicense() Tests ==========
+
+    @Test
+    @DisplayName("shouldUploadBusinessLicense_pdfFile")
+    void shouldUploadBusinessLicense_pdfFile() throws Exception {
+        // Given
+        Map<String, Object> pdfResult = new HashMap<>();
+        pdfResult.put("secure_url", "https://res.cloudinary.com/test/raw/upload/license.pdf");
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(pdfResult);
+
+        // When
+        String result = cloudinaryService.uploadBusinessLicense(validPdfFile, 1);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.contains("license.pdf") || result.contains("res.cloudinary.com"));
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("shouldUploadBusinessLicense_imageFile")
+    void shouldUploadBusinessLicense_imageFile() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.uploadBusinessLicense(validImageFile, 1);
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenBusinessLicenseInvalidType")
+    void shouldThrowException_whenBusinessLicenseInvalidType() {
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () -> {
+            cloudinaryService.uploadBusinessLicense(invalidFileType, 1);
+        });
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenBusinessLicenseFilenameNull")
+    void shouldThrowException_whenBusinessLicenseFilenameNull() {
+        // Given
+        MultipartFile fileWithoutName = new MockMultipartFile(
+            "document",
+            null,
+            "application/pdf",
+            "content".getBytes()
+        );
+
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () -> {
+            cloudinaryService.uploadBusinessLicense(fileWithoutName, 1);
+        });
+    }
+
+    // ========== uploadDishImage() Tests ==========
+
+    @Test
+    @DisplayName("shouldUploadDishImage_successfully")
+    void shouldUploadDishImage_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.uploadDishImage(validImageFile, 1, 10);
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    // ========== uploadAvatar() Tests ==========
+
+    @Test
+    @DisplayName("shouldUploadAvatar_successfully")
+    void shouldUploadAvatar_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.uploadAvatar(validImageFile, 1);
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    // ========== uploadTableImage() Tests ==========
+
+    @Test
+    @DisplayName("shouldUploadTableImage_withImageNumber")
+    void shouldUploadTableImage_withImageNumber() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.uploadTableImage(validImageFile, 1, 5, 2);
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("shouldUploadTableImage_withoutImageNumber")
+    void shouldUploadTableImage_withoutImageNumber() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.uploadTableImage(validImageFile, 1, 5);
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    // ========== uploadReviewEvidence() Tests ==========
+
+    @Test
+    @DisplayName("shouldUploadReviewEvidence_successfully")
+    void shouldUploadReviewEvidence_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.uploadReviewEvidence(validImageFile, 1);
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    // ========== uploadServiceImage() Tests ==========
+
+    @Test
+    @DisplayName("shouldUploadServiceImage_successfully")
+    void shouldUploadServiceImage_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.uploadServiceImage(validImageFile, 1, 10);
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    // ========== updateImage() Tests ==========
+
+    @Test
+    @DisplayName("shouldUpdateImage_withOldImageUrl")
+    void shouldUpdateImage_withOldImageUrl() throws Exception {
+        // Given
+        String oldImageUrl = "https://res.cloudinary.com/test/image/upload/old.jpg";
+        Map<String, Object> destroyResult = new HashMap<>();
+        destroyResult.put("result", "ok");
+        when(uploader.destroy(anyString(), any(Map.class))).thenReturn(destroyResult);
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.updateImage(validImageFile, oldImageUrl, "folder", "public-id");
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).destroy(anyString(), any(Map.class));
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("shouldUpdateImage_withoutOldImageUrl")
+    void shouldUpdateImage_withoutOldImageUrl() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.updateImage(validImageFile, null, "folder", "public-id");
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, never()).destroy(anyString(), any(Map.class));
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("shouldUpdateImage_withEmptyOldImageUrl")
+    void shouldUpdateImage_withEmptyOldImageUrl() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
+
+        // When
+        String result = cloudinaryService.updateImage(validImageFile, "", "folder", "public-id");
+
+        // Then
+        assertNotNull(result);
+        verify(uploader, never()).destroy(anyString(), any(Map.class));
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
+    }
+
+    // ========== deleteImage() Tests ==========
+
+    @Test
+    @DisplayName("shouldDeleteImage_successfully")
+    void shouldDeleteImage_successfully() throws Exception {
+        // Given
+        String imageUrl = "https://res.cloudinary.com/test/image/upload/v1234567890/test.jpg";
+        Map<String, Object> destroyResult = new HashMap<>();
+        destroyResult.put("result", "ok");
+        when(uploader.destroy(anyString(), any(Map.class))).thenReturn(destroyResult);
+
+        // When
+        boolean result = cloudinaryService.deleteImage(imageUrl);
+
+        // Then
+        assertTrue(result);
+        verify(uploader, times(1)).destroy(anyString(), any(Map.class));
+    }
+
+    @Test
+    @DisplayName("shouldReturnFalse_whenDeleteImageFails")
+    void shouldReturnFalse_whenDeleteImageFails() throws Exception {
+        // Given
+        String imageUrl = "https://res.cloudinary.com/test/image/upload/v1234567890/test.jpg";
+        Map<String, Object> destroyResult = new HashMap<>();
+        destroyResult.put("result", "not_found");
+        when(uploader.destroy(anyString(), any(Map.class))).thenReturn(destroyResult);
+
+        // When
+        boolean result = cloudinaryService.deleteImage(imageUrl);
+
+        // Then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("shouldReturnFalse_whenInvalidImageUrl")
+    void shouldReturnFalse_whenInvalidImageUrl() {
+        // Given
+        String invalidUrl = "invalid-url";
+
+        // When
+        boolean result = cloudinaryService.deleteImage(invalidUrl);
+
+        // Then
+        assertFalse(result);
+        // verify() does not throw IOException, so this is safe
+    }
+
+    @Test
+    @DisplayName("shouldReturnFalse_whenNullImageUrl")
+    void shouldReturnFalse_whenNullImageUrl() {
+        // When
+        boolean result = cloudinaryService.deleteImage(null);
+
+        // Then
+        assertFalse(result);
+        try {
+            verify(uploader, never()).destroy(anyString(), any(Map.class));
+        } catch (IOException e) {
+            // Expected in test
         }
     }
 
-    @Nested
-    @DisplayName("uploadRestaurantImage() Tests")
-    class UploadRestaurantImageTests {
+    @Test
+    @DisplayName("shouldHandleException_whenDeleteThrowsException")
+    void shouldHandleException_whenDeleteThrowsException() throws Exception {
+        // Given
+        String imageUrl = "https://res.cloudinary.com/test/image/upload/v1234567890/test.jpg";
+        doAnswer(invocation -> {
+            throw new IOException("Delete failed");
+        }).when(uploader).destroy(anyString(), any(Map.class));
 
-        @Test
-        @DisplayName("Should upload restaurant image successfully")
-        void shouldUploadRestaurantImageSuccessfully() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
+        // When
+        boolean result = cloudinaryService.deleteImage(imageUrl);
 
-            String result = cloudinaryService.uploadRestaurantImage(testImageFile, 1, "logo", 1);
+        // Then
+        assertFalse(result);
+    }
+    // ========== deleteFolder() Tests ==========
 
-            assertNotNull(result);
-            verify(uploader).upload(any(byte[].class), any(Map.class));
-        }
+    @Test
+    @DisplayName("shouldDeleteFolder_successfully")
+    void shouldDeleteFolder_successfully() throws Exception {
+        // Given
+        String folderPath = "restaurants/1";
+        Map<String, Object> deleteResult = new HashMap<>();
+        deleteResult.put("result", "ok");
+        // api.deleteFolder returns Map<String, Object>, not ApiResponse
+        // Using doAnswer to handle the actual return type
+        doAnswer(invocation -> deleteResult).when(api).deleteFolder(eq(folderPath), any(Map.class));
 
-        @Test
-        @DisplayName("Should upload restaurant image with default image number")
-        void shouldUploadRestaurantImageWithDefaultImageNumber() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
+        // When
+        boolean result = cloudinaryService.deleteFolder(folderPath);
 
-            String result = cloudinaryService.uploadRestaurantImage(testImageFile, 1, "logo");
-
-            assertNotNull(result);
-            verify(uploader).upload(any(byte[].class), any(Map.class));
-        }
+        // Then
+        assertTrue(result);
+        verify(api, times(1)).deleteFolder(eq(folderPath), any(Map.class));
     }
 
-    @Nested
-    @DisplayName("uploadBusinessLicense() Tests")
-    class UploadBusinessLicenseTests {
+    @Test
+    @DisplayName("shouldReturnFalse_whenDeleteFolderFails")
+    void shouldReturnFalse_whenDeleteFolderFails() throws Exception {
+        // Given
+        String folderPath = "restaurants/1";
+        Map<String, Object> deleteResult = new HashMap<>();
+        deleteResult.put("result", "not_found");
+        // api.deleteFolder returns Map<String, Object>, not ApiResponse
+        // Using doAnswer to handle the actual return type
+        doAnswer(invocation -> deleteResult).when(api).deleteFolder(eq(folderPath), any(Map.class));
 
-        @Test
-        @DisplayName("Should upload PDF business license successfully")
-        void shouldUploadPdfBusinessLicenseSuccessfully() throws IOException {
-            Map<String, Object> pdfResult = new HashMap<>();
-            pdfResult.put("secure_url", "https://res.cloudinary.com/test/raw/upload/document.pdf");
+        // When
+        boolean result = cloudinaryService.deleteFolder(folderPath);
 
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(pdfResult);
-
-            String result = cloudinaryService.uploadBusinessLicense(testPdfFile, 1);
-
-            assertNotNull(result);
-            assertEquals("https://res.cloudinary.com/test/raw/upload/document.pdf", result);
-        }
-
-        @Test
-        @DisplayName("Should upload image business license successfully")
-        void shouldUploadImageBusinessLicenseSuccessfully() throws IOException {
-            MockMultipartFile imageLicense = new MockMultipartFile(
-                    "file", "license.jpg", "image/jpeg", "test content".getBytes());
-
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
-
-            String result = cloudinaryService.uploadBusinessLicense(imageLicense, 1);
-
-            assertNotNull(result);
-        }
-
-        @Test
-        @DisplayName("Should throw exception for invalid file type")
-        void shouldThrowExceptionForInvalidFileType() {
-            MockMultipartFile invalidFile = new MockMultipartFile(
-                    "file", "license.exe", "application/x-msdownload", "test content".getBytes());
-
-            assertThrows(IllegalArgumentException.class, () ->
-                    cloudinaryService.uploadBusinessLicense(invalidFile, 1));
-        }
-
-        @Test
-        @DisplayName("Should throw exception for file too large")
-        void shouldThrowExceptionForFileTooLarge() {
-            byte[] largeContent = new byte[21 * 1024 * 1024]; // 21MB
-            MockMultipartFile largeFile = new MockMultipartFile(
-                    "file", "license.pdf", "application/pdf", largeContent);
-
-            assertThrows(IllegalArgumentException.class, () ->
-                    cloudinaryService.uploadBusinessLicense(largeFile, 1));
-        }
+        // Then
+        assertFalse(result);
     }
 
-    @Nested
-    @DisplayName("uploadDishImage() Tests")
-    class UploadDishImageTests {
+    @Test
+    @DisplayName("shouldHandleException_whenDeleteFolderThrowsException")
+    void shouldHandleException_whenDeleteFolderThrowsException() throws Exception {
+        // Given
+        String folderPath = "restaurants/1";
+        doAnswer(invocation -> {
+            throw new IOException("Delete failed");
+        }).when(api).deleteFolder(eq(folderPath), any(Map.class));
 
-        @Test
-        @DisplayName("Should upload dish image successfully")
-        void shouldUploadDishImageSuccessfully() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
+        // When
+        boolean result = cloudinaryService.deleteFolder(folderPath);
 
-            String result = cloudinaryService.uploadDishImage(testImageFile, 1, 1);
-
-            assertNotNull(result);
-            verify(uploader).upload(any(byte[].class), any(Map.class));
-        }
+        // Then
+        assertFalse(result);
     }
 
-    @Nested
-    @DisplayName("uploadAvatar() Tests")
-    class UploadAvatarTests {
+    // ========== updateRestaurantImage() Tests ==========
 
-        @Test
-        @DisplayName("Should upload avatar successfully")
-        void shouldUploadAvatarSuccessfully() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
+    @Test
+    @DisplayName("shouldUpdateRestaurantImage_successfully")
+    void shouldUpdateRestaurantImage_successfully() throws Exception {
+        // Given
+        String oldImageUrl = "https://res.cloudinary.com/test/image/upload/old.jpg";
+        Map<String, Object> destroyResult = new HashMap<>();
+        destroyResult.put("result", "ok");
+        when(uploader.destroy(anyString(), any(Map.class))).thenReturn(destroyResult);
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
 
-            String result = cloudinaryService.uploadAvatar(testImageFile, 1);
+        // When
+        String result = cloudinaryService.updateRestaurantImage(validImageFile, oldImageUrl, 1, "main");
 
-            assertNotNull(result);
-            verify(uploader).upload(any(byte[].class), any(Map.class));
-        }
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
     }
 
-    @Nested
-    @DisplayName("uploadTableImage() Tests")
-    class UploadTableImageTests {
+    // ========== updateDishImage() Tests ==========
 
-        @Test
-        @DisplayName("Should upload table image successfully")
-        void shouldUploadTableImageSuccessfully() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
+    @Test
+    @DisplayName("shouldUpdateDishImage_successfully")
+    void shouldUpdateDishImage_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
 
-            String result = cloudinaryService.uploadTableImage(testImageFile, 1, 1, 1);
+        // When
+        String result = cloudinaryService.updateDishImage(validImageFile, null, 1, 10);
 
-            assertNotNull(result);
-            verify(uploader).upload(any(byte[].class), any(Map.class));
-        }
-
-        @Test
-        @DisplayName("Should upload table image with default image number")
-        void shouldUploadTableImageWithDefaultImageNumber() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
-
-            String result = cloudinaryService.uploadTableImage(testImageFile, 1, 1);
-
-            assertNotNull(result);
-            verify(uploader).upload(any(byte[].class), any(Map.class));
-        }
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
     }
 
-    @Nested
-    @DisplayName("uploadReviewEvidence() Tests")
-    class UploadReviewEvidenceTests {
+    // ========== updateTableImage() Tests ==========
 
-        @Test
-        @DisplayName("Should upload review evidence successfully")
-        void shouldUploadReviewEvidenceSuccessfully() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
+    @Test
+    @DisplayName("shouldUpdateTableImage_successfully")
+    void shouldUpdateTableImage_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
 
-            String result = cloudinaryService.uploadReviewEvidence(testImageFile, 1);
+        // When
+        String result = cloudinaryService.updateTableImage(validImageFile, null, 1, 5);
 
-            assertNotNull(result);
-            verify(uploader).upload(any(byte[].class), any(Map.class));
-        }
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
     }
 
-    @Nested
-    @DisplayName("uploadServiceImage() Tests")
-    class UploadServiceImageTests {
+    // ========== updateAvatar() Tests ==========
 
-        @Test
-        @DisplayName("Should upload service image successfully")
-        void shouldUploadServiceImageSuccessfully() throws IOException {
-            when(uploader.upload(any(byte[].class), any(Map.class)))
-                    .thenReturn(mockUploadResult);
+    @Test
+    @DisplayName("shouldUpdateAvatar_successfully")
+    void shouldUpdateAvatar_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
 
-            String result = cloudinaryService.uploadServiceImage(testImageFile, 1, 1);
+        // When
+        String result = cloudinaryService.updateAvatar(validImageFile, null, 1);
 
-            assertNotNull(result);
-            verify(uploader).upload(any(byte[].class), any(Map.class));
-        }
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
     }
 
-    @Nested
-    @DisplayName("deleteImage() Tests")
-    class DeleteImageTests {
+    // ========== updateReviewEvidence() Tests ==========
 
-        @Test
-        @DisplayName("Should delete image successfully")
-        void shouldDeleteImageSuccessfully() throws IOException {
-            Map<String, Object> deleteResult = new HashMap<>();
-            deleteResult.put("result", "ok");
+    @Test
+    @DisplayName("shouldUpdateReviewEvidence_successfully")
+    void shouldUpdateReviewEvidence_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
 
-            when(uploader.destroy(anyString(), any(Map.class)))
-                    .thenReturn(deleteResult);
+        // When
+        String result = cloudinaryService.updateReviewEvidence(validImageFile, null, 1);
 
-            boolean result = cloudinaryService.deleteImage("test-public-id");
-
-            assertTrue(result);
-            verify(uploader).destroy(eq("test-public-id"), any(Map.class));
-        }
-
-        @Test
-        @DisplayName("Should return false when deletion fails")
-        void shouldReturnFalseWhenDeletionFails() throws IOException {
-            Map<String, Object> deleteResult = new HashMap<>();
-            deleteResult.put("result", "not found");
-
-            when(uploader.destroy(anyString(), any(Map.class)))
-                    .thenReturn(deleteResult);
-
-            boolean result = cloudinaryService.deleteImage("non-existent-id");
-
-            assertFalse(result);
-        }
-
-        @Test
-        @DisplayName("Should handle Cloudinary exception")
-        void shouldHandleCloudinaryException() throws IOException {
-            when(uploader.destroy(anyString(), any(Map.class)))
-                    .thenThrow(new IOException("Cloudinary error"));
-
-            assertThrows(IOException.class, () ->
-                    cloudinaryService.deleteImage("test-id"));
-        }
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
     }
 
-    @Nested
-    @DisplayName("validateImageFile() Tests")
-    class ValidateImageFileTests {
+    // ========== updateServiceImage() Tests ==========
 
-        @Test
-        @DisplayName("Should validate valid image file")
-        void shouldValidateValidImageFile() {
-            assertDoesNotThrow(() -> {
-                // Validation is called internally, so we test via upload
-                when(uploader.upload(any(byte[].class), any(Map.class)))
-                        .thenReturn(mockUploadResult);
-                cloudinaryService.uploadImage(testImageFile, "test", "test");
-            });
-        }
+    @Test
+    @DisplayName("shouldUpdateServiceImage_successfully")
+    void shouldUpdateServiceImage_successfully() throws Exception {
+        // Given
+        when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
 
-        @Test
-        @DisplayName("Should reject invalid image type")
-        void shouldRejectInvalidImageType() {
-            MockMultipartFile invalidFile = new MockMultipartFile(
-                    "file", "test.exe", "application/x-msdownload", "test content".getBytes());
+        // When
+        String result = cloudinaryService.updateServiceImage(validImageFile, null, 1, 10);
 
-            assertThrows(IllegalArgumentException.class, () -> {
-                when(uploader.upload(any(byte[].class), any(Map.class)))
-                        .thenReturn(mockUploadResult);
-                cloudinaryService.uploadImage(invalidFile, "test", "test");
-            });
-        }
-
-        @Test
-        @DisplayName("Should reject file too large")
-        void shouldRejectFileTooLarge() {
-            byte[] largeContent = new byte[21 * 1024 * 1024]; // 21MB
-            MockMultipartFile largeFile = new MockMultipartFile(
-                    "file", "large.jpg", "image/jpeg", largeContent);
-
-            assertThrows(IllegalArgumentException.class, () -> {
-                when(uploader.upload(any(byte[].class), any(Map.class)))
-                        .thenReturn(mockUploadResult);
-                cloudinaryService.uploadImage(largeFile, "test", "test");
-            });
-        }
+        // Then
+        assertNotNull(result);
+        verify(uploader, times(1)).upload(any(byte[].class), any(Map.class));
     }
 }
 

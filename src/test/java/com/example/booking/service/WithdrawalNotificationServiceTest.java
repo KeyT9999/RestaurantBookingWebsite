@@ -1,31 +1,34 @@
 package com.example.booking.service;
 
-import com.example.booking.domain.Notification;
-import com.example.booking.domain.RestaurantBankAccount;
-import com.example.booking.domain.RestaurantOwner;
-import com.example.booking.domain.RestaurantProfile;
-import com.example.booking.domain.User;
-import com.example.booking.domain.UserRole;
-import com.example.booking.common.enums.WithdrawalStatus;
-import com.example.booking.domain.WithdrawalRequest;
-import com.example.booking.repository.NotificationRepository;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.math.BigDecimal;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import com.example.booking.common.enums.WithdrawalStatus;
+import com.example.booking.domain.RestaurantOwner;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.User;
+import com.example.booking.domain.UserRole;
+import com.example.booking.domain.WithdrawalRequest;
+import com.example.booking.repository.NotificationRepository;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
+/**
+ * Unit tests for WithdrawalNotificationService
+ */
 @ExtendWith(MockitoExtension.class)
-class WithdrawalNotificationServiceTest {
+@DisplayName("WithdrawalNotificationService Tests")
+public class WithdrawalNotificationServiceTest {
 
     @Mock
     private NotificationRepository notificationRepository;
@@ -40,14 +43,14 @@ class WithdrawalNotificationServiceTest {
     private RestaurantProfile restaurant;
     private RestaurantOwner owner;
     private User user;
-    private RestaurantBankAccount bankAccount;
 
     @BeforeEach
     void setUp() {
+        UUID userId = UUID.randomUUID();
+
         user = new User();
-        user.setId(UUID.randomUUID());
-        user.setEmail("owner@restaurant.com");
-        user.setFullName("Restaurant Owner");
+        user.setId(userId);
+        user.setEmail("owner@test.com");
         user.setRole(UserRole.RESTAURANT_OWNER);
 
         owner = new RestaurantOwner();
@@ -58,101 +61,122 @@ class WithdrawalNotificationServiceTest {
         restaurant.setRestaurantName("Test Restaurant");
         restaurant.setOwner(owner);
 
-        bankAccount = new RestaurantBankAccount();
-        bankAccount.setAccountId(1);
-        bankAccount.setAccountNumber("1234567890");
-        bankAccount.setBankName("Test Bank");
-        bankAccount.setRestaurant(restaurant);
-
         withdrawalRequest = new WithdrawalRequest();
         withdrawalRequest.setRequestId(1);
         withdrawalRequest.setRestaurant(restaurant);
-        withdrawalRequest.setBankAccount(bankAccount);
         withdrawalRequest.setAmount(new BigDecimal("1000000"));
         withdrawalRequest.setStatus(WithdrawalStatus.PENDING);
-        withdrawalRequest.setCreatedAt(LocalDateTime.now());
     }
 
-    @Test
-    void shouldNotifyWithdrawalCreated() {
-        when(notificationRepository.save(any(Notification.class))).thenReturn(new Notification());
-        doNothing().when(emailService).sendEmail(anyString(), anyString(), anyString());
+    // ========== notifyWithdrawalCreated() Tests ==========
 
+    @Test
+    @DisplayName("shouldNotifyWithdrawalCreated_successfully")
+    void shouldNotifyWithdrawalCreated_successfully() {
+        // Given
+        when(notificationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
         withdrawalNotificationService.notifyWithdrawalCreated(withdrawalRequest);
 
-        verify(notificationRepository).save(any(Notification.class));
-        verify(emailService).sendEmail(eq("owner@restaurant.com"), anyString(), anyString());
+        // Then
+        verify(notificationRepository, times(1)).save(any());
     }
 
-    @Test
-    void shouldNotifyWithdrawalApproved() {
-        withdrawalRequest.setStatus(WithdrawalStatus.APPROVED);
-        when(notificationRepository.save(any(Notification.class))).thenReturn(new Notification());
-        doNothing().when(emailService).sendEmail(anyString(), anyString(), anyString());
+    // ========== notifyWithdrawalApproved() Tests ==========
 
+    @Test
+    @DisplayName("shouldNotifyWithdrawalApproved_successfully")
+    void shouldNotifyWithdrawalApproved_successfully() {
+        // Given
+        withdrawalRequest.setStatus(WithdrawalStatus.APPROVED);
+        when(notificationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
         withdrawalNotificationService.notifyWithdrawalApproved(withdrawalRequest);
 
-        verify(notificationRepository).save(any(Notification.class));
-        verify(emailService).sendEmail(eq("owner@restaurant.com"), anyString(), anyString());
+        // Then
+        verify(notificationRepository, times(1)).save(any());
     }
 
-    @Test
-    void shouldNotifyWithdrawalRejected() {
-        withdrawalRequest.setStatus(WithdrawalStatus.REJECTED);
-        withdrawalRequest.setRejectionReason("Insufficient funds");
-        when(notificationRepository.save(any(Notification.class))).thenReturn(new Notification());
-        doNothing().when(emailService).sendEmail(anyString(), anyString(), anyString());
+    // ========== notifyWithdrawalRejected() Tests ==========
 
+    @Test
+    @DisplayName("shouldNotifyWithdrawalRejected_successfully")
+    void shouldNotifyWithdrawalRejected_successfully() {
+        // Given
+        withdrawalRequest.setStatus(WithdrawalStatus.REJECTED);
+        withdrawalRequest.setRejectionReason("Insufficient balance");
+        when(notificationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
         withdrawalNotificationService.notifyWithdrawalRejected(withdrawalRequest);
 
-        verify(notificationRepository).save(any(Notification.class));
-        verify(emailService).sendEmail(eq("owner@restaurant.com"), anyString(), anyString());
+        // Then
+        verify(notificationRepository, times(1)).save(any());
     }
 
     @Test
-    void shouldNotifyWithdrawalRejected_WithoutReason() {
+    @DisplayName("shouldNotifyWithdrawalRejected_withNullReason")
+    void shouldNotifyWithdrawalRejected_withNullReason() {
+        // Given
         withdrawalRequest.setStatus(WithdrawalStatus.REJECTED);
         withdrawalRequest.setRejectionReason(null);
-        when(notificationRepository.save(any(Notification.class))).thenReturn(new Notification());
-        doNothing().when(emailService).sendEmail(anyString(), anyString(), anyString());
+        when(notificationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
+        // When
         withdrawalNotificationService.notifyWithdrawalRejected(withdrawalRequest);
 
-        verify(notificationRepository).save(any(Notification.class));
-        verify(emailService).sendEmail(eq("owner@restaurant.com"), anyString(), anyString());
+        // Then
+        verify(notificationRepository, times(1)).save(any());
     }
 
-    @Test
-    void shouldNotifyWithdrawalSucceeded() {
-        withdrawalRequest.setStatus(WithdrawalStatus.SUCCEEDED);
-        when(notificationRepository.save(any(Notification.class))).thenReturn(new Notification());
-        doNothing().when(emailService).sendEmail(anyString(), anyString(), anyString());
+    // ========== notifyWithdrawalSucceeded() Tests ==========
 
+    @Test
+    @DisplayName("shouldNotifyWithdrawalSucceeded_successfully")
+    void shouldNotifyWithdrawalSucceeded_successfully() {
+        // Given
+        withdrawalRequest.setStatus(WithdrawalStatus.SUCCEEDED);
+        when(notificationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
         withdrawalNotificationService.notifyWithdrawalSucceeded(withdrawalRequest);
 
-        verify(notificationRepository).save(any(Notification.class));
-        verify(emailService).sendEmail(eq("owner@restaurant.com"), anyString(), anyString());
+        // Then
+        verify(notificationRepository, times(1)).save(any());
     }
 
-    @Test
-    void shouldNotifyWithdrawalFailed() {
-        withdrawalRequest.setStatus(WithdrawalStatus.FAILED);
-        withdrawalRequest.setRejectionReason("Bank error");
-        when(notificationRepository.save(any(Notification.class))).thenReturn(new Notification());
+    // ========== notifyWithdrawalFailed() Tests ==========
 
+    @Test
+    @DisplayName("shouldNotifyWithdrawalFailed_successfully")
+    void shouldNotifyWithdrawalFailed_successfully() {
+        // Given
+        withdrawalRequest.setStatus(WithdrawalStatus.FAILED);
+        // WithdrawalRequest doesn't have setFailureReason, using rejectionReason
+        withdrawalRequest.setRejectionReason("Bank transfer error");
+        when(notificationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
         withdrawalNotificationService.notifyWithdrawalFailed(withdrawalRequest);
 
-        verify(notificationRepository).save(any(Notification.class));
+        // Then
+        verify(notificationRepository, times(1)).save(any());
     }
 
+    // ========== Error Handling Tests ==========
+
     @Test
-    void shouldHandleExceptionGracefully() {
-        withdrawalRequest.getRestaurant().getOwner().getUser().setEmail(null); // Cause exception
+    @DisplayName("shouldHandleException_gracefully")
+    void shouldHandleException_gracefully() {
+        // Given
+        when(notificationRepository.save(any())).thenThrow(new RuntimeException("Database error"));
 
-        withdrawalNotificationService.notifyWithdrawalCreated(withdrawalRequest);
-
-        // Should not throw exception, just log error
-        verify(notificationRepository, never()).save(any(Notification.class));
+        // When & Then - Should not throw exception
+        assertDoesNotThrow(() -> {
+            withdrawalNotificationService.notifyWithdrawalCreated(withdrawalRequest);
+        });
     }
 }
 

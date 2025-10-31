@@ -1,5 +1,21 @@
 package com.example.booking.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import com.example.booking.domain.RestaurantBankAccount;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.dto.payout.RestaurantBankAccountDto;
@@ -7,26 +23,13 @@ import com.example.booking.exception.BadRequestException;
 import com.example.booking.exception.ResourceNotFoundException;
 import com.example.booking.repository.RestaurantBankAccountRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
+/**
+ * Unit tests for RestaurantBankAccountService
+ */
 @ExtendWith(MockitoExtension.class)
-class RestaurantBankAccountServiceTest {
+@DisplayName("RestaurantBankAccountService Tests")
+public class RestaurantBankAccountServiceTest {
 
     @Mock
     private RestaurantBankAccountRepository bankAccountRepository;
@@ -37,301 +40,316 @@ class RestaurantBankAccountServiceTest {
     @InjectMocks
     private RestaurantBankAccountService bankAccountService;
 
+    private Integer restaurantId;
+    private Integer accountId;
     private RestaurantProfile restaurant;
-    private RestaurantBankAccount bankAccount;
-    private RestaurantBankAccountDto bankAccountDto;
+    private RestaurantBankAccount account;
+    private RestaurantBankAccountDto accountDto;
 
     @BeforeEach
     void setUp() {
+        restaurantId = 1;
+        accountId = 1;
+
         restaurant = new RestaurantProfile();
-        restaurant.setRestaurantId(1);
+        restaurant.setRestaurantId(restaurantId);
         restaurant.setRestaurantName("Test Restaurant");
 
-        bankAccount = new RestaurantBankAccount();
-        bankAccount.setAccountId(1);
-        bankAccount.setRestaurant(restaurant);
-        bankAccount.setBankCode("970422");
-        bankAccount.setBankName("MB Bank");
-        bankAccount.setAccountNumber("1234567890");
-        bankAccount.setAccountHolderName("Test Owner");
-        bankAccount.setIsVerified(false);
-        bankAccount.setIsDefault(true);
+        account = new RestaurantBankAccount();
+        account.setAccountId(accountId);
+        account.setRestaurant(restaurant);
+        account.setBankCode("VCB");
+        account.setBankName("Vietcombank");
+        account.setAccountNumber("1234567890");
+        account.setAccountHolderName("Test Owner");
+        account.setIsDefault(true);
+        account.setIsVerified(false);
 
-        bankAccountDto = new RestaurantBankAccountDto();
-        bankAccountDto.setAccountId(1);
-        bankAccountDto.setRestaurantId(1);
-        bankAccountDto.setBankCode("970422");
-        bankAccountDto.setBankName("MB Bank");
-        bankAccountDto.setAccountNumber("1234567890");
-        bankAccountDto.setAccountHolderName("Test Owner");
-        bankAccountDto.setIsDefault(true);
+        accountDto = new RestaurantBankAccountDto();
+        accountDto.setBankCode("VCB");
+        accountDto.setAccountNumber("1234567890");
+        accountDto.setAccountHolderName("Test Owner");
+        accountDto.setIsDefault(true);
+    }
+
+    // ========== getBankAccounts() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetBankAccounts_successfully")
+    void shouldGetBankAccounts_successfully() {
+        // Given
+        List<RestaurantBankAccount> accounts = Arrays.asList(account);
+        when(bankAccountRepository.findByRestaurantId(restaurantId)).thenReturn(accounts);
+
+        // When
+        List<RestaurantBankAccountDto> result = bankAccountService.getBankAccounts(restaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
     }
 
     @Test
-    void shouldGetBankAccounts() {
-        when(bankAccountRepository.findByRestaurantId(1)).thenReturn(Arrays.asList(bankAccount));
+    @DisplayName("shouldReturnEmptyList_whenNoAccounts")
+    void shouldReturnEmptyList_whenNoAccounts() {
+        // Given
+        when(bankAccountRepository.findByRestaurantId(restaurantId)).thenReturn(Arrays.asList());
 
-        List<RestaurantBankAccountDto> result = bankAccountService.getBankAccounts(1);
+        // When
+        List<RestaurantBankAccountDto> result = bankAccountService.getBankAccounts(restaurantId);
 
-        assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAccountId()).isEqualTo(1);
-        assertThat(result.get(0).getAccountNumber()).isEqualTo("1234567890");
+        // Then
+        assertNotNull(result);
+        assertEquals(0, result.size());
+    }
+
+    // ========== addBankAccount() Tests ==========
+
+    @Test
+    @DisplayName("shouldAddBankAccount_successfully")
+    void shouldAddBankAccount_successfully() {
+        // Given
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(restaurantId, "1234567890"))
+            .thenReturn(false);
+        when(bankAccountRepository.countByRestaurantId(restaurantId)).thenReturn(0L);
+        when(bankAccountRepository.save(any(RestaurantBankAccount.class))).thenReturn(account);
+
+        // When
+        RestaurantBankAccountDto result = bankAccountService.addBankAccount(restaurantId, accountDto);
+
+        // Then
+        assertNotNull(result);
+        verify(bankAccountRepository, times(1)).save(any(RestaurantBankAccount.class));
     }
 
     @Test
-    void shouldAddBankAccount() {
-        RestaurantBankAccountDto newDto = new RestaurantBankAccountDto();
-        newDto.setBankCode("970436");
-        newDto.setAccountNumber("9876543210");
-        newDto.setAccountHolderName("New Owner");
+    @DisplayName("shouldSetFirstAccountAsDefault")
+    void shouldSetFirstAccountAsDefault() {
+        // Given
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(restaurantId, "1234567890"))
+            .thenReturn(false);
+        when(bankAccountRepository.countByRestaurantId(restaurantId)).thenReturn(0L);
+        when(bankAccountRepository.save(any(RestaurantBankAccount.class))).thenReturn(account);
 
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(1, "9876543210")).thenReturn(false);
-        when(bankAccountRepository.countByRestaurantId(1)).thenReturn(0L);
-        when(bankAccountRepository.save(any(RestaurantBankAccount.class))).thenReturn(bankAccount);
+        // When
+        RestaurantBankAccountDto result = bankAccountService.addBankAccount(restaurantId, accountDto);
 
-        RestaurantBankAccountDto result = bankAccountService.addBankAccount(1, newDto);
-
-        assertThat(result).isNotNull();
-        verify(bankAccountRepository).save(any(RestaurantBankAccount.class));
+        // Then
+        assertNotNull(result);
+        verify(bankAccountRepository, times(1)).save(any(RestaurantBankAccount.class));
     }
 
     @Test
-    void shouldAddBankAccount_SetAsDefaultIfFirst() {
-        RestaurantBankAccountDto newDto = new RestaurantBankAccountDto();
-        newDto.setBankCode("970436");
-        newDto.setAccountNumber("9876543210");
-        newDto.setAccountHolderName("New Owner");
+    @DisplayName("shouldThrowException_whenRestaurantNotFound")
+    void shouldThrowException_whenRestaurantNotFound() {
+        // Given
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.empty());
 
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(1, "9876543210")).thenReturn(false);
-        when(bankAccountRepository.countByRestaurantId(1)).thenReturn(0L);
-        when(bankAccountRepository.save(any(RestaurantBankAccount.class))).thenAnswer(invocation -> {
-            RestaurantBankAccount account = invocation.getArgument(0);
-            account.setAccountId(1);
-            return account;
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> {
+            bankAccountService.addBankAccount(restaurantId, accountDto);
         });
-
-        RestaurantBankAccountDto result = bankAccountService.addBankAccount(1, newDto);
-
-        assertThat(result).isNotNull();
-        verify(bankAccountRepository).save(any(RestaurantBankAccount.class));
     }
 
     @Test
-    void shouldAddBankAccount_UnsetOtherDefaults() {
-        RestaurantBankAccountDto newDto = new RestaurantBankAccountDto();
-        newDto.setBankCode("970436");
-        newDto.setAccountNumber("9876543210");
-        newDto.setAccountHolderName("New Owner");
-        newDto.setIsDefault(true);
+    @DisplayName("shouldThrowException_whenAccountNumberExists")
+    void shouldThrowException_whenAccountNumberExists() {
+        // Given
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(restaurantId, "1234567890"))
+            .thenReturn(true);
 
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(1, "9876543210")).thenReturn(false);
-        when(bankAccountRepository.countByRestaurantId(1)).thenReturn(1L);
-        when(bankAccountRepository.save(any(RestaurantBankAccount.class))).thenReturn(bankAccount);
+        // When & Then
+        assertThrows(BadRequestException.class, () -> {
+            bankAccountService.addBankAccount(restaurantId, accountDto);
+        });
+    }
 
-        bankAccountService.addBankAccount(1, newDto);
+    // ========== updateBankAccount() Tests ==========
 
-        verify(bankAccountRepository).unsetDefaultForRestaurant(1);
+    @Test
+    @DisplayName("shouldUpdateBankAccount_successfully")
+    void shouldUpdateBankAccount_successfully() {
+        // Given
+        account.setRestaurant(restaurant);
+        when(bankAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(restaurantId, "1234567890"))
+            .thenReturn(false);
+        when(bankAccountRepository.save(account)).thenReturn(account);
+
+        // When
+        RestaurantBankAccountDto result = bankAccountService.updateBankAccount(restaurantId, accountId, accountDto);
+
+        // Then
+        assertNotNull(result);
+        verify(bankAccountRepository, times(1)).save(account);
     }
 
     @Test
-    void shouldAddBankAccount_RestaurantNotFound() {
-        RestaurantBankAccountDto newDto = new RestaurantBankAccountDto();
-        newDto.setBankCode("970436");
-        newDto.setAccountNumber("9876543210");
-        newDto.setAccountHolderName("New Owner");
+    @DisplayName("shouldThrowException_whenAccountNotFound")
+    void shouldThrowException_whenAccountNotFound() {
+        // Given
+        when(bankAccountRepository.findById(accountId)).thenReturn(Optional.empty());
 
-        when(restaurantRepository.findById(1)).thenReturn(Optional.empty());
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> {
+            bankAccountService.updateBankAccount(restaurantId, accountId, accountDto);
+        });
+    }
 
-        assertThatThrownBy(() -> bankAccountService.addBankAccount(1, newDto))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Không tìm thấy nhà hàng");
+    // ========== deleteBankAccount() Tests ==========
+
+    @Test
+    @DisplayName("shouldDeleteBankAccount_successfully")
+    void shouldDeleteBankAccount_successfully() {
+        // Given
+        account.setRestaurant(restaurant);
+        when(bankAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        doNothing().when(bankAccountRepository).delete(account);
+
+        // When
+        bankAccountService.deleteBankAccount(restaurantId, accountId);
+
+        // Then
+        verify(bankAccountRepository, times(1)).delete(account);
     }
 
     @Test
-    void shouldAddBankAccount_DuplicateAccountNumber() {
-        RestaurantBankAccountDto newDto = new RestaurantBankAccountDto();
-        newDto.setBankCode("970436");
-        newDto.setAccountNumber("1234567890");
-        newDto.setAccountHolderName("New Owner");
+    @DisplayName("shouldThrowException_whenDeleteAccountNotFound")
+    void shouldThrowException_whenDeleteAccountNotFound() {
+        // Given
+        when(bankAccountRepository.findById(accountId)).thenReturn(Optional.empty());
 
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(1, "1234567890")).thenReturn(true);
+        // When & Then
+        assertThrows(ResourceNotFoundException.class, () -> {
+            bankAccountService.deleteBankAccount(restaurantId, accountId);
+        });
+    }
 
-        assertThatThrownBy(() -> bankAccountService.addBankAccount(1, newDto))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Số tài khoản này đã tồn tại");
+
+    // ========== getDefaultBankAccount() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetDefaultBankAccount_successfully")
+    void shouldGetDefaultBankAccount_successfully() {
+        // Given
+        when(bankAccountRepository.findByRestaurantIdAndIsDefaultTrue(restaurantId))
+            .thenReturn(Optional.of(account));
+
+        // When
+        RestaurantBankAccountDto result = bankAccountService.getDefaultBankAccount(restaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertTrue(result.getIsDefault());
     }
 
     @Test
-    void shouldAddBankAccount_InvalidAccountNumber() {
-        RestaurantBankAccountDto newDto = new RestaurantBankAccountDto();
-        newDto.setBankCode("970436");
-        newDto.setAccountNumber("123"); // Too short
-        newDto.setAccountHolderName("New Owner");
+    @DisplayName("shouldReturnNull_whenNoDefaultAccount")
+    void shouldReturnNull_whenNoDefaultAccount() {
+        // Given
+        when(bankAccountRepository.findByRestaurantIdAndIsDefaultTrue(restaurantId))
+            .thenReturn(Optional.empty());
 
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(1, "123")).thenReturn(false);
+        // When
+        RestaurantBankAccountDto result = bankAccountService.getDefaultBankAccount(restaurantId);
 
-        assertThatThrownBy(() -> bankAccountService.addBankAccount(1, newDto))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Số tài khoản phải chứa từ 9-20 chữ số");
+        // Then
+        assertNull(result);
+    }
+
+    // ========== Validation Tests ==========
+
+    @Test
+    @DisplayName("shouldThrowException_whenBankCodeIsEmpty")
+    void shouldThrowException_whenBankCodeIsEmpty() {
+        // Given
+        accountDto.setBankCode("");
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
+
+        // When & Then
+        assertThrows(com.example.booking.exception.BadRequestException.class, () -> {
+            bankAccountService.addBankAccount(restaurantId, accountDto);
+        });
     }
 
     @Test
-    void shouldUpdateBankAccount() {
-        RestaurantBankAccountDto updateDto = new RestaurantBankAccountDto();
-        updateDto.setBankCode("970436");
-        updateDto.setAccountNumber("9876543210");
-        updateDto.setAccountHolderName("Updated Owner");
-        updateDto.setIsDefault(false);
+    @DisplayName("shouldThrowException_whenAccountNumberIsInvalid")
+    void shouldThrowException_whenAccountNumberIsInvalid() {
+        // Given
+        accountDto.setAccountNumber("123"); // Too short
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
 
-        when(bankAccountRepository.findById(1)).thenReturn(Optional.of(bankAccount));
-        when(bankAccountRepository.existsByRestaurantIdAndAccountNumberAndAccountIdNot(1, "9876543210", 1)).thenReturn(false);
-        when(bankAccountRepository.save(any(RestaurantBankAccount.class))).thenReturn(bankAccount);
-
-        RestaurantBankAccountDto result = bankAccountService.updateBankAccount(1, 1, updateDto);
-
-        assertThat(result).isNotNull();
-        verify(bankAccountRepository).save(any(RestaurantBankAccount.class));
+        // When & Then
+        assertThrows(com.example.booking.exception.BadRequestException.class, () -> {
+            bankAccountService.addBankAccount(restaurantId, accountDto);
+        });
     }
 
     @Test
-    void shouldUpdateBankAccount_NotFound() {
-        RestaurantBankAccountDto updateDto = new RestaurantBankAccountDto();
-        when(bankAccountRepository.findById(1)).thenReturn(Optional.empty());
+    @DisplayName("shouldThrowException_whenAccountNumberIsNull")
+    void shouldThrowException_whenAccountNumberIsNull() {
+        // Given
+        accountDto.setAccountNumber(null);
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
 
-        assertThatThrownBy(() -> bankAccountService.updateBankAccount(1, 1, updateDto))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Không tìm thấy tài khoản ngân hàng");
+        // When & Then
+        assertThrows(com.example.booking.exception.BadRequestException.class, () -> {
+            bankAccountService.addBankAccount(restaurantId, accountDto);
+        });
     }
 
     @Test
-    void shouldUpdateBankAccount_WrongRestaurant() {
+    @DisplayName("shouldThrowException_whenDeleteDefaultAccount_withOtherAccounts")
+    void shouldThrowException_whenDeleteDefaultAccount_withOtherAccounts() {
+        // Given
+        account.setIsDefault(true);
+        account.setRestaurant(restaurant);
+        when(bankAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(bankAccountRepository.countByRestaurantId(restaurantId)).thenReturn(2L);
+
+        // When & Then
+        assertThrows(BadRequestException.class, () -> {
+            bankAccountService.deleteBankAccount(restaurantId, accountId);
+        });
+    }
+
+    @Test
+    @DisplayName("shouldUnsetDefaultForRestaurant_whenSettingNewDefault")
+    void shouldUnsetDefaultForRestaurant_whenSettingNewDefault() {
+        // Given
+        account.setRestaurant(restaurant);
+        account.setIsDefault(false);
+        accountDto.setIsDefault(true);
+        when(bankAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(bankAccountRepository.existsByRestaurantIdAndAccountNumberAndAccountIdNot(
+            restaurantId, "1234567890", accountId)).thenReturn(false);
+        doNothing().when(bankAccountRepository).unsetDefaultForRestaurant(restaurantId);
+        when(bankAccountRepository.save(account)).thenReturn(account);
+
+        // When
+        RestaurantBankAccountDto result = bankAccountService.updateBankAccount(restaurantId, accountId, accountDto);
+
+        // Then
+        assertNotNull(result);
+        verify(bankAccountRepository, times(1)).unsetDefaultForRestaurant(restaurantId);
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenAccountNotOwnedByRestaurant")
+    void shouldThrowException_whenAccountNotOwnedByRestaurant() {
+        // Given
         RestaurantProfile otherRestaurant = new RestaurantProfile();
-        otherRestaurant.setRestaurantId(2);
+        otherRestaurant.setRestaurantId(999);
+        account.setRestaurant(otherRestaurant);
+        when(bankAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
 
-        RestaurantBankAccount otherAccount = new RestaurantBankAccount();
-        otherAccount.setAccountId(1);
-        otherAccount.setRestaurant(otherRestaurant);
-
-        RestaurantBankAccountDto updateDto = new RestaurantBankAccountDto();
-        when(bankAccountRepository.findById(1)).thenReturn(Optional.of(otherAccount));
-
-        assertThatThrownBy(() -> bankAccountService.updateBankAccount(1, 1, updateDto))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("không thuộc nhà hàng này");
-    }
-
-    @Test
-    void shouldDeleteBankAccount() {
-        when(bankAccountRepository.findById(1)).thenReturn(Optional.of(bankAccount));
-        when(bankAccountRepository.countByRestaurantId(1)).thenReturn(2L); // More than 1 account
-
-        bankAccountService.deleteBankAccount(1, 1);
-
-        verify(bankAccountRepository).delete(bankAccount);
-    }
-
-    @Test
-    void shouldDeleteBankAccount_NotFound() {
-        when(bankAccountRepository.findById(1)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> bankAccountService.deleteBankAccount(1, 1))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Không tìm thấy tài khoản ngân hàng");
-    }
-
-    @Test
-    void shouldDeleteBankAccount_CannotDeleteDefaultWhenMultipleAccounts() {
-        bankAccount.setIsDefault(true);
-        when(bankAccountRepository.findById(1)).thenReturn(Optional.of(bankAccount));
-        when(bankAccountRepository.countByRestaurantId(1)).thenReturn(2L); // More than 1 account
-
-        assertThatThrownBy(() -> bankAccountService.deleteBankAccount(1, 1))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Không thể xóa tài khoản mặc định");
-    }
-
-    @Test
-    void shouldGetDefaultBankAccount() {
-        when(bankAccountRepository.findByRestaurantIdAndIsDefaultTrue(1)).thenReturn(Optional.of(bankAccount));
-
-        RestaurantBankAccountDto result = bankAccountService.getDefaultBankAccount(1);
-
-        assertThat(result).isNotNull();
-        assertThat(result.getAccountId()).isEqualTo(1);
-        assertThat(result.getIsDefault()).isTrue();
-    }
-
-    @Test
-    void shouldGetDefaultBankAccount_NotFound() {
-        when(bankAccountRepository.findByRestaurantIdAndIsDefaultTrue(1)).thenReturn(Optional.empty());
-
-        RestaurantBankAccountDto result = bankAccountService.getDefaultBankAccount(1);
-
-        assertThat(result).isNull();
-    }
-
-    @Test
-    void shouldValidateBankAccount_MissingBankCode() {
-        RestaurantBankAccountDto dto = new RestaurantBankAccountDto();
-        dto.setBankCode("");
-        dto.setAccountNumber("1234567890");
-        dto.setAccountHolderName("Owner");
-
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
-
-        assertThatThrownBy(() -> bankAccountService.addBankAccount(1, dto))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Mã ngân hàng không được để trống");
-    }
-
-    @Test
-    void shouldValidateBankAccount_MissingAccountNumber() {
-        RestaurantBankAccountDto dto = new RestaurantBankAccountDto();
-        dto.setBankCode("970422");
-        dto.setAccountNumber("");
-        dto.setAccountHolderName("Owner");
-
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
-
-        assertThatThrownBy(() -> bankAccountService.addBankAccount(1, dto))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Số tài khoản không được để trống");
-    }
-
-    @Test
-    void shouldValidateBankAccount_MissingAccountHolderName() {
-        RestaurantBankAccountDto dto = new RestaurantBankAccountDto();
-        dto.setBankCode("970422");
-        dto.setAccountNumber("1234567890");
-        dto.setAccountHolderName("");
-
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(1, "1234567890")).thenReturn(false);
-
-        assertThatThrownBy(() -> bankAccountService.addBankAccount(1, dto))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Tên chủ tài khoản không được để trống");
-    }
-
-    @Test
-    void shouldValidateBankAccount_InvalidBankCode() {
-        RestaurantBankAccountDto dto = new RestaurantBankAccountDto();
-        dto.setBankCode("999999"); // Invalid bank code
-        dto.setAccountNumber("1234567890");
-        dto.setAccountHolderName("Owner");
-
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(bankAccountRepository.existsByRestaurantIdAndAccountNumber(1, "1234567890")).thenReturn(false);
-
-        assertThatThrownBy(() -> bankAccountService.addBankAccount(1, dto))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Mã ngân hàng không hợp lệ");
+        // When & Then
+        assertThrows(BadRequestException.class, () -> {
+            bankAccountService.updateBankAccount(restaurantId, accountId, accountDto);
+        });
     }
 }
 

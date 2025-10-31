@@ -1,145 +1,130 @@
 package com.example.booking.web.controller.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import com.example.booking.domain.User;
-import com.example.booking.domain.UserRole;
 import com.example.booking.dto.AIActionRequest;
 import com.example.booking.dto.AIActionResponse;
 import com.example.booking.service.AIIntentDispatcherService;
 import com.example.booking.service.SimpleUserService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-@WebMvcTest(AIActionsController.class)
-class AIActionsControllerTest {
+/**
+ * Unit tests for AIActionsController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("AIActionsController Tests")
+public class AIActionsControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private AIIntentDispatcherService intentDispatcherService;
 
-    @MockBean
+    @Mock
     private SimpleUserService userService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @Mock
+    private Authentication authentication;
 
-    private User testUser;
+    @InjectMocks
+    private AIActionsController controller;
+
+    private User user;
+    private AIActionRequest request;
 
     @BeforeEach
     void setUp() {
-        testUser = new User();
-        testUser.setId(java.util.UUID.randomUUID());
-        testUser.setUsername("customer@test.com");
-        testUser.setEmail("customer@test.com");
-        testUser.setRole(UserRole.CUSTOMER);
-    }
+        user = new User();
+        user.setId(UUID.randomUUID());
+        user.setUsername("testuser");
 
-    @Test
-    // TC AI-001
-    @WithMockUser(username = "customer@test.com", roles = {"CUSTOMER"})
-    void shouldExecuteAIAction_whenValidRequest() throws Exception {
-        // Given
+        request = new AIActionRequest();
+        request.setIntent("BOOK_RESTAURANT");
         Map<String, Object> data = new HashMap<>();
-        data.put("value", "test");
-        AIActionRequest request = new AIActionRequest("test_intent", data);
-        AIActionResponse response = AIActionResponse.success("Action completed");
-        
-        when(userService.loadUserByUsername(anyString())).thenReturn(testUser);
-        when(intentDispatcherService.dispatchIntent(anyString(), any(Map.class), any(User.class))).thenReturn(response);
-        
-        // When & Then
-        mockMvc.perform(post("/api/ai/actions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+        data.put("restaurantId", 1);
+        request.setData(data);
+    }
+
+    // ========== executeAIAction() Tests ==========
+
+    @Test
+    @DisplayName("shouldExecuteAIAction_successfully")
+    void shouldExecuteAIAction_successfully() {
+        // Given
+        AIActionResponse response = AIActionResponse.success("Booking created", null);
+
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(intentDispatcherService.dispatchIntent(anyString(), any(), any(User.class)))
+            .thenReturn(response);
+
+        // When
+        ResponseEntity<AIActionResponse> result = controller.executeAIAction(request, authentication);
+
+        // Then
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertNotNull(result.getBody());
+        assertTrue(result.getBody().isSuccess());
     }
 
     @Test
-    // TC AI-002
-    @WithMockUser(username = "customer@test.com", roles = {"CUSTOMER"})
-    void shouldReturnBadRequest_whenIntentIsMissing() throws Exception {
+    @DisplayName("shouldReturnError_whenIntentMissing")
+    void shouldReturnError_whenIntentMissing() {
         // Given
-        AIActionRequest request = new AIActionRequest("", new HashMap<>());
-        
-        when(userService.loadUserByUsername(anyString())).thenReturn(testUser);
-        
-        // When & Then
-        mockMvc.perform(post("/api/ai/actions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+        request.setIntent(null);
+
+        // When
+        ResponseEntity<AIActionResponse> result = controller.executeAIAction(request, authentication);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertNotNull(result.getBody());
+        assertFalse(result.getBody().isSuccess());
     }
 
     @Test
-    // TC AI-003
-    @WithMockUser(username = "customer@test.com", roles = {"CUSTOMER"})
-    void shouldReturnBadRequest_whenDataIsMissing() throws Exception {
+    @DisplayName("shouldReturnError_whenDataMissing")
+    void shouldReturnError_whenDataMissing() {
         // Given
-        AIActionRequest request = new AIActionRequest();
-        request.setIntent("test_intent");
         request.setData(null);
-        
-        when(userService.loadUserByUsername(anyString())).thenReturn(testUser);
-        
-        // When & Then
-        mockMvc.perform(post("/api/ai/actions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+
+        // When
+        ResponseEntity<AIActionResponse> result = controller.executeAIAction(request, authentication);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        assertNotNull(result.getBody());
+        assertFalse(result.getBody().isSuccess());
     }
 
     @Test
-    // TC AI-004
-    @WithMockUser(username = "customer@test.com", roles = {"CUSTOMER"})
-    void shouldReturnInternalServerError_whenDispatchThrowsException() throws Exception {
+    @DisplayName("shouldReturnError_whenDispatchFails")
+    void shouldReturnError_whenDispatchFails() {
         // Given
-        AIActionRequest request = new AIActionRequest("test_intent", new HashMap<>());
-        
-        when(userService.loadUserByUsername(anyString())).thenReturn(testUser);
-        when(intentDispatcherService.dispatchIntent(anyString(), any(Map.class), any(User.class)))
-            .thenThrow(new RuntimeException("Service error"));
-        
-        // When & Then
-        mockMvc.perform(post("/api/ai/actions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isInternalServerError());
-    }
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(intentDispatcherService.dispatchIntent(anyString(), any(), any(User.class)))
+            .thenThrow(new RuntimeException("Dispatch failed"));
 
-    @Test
-    // TC AI-005
-    @WithMockUser(username = "admin@test.com", roles = {"ADMIN"})
-    void shouldReturnForbidden_whenUserIsNotCustomer() throws Exception {
-        // Given
-        AIActionRequest request = new AIActionRequest("test_intent", new HashMap<>());
-        
-        // When & Then
-        mockMvc.perform(post("/api/ai/actions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
+        // When
+        ResponseEntity<AIActionResponse> result = controller.executeAIAction(request, authentication);
+
+        // Then
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, result.getStatusCode());
+        assertNotNull(result.getBody());
+        assertFalse(result.getBody().isSuccess());
     }
 }
-

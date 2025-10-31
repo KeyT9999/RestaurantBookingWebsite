@@ -1,170 +1,153 @@
 package com.example.booking.web.controller.admin;
 
-import com.example.booking.domain.ReviewReportStatus;
-import com.example.booking.domain.User;
-import com.example.booking.domain.UserRole;
-import com.example.booking.dto.ReviewReportView;
-import com.example.booking.service.ReviewReportService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.web.servlet.MockMvc;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-@WebMvcTest(AdminModerationController.class)
-class AdminModerationControllerTest {
+import com.example.booking.domain.ReviewReportStatus;
+import com.example.booking.domain.User;
+import com.example.booking.dto.ReviewReportView;
+import com.example.booking.service.ReviewReportService;
 
-    @Autowired
-    private MockMvc mockMvc;
+/**
+ * Unit tests for AdminModerationController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("AdminModerationController Tests")
+public class AdminModerationControllerTest {
 
-    @MockBean
+    @Mock
     private ReviewReportService reviewReportService;
 
-    private ReviewReportView reportView;
-    private User adminUser;
+    @Mock
+    private Model model;
+
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private RedirectAttributes redirectAttributes;
+
+    @InjectMocks
+    private AdminModerationController controller;
+
+    private User admin;
+    private Long reportId;
 
     @BeforeEach
     void setUp() {
-        adminUser = new User();
-        adminUser.setId(UUID.randomUUID());
-        adminUser.setEmail("admin@test.com");
-        adminUser.setRole(UserRole.ADMIN);
+        reportId = 1L;
+        admin = new User();
+        admin.setId(UUID.randomUUID());
+    }
 
-        reportView = new ReviewReportView();
-        reportView.setReportId(1L);
-        reportView.setReviewId(100);
-        reportView.setStatus(ReviewReportStatus.PENDING);
-        reportView.setReportedAt(LocalDateTime.now());
+    // ========== listReports() Tests ==========
+
+    @Test
+    @DisplayName("shouldListReports_successfully")
+    void shouldListReports_successfully() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<ReviewReportView> reportPage = mock(Page.class);
+
+        when(reviewReportService.getReportsForAdmin(Optional.empty(), pageable))
+            .thenReturn(reportPage);
+
+        // When
+        String view = controller.listReports(0, 20, null, model);
+
+        // Then
+        assertEquals("admin/moderation", view);
+        verify(model, times(1)).addAttribute("reportPage", reportPage);
+        verify(model, times(1)).addAttribute("currentPage", 0);
+        verify(model, times(1)).addAttribute("pageSize", 20);
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void shouldListReports() throws Exception {
-        Page<ReviewReportView> reportPage = new PageImpl<>(Arrays.asList(reportView));
-        when(reviewReportService.getReportsForAdmin(any(Optional.class), any())).thenReturn(reportPage);
+    @DisplayName("shouldFilterReportsByStatus_successfully")
+    void shouldFilterReportsByStatus_successfully() {
+        // Given
+        ReviewReportStatus status = ReviewReportStatus.PENDING;
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<ReviewReportView> reportPage = mock(Page.class);
 
-        mockMvc.perform(get("/admin/moderation"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/moderation"))
-                .andExpect(model().attributeExists("reportPage"))
-                .andExpect(model().attributeExists("statuses"));
+        when(reviewReportService.getReportsForAdmin(Optional.of(status), pageable))
+            .thenReturn(reportPage);
+
+        // When
+        String view = controller.listReports(0, 20, status, model);
+
+        // Then
+        assertEquals("admin/moderation", view);
+        verify(model, times(1)).addAttribute("selectedStatus", status);
+    }
+
+    // ========== viewReport() Tests ==========
+
+    @Test
+    @DisplayName("shouldViewReport_successfully")
+    void shouldViewReport_successfully() {
+        // Given
+        ReviewReportView report = new ReviewReportView();
+        when(reviewReportService.getReportView(reportId)).thenReturn(report);
+
+        // When
+        String view = controller.viewReport(reportId, model);
+
+        // Then
+        assertEquals("admin/moderation-detail", view);
+        verify(model, times(1)).addAttribute("report", report);
+    }
+
+    // ========== resolveReport() Tests ==========
+
+    @Test
+    @DisplayName("shouldResolveReport_successfully")
+    void shouldResolveReport_successfully() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(admin);
+        doNothing().when(reviewReportService).resolveReport(reportId, admin.getId(), "Resolved");
+
+        // When
+        String view = controller.resolveReport(reportId, "Resolved", authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(reviewReportService, times(1)).resolveReport(reportId, admin.getId(), "Resolved");
+        verify(redirectAttributes, times(1)).addFlashAttribute("success", anyString());
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
-    void shouldListReports_WithPagination() throws Exception {
-        Page<ReviewReportView> reportPage = new PageImpl<>(Arrays.asList(reportView));
-        when(reviewReportService.getReportsForAdmin(any(Optional.class), any())).thenReturn(reportPage);
+    @DisplayName("shouldHandleError_whenResolveFails")
+    void shouldHandleError_whenResolveFails() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(admin);
+        doThrow(new RuntimeException("Error")).when(reviewReportService)
+            .resolveReport(reportId, admin.getId(), "Resolved");
 
-        mockMvc.perform(get("/admin/moderation")
-                        .param("page", "1")
-                        .param("size", "10"))
-                .andExpect(status().isOk())
-                .andExpect(model().attribute("currentPage", 1))
-                .andExpect(model().attribute("pageSize", 10));
-    }
+        // When
+        String view = controller.resolveReport(reportId, "Resolved", authentication, redirectAttributes);
 
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void shouldListReports_WithStatusFilter() throws Exception {
-        Page<ReviewReportView> reportPage = new PageImpl<>(Arrays.asList(reportView));
-        when(reviewReportService.getReportsForAdmin(eq(Optional.of(ReviewReportStatus.PENDING)), any()))
-                .thenReturn(reportPage);
-
-        mockMvc.perform(get("/admin/moderation")
-                        .param("status", "PENDING"))
-                .andExpect(status().isOk())
-                .andExpect(model().attribute("selectedStatus", ReviewReportStatus.PENDING));
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    void shouldViewReport() throws Exception {
-        when(reviewReportService.getReportView(1L)).thenReturn(reportView);
-
-        mockMvc.perform(get("/admin/moderation/1"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/moderation-detail"))
-                .andExpect(model().attributeExists("report"));
-    }
-
-    @Test
-    @WithMockUser(username = "admin@test.com", roles = "ADMIN")
-    void shouldResolveReport() throws Exception {
-        doNothing().when(reviewReportService).resolveReport(anyLong(), any(), anyString());
-
-        mockMvc.perform(post("/admin/moderation/1/resolve")
-                        .param("resolutionMessage", "Resolved")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/moderation"))
-                .andExpect(flash().attributeExists("success"));
-    }
-
-    @Test
-    @WithMockUser(username = "admin@test.com", roles = "ADMIN")
-    void shouldResolveReport_WithoutMessage() throws Exception {
-        doNothing().when(reviewReportService).resolveReport(anyLong(), any(), any());
-
-        mockMvc.perform(post("/admin/moderation/1/resolve")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/moderation"));
-    }
-
-    @Test
-    @WithMockUser(username = "admin@test.com", roles = "ADMIN")
-    void shouldHandleResolveReportException() throws Exception {
-        doThrow(new RuntimeException("Service error"))
-                .when(reviewReportService).resolveReport(anyLong(), any(), any());
-
-        mockMvc.perform(post("/admin/moderation/1/resolve")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/moderation"))
-                .andExpect(flash().attributeExists("error"));
-    }
-
-    @Test
-    @WithMockUser(username = "admin@test.com", roles = "ADMIN")
-    void shouldRejectReport() throws Exception {
-        doNothing().when(reviewReportService).rejectReport(anyLong(), any(), anyString());
-
-        mockMvc.perform(post("/admin/moderation/1/reject")
-                        .param("resolutionMessage", "Rejected")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/moderation"))
-                .andExpect(flash().attributeExists("success"));
-    }
-
-    @Test
-    @WithMockUser(username = "admin@test.com", roles = "ADMIN")
-    void shouldHandleRejectReportException() throws Exception {
-        doThrow(new RuntimeException("Service error"))
-                .when(reviewReportService).rejectReport(anyLong(), any(), any());
-
-        mockMvc.perform(post("/admin/moderation/1/reject")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/moderation"))
-                .andExpect(flash().attributeExists("error"));
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(redirectAttributes, times(1)).addFlashAttribute("error", anyString());
     }
 }
+

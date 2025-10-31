@@ -1,34 +1,73 @@
 package com.example.booking.common.api;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
-class ApiResponseTest {
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
-	@Test
-	void success_withData_shouldPopulateFields() {
-		ApiResponse<String> res = ApiResponse.success("ok", "data");
-		assertTrue(res.isSuccess());
-		assertEquals("ok", res.getMessage());
-		assertEquals("data", res.getData());
-	}
+/**
+ * Unit tests for ApiResponse
+ */
+@DisplayName("ApiResponse Tests")
+public class ApiResponseTest {
 
-	@Test
-	void success_withoutData_shouldHaveNullData() {
-		ApiResponse<Void> res = ApiResponse.success("done");
-		assertTrue(res.isSuccess());
-		assertEquals("done", res.getMessage());
-		assertNull(res.getData());
-	}
+    // ========== success() Tests ==========
 
-	@Test
-	void error_shouldSetSuccessFalse() {
-		ApiResponse<Void> res = ApiResponse.error("err");
-		assertFalse(res.isSuccess());
-		assertEquals("err", res.getMessage());
-		assertNull(res.getData());
-	}
+    @Test
+    @DisplayName("shouldCreateSuccessResponse_withData")
+    void shouldCreateSuccessResponse_withData() {
+        // When
+        ApiResponse<String> response = ApiResponse.success("Operation successful", "result");
+
+        // Then
+        assertTrue(response.isSuccess());
+        assertEquals("Operation successful", response.getMessage());
+        assertEquals("result", response.getData());
+    }
+
+    @Test
+    @DisplayName("shouldCreateSuccessResponse_withoutData")
+    void shouldCreateSuccessResponse_withoutData() {
+        // When
+        ApiResponse<Void> response = ApiResponse.success("Operation successful");
+
+        // Then
+        assertTrue(response.isSuccess());
+        assertEquals("Operation successful", response.getMessage());
+        assertNull(response.getData());
+    }
+
+    // ========== error() Tests ==========
+
+    @Test
+    @DisplayName("shouldCreateErrorResponse")
+    void shouldCreateErrorResponse() {
+        // When
+        ApiResponse<Void> response = ApiResponse.error("Error occurred");
+
+        // Then
+        assertFalse(response.isSuccess());
+        assertEquals("Error occurred", response.getMessage());
+        assertNull(response.getData());
+    }
+
+    // ========== Getters/Setters Tests ==========
+
+    @Test
+    @DisplayName("shouldSetAndGetFields_successfully")
+    void shouldSetAndGetFields_successfully() {
+        // Given
+        ApiResponse<String> response = new ApiResponse<>();
+
+        // When
+        response.setSuccess(true);
+        response.setMessage("Test message");
+        response.setData("Test data");
+
+        // Then
+        assertTrue(response.isSuccess());
+        assertEquals("Test message", response.getMessage());
+        assertEquals("Test data", response.getData());
+    }
 }
-
 

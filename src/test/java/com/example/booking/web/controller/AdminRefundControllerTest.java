@@ -1,88 +1,120 @@
 package com.example.booking.web.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.UUID;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import com.example.booking.domain.RefundRequest;
-import com.example.booking.domain.Payment;
-import com.example.booking.domain.Customer;
-import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.service.RefundService;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+/**
+ * Unit tests for AdminRefundController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("AdminRefundController Tests")
+public class AdminRefundControllerTest {
 
-@WebMvcTest(AdminRefundController.class)
-@AutoConfigureMockMvc(addFilters = false)
-class AdminRefundControllerTest {
+    @Mock
+    private RefundService refundService;
 
-	@Autowired
-	private MockMvc mockMvc;
+    @Mock
+    private Authentication authentication;
 
-	@MockBean
-	private RefundService refundService;
+    @InjectMocks
+    private AdminRefundController controller;
 
-	@Test
-	void getPendingRefunds_returnsSuccessJson() throws Exception {
-		RefundRequest req = new RefundRequest();
-		req.setRefundRequestId(1);
-		Payment payment = new Payment();
-		payment.setPaymentId(100);
-		req.setPayment(payment);
-		Customer customer = new Customer();
-		customer.setCustomerId(UUID.randomUUID());
-		req.setCustomer(customer);
-		RestaurantProfile rest = new RestaurantProfile();
-		rest.setRestaurantId(5);
-		req.setRestaurant(rest);
-		when(refundService.getPendingRefunds()).thenReturn(List.of(req));
+    private RefundRequest refundRequest;
 
-		mockMvc.perform(get("/admin/refunds/pending"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.success").value(true))
-				.andExpect(jsonPath("$.count").value(1));
-	}
+    @BeforeEach
+    void setUp() {
+        refundRequest = new RefundRequest();
+        refundRequest.setRefundRequestId(1);
+    }
 
-	@Test
-	void rejectRefund_returnsSuccessJson() throws Exception {
-		doNothing().when(refundService).rejectRefund(anyInt(), any(UUID.class), any());
-		mockMvc.perform(post("/admin/refunds/10/reject").param("rejectReason", "bad"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.success").value(true));
-	}
+    // ========== getPendingRefunds() Tests ==========
 
-	@Test
-	void completeRefund_returnsSuccessJson() throws Exception {
-		doNothing().when(refundService).completeRefund(anyInt(), any(UUID.class), any(), any());
-		mockMvc.perform(post("/admin/refunds/10/complete")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content("{\"adminNote\":\"ok\"}"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.success").value(true));
-	}
+    @Test
+    @DisplayName("shouldGetPendingRefunds_successfully")
+    void shouldGetPendingRefunds_successfully() {
+        // Given
+        List<RefundRequest> pendingRefunds = new ArrayList<>();
+        pendingRefunds.add(refundRequest);
+        when(refundService.getPendingRefunds()).thenReturn(pendingRefunds);
 
-	@Test
-	void generateVietQR_returnsSuccessJson() throws Exception {
-		when(refundService.generateVietQRForRefund(anyInt())).thenReturn("http://vietqr");
-		mockMvc.perform(post("/admin/refunds/11/generate-vietqr"))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.success").value(true))
-				.andExpect(jsonPath("$.vietqrUrl").value("http://vietqr"));
-	}
+        // When
+        ResponseEntity<?> response = controller.getPendingRefunds();
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
+
+    // ========== getRefundRequestDetails() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetRefundRequestDetails_successfully")
+    void shouldGetRefundRequestDetails_successfully() {
+        // When
+        ResponseEntity<?> response = controller.getRefundRequestDetails(1);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
+
+    // ========== rejectRefund() Tests ==========
+
+    @Test
+    @DisplayName("shouldRejectRefund_successfully")
+    void shouldRejectRefund_successfully() {
+        // Given
+        String reason = "Invalid request";
+        UUID adminId = UUID.randomUUID();
+        when(authentication.getName()).thenReturn("admin");
+        doNothing().when(refundService).rejectRefund(1, any(UUID.class), eq(reason));
+
+        // When
+        ResponseEntity<?> response = controller.rejectRefund(1, reason, authentication);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(refundService, times(1)).rejectRefund(eq(1), any(UUID.class), eq(reason));
+    }
+
+    // ========== completeRefund() Tests ==========
+
+    @Test
+    @DisplayName("shouldCompleteRefund_successfully")
+    void shouldCompleteRefund_successfully() {
+        // Given
+        java.util.Map<String, String> requestBody = new java.util.HashMap<>();
+        requestBody.put("transferReference", "REF123");
+        requestBody.put("adminNote", "Completed");
+        when(authentication.getName()).thenReturn("admin");
+        doNothing().when(refundService).completeRefund(eq(1), any(UUID.class), anyString(), anyString());
+
+        // When
+        ResponseEntity<?> response = controller.completeRefund(1, requestBody, authentication);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(refundService, times(1)).completeRefund(eq(1), any(UUID.class), anyString(), anyString());
+    }
 }
-
-

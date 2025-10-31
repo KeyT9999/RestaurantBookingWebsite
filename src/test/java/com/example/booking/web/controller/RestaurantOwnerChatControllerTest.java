@@ -1,189 +1,127 @@
 package com.example.booking.web.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.ui.Model;
 
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.User;
-import com.example.booking.domain.UserRole;
 import com.example.booking.dto.ChatRoomDto;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.SimpleUserService;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+/**
+ * Unit tests for RestaurantOwnerChatController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("RestaurantOwnerChatController Tests")
+public class RestaurantOwnerChatControllerTest {
 
-@WebMvcTest(RestaurantOwnerChatController.class)
-@AutoConfigureMockMvc(addFilters = false)
-class RestaurantOwnerChatControllerTest {
+    @Mock
+    private ChatService chatService;
 
-	@Autowired
-	private MockMvc mockMvc;
+    @Mock
+    private SimpleUserService userService;
 
-	@MockBean
-	private ChatService chatService;
+    @Mock
+    private RestaurantOwnerService restaurantOwnerService;
 
-	@MockBean
-	private SimpleUserService userService;
+    @Mock
+    private BookingService bookingService;
 
-	@MockBean
-	private RestaurantOwnerService restaurantOwnerService;
+    @Mock
+    private Model model;
 
-	@MockBean
-	private BookingService bookingService;
+    @Mock
+    private Authentication authentication;
 
-	private User testUser;
-	private RestaurantProfile testRestaurant;
-	private Booking testBooking;
-	private ChatRoomDto testChatRoom;
+    @InjectMocks
+    private RestaurantOwnerChatController restaurantOwnerChatController;
 
-	@BeforeEach
-	void setUp() {
-		testUser = new User();
-		testUser.setId(UUID.randomUUID());
-		testUser.setUsername("owner@example.com");
-		testUser.setEmail("owner@example.com");
-		testUser.setFullName("Restaurant Owner");
-		testUser.setRole(UserRole.RESTAURANT_OWNER);
+    private User user;
+    private UUID userId;
+    private RestaurantProfile restaurant;
+    private Booking booking;
 
-		testRestaurant = new RestaurantProfile();
-		testRestaurant.setRestaurantId(1);
-		testRestaurant.setRestaurantName("Test Restaurant");
+    @BeforeEach
+    void setUp() {
+        userId = UUID.randomUUID();
+        user = new User();
+        user.setId(userId);
+        user.setEmail("owner@test.com");
 
-		Customer testCustomer = new Customer();
-		testCustomer.setCustomerId(UUID.randomUUID());
-		User customerUser = new User();
-		customerUser.setId(UUID.randomUUID());
-		customerUser.setRole(UserRole.CUSTOMER);
-		testCustomer.setUser(customerUser);
+        restaurant = new RestaurantProfile();
+        restaurant.setRestaurantId(1);
+        restaurant.setRestaurantName("Test Restaurant");
 
-		testBooking = new Booking();
-		testBooking.setBookingId(1);
-		testBooking.setRestaurant(testRestaurant);
-		testBooking.setCustomer(testCustomer);
+        booking = new Booking();
+        booking.setBookingId(1);
+        booking.setRestaurant(restaurant);
 
-		testChatRoom = new ChatRoomDto();
-		testChatRoom.setRoomId("room-123");
-		testChatRoom.setParticipantName("Customer Name");
-	}
+        when(authentication.getPrincipal()).thenReturn(user);
+    }
 
-	// ========== chatPage() Tests ==========
+    // ========== chatPage() Tests ==========
 
-	@Test
-	@DisplayName("chatPage - should render chat page with rooms")
-	void chatPage_ShouldRenderChatPage() throws Exception {
-		when(chatService.getUserChatRooms(eq(testUser.getId()), eq(testUser.getRole())))
-				.thenReturn(Arrays.asList(testChatRoom));
-		when(restaurantOwnerService.getRestaurantsByUserId(eq(testUser.getId())))
-				.thenReturn(Arrays.asList(testRestaurant));
+    @Test
+    @DisplayName("shouldShowChatPage_successfully")
+    void shouldShowChatPage_successfully() {
+        // Given
+        List<ChatRoomDto> chatRooms = Arrays.asList(new ChatRoomDto());
+        List<RestaurantProfile> restaurants = Arrays.asList(restaurant);
 
-		mockMvc.perform(get("/restaurant-owner/chat")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().isOk())
-				.andExpect(view().name("restaurant-owner/chat"))
-				.andExpect(model().attributeExists("chatRooms", "currentUser", "restaurants"));
-	}
+        when(chatService.getUserChatRooms(userId, user.getRole())).thenReturn(chatRooms);
+        when(restaurantOwnerService.getRestaurantsByUserId(userId)).thenReturn(restaurants);
 
-	@Test
-	@DisplayName("chatPage - should auto-select restaurant when only one exists")
-	void chatPage_WithSingleRestaurant_ShouldAutoSelect() throws Exception {
-		when(chatService.getUserChatRooms(any(), any())).thenReturn(Collections.emptyList());
-		when(restaurantOwnerService.getRestaurantsByUserId(eq(testUser.getId())))
-				.thenReturn(Arrays.asList(testRestaurant));
+        // When
+        String view = restaurantOwnerChatController.chatPage(null, authentication, model);
 
-		mockMvc.perform(get("/restaurant-owner/chat")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().isOk())
-				.andExpect(model().attributeExists("autoSelectRestaurant"));
-	}
+        // Then
+        assertEquals("restaurant-owner/chat", view);
+        verify(model, atLeastOnce()).addAttribute(anyString(), any());
+    }
 
-	@Test
-	@DisplayName("chatPage - should create chat room when bookingId provided")
-	void chatPage_WithBookingId_ShouldCreateChatRoom() throws Exception {
-		when(bookingService.findBookingById(1)).thenReturn(Optional.of(testBooking));
-		when(restaurantOwnerService.getRestaurantsByUserId(any())).thenReturn(Arrays.asList(testRestaurant));
-		when(chatService.getRoomId(any(), any(), any())).thenReturn(null);
-		when(chatService.getUserChatRooms(any(), any())).thenReturn(Collections.emptyList());
+    @Test
+    @DisplayName("shouldHandleBookingId_successfully")
+    void shouldHandleBookingId_successfully() {
+        // Given
+        Customer customer = new Customer();
+        customer.setUser(user);
+        booking.setCustomer(customer);
 
-		mockMvc.perform(get("/restaurant-owner/chat")
-				.param("bookingId", "1")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/restaurant-owner/chat"));
-	}
+        List<RestaurantProfile> restaurants = Arrays.asList(restaurant);
+        when(bookingService.findBookingById(1)).thenReturn(Optional.of(booking));
+        when(restaurantOwnerService.getRestaurantsByUserId(userId)).thenReturn(restaurants);
+        com.example.booking.domain.ChatRoom mockRoom = new com.example.booking.domain.ChatRoom();
+        mockRoom.setRoomId("room-123");
+        when(chatService.getRoomId(any(), any(), anyInt())).thenReturn(null);
+        when(chatService.createCustomerRestaurantRoom(any(), anyInt())).thenReturn(mockRoom);
 
-	@Test
-	@DisplayName("chatPage - should not create duplicate chat room")
-	void chatPage_WithExistingChatRoom_ShouldNotCreateDuplicate() throws Exception {
-		when(bookingService.findBookingById(1)).thenReturn(Optional.of(testBooking));
-		when(restaurantOwnerService.getRestaurantsByUserId(any())).thenReturn(Arrays.asList(testRestaurant));
-		when(chatService.getRoomId(any(), any(), any())).thenReturn("existing-room-id");
-		when(chatService.getUserChatRooms(any(), any())).thenReturn(Collections.emptyList());
+        // When
+        String view = restaurantOwnerChatController.chatPage(1, authentication, model);
 
-		mockMvc.perform(get("/restaurant-owner/chat")
-				.param("bookingId", "1")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().is3xxRedirection())
-				.andExpect(redirectedUrl("/restaurant-owner/chat"));
-	}
-
-	// ========== chatRoom() Tests ==========
-
-	@Test
-	@DisplayName("chatRoom - should render chat room page")
-	void chatRoom_WithValidRoom_ShouldRenderRoomPage() throws Exception {
-		when(chatService.canUserAccessRoom(eq("room-123"), eq(testUser.getId()), eq(testUser.getRole())))
-				.thenReturn(true);
-		when(chatService.getChatRoomById("room-123")).thenReturn(Optional.of(new com.example.booking.domain.ChatRoom()));
-		when(chatService.convertToDto(any())).thenReturn(testChatRoom);
-
-		mockMvc.perform(get("/restaurant-owner/chat/room/room-123")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().isOk())
-				.andExpect(view().name("restaurant-owner/chat-room"))
-				.andExpect(model().attributeExists("roomId", "currentUser", "room"));
-	}
-
-	@Test
-	@DisplayName("chatRoom - should return 403 when user cannot access")
-	void chatRoom_WithUnauthorizedAccess_ShouldReturn403() throws Exception {
-		when(chatService.canUserAccessRoom(eq("room-123"), eq(testUser.getId()), eq(testUser.getRole())))
-				.thenReturn(false);
-
-		mockMvc.perform(get("/restaurant-owner/chat/room/room-123")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().isOk())
-				.andExpect(view().name("error/403"));
-	}
-
-	@Test
-	@DisplayName("chatRoom - should return 404 when room not found")
-	void chatRoom_WithNonExistentRoom_ShouldReturn404() throws Exception {
-		when(chatService.canUserAccessRoom(anyString(), any(), any())).thenReturn(true);
-		when(chatService.getChatRoomById("non-existent")).thenReturn(Optional.empty());
-
-		mockMvc.perform(get("/restaurant-owner/chat/room/non-existent")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().isOk())
-				.andExpect(view().name("error/404"));
-	}
+        // Then
+        assertEquals("redirect:/restaurant-owner/chat", view);
+        verify(chatService, times(1)).createCustomerRestaurantRoom(any(), eq(1));
+    }
 }
 

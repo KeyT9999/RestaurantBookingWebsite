@@ -1,58 +1,81 @@
 package com.example.booking.web.controller.api;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import com.example.booking.domain.User;
-import com.example.booking.domain.UserRole;
 import com.example.booking.service.SimpleUserService;
 
-@WebMvcTest(controllers = UserApiController.class)
-@AutoConfigureMockMvc(addFilters = false)
-class UserApiControllerTest {
+/**
+ * Unit tests for UserApiController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("UserApiController Tests")
+public class UserApiControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private SimpleUserService userService;
 
-    private User mockUser;
+    @Mock
+    private Authentication authentication;
+
+    @InjectMocks
+    private UserApiController controller;
+
+    private User user;
 
     @BeforeEach
     void setUp() {
-        mockUser = new User();
-        mockUser.setId(UUID.randomUUID());
-        mockUser.setUsername("testuser");
-        mockUser.setEmail("test@example.com");
-        mockUser.setFullName("Test User");
-        mockUser.setRole(UserRole.CUSTOMER);
+        user = new User();
+        user.setId(UUID.randomUUID());
+        user.setUsername("testuser");
+        user.setEmail("test@example.com");
+        user.setFullName("Test User");
+    }
+
+    // ========== getCurrentUser() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetCurrentUser_successfully")
+    void shouldGetCurrentUser_successfully() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(user);
+        user.setRole(com.example.booking.domain.UserRole.CUSTOMER);
+
+        // When
+        ResponseEntity<?> response = controller.getCurrentUser(authentication);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
     }
 
     @Test
-    void testGetCurrentUser_WithoutAuthentication_ShouldReturnBadRequest() throws Exception {
-        // When & Then: Should return 400 Bad Request
-        mockMvc.perform(get("/api/user/current"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$").value("User not authenticated"));
-    }
+    @DisplayName("shouldReturnError_whenNotAuthenticated")
+    void shouldReturnError_whenNotAuthenticated() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(false);
 
-    @Test
-    void testGetCurrentUser_WithPrincipalObject_ShouldReturnBadRequest() throws Exception {
-        // This test verifies the basic controller setup works
-        // Full authentication testing requires Spring Boot Test integration
-        // or more complex mock setup
+        // When
+        ResponseEntity<?> response = controller.getCurrentUser(authentication);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
 }
+

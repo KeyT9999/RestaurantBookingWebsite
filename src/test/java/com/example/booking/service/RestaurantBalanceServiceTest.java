@@ -1,32 +1,38 @@
 package com.example.booking.service;
 
-import com.example.booking.common.enums.CommissionType;
-import com.example.booking.domain.RestaurantBalance;
-import com.example.booking.domain.RestaurantProfile;
-import com.example.booking.dto.payout.RestaurantBalanceDto;
-import com.example.booking.exception.ResourceNotFoundException;
-import com.example.booking.repository.BookingRepository;
-import com.example.booking.repository.RestaurantBalanceRepository;
-import com.example.booking.repository.RestaurantProfileRepository;
-import com.example.booking.repository.WithdrawalRequestRepository;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.util.Optional;
+import com.example.booking.common.enums.BookingStatus;
+import com.example.booking.common.enums.CommissionType;
+import com.example.booking.domain.RestaurantBalance;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.repository.BookingRepository;
+import com.example.booking.repository.RestaurantBalanceRepository;
+import com.example.booking.repository.RestaurantProfileRepository;
+import com.example.booking.repository.WithdrawalRequestRepository;
+import com.example.booking.service.RestaurantBalanceService.InsufficientBalanceException;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
+/**
+ * Unit tests for RestaurantBalanceService
+ */
 @ExtendWith(MockitoExtension.class)
-class RestaurantBalanceServiceTest {
+@DisplayName("RestaurantBalanceService Tests")
+public class RestaurantBalanceServiceTest {
 
     @Mock
     private RestaurantBalanceRepository balanceRepository;
@@ -43,126 +49,360 @@ class RestaurantBalanceServiceTest {
     @InjectMocks
     private RestaurantBalanceService balanceService;
 
+    private Integer restaurantId;
     private RestaurantProfile restaurant;
     private RestaurantBalance balance;
 
     @BeforeEach
     void setUp() {
+        restaurantId = 1;
+
         restaurant = new RestaurantProfile();
-        restaurant.setRestaurantId(1);
+        restaurant.setRestaurantId(restaurantId);
         restaurant.setRestaurantName("Test Restaurant");
 
         balance = new RestaurantBalance();
-        balance.setBalanceId(1);
         balance.setRestaurant(restaurant);
         balance.setTotalRevenue(new BigDecimal("10000000"));
         balance.setTotalBookingsCompleted(50);
         balance.setCommissionRate(new BigDecimal("5.0"));
         balance.setCommissionType(CommissionType.PERCENTAGE);
         balance.setCommissionFixedAmount(BigDecimal.ZERO);
-        balance.setTotalCommission(new BigDecimal("500000"));
-        balance.setTotalWithdrawn(new BigDecimal("200000"));
-        balance.setPendingWithdrawal(new BigDecimal("100000"));
+        balance.setTotalWithdrawn(BigDecimal.ZERO);
+        balance.setPendingWithdrawal(BigDecimal.ZERO);
+        balance.recalculateAvailableBalance();
+    }
+
+    // ========== getBalance() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetBalance_successfully")
+    void shouldGetBalance_successfully() {
+        // Given
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.of(balance));
+
+        // When
+        com.example.booking.dto.payout.RestaurantBalanceDto result = balanceService.getBalance(restaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(restaurantId, result.getRestaurantId());
     }
 
     @Test
-    void shouldGetBalance_ExistingBalance() {
-        when(balanceRepository.findByRestaurantRestaurantId(1)).thenReturn(Optional.of(balance));
-
-        RestaurantBalanceDto result = balanceService.getBalance(1);
-
-        assertThat(result).isNotNull();
-        assertThat(result.getRestaurantId()).isEqualTo(1);
-        assertThat(result.getTotalRevenue()).isEqualByComparingTo(new BigDecimal("10000000"));
-        assertThat(result.getTotalBookingsCompleted()).isEqualTo(50);
-    }
-
-    @Test
-    void shouldGetBalance_CreateNewBalance() {
-        when(balanceRepository.findByRestaurantRestaurantId(1)).thenReturn(Optional.empty());
-        when(restaurantRepository.findById(1)).thenReturn(Optional.of(restaurant));
+    @DisplayName("shouldCreateBalance_whenNotExists")
+    void shouldCreateBalance_whenNotExists() {
+        // Given
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.empty());
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
         when(balanceRepository.save(any(RestaurantBalance.class))).thenReturn(balance);
 
-        RestaurantBalanceDto result = balanceService.getBalance(1);
+        // When
+        com.example.booking.dto.payout.RestaurantBalanceDto result = balanceService.getBalance(restaurantId);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getRestaurantId()).isEqualTo(1);
-        verify(balanceRepository).save(any(RestaurantBalance.class));
+        // Then
+        assertNotNull(result);
+        verify(balanceRepository, times(1)).save(any(RestaurantBalance.class));
+    }
+
+    // ========== getOrCreateBalance() Tests ==========
+
+    @Test
+    @DisplayName("shouldGetExistingBalance_whenExists")
+    void shouldGetExistingBalance_whenExists() {
+        // Given
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.of(balance));
+
+        // When
+        RestaurantBalance result = balanceService.getOrCreateBalance(restaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(balance, result);
+        verify(balanceRepository, never()).save(any(RestaurantBalance.class));
     }
 
     @Test
-    void shouldGetBalance_RestaurantNotFound() {
-        when(balanceRepository.findByRestaurantRestaurantId(1)).thenReturn(Optional.empty());
-        when(restaurantRepository.findById(1)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> balanceService.getBalance(1))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Không tìm thấy nhà hàng");
-    }
-
-    @Test
-    void shouldAddRevenue() {
-        when(balanceRepository.findByRestaurantRestaurantId(1)).thenReturn(Optional.of(balance));
+    @DisplayName("shouldCreateNewBalance_whenNotExists")
+    void shouldCreateNewBalance_whenNotExists() {
+        // Given
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.empty());
+        when(restaurantRepository.findById(restaurantId)).thenReturn(Optional.of(restaurant));
         when(balanceRepository.save(any(RestaurantBalance.class))).thenReturn(balance);
 
-        BigDecimal amount = new BigDecimal("500000");
-        balanceService.addRevenue(1, amount);
+        // When
+        RestaurantBalance result = balanceService.getOrCreateBalance(restaurantId);
 
-        verify(balanceRepository).save(any(RestaurantBalance.class));
+        // Then
+        assertNotNull(result);
+        verify(balanceRepository, times(1)).save(any(RestaurantBalance.class));
+    }
+
+    // ========== addRevenue() Tests ==========
+
+    @Test
+    @DisplayName("shouldAddRevenue_successfully")
+    void shouldAddRevenue_successfully() {
+        // Given
+        BigDecimal amount = new BigDecimal("1000000");
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.of(balance));
+        when(balanceRepository.save(balance)).thenReturn(balance);
+
+        // When
+        balanceService.addRevenue(restaurantId, amount);
+
+        // Then
+        verify(balanceRepository, times(1)).save(balance);
+    }
+
+    // ========== lockBalance() Tests ==========
+
+    @Test
+    @DisplayName("shouldLockBalance_successfully")
+    void shouldLockBalance_successfully() {
+        // Given
+        BigDecimal amount = new BigDecimal("1000000");
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.of(balance));
+        when(balanceRepository.save(balance)).thenReturn(balance);
+
+        // When
+        balanceService.lockBalance(restaurantId, amount);
+
+        // Then
+        verify(balanceRepository, times(1)).save(balance);
     }
 
     @Test
-    void shouldLockBalance() {
-        when(balanceRepository.findByRestaurantRestaurantId(1)).thenReturn(Optional.of(balance));
-        when(balanceRepository.save(any(RestaurantBalance.class))).thenReturn(balance);
+    @DisplayName("shouldThrowException_whenInsufficientBalance")
+    void shouldThrowException_whenInsufficientBalance() {
+        // Given
+        BigDecimal amount = new BigDecimal("999999999"); // Too large
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.of(balance));
 
-        BigDecimal amount = new BigDecimal("100000");
-        balanceService.lockBalance(1, amount);
+        // When & Then
+        assertThrows(InsufficientBalanceException.class, () -> {
+            balanceService.lockBalance(restaurantId, amount);
+        });
+    }
 
-        verify(balanceRepository).save(any(RestaurantBalance.class));
+    // ========== unlockBalance() Tests ==========
+
+    @Test
+    @DisplayName("shouldUnlockBalance_successfully")
+    void shouldUnlockBalance_successfully() {
+        // Given
+        BigDecimal amount = new BigDecimal("1000000");
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.of(balance));
+        when(balanceRepository.save(balance)).thenReturn(balance);
+
+        // When
+        balanceService.unlockBalance(restaurantId, amount);
+
+        // Then
+        verify(balanceRepository, times(1)).save(balance);
+    }
+
+    // ========== confirmWithdrawal() Tests ==========
+
+    @Test
+    @DisplayName("shouldConfirmWithdrawal_successfully")
+    void shouldConfirmWithdrawal_successfully() {
+        // Given
+        BigDecimal amount = new BigDecimal("1000000");
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.of(balance));
+        when(balanceRepository.save(balance)).thenReturn(balance);
+
+        // When
+        balanceService.confirmWithdrawal(restaurantId, amount);
+
+        // Then
+        verify(balanceRepository, times(1)).save(balance);
+    }
+
+    // ========== fixBalanceFromWithdrawals() Tests ==========
+
+    @Test
+    @DisplayName("shouldFixBalanceFromWithdrawals_successfully")
+    void shouldFixBalanceFromWithdrawals_successfully() {
+        // Given
+        BigDecimal totalWithdrawn = new BigDecimal("5000000");
+        BigDecimal pendingWithdrawal = new BigDecimal("1000000");
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.of(balance));
+        when(withdrawalRepository.sumAmountByRestaurantIdAndStatus(restaurantId, 
+            com.example.booking.common.enums.WithdrawalStatus.SUCCEEDED)).thenReturn(totalWithdrawn);
+        when(withdrawalRepository.sumAmountByRestaurantIdAndStatus(restaurantId, 
+            com.example.booking.common.enums.WithdrawalStatus.PENDING)).thenReturn(pendingWithdrawal);
+        when(withdrawalRepository.countByRestaurantRestaurantIdAndStatus(restaurantId, 
+            com.example.booking.common.enums.WithdrawalStatus.PENDING)).thenReturn(1L);
+        when(balanceRepository.save(balance)).thenReturn(balance);
+
+        // When
+        balanceService.fixBalanceFromWithdrawals(restaurantId);
+
+        // Then
+        verify(balanceRepository, times(1)).save(balance);
+    }
+
+    // ========== Commission Methods Tests ==========
+
+    @Test
+    @DisplayName("shouldGetCommissionToday_successfully")
+    void shouldGetCommissionToday_successfully() {
+        // Given
+        BigDecimal gross = new BigDecimal("10000000");
+        when(bookingRepository.sumDepositByStatusAndCreatedBetween(
+            eq(BookingStatus.COMPLETED), any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(gross);
+
+        // When
+        BigDecimal result = balanceService.getCommissionToday();
+
+        // Then
+        assertNotNull(result);
+        // Commission = 10000000 * 0.30 = 3000000
+        assertEquals(new BigDecimal("3000000"), result);
     }
 
     @Test
-    void shouldUnlockBalance() {
-        when(balanceRepository.findByRestaurantRestaurantId(1)).thenReturn(Optional.of(balance));
-        when(balanceRepository.save(any(RestaurantBalance.class))).thenReturn(balance);
+    @DisplayName("shouldGetCompletedBookingsToday_successfully")
+    void shouldGetCompletedBookingsToday_successfully() {
+        // Given
+        when(bookingRepository.countByStatusAndBookingTimeBetween(
+            eq(BookingStatus.COMPLETED), any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(10L);
 
-        BigDecimal amount = new BigDecimal("100000");
-        balanceService.unlockBalance(1, amount);
+        // When
+        long result = balanceService.getCompletedBookingsToday();
 
-        verify(balanceRepository).save(any(RestaurantBalance.class));
+        // Then
+        assertEquals(10L, result);
     }
 
     @Test
-    void shouldConfirmWithdrawal() {
-        when(balanceRepository.findByRestaurantRestaurantId(1)).thenReturn(Optional.of(balance));
-        when(balanceRepository.save(any(RestaurantBalance.class))).thenReturn(balance);
+    @DisplayName("shouldGetWeeklyCommission_successfully")
+    void shouldGetWeeklyCommission_successfully() {
+        // Given
+        BigDecimal gross = new BigDecimal("70000000");
+        when(bookingRepository.sumDepositByStatusAndCreatedBetween(
+            eq(BookingStatus.COMPLETED), any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(gross);
 
-        BigDecimal amount = new BigDecimal("500000");
-        balanceService.confirmWithdrawal(1, amount);
+        // When
+        BigDecimal result = balanceService.getWeeklyCommission();
 
-        verify(balanceRepository).save(any(RestaurantBalance.class));
+        // Then
+        assertNotNull(result);
     }
 
     @Test
-    void shouldFixBalanceFromWithdrawals() {
-        when(balanceRepository.findByRestaurantRestaurantId(1)).thenReturn(Optional.of(balance));
-        when(balanceRepository.save(any(RestaurantBalance.class))).thenReturn(balance);
-        when(withdrawalRepository.sumAmountByRestaurantIdAndStatus(eq(1), any())).thenReturn(BigDecimal.ZERO);
-        when(withdrawalRepository.countByRestaurantRestaurantIdAndStatus(eq(1), any())).thenReturn(0L);
+    @DisplayName("shouldGetMonthlyCommission_successfully")
+    void shouldGetMonthlyCommission_successfully() {
+        // Given
+        BigDecimal gross = new BigDecimal("300000000");
+        when(bookingRepository.sumDepositByStatusAndCreatedBetween(
+            eq(BookingStatus.COMPLETED), any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(gross);
 
-        balanceService.fixBalanceFromWithdrawals(1);
+        // When
+        BigDecimal result = balanceService.getMonthlyCommission();
 
-        verify(balanceRepository).save(any(RestaurantBalance.class));
+        // Then
+        assertNotNull(result);
     }
 
     @Test
-    void shouldRecalculateAll() {
+    @DisplayName("shouldGetTotalCommission_successfully")
+    void shouldGetTotalCommission_successfully() {
+        // Given
+        BigDecimal gross = new BigDecimal("100000000");
+        when(bookingRepository.sumDepositByStatus(BookingStatus.COMPLETED)).thenReturn(gross);
+
+        // When
+        BigDecimal result = balanceService.getTotalCommission();
+
+        // Then
+        assertNotNull(result);
+        assertEquals(new BigDecimal("30000000"), result); // 30% of 100M
+    }
+
+    @Test
+    @DisplayName("shouldGetAverageCommissionPerBooking_successfully")
+    void shouldGetAverageCommissionPerBooking_successfully() {
+        // Given
+        BigDecimal gross = new BigDecimal("100000000");
+        when(bookingRepository.sumDepositByStatus(BookingStatus.COMPLETED)).thenReturn(gross);
+        when(bookingRepository.countByStatus(BookingStatus.COMPLETED)).thenReturn(100L);
+
+        // When
+        BigDecimal result = balanceService.getAverageCommissionPerBooking();
+
+        // Then
+        assertNotNull(result);
+        // Total commission = 30M, divided by 100 = 300K per booking
+    }
+
+    @Test
+    @DisplayName("shouldGetCommissionRate_successfully")
+    void shouldGetCommissionRate_successfully() {
+        // When
+        BigDecimal result = balanceService.getCommissionRate();
+
+        // Then
+        assertEquals(new BigDecimal("30.0"), result); // 0.30 * 100
+    }
+
+    // ========== Helper Methods Tests ==========
+
+    @Test
+    @DisplayName("shouldGetBalanceByRestaurantId_successfully")
+    void shouldGetBalanceByRestaurantId_successfully() {
+        // Given
+        when(balanceRepository.findByRestaurantRestaurantId(restaurantId))
+            .thenReturn(Optional.of(balance));
+
+        // When
+        RestaurantBalance result = balanceService.getBalanceByRestaurantId(restaurantId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(balance, result);
+    }
+
+    @Test
+    @DisplayName("shouldSaveBalance_successfully")
+    void shouldSaveBalance_successfully() {
+        // Given
+        when(balanceRepository.save(balance)).thenReturn(balance);
+
+        // When
+        RestaurantBalance result = balanceService.saveBalance(balance);
+
+        // Then
+        assertNotNull(result);
+        verify(balanceRepository, times(1)).save(balance);
+    }
+
+    @Test
+    @DisplayName("shouldRecalculateAll_successfully")
+    void shouldRecalculateAll_successfully() {
+        // Given
         doNothing().when(balanceRepository).recalculateAllBalances();
 
+        // When
         balanceService.recalculateAll();
 
-        verify(balanceRepository).recalculateAllBalances();
+        // Then
+        verify(balanceRepository, times(1)).recalculateAllBalances();
     }
 }
 

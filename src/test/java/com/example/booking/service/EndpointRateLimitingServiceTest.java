@@ -1,66 +1,185 @@
 package com.example.booking.service;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 
+/**
+ * Unit tests for EndpointRateLimitingService
+ */
 @ExtendWith(MockitoExtension.class)
-class EndpointRateLimitingServiceTest {
+@DisplayName("EndpointRateLimitingService Tests")
+public class EndpointRateLimitingServiceTest {
 
     @Mock
-    private AdvancedRateLimitingService advancedRateLimitingService;
+    private AdvancedRateLimitingService advancedService;
+
+    @Mock
+    private HttpServletRequest request;
+
+    @Mock
+    private HttpServletResponse response;
 
     @InjectMocks
     private EndpointRateLimitingService endpointRateLimitingService;
 
+    @BeforeEach
+    void setUp() {
+        when(request.getRemoteAddr()).thenReturn("192.168.1.1");
+        when(request.getRequestURI()).thenReturn("/test");
+        when(advancedService.isRequestAllowed(any(HttpServletRequest.class), 
+            any(HttpServletResponse.class), anyString())).thenReturn(true);
+    }
+
+    // ========== isLoginAllowed() Tests ==========
+
     @Test
-    void isLoginAllowed_shouldDelegateWithLoginKey() {
-        MockHttpServletRequest request = buildRequest("/auth/login");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    @DisplayName("shouldCheckLoginRateLimit_successfully")
+    void shouldCheckLoginRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isLoginAllowed(request, response);
 
-        when(advancedRateLimitingService.isRequestAllowed(request, response, "login")).thenReturn(true);
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "login");
+    }
 
-        assertTrue(endpointRateLimitingService.isLoginAllowed(request, response));
-        verify(advancedRateLimitingService).isRequestAllowed(request, response, "login");
+    // ========== isRegisterAllowed() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckRegisterRateLimit_successfully")
+    void shouldCheckRegisterRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isRegisterAllowed(request, response);
+
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "register");
+    }
+
+    // ========== isForgotPasswordAllowed() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckForgotPasswordRateLimit_successfully")
+    void shouldCheckForgotPasswordRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isForgotPasswordAllowed(request, response);
+
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "forgot-password");
+    }
+
+    // ========== isResetPasswordAllowed() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckResetPasswordRateLimit_successfully")
+    void shouldCheckResetPasswordRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isResetPasswordAllowed(request, response);
+
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "reset-password");
+    }
+
+    // ========== isBookingAllowed() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckBookingRateLimit_successfully")
+    void shouldCheckBookingRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isBookingAllowed(request, response);
+
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "booking");
+    }
+
+    // ========== isChatAllowed() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckChatRateLimit_successfully")
+    void shouldCheckChatRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isChatAllowed(request, response);
+
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "chat");
+    }
+
+    // ========== isReviewAllowed() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckReviewRateLimit_successfully")
+    void shouldCheckReviewRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isReviewAllowed(request, response);
+
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "review");
+    }
+
+    // ========== Other Endpoint Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckPaymentRateLimit_successfully")
+    void shouldCheckPaymentRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isPaymentAllowed(request, response);
+
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "payment");
     }
 
     @Test
-    void isBookingAllowed_shouldDelegateWithBookingKey() {
-        MockHttpServletRequest request = buildRequest("/booking/create");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    @DisplayName("shouldCheckFileUploadRateLimit_successfully")
+    void shouldCheckFileUploadRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isFileUploadAllowed(request, response);
 
-        when(advancedRateLimitingService.isRequestAllowed(request, response, "booking")).thenReturn(true);
-
-        assertTrue(endpointRateLimitingService.isBookingAllowed(request, response));
-        verify(advancedRateLimitingService).isRequestAllowed(request, response, "booking");
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "file-upload");
     }
 
     @Test
-    void isAnalyticsAllowed_whenAdvancedServiceBlocks_shouldReturnFalse() {
-        MockHttpServletRequest request = buildRequest("/admin/analytics");
-        request.addHeader("X-Forwarded-For", "203.0.113.10, 10.0.0.1");
-        MockHttpServletResponse response = new MockHttpServletResponse();
+    @DisplayName("shouldCheckAdminRateLimit_successfully")
+    void shouldCheckAdminRateLimit_successfully() {
+        // When
+        boolean result = endpointRateLimitingService.isAdminAllowed(request, response);
 
-        when(advancedRateLimitingService.isRequestAllowed(request, response, "analytics")).thenReturn(false);
-
-        assertFalse(endpointRateLimitingService.isAnalyticsAllowed(request, response));
-        verify(advancedRateLimitingService).isRequestAllowed(request, response, "analytics");
+        // Then
+        assertTrue(result);
+        verify(advancedService, times(1)).isRequestAllowed(request, response, "admin");
     }
 
-    private MockHttpServletRequest buildRequest(String uri) {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI(uri);
-        request.setRemoteAddr("192.168.1.1");
-        request.addHeader("User-Agent", "JUnit");
-        return request;
+    @Test
+    @DisplayName("shouldReturnFalse_whenAdvancedServiceBlocks")
+    void shouldReturnFalse_whenAdvancedServiceBlocks() {
+        // Given
+        when(advancedService.isRequestAllowed(any(HttpServletRequest.class), 
+            any(HttpServletResponse.class), anyString())).thenReturn(false);
+
+        // When
+        boolean result = endpointRateLimitingService.isLoginAllowed(request, response);
+
+        // Then
+        assertFalse(result);
     }
 }
+

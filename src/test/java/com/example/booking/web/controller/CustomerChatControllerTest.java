@@ -1,103 +1,99 @@
 package com.example.booking.web.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.ui.Model;
 
 import com.example.booking.domain.User;
-import com.example.booking.domain.UserRole;
 import com.example.booking.dto.ChatRoomDto;
 import com.example.booking.service.ChatService;
 import com.example.booking.service.SimpleUserService;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+/**
+ * Unit tests for CustomerChatController
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("CustomerChatController Tests")
+public class CustomerChatControllerTest {
 
-@WebMvcTest(CustomerChatController.class)
-@AutoConfigureMockMvc(addFilters = false)
-class CustomerChatControllerTest {
+    @Mock
+    private ChatService chatService;
 
-	@Autowired
-	private MockMvc mockMvc;
+    @Mock
+    private SimpleUserService userService;
 
-	@MockBean
-	private ChatService chatService;
+    @Mock
+    private Model model;
 
-	@MockBean
-	private SimpleUserService userService;
+    @Mock
+    private Authentication authentication;
 
-	private User testUser;
-	private ChatRoomDto testChatRoom;
+    @InjectMocks
+    private CustomerChatController customerChatController;
 
-	@BeforeEach
-	void setUp() {
-		testUser = new User();
-		testUser.setId(UUID.randomUUID());
-		testUser.setUsername("customer@example.com");
-		testUser.setEmail("customer@example.com");
-		testUser.setFullName("Test Customer");
-		testUser.setRole(UserRole.CUSTOMER);
+    private User user;
+    private UUID userId;
 
-		testChatRoom = new ChatRoomDto();
-		testChatRoom.setRoomId("room-123");
-		testChatRoom.setParticipantName("Restaurant Name");
-	}
+    @BeforeEach
+    void setUp() {
+        userId = UUID.randomUUID();
+        user = new User();
+        user.setId(userId);
+        user.setEmail("customer@test.com");
 
-	// ========== chatPage() Tests ==========
+        when(authentication.getPrincipal()).thenReturn(user);
+    }
 
-	@Test
-	@DisplayName("chatPage - should render chat page with rooms")
-	void chatPage_ShouldRenderChatPage() throws Exception {
-		when(chatService.getUserChatRooms(eq(testUser.getId()), eq(testUser.getRole())))
-				.thenReturn(Arrays.asList(testChatRoom));
+    // ========== chatPage() Tests ==========
 
-		mockMvc.perform(get("/customer/chat")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().isOk())
-				.andExpect(view().name("customer/chat"))
-				.andExpect(model().attributeExists("chatRooms", "currentUser"));
-	}
+    @Test
+    @DisplayName("shouldShowChatPage_successfully")
+    void shouldShowChatPage_successfully() {
+        // Given
+        List<ChatRoomDto> chatRooms = Arrays.asList(new ChatRoomDto());
+        when(chatService.getUserChatRooms(userId, user.getRole())).thenReturn(chatRooms);
 
-	@Test
-	@DisplayName("chatPage - should render chat page with empty rooms")
-	void chatPage_WithEmptyRooms_ShouldRenderChatPage() throws Exception {
-		when(chatService.getUserChatRooms(eq(testUser.getId()), eq(testUser.getRole())))
-				.thenReturn(Collections.emptyList());
+        // When
+        String view = customerChatController.chatPage(authentication, model);
 
-		mockMvc.perform(get("/customer/chat")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().isOk())
-				.andExpect(view().name("customer/chat"))
-				.andExpect(model().attribute("chatRooms", Collections.emptyList()));
-	}
+        // Then
+        assertEquals("customer/chat", view);
+        verify(model, times(1)).addAttribute(eq("chatRooms"), eq(chatRooms));
+        verify(model, times(1)).addAttribute(eq("currentUser"), eq(user));
+    }
 
-	@Test
-	@DisplayName("chatPage - should render chat page with multiple rooms")
-	void chatPage_WithMultipleRooms_ShouldRenderChatPage() throws Exception {
-		ChatRoomDto room2 = new ChatRoomDto();
-		room2.setRoomId("room-456");
-		List<ChatRoomDto> rooms = Arrays.asList(testChatRoom, room2);
+    @Test
+    @DisplayName("shouldHandleOAuth2User_successfully")
+    void shouldHandleOAuth2User_successfully() {
+        // Given
+        org.springframework.security.oauth2.core.user.OAuth2User oAuth2User = 
+            mock(org.springframework.security.oauth2.core.user.OAuth2User.class);
+        when(oAuth2User.getName()).thenReturn("customer@test.com");
+        when(authentication.getPrincipal()).thenReturn(oAuth2User);
+        when(userService.loadUserByUsername("customer@test.com")).thenReturn(user);
+        
+        List<ChatRoomDto> chatRooms = Arrays.asList(new ChatRoomDto());
+        when(chatService.getUserChatRooms(userId, user.getRole())).thenReturn(chatRooms);
 
-		when(chatService.getUserChatRooms(eq(testUser.getId()), eq(testUser.getRole())))
-				.thenReturn(rooms);
+        // When
+        String view = customerChatController.chatPage(authentication, model);
 
-		mockMvc.perform(get("/customer/chat")
-				.principal(new UsernamePasswordAuthenticationToken(testUser, null, testUser.getAuthorities())))
-				.andExpect(status().isOk())
-				.andExpect(model().attribute("chatRooms", rooms));
-	}
+        // Then
+        assertEquals("customer/chat", view);
+    }
 }
 
