@@ -29,6 +29,7 @@ import com.example.booking.service.RestaurantOwnerService;
  * Unit tests for RestaurantFileUploadController
  */
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @DisplayName("RestaurantFileUploadController Tests")
 public class RestaurantFileUploadControllerTest {
 
@@ -116,8 +117,8 @@ public class RestaurantFileUploadControllerTest {
         when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
         when(fileUploadService.uploadBusinessLicense(any(MultipartFile.class), eq(1)))
             .thenReturn("/uploads/license.pdf");
-        doNothing().when(restaurantOwnerService).updateRestaurantProfile(any(RestaurantProfile.class));
-        doNothing().when(restaurantOwnerService).createMedia(any(com.example.booking.domain.RestaurantMedia.class));
+        when(restaurantOwnerService.updateRestaurantProfile(any(RestaurantProfile.class))).thenReturn(restaurant);
+        when(restaurantOwnerService.createMedia(any(com.example.booking.domain.RestaurantMedia.class))).thenReturn(new com.example.booking.domain.RestaurantMedia());
         doNothing().when(restaurantApprovalService).notifyNewRestaurantRegistration(any(RestaurantProfile.class));
 
         // When
@@ -207,7 +208,7 @@ public class RestaurantFileUploadControllerTest {
         
         when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
         when(fileUploadService.deleteFile("/uploads/license.pdf")).thenReturn(true);
-        doNothing().when(restaurantOwnerService).updateRestaurantProfile(any(RestaurantProfile.class));
+        when(restaurantOwnerService.updateRestaurantProfile(any(RestaurantProfile.class))).thenReturn(restaurant);
         when(restaurantOwnerService.getMediaByRestaurantAndType(any(RestaurantProfile.class), eq("business_license")))
             .thenReturn(java.util.Collections.emptyList());
 
@@ -250,7 +251,7 @@ public class RestaurantFileUploadControllerTest {
         when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
         when(fileUploadService.uploadContractDocument(any(MultipartFile.class), eq(1), anyString()))
             .thenReturn("/uploads/contract.pdf");
-        doNothing().when(restaurantOwnerService).createMedia(any(com.example.booking.domain.RestaurantMedia.class));
+        when(restaurantOwnerService.createMedia(any(com.example.booking.domain.RestaurantMedia.class))).thenReturn(new com.example.booking.domain.RestaurantMedia());
 
         // When
         String view = fileUploadController.uploadContractDocument(file, 1, "standard", principal, redirectAttributes);

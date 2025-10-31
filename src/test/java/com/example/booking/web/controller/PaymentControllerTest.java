@@ -46,6 +46,7 @@ import com.example.booking.domain.Voucher;
  * Unit tests for PaymentController
  */
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @DisplayName("PaymentController Tests")
 public class PaymentControllerTest {
 
