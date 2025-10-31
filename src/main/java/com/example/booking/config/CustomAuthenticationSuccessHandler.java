@@ -1,22 +1,23 @@
 package com.example.booking.config;
 
-import com.example.booking.service.LoginRateLimitingService;
 import com.example.booking.domain.RateLimitStatistics;
 import com.example.booking.repository.RateLimitStatisticsRepository;
+import com.example.booking.service.LoginRateLimitingService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-
 @Component
+@ConditionalOnBean({LoginRateLimitingService.class, RateLimitStatisticsRepository.class})
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
     
     private static final Logger logger = LoggerFactory.getLogger(CustomAuthenticationSuccessHandler.class);

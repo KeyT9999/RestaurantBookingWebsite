@@ -3,18 +3,20 @@ package com.example.booking.config;
 import com.example.booking.service.GeneralRateLimitingService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 /**
  * Interceptor for rate limiting requests based on IP address
  */
 @Component
+@ConditionalOnBean(GeneralRateLimitingService.class)
 public class RateLimitingInterceptor implements HandlerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(RateLimitingInterceptor.class);

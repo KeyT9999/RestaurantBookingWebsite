@@ -6,24 +6,26 @@ import com.example.booking.audit.Auditable;
 import com.example.booking.repository.DishRepository;
 import com.example.booking.service.AuditService;
 
+import jakarta.servlet.http.HttpServletRequest;
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import jakarta.servlet.http.HttpServletRequest;
-import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Aspect for automatic audit logging using AOP
@@ -46,11 +48,16 @@ public class AuditAspect {
     /**
      * Around advice for methods annotated with @Auditable
      */
-    @Around("@annotation(auditable)")
-    public Object auditMethod(ProceedingJoinPoint joinPoint, Auditable auditable) throws Throwable {
+    @Around("@annotation(com.example.booking.audit.Auditable) || @within(com.example.booking.audit.Auditable)")
+    public Object auditMethod(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         Object result = null;
         Throwable exception = null;
+        Auditable auditable = resolveAuditable(joinPoint);
+
+        if (auditable == null) {
+            return joinPoint.proceed();
+        }
         
         try {
             // Execute the method
@@ -70,9 +77,8 @@ public class AuditAspect {
      * Around advice for service methods (automatic detection)
      * EXCLUDE AuditService to prevent infinite loop
      */
-    @Around("execution(* com.example.booking.service.*Service.*(..)) && " +
-            "!execution(* com.example.booking.service.AuditService.*(..)) && " +
-            "!execution(* com.example.booking.service.*AuditService.*(..))")
+    @Around("execution(* *..*Service*+.*(..)) && " +
+            "!within(*..AuditService*+)")
     public Object auditServiceMethods(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         Object result = null;
@@ -88,6 +94,9 @@ public class AuditAspect {
             throw e;
         } finally {
             // Auto-detect audit action based on method name
+            if (action == null && exception != null) {
+                action = AuditAction.API_ERROR;
+            }
             if (action != null) {
                 long executionTime = System.currentTimeMillis() - startTime;
                 logAuditEvent(joinPoint, action, result, exception, executionTime, extraMetadata);
@@ -99,9 +108,9 @@ public class AuditAspect {
      * Around advice for repository methods (CRUD operations)
      * EXCLUDE AuditLogRepository to prevent infinite loop
      */
-    @Around("(execution(* com.example.booking.repository.*Repository.save*(..)) || " +
-            "execution(* com.example.booking.repository.*Repository.delete*(..))) && " +
-            "!execution(* com.example.booking.repository.AuditLogRepository.*(..))")
+    @Around("(execution(* *..*Repository*+.*save*(..)) || " +
+            "execution(* *..*Repository*+.*delete*(..))) && " +
+            "!within(*..AuditLogRepository*+)")
     public Object auditRepositoryMethods(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         Object result = null;
@@ -123,6 +132,36 @@ public class AuditAspect {
         }
     }
     
+    private Auditable resolveAuditable(ProceedingJoinPoint joinPoint) {
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        Method method = signature.getMethod();
+
+        Auditable auditable = AnnotationUtils.findAnnotation(method, Auditable.class);
+        if (auditable != null) {
+            return auditable;
+        }
+
+        Method specificMethod = AopUtils.getMostSpecificMethod(method, joinPoint.getTarget().getClass());
+        if (specificMethod != null) {
+            auditable = AnnotationUtils.findAnnotation(specificMethod, Auditable.class);
+            if (auditable != null) {
+                return auditable;
+            }
+        }
+
+        for (Class<?> iface : joinPoint.getTarget().getClass().getInterfaces()) {
+            Method interfaceMethod = ReflectionUtils.findMethod(iface, method.getName(), method.getParameterTypes());
+            if (interfaceMethod != null) {
+                auditable = AnnotationUtils.findAnnotation(interfaceMethod, Auditable.class);
+                if (auditable != null) {
+                    return auditable;
+                }
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Log audit event for @Auditable annotation
      */

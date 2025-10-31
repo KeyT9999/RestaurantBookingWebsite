@@ -58,6 +58,7 @@ class AiSyncEventPublisherTest {
     private AuditEvent testEvent;
     private RestaurantProfile testRestaurant;
     private Dish testDish;
+    private RetryProperties retryProps;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -79,24 +80,22 @@ class AiSyncEventPublisherTest {
         
         testDish = new Dish();
         testDish.setDishId(100);
-        testDish.setName("Test Dish");
-        testDish.setRestaurant(testRestaurant);
+       testDish.setName("Test Dish");
+       testDish.setRestaurant(testRestaurant);
         
-        RetryProperties retryProps = new RetryProperties();
+        retryProps = new RetryProperties();
         retryProps.setMaxAttempts(3);
         retryProps.setBackoffMs(0); // No sleep in tests
-        
-        when(properties.isEnabled()).thenReturn(true);
-        when(properties.getUrl()).thenReturn("http://localhost:8080/sync");
-        when(properties.getSecret()).thenReturn("test-secret");
-        when(properties.getRetry()).thenReturn(retryProps);
-        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
     }
 
     @Test
     // TC AS-001
-    void shouldPublishEvent_whenEnabledAndSuccessful() {
+    void shouldPublishEvent_whenEnabledAndSuccessful() throws Exception {
         // Given
+        when(properties.isEnabled()).thenReturn(true);
+        when(properties.getUrl()).thenReturn("http://localhost:8080/sync");
+        when(properties.getRetry()).thenReturn(retryProps);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
         when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(testRestaurant));
         ResponseEntity<String> response = new ResponseEntity<>(HttpStatus.OK);
         when(restTemplate.postForEntity(anyString(), any(), eq(String.class))).thenReturn(response);
@@ -125,6 +124,7 @@ class AiSyncEventPublisherTest {
     // TC AS-003
     void shouldNotPublish_whenUrlIsNull() {
         // Given
+        when(properties.isEnabled()).thenReturn(true);
         when(properties.getUrl()).thenReturn(null);
         
         // When
@@ -138,6 +138,8 @@ class AiSyncEventPublisherTest {
     // TC AS-004
     void shouldNotPublish_whenEventNotSuccessful() {
         // Given
+        when(properties.isEnabled()).thenReturn(true);
+        when(properties.getUrl()).thenReturn("http://localhost:8080/sync");
         testEvent.setSuccess(false);
         
         // When
@@ -151,6 +153,8 @@ class AiSyncEventPublisherTest {
     // TC AS-005
     void shouldNotPublish_whenActionIsRead() {
         // Given
+        when(properties.isEnabled()).thenReturn(true);
+        when(properties.getUrl()).thenReturn("http://localhost:8080/sync");
         testEvent.setAction(AuditAction.READ);
         
         // When
@@ -162,8 +166,13 @@ class AiSyncEventPublisherTest {
 
     @Test
     // TC AS-010
-    void shouldAddHMACSignature_whenSecretIsConfigured() {
+    void shouldAddHMACSignature_whenSecretIsConfigured() throws Exception {
         // Given
+        when(properties.isEnabled()).thenReturn(true);
+        when(properties.getUrl()).thenReturn("http://localhost:8080/sync");
+        when(properties.getRetry()).thenReturn(retryProps);
+        when(properties.getSecret()).thenReturn("test-secret");
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
         when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(testRestaurant));
         ResponseEntity<String> response = new ResponseEntity<>(HttpStatus.OK);
         when(restTemplate.postForEntity(anyString(), any(), eq(String.class))).thenReturn(response);
@@ -177,8 +186,12 @@ class AiSyncEventPublisherTest {
 
     @Test
     // TC AS-011
-    void shouldAddApiKeyHeader_whenApiKeyIsConfigured() {
+    void shouldAddApiKeyHeader_whenApiKeyIsConfigured() throws Exception {
         // Given
+        when(properties.isEnabled()).thenReturn(true);
+        when(properties.getUrl()).thenReturn("http://localhost:8080/sync");
+        when(properties.getRetry()).thenReturn(retryProps);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
         when(properties.getApiKey()).thenReturn("test-api-key");
         when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(testRestaurant));
         ResponseEntity<String> response = new ResponseEntity<>(HttpStatus.OK);

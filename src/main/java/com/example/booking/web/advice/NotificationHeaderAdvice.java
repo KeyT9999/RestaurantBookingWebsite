@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -15,6 +16,7 @@ import com.example.booking.dto.notification.NotificationView;
 import com.example.booking.service.NotificationService;
 
 @ControllerAdvice
+@ConditionalOnBean(NotificationService.class)
 public class NotificationHeaderAdvice {
 
 	@Autowired

@@ -16,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
-import com.example.booking.dto.AIActionResponse;
 
 @ExtendWith(MockitoExtension.class)
 class AIResponseProcessorServiceTest {
@@ -57,16 +56,12 @@ class AIResponseProcessorServiceTest {
         // Given
         String aiResponse = "I found an action";
         String originalMessage = "Apply voucher";
-        AIActionResponse actionResponse = AIActionResponse.success("Voucher applied");
-        
-        when(intentDispatcherService.dispatchIntent(anyString(), any(), any(User.class))).thenReturn(actionResponse);
         
         // When
         String result = responseProcessorService.processAIResponse(aiResponse, testUser, originalMessage);
         
         // Then
-        assertNotNull(result);
-        // Note: Since extractActionFromResponse currently returns null, this test will return original response
+        assertEquals(aiResponse, result);
     }
 
     @Test

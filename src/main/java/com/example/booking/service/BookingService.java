@@ -500,9 +500,10 @@ public class BookingService {
         // Update table assignment if changed
         if (form.getTableId() != null) {
             // Không cần update old table status - chỉ cần remove assignment
-            if (!booking.getBookingTables().isEmpty()) {
+            List<BookingTable> currentTables = booking.getBookingTables();
+            if (currentTables != null && !currentTables.isEmpty()) {
                 System.out.println("🔍 Removing old table assignments...");
-                for (BookingTable bookingTable : booking.getBookingTables()) {
+                for (BookingTable bookingTable : currentTables) {
                     RestaurantTable oldTable = bookingTable.getTable();
                     System.out.println("✅ Removing assignment for table " + oldTable.getTableName());
                 }
@@ -600,8 +601,11 @@ public class BookingService {
                 logger.info("🔄 Creating refund request for completed payment: {}", payment.getPaymentId());
 
                 // Tạo refund request với manual transfer và thông tin bank account
+                Integer refundReferenceId = payment.getPaymentId() != null
+                        ? payment.getPaymentId()
+                        : booking.getBookingId();
                 refundService.processRefundWithManualTransfer(
-                        payment.getPaymentId(),
+                        refundReferenceId,
                         "Booking cancelled: " + cancelReason,
                         bankCode,
                         accountNumber);
@@ -796,7 +800,20 @@ public class BookingService {
         System.out.println("🔍 Creating booking confirmation notification for booking ID: " + booking.getBookingId());
         try {
             Notification notification = new Notification();
-            notification.setRecipientUserId(booking.getCustomer().getUser().getId());
+            UUID recipientId = null;
+            if (booking.getCustomer() != null) {
+                if (booking.getCustomer().getUser() != null
+                        && booking.getCustomer().getUser().getId() != null) {
+                    recipientId = booking.getCustomer().getUser().getId();
+                } else {
+                    recipientId = booking.getCustomer().getCustomerId();
+                }
+            }
+            if (recipientId == null) {
+                System.err.println("⚠️ Unable to determine recipient for booking confirmation notification");
+                return;
+            }
+            notification.setRecipientUserId(recipientId);
             notification.setType(NotificationType.BOOKING_CONFIRMED);
             notification.setTitle("Đặt bàn đã được xác nhận");
             notification.setContent(String.format(
@@ -1320,11 +1337,12 @@ public class BookingService {
 
         // Add dishes total
         List<BookingDish> bookingDishes = bookingDishRepository.findByBooking(booking);
-        if (!bookingDishes.isEmpty()) {
+        if (bookingDishes != null && !bookingDishes.isEmpty()) {
             BigDecimal dishesTotal = BigDecimal.ZERO;
             for (BookingDish bookingDish : bookingDishes) {
                 dishesTotal = dishesTotal.add(bookingDish.getTotalPrice());
-                System.out.println("🍽️ Dish: " + bookingDish.getDish().getName() +
+                String dishName = bookingDish.getDish() != null ? bookingDish.getDish().getName() : "Unknown dish";
+                System.out.println("🍽️ Dish: " + dishName +
                         " x" + bookingDish.getQuantity() +
                         " = " + bookingDish.getTotalPrice());
             }
@@ -1335,11 +1353,14 @@ public class BookingService {
         // Add services total
         List<com.example.booking.domain.BookingService> bookingServices = bookingServiceRepository
                 .findByBooking(booking);
-        if (!bookingServices.isEmpty()) {
+        if (bookingServices != null && !bookingServices.isEmpty()) {
             BigDecimal servicesTotal = BigDecimal.ZERO;
             for (com.example.booking.domain.BookingService bookingService : bookingServices) {
                 servicesTotal = servicesTotal.add(bookingService.getTotalPrice());
-                System.out.println("🔧 Service: " + bookingService.getService().getName() +
+                String serviceName = bookingService.getService() != null
+                        ? bookingService.getService().getName()
+                        : "Unknown service";
+                System.out.println("🔧 Service: " + serviceName +
                         " x" + bookingService.getQuantity() +
                         " = " + bookingService.getTotalPrice());
             }

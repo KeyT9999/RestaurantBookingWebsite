@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -423,11 +424,26 @@ public class ChatApiController {
      * Helper method to get User from Authentication (handles both User and OAuth2User)
      */
     private User getUserFromAuthentication(Authentication authentication) {
+        if (authentication == null) {
+            authentication = SecurityContextHolder.getContext().getAuthentication();
+        }
+        if (authentication == null) {
+            throw new RuntimeException("Authentication not available");
+        }
         Object principal = authentication.getPrincipal();
 
         // Nếu là User object trực tiếp (regular login)
         if (principal instanceof User) {
             return (User) principal;
+        }
+
+        if (principal instanceof org.springframework.security.core.userdetails.User userDetails) {
+            try {
+                return (User) userService.loadUserByUsername(userDetails.getUsername());
+            } catch (Exception e) {
+                throw new RuntimeException("User not found for username: " + userDetails.getUsername() +
+                        ". Error: " + e.getMessage());
+            }
         }
 
         // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)

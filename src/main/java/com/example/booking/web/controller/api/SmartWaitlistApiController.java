@@ -8,11 +8,12 @@ import java.lang.IllegalArgumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.booking.domain.Waitlist;
@@ -115,14 +116,17 @@ public class SmartWaitlistApiController {
             System.out.println("   Dish IDs: " + request.dishIds);
             System.out.println("   Service IDs: " + request.serviceIds);
             System.out.println("   Table IDs: " + request.tableIds);
-            System.out.println("   Username: " + (authentication != null ? authentication.getName() : "null"));
+            Authentication effectiveAuth = authentication != null
+                    ? authentication
+                    : SecurityContextHolder.getContext().getAuthentication();
+            System.out.println("   Username: " + (effectiveAuth != null ? effectiveAuth.getName() : "null"));
             
-            if (authentication == null) {
+            if (effectiveAuth == null) {
                 System.out.println("❌ Authentication is null");
                 return ResponseEntity.badRequest().body(new ErrorResponse("Authentication required"));
             }
             
-            String username = authentication.getName();
+            String username = effectiveAuth.getName();
             System.out.println("🔍 Getting customer ID for username: " + username);
             
             // Get customer ID from username
@@ -188,8 +192,11 @@ public class SmartWaitlistApiController {
     public ResponseEntity<?> getWaitlistDetails(@PathVariable Integer waitlistId, Authentication authentication) {
         try {
             System.out.println("🔍 Getting waitlist details for ID: " + waitlistId);
+            Authentication effectiveAuth = authentication != null
+                    ? authentication
+                    : SecurityContextHolder.getContext().getAuthentication();
             
-            if (authentication == null) {
+            if (effectiveAuth == null) {
                 return ResponseEntity.badRequest().body(new ErrorResponse("Authentication required"));
             }
             

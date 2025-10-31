@@ -9,7 +9,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.security.Principal;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
@@ -61,13 +61,7 @@ class ChatMessageControllerTest {
     private AIResponseProcessorService aiResponseProcessorService;
 
     @Mock
-    private Principal principal;
-
-    @Mock
     private SimpMessageHeaderAccessor headerAccessor;
-
-    @Mock
-    private User user;
 
     @Mock
     private ChatRoom chatRoom;
@@ -80,17 +74,28 @@ class ChatMessageControllerTest {
 
     private UUID testUserId;
     private String testRoomId;
+    private User user;
+    private UsernamePasswordAuthenticationToken principal;
 
     @BeforeEach
     void setUp() {
         testUserId = UUID.randomUUID();
         testRoomId = "customer_" + testUserId + "_restaurant_1";
-        
-        when(user.getId()).thenReturn(testUserId);
-        when(user.getUsername()).thenReturn("testuser");
-        when(user.getRole()).thenReturn(UserRole.CUSTOMER);
-        when(principal.getName()).thenReturn("testuser");
-        when(headerAccessor.getUser()).thenReturn(principal);
+
+        user = new User();
+        user.setId(testUserId);
+        user.setUsername("testuser");
+        user.setEmail("testuser@example.com");
+        user.setPassword("password123");
+        user.setFullName("Test User");
+        user.setRole(UserRole.CUSTOMER);
+
+        principal = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()) {
+            @Override
+            public String getName() {
+                return user.getUsername();
+            }
+        };
     }
 
     @Test
@@ -101,12 +106,17 @@ class ChatMessageControllerTest {
         Message message = new Message();
         message.setMessageId(1);
         message.setContent("Hello world");
+        message.setRoom(chatRoom);
+        message.setSender(user);
+        message.setMessageType(MessageType.TEXT);
+
+        when(headerAccessor.getUser()).thenReturn(principal);
         
-        when(userService.loadUserByUsername("testuser")).thenReturn(user);
         when(inputSanitizer.sanitizeChatMessage("Hello world")).thenReturn("Hello world");
         when(chatService.canUserAccessRoom(testRoomId, testUserId, UserRole.CUSTOMER)).thenReturn(true);
         when(chatService.sendMessage(anyString(), any(UUID.class), anyString(), any(MessageType.class))).thenReturn(message);
         when(chatService.getRoomById(testRoomId)).thenReturn(chatRoom);
+        when(chatRoom.getRoomId()).thenReturn(testRoomId);
         when(chatRoom.getRestaurant()).thenReturn(restaurant);
         when(restaurant.getRestaurantId()).thenReturn(1); // Not AI restaurant
         
@@ -153,6 +163,7 @@ class ChatMessageControllerTest {
     void shouldSendError_whenMessageIsWhitespaceOnly() {
         // Given
         ChatMessageRequest request = new ChatMessageRequest(testRoomId, "   ");
+        when(headerAccessor.getUser()).thenReturn(principal);
         
         // When
         controller.sendMessage(request, headerAccessor);
@@ -169,12 +180,18 @@ class ChatMessageControllerTest {
         ChatMessageRequest request = new ChatMessageRequest(testRoomId, "<script>alert(1)</script>");
         Message message = new Message();
         String sanitizedContent = "alert(1)";
+        message.setMessageId(2);
+        message.setContent(sanitizedContent);
+        message.setRoom(chatRoom);
+        message.setSender(user);
+        message.setMessageType(MessageType.TEXT);
+        when(headerAccessor.getUser()).thenReturn(principal);
         
-        when(userService.loadUserByUsername("testuser")).thenReturn(user);
         when(inputSanitizer.sanitizeChatMessage("<script>alert(1)</script>")).thenReturn(sanitizedContent);
         when(chatService.canUserAccessRoom(testRoomId, testUserId, UserRole.CUSTOMER)).thenReturn(true);
         when(chatService.sendMessage(anyString(), any(UUID.class), eq(sanitizedContent), any(MessageType.class))).thenReturn(message);
         when(chatService.getRoomById(testRoomId)).thenReturn(chatRoom);
+        when(chatRoom.getRoomId()).thenReturn(testRoomId);
         when(chatRoom.getRestaurant()).thenReturn(restaurant);
         when(restaurant.getRestaurantId()).thenReturn(1);
         
@@ -195,12 +212,17 @@ class ChatMessageControllerTest {
         ChatMessageRequest request = new ChatMessageRequest(testRoomId, "Hello AI");
         Message message = new Message();
         message.setMessageId(1);
+        message.setContent("Hello AI");
+        message.setRoom(chatRoom);
+        message.setSender(user);
+        message.setMessageType(MessageType.TEXT);
+        when(headerAccessor.getUser()).thenReturn(principal);
         
-        when(userService.loadUserByUsername("testuser")).thenReturn(user);
         when(inputSanitizer.sanitizeChatMessage("Hello AI")).thenReturn("Hello AI");
         when(chatService.canUserAccessRoom(testRoomId, testUserId, UserRole.CUSTOMER)).thenReturn(true);
         when(chatService.sendMessage(anyString(), any(UUID.class), anyString(), any(MessageType.class))).thenReturn(message);
         when(chatService.getRoomById(testRoomId)).thenReturn(chatRoom);
+        when(chatRoom.getRoomId()).thenReturn(testRoomId);
         when(chatRoom.getRestaurant()).thenReturn(restaurant);
         when(restaurant.getRestaurantId()).thenReturn(37); // AI Restaurant ID
         
@@ -218,6 +240,7 @@ class ChatMessageControllerTest {
     void shouldBroadcastTypingIndicator_whenHandlingTyping() {
         // Given
         TypingRequest request = new TypingRequest(testRoomId, true);
+        when(headerAccessor.getUser()).thenReturn(principal);
         
         // When
         controller.handleTyping(request, headerAccessor);
@@ -253,8 +276,8 @@ class ChatMessageControllerTest {
     void shouldMarkMessagesAsReadAndBroadcast_whenJoiningRoom() {
         // Given
         JoinRoomRequest request = new JoinRoomRequest(testRoomId);
+        when(headerAccessor.getUser()).thenReturn(principal);
         
-        when(userService.loadUserByUsername("testuser")).thenReturn(user);
         when(chatService.canUserAccessRoom(testRoomId, testUserId, UserRole.CUSTOMER)).thenReturn(true);
         when(chatService.markMessagesAsRead(testRoomId, testUserId)).thenReturn(5);
         when(chatService.getChatRoomById(testRoomId)).thenReturn(java.util.Optional.of(chatRoom));
@@ -272,8 +295,8 @@ class ChatMessageControllerTest {
     void shouldSendError_whenUserNotAuthorizedToJoinRoom() {
         // Given
         JoinRoomRequest request = new JoinRoomRequest(testRoomId);
+        when(headerAccessor.getUser()).thenReturn(principal);
         
-        when(userService.loadUserByUsername("testuser")).thenReturn(user);
         when(chatService.canUserAccessRoom(testRoomId, testUserId, UserRole.CUSTOMER)).thenReturn(false);
         
         // When
@@ -288,38 +311,75 @@ class ChatMessageControllerTest {
     // TC RC-011
     void shouldProcessAIResponse_whenMessageToAI() throws Exception {
         // Given
-        String roomId = "customer_" + testUserId + "_restaurant_37"; // AI Restaurant
-        ChatMessageRequest request = new ChatMessageRequest(roomId, "Hello AI");
-        Message message = new Message();
-        message.setMessageId(1);
+        String roomId = "customer_" + testUserId + "_restaurant_37";
         UUID aiUserId = UUID.randomUUID();
-        
-        when(userService.loadUserByUsername("testuser")).thenReturn(user);
-        when(inputSanitizer.sanitizeChatMessage("Hello AI")).thenReturn("Hello AI");
-        when(chatService.canUserAccessRoom(roomId, testUserId, UserRole.CUSTOMER)).thenReturn(true);
-        when(chatService.sendMessage(anyString(), any(UUID.class), anyString(), any(MessageType.class))).thenReturn(message);
-        when(chatService.getRoomById(roomId)).thenReturn(chatRoom);
-        when(chatRoom.getRestaurant()).thenReturn(restaurant);
-        when(restaurant.getRestaurantId()).thenReturn(37); // AI Restaurant ID
-        when(aiService.sendMessageToAI(anyString(), anyString())).thenReturn("AI Response");
-        when(aiResponseProcessorService.processAIResponse(anyString(), any(User.class), anyString())).thenReturn("Processed Response");
+        Message aiMessage = new Message();
+        aiMessage.setMessageId(42);
+        aiMessage.setContent("Processed Response");
+        ChatRoom aiRoom = new ChatRoom();
+        aiRoom.setRoomId(roomId);
+        aiMessage.setRoom(aiRoom);
+        User aiSender = new User();
+        aiSender.setId(aiUserId);
+        aiSender.setUsername("ai-assistant");
+        aiSender.setEmail("ai@example.com");
+        aiSender.setPassword("password123");
+        aiSender.setFullName("AI Assistant");
+        aiSender.setRole(UserRole.RESTAURANT_OWNER);
+        aiMessage.setSender(aiSender);
+        aiMessage.setMessageType(MessageType.TEXT);
+
         when(userService.findById(testUserId)).thenReturn(user);
+        when(aiService.sendMessageToAI("Hello AI", testUserId.toString())).thenReturn("AI Response");
+        when(aiResponseProcessorService.processAIResponse("AI Response", user, "Hello AI")).thenReturn("Processed Response");
         when(chatService.getAIRestaurantOwnerId()).thenReturn(aiUserId);
-        
-        // When - Simplified test, actual async processing would require more setup
-        // The method is @Async, so we're just verifying it compiles
-        assertNotNull(controller);
+        when(chatService.sendMessage(roomId, aiUserId, "Processed Response", MessageType.TEXT)).thenReturn(aiMessage);
+        when(chatService.getChatRoomById(roomId)).thenReturn(java.util.Optional.empty());
+
+        // When
+        controller.processAIResponse(roomId, "Hello AI", testUserId);
+
+        // Then
+        verify(aiService).sendMessageToAI("Hello AI", testUserId.toString());
+        verify(aiResponseProcessorService).processAIResponse("AI Response", user, "Hello AI");
+        verify(chatService).sendMessage(roomId, aiUserId, "Processed Response", MessageType.TEXT);
+        verify(messagingTemplate, times(2)).convertAndSend(eq("/topic/room/" + roomId + "/typing"), any(TypingResponse.class));
+        verify(messagingTemplate).convertAndSend(eq("/topic/room/" + roomId), any(ChatMessageController.ChatMessageResponse.class));
     }
 
     @Test
     // TC RC-012
     void shouldSendFallbackMessage_whenAITimesOut() throws Exception {
-        // Given - Simplified test
-        // In reality, this would test the async processAIResponse method's exception handling
-        
-        // When & Then
-        // Note: This is a placeholder test for the timeout scenario
-        assertNotNull(controller);
+        // Given
+        String roomId = "customer_" + testUserId + "_restaurant_37";
+        UUID aiUserId = UUID.randomUUID();
+        ChatRoom aiRoom = new ChatRoom();
+        aiRoom.setRoomId(roomId);
+        User aiSender = new User();
+        aiSender.setId(aiUserId);
+        aiSender.setUsername("ai-assistant");
+        aiSender.setEmail("ai@example.com");
+        aiSender.setPassword("password123");
+        aiSender.setFullName("AI Assistant");
+        aiSender.setRole(UserRole.RESTAURANT_OWNER);
+
+        when(userService.findById(testUserId)).thenReturn(user);
+        when(aiService.sendMessageToAI("Hello AI", testUserId.toString())).thenThrow(new RuntimeException("timeout"));
+        when(chatService.getAIRestaurantOwnerId()).thenReturn(aiUserId);
+        Message fallbackMessage = new Message();
+        fallbackMessage.setMessageId(7);
+        fallbackMessage.setContent("Xin lỗi, có lỗi xảy ra khi xử lý tin nhắn của bạn.");
+        fallbackMessage.setRoom(aiRoom);
+        fallbackMessage.setSender(aiSender);
+        fallbackMessage.setMessageType(MessageType.TEXT);
+        when(chatService.sendMessage(roomId, aiUserId, "Xin lỗi, có lỗi xảy ra khi xử lý tin nhắn của bạn.", MessageType.TEXT))
+            .thenReturn(fallbackMessage);
+
+        // When
+        controller.processAIResponse(roomId, "Hello AI", testUserId);
+
+        // Then
+        verify(chatService).sendMessage(roomId, aiUserId, "Xin lỗi, có lỗi xảy ra khi xử lý tin nhắn của bạn.", MessageType.TEXT);
+        verify(messagingTemplate).convertAndSend(eq("/topic/room/" + roomId), any(ChatMessageController.ChatMessageResponse.class));
     }
 }
-

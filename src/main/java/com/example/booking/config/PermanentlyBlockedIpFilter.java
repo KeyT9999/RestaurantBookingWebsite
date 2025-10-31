@@ -1,20 +1,25 @@
 package com.example.booking.config;
 
 import com.example.booking.service.DatabaseRateLimitingService;
-import jakarta.servlet.*;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
 
 /**
  * Filter để kiểm tra IP bị chặn vĩnh viễn
  */
 @Component
 @Order(1) // Chạy trước các filter khác
+@ConditionalOnBean(DatabaseRateLimitingService.class)
 public class PermanentlyBlockedIpFilter implements Filter {
 
     @Autowired

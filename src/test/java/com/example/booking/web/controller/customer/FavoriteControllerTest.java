@@ -25,8 +25,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.context.annotation.Import;
+
+import com.example.booking.config.TestRateLimitingConfig;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.User;
+import com.example.booking.domain.UserRole;
 import com.example.booking.dto.customer.FavoriteRestaurantDto;
 import com.example.booking.dto.customer.ToggleFavoriteRequest;
 import com.example.booking.dto.customer.ToggleFavoriteResponse;
@@ -35,6 +39,7 @@ import com.example.booking.service.FavoriteService;
 
 @WebMvcTest(controllers = FavoriteController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@Import(TestRateLimitingConfig.class)
 class FavoriteControllerTest {
 
     @Autowired private MockMvc mockMvc;
@@ -50,11 +55,13 @@ class FavoriteControllerTest {
         authedUser = new User();
         UUID uid = UUID.randomUUID();
         authedUser.setId(uid);
+        authedUser.setRole(com.example.booking.domain.UserRole.CUSTOMER);
         customer = new Customer();
         customerId = UUID.randomUUID();
         customer.setCustomerId(customerId);
         when(customerRepository.findByUserId(uid)).thenReturn(java.util.Optional.of(customer));
-        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(authedUser, "pwd"));
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(authedUser, "pwd", authedUser.getAuthorities()));
     }
 
     @AfterEach

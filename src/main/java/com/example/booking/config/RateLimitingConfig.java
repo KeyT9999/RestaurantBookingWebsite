@@ -1,10 +1,13 @@
 package com.example.booking.config;
 
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.Refill;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -14,20 +17,18 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ConcurrentHashMap;
-
 @Configuration
 public class RateLimitingConfig implements WebMvcConfigurer {
     
-        private final RateLimitingInterceptor rateLimitingInterceptor;
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private RateLimitingInterceptor rateLimitingInterceptor;
 
-        public RateLimitingConfig(RateLimitingInterceptor rateLimitingInterceptor) {
-                this.rateLimitingInterceptor = rateLimitingInterceptor;
-        }
+    public RateLimitingConfig() {
+    }
+
+    public RateLimitingConfig(RateLimitingInterceptor rateLimitingInterceptor) {
+        this.rateLimitingInterceptor = rateLimitingInterceptor;
+    }
 
     @Value("${rate.limit.login.requests:5}")
     private int loginRequests;
@@ -120,8 +121,10 @@ public class RateLimitingConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
+        if (rateLimitingInterceptor != null) {
             registry.addInterceptor(rateLimitingInterceptor)
-                .addPathPatterns("/auth/**", "/booking/**", "/api/chat/**", "/reviews/**", "/api/**")
-                .excludePathPatterns("/css/**", "/js/**", "/images/**", "/uploads/**", "/actuator/**", "/login");
+                    .addPathPatterns("/auth/**", "/booking/**", "/api/chat/**", "/reviews/**", "/api/**")
+                    .excludePathPatterns("/css/**", "/js/**", "/images/**", "/uploads/**", "/actuator/**", "/login");
+        }
     }
 }
