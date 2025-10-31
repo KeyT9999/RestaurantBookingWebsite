@@ -679,6 +679,231 @@ public class PaymentControllerTest {
         verify(refundService, times(1)).getRefundInfo(1);
     }
 
+    // ========== Refund Error Cases - Covering HashMap Initializations ==========
+
+    @Test
+    @DisplayName("shouldReturnUnauthorized_whenProcessFullRefundWithoutAuth")
+    void shouldReturnUnauthorized_whenProcessFullRefundWithoutAuth() {
+        // Given
+        Authentication nullAuth = null;
+
+        // When
+        ResponseEntity<?> response = paymentController.processFullRefund(1, "reason", nullAuth);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(401, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturnBadRequest_whenProcessFullRefundWithIllegalArgument")
+    void shouldReturnBadRequest_whenProcessFullRefundWithIllegalArgument() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(refundService.processFullRefund(eq(1), anyString()))
+            .thenThrow(new IllegalArgumentException("Invalid payment"));
+
+        // When
+        ResponseEntity<?> response = paymentController.processFullRefund(1, "reason", authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturn500_whenProcessFullRefundWithException")
+    void shouldReturn500_whenProcessFullRefundWithException() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(refundService.processFullRefund(eq(1), anyString()))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        ResponseEntity<?> response = paymentController.processFullRefund(1, "reason", authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturnUnauthorized_whenProcessPartialRefundWithoutAuth")
+    void shouldReturnUnauthorized_whenProcessPartialRefundWithoutAuth() {
+        // Given
+        Authentication nullAuth = null;
+
+        // When
+        ResponseEntity<?> response = paymentController.processPartialRefund(1, "200000", "reason", nullAuth);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(401, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturnBadRequest_whenProcessPartialRefundWithInvalidAmount")
+    void shouldReturnBadRequest_whenProcessPartialRefundWithInvalidAmount() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+
+        // When
+        ResponseEntity<?> response = paymentController.processPartialRefund(1, "invalid", "reason", authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturnBadRequest_whenProcessPartialRefundWithIllegalArgument")
+    void shouldReturnBadRequest_whenProcessPartialRefundWithIllegalArgument() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(refundService.processPartialRefund(eq(1), any(BigDecimal.class), anyString()))
+            .thenThrow(new IllegalArgumentException("Invalid refund amount"));
+
+        // When
+        ResponseEntity<?> response = paymentController.processPartialRefund(1, "200000", "reason", authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturn500_whenProcessPartialRefundWithException")
+    void shouldReturn500_whenProcessPartialRefundWithException() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(refundService.processPartialRefund(eq(1), any(BigDecimal.class), anyString()))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        ResponseEntity<?> response = paymentController.processPartialRefund(1, "200000", "reason", authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturnUnauthorized_whenCheckRefundEligibilityWithoutAuth")
+    void shouldReturnUnauthorized_whenCheckRefundEligibilityWithoutAuth() {
+        // Given
+        Authentication nullAuth = null;
+
+        // When
+        ResponseEntity<?> response = paymentController.checkRefundEligibility(1, nullAuth);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(401, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturn404_whenCheckRefundEligibilityPaymentNotFound")
+    void shouldReturn404_whenCheckRefundEligibilityPaymentNotFound() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(paymentRepository.findById(999)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = paymentController.checkRefundEligibility(999, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturn500_whenCheckRefundEligibilityWithException")
+    void shouldReturn500_whenCheckRefundEligibilityWithException() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(paymentRepository.findById(1)).thenThrow(new RuntimeException("Database error"));
+
+        // When
+        ResponseEntity<?> response = paymentController.checkRefundEligibility(1, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturnUnauthorized_whenGetRefundablePaymentsWithoutAuth")
+    void shouldReturnUnauthorized_whenGetRefundablePaymentsWithoutAuth() {
+        // Given
+        Authentication nullAuth = null;
+
+        // When
+        ResponseEntity<?> response = paymentController.getRefundablePayments(nullAuth);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(401, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturn500_whenGetRefundablePaymentsWithException")
+    void shouldReturn500_whenGetRefundablePaymentsWithException() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(refundService.getRefundablePayments()).thenThrow(new RuntimeException("Database error"));
+
+        // When
+        ResponseEntity<?> response = paymentController.getRefundablePayments(authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturnUnauthorized_whenGetRefundInfoWithoutAuth")
+    void shouldReturnUnauthorized_whenGetRefundInfoWithoutAuth() {
+        // Given
+        Authentication nullAuth = null;
+
+        // When
+        ResponseEntity<?> response = paymentController.getRefundInfo(1, nullAuth);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(401, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturn404_whenGetRefundInfoNotFound")
+    void shouldReturn404_whenGetRefundInfoNotFound() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(refundService.getRefundInfo(999)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = paymentController.getRefundInfo(999, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("shouldReturn500_whenGetRefundInfoWithException")
+    void shouldReturn500_whenGetRefundInfoWithException() {
+        // Given
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(refundService.getRefundInfo(1)).thenThrow(new RuntimeException("Database error"));
+
+        // When
+        ResponseEntity<?> response = paymentController.getRefundInfo(1, authentication);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(500, response.getStatusCode().value());
+    }
+
     // ========== Error Handling Tests ==========
 
     @Test
@@ -910,6 +1135,524 @@ public class PaymentControllerTest {
         // Then
         assertTrue(result.contains("redirect:/booking/my"));
         verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), anyString());
+    }
+
+    // ========== Additional PaymentController Endpoints - Batch Coverage ==========
+
+    @Test
+    @DisplayName("testCreatePayOSLink - should create test link successfully")
+    void testCreatePayOSLink_ShouldReturnSuccess() {
+        // Given
+        PayOsService.CreateLinkResponse linkResponse = mock(PayOsService.CreateLinkResponse.class);
+        PayOsService.CreateLinkResponse.Data linkData = mock(PayOsService.CreateLinkResponse.Data.class);
+        
+        when(linkResponse.getData()).thenReturn(linkData);
+        when(linkData.getCheckoutUrl()).thenReturn("https://payos.vn/test");
+        when(linkData.getQrCode()).thenReturn("QR_CODE_DATA");
+        when(payOsService.createPaymentLink(anyLong(), anyLong(), anyString())).thenReturn(linkResponse);
+
+        // When
+        ResponseEntity<?> response = paymentController.testCreatePayOSLink(123L, 500000L, "Test payment");
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+    }
+
+    @Test
+    @DisplayName("testCreatePayOSLink - should handle null response")
+    void testCreatePayOSLink_WithNullResponse_ShouldReturnError() {
+        // Given
+        when(payOsService.createPaymentLink(anyLong(), anyLong(), anyString())).thenReturn(null);
+
+        // When
+        ResponseEntity<?> response = paymentController.testCreatePayOSLink(123L, 500000L, "Test payment");
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("testCreatePayOSLink - should handle exception")
+    void testCreatePayOSLink_WithException_ShouldReturnError() {
+        // Given
+        when(payOsService.createPaymentLink(anyLong(), anyLong(), anyString()))
+            .thenThrow(new RuntimeException("Service error"));
+
+        // When
+        ResponseEntity<?> response = paymentController.testCreatePayOSLink(123L, 500000L, "Test payment");
+
+        // Then
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("confirmWebhook - should confirm webhook successfully")
+    void confirmWebhook_WithValidUrl_ShouldReturnSuccess() throws Exception {
+        // Given
+        PayOsService.WebhookConfirmResponse confirmResponse = mock(PayOsService.WebhookConfirmResponse.class);
+        PayOsService.WebhookConfirmResponse.WebhookConfirmData confirmData = mock(PayOsService.WebhookConfirmResponse.WebhookConfirmData.class);
+        
+        when(confirmResponse.getCode()).thenReturn("00");
+        when(confirmResponse.getData()).thenReturn(confirmData);
+        when(payOsService.confirmWebhook(anyString())).thenReturn(confirmResponse);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+        // When
+        ResponseEntity<?> response = paymentController.confirmWebhook("https://example.com/webhook");
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("confirmWebhook - should reject empty URL")
+    void confirmWebhook_WithEmptyUrl_ShouldReturnError() {
+        // When
+        ResponseEntity<?> response = paymentController.confirmWebhook("");
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("confirmWebhook - should handle invalid URL")
+    void confirmWebhook_WithInvalidUrl_ShouldReturnError() throws Exception {
+        // Given
+        when(payOsService.confirmWebhook(anyString()))
+            .thenThrow(new IllegalArgumentException("Invalid URL"));
+
+        // When
+        ResponseEntity<?> response = paymentController.confirmWebhook("invalid-url");
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("confirmWebhook - should handle failed confirmation")
+    void confirmWebhook_WithFailedConfirmation_ShouldReturnError() {
+        // Given
+        PayOsService.WebhookConfirmResponse confirmResponse = mock(PayOsService.WebhookConfirmResponse.class);
+        when(confirmResponse.getCode()).thenReturn("01");
+        when(confirmResponse.getDesc()).thenReturn("Failed");
+        when(payOsService.confirmWebhook(anyString())).thenReturn(confirmResponse);
+
+        // When
+        ResponseEntity<?> response = paymentController.confirmWebhook("https://example.com/webhook");
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("confirmWebhook - should handle exception")
+    void confirmWebhook_WithException_ShouldReturnError() {
+        // Given
+        when(payOsService.confirmWebhook(anyString()))
+            .thenThrow(new RuntimeException("Service error"));
+
+        // When
+        ResponseEntity<?> response = paymentController.confirmWebhook("https://example.com/webhook");
+
+        // Then
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("handlePayOSWebhook - should handle null signature")
+    void handlePayOSWebhook_WithNullSignature_ShouldReturnError() {
+        // Given
+        String webhookBody = "{\"code\":\"00\"}";
+
+        // When
+        ResponseEntity<?> response = paymentController.handlePayOSWebhook(webhookBody, null);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("handlePayOSWebhook - should handle invalid signature")
+    void handlePayOSWebhook_WithInvalidSignature_ShouldReturnError() {
+        // Given
+        String webhookBody = "{\"code\":\"00\"}";
+        when(payOsService.verifyWebhook(anyString(), anyString())).thenReturn(false);
+
+        // When
+        ResponseEntity<?> response = paymentController.handlePayOSWebhook(webhookBody, "invalid");
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+        verify(paymentService, never()).handlePayOsWebhook(anyString());
+    }
+
+    @Test
+    @DisplayName("handlePayOSWebhook - should handle processing failure")
+    void handlePayOSWebhook_WithProcessingFailure_ShouldReturnError() {
+        // Given
+        String webhookBody = "{\"code\":\"00\"}";
+        when(payOsService.verifyWebhook(anyString(), anyString())).thenReturn(true);
+        when(paymentService.handlePayOsWebhook(anyString())).thenReturn(false);
+
+        // When
+        ResponseEntity<?> response = paymentController.handlePayOSWebhook(webhookBody, "valid");
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("handlePayOSWebhook - should handle exception")
+    void handlePayOSWebhook_WithException_ShouldReturnError() {
+        // Given
+        String webhookBody = "{\"code\":\"00\"}";
+        when(payOsService.verifyWebhook(anyString(), anyString())).thenReturn(true);
+        when(paymentService.handlePayOsWebhook(anyString()))
+            .thenThrow(new RuntimeException("Processing error"));
+
+        // When
+        ResponseEntity<?> response = paymentController.handlePayOSWebhook(webhookBody, "valid");
+
+        // Then
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("downloadPayOSInvoice - should download invoice successfully")
+    void downloadPayOSInvoice_WithValidData_ShouldReturnPDF() {
+        // Given
+        byte[] pdfData = "PDF_CONTENT".getBytes();
+        when(paymentService.findByOrderCode(123456L)).thenReturn(Optional.of(payment));
+        when(payOsService.getInvoiceInfo(anyLong())).thenReturn(createMockInvoiceResponse());
+        when(payOsService.downloadInvoice(anyLong(), anyString())).thenReturn(pdfData);
+
+        // When
+        ResponseEntity<?> response = paymentController.downloadPayOSInvoice(123456L, authentication);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("downloadPayOSInvoice - should return 404 when payment not found")
+    void downloadPayOSInvoice_WithPaymentNotFound_ShouldReturn404() {
+        // Given
+        when(paymentService.findByOrderCode(999999L)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = paymentController.downloadPayOSInvoice(999999L, authentication);
+
+        // Then
+        assertEquals(404, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("downloadPayOSInvoice - should return 403 when unauthorized")
+    void downloadPayOSInvoice_WithUnauthorized_ShouldReturn403() {
+        // Given
+        UUID differentCustomerId = UUID.randomUUID();
+        Customer differentCustomer = new Customer();
+        differentCustomer.setCustomerId(differentCustomerId);
+        Payment differentPayment = new Payment();
+        differentPayment.setCustomer(differentCustomer);
+        
+        when(paymentService.findByOrderCode(123456L)).thenReturn(Optional.of(differentPayment));
+
+        // When
+        ResponseEntity<?> response = paymentController.downloadPayOSInvoice(123456L, authentication);
+
+        // Then
+        assertEquals(403, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("downloadPayOSInvoice - should return 400 when payment not completed")
+    void downloadPayOSInvoice_WithNotCompleted_ShouldReturn400() {
+        // Given
+        payment.setStatus(PaymentStatus.PENDING);
+        when(paymentService.findByOrderCode(123456L)).thenReturn(Optional.of(payment));
+
+        // When
+        ResponseEntity<?> response = paymentController.downloadPayOSInvoice(123456L, authentication);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("syncPayOSStatus - should sync successfully when PAID")
+    void syncPayOSStatus_WithPaidStatus_ShouldUpdatePayment() {
+        // Given
+        PayOsService.PaymentInfoResponse payOSResponse = mock(PayOsService.PaymentInfoResponse.class);
+        PayOsService.PaymentInfoResponse.PaymentInfoData paymentData = mock(PayOsService.PaymentInfoResponse.PaymentInfoData.class);
+        
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(payOsService.getPaymentInfo(anyLong())).thenReturn(payOSResponse);
+        when(payOSResponse.getCode()).thenReturn("00");
+        when(payOSResponse.getData()).thenReturn(paymentData);
+        when(paymentData.getStatus()).thenReturn("PAID");
+        when(paymentData.getId()).thenReturn("link-id");
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
+        doNothing().when(bookingService).completeBooking(anyInt());
+
+        // When
+        ResponseEntity<String> response = paymentController.syncPayOSStatus(1);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("COMPLETED"));
+    }
+
+    @Test
+    @DisplayName("syncPayOSStatus - should handle payment not found")
+    void syncPayOSStatus_WithPaymentNotFound_ShouldReturnMessage() {
+        // Given
+        when(paymentService.findById(999)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<String> response = paymentController.syncPayOSStatus(999);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("not found"));
+    }
+
+    @Test
+    @DisplayName("syncPayOSStatus - should handle non-PayOS payment")
+    void syncPayOSStatus_WithNonPayOSPayment_ShouldReturnMessage() {
+        // Given
+        payment.setPaymentMethod(PaymentMethod.CASH);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+
+        // When
+        ResponseEntity<String> response = paymentController.syncPayOSStatus(1);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("not PayOS"));
+    }
+
+    @Test
+    @DisplayName("syncPayOSStatus - should handle already completed")
+    void syncPayOSStatus_WithAlreadyCompleted_ShouldReturnMessage() {
+        // Given
+        payment.setStatus(PaymentStatus.COMPLETED);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+
+        // When
+        ResponseEntity<String> response = paymentController.syncPayOSStatus(1);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("already COMPLETED"));
+    }
+
+    @Test
+    @DisplayName("debugBookingPayment - should return debug info")
+    void debugBookingPayment_WithValidBooking_ShouldReturnInfo() {
+        // Given
+        when(bookingService.findBookingById(1)).thenReturn(Optional.of(booking));
+        when(paymentService.findByBooking(booking)).thenReturn(Optional.of(payment));
+
+        // When
+        ResponseEntity<String> response = paymentController.debugBookingPayment(1);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("Booking ID"));
+    }
+
+    @Test
+    @DisplayName("debugBookingPayment - should handle booking not found")
+    void debugBookingPayment_WithBookingNotFound_ShouldReturnMessage() {
+        // Given
+        when(bookingService.findBookingById(999)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<String> response = paymentController.debugBookingPayment(999);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(response.getBody().contains("not found"));
+    }
+
+    @Test
+    @DisplayName("getPayOSInvoices - should return invoices successfully")
+    void getPayOSInvoices_WithValidPayment_ShouldReturnInvoices() throws Exception {
+        // Given
+        PayOsService.InvoiceInfoResponse invoiceResponse = mock(PayOsService.InvoiceInfoResponse.class);
+        PayOsService.InvoiceInfoResponse.InvoiceData data = mock(PayOsService.InvoiceInfoResponse.InvoiceData.class);
+        PayOsService.InvoiceInfoResponse.InvoiceData.Invoice invoice = mock(PayOsService.InvoiceInfoResponse.InvoiceData.Invoice.class);
+        
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(payOsService.getInvoiceInfo(anyLong())).thenReturn(invoiceResponse);
+        when(invoiceResponse.getCode()).thenReturn("00");
+        when(invoiceResponse.getData()).thenReturn(data);
+        when(data.getInvoices()).thenReturn(java.util.List.of(invoice));
+        when(objectMapper.writeValueAsString(any())).thenReturn("[{\"invoiceId\":\"123\"}]");
+
+        // When
+        ResponseEntity<?> response = paymentController.getPayOSInvoices(1, authentication);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("getPayOSInvoices - should return 400 when payment not found")
+    void getPayOSInvoices_WithPaymentNotFound_ShouldReturn400() {
+        // Given
+        when(paymentService.findById(999)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = paymentController.getPayOSInvoices(999, authentication);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("getPayOSInvoices - should return 400 when unauthorized")
+    void getPayOSInvoices_WithUnauthorized_ShouldReturn400() {
+        // Given
+        UUID differentCustomerId = UUID.randomUUID();
+        Customer differentCustomer = new Customer();
+        differentCustomer.setCustomerId(differentCustomerId);
+        Payment differentPayment = new Payment();
+        differentPayment.setCustomer(differentCustomer);
+        
+        when(paymentService.findById(1)).thenReturn(Optional.of(differentPayment));
+
+        // When
+        ResponseEntity<?> response = paymentController.getPayOSInvoices(1, authentication);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("getPayOSInvoices - should return 400 when not PayOS")
+    void getPayOSInvoices_WithNonPayOS_ShouldReturn400() {
+        // Given
+        payment.setPaymentMethod(PaymentMethod.CASH);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+
+        // When
+        ResponseEntity<?> response = paymentController.getPayOSInvoices(1, authentication);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("getPayOSInvoices - should handle failed response")
+    void getPayOSInvoices_WithFailedResponse_ShouldReturnError() {
+        // Given
+        PayOsService.InvoiceInfoResponse invoiceResponse = mock(PayOsService.InvoiceInfoResponse.class);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(payOsService.getInvoiceInfo(anyLong())).thenReturn(invoiceResponse);
+        when(invoiceResponse.getCode()).thenReturn("01");
+
+        // When
+        ResponseEntity<?> response = paymentController.getPayOSInvoices(1, authentication);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+    }
+
+    @Test
+    @DisplayName("downloadPayOSInvoice by ID - should download successfully")
+    void downloadPayOSInvoiceById_WithValidData_ShouldReturnPDF() {
+        // Given
+        byte[] pdfData = "PDF_CONTENT".getBytes();
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(payOsService.getInvoiceInfo(anyLong())).thenReturn(createMockInvoiceResponse());
+        when(payOsService.downloadInvoice(anyLong(), anyString())).thenReturn(pdfData);
+        payment.setStatus(PaymentStatus.COMPLETED);
+
+        // When
+        ResponseEntity<?> response = paymentController.downloadPayOSInvoice(1, "inv-123", authentication);
+
+        // Then
+        assertEquals(200, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("downloadPayOSInvoice by ID - should return 400 when payment not found")
+    void downloadPayOSInvoiceById_WithPaymentNotFound_ShouldReturn400() {
+        // Given
+        when(paymentService.findById(999)).thenReturn(Optional.empty());
+
+        // When
+        ResponseEntity<?> response = paymentController.downloadPayOSInvoice(999, "inv-123", authentication);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("downloadPayOSInvoice by ID - should return 400 when unauthorized")
+    void downloadPayOSInvoiceById_WithUnauthorized_ShouldReturn400() {
+        // Given
+        UUID differentCustomerId = UUID.randomUUID();
+        Customer differentCustomer = new Customer();
+        differentCustomer.setCustomerId(differentCustomerId);
+        Payment differentPayment = new Payment();
+        differentPayment.setCustomer(differentCustomer);
+        
+        when(paymentService.findById(1)).thenReturn(Optional.of(differentPayment));
+
+        // When
+        ResponseEntity<?> response = paymentController.downloadPayOSInvoice(1, "inv-123", authentication);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("downloadPayOSInvoice by ID - should return 400 when not PayOS")
+    void downloadPayOSInvoiceById_WithNonPayOS_ShouldReturn400() {
+        // Given
+        payment.setPaymentMethod(PaymentMethod.CASH);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+
+        // When
+        ResponseEntity<?> response = paymentController.downloadPayOSInvoice(1, "inv-123", authentication);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("downloadPayOSInvoice by ID - should return 400 when download fails")
+    void downloadPayOSInvoiceById_WithDownloadFailure_ShouldReturn400() {
+        // Given
+        payment.setStatus(PaymentStatus.COMPLETED);
+        when(paymentService.findById(1)).thenReturn(Optional.of(payment));
+        when(payOsService.getInvoiceInfo(anyLong())).thenReturn(createMockInvoiceResponse());
+        when(payOsService.downloadInvoice(anyLong(), anyString())).thenReturn(null);
+
+        // When
+        ResponseEntity<?> response = paymentController.downloadPayOSInvoice(1, "inv-123", authentication);
+
+        // Then
+        assertEquals(400, response.getStatusCode().value());
+    }
+
+    // Helper method
+    private PayOsService.InvoiceInfoResponse createMockInvoiceResponse() {
+        PayOsService.InvoiceInfoResponse response = mock(PayOsService.InvoiceInfoResponse.class);
+        PayOsService.InvoiceInfoResponse.InvoiceData data = mock(PayOsService.InvoiceInfoResponse.InvoiceData.class);
+        PayOsService.InvoiceInfoResponse.InvoiceData.Invoice invoice = mock(PayOsService.InvoiceInfoResponse.InvoiceData.Invoice.class);
+        
+        when(response.getCode()).thenReturn("00");
+        when(response.getData()).thenReturn(data);
+        when(data.getInvoices()).thenReturn(java.util.List.of(invoice));
+        when(invoice.getInvoiceId()).thenReturn("inv-123");
+        
+        return response;
     }
 
 }

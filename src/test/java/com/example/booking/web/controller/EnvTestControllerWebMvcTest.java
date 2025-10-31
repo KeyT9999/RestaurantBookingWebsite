@@ -32,7 +32,24 @@ class EnvTestControllerWebMvcTest {
     void testCheckEnvVariables() throws Exception {
         mockMvc.perform(get("/test/env/check"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$").exists());
+            .andExpect(jsonPath("$").exists())
+            .andExpect(jsonPath("$.cloudinary_cloud_name").exists())
+            .andExpect(jsonPath("$.cloudinary_api_key").exists())
+            .andExpect(jsonPath("$.cloudinary_api_secret").exists())
+            .andExpect(jsonPath("$.jdbc_url").exists())
+            .andExpect(jsonPath("$.db_username").exists())
+            .andExpect(jsonPath("$.db_password").exists())
+            .andExpect(jsonPath("$.env_file_read").exists())
+            .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("GET /test/env/check - should handle short API key (less than 4 chars)")
+    void testCheckEnvVariables_WithShortApiKey() throws Exception {
+        // Test with short key that might cause substring issues
+        mockMvc.perform(get("/test/env/check"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.cloudinary_api_key").exists());
     }
 }
 

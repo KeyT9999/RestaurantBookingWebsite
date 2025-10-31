@@ -79,5 +79,91 @@ class DebugControllerTest {
             .andExpect(status().isOk())
             .andExpect(content().string(org.hamcrest.Matchers.containsString("Error")));
     }
+
+    @Test
+    @DisplayName("GET /debug/vouchers - Should handle vouchers with null restaurant")
+    void testDebugVouchers_WithNullRestaurant() throws Exception {
+        Voucher voucherWithNullRestaurant = new Voucher();
+        voucherWithNullRestaurant.setVoucherId(2);
+        voucherWithNullRestaurant.setCode("TEST002");
+        voucherWithNullRestaurant.setRestaurant(null);
+
+        List<Voucher> restaurantVouchers = Arrays.asList(voucherWithNullRestaurant);
+        List<Voucher> allVouchers = Arrays.asList(voucherWithNullRestaurant);
+
+        when(voucherService.getVouchersByRestaurant(16))
+            .thenReturn(restaurantVouchers);
+        when(voucherService.getAllVouchers())
+            .thenReturn(allVouchers);
+
+        mockMvc.perform(get("/debug/vouchers"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Found 1 vouchers")));
+
+        verify(voucherService).getVouchersByRestaurant(16);
+        verify(voucherService).getAllVouchers();
+    }
+
+    @Test
+    @DisplayName("GET /debug/vouchers - Should handle exception from getAllVouchers")
+    void testDebugVouchers_ShouldHandleExceptionFromGetAll() throws Exception {
+        List<Voucher> restaurantVouchers = Arrays.asList(voucher);
+        when(voucherService.getVouchersByRestaurant(16))
+            .thenReturn(restaurantVouchers);
+        when(voucherService.getAllVouchers())
+            .thenThrow(new RuntimeException("Database error"));
+
+        mockMvc.perform(get("/debug/vouchers"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Error")));
+    }
+
+    @Test
+    @DisplayName("GET /debug/vouchers - Should handle vouchers with restaurant")
+    void testDebugVouchers_WithRestaurant() throws Exception {
+        com.example.booking.domain.RestaurantProfile restaurant = new com.example.booking.domain.RestaurantProfile();
+        restaurant.setRestaurantId(16);
+        
+        Voucher voucherWithRestaurant = new Voucher();
+        voucherWithRestaurant.setVoucherId(3);
+        voucherWithRestaurant.setCode("TEST003");
+        voucherWithRestaurant.setRestaurant(restaurant);
+
+        List<Voucher> restaurantVouchers = Arrays.asList(voucherWithRestaurant);
+        List<Voucher> allVouchers = Arrays.asList(voucherWithRestaurant);
+
+        when(voucherService.getVouchersByRestaurant(16))
+            .thenReturn(restaurantVouchers);
+        when(voucherService.getAllVouchers())
+            .thenReturn(allVouchers);
+
+        mockMvc.perform(get("/debug/vouchers"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Found 1 vouchers")));
+    }
+
+    @Test
+    @DisplayName("GET /debug/vouchers - Should handle multiple vouchers")
+    void testDebugVouchers_WithMultipleVouchers() throws Exception {
+        Voucher voucher1 = new Voucher();
+        voucher1.setVoucherId(1);
+        voucher1.setCode("VOUCHER1");
+        
+        Voucher voucher2 = new Voucher();
+        voucher2.setVoucherId(2);
+        voucher2.setCode("VOUCHER2");
+
+        List<Voucher> restaurantVouchers = Arrays.asList(voucher1, voucher2);
+        List<Voucher> allVouchers = Arrays.asList(voucher1, voucher2);
+
+        when(voucherService.getVouchersByRestaurant(16))
+            .thenReturn(restaurantVouchers);
+        when(voucherService.getAllVouchers())
+            .thenReturn(allVouchers);
+
+        mockMvc.perform(get("/debug/vouchers"))
+            .andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Found 2 vouchers")));
+    }
 }
 

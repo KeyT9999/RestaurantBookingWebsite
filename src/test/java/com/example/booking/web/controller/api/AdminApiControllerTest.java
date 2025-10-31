@@ -20,8 +20,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(AdminApiController.class)
+@WebMvcTest(controllers = AdminApiController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@org.springframework.test.context.TestPropertySource(properties = {
+	"spring.main.allow-bean-definition-overriding=true"
+})
 class AdminApiControllerTest {
 
 	@Autowired
@@ -29,6 +32,9 @@ class AdminApiControllerTest {
 
 	@MockBean
 	private UserRepository userRepository;
+	
+	@MockBean(name = "advancedRateLimitingInterceptor")
+	private com.example.booking.config.AdvancedRateLimitingInterceptor advancedRateLimitingInterceptor;
 
 	@Test
 	void createAdmin_whenNoExisting_shouldCreate() throws Exception {
@@ -45,6 +51,14 @@ class AdminApiControllerTest {
 		mockMvc.perform(post("/api/admin/create-admin"))
 				.andExpect(status().isOk())
 				.andExpect(content().string(org.hamcrest.Matchers.containsString("already exists")));
+	}
+
+	@Test
+	void createAdmin_whenException_shouldReturnError() throws Exception {
+		when(userRepository.findByRole(eq(UserRole.ADMIN), any())).thenThrow(new RuntimeException("Database error"));
+		mockMvc.perform(post("/api/admin/create-admin"))
+				.andExpect(status().isBadRequest())
+				.andExpect(content().string(org.hamcrest.Matchers.containsString("Error creating admin user")));
 	}
 }
 

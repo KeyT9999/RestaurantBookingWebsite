@@ -135,5 +135,27 @@ class TestControllerTest {
                     .content("invalid json"))
                     .andExpect(status().isBadRequest());
         }
+
+        @Test
+        @DisplayName("Should handle null query in request")
+        void testTestCustomQuery_WithNullQuery_ShouldReturnError() throws Exception {
+            mockMvc.perform(post("/test/openai/query")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"query\":null}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").exists());
+        }
+
+        @Test
+        @DisplayName("Should handle whitespace-only query")
+        void testTestCustomQuery_WithWhitespaceQuery_ShouldReturnError() throws Exception {
+            mockMvc.perform(post("/test/openai/query")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"query\":\"   \"}"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value("error"))
+                    .andExpect(jsonPath("$.message").exists());
+        }
     }
 }
