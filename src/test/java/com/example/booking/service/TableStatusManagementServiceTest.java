@@ -27,6 +27,8 @@ import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.BookingTableRepository;
 import com.example.booking.repository.RestaurantTableRepository;
 
+import java.util.Optional;
+
 /**
  * Unit tests for TableStatusManagementService
  */
@@ -159,6 +161,154 @@ public class TableStatusManagementServiceTest {
 
         // Then
         verify(restaurantTableRepository, atLeastOnce()).save(any(RestaurantTable.class));
+    }
+
+    // ========== setTableToMaintenance() Tests ==========
+
+    @Test
+    @DisplayName("shouldSetTableToMaintenance_successfully")
+    void shouldSetTableToMaintenance_successfully() {
+        // Given
+        Integer tableId = 1;
+        table.setTableId(tableId);
+        table.setStatus(TableStatus.AVAILABLE);
+        
+        when(restaurantTableRepository.findById(tableId)).thenReturn(Optional.of(table));
+        when(restaurantTableRepository.save(table)).thenReturn(table);
+
+        // When
+        tableStatusService.setTableToMaintenance(tableId);
+
+        // Then
+        assertEquals(TableStatus.MAINTENANCE, table.getStatus());
+        verify(restaurantTableRepository).save(table);
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenTableNotFoundForMaintenance")
+    void shouldThrowException_whenTableNotFoundForMaintenance() {
+        // Given
+        Integer tableId = 999;
+        when(restaurantTableRepository.findById(tableId)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            tableStatusService.setTableToMaintenance(tableId);
+        });
+
+        assertTrue(exception.getMessage().contains("Table not found"));
+    }
+
+    // ========== setTableToAvailable() Tests ==========
+
+    @Test
+    @DisplayName("shouldSetTableToAvailable_successfully")
+    void shouldSetTableToAvailable_successfully() {
+        // Given
+        Integer tableId = 1;
+        table.setTableId(tableId);
+        table.setStatus(TableStatus.MAINTENANCE);
+        
+        when(restaurantTableRepository.findById(tableId)).thenReturn(Optional.of(table));
+        when(restaurantTableRepository.save(table)).thenReturn(table);
+
+        // When
+        tableStatusService.setTableToAvailable(tableId);
+
+        // Then
+        assertEquals(TableStatus.AVAILABLE, table.getStatus());
+        verify(restaurantTableRepository).save(table);
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenTableNotFoundForAvailable")
+    void shouldThrowException_whenTableNotFoundForAvailable() {
+        // Given
+        Integer tableId = 999;
+        when(restaurantTableRepository.findById(tableId)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            tableStatusService.setTableToAvailable(tableId);
+        });
+
+        assertTrue(exception.getMessage().contains("Table not found"));
+    }
+
+    // ========== checkInCustomer() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckInCustomer_successfully")
+    void shouldCheckInCustomer_successfully() {
+        // Given
+        Integer bookingId = 1;
+        booking.setBookingId(bookingId);
+        booking.setStatus(BookingStatus.CONFIRMED);
+        table.setStatus(TableStatus.RESERVED);
+        
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(bookingTableRepository.findByBooking(booking)).thenReturn(Arrays.asList(bookingTable));
+        when(restaurantTableRepository.save(table)).thenReturn(table);
+
+        // When
+        tableStatusService.checkInCustomer(bookingId);
+
+        // Then
+        assertEquals(TableStatus.OCCUPIED, table.getStatus());
+        verify(restaurantTableRepository).save(table);
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenBookingNotFoundForCheckIn")
+    void shouldThrowException_whenBookingNotFoundForCheckIn() {
+        // Given
+        Integer bookingId = 999;
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            tableStatusService.checkInCustomer(bookingId);
+        });
+
+        assertTrue(exception.getMessage().contains("Booking not found"));
+    }
+
+    // ========== checkOutCustomer() Tests ==========
+
+    @Test
+    @DisplayName("shouldCheckOutCustomer_successfully")
+    void shouldCheckOutCustomer_successfully() {
+        // Given
+        Integer bookingId = 1;
+        booking.setBookingId(bookingId);
+        booking.setStatus(BookingStatus.CONFIRMED);
+        table.setStatus(TableStatus.OCCUPIED);
+        
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(bookingTableRepository.findByBooking(booking)).thenReturn(Arrays.asList(bookingTable));
+        when(restaurantTableRepository.save(table)).thenReturn(table);
+
+        // When
+        tableStatusService.checkOutCustomer(bookingId);
+
+        // Then
+        assertEquals(TableStatus.CLEANING, table.getStatus());
+        verify(restaurantTableRepository).save(table);
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenBookingNotFoundForCheckOut")
+    void shouldThrowException_whenBookingNotFoundForCheckOut() {
+        // Given
+        Integer bookingId = 999;
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.empty());
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            tableStatusService.checkOutCustomer(bookingId);
+        });
+
+        assertTrue(exception.getMessage().contains("Booking not found"));
     }
 }
 

@@ -328,10 +328,89 @@ public class EmailServiceTest {
     void shouldThrowException_whenRestaurantApprovalEmailFails() {
         // Given
         doThrow(new RuntimeException("Mail error")).when(mailSender).send(any(SimpleMailMessage.class));
+        ReflectionTestUtils.setField(emailService, "activeProfile", "prod");
 
         // When & Then
         assertThrows(RuntimeException.class, () -> {
             emailService.sendRestaurantApprovalEmail(testEmail, "Restaurant", "Subject", "Content");
+        });
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenRestaurantRejectionEmailFails")
+    void shouldThrowException_whenRestaurantRejectionEmailFails() {
+        // Given
+        doThrow(new RuntimeException("Mail error")).when(mailSender).send(any(SimpleMailMessage.class));
+        ReflectionTestUtils.setField(emailService, "activeProfile", "prod");
+
+        // When & Then
+        assertThrows(RuntimeException.class, () -> {
+            emailService.sendRestaurantRejectionEmail(testEmail, "Restaurant", "Subject", "Content");
+        });
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenRestaurantSuspensionEmailFails")
+    void shouldThrowException_whenRestaurantSuspensionEmailFails() {
+        // Given
+        doThrow(new RuntimeException("Mail error")).when(mailSender).send(any(SimpleMailMessage.class));
+        ReflectionTestUtils.setField(emailService, "activeProfile", "prod");
+
+        // When & Then
+        assertThrows(RuntimeException.class, () -> {
+            emailService.sendRestaurantSuspensionEmail(testEmail, "Restaurant", "Subject", "Content");
+        });
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenRestaurantResubmitEmailFails")
+    void shouldThrowException_whenRestaurantResubmitEmailFails() {
+        // Given
+        doThrow(new RuntimeException("Mail error")).when(mailSender).send(any(SimpleMailMessage.class));
+        ReflectionTestUtils.setField(emailService, "activeProfile", "prod");
+
+        // When & Then - sendRestaurantResubmitEmail throws RuntimeException in catch block
+        assertThrows(RuntimeException.class, () -> {
+            emailService.sendRestaurantResubmitEmail(testEmail, "Restaurant", "Subject", "Content");
+        });
+    }
+
+    @Test
+    @DisplayName("shouldThrowException_whenRestaurantActivationEmailFails")
+    void shouldThrowException_whenRestaurantActivationEmailFails() {
+        // Given
+        doThrow(new RuntimeException("Mail error")).when(mailSender).send(any(SimpleMailMessage.class));
+        ReflectionTestUtils.setField(emailService, "activeProfile", "prod");
+
+        // When & Then - sendRestaurantActivationEmail throws RuntimeException in catch block
+        assertThrows(RuntimeException.class, () -> {
+            emailService.sendRestaurantActivationEmail(testEmail, "Restaurant", "Subject", "Content");
+        });
+    }
+
+    @Test
+    @DisplayName("shouldLogError_whenSendVerificationEmailCatchBlockExecuted")
+    void shouldLogError_whenSendVerificationEmailCatchBlockExecuted() {
+        // Given
+        doThrow(new RuntimeException("Mail server error")).when(mailSender).send(any(SimpleMailMessage.class));
+        ReflectionTestUtils.setField(emailService, "activeProfile", "prod");
+
+        // When & Then - Should handle exception gracefully (no throw)
+        assertDoesNotThrow(() -> {
+            emailService.sendVerificationEmail(testEmail, testToken);
+        });
+    }
+
+    @Test
+    @DisplayName("shouldLogError_whenSendPasswordResetEmailCatchBlockExecuted")
+    void shouldLogError_whenSendPasswordResetEmailCatchBlockExecuted() {
+        // Given
+        doThrow(new RuntimeException("Mail server error")).when(mailSender).send(any(SimpleMailMessage.class));
+        ReflectionTestUtils.setField(emailService, "activeProfile", "prod");
+
+        // When & Then - Should handle exception gracefully (no throw)
+        assertDoesNotThrow(() -> {
+            emailService.sendPasswordResetEmail(testEmail, testToken);
         });
     }
 }

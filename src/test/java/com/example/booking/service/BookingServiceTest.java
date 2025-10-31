@@ -7,11 +7,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +29,7 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -1507,5 +1510,213 @@ class BookingServiceTest {
         // Then
         assertNotNull(result);
         assertNotNull(result.getDepositAmount());
+    }
+
+    // ==================== PARSE METHODS COVERAGE TESTS ====================
+    // These test parseDishIds and parseServiceIds indirectly through assign methods
+
+    @Test
+    @DisplayName("testAssignDishesToBooking_WithNullDishIds_ShouldReturnEmptyMap")
+    void testAssignDishesToBooking_WithNullDishIds_ShouldReturnEmptyMap() {
+        // Given - parseDishIds should return empty map when dishIds is null
+        // When
+        bookingService.assignDishesToBooking(mockBooking, null);
+
+        // Then - Should not call repository since map is empty
+        verify(dishRepository, never()).findById(anyInt());
+        verify(bookingDishRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("testAssignDishesToBooking_WithEmptyStringDishIds_ShouldReturnEmptyMap")
+    void testAssignDishesToBooking_WithEmptyStringDishIds_ShouldReturnEmptyMap() {
+        // Given - parseDishIds should return empty map when dishIds is empty string
+        // When
+        bookingService.assignDishesToBooking(mockBooking, "");
+
+        // Then - Should not call repository since map is empty
+        verify(dishRepository, never()).findById(anyInt());
+        verify(bookingDishRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("testAssignDishesToBooking_WithWhitespaceDishIds_ShouldReturnEmptyMap")
+    void testAssignDishesToBooking_WithWhitespaceDishIds_ShouldReturnEmptyMap() {
+        // Given - parseDishIds should return empty map when dishIds is whitespace only
+        // When
+        bookingService.assignDishesToBooking(mockBooking, "   ");
+
+        // Then - Should not call repository since map is empty
+        verify(dishRepository, never()).findById(anyInt());
+        verify(bookingDishRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("testAssignServicesToBooking_WithWhitespaceServiceIds_ShouldReturnEmptyList")
+    void testAssignServicesToBooking_WithWhitespaceServiceIds_ShouldReturnEmptyList() {
+        // Given - parseServiceIds should return empty list when serviceIds is
+        // whitespace only
+        // When
+        bookingService.assignServicesToBooking(mockBooking, "   ");
+
+        // Then - Should not call repository since list is empty
+        verify(restaurantServiceRepository, never()).findById(anyInt());
+        verify(bookingServiceRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("testGetCurrentTableId_WithNullBookingTables_ShouldReturnNull")
+    void testGetCurrentTableId_WithNullBookingTables_ShouldReturnNull() {
+        // Given - Use reflection to test private method
+        Booking booking = new Booking();
+        booking.setBookingTables(null);
+
+        // When - Call via reflection
+        Integer result = org.springframework.test.util.ReflectionTestUtils.invokeMethod(
+                bookingService, "getCurrentTableId", booking);
+
+        // Then
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("testGetCurrentTableId_WithEmptyBookingTables_ShouldReturnNull")
+    void testGetCurrentTableId_WithEmptyBookingTables_ShouldReturnNull() {
+        // Given
+        Booking booking = new Booking();
+        booking.setBookingTables(Collections.emptyList());
+
+        // When
+        Integer result = org.springframework.test.util.ReflectionTestUtils.invokeMethod(
+                bookingService, "getCurrentTableId", booking);
+
+        // Then
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("testAssignMultipleTablesToBooking_WithInvalidTableIdFormat_ShouldThrowException")
+    void testAssignMultipleTablesToBooking_WithInvalidTableIdFormat_ShouldThrowException() {
+        // Given
+        Booking booking = new Booking();
+        booking.setBookingId(1);
+        booking.setNumberOfGuests(4);
+        String invalidTableIds = "abc,def"; // Invalid format
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            org.springframework.test.util.ReflectionTestUtils.invokeMethod(
+                    bookingService, "assignMultipleTablesToBooking", booking, invalidTableIds);
+        });
+
+        assertTrue(exception.getMessage().contains("Invalid table ID format"));
+    }
+
+    @Test
+    @DisplayName("testParseDishIds_WithInvalidFormat_ShouldSkipInvalidPairs")
+    void testParseDishIds_WithInvalidFormat_ShouldSkipInvalidPairs() {
+        // Given - invalid format (missing colon or extra parts)
+        Booking booking = new Booking();
+        String invalidDishIds = "1:2,invalid,3:4,5"; // "invalid" and "5" should be skipped
+
+        com.example.booking.domain.Dish dish1 = new com.example.booking.domain.Dish();
+        dish1.setDishId(1);
+        dish1.setPrice(new BigDecimal("50000"));
+
+        com.example.booking.domain.Dish dish3 = new com.example.booking.domain.Dish();
+        dish3.setDishId(3);
+        dish3.setPrice(new BigDecimal("30000"));
+
+        when(dishRepository.findById(1)).thenReturn(Optional.of(dish1));
+        when(dishRepository.findById(3)).thenReturn(Optional.of(dish3));
+        when(bookingDishRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When - parseDishIds is called via assignDishesToBooking
+        bookingService.assignDishesToBooking(booking, invalidDishIds);
+
+        // Then - Only valid pairs (1:2 and 3:4) should be processed
+        verify(dishRepository, times(2)).findById(anyInt());
+    }
+
+    @Test
+    @DisplayName("testParseServiceIds_WithInvalidFormat_ShouldThrowException")
+    void testParseServiceIds_WithInvalidFormat_ShouldThrowException() {
+        // Given - invalid format (non-numeric)
+        Booking booking = new Booking();
+        String invalidServiceIds = "abc,def"; // Invalid format
+
+        // When & Then - NumberFormatException should be thrown
+        assertThrows(NumberFormatException.class, () -> {
+            bookingService.assignServicesToBooking(booking, invalidServiceIds);
+        });
+    }
+
+    @Test
+    @DisplayName("testUpdateBookingForRestaurantOwner_WithNullTableIds_ShouldNotAssignTables")
+    void testUpdateBookingForRestaurantOwner_WithNullTableIds_ShouldNotAssignTables() {
+        // Given
+        Integer bookingId = 1;
+        Set<Integer> ownerRestaurantIds = Set.of(1, 2);
+        BookingForm form = new BookingForm();
+        form.setTableIds(null); // Null tableIds
+        form.setTableId(null); // Also null single tableId
+        form.setRestaurantId(1);
+
+        Booking booking = new Booking();
+        booking.setBookingId(bookingId);
+        RestaurantProfile restaurant = new RestaurantProfile();
+        restaurant.setRestaurantId(1);
+        booking.setRestaurant(restaurant);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(anyInt())).thenReturn(Optional.empty());
+        when(bookingTableRepository.findByBooking(any())).thenReturn(Collections.emptyList());
+        when(bookingDishRepository.findByBooking(any())).thenReturn(Collections.emptyList());
+        when(bookingServiceRepository.findByBooking(any())).thenReturn(Collections.emptyList());
+        when(bookingRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Booking result = bookingService.updateBookingForRestaurantOwner(bookingId, form, ownerRestaurantIds);
+
+        // Then - Should not call assignMultipleTablesToBooking or assignTableToBooking
+        verify(restaurantTableRepository, never()).findById(anyInt());
+    }
+
+    @Test
+    @DisplayName("testUpdateBookingForRestaurantOwner_WithNullTableIdsAndChangedRestaurant_ShouldNotAssignTables")
+    void testUpdateBookingForRestaurantOwner_WithNullTableIdsAndChangedRestaurant_ShouldNotAssignTables() {
+        // Given - Restaurant changed but tableIds is null
+        Integer bookingId = 1;
+        Set<Integer> ownerRestaurantIds = Set.of(1, 2);
+        BookingForm form = new BookingForm();
+        form.setTableIds(null);
+        form.setTableId(null);
+        form.setRestaurantId(2); // Changed restaurant
+
+        Booking booking = new Booking();
+        booking.setBookingId(bookingId);
+        RestaurantProfile oldRestaurant = new RestaurantProfile();
+        oldRestaurant.setRestaurantId(1);
+        booking.setRestaurant(oldRestaurant);
+
+        RestaurantProfile newRestaurant = new RestaurantProfile();
+        newRestaurant.setRestaurantId(2);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(restaurantProfileRepository.findById(2)).thenReturn(Optional.of(newRestaurant));
+        when(bookingTableRepository.findByBooking(any())).thenReturn(Collections.emptyList());
+        when(bookingDishRepository.findByBooking(any())).thenReturn(Collections.emptyList());
+        when(bookingServiceRepository.findByBooking(any())).thenReturn(Collections.emptyList());
+        when(bookingRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        doNothing().when(bookingTableRepository).deleteByBooking(any());
+
+        // When
+        Booking result = bookingService.updateBookingForRestaurantOwner(bookingId, form, ownerRestaurantIds);
+
+        // Then - Should delete old tables but not assign new ones since tableIds is
+        // null
+        verify(bookingTableRepository).deleteByBooking(any());
+        verify(restaurantTableRepository, never()).findById(anyInt());
     }
 }

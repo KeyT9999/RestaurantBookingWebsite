@@ -140,6 +140,41 @@ class ChatServiceTest {
     }
 
     @Test
+    @DisplayName("Should return existing room when room already exists")
+    void shouldReturnExistingRoom_whenRoomAlreadyExists() {
+        // Given
+        when(customerRepository.findByUserId(testUserId)).thenReturn(Optional.of(testCustomer));
+        when(chatRoomRepository.findByCustomerAndRestaurant(testUserId, testRestaurantId))
+            .thenReturn(Optional.of(testChatRoom));
+        
+        // When
+        ChatRoom result = chatService.createCustomerRestaurantRoom(testUserId, testRestaurantId);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(testChatRoom, result);
+        verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when restaurant not found")
+    void shouldThrowException_whenRestaurantNotFound() {
+        // Given
+        when(customerRepository.findByUserId(testUserId)).thenReturn(Optional.of(testCustomer));
+        when(chatRoomRepository.findByCustomerAndRestaurant(testUserId, testRestaurantId))
+            .thenReturn(Optional.empty());
+        when(restaurantProfileRepository.findById(testRestaurantId)).thenReturn(Optional.empty());
+        
+        // When & Then
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+            chatService.createCustomerRestaurantRoom(testUserId, testRestaurantId);
+        });
+        
+        assertTrue(ex.getMessage().contains("Restaurant not found"));
+        verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+    }
+
+    @Test
     // TC RC-015
     void shouldSendMessageAndUpdateLastMessageTime_whenValidInput() {
         // Given
@@ -341,6 +376,43 @@ class ChatServiceTest {
         );
     }
 
+    @Test
+    @DisplayName("Should throw exception when admin not found")
+    void createAdminRestaurantRoom_withAdminNotFound_shouldThrowException() {
+        // Given
+        UUID adminId = UUID.randomUUID();
+        when(chatRoomRepository.findByAdminAndRestaurant(adminId, testRestaurantId))
+                .thenReturn(Optional.empty());
+        when(userRepository.findById(adminId)).thenReturn(Optional.empty());
+
+        // When & Then
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                chatService.createAdminRestaurantRoom(adminId, testRestaurantId)
+        );
+        assertTrue(ex.getMessage().contains("Admin not found"));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when restaurant not found")
+    void createAdminRestaurantRoom_withRestaurantNotFound_shouldThrowException() {
+        // Given
+        UUID adminId = UUID.randomUUID();
+        User admin = new User();
+        admin.setId(adminId);
+        
+        when(chatRoomRepository.findByAdminAndRestaurant(adminId, testRestaurantId))
+                .thenReturn(Optional.empty());
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(restaurantProfileRepository.findById(testRestaurantId))
+                .thenReturn(Optional.empty());
+
+        // When & Then
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                chatService.createAdminRestaurantRoom(adminId, testRestaurantId)
+        );
+        assertTrue(ex.getMessage().contains("Restaurant not found"));
+    }
+
     // ========== createRestaurantOwnerAdminRoom() Tests ==========
 
     @Test
@@ -368,6 +440,189 @@ class ChatServiceTest {
 
         // When
         ChatRoom result = chatService.createRestaurantOwnerAdminRoom(ownerUserId, adminId, restaurantIdLong);
+
+        // Then
+        assertNotNull(result);
+        verify(chatRoomRepository).save(any(ChatRoom.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when admin role is not ADMIN")
+    void createRestaurantOwnerAdminRoom_withNonAdminRole_shouldThrowException() {
+        // Given
+        UUID ownerUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        Long restaurantIdLong = 1L;
+        
+        RestaurantOwner owner = new RestaurantOwner();
+        owner.setUser(testUser);
+        owner.getRestaurants().add(testRestaurant);
+        
+        User nonAdmin = new User();
+        nonAdmin.setId(adminId);
+        nonAdmin.setRole(UserRole.CUSTOMER); // Not ADMIN
+        
+        when(restaurantOwnerRepository.findByUserId(ownerUserId))
+                .thenReturn(Optional.of(owner));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(nonAdmin));
+
+        // When & Then
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                chatService.createRestaurantOwnerAdminRoom(ownerUserId, adminId, restaurantIdLong)
+        );
+        assertTrue(ex.getMessage().contains("not an admin"));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when restaurant owner not found")
+    void createRestaurantOwnerAdminRoom_withOwnerNotFound_shouldThrowException() {
+        // Given
+        UUID ownerUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        Long restaurantIdLong = 1L;
+        
+        when(restaurantOwnerRepository.findByUserId(ownerUserId))
+                .thenReturn(Optional.empty());
+
+        // When & Then
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                chatService.createRestaurantOwnerAdminRoom(ownerUserId, adminId, restaurantIdLong)
+        );
+        assertTrue(ex.getMessage().contains("Restaurant owner not found"));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when admin not found")
+    void createRestaurantOwnerAdminRoom_withAdminNotFound_shouldThrowException() {
+        // Given
+        UUID ownerUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        Long restaurantIdLong = 1L;
+        
+        RestaurantOwner owner = new RestaurantOwner();
+        owner.setUser(testUser);
+        owner.getRestaurants().add(testRestaurant);
+        
+        when(restaurantOwnerRepository.findByUserId(ownerUserId))
+                .thenReturn(Optional.of(owner));
+        when(userRepository.findById(adminId)).thenReturn(Optional.empty());
+
+        // When & Then
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                chatService.createRestaurantOwnerAdminRoom(ownerUserId, adminId, restaurantIdLong)
+        );
+        assertTrue(ex.getMessage().contains("Admin not found"));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when restaurant owner has no restaurants")
+    void createRestaurantOwnerAdminRoom_withNoRestaurants_shouldThrowException() {
+        // Given
+        UUID ownerUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        Long restaurantIdLong = 1L;
+        
+        RestaurantOwner owner = new RestaurantOwner();
+        owner.setUser(testUser);
+        owner.setRestaurants(new ArrayList<>()); // Empty list
+        
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setRole(UserRole.ADMIN);
+        
+        when(restaurantOwnerRepository.findByUserId(ownerUserId))
+                .thenReturn(Optional.of(owner));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+
+        // When & Then
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                chatService.createRestaurantOwnerAdminRoom(ownerUserId, adminId, restaurantIdLong)
+        );
+        assertTrue(ex.getMessage().contains("no restaurants"));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when restaurant not found or not owned")
+    void createRestaurantOwnerAdminRoom_withRestaurantNotOwned_shouldThrowException() {
+        // Given
+        UUID ownerUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        Long restaurantIdLong = 999L; // Restaurant ID not owned by owner
+        
+        RestaurantOwner owner = new RestaurantOwner();
+        owner.setUser(testUser);
+        owner.getRestaurants().add(testRestaurant); // Only has restaurant ID 1
+        
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setRole(UserRole.ADMIN);
+        
+        when(restaurantOwnerRepository.findByUserId(ownerUserId))
+                .thenReturn(Optional.of(owner));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+
+        // When & Then
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                chatService.createRestaurantOwnerAdminRoom(ownerUserId, adminId, restaurantIdLong)
+        );
+        assertTrue(ex.getMessage().contains("Restaurant not found or not owned"));
+    }
+
+    @Test
+    @DisplayName("Should return existing room when room already exists")
+    void createRestaurantOwnerAdminRoom_withExistingRoom_shouldReturnExisting() {
+        // Given
+        UUID ownerUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        Long restaurantIdLong = 1L;
+        
+        RestaurantOwner owner = new RestaurantOwner();
+        owner.setUser(testUser);
+        owner.getRestaurants().add(testRestaurant);
+        
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setRole(UserRole.ADMIN);
+        
+        when(restaurantOwnerRepository.findByUserId(ownerUserId))
+                .thenReturn(Optional.of(owner));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(chatRoomRepository.findByAdminAndRestaurant(adminId, testRestaurantId))
+                .thenReturn(Optional.of(testChatRoom));
+
+        // When
+        ChatRoom result = chatService.createRestaurantOwnerAdminRoom(ownerUserId, adminId, restaurantIdLong);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(testChatRoom, result);
+        verify(chatRoomRepository, never()).save(any(ChatRoom.class));
+    }
+
+    @Test
+    @DisplayName("Should use first restaurant when restaurantId is null")
+    void createRestaurantOwnerAdminRoom_withNullRestaurantId_shouldUseFirstRestaurant() {
+        // Given
+        UUID ownerUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+        
+        RestaurantOwner owner = new RestaurantOwner();
+        owner.setUser(testUser);
+        owner.getRestaurants().add(testRestaurant);
+        
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setRole(UserRole.ADMIN);
+        
+        when(restaurantOwnerRepository.findByUserId(ownerUserId))
+                .thenReturn(Optional.of(owner));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(chatRoomRepository.findByAdminAndRestaurant(adminId, testRestaurantId))
+                .thenReturn(Optional.empty());
+        when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(testChatRoom);
+
+        // When
+        ChatRoom result = chatService.createRestaurantOwnerAdminRoom(ownerUserId, adminId, null);
 
         // Then
         assertNotNull(result);
@@ -750,6 +1005,91 @@ class ChatServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         verify(chatRoomRepository).findByAdminId(testUserId);
+    }
+
+    // ========== convertToMessageDto() Tests ==========
+
+    @Test
+    @DisplayName("shouldConvertToMessageDto_successfully")
+    void shouldConvertToMessageDto_successfully() {
+        // Given
+        Message message = new Message();
+        message.setMessageId(1);
+        message.setRoom(testChatRoom);
+        message.setContent("Test message");
+        message.setMessageType(MessageType.TEXT);
+        message.setSentAt(java.time.LocalDateTime.now());
+        message.setIsRead(false);
+        
+        // Mock sender
+        User sender = new User();
+        sender.setId(testUserId);
+        sender.setFullName("Test User");
+        message.setSender(sender);
+
+        List<Message> messages = Arrays.asList(message);
+        org.springframework.data.domain.Page<Message> page = new org.springframework.data.domain.PageImpl<>(messages);
+        
+        when(messageRepository.findByRoomIdOrderBySentAtAsc(eq(testRoomId), any(org.springframework.data.domain.PageRequest.class)))
+            .thenReturn(page);
+
+        // When
+        List<ChatMessageDto> result = chatService.getMessages(testRoomId, 0, 10);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        ChatMessageDto dto = result.get(0);
+        assertEquals(message.getMessageId(), dto.getMessageId());
+        assertEquals(testRoomId, dto.getRoomId());
+        assertEquals(testUserId, dto.getSenderId());
+        assertEquals("Test message", dto.getContent());
+    }
+
+    // ========== getRestaurantOwnerId() - Exception Tests ==========
+
+    @Test
+    @DisplayName("shouldReturnNull_whenRestaurantOwnerIdHasException")
+    void shouldReturnNull_whenRestaurantOwnerIdHasException() {
+        // Given - Mock repository to throw exception
+        when(restaurantProfileRepository.findById(testRestaurantId))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        UUID result = chatService.getRestaurantOwnerId(testRestaurantId);
+
+        // Then - Should handle exception gracefully and return null
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("shouldReturnNull_whenRestaurantNotFoundForOwnerId")
+    void shouldReturnNull_whenRestaurantNotFoundForOwnerId() {
+        // Given
+        when(restaurantProfileRepository.findById(testRestaurantId))
+            .thenReturn(Optional.empty());
+
+        // When
+        UUID result = chatService.getRestaurantOwnerId(testRestaurantId);
+
+        // Then
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("shouldReturnNull_whenRestaurantHasNoOwner")
+    void shouldReturnNull_whenRestaurantHasNoOwner() {
+        // Given
+        testRestaurant.setOwner(null);
+        when(restaurantProfileRepository.findById(testRestaurantId))
+            .thenReturn(Optional.of(testRestaurant));
+
+        // When
+        UUID result = chatService.getRestaurantOwnerId(testRestaurantId);
+
+        // Then - Should handle null owner gracefully (exception caught)
+        // The method will catch NullPointerException and return null
+        assertNull(result);
     }
 }
 
