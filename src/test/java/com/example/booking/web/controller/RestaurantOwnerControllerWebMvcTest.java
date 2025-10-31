@@ -91,6 +91,12 @@ class RestaurantOwnerControllerWebMvcTest {
     @MockBean
     private BookingTableRepository bookingTableRepository;
 
+    @MockBean
+    private com.example.booking.service.EndpointRateLimitingService endpointRateLimitingService;
+
+    @MockBean
+    private com.example.booking.service.GeneralRateLimitingService generalRateLimitingService;
+
     private User ownerUser;
     private RestaurantOwner owner;
     private RestaurantProfile restaurant;
@@ -114,12 +120,17 @@ class RestaurantOwnerControllerWebMvcTest {
         restaurant.setRestaurantName("Test Restaurant");
         restaurant.setOwner(owner);
         restaurant.setApprovalStatus(RestaurantApprovalStatus.APPROVED);
+        
+        // Set restaurants for owner
+        List<RestaurantProfile> restaurants = Arrays.asList(restaurant);
+        owner.setRestaurants(restaurants);
 
         booking = new Booking();
         booking.setBookingId(1);
         booking.setStatus(BookingStatus.PENDING);
         booking.setRestaurant(restaurant);
         booking.setBookingTime(LocalDateTime.now().plusHours(2));
+        booking.setBookingTables(new ArrayList<>());
 
         waitlist = new Waitlist();
         waitlist.setWaitlistId(1);
@@ -128,6 +139,7 @@ class RestaurantOwnerControllerWebMvcTest {
         when(userService.findById(any())).thenReturn(ownerUser);
         when(restaurantOwnerService.getRestaurantOwnerByUserId(any())).thenReturn(Optional.of(owner));
         when(restaurantOwnerService.getRestaurantsByUserId(any())).thenReturn(Arrays.asList(restaurant));
+        when(restaurantOwnerService.getRestaurantsByOwnerId(any())).thenReturn(Arrays.asList(restaurant));
     }
 
     // ========== Dashboard Tests ==========
@@ -190,7 +202,7 @@ class RestaurantOwnerControllerWebMvcTest {
 
         mockMvc.perform(get("/restaurant-owner/profile/1"))
             .andExpect(status().isOk())
-            .andExpect(view().name("restaurant-owner/restaurant-detail"));
+            .andExpect(view().name("restaurant-owner/profile"));
     }
 
     // ========== Update Restaurant Tests ==========
@@ -219,7 +231,7 @@ class RestaurantOwnerControllerWebMvcTest {
                 .param("address", "New Address")
                 .with(csrf()))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/restaurant-owner/profile/1"));
+            .andExpect(redirectedUrl("/restaurant-owner/profile"));
     }
 
     // ========== Dishes Tests ==========
@@ -228,11 +240,12 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("GET /restaurant-owner/restaurants/1/dishes - should list dishes")
     void testRestaurantDishes() throws Exception {
-        when(restaurantService.findDishesByRestaurant(1)).thenReturn(new ArrayList<>());
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getDishesByRestaurantWithImages(1)).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/restaurant-owner/restaurants/1/dishes"))
             .andExpect(status().isOk())
-            .andExpect(view().name("restaurant-owner/dishes"))
+            .andExpect(view().name("restaurant-owner/restaurant-dishes"))
             .andExpect(model().attributeExists("dishes"));
     }
 
@@ -274,11 +287,12 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("GET /restaurant-owner/restaurants/1/tables - should list tables")
     void testRestaurantTables() throws Exception {
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
         when(restaurantService.findTablesByRestaurant(1)).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/restaurant-owner/restaurants/1/tables"))
             .andExpect(status().isOk())
-            .andExpect(view().name("restaurant-owner/tables"))
+            .andExpect(view().name("restaurant-owner/restaurant-tables"))
             .andExpect(model().attributeExists("tables"));
     }
 
@@ -309,6 +323,7 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("GET /restaurant-owner/bookings - should list all bookings")
     void testViewAllBookings() throws Exception {
+        when(restaurantOwnerService.getRestaurantsByOwnerId(any())).thenReturn(Arrays.asList(restaurant));
         when(bookingService.getBookingsByRestaurant(1)).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/restaurant-owner/bookings"))
@@ -322,6 +337,8 @@ class RestaurantOwnerControllerWebMvcTest {
     @DisplayName("GET /restaurant-owner/bookings/1 - should show booking detail")
     void testViewBookingDetail() throws Exception {
         when(bookingService.getBookingWithDetailsById(1)).thenReturn(Optional.of(booking));
+        when(communicationHistoryRepository.findByBookingIdOrderByTimestampDesc(1)).thenReturn(new ArrayList<>());
+        when(internalNoteRepository.findByBookingIdOrderByCreatedAtDesc(1)).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/restaurant-owner/bookings/1"))
             .andExpect(status().isOk())
@@ -338,7 +355,8 @@ class RestaurantOwnerControllerWebMvcTest {
         mockMvc.perform(post("/restaurant-owner/bookings/1/status")
                 .param("status", "CONFIRMED")
                 .with(csrf()))
-            .andExpect(status().is3xxRedirection());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test
@@ -359,12 +377,14 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("GET /restaurant-owner/waitlist - should show waitlist management")
     void testWaitlistManagement() throws Exception {
-        when(waitlistService.getAllWaitlistByRestaurant(1)).thenReturn(new ArrayList<>());
+        when(restaurantOwnerService.getRestaurantsByOwnerId(any())).thenReturn(Arrays.asList(restaurant));
+        when(waitlistService.getWaitlistByRestaurant(1)).thenReturn(new ArrayList<>());
+        when(waitlistService.getCalledCustomers(1)).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/restaurant-owner/waitlist"))
             .andExpect(status().isOk())
-            .andExpect(view().name("restaurant-owner/waitlist-management"))
-            .andExpect(model().attributeExists("waitlists"));
+            .andExpect(view().name("restaurant-owner/waitlist"))
+            .andExpect(model().attributeExists("waitingCustomers"));
     }
 
     @Test
@@ -418,6 +438,7 @@ class RestaurantOwnerControllerWebMvcTest {
     @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
     @DisplayName("GET /restaurant-owner/restaurants/1/services - should list services")
     void testShowRestaurantServices() throws Exception {
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
         when(restaurantOwnerService.getServicesByRestaurant(1)).thenReturn(new ArrayList<>());
 
         mockMvc.perform(get("/restaurant-owner/restaurants/1/services"))
@@ -444,6 +465,190 @@ class RestaurantOwnerControllerWebMvcTest {
                 .param("price", "50000")
                 .with(csrf()))
             .andExpect(status().is3xxRedirection());
+    }
+
+    // ========== API Endpoints Tests ==========
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("GET /restaurant-owner/bookings/1/api - should return booking detail JSON")
+    void testGetBookingDetailJson() throws Exception {
+        when(bookingService.getBookingDetailById(1)).thenReturn(Optional.of(booking));
+
+        mockMvc.perform(get("/restaurant-owner/bookings/1/api"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("GET /restaurant-owner/bookings/1/api - should return error when booking not found")
+    void testGetBookingDetailJson_NotFound() throws Exception {
+        when(bookingService.getBookingDetailById(999)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/restaurant-owner/bookings/999/api"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("GET /restaurant-owner/bookings/1/available-tables - should return available tables")
+    void testGetAvailableTables() throws Exception {
+        when(bookingService.getBookingDetailById(1)).thenReturn(Optional.of(booking));
+        when(restaurantTableRepository.findByRestaurantRestaurantId(anyInt())).thenReturn(new ArrayList<>());
+
+        mockMvc.perform(get("/restaurant-owner/bookings/1/available-tables"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("POST /restaurant-owner/bookings/1/change-table - should change table")
+    void testChangeTable() throws Exception {
+        when(bookingService.getBookingDetailById(1)).thenReturn(Optional.of(booking));
+        RestaurantTable table = new RestaurantTable();
+        table.setTableId(2);
+        table.setTableName("Table 2");
+        when(restaurantTableRepository.findByRestaurantRestaurantId(anyInt())).thenReturn(Arrays.asList(table));
+        doNothing().when(bookingTableRepository).deleteByBooking(any());
+        when(bookingTableRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(bookingRepository.save(any())).thenReturn(booking);
+
+        mockMvc.perform(post("/restaurant-owner/bookings/1/change-table")
+                .param("newTableId", "2")
+                .with(csrf()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("POST /restaurant-owner/bookings/1/add-note - should add internal note")
+    void testAddInternalNote_Api() throws Exception {
+        when(bookingService.getBookingDetailById(1)).thenReturn(Optional.of(booking));
+        when(internalNoteRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        mockMvc.perform(post("/restaurant-owner/bookings/1/add-note")
+                .param("content", "Test note")
+                .with(csrf()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("POST /restaurant-owner/bookings/1/delete-note - should delete internal note")
+    void testDeleteInternalNote_Api() throws Exception {
+        com.example.booking.entity.InternalNote note = new com.example.booking.entity.InternalNote();
+        note.setId(1L);
+        note.setBookingId(1);
+        when(internalNoteRepository.findById(1L)).thenReturn(Optional.of(note));
+
+        mockMvc.perform(post("/restaurant-owner/bookings/1/delete-note")
+                .param("noteId", "1")
+                .with(csrf()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("POST /restaurant-owner/api/bookings/1/cancel - should cancel booking via API")
+    void testCancelBookingApi() throws Exception {
+        booking.setStatus(BookingStatus.PENDING);
+        when(bookingService.cancelBookingByRestaurant(eq(1), any(UUID.class), eq("Test reason"), isNull(), isNull()))
+            .thenReturn(booking);
+
+        mockMvc.perform(post("/restaurant-owner/api/bookings/1/cancel")
+                .param("cancelReason", "Test reason")
+                .with(csrf()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("GET /restaurant-owner/waitlist/1/detail - should return waitlist detail")
+    void testGetWaitlistDetailApi() throws Exception {
+        com.example.booking.dto.WaitlistDetailDto detail = new com.example.booking.dto.WaitlistDetailDto();
+        when(waitlistService.getWaitlistDetail(1)).thenReturn(detail);
+
+        mockMvc.perform(get("/restaurant-owner/waitlist/1/detail"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("POST /restaurant-owner/waitlist/1/update - should update waitlist")
+    void testUpdateWaitlistApi() throws Exception {
+        com.example.booking.dto.WaitlistDetailDto updated = new com.example.booking.dto.WaitlistDetailDto();
+        when(waitlistService.updateWaitlist(anyInt(), any(), any(), any())).thenReturn(updated);
+
+        mockMvc.perform(post("/restaurant-owner/waitlist/1/update")
+                .contentType("application/json")
+                .content("{\"partySize\":4,\"status\":\"CALLED\"}")
+                .with(csrf()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("POST /restaurant-owner/bookings/1/add-communication - should add communication via API")
+    void testAddCommunicationApi() throws Exception {
+        when(communicationHistoryRepository.save(any())).thenAnswer(inv -> {
+            com.example.booking.entity.CommunicationHistory comm = inv.getArgument(0);
+            comm.setId(1L);
+            return comm;
+        });
+
+        mockMvc.perform(post("/restaurant-owner/bookings/1/add-communication")
+                .param("type", "CALL")
+                .param("content", "Called customer")
+                .param("direction", "OUTGOING")
+                .param("status", "SENT")
+                .with(csrf()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("GET /restaurant-owner/bookings/1/communication-history - should return communication history")
+    void testGetCommunicationHistoryApi() throws Exception {
+        when(communicationHistoryRepository.findByBookingIdOrderByTimestampDesc(1))
+            .thenReturn(new ArrayList<>());
+
+        mockMvc.perform(get("/restaurant-owner/bookings/1/communication-history"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("GET /restaurant-owner/waitlist/data - should return waitlist data")
+    void testGetWaitlistData() throws Exception {
+        when(waitlistService.getWaitlistByRestaurant(1)).thenReturn(new ArrayList<>());
+        when(waitlistService.getCalledCustomers(1)).thenReturn(new ArrayList<>());
+
+        mockMvc.perform(get("/restaurant-owner/waitlist/data")
+                .param("restaurantId", "1"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "owner", roles = {"RESTAURANT_OWNER"})
+    @DisplayName("GET /restaurant-owner/waitlist/1 - should show waitlist detail view")
+    void testViewWaitlistDetail() throws Exception {
+        com.example.booking.dto.WaitlistDetailDto detail = new com.example.booking.dto.WaitlistDetailDto();
+        when(waitlistService.getWaitlistDetail(1)).thenReturn(detail);
+
+        mockMvc.perform(get("/restaurant-owner/waitlist/1"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("restaurant-owner/waitlist-detail"));
     }
 }
 

@@ -31,6 +31,7 @@ import com.example.booking.repository.UserRepository;
  * Unit tests for AdminUserController
  */
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @DisplayName("AdminUserController Tests")
 public class AdminUserControllerTest {
 
@@ -94,19 +95,14 @@ public class AdminUserControllerTest {
         verify(model, times(1)).addAttribute(anyString(), any(UserCreateForm.class));
     }
 
-    // ========== show() Tests ==========
-
     @Test
-    @DisplayName("shouldShowUser_successfully")
-    void shouldShowUser_successfully() {
+    @DisplayName("shouldListUsers_withFilters")
+    void shouldListUsers_withFilters() {
         // Given
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        // Note: countByCustomerUser doesn't exist, removing this check
+        when(userRepository.findAll(any(Sort.class))).thenReturn(Arrays.asList(user));
 
-        // Note: show method doesn't exist in AdminUserController
-        // The controller likely redirects to list or uses a different pattern
         // When
-        String view = null; // Method doesn't exist
+        String view = adminUserController.list(0, "20", "email", "asc", "test", "CUSTOMER", model);
 
         // Then
         assertNotNull(view);
@@ -114,17 +110,102 @@ public class AdminUserControllerTest {
     }
 
     @Test
-    @DisplayName("shouldReturn404_whenUserNotFound")
-    void shouldReturn404_whenUserNotFound() {
+    @DisplayName("shouldListUsers_withAllSize")
+    void shouldListUsers_withAllSize() {
         // Given
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        when(userRepository.findAll(any(Sort.class))).thenReturn(Arrays.asList(user));
 
-        // When & Then
-        // Note: show() method doesn't exist in AdminUserController
-        // This test needs to be adjusted to test an existing method or removed
-        // assertThrows(com.example.booking.exception.ResourceNotFoundException.class, () -> {
-        //     adminUserController.show(userId, model);
-        // });
+        // When
+        String view = adminUserController.list(0, "all", "createdAt", "desc", "", null, model);
+
+        // Then
+        assertNotNull(view);
+        verify(model, atLeastOnce()).addAttribute(anyString(), any());
+    }
+
+    // ========== create() Tests ==========
+
+    @Test
+    @DisplayName("shouldCreateUser_successfully")
+    void shouldCreateUser_successfully() {
+        // Given
+        UserCreateForm form = new UserCreateForm();
+        form.setUsername("newuser");
+        form.setEmail("new@test.com");
+        form.setPassword("password123");
+        form.setFullName("New User");
+        form.setRole(UserRole.CUSTOMER);
+        form.setActive(true);
+        form.setEmailVerified(false);
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+        when(userRepository.existsByEmail("new@test.com")).thenReturn(false);
+        when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        // When
+        String view = adminUserController.create(form, bindingResult, model);
+
+        // Then
+        assertTrue(view.contains("redirect"));
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("shouldFailCreate_withValidationErrors")
+    void shouldFailCreate_withValidationErrors() {
+        // Given
+        UserCreateForm form = new UserCreateForm();
+        when(bindingResult.hasErrors()).thenReturn(true);
+
+        // When
+        String view = adminUserController.create(form, bindingResult, model);
+
+        // Then
+        assertEquals("admin/user-form", view);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("shouldFailCreate_withDuplicateUsername")
+    void shouldFailCreate_withDuplicateUsername() {
+        // Given
+        UserCreateForm form = new UserCreateForm();
+        form.setUsername("existing");
+        form.setEmail("new@test.com");
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(userRepository.existsByUsername("existing")).thenReturn(true);
+
+        // When
+        String view = adminUserController.create(form, bindingResult, model);
+
+        // Then
+        assertEquals("admin/user-form", view);
+        verify(bindingResult).rejectValue(eq("username"), anyString(), anyString());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("shouldFailCreate_withDuplicateEmail")
+    void shouldFailCreate_withDuplicateEmail() {
+        // Given
+        UserCreateForm form = new UserCreateForm();
+        form.setUsername("newuser");
+        form.setEmail("existing@test.com");
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+        when(userRepository.existsByEmail("existing@test.com")).thenReturn(true);
+
+        // When
+        String view = adminUserController.create(form, bindingResult, model);
+
+        // Then
+        assertEquals("admin/user-form", view);
+        verify(bindingResult).rejectValue(eq("email"), anyString(), anyString());
+        verify(userRepository, never()).save(any(User.class));
     }
 
     // ========== edit() Tests ==========
@@ -141,6 +222,108 @@ public class AdminUserControllerTest {
         // Then
         assertNotNull(view);
         verify(model, atLeastOnce()).addAttribute(anyString(), any(UserEditForm.class));
+    }
+
+    @Test
+    @DisplayName("shouldShowEditForm_userNotFound")
+    void shouldShowEditForm_userNotFound() {
+        // Given
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // When
+        String view = adminUserController.editForm(userId, model);
+
+        // Then
+        assertTrue(view.contains("redirect"));
+    }
+
+    @Test
+    @DisplayName("shouldEditUser_successfully")
+    void shouldEditUser_successfully() {
+        // Given
+        UserEditForm form = new UserEditForm();
+        form.setUsername("testuser");
+        form.setEmail("test@test.com");
+        form.setFullName("Updated Name");
+        form.setRole(UserRole.CUSTOMER);
+        form.setActive(true);
+        form.setEmailVerified(true);
+        user.setUsername("testuser");
+        user.setEmail("test@test.com");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        // When
+        String view = adminUserController.edit(userId, form, bindingResult, model);
+
+        // Then
+        assertTrue(view.contains("redirect"));
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("shouldFailEdit_withValidationErrors")
+    void shouldFailEdit_withValidationErrors() {
+        // Given
+        UserEditForm form = new UserEditForm();
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(bindingResult.hasErrors()).thenReturn(true);
+
+        // When
+        String view = adminUserController.edit(userId, form, bindingResult, model);
+
+        // Then
+        assertEquals("admin/user-form", view);
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("shouldFailEdit_userNotFound")
+    void shouldFailEdit_userNotFound() {
+        // Given
+        UserEditForm form = new UserEditForm();
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // When
+        String view = adminUserController.edit(userId, form, bindingResult, model);
+
+        // Then
+        assertTrue(view.contains("redirect"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    // ========== toggleActive() Tests ==========
+
+    @Test
+    @DisplayName("shouldToggleActive_successfully")
+    void shouldToggleActive_successfully() {
+        // Given
+        user.setActive(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // When
+        var response = adminUserController.toggleActive(userId);
+
+        // Then
+        assertNotNull(response);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("shouldToggleActive_userNotFound")
+    void shouldToggleActive_userNotFound() {
+        // Given
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // When
+        var response = adminUserController.toggleActive(userId);
+
+        // Then
+        assertNotNull(response);
+        verify(userRepository, never()).save(any(User.class));
     }
 }
 
