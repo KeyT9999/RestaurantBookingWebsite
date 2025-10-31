@@ -24,7 +24,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -36,11 +35,8 @@ import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.User;
-import com.example.booking.dto.NearbyRestaurantDto;
-import com.example.booking.dto.RestaurantDto;
 import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewStatisticsDto;
-import com.example.booking.dto.DishWithImageDto;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.CustomerService;
@@ -203,8 +199,8 @@ public class HomeControllerTest {
         when(restaurantMediaRepository.findByRestaurantsAndType(anyList(), eq("cover")))
             .thenReturn(Collections.emptyList());
         when(authentication.isAuthenticated()).thenReturn(true);
-        Collection<SimpleGrantedAuthority> authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        when(authentication.getAuthorities()).thenReturn((Collection) authorities);
+        Collection<? extends GrantedAuthority> authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        doReturn(authorities).when(authentication).getAuthorities();
         when(authentication.getPrincipal()).thenReturn(user);
         when(notificationService.countUnreadByUserId(any())).thenReturn(5L);
 
@@ -226,8 +222,8 @@ public class HomeControllerTest {
         when(restaurantMediaRepository.findByRestaurantsAndType(anyList(), eq("cover")))
             .thenReturn(Collections.emptyList());
         when(authentication.isAuthenticated()).thenReturn(true);
-        Collection<SimpleGrantedAuthority> authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_RESTAURANT_OWNER"));
-        when(authentication.getAuthorities()).thenReturn((Collection) authorities);
+        Collection<? extends GrantedAuthority> authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_RESTAURANT_OWNER"));
+        doReturn(authorities).when(authentication).getAuthorities();
         when(authentication.getPrincipal()).thenReturn(user);
         when(notificationService.countUnreadByUserId(any())).thenReturn(3L);
 
