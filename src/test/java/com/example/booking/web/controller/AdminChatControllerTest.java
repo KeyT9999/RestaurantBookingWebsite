@@ -1,7 +1,11 @@
 package com.example.booking.web.controller;
 
+import java.util.Collections;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -15,6 +19,8 @@ import com.example.booking.domain.UserRole;
 import com.example.booking.repository.UserRepository;
 import com.example.booking.service.ChatService;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -34,29 +40,97 @@ class AdminChatControllerTest {
 	@MockBean
 	private UserRepository userRepository;
 
-	@Test
-	void adminChat_withAdminUser_shouldRenderView() throws Exception {
-		User admin = new User("admin", "a@example.com", "password123", "Admin");
-		admin.setRole(UserRole.ADMIN);
-		admin.setId(UUID.randomUUID());
+	private User testAdmin;
+	private User testCustomer;
 
+	@BeforeEach
+	void setUp() {
+		testAdmin = new User();
+		testAdmin.setId(UUID.randomUUID());
+		testAdmin.setUsername("admin@example.com");
+		testAdmin.setEmail("admin@example.com");
+		testAdmin.setFullName("Admin User");
+		testAdmin.setRole(UserRole.ADMIN);
+
+		testCustomer = new User();
+		testCustomer.setId(UUID.randomUUID());
+		testCustomer.setUsername("customer@example.com");
+		testCustomer.setEmail("customer@example.com");
+		testCustomer.setFullName("Customer User");
+		testCustomer.setRole(UserRole.CUSTOMER);
+	}
+
+	// ========== adminChatPage() Tests ==========
+
+	@Test
+	@DisplayName("adminChatPage - should render view for admin user")
+	void adminChatPage_WithAdminUser_ShouldRenderView() throws Exception {
 		mockMvc.perform(get("/admin/chat")
-				.principal(new UsernamePasswordAuthenticationToken(admin, null, admin.getAuthorities())))
+				.principal(new UsernamePasswordAuthenticationToken(testAdmin, null, testAdmin.getAuthorities())))
 				.andExpect(status().isOk())
 				.andExpect(view().name("admin/chat"))
-				.andExpect(model().attributeExists("admin", "adminId", "adminName", "adminEmail"));
+				.andExpect(model().attributeExists("admin", "adminId", "adminName", "adminEmail"))
+				.andExpect(model().attribute("adminId", testAdmin.getId()))
+				.andExpect(model().attribute("adminName", testAdmin.getFullName()))
+				.andExpect(model().attribute("adminEmail", testAdmin.getEmail()));
 	}
 
 	@Test
-	void adminChat_withNonAdmin_shouldRedirectError() throws Exception {
-		User user = new User("user", "u@example.com", "password123", "User");
-		user.setRole(UserRole.CUSTOMER);
-		user.setId(UUID.randomUUID());
-
+	@DisplayName("adminChatPage - should redirect for non-admin user")
+	void adminChatPage_WithNonAdmin_ShouldRedirectError() throws Exception {
 		mockMvc.perform(get("/admin/chat")
-				.principal(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities())))
+				.principal(new UsernamePasswordAuthenticationToken(testCustomer, null, testCustomer.getAuthorities())))
 				.andExpect(status().is3xxRedirection())
 				.andExpect(redirectedUrl("/error?message=Access denied. Admin role required."));
+	}
+
+	@Test
+	@DisplayName("adminChatPage - should redirect for restaurant owner")
+	void adminChatPage_WithRestaurantOwner_ShouldRedirectError() throws Exception {
+		User owner = new User();
+		owner.setId(UUID.randomUUID());
+		owner.setUsername("owner@example.com");
+		owner.setRole(UserRole.RESTAURANT_OWNER);
+
+		mockMvc.perform(get("/admin/chat")
+				.principal(new UsernamePasswordAuthenticationToken(owner, null, owner.getAuthorities())))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/error?message=Access denied. Admin role required."));
+	}
+
+	@Test
+	@DisplayName("adminChatPage - should handle authentication token with username")
+	void adminChatPage_WithUsernameAuthentication_ShouldRenderView() throws Exception {
+		UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+				testAdmin, null, testAdmin.getAuthorities());
+		when(userRepository.findByEmail(testAdmin.getEmail())).thenReturn(Optional.of(testAdmin));
+
+		mockMvc.perform(get("/admin/chat")
+				.principal(token))
+				.andExpect(status().isOk())
+				.andExpect(view().name("admin/chat"));
+	}
+
+	@Test
+	@DisplayName("adminChatPage - should handle null authentication")
+	void adminChatPage_WithNullAuthentication_ShouldRedirectError() throws Exception {
+		mockMvc.perform(get("/admin/chat"))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/error?message=Error loading admin chat: No authentication found"));
+	}
+
+	@Test
+	@DisplayName("adminChatPage - should handle exceptions gracefully")
+	void adminChatPage_WithException_ShouldRedirectError() throws Exception {
+		when(userRepository.findByEmail(anyString())).thenThrow(new RuntimeException("Database error"));
+		
+		UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+				"test@example.com", null, Collections.emptyList());
+
+		mockMvc.perform(get("/admin/chat")
+				.principal(token))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/error?message=Error loading admin chat: Database error"));
 	}
 }
 

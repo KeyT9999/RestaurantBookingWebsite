@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,11 +22,13 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -811,5 +814,244 @@ class BookingControllerTest {
         // When & Then
         mockMvc.perform(MockMvcRequestBuilders.get("/booking/my"))
                 .andExpect(status().is3xxRedirection());
+    }
+
+    // ==================== BOOKING DETAILS TESTS ====================
+
+    @Test
+    @DisplayName("testGetBookingDetails_ShouldRedirectToMyBookings")
+    @WithMockUser(roles = "CUSTOMER")
+    void testGetBookingDetails_ShouldRedirectToMyBookings() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/1/details"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/my"));
+    }
+
+    // ==================== UPDATE BOOKING TESTS ====================
+
+    @Test
+    @DisplayName("testUpdateBooking_WithValidData_ShouldUpdateSuccessfully")
+    @WithMockUser(roles = "CUSTOMER")
+    void testUpdateBooking_WithValidData_ShouldUpdateSuccessfully() throws Exception {
+        // Given
+        Booking updatedBooking = new Booking();
+        updatedBooking.setBookingId(1);
+        when(bookingService.updateBookingWithItems(eq(1), any(BookingForm.class))).thenReturn(updatedBooking);
+        when(bookingService.calculateTotalAmount(any(Booking.class))).thenReturn(new BigDecimal("1000000"));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/1/update")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/1/details"))
+                .andExpect(flash().attributeExists("successMessage"));
+    }
+
+    @Test
+    @DisplayName("testUpdateBooking_WithValidationErrors_ShouldRedirect")
+    @WithMockUser(roles = "CUSTOMER")
+    void testUpdateBooking_WithValidationErrors_ShouldRedirect() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/1/update")
+                .param("restaurantId", "-1") // Invalid
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/1/details"))
+                .andExpect(flash().attributeExists("errorMessage"));
+    }
+
+    // ==================== EDIT BOOKING FORM TESTS ====================
+
+    @Test
+    @DisplayName("testShowEditBookingForm_WithValidBooking_ShouldReturnForm")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowEditBookingForm_WithValidBooking_ShouldReturnForm() throws Exception {
+        // Given
+        mockBooking.setStatus(BookingStatus.PENDING);
+        when(bookingService.getBookingWithDetailsById(1)).thenReturn(Optional.of(mockBooking));
+        when(userService.findByUsername(anyString())).thenReturn(Optional.of(mockCustomer.getUser()));
+        when(restaurantService.findAllRestaurants()).thenReturn(Arrays.asList(mockRestaurant));
+        when(restaurantService.findTablesByRestaurant(1)).thenReturn(Arrays.asList(mockTable));
+        when(restaurantService.findDishesByRestaurant(1)).thenReturn(new ArrayList<>());
+        when(restaurantService.findServicesByRestaurant(1)).thenReturn(new ArrayList<>());
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/1/edit"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("booking/form"))
+                .andExpect(model().attributeExists("bookingForm", "restaurants", "tables"));
+    }
+
+    @Test
+    @DisplayName("testShowEditBookingForm_WithNonEditableBooking_ShouldRedirect")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowEditBookingForm_WithNonEditableBooking_ShouldRedirect() throws Exception {
+        // Given
+        mockBooking.setStatus(BookingStatus.CANCELLED); // Cannot edit cancelled booking
+        when(bookingService.getBookingWithDetailsById(1)).thenReturn(Optional.of(mockBooking));
+        when(userService.findByUsername(anyString())).thenReturn(Optional.of(mockCustomer.getUser()));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/1/edit"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/1/details?error=cannot_edit"));
+    }
+
+    @Test
+    @DisplayName("testShowEditBookingForm_WithNotFoundBooking_ShouldRedirect")
+    @WithMockUser(roles = "CUSTOMER")
+    void testShowEditBookingForm_WithNotFoundBooking_ShouldRedirect() throws Exception {
+        // Given
+        when(bookingService.getBookingWithDetailsById(999)).thenReturn(Optional.empty());
+        when(userService.findByUsername(anyString())).thenReturn(Optional.of(mockCustomer.getUser()));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/999/edit"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/my?error=booking_not_found"));
+    }
+
+    // ==================== WAITLIST TESTS ====================
+
+    @Test
+    @DisplayName("testJoinWaitlist_WithValidData_ShouldJoinSuccessfully")
+    @WithMockUser(roles = "CUSTOMER")
+    void testJoinWaitlist_WithValidData_ShouldJoinSuccessfully() throws Exception {
+        // Given
+        when(waitlistService.addToWaitlist(eq(1), eq(4), any(UUID.class))).thenReturn(mockWaitlist);
+        when(waitlistService.getQueuePosition(1)).thenReturn(1);
+        when(waitlistService.calculateEstimatedWaitTime(1)).thenReturn(15);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/waitlist")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"restaurantId\":1,\"guestCount\":4}")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.waitlistId").exists());
+    }
+
+    @Test
+    @DisplayName("testCancelWaitlist_WithValidId_ShouldCancelSuccessfully")
+    @WithMockUser(roles = "CUSTOMER")
+    void testCancelWaitlist_WithValidId_ShouldCancelSuccessfully() throws Exception {
+        // Given
+        mockWaitlist.setCustomer(mockCustomer);
+        when(waitlistService.findById(1)).thenReturn(mockWaitlist);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/waitlist/cancel/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("testGetWaitlistDetail_WithValidId_ShouldReturnDetail")
+    @WithMockUser(roles = "CUSTOMER")
+    void testGetWaitlistDetail_WithValidId_ShouldReturnDetail() throws Exception {
+        // Given
+        when(waitlistService.getWaitlistDetailForCustomer(eq(1), any(UUID.class)))
+                .thenReturn(new com.example.booking.dto.WaitlistDetailDto());
+        when(waitlistService.getWaitlistDetail(1))
+                .thenReturn(new com.example.booking.dto.WaitlistDetailDto());
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/waitlist/1")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("testUpdateWaitlist_WithValidData_ShouldUpdateSuccessfully")
+    @WithMockUser(roles = "CUSTOMER")
+    void testUpdateWaitlist_WithValidData_ShouldUpdateSuccessfully() throws Exception {
+        // Given
+        com.example.booking.dto.WaitlistDetailDto updated = new com.example.booking.dto.WaitlistDetailDto();
+        when(waitlistService.updateWaitlist(eq(1), eq(6), isNull(), eq("Special request")))
+                .thenReturn(updated);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/waitlist/1/update")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"partySize\":6,\"specialRequests\":\"Special request\"}")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    // ==================== LEGACY UPDATE BOOKING TESTS ====================
+
+    @Test
+    @DisplayName("testUpdateBookingLegacy_WithValidData_ShouldUpdateSuccessfully")
+    @WithMockUser(roles = "CUSTOMER")
+    void testUpdateBookingLegacy_WithValidData_ShouldUpdateSuccessfully() throws Exception {
+        // Given
+        when(restaurantService.findAllRestaurants()).thenReturn(Arrays.asList(mockRestaurant));
+        when(bookingService.updateBooking(eq(1), any(BookingForm.class), any(UUID.class)))
+                .thenReturn(mockBooking);
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/1/legacy")
+                .param("restaurantId", "1")
+                .param("tableId", "1")
+                .param("guestCount", "4")
+                .param("bookingTime", "2024-12-25T19:00")
+                .param("depositAmount", "100000")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/my"))
+                .andExpect(flash().attributeExists("successMessage"));
+    }
+
+    // ==================== CANCEL BOOKING (LEGACY) TESTS ====================
+
+    @Test
+    @DisplayName("testCancelBookingLegacy_ShouldRedirectToMyBookings")
+    @WithMockUser(roles = "CUSTOMER")
+    void testCancelBookingLegacy_ShouldRedirectToMyBookings() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.post("/booking/1/cancel")
+                .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/booking/my"))
+                .andExpect(flash().attributeExists("successMessage"));
+    }
+
+    // ==================== GET TABLES BY RESTAURANT TESTS ====================
+
+    @Test
+    @DisplayName("testGetTablesByRestaurant_ShouldReturnTableOptions")
+    @WithMockUser(roles = "CUSTOMER")
+    void testGetTablesByRestaurant_ShouldReturnTableOptions() throws Exception {
+        // Given
+        when(restaurantService.findTablesByRestaurant(1)).thenReturn(Arrays.asList(mockTable));
+
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/api/restaurants/1/tables"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("fragments/table-options :: table-options"))
+                .andExpect(model().attributeExists("tables"));
+    }
+
+    // ==================== ACCESS DENIED TESTS ====================
+
+    @Test
+    @DisplayName("testAccessDenied_ShouldReturn403Page")
+    void testAccessDenied_ShouldReturn403Page() throws Exception {
+        // When & Then
+        mockMvc.perform(MockMvcRequestBuilders.get("/booking/access-denied"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("error/403"))
+                .andExpect(model().attributeExists("message"));
     }
 }

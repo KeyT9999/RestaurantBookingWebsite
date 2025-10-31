@@ -10,6 +10,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +26,8 @@ import org.mockito.Mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -519,6 +524,209 @@ class NotificationServiceImplTest {
         // Then
         assertNotNull(result);
         assertEquals(3, result.size());
+    }
+
+    // ==================== SEND NOTIFICATIONS TESTS ====================
+
+    @Test
+    @DisplayName("sendNotifications - should send to all when audience is ALL")
+    void sendNotifications_WithAudienceAll_ShouldSendToAll() {
+        form.setAudience(NotificationForm.AudienceType.ALL);
+        List<User> activeUsers = new ArrayList<>();
+        activeUsers.add(mockUser);
+
+        when(userRepository.findAll()).thenReturn(activeUsers);
+        when(notificationRepository.saveAll(anyList())).thenReturn(new ArrayList<>());
+
+        assertDoesNotThrow(() -> notificationService.sendNotifications(form, adminId));
+
+        verify(notificationRepository).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("sendNotifications - should send to roles when audience is ROLE")
+    void sendNotifications_WithAudienceRole_ShouldSendToRoles() {
+        form.setAudience(NotificationForm.AudienceType.ROLE);
+        Set<UserRole> roles = new HashSet<>(Arrays.asList(UserRole.CUSTOMER));
+        form.setTargetRoles(roles);
+        List<User> users = new ArrayList<>();
+        users.add(mockUser);
+
+        when(userRepository.findAll()).thenReturn(users);
+        when(notificationRepository.saveAll(anyList())).thenReturn(new ArrayList<>());
+
+        assertDoesNotThrow(() -> notificationService.sendNotifications(form, adminId));
+
+        verify(notificationRepository).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("sendNotifications - should send to users when audience is USER")
+    void sendNotifications_WithAudienceUser_ShouldSendToUsers() {
+        form.setAudience(NotificationForm.AudienceType.USER);
+        Set<UUID> userIds = new HashSet<>(Arrays.asList(userId));
+        form.setTargetUserIds(userIds);
+        List<User> users = new ArrayList<>();
+        users.add(mockUser);
+
+        when(userRepository.findAllById(userIds)).thenReturn(users);
+        when(notificationRepository.saveAll(anyList())).thenReturn(new ArrayList<>());
+
+        assertDoesNotThrow(() -> notificationService.sendNotifications(form, adminId));
+
+        verify(notificationRepository).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("sendNotifications - should throw exception when audience is null")
+    void sendNotifications_WithNullAudience_ShouldThrowException() {
+        form.setAudience(null);
+
+        assertThrows(IllegalArgumentException.class, () -> notificationService.sendNotifications(form, adminId));
+    }
+
+    @Test
+    @DisplayName("sendNotifications - should throw exception when form is null")
+    void sendNotifications_WithNullForm_ShouldThrowException() {
+        assertThrows(IllegalArgumentException.class, () -> notificationService.sendNotifications(null, adminId));
+    }
+
+    @Test
+    @DisplayName("sendNotifications - should throw exception when ROLE audience without target roles")
+    void sendNotifications_WithRoleAudienceWithoutTargetRoles_ShouldThrowException() {
+        form.setAudience(NotificationForm.AudienceType.ROLE);
+        form.setTargetRoles(null);
+
+        assertThrows(IllegalArgumentException.class, () -> notificationService.sendNotifications(form, adminId));
+    }
+
+    @Test
+    @DisplayName("sendNotifications - should throw exception when USER audience without target user ids")
+    void sendNotifications_WithUserAudienceWithoutTargetUserIds_ShouldThrowException() {
+        form.setAudience(NotificationForm.AudienceType.USER);
+        form.setTargetUserIds(null);
+
+        assertThrows(IllegalArgumentException.class, () -> notificationService.sendNotifications(form, adminId));
+    }
+
+    // ==================== FIND BY USER ID AND UNREAD TESTS ====================
+
+    @Test
+    @DisplayName("findByUserIdAndUnread - should return unread notifications")
+    void findByUserIdAndUnread_WithUnreadTrue_ShouldReturnUnread() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Notification> unreadPage = new PageImpl<>(List.of(mockNotification));
+
+        when(notificationRepository.findByRecipientUserIdAndStatusAndReadAtIsNullOrderByPublishAtDesc(
+            eq(userId), eq(NotificationStatus.SENT), any(Pageable.class)))
+            .thenReturn(unreadPage);
+
+        Page<NotificationView> result = notificationService.findByUserIdAndUnread(userId, true, pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+    }
+
+    @Test
+    @DisplayName("findByUserIdAndUnread - should return read notifications")
+    void findByUserIdAndUnread_WithUnreadFalse_ShouldReturnRead() {
+        Pageable pageable = PageRequest.of(0, 10);
+        mockNotification.setReadAt(LocalDateTime.now());
+        Page<Notification> readPage = new PageImpl<>(List.of(mockNotification));
+
+        when(notificationRepository.findByRecipientUserIdAndStatusAndReadAtIsNotNullOrderByPublishAtDesc(
+            eq(userId), eq(NotificationStatus.SENT), any(Pageable.class)))
+            .thenReturn(readPage);
+
+        Page<NotificationView> result = notificationService.findByUserIdAndUnread(userId, false, pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+    }
+
+    // ==================== ADMIN QUERY TESTS ====================
+
+    @Test
+    @DisplayName("findAllForAdmin - should return all notifications")
+    void findAllForAdmin_ShouldReturnAllNotifications() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Notification> notificationPage = new PageImpl<>(List.of(mockNotification));
+
+        when(notificationRepository.findAll(pageable)).thenReturn(notificationPage);
+
+        Page<NotificationView> result = notificationService.findAllForAdmin(pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+    }
+
+    @Test
+    @DisplayName("findGroupedForAdmin - should return grouped summaries")
+    void findGroupedForAdmin_ShouldReturnGroupedSummaries() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Object[] row = {1, NotificationType.SYSTEM_ANNOUNCEMENT, "Title", "Content", LocalDateTime.now()};
+        List<Object[]> rowsList = new ArrayList<>();
+        rowsList.add(row);
+        Page<Object[]> rowsPage = new PageImpl<>(rowsList);
+        List<Object[]> roleBreakdown = new ArrayList<>();
+
+        when(notificationRepository.findGroupedSummaries(pageable)).thenReturn(rowsPage);
+        when(notificationRepository.countRecipientsByRoleForGroups()).thenReturn(roleBreakdown);
+
+        Page<com.example.booking.dto.notification.AdminNotificationSummary> result = 
+            notificationService.findGroupedForAdmin(pageable);
+
+        assertNotNull(result);
+        assertEquals(1, result.getContent().size());
+    }
+
+    @Test
+    @DisplayName("findById - should return notification when exists")
+    void findById_WhenExists_ShouldReturnNotification() {
+        when(notificationRepository.findById(1)).thenReturn(Optional.of(mockNotification));
+
+        NotificationView result = notificationService.findById(1);
+
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+    }
+
+    @Test
+    @DisplayName("findById - should return null when not exists")
+    void findById_WhenNotExists_ShouldReturnNull() {
+        when(notificationRepository.findById(999)).thenReturn(Optional.empty());
+
+        NotificationView result = notificationService.findById(999);
+
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("countTotalSent - should return total count")
+    void countTotalSent_ShouldReturnTotalCount() {
+        when(notificationRepository.count()).thenReturn(100L);
+
+        long result = notificationService.countTotalSent();
+
+        assertEquals(100L, result);
+    }
+
+    @Test
+    @DisplayName("countTotalRead - should return read count")
+    void countTotalRead_ShouldReturnReadCount() {
+        when(notificationRepository.countByReadAtIsNotNull()).thenReturn(75L);
+
+        long result = notificationService.countTotalRead();
+
+        assertEquals(75L, result);
+    }
+
+    @Test
+    @DisplayName("expireNotification - should expire notification")
+    void expireNotification_ShouldExpireNotification() {
+        assertDoesNotThrow(() -> notificationService.expireNotification(1));
+
+        verify(notificationRepository).expireNotification(eq(1), any(LocalDateTime.class));
     }
 }
 
