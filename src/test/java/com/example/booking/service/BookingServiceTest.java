@@ -1289,4 +1289,223 @@ class BookingServiceTest {
         );
         assertTrue(exception.getMessage().contains("vượt quá sức chứa"));
     }
+
+    // ==================== CREATE BOOKING WITH TABLE IDS TESTS ====================
+
+    @Test
+    @DisplayName("Should create booking with tableIds string")
+    void testCreateBooking_WithTableIds_ShouldSuccess() {
+        // Given
+        prepareCreateBookingStubs();
+        bookingForm.setTableId(null);
+        bookingForm.setTableIds("1");
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        when(bookingTableRepository.findByBooking(any())).thenReturn(Arrays.asList(new BookingTable()));
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        verify(bookingTableRepository).save(any(BookingTable.class));
+    }
+
+    // ==================== UPDATE BOOKING WITH RESTAURANT CHANGE TESTS ====================
+
+    @Test
+    @DisplayName("Should update booking with restaurant change")
+    void testUpdateBooking_WithRestaurantChange_ShouldUpdate() {
+        // Given
+        mockBooking.setStatus(BookingStatus.PENDING);
+        RestaurantProfile newRestaurant = new RestaurantProfile();
+        newRestaurant.setRestaurantId(2);
+        newRestaurant.setRestaurantName("New Restaurant");
+
+        BookingForm form = new BookingForm();
+        form.setRestaurantId(2);
+        form.setTableId(1);
+        form.setGuestCount(4);
+        form.setBookingTime(LocalDateTime.now().plusDays(2));
+        form.setDepositAmount(new BigDecimal("100000"));
+
+        RestaurantTable newTable = new RestaurantTable();
+        newTable.setTableId(1);
+        newTable.setCapacity(4);
+        newTable.setRestaurant(newRestaurant);
+
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+        when(restaurantProfileRepository.findById(2)).thenReturn(Optional.of(newRestaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(newTable));
+        when(bookingTableRepository.findByBooking(mockBooking)).thenReturn(Collections.emptyList());
+        when(bookingTableRepository.save(any(BookingTable.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doNothing().when(conflictService).validateBookingUpdateConflicts(anyInt(), any(BookingForm.class), any(UUID.class));
+
+        // When
+        Booking result = bookingService.updateBooking(1, form, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.getRestaurant().getRestaurantId());
+    }
+
+    // ==================== CANCEL BOOKING WITHOUT PAYMENT TESTS ====================
+
+    @Test
+    @DisplayName("Should cancel booking without payment")
+    void testCancelBooking_WithoutPayment_ShouldCancel() {
+        // Given
+        mockBooking.setCustomer(customer);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+        when(paymentRepository.findByBooking(mockBooking)).thenReturn(Optional.empty());
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Booking result = bookingService.cancelBooking(1, customerId, "Test reason", "VCB", "1234567890");
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.CANCELLED, result.getStatus());
+        verify(refundService, never()).processRefundWithManualTransfer(anyInt(), anyString(), anyString(), anyString());
+    }
+
+    // ==================== CANCEL BOOKING WITH PENDING PAYMENT TESTS ====================
+
+    @Test
+    @DisplayName("Should cancel booking with pending payment without refund")
+    void testCancelBooking_WithPendingPayment_ShouldCancelWithoutRefund() {
+        // Given
+        mockBooking.setCustomer(customer);
+        Payment pendingPayment = new Payment();
+        pendingPayment.setStatus(com.example.booking.domain.PaymentStatus.PENDING);
+        pendingPayment.setAmount(new BigDecimal("100000"));
+
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+        when(paymentRepository.findByBooking(mockBooking)).thenReturn(Optional.of(pendingPayment));
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Booking result = bookingService.cancelBooking(1, customerId, "Test reason", "VCB", "1234567890");
+
+        // Then
+        assertNotNull(result);
+        assertEquals(BookingStatus.CANCELLED, result.getStatus());
+        verify(refundService, never()).processRefundWithManualTransfer(anyInt(), anyString(), anyString(), anyString());
+    }
+
+    // ==================== STATUS TRANSITION TESTS ====================
+
+    @Test
+    @DisplayName("Should update status from PENDING to CANCELLED")
+    void testUpdateBookingStatus_PendingToCancelled_ShouldUpdate() {
+        // Given
+        mockBooking.setStatus(BookingStatus.PENDING);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
+
+        // When
+        Booking result = bookingService.updateBookingStatus(1, BookingStatus.CANCELLED);
+
+        // Then
+        assertEquals(BookingStatus.CANCELLED, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should update status from CONFIRMED to CANCELLED")
+    void testUpdateBookingStatus_ConfirmedToCancelled_ShouldUpdate() {
+        // Given
+        mockBooking.setStatus(BookingStatus.CONFIRMED);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
+
+        // When
+        Booking result = bookingService.updateBookingStatus(1, BookingStatus.CANCELLED);
+
+        // Then
+        assertEquals(BookingStatus.CANCELLED, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should update status from CONFIRMED to NO_SHOW")
+    void testUpdateBookingStatus_ConfirmedToNoShow_ShouldUpdate() {
+        // Given
+        mockBooking.setStatus(BookingStatus.CONFIRMED);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
+
+        // When
+        Booking result = bookingService.updateBookingStatus(1, BookingStatus.NO_SHOW);
+
+        // Then
+        assertEquals(BookingStatus.NO_SHOW, result.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should throw exception for invalid transition from CANCELLED")
+    void testUpdateBookingStatus_FromCancelled_ShouldThrowException() {
+        // Given
+        mockBooking.setStatus(BookingStatus.CANCELLED);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.updateBookingStatus(1, BookingStatus.PENDING)
+        );
+        assertTrue(exception.getMessage().contains("Invalid status transition"));
+    }
+
+    @Test
+    @DisplayName("Should throw exception for invalid transition from NO_SHOW")
+    void testUpdateBookingStatus_FromNoShow_ShouldThrowException() {
+        // Given
+        mockBooking.setStatus(BookingStatus.NO_SHOW);
+        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            bookingService.updateBookingStatus(1, BookingStatus.PENDING)
+        );
+        assertTrue(exception.getMessage().contains("Invalid status transition"));
+    }
+
+    // ==================== CALCULATE TOTAL AMOUNT EDGE CASES ====================
+
+    @Test
+    @DisplayName("Should calculate total with null deposit amount")
+    void testCalculateTotalAmount_WithNullDeposit_ShouldUseZero() {
+        // Given
+        Booking booking = new Booking();
+        booking.setDepositAmount(null);
+        when(bookingDishRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+        when(bookingServiceRepository.findByBooking(booking)).thenReturn(Collections.emptyList());
+
+        // When
+        BigDecimal total = bookingService.calculateTotalAmount(booking);
+
+        // Then
+        assertEquals(BigDecimal.ZERO, total);
+    }
+
+    // ==================== CREATE BOOKING WITH DEPOSIT FROM TABLE TESTS ====================
+
+    @Test
+    @DisplayName("Should use deposit amount from table when form deposit is null")
+    void testCreateBooking_WithTableDeposit_ShouldUseTableDeposit() {
+        // Given
+        prepareCreateBookingStubs();
+        bookingForm.setDepositAmount(null);
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
+        when(bookingDishRepository.findByBooking(any())).thenReturn(Collections.emptyList());
+        when(bookingServiceRepository.findByBooking(any())).thenReturn(Collections.emptyList());
+
+        // When
+        Booking result = bookingService.createBooking(bookingForm, customerId);
+
+        // Then
+        assertNotNull(result);
+        assertNotNull(result.getDepositAmount());
+    }
 }
