@@ -1,18 +1,18 @@
 package com.example.booking.config;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * Comprehensive tests for PayoutConfiguration
+ * Unit tests for PayoutConfiguration
  */
-@DisplayName("PayoutConfiguration Test Suite")
-class PayoutConfigurationTest {
+@DisplayName("PayoutConfiguration Tests")
+public class PayoutConfigurationTest {
 
     private PayoutConfiguration config;
 
@@ -21,81 +21,207 @@ class PayoutConfigurationTest {
         config = new PayoutConfiguration();
     }
 
+    // ========== Minimum Withdrawal Amount Tests ==========
+
     @Test
-    @DisplayName("Should have default values")
-    void testDefaultValues() {
-        assertThat(config.getMinimumWithdrawalAmount()).isEqualByComparingTo(new BigDecimal("100000"));
-        assertThat(config.getMaxWithdrawalsPerDay()).isEqualTo(3);
-        assertThat(config.getMaxBankAccountsPerRestaurant()).isEqualTo(5);
-        assertThat(config.getCommissionType()).isEqualTo("PERCENTAGE");
-        assertThat(config.getCommissionRate()).isEqualByComparingTo(new BigDecimal("7.50"));
-        assertThat(config.getCommissionFixedAmount()).isEqualByComparingTo(new BigDecimal("15000"));
-        assertThat(config.isAutoApprove()).isFalse();
-        assertThat(config.getRetryAfterMinutes()).isEqualTo(30);
+    @DisplayName("shouldGetDefaultMinimumWithdrawalAmount")
+    void shouldGetDefaultMinimumWithdrawalAmount() {
+        // When
+        BigDecimal amount = config.getMinimumWithdrawalAmount();
+
+        // Then
+        assertNotNull(amount);
+        assertEquals(new BigDecimal("100000"), amount);
     }
 
     @Test
-    @DisplayName("Should test all getters and setters")
-    void testSettersAndGetters() {
-        BigDecimal minAmount = new BigDecimal("200000");
-        BigDecimal commissionRate = new BigDecimal("10.00");
-        BigDecimal fixedAmount = new BigDecimal("20000");
+    @DisplayName("shouldSetAndGetMinimumWithdrawalAmount")
+    void shouldSetAndGetMinimumWithdrawalAmount() {
+        // Given
+        BigDecimal amount = new BigDecimal("200000");
 
-        config.setMinimumWithdrawalAmount(minAmount);
-        config.setMaxWithdrawalsPerDay(5);
-        config.setMaxBankAccountsPerRestaurant(10);
-        config.setCommissionType("FIXED");
-        config.setCommissionRate(commissionRate);
-        config.setCommissionFixedAmount(fixedAmount);
-        config.setAutoApprove(true);
-        config.setRetryAfterMinutes(60);
+        // When
+        config.setMinimumWithdrawalAmount(amount);
 
-        assertThat(config.getMinimumWithdrawalAmount()).isEqualByComparingTo(minAmount);
-        assertThat(config.getMaxWithdrawalsPerDay()).isEqualTo(5);
-        assertThat(config.getMaxBankAccountsPerRestaurant()).isEqualTo(10);
-        assertThat(config.getCommissionType()).isEqualTo("FIXED");
-        assertThat(config.getCommissionRate()).isEqualByComparingTo(commissionRate);
-        assertThat(config.getCommissionFixedAmount()).isEqualByComparingTo(fixedAmount);
-        assertThat(config.isAutoApprove()).isTrue();
-        assertThat(config.getRetryAfterMinutes()).isEqualTo(60);
+        // Then
+        assertEquals(amount, config.getMinimumWithdrawalAmount());
+    }
+
+    // ========== Max Withdrawals Per Day Tests ==========
+
+    @Test
+    @DisplayName("shouldGetDefaultMaxWithdrawalsPerDay")
+    void shouldGetDefaultMaxWithdrawalsPerDay() {
+        // When
+        int max = config.getMaxWithdrawalsPerDay();
+
+        // Then
+        assertEquals(3, max);
     }
 
     @Test
-    @DisplayName("Should handle null values")
-    void testNullValues() {
-        config.setMinimumWithdrawalAmount(null);
-        config.setCommissionRate(null);
-        config.setCommissionFixedAmount(null);
+    @DisplayName("shouldSetAndGetMaxWithdrawalsPerDay")
+    void shouldSetAndGetMaxWithdrawalsPerDay() {
+        // Given
+        int max = 5;
 
-        assertThat(config.getMinimumWithdrawalAmount()).isNull();
-        assertThat(config.getCommissionRate()).isNull();
-        assertThat(config.getCommissionFixedAmount()).isNull();
+        // When
+        config.setMaxWithdrawalsPerDay(max);
+
+        // Then
+        assertEquals(max, config.getMaxWithdrawalsPerDay());
+    }
+
+    // ========== Max Bank Accounts Per Restaurant Tests ==========
+
+    @Test
+    @DisplayName("shouldGetDefaultMaxBankAccountsPerRestaurant")
+    void shouldGetDefaultMaxBankAccountsPerRestaurant() {
+        // When
+        int max = config.getMaxBankAccountsPerRestaurant();
+
+        // Then
+        assertEquals(5, max);
     }
 
     @Test
-    @DisplayName("Should handle different commission types")
-    void testCommissionTypes() {
-        config.setCommissionType("PERCENTAGE");
-        assertThat(config.getCommissionType()).isEqualTo("PERCENTAGE");
+    @DisplayName("shouldSetAndGetMaxBankAccountsPerRestaurant")
+    void shouldSetAndGetMaxBankAccountsPerRestaurant() {
+        // Given
+        int max = 10;
 
-        config.setCommissionType("FIXED");
-        assertThat(config.getCommissionType()).isEqualTo("FIXED");
+        // When
+        config.setMaxBankAccountsPerRestaurant(max);
+
+        // Then
+        assertEquals(max, config.getMaxBankAccountsPerRestaurant());
+    }
+
+    // ========== Commission Type Tests ==========
+
+    @Test
+    @DisplayName("shouldGetDefaultCommissionType")
+    void shouldGetDefaultCommissionType() {
+        // When
+        String type = config.getCommissionType();
+
+        // Then
+        assertEquals("PERCENTAGE", type);
     }
 
     @Test
-    @DisplayName("Should handle zero values")
-    void testZeroValues() {
-        config.setMinimumWithdrawalAmount(BigDecimal.ZERO);
-        config.setCommissionRate(BigDecimal.ZERO);
-        config.setCommissionFixedAmount(BigDecimal.ZERO);
-        config.setMaxWithdrawalsPerDay(0);
-        config.setRetryAfterMinutes(0);
+    @DisplayName("shouldSetAndGetCommissionType")
+    void shouldSetAndGetCommissionType() {
+        // Given
+        String type = "FIXED";
 
-        assertThat(config.getMinimumWithdrawalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(config.getCommissionRate()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(config.getCommissionFixedAmount()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(config.getMaxWithdrawalsPerDay()).isEqualTo(0);
-        assertThat(config.getRetryAfterMinutes()).isEqualTo(0);
+        // When
+        config.setCommissionType(type);
+
+        // Then
+        assertEquals(type, config.getCommissionType());
+    }
+
+    // ========== Commission Rate Tests ==========
+
+    @Test
+    @DisplayName("shouldGetDefaultCommissionRate")
+    void shouldGetDefaultCommissionRate() {
+        // When
+        BigDecimal rate = config.getCommissionRate();
+
+        // Then
+        assertNotNull(rate);
+        assertEquals(new BigDecimal("7.50"), rate);
+    }
+
+    @Test
+    @DisplayName("shouldSetAndGetCommissionRate")
+    void shouldSetAndGetCommissionRate() {
+        // Given
+        BigDecimal rate = new BigDecimal("10.00");
+
+        // When
+        config.setCommissionRate(rate);
+
+        // Then
+        assertEquals(rate, config.getCommissionRate());
+    }
+
+    // ========== Commission Fixed Amount Tests ==========
+
+    @Test
+    @DisplayName("shouldGetDefaultCommissionFixedAmount")
+    void shouldGetDefaultCommissionFixedAmount() {
+        // When
+        BigDecimal amount = config.getCommissionFixedAmount();
+
+        // Then
+        assertNotNull(amount);
+        assertEquals(new BigDecimal("15000"), amount);
+    }
+
+    @Test
+    @DisplayName("shouldSetAndGetCommissionFixedAmount")
+    void shouldSetAndGetCommissionFixedAmount() {
+        // Given
+        BigDecimal amount = new BigDecimal("20000");
+
+        // When
+        config.setCommissionFixedAmount(amount);
+
+        // Then
+        assertEquals(amount, config.getCommissionFixedAmount());
+    }
+
+    // ========== Auto Approve Tests ==========
+
+    @Test
+    @DisplayName("shouldGetDefaultAutoApprove")
+    void shouldGetDefaultAutoApprove() {
+        // When
+        boolean autoApprove = config.isAutoApprove();
+
+        // Then
+        assertFalse(autoApprove);
+    }
+
+    @Test
+    @DisplayName("shouldSetAndGetAutoApprove")
+    void shouldSetAndGetAutoApprove() {
+        // Given
+        boolean autoApprove = true;
+
+        // When
+        config.setAutoApprove(autoApprove);
+
+        // Then
+        assertEquals(autoApprove, config.isAutoApprove());
+    }
+
+    // ========== Retry After Minutes Tests ==========
+
+    @Test
+    @DisplayName("shouldGetDefaultRetryAfterMinutes")
+    void shouldGetDefaultRetryAfterMinutes() {
+        // When
+        int minutes = config.getRetryAfterMinutes();
+
+        // Then
+        assertEquals(30, minutes);
+    }
+
+    @Test
+    @DisplayName("shouldSetAndGetRetryAfterMinutes")
+    void shouldSetAndGetRetryAfterMinutes() {
+        // Given
+        int minutes = 60;
+
+        // When
+        config.setRetryAfterMinutes(minutes);
+
+        // Then
+        assertEquals(minutes, config.getRetryAfterMinutes());
     }
 }
 

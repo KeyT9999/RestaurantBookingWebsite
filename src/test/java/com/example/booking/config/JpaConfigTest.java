@@ -1,36 +1,52 @@
 package com.example.booking.config;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 
 /**
- * Comprehensive tests for JpaConfig
+ * Unit tests for JpaConfig
  */
 @SpringBootTest
-@DisplayName("JpaConfig Test Suite")
-class JpaConfigTest {
-
-    @Autowired(required = false)
-    private JpaConfig jpaConfig;
+@Import(JpaConfig.class)
+@TestPropertySource(properties = {
+    "spring.jpa.hibernate.ddl-auto=validate"
+})
+@DisplayName("JpaConfig Tests")
+public class JpaConfigTest {
 
     @Test
-    @DisplayName("Should load JpaConfig")
-    void testJpaConfigLoads() {
-        // JpaConfig is a configuration class that enables JPA auditing
-        // The test verifies that the configuration class is properly loaded
-        assertThat(jpaConfig).isNotNull();
+    @DisplayName("shouldLoadJpaConfig_successfully")
+    void shouldLoadJpaConfig_successfully() {
+        // Given
+        JpaConfig config = new JpaConfig();
+
+        // Then
+        assertNotNull(config);
     }
 
     @Test
-    @DisplayName("Should have EnableJpaAuditing annotation")
-    void testEnableJpaAuditingAnnotation() {
-        EnableJpaAuditing annotation = JpaConfig.class.getAnnotation(EnableJpaAuditing.class);
-        assertThat(annotation).isNotNull();
+    @DisplayName("shouldBeConfigurationClass")
+    void shouldBeConfigurationClass() {
+        // Given
+        JpaConfig config = new JpaConfig();
+
+        // Then
+        assertTrue(config.getClass().isAnnotationPresent(org.springframework.context.annotation.Configuration.class));
+    }
+
+    @Test
+    @DisplayName("shouldEnableJpaAuditing")
+    void shouldEnableJpaAuditing() {
+        // Given
+        JpaConfig config = new JpaConfig();
+
+        // Then
+        assertTrue(config.getClass().isAnnotationPresent(org.springframework.data.jpa.repository.config.EnableJpaAuditing.class));
     }
 }
 

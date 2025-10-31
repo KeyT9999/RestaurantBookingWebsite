@@ -25,13 +25,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.ui.Model;
-import org.springframework.data.domain.Sort;
 
+import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantMedia;
-import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.User;
@@ -81,6 +81,8 @@ public class HomeControllerTest {
     private RestaurantProfile restaurant;
     private User user;
     private Customer customer;
+    private ReviewStatisticsDto statistics;
+    private RestaurantMedia media;
 
     @BeforeEach
     void setUp() {
@@ -89,7 +91,7 @@ public class HomeControllerTest {
         restaurant.setRestaurantName("Test Restaurant");
         restaurant.setCuisineType("Vietnamese");
         restaurant.setAddress("123 Test St");
-        restaurant.setAveragePrice(BigDecimal.valueOf(200000));
+        restaurant.setAveragePrice(new BigDecimal(200000));
         
         user = new User();
         user.setId(UUID.randomUUID());
@@ -100,6 +102,14 @@ public class HomeControllerTest {
         customer.setCustomerId(UUID.randomUUID());
         customer.setUser(user);
         customer.setFullName("Test Customer");
+
+        statistics = new ReviewStatisticsDto(4.5, 100, Collections.emptyMap());
+
+        media = new RestaurantMedia();
+        media.setMediaId(1);
+        media.setRestaurant(restaurant);
+        media.setUrl("http://example.com/cover.jpg");
+        media.setType("cover");
     }
 
     // ========== home() Tests ==========
@@ -143,6 +153,44 @@ public class HomeControllerTest {
     }
 
     @Test
+    @DisplayName("shouldDisplayHomePage_WithSearchParams")
+    void shouldDisplayHomePage_WithSearchParams() {
+        // Given
+        List<RestaurantProfile> topRestaurants = Arrays.asList(restaurant);
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(topRestaurants);
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(statistics);
+
+        // When
+        String view = controller.home("pizza", "Italian", "100000-300000", model, authentication);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model, times(1)).addAttribute(eq("search"), eq("pizza"));
+        verify(model, times(1)).addAttribute(eq("cuisineType"), eq("Italian"));
+        verify(model, times(1)).addAttribute(eq("priceRange"), eq("100000-300000"));
+    }
+
+    @Test
+    @DisplayName("shouldDisplayHomePage_WithPopularRestaurants")
+    void shouldDisplayHomePage_WithPopularRestaurants() {
+        // Given
+        List<RestaurantProfile> topRestaurants = Arrays.asList(restaurant);
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(topRestaurants);
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(statistics);
+
+        // When
+        String view = controller.home(null, null, null, model, authentication);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model, atLeastOnce()).addAttribute(eq("popularRestaurants"), any());
+    }
+
+    @Test
     @DisplayName("shouldDisplayHomePage_withAuthenticatedAdminUser")
     void shouldDisplayHomePage_withAuthenticatedAdminUser() {
         // Given
@@ -151,8 +199,8 @@ public class HomeControllerTest {
         when(restaurantMediaRepository.findByRestaurantsAndType(anyList(), eq("cover")))
             .thenReturn(Collections.emptyList());
         when(authentication.isAuthenticated()).thenReturn(true);
-        Collection<SimpleGrantedAuthority> authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        when(authentication.getAuthorities()).thenReturn((Collection) authorities);
+        Collection<? extends GrantedAuthority> authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        doReturn(authorities).when(authentication).getAuthorities();
         when(authentication.getPrincipal()).thenReturn(user);
         when(notificationService.countUnreadByUserId(any())).thenReturn(5L);
 
@@ -174,8 +222,8 @@ public class HomeControllerTest {
         when(restaurantMediaRepository.findByRestaurantsAndType(anyList(), eq("cover")))
             .thenReturn(Collections.emptyList());
         when(authentication.isAuthenticated()).thenReturn(true);
-        Collection<SimpleGrantedAuthority> authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_RESTAURANT_OWNER"));
-        when(authentication.getAuthorities()).thenReturn((Collection) authorities);
+        Collection<? extends GrantedAuthority> authorities = Arrays.asList(new SimpleGrantedAuthority("ROLE_RESTAURANT_OWNER"));
+        doReturn(authorities).when(authentication).getAuthorities();
         when(authentication.getPrincipal()).thenReturn(user);
         when(notificationService.countUnreadByUserId(any())).thenReturn(3L);
 
@@ -185,6 +233,27 @@ public class HomeControllerTest {
         // Then
         assertEquals("public/home", view);
         verify(model).addAttribute("userRole", "RESTAURANT_OWNER");
+    }
+
+    @Test
+    @DisplayName("shouldDisplayHomePage_WithAuthenticatedUser")
+    void shouldDisplayHomePage_WithAuthenticatedUser() {
+        // Given
+        GrantedAuthority authority = mock(GrantedAuthority.class);
+        when(authority.getAuthority()).thenReturn("ROLE_CUSTOMER");
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(user);
+        Collection<? extends GrantedAuthority> authorities = java.util.Collections.singleton(authority);
+        doReturn(authorities).when(authentication).getAuthorities();
+        when(notificationService.countUnreadByUserId(user.getId())).thenReturn(5L);
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(Collections.emptyList());
+
+        // When
+        String view = controller.home(null, null, null, model, authentication);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model, atLeastOnce()).addAttribute(eq("unreadCount"), eq(5L));
     }
 
     @Test
@@ -222,6 +291,27 @@ public class HomeControllerTest {
         // Then
         assertEquals("public/home", view);
         verify(model).addAttribute("unreadCount", 0L);
+    }
+
+    @Test
+    @DisplayName("shouldHandleException_whenNotificationCountFails")
+    void shouldHandleException_whenNotificationCountFails() {
+        // Given
+        GrantedAuthority authority = mock(GrantedAuthority.class);
+        when(authority.getAuthority()).thenReturn("ROLE_CUSTOMER");
+        when(authentication.isAuthenticated()).thenReturn(true);
+        when(authentication.getPrincipal()).thenReturn(user);
+        Collection<? extends GrantedAuthority> authorities = java.util.Collections.singleton(authority);
+        doReturn(authorities).when(authentication).getAuthorities();
+        when(notificationService.countUnreadByUserId(user.getId())).thenThrow(new RuntimeException("Error"));
+        when(restaurantService.findTopRatedRestaurants(6)).thenReturn(Collections.emptyList());
+
+        // When
+        String view = controller.home(null, null, null, model, authentication);
+
+        // Then
+        assertEquals("public/home", view);
+        verify(model, atLeastOnce()).addAttribute(eq("unreadCount"), eq(0L));
     }
 
     // ========== restaurants() Tests ==========
@@ -265,6 +355,27 @@ public class HomeControllerTest {
         assertEquals("public/restaurants", view);
         verify(model).addAttribute("search", searchTerm);
         verify(restaurantService).getRestaurantsWithFilters(any(), eq(searchTerm), isNull(), isNull(), isNull());
+    }
+
+    @Test
+    @DisplayName("shouldSearchRestaurants_WithFilters")
+    void shouldSearchRestaurants_WithFilters() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 12);
+        Page<RestaurantProfile> restaurantPage = new PageImpl<>(Arrays.asList(restaurant));
+
+        when(restaurantService.getRestaurantsWithFilters(eq(pageable), eq("pizza"), 
+            eq("Italian"), eq("100000-300000"), isNull())).thenReturn(restaurantPage);
+        when(restaurantMediaRepository.findByRestaurantsAndType(any(), eq("cover")))
+            .thenReturn(Arrays.asList(media));
+
+        // When
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", "pizza", 
+            "Italian", "100000-300000", null, model);
+
+        // Then
+        assertEquals("public/restaurants", view);
+        verify(model, atLeastOnce()).addAttribute(eq("restaurants"), any());
     }
 
     @Test
@@ -368,6 +479,24 @@ public class HomeControllerTest {
     }
 
     @Test
+    @DisplayName("shouldSearchRestaurants_WithPagination")
+    void shouldSearchRestaurants_WithPagination() {
+        // Given
+        Pageable pageable = PageRequest.of(2, 10);
+        Page<RestaurantProfile> restaurantPage = new PageImpl<>(Arrays.asList(restaurant));
+
+        when(restaurantService.getRestaurantsWithFilters(eq(pageable), isNull(), 
+            isNull(), isNull(), isNull())).thenReturn(restaurantPage);
+
+        // When
+        String view = controller.restaurants(2, 10, "restaurantName", "asc", null, null, null, null, model);
+
+        // Then
+        assertEquals("public/restaurants", view);
+        verify(model, atLeastOnce()).addAttribute(eq("currentPage"), eq(2));
+    }
+
+    @Test
     @DisplayName("shouldLoadCoverImages_forRestaurants")
     void shouldLoadCoverImages_forRestaurants() {
         // Given
@@ -407,6 +536,39 @@ public class HomeControllerTest {
         verify(model).addAttribute(eq("error"), anyString());
     }
 
+    @Test
+    @DisplayName("shouldSearchRestaurants_WithEmptyResults")
+    void shouldSearchRestaurants_WithEmptyResults() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 12);
+        Page<RestaurantProfile> restaurantPage = new PageImpl<>(Collections.emptyList());
+
+        when(restaurantService.getRestaurantsWithFilters(eq(pageable), isNull(), 
+            isNull(), isNull(), isNull())).thenReturn(restaurantPage);
+
+        // When
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, model);
+
+        // Then
+        assertEquals("public/restaurants", view);
+        verify(model, atLeastOnce()).addAttribute(eq("restaurants"), eq(Collections.emptyList()));
+    }
+
+    @Test
+    @DisplayName("shouldSearchRestaurants_HandleException")
+    void shouldSearchRestaurants_HandleException() {
+        // Given
+        when(restaurantService.getRestaurantsWithFilters(any(Pageable.class), isNull(), 
+            isNull(), isNull(), isNull())).thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, model);
+
+        // Then
+        assertEquals("public/restaurants", view);
+        verify(model, atLeastOnce()).addAttribute(eq("error"), anyString());
+    }
+
     // ========== restaurantDetail() Tests ==========
 
     @Test
@@ -426,6 +588,27 @@ public class HomeControllerTest {
         // Then
         assertEquals("public/restaurant-detail-simple", view);
         verify(model).addAttribute(eq("restaurant"), eq(restaurant));
+    }
+
+    @Test
+    @DisplayName("shouldDisplayRestaurantDetails_WithMedia")
+    void shouldDisplayRestaurantDetails_WithMedia() {
+        // Given
+        List<RestaurantMedia> mediaList = Arrays.asList(media);
+
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(mediaList);
+        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(statistics);
+        when(reviewService.getReviewsByRestaurant(anyInt(), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        // When
+        String view = controller.restaurantDetail(1, model, authentication);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model, atLeastOnce()).addAttribute(eq("restaurant"), any());
+        verify(model, atLeastOnce()).addAttribute(anyString(), any());
     }
 
     @Test
@@ -589,5 +772,21 @@ public class HomeControllerTest {
         // Then
         assertEquals("public/restaurant-detail-simple", view);
         verify(model).addAttribute(eq("tables"), anyList());
+    }
+
+    @Test
+    @DisplayName("shouldHandleException_whenReviewServiceFails")
+    void shouldHandleException_whenReviewServiceFails() {
+        // Given
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(restaurantOwnerService.getMediaByRestaurant(restaurant)).thenReturn(Collections.emptyList());
+        when(reviewService.getRestaurantReviewStatistics(1)).thenThrow(new RuntimeException("Review error"));
+
+        // When
+        String view = controller.restaurantDetail(1, model, authentication);
+
+        // Then
+        assertEquals("public/restaurant-detail-simple", view);
+        verify(model, atLeastOnce()).addAttribute(anyString(), any());
     }
 }

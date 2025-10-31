@@ -319,7 +319,107 @@ class ChatMessageControllerTest {
         
         // When & Then
         // Note: This is a placeholder test for the timeout scenario
+        // This test doesn't use any stubs from setUp, so it's lenient
         assertNotNull(controller);
+    }
+
+    @Test
+    // TC RC-013
+    void shouldSendError_whenUserNotFound() throws Exception {
+        // Given
+        ChatMessageRequest request = new ChatMessageRequest(testRoomId, "Hello");
+        
+        when(userService.loadUserByUsername("testuser")).thenReturn(null);
+        
+        // When
+        controller.sendMessage(request, headerAccessor);
+        
+        // Then
+        verify(messagingTemplate, times(1)).convertAndSendToUser(eq("testuser"), eq("/queue/errors"), any());
+        verify(chatService, never()).sendMessage(anyString(), any(UUID.class), anyString(), any(MessageType.class));
+    }
+
+    @Test
+    // TC RC-014
+    void shouldSendError_whenCannotAccessRoom() throws Exception {
+        // Given
+        ChatMessageRequest request = new ChatMessageRequest(testRoomId, "Hello");
+        
+        when(userService.loadUserByUsername("testuser")).thenReturn(user);
+        when(inputSanitizer.sanitizeChatMessage("Hello")).thenReturn("Hello");
+        when(chatService.canUserAccessRoom(testRoomId, testUserId, UserRole.CUSTOMER)).thenReturn(false);
+        
+        // When
+        controller.sendMessage(request, headerAccessor);
+        
+        // Then
+        verify(messagingTemplate, times(1)).convertAndSendToUser(eq("testuser"), eq("/queue/errors"), any());
+        verify(chatService, never()).sendMessage(anyString(), any(UUID.class), anyString(), any(MessageType.class));
+    }
+
+    @Test
+    // TC RC-015
+    void shouldSendError_whenMessageIsEmptyAfterSanitization() throws Exception {
+        // Given
+        ChatMessageRequest request = new ChatMessageRequest(testRoomId, "<script></script>");
+        
+        when(userService.loadUserByUsername("testuser")).thenReturn(user);
+        when(inputSanitizer.sanitizeChatMessage("<script></script>")).thenReturn("");
+        
+        // When
+        controller.sendMessage(request, headerAccessor);
+        
+        // Then
+        verify(messagingTemplate, times(1)).convertAndSendToUser(eq("testuser"), eq("/queue/errors"), any());
+        verify(chatService, never()).sendMessage(anyString(), any(UUID.class), anyString(), any(MessageType.class));
+    }
+
+    @Test
+    // TC RC-016
+    void shouldSendError_whenJoinRoomWithNullRoomId() {
+        // Given
+        JoinRoomRequest request = new JoinRoomRequest(null);
+        
+        // When
+        controller.joinRoom(request, headerAccessor);
+        
+        // Then
+        verify(messagingTemplate, times(1)).convertAndSendToUser(eq("testuser"), eq("/queue/errors"), any());
+        verify(chatService, never()).markMessagesAsRead(anyString(), any(UUID.class));
+    }
+
+    @Test
+    // TC RC-017
+    void shouldHandleTypingWithFalse() {
+        // Given
+        TypingRequest request = new TypingRequest(testRoomId, false);
+        
+        // When
+        controller.handleTyping(request, headerAccessor);
+        
+        // Then
+        ArgumentCaptor<Object> responseCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(messagingTemplate, times(1)).convertAndSend(
+            eq("/topic/room/" + testRoomId + "/typing"),
+            responseCaptor.capture()
+        );
+        
+        Object response = responseCaptor.getValue();
+        assertNotNull(response);
+    }
+
+    @Test
+    // TC RC-018
+    void shouldSendError_whenJoinRoomWithEmptyRoomId() {
+        // Given
+        JoinRoomRequest request = new JoinRoomRequest("   ");
+        
+        // When
+        controller.joinRoom(request, headerAccessor);
+        
+        // Then
+        verify(messagingTemplate, times(1)).convertAndSendToUser(eq("testuser"), eq("/queue/errors"), any());
+        verify(chatService, never()).markMessagesAsRead(anyString(), any(UUID.class));
     }
 }
 

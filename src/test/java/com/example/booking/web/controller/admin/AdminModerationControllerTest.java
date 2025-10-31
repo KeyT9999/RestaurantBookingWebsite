@@ -149,5 +149,197 @@ public class AdminModerationControllerTest {
         assertEquals("redirect:/admin/moderation", view);
         verify(redirectAttributes, times(1)).addFlashAttribute("error", anyString());
     }
+
+    @Test
+    @DisplayName("shouldResolveReport_withNullAuthentication")
+    void shouldResolveReport_withNullAuthentication() {
+        // Given
+        doNothing().when(reviewReportService).resolveReport(reportId, null, "Resolved");
+
+        // When
+        String view = controller.resolveReport(reportId, "Resolved", null, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(reviewReportService, times(1)).resolveReport(reportId, null, "Resolved");
+        verify(redirectAttributes, times(1)).addFlashAttribute("success", anyString());
+    }
+
+    @Test
+    @DisplayName("shouldResolveReport_withNullResolutionMessage")
+    void shouldResolveReport_withNullResolutionMessage() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(admin);
+        doNothing().when(reviewReportService).resolveReport(reportId, admin.getId(), null);
+
+        // When
+        String view = controller.resolveReport(reportId, null, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(reviewReportService, times(1)).resolveReport(reportId, admin.getId(), null);
+        verify(redirectAttributes, times(1)).addFlashAttribute("success", anyString());
+    }
+
+    // ========== rejectReport() Tests ==========
+
+    @Test
+    @DisplayName("shouldRejectReport_successfully")
+    void shouldRejectReport_successfully() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(admin);
+        doNothing().when(reviewReportService).rejectReport(reportId, admin.getId(), "Rejected");
+
+        // When
+        String view = controller.rejectReport(reportId, "Rejected", authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(reviewReportService, times(1)).rejectReport(reportId, admin.getId(), "Rejected");
+        verify(redirectAttributes, times(1)).addFlashAttribute("success", anyString());
+    }
+
+    @Test
+    @DisplayName("shouldHandleError_whenRejectFails")
+    void shouldHandleError_whenRejectFails() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(admin);
+        doThrow(new RuntimeException("Error")).when(reviewReportService)
+            .rejectReport(reportId, admin.getId(), "Rejected");
+
+        // When
+        String view = controller.rejectReport(reportId, "Rejected", authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(redirectAttributes, times(1)).addFlashAttribute("error", anyString());
+    }
+
+    @Test
+    @DisplayName("shouldRejectReport_withNullAuthentication")
+    void shouldRejectReport_withNullAuthentication() {
+        // Given
+        doNothing().when(reviewReportService).rejectReport(reportId, null, "Rejected");
+
+        // When
+        String view = controller.rejectReport(reportId, "Rejected", null, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(reviewReportService, times(1)).rejectReport(reportId, null, "Rejected");
+        verify(redirectAttributes, times(1)).addFlashAttribute("success", anyString());
+    }
+
+    @Test
+    @DisplayName("shouldRejectReport_withNullResolutionMessage")
+    void shouldRejectReport_withNullResolutionMessage() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(admin);
+        doNothing().when(reviewReportService).rejectReport(reportId, admin.getId(), null);
+
+        // When
+        String view = controller.rejectReport(reportId, null, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(reviewReportService, times(1)).rejectReport(reportId, admin.getId(), null);
+        verify(redirectAttributes, times(1)).addFlashAttribute("success", anyString());
+    }
+
+    // ========== listReports() Additional Tests ==========
+
+    @Test
+    @DisplayName("shouldListReports_withCustomPageSize")
+    void shouldListReports_withCustomPageSize() {
+        // Given
+        Pageable pageable = PageRequest.of(1, 50);
+        Page<ReviewReportView> reportPage = mock(Page.class);
+
+        when(reviewReportService.getReportsForAdmin(Optional.empty(), pageable))
+            .thenReturn(reportPage);
+
+        // When
+        String view = controller.listReports(1, 50, null, model);
+
+        // Then
+        assertEquals("admin/moderation", view);
+        verify(model, times(1)).addAttribute("currentPage", 1);
+        verify(model, times(1)).addAttribute("pageSize", 50);
+        verify(model, times(1)).addAttribute("pageTitle", "Content Moderation");
+        verify(model, times(1)).addAttribute("statuses", ReviewReportStatus.values());
+    }
+
+    @Test
+    @DisplayName("shouldListReports_withAllStatuses")
+    @SuppressWarnings("unchecked")
+    void shouldListReports_withAllStatuses() {
+        // Given
+        for (ReviewReportStatus status : ReviewReportStatus.values()) {
+            Pageable pageable = PageRequest.of(0, 20);
+            Page<ReviewReportView> reportPage = mock(Page.class);
+
+            when(reviewReportService.getReportsForAdmin(Optional.of(status), pageable))
+                .thenReturn(reportPage);
+
+            // When
+            String view = controller.listReports(0, 20, status, model);
+
+            // Then
+            assertEquals("admin/moderation", view);
+            verify(model, times(1)).addAttribute("selectedStatus", status);
+        }
+    }
+
+    // ========== viewReport() Additional Tests ==========
+
+    @Test
+    @DisplayName("shouldViewReport_setPageTitle")
+    void shouldViewReport_setPageTitle() {
+        // Given
+        ReviewReportView report = new ReviewReportView();
+        when(reviewReportService.getReportView(reportId)).thenReturn(report);
+
+        // When
+        String view = controller.viewReport(reportId, model);
+
+        // Then
+        assertEquals("admin/moderation-detail", view);
+        verify(model, times(1)).addAttribute("pageTitle", "Chi tiết báo cáo review");
+        verify(model, times(1)).addAttribute("report", report);
+    }
+
+    // ========== resolveReport() with non-User principal Tests ==========
+
+    @Test
+    @DisplayName("shouldResolveReport_withNonUserPrincipal")
+    void shouldResolveReport_withNonUserPrincipal() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn("non-user-principal");
+        doNothing().when(reviewReportService).resolveReport(reportId, null, "Resolved");
+
+        // When
+        String view = controller.resolveReport(reportId, "Resolved", authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(reviewReportService, times(1)).resolveReport(reportId, null, "Resolved");
+    }
+
+    // ========== rejectReport() with non-User principal Tests ==========
+
+    @Test
+    @DisplayName("shouldRejectReport_withNonUserPrincipal")
+    void shouldRejectReport_withNonUserPrincipal() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn("non-user-principal");
+        doNothing().when(reviewReportService).rejectReport(reportId, null, "Rejected");
+
+        // When
+        String view = controller.rejectReport(reportId, "Rejected", authentication, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/admin/moderation", view);
+        verify(reviewReportService, times(1)).rejectReport(reportId, null, "Rejected");
+    }
 }
 

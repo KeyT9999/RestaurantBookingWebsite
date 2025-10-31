@@ -103,33 +103,265 @@ public class RestaurantFileUploadControllerTest {
 
     @Test
     @DisplayName("shouldUploadBusinessLicense_successfully")
-    void shouldUploadBusinessLicense_successfully() {
+    void shouldUploadBusinessLicense_successfully() throws Exception {
         // Given
         MultipartFile file = new MockMultipartFile("file", "license.pdf", 
             "application/pdf", "test content".getBytes());
+        com.example.booking.domain.RestaurantOwner owner = new com.example.booking.domain.RestaurantOwner();
+        com.example.booking.domain.User user = new com.example.booking.domain.User();
+        user.setUsername("owner@test.com");
+        owner.setUser(user);
+        restaurant.setOwner(owner);
+        
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(fileUploadService.uploadBusinessLicense(any(MultipartFile.class), eq(1)))
+            .thenReturn("/uploads/license.pdf");
+        doNothing().when(restaurantOwnerService).updateRestaurantProfile(any(RestaurantProfile.class));
+        doNothing().when(restaurantOwnerService).createMedia(any(com.example.booking.domain.RestaurantMedia.class));
+        doNothing().when(restaurantApprovalService).notifyNewRestaurantRegistration(any(RestaurantProfile.class));
+
+        // When
+        String view = fileUploadController.uploadBusinessLicense(file, 1, principal, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("business-license"));
+        verify(fileUploadService, times(1)).uploadBusinessLicense(file, 1);
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("success"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldReturnError_whenRestaurantNotFoundForUpload")
+    void shouldReturnError_whenRestaurantNotFoundForUpload() {
+        // Given
+        MultipartFile file = new MockMultipartFile("file", "license.pdf", 
+            "application/pdf", "test content".getBytes());
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.empty());
+
+        // When
+        String view = fileUploadController.uploadBusinessLicense(file, 1, principal, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("business-license"));
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldReturnError_whenUnauthorizedOwner")
+    void shouldReturnError_whenUnauthorizedOwner() {
+        // Given
+        MultipartFile file = new MockMultipartFile("file", "license.pdf", 
+            "application/pdf", "test content".getBytes());
+        com.example.booking.domain.RestaurantOwner owner = new com.example.booking.domain.RestaurantOwner();
+        com.example.booking.domain.User user = new com.example.booking.domain.User();
+        user.setUsername("other@test.com");
+        owner.setUser(user);
+        restaurant.setOwner(owner);
+        
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+
+        // When
+        String view = fileUploadController.uploadBusinessLicense(file, 1, principal, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("business-license"));
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldHandleIOException_whenUploadFails")
+    void shouldHandleIOException_whenUploadFails() throws Exception {
+        // Given
+        MultipartFile file = new MockMultipartFile("file", "license.pdf", 
+            "application/pdf", "test content".getBytes());
+        com.example.booking.domain.RestaurantOwner owner = new com.example.booking.domain.RestaurantOwner();
+        com.example.booking.domain.User user = new com.example.booking.domain.User();
+        user.setUsername("owner@test.com");
+        owner.setUser(user);
+        restaurant.setOwner(owner);
+        
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(fileUploadService.uploadBusinessLicense(any(MultipartFile.class), eq(1)))
+            .thenThrow(new java.io.IOException("Upload failed"));
+
+        // When
+        String view = fileUploadController.uploadBusinessLicense(file, 1, principal, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldDeleteBusinessLicense_successfully")
+    void shouldDeleteBusinessLicense_successfully() {
+        // Given
+        com.example.booking.domain.RestaurantOwner owner = new com.example.booking.domain.RestaurantOwner();
+        com.example.booking.domain.User user = new com.example.booking.domain.User();
+        user.setUsername("owner@test.com");
+        owner.setUser(user);
+        restaurant.setOwner(owner);
+        restaurant.setBusinessLicenseFile("/uploads/license.pdf");
+        
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(fileUploadService.deleteFile("/uploads/license.pdf")).thenReturn(true);
+        doNothing().when(restaurantOwnerService).updateRestaurantProfile(any(RestaurantProfile.class));
+        when(restaurantOwnerService.getMediaByRestaurantAndType(any(RestaurantProfile.class), eq("business_license")))
+            .thenReturn(java.util.Collections.emptyList());
+
+        // When
+        String view = fileUploadController.deleteBusinessLicense(1, principal, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("business-license"));
+        verify(fileUploadService, times(1)).deleteFile("/uploads/license.pdf");
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("success"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldReturnError_whenDeleteBusinessLicenseNotFound")
+    void shouldReturnError_whenDeleteBusinessLicenseNotFound() {
+        // Given
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.empty());
+
+        // When
+        String view = fileUploadController.deleteBusinessLicense(1, principal, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldUploadContractDocument_successfully")
+    void shouldUploadContractDocument_successfully() throws Exception {
+        // Given
+        MultipartFile file = new MockMultipartFile("file", "contract.pdf", 
+            "application/pdf", "test content".getBytes());
+        com.example.booking.domain.RestaurantOwner owner = new com.example.booking.domain.RestaurantOwner();
+        com.example.booking.domain.User user = new com.example.booking.domain.User();
+        user.setUsername("owner@test.com");
+        owner.setUser(user);
+        restaurant.setOwner(owner);
+        
+        when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
+        when(fileUploadService.uploadContractDocument(any(MultipartFile.class), eq(1), anyString()))
+            .thenReturn("/uploads/contract.pdf");
+        doNothing().when(restaurantOwnerService).createMedia(any(com.example.booking.domain.RestaurantMedia.class));
+
+        // When
+        String view = fileUploadController.uploadContractDocument(file, 1, "standard", principal, redirectAttributes);
+
+        // Then
+        assertNotNull(view);
+        assertTrue(view.contains("contract"));
+        verify(fileUploadService, times(1)).uploadContractDocument(file, 1, "standard");
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("success"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldHandleError_whenUploadContractDocumentFails")
+    void shouldHandleError_whenUploadContractDocumentFails() {
+        // Given
+        MultipartFile file = new MockMultipartFile("file", "contract.pdf", 
+            "application/pdf", "test content".getBytes());
+        com.example.booking.domain.RestaurantOwner owner = new com.example.booking.domain.RestaurantOwner();
+        com.example.booking.domain.User user = new com.example.booking.domain.User();
+        user.setUsername("owner@test.com");
+        owner.setUser(user);
+        restaurant.setOwner(owner);
+        
         when(restaurantOwnerService.getRestaurantById(1)).thenReturn(Optional.of(restaurant));
         try {
-            when(fileUploadService.uploadBusinessLicense(any(MultipartFile.class), eq(1)))
-                .thenReturn("/uploads/license.pdf");
-        } catch (java.io.IOException e) {
+            when(fileUploadService.uploadContractDocument(any(MultipartFile.class), eq(1), anyString()))
+                .thenThrow(new RuntimeException("Upload failed"));
+        } catch (Exception e) {
             // Mock setup
         }
 
         // When
-        String view = null;
-        try {
-            view = fileUploadController.uploadBusinessLicense(file, 1, principal, redirectAttributes);
-        } catch (Exception e) {
-            // IOException is handled inside the controller
-        }
+        String view = fileUploadController.uploadContractDocument(file, 1, "standard", principal, redirectAttributes);
 
         // Then
         assertNotNull(view);
-        try {
-            verify(fileUploadService, times(1)).uploadBusinessLicense(file, 1);
-        } catch (java.io.IOException e) {
-            // IOException is handled inside controller
-        }
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldShowExistingLicense_whenLicenseExists")
+    void shouldShowExistingLicense_whenLicenseExists() {
+        // Given
+        restaurant.setBusinessLicenseFile("/uploads/license.pdf");
+        FileUploadService.FileInfo fileInfo = new FileUploadService.FileInfo(
+            "license.pdf", 1024L, "application/pdf"
+        );
+        
+        when(restaurantOwnerService.getRestaurantByOwnerUsername("owner@test.com"))
+            .thenReturn(Optional.of(restaurant));
+        when(fileUploadService.getFileInfo("/uploads/license.pdf")).thenReturn(fileInfo);
+
+        // When
+        String view = fileUploadController.businessLicenseUploadPage(principal, model);
+
+        // Then
+        assertNotNull(view);
+        verify(model, times(1)).addAttribute(eq("existingLicense"), eq("/uploads/license.pdf"));
+        verify(model, times(1)).addAttribute(eq("fileInfo"), eq(fileInfo));
+    }
+
+    @Test
+    @DisplayName("shouldHandleUploadProgress_successfully")
+    void shouldHandleUploadProgress_successfully() {
+        // Given
+        MultipartFile file = new MockMultipartFile("file", "test.pdf", 
+            "application/pdf", "test content".getBytes());
+
+        // When
+        org.springframework.http.ResponseEntity<java.util.Map<String, Object>> response = 
+            fileUploadController.uploadProgress(file, "business_license", 1);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(200, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().containsKey("success"));
+        assertTrue(response.getBody().containsKey("fileInfo"));
+    }
+
+    @Test
+    @DisplayName("shouldReturnError_whenUploadProgressFileEmpty")
+    void shouldReturnError_whenUploadProgressFileEmpty() {
+        // Given
+        MultipartFile file = new MockMultipartFile("file", "", "", new byte[0]);
+
+        // When
+        org.springframework.http.ResponseEntity<java.util.Map<String, Object>> response = 
+            fileUploadController.uploadProgress(file, "business_license", 1);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(400, response.getStatusCode().value());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().containsKey("success"));
+        assertEquals(false, response.getBody().get("success"));
+    }
+
+    @Test
+    @DisplayName("shouldHandleException_whenShowBusinessLicensePage")
+    void shouldHandleException_whenShowBusinessLicensePage() {
+        // Given
+        when(restaurantOwnerService.getRestaurantByOwnerUsername("owner@test.com"))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String view = fileUploadController.businessLicenseUploadPage(principal, model);
+
+        // Then
+        assertNotNull(view);
+        verify(model, times(1)).addAttribute(eq("error"), anyString());
     }
 }
 

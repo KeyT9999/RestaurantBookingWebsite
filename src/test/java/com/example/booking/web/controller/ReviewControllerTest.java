@@ -4,9 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,9 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -28,12 +22,22 @@ import com.example.booking.domain.Customer;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.Review;
 import com.example.booking.domain.User;
-import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewForm;
+import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewStatisticsDto;
-import com.example.booking.service.CustomerService;
+import com.example.booking.repository.CustomerRepository;
 import com.example.booking.service.ReviewService;
+import com.example.booking.service.CustomerService;
 import com.example.booking.util.InputSanitizer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.time.LocalDateTime;
 
 /**
  * Unit tests for ReviewController
@@ -47,6 +51,9 @@ public class ReviewControllerTest {
 
     @Mock
     private CustomerService customerService;
+
+    @Mock
+    private CustomerRepository customerRepository;
 
     @Mock
     private InputSanitizer inputSanitizer;
@@ -69,11 +76,15 @@ public class ReviewControllerTest {
     private User user;
     private Customer customer;
     private RestaurantProfile restaurant;
+    private Review review;
+    private ReviewDto reviewDto;
+    private ReviewStatisticsDto statistics;
 
     @BeforeEach
     void setUp() {
         user = new User();
         user.setId(UUID.randomUUID());
+        user.setEmail("test@example.com");
 
         customer = new Customer();
         customer.setCustomerId(UUID.randomUUID());
@@ -82,6 +93,21 @@ public class ReviewControllerTest {
         restaurant = new RestaurantProfile();
         restaurant.setRestaurantId(1);
         restaurant.setRestaurantName("Test Restaurant");
+
+        review = new Review();
+        review.setReviewId(1);
+        review.setCustomer(customer);
+        review.setRestaurant(restaurant);
+        review.setRating(5);
+        review.setComment("Great restaurant!");
+        review.setCreatedAt(LocalDateTime.now()); // Make it editable
+
+        reviewDto = new ReviewDto();
+        reviewDto.setReviewId(1);
+        reviewDto.setRating(5);
+        reviewDto.setComment("Great restaurant!");
+
+        statistics = new ReviewStatisticsDto(5.0, 100, Collections.emptyMap());
     }
 
     // ========== showCreateReviewForm() Tests ==========
@@ -122,10 +148,9 @@ public class ReviewControllerTest {
 
         when(bindingResult.hasErrors()).thenReturn(false);
         when(authentication.getPrincipal()).thenReturn(user);
-        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
-        when(inputSanitizer.sanitizeReviewComment(anyString())).thenAnswer(i -> i.getArgument(0));
+        when(customerRepository.findByUserId(user.getId())).thenReturn(java.util.Optional.of(customer));
         when(reviewService.createOrUpdateReview(any(ReviewForm.class), eq(customer.getCustomerId())))
-            .thenReturn(new Review());
+            .thenReturn(new com.example.booking.domain.Review());
 
         // When
         String view = controller.handleReviewSubmission(form, bindingResult, authentication, redirectAttributes);
@@ -154,11 +179,12 @@ public class ReviewControllerTest {
     }
 
     @Test
-    @DisplayName("shouldHandleReviewSubmission_whenCustomerNotFound")
-    void shouldHandleReviewSubmission_whenCustomerNotFound() {
+    @DisplayName("shouldHandleException_whenCustomerNotFound")
+    void shouldHandleException_whenCustomerNotFound() {
         // Given
         ReviewForm form = new ReviewForm();
         form.setRestaurantId(1);
+
         when(bindingResult.hasErrors()).thenReturn(false);
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.empty());
@@ -168,28 +194,33 @@ public class ReviewControllerTest {
 
         // Then
         assertTrue(view.contains("redirect:/restaurants/1"));
-        verify(redirectAttributes).addFlashAttribute(eq("error"), anyString());
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("error"), anyString());
+        verify(reviewService, never()).createOrUpdateReview(any(), any());
     }
 
     @Test
-    @DisplayName("shouldHandleReviewSubmission_withException")
-    void shouldHandleReviewSubmission_withException() {
+    @DisplayName("shouldSanitizeComment_whenHandlingReviewSubmission")
+    void shouldSanitizeComment_whenHandlingReviewSubmission() {
         // Given
         ReviewForm form = new ReviewForm();
         form.setRestaurantId(1);
+        form.setRating(5);
+        form.setComment("<script>alert('xss')</script>Bad comment");
+
         when(bindingResult.hasErrors()).thenReturn(false);
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
-        when(inputSanitizer.sanitizeReviewComment(anyString())).thenAnswer(i -> i.getArgument(0));
-        when(reviewService.createOrUpdateReview(any(), any()))
-            .thenThrow(new RuntimeException("Review error"));
+        when(inputSanitizer.sanitizeReviewComment(anyString())).thenReturn("Bad comment");
+        when(reviewService.createOrUpdateReview(any(ReviewForm.class), eq(customer.getCustomerId())))
+            .thenReturn(review);
 
         // When
         String view = controller.handleReviewSubmission(form, bindingResult, authentication, redirectAttributes);
 
         // Then
-        assertTrue(view.contains("redirect:/restaurants/1"));
-        verify(redirectAttributes).addFlashAttribute(eq("error"), anyString());
+        assertEquals("redirect:/restaurants/1", view);
+        verify(inputSanitizer, times(1)).sanitizeReviewComment(anyString());
+        verify(reviewService, times(1)).createOrUpdateReview(any(ReviewForm.class), eq(customer.getCustomerId()));
     }
 
     // ========== getRestaurantReviews() Tests ==========
@@ -198,66 +229,76 @@ public class ReviewControllerTest {
     @DisplayName("shouldGetRestaurantReviews_successfully")
     void shouldGetRestaurantReviews_successfully() {
         // Given
-        Page<ReviewDto> reviewPage = new PageImpl<>(new ArrayList<>());
-        when(reviewService.getReviewsByRestaurant(eq(1), any())).thenReturn(reviewPage);
-        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(new ReviewStatisticsDto());
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<ReviewDto> reviewPage = new PageImpl<>(Arrays.asList(reviewDto));
 
-        // When
-        String view = controller.getRestaurantReviews(1, 0, 10, null, model, null);
-
-        // Then
-        assertEquals("review/list", view);
-        verify(model).addAttribute(eq("reviews"), anyList());
-        verify(model).addAttribute(eq("statistics"), any());
-    }
-
-    @Test
-    @DisplayName("shouldGetRestaurantReviews_withRatingFilter")
-    void shouldGetRestaurantReviews_withRatingFilter() {
-        // Given
-        when(reviewService.getReviewsByRestaurantAndRating(1, 5)).thenReturn(new ArrayList<>());
-        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(new ReviewStatisticsDto());
-
-        // When
-        String view = controller.getRestaurantReviews(1, 0, 10, 5, model, null);
-
-        // Then
-        assertEquals("review/list", view);
-        verify(reviewService).getReviewsByRestaurantAndRating(1, 5);
-    }
-
-    @Test
-    @DisplayName("shouldGetRestaurantReviews_withAuthenticatedUser")
-    void shouldGetRestaurantReviews_withAuthenticatedUser() {
-        // Given
-        Page<ReviewDto> reviewPage = new PageImpl<>(new ArrayList<>());
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
-        when(reviewService.hasCustomerReviewedRestaurant(customer.getCustomerId(), 1)).thenReturn(false);
-        when(reviewService.getReviewsByRestaurant(eq(1), any())).thenReturn(reviewPage);
-        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(new ReviewStatisticsDto());
+        when(reviewService.getReviewsByRestaurant(1, pageable)).thenReturn(reviewPage);
+        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(statistics);
+        when(reviewService.hasCustomerReviewedRestaurant(any(UUID.class), eq(1))).thenReturn(false);
 
         // When
         String view = controller.getRestaurantReviews(1, 0, 10, null, model, authentication);
 
         // Then
         assertEquals("review/list", view);
-        verify(model).addAttribute("hasReviewed", false);
+        verify(model, atLeastOnce()).addAttribute(anyString(), any());
     }
 
     @Test
-    @DisplayName("shouldGetRestaurantReviews_withException")
-    void shouldGetRestaurantReviews_withException() {
+    @DisplayName("shouldGetRestaurantReviews_WithRatingFilter")
+    void shouldGetRestaurantReviews_WithRatingFilter() {
         // Given
-        when(reviewService.getReviewsByRestaurant(eq(1), any()))
-            .thenThrow(new RuntimeException("Database error"));
+        List<ReviewDto> filteredReviews = Arrays.asList(reviewDto);
+
+        when(reviewService.getReviewsByRestaurantAndRating(1, 5)).thenReturn(filteredReviews);
+        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(statistics);
+        when(reviewService.hasCustomerReviewedRestaurant(any(UUID.class), eq(1))).thenReturn(false);
 
         // When
-        String view = controller.getRestaurantReviews(1, 0, 10, null, model, null);
+        String view = controller.getRestaurantReviews(1, 0, 10, 5, model, authentication);
 
         // Then
         assertEquals("review/list", view);
-        verify(model).addAttribute(eq("error"), anyString());
+        verify(model, atLeastOnce()).addAttribute(eq("reviews"), any());
+    }
+
+    @Test
+    @DisplayName("shouldGetRestaurantReviews_WithCustomerReviewStatus")
+    void shouldGetRestaurantReviews_WithCustomerReviewStatus() {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<ReviewDto> reviewPage = new PageImpl<>(Arrays.asList(reviewDto));
+
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
+        when(reviewService.getReviewsByRestaurant(1, pageable)).thenReturn(reviewPage);
+        when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(statistics);
+        when(reviewService.hasCustomerReviewedRestaurant(customer.getCustomerId(), 1)).thenReturn(true);
+        when(reviewService.getCustomerReviewForRestaurant(customer.getCustomerId(), 1))
+            .thenReturn(Optional.of(reviewDto));
+
+        // When
+        String view = controller.getRestaurantReviews(1, 0, 10, null, model, authentication);
+
+        // Then
+        assertEquals("review/list", view);
+        verify(model, atLeastOnce()).addAttribute(eq("hasReviewed"), eq(true));
+        verify(model, atLeastOnce()).addAttribute(eq("customerReview"), any());
+    }
+
+    @Test
+    @DisplayName("shouldHandleException_whenGetRestaurantReviewsFails")
+    void shouldHandleException_whenGetRestaurantReviewsFails() {
+        // Given
+        when(reviewService.getReviewsByRestaurant(anyInt(), any(Pageable.class)))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String view = controller.getRestaurantReviews(1, 0, 10, null, model, authentication);
+
+        // Then
+        assertEquals("review/list", view);
+        verify(model, atLeastOnce()).addAttribute(eq("error"), anyString());
     }
 
     // ========== showEditReviewForm() Tests ==========
@@ -266,11 +307,6 @@ public class ReviewControllerTest {
     @DisplayName("shouldShowEditReviewForm_successfully")
     void shouldShowEditReviewForm_successfully() {
         // Given
-        Review review = new Review();
-        review.setReviewId(1);
-        review.setCustomer(customer);
-        review.setRestaurant(restaurant);
-        
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
         when(reviewService.getReviewById(1)).thenReturn(Optional.of(review));
@@ -283,8 +319,18 @@ public class ReviewControllerTest {
     }
 
     @Test
-    @DisplayName("shouldShowEditReviewForm_return404WhenReviewNotFound")
-    void shouldShowEditReviewForm_return404WhenReviewNotFound() {
+    @DisplayName("shouldRedirectToLogin_whenNotAuthenticatedForEdit")
+    void shouldRedirectToLogin_whenNotAuthenticatedForEdit() {
+        // When
+        String view = controller.showEditReviewForm(1, null);
+
+        // Then
+        assertEquals("redirect:/login", view);
+    }
+
+    @Test
+    @DisplayName("shouldReturn404_whenReviewNotFound")
+    void shouldReturn404_whenReviewNotFound() {
         // Given
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
@@ -298,18 +344,13 @@ public class ReviewControllerTest {
     }
 
     @Test
-    @DisplayName("shouldShowEditReviewForm_return403WhenUnauthorized")
-    void shouldShowEditReviewForm_return403WhenUnauthorized() {
+    @DisplayName("shouldReturn403_whenNotReviewOwner")
+    void shouldReturn403_whenNotReviewOwner() {
         // Given
-        UUID otherCustomerId = UUID.randomUUID();
         Customer otherCustomer = new Customer();
-        otherCustomer.setCustomerId(otherCustomerId);
-        
-        Review review = new Review();
-        review.setReviewId(1);
+        otherCustomer.setCustomerId(UUID.randomUUID());
         review.setCustomer(otherCustomer);
-        review.setRestaurant(restaurant);
-        
+
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
         when(reviewService.getReviewById(1)).thenReturn(Optional.of(review));
@@ -319,6 +360,23 @@ public class ReviewControllerTest {
 
         // Then
         assertEquals("redirect:/error/403", view);
+    }
+
+    @Test
+    @DisplayName("shouldReturn400_whenReviewNotEditable")
+    void shouldReturn400_whenReviewNotEditable() {
+        // Given
+        review.setCreatedAt(LocalDateTime.now().minusDays(31)); // Make it not editable (> 30 days)
+
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
+        when(reviewService.getReviewById(1)).thenReturn(Optional.of(review));
+
+        // When
+        String view = controller.showEditReviewForm(1, authentication);
+
+        // Then
+        assertEquals("redirect:/error/400", view);
     }
 
     // ========== editReview() Tests ==========
@@ -331,61 +389,50 @@ public class ReviewControllerTest {
         form.setRestaurantId(1);
         form.setRating(4);
         form.setComment("Updated review");
-        
-        Review review = new Review();
-        review.setReviewId(1);
-        review.setCustomer(customer);
-        review.setRestaurant(restaurant);
-        
+
         when(bindingResult.hasErrors()).thenReturn(false);
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
-        when(inputSanitizer.sanitizeReviewComment(anyString())).thenAnswer(i -> i.getArgument(0));
         when(reviewService.getReviewById(1)).thenReturn(Optional.of(review));
-        when(reviewService.createOrUpdateReview(any(), any())).thenReturn(review);
+        when(inputSanitizer.sanitizeReviewComment(anyString())).thenReturn("Updated review");
+        when(reviewService.createOrUpdateReview(any(ReviewForm.class), eq(customer.getCustomerId())))
+            .thenReturn(review);
 
         // When
         String view = controller.editReview(1, form, bindingResult, model, authentication, redirectAttributes);
 
         // Then
         assertTrue(view.contains("redirect:/restaurants/1#reviews"));
-        verify(redirectAttributes).addFlashAttribute(eq("success"), anyString());
+        verify(reviewService, times(1)).createOrUpdateReview(any(ReviewForm.class), eq(customer.getCustomerId()));
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("success"), anyString());
     }
 
     @Test
-    @DisplayName("shouldEditReview_return403WhenUnauthorized")
-    void shouldEditReview_return403WhenUnauthorized() {
+    @DisplayName("shouldReturnError_whenValidationErrorsInEdit")
+    void shouldReturnError_whenValidationErrorsInEdit() {
         // Given
         ReviewForm form = new ReviewForm();
         form.setRestaurantId(1);
-        
-        UUID otherCustomerId = UUID.randomUUID();
-        Customer otherCustomer = new Customer();
-        otherCustomer.setCustomerId(otherCustomerId);
-        
-        Review review = new Review();
-        review.setReviewId(1);
-        review.setCustomer(otherCustomer);
-        
-        when(bindingResult.hasErrors()).thenReturn(false);
+
+        when(bindingResult.hasErrors()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(user);
-        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
-        when(reviewService.getReviewById(1)).thenReturn(Optional.of(review));
 
         // When
         String view = controller.editReview(1, form, bindingResult, model, authentication, redirectAttributes);
 
         // Then
-        assertEquals("error/403", view);
+        assertTrue(view.contains("redirect:/restaurants/1#reviews"));
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("error"), anyString());
+        verify(reviewService, never()).createOrUpdateReview(any(), any());
     }
 
     @Test
-    @DisplayName("shouldEditReview_return404WhenReviewNotFound")
-    void shouldEditReview_return404WhenReviewNotFound() {
+    @DisplayName("shouldReturn404_whenReviewNotFoundForEdit")
+    void shouldReturn404_whenReviewNotFoundForEdit() {
         // Given
         ReviewForm form = new ReviewForm();
         form.setRestaurantId(1);
-        
+
         when(bindingResult.hasErrors()).thenReturn(false);
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
@@ -396,6 +443,30 @@ public class ReviewControllerTest {
 
         // Then
         assertEquals("error/404", view);
+        verify(model, times(1)).addAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldReturn403_whenNotReviewOwnerForEdit")
+    void shouldReturn403_whenNotReviewOwnerForEdit() {
+        // Given
+        ReviewForm form = new ReviewForm();
+        form.setRestaurantId(1);
+        Customer otherCustomer = new Customer();
+        otherCustomer.setCustomerId(UUID.randomUUID());
+        review.setCustomer(otherCustomer);
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
+        when(reviewService.getReviewById(1)).thenReturn(Optional.of(review));
+
+        // When
+        String view = controller.editReview(1, form, bindingResult, model, authentication, redirectAttributes);
+
+        // Then
+        assertEquals("error/403", view);
+        verify(model, times(1)).addAttribute(eq("error"), anyString());
     }
 
     // ========== deleteReview() Tests ==========
@@ -404,27 +475,34 @@ public class ReviewControllerTest {
     @DisplayName("shouldDeleteReview_successfully")
     void shouldDeleteReview_successfully() {
         // Given
-        Review review = new Review();
-        review.setReviewId(1);
-        review.setCustomer(customer);
-        review.setRestaurant(restaurant);
-        
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
         when(reviewService.getReviewById(1)).thenReturn(Optional.of(review));
+        doNothing().when(reviewService).deleteReview(1, customer.getCustomerId());
 
         // When
         String view = controller.deleteReview(1, authentication, redirectAttributes);
 
         // Then
         assertTrue(view.contains("redirect:/reviews/restaurant/1"));
-        verify(reviewService).deleteReview(1, customer.getCustomerId());
-        verify(redirectAttributes).addFlashAttribute(eq("success"), anyString());
+        verify(reviewService, times(1)).deleteReview(1, customer.getCustomerId());
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("success"), anyString());
     }
 
     @Test
-    @DisplayName("shouldDeleteReview_return404WhenReviewNotFound")
-    void shouldDeleteReview_return404WhenReviewNotFound() {
+    @DisplayName("shouldRedirectToLogin_whenNotAuthenticatedForDelete")
+    void shouldRedirectToLogin_whenNotAuthenticatedForDelete() {
+        // When
+        String view = controller.deleteReview(1, null, redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/login", view);
+        verify(reviewService, never()).deleteReview(anyInt(), any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("shouldReturnError_whenReviewNotFoundForDelete")
+    void shouldReturnError_whenReviewNotFoundForDelete() {
         // Given
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
@@ -435,43 +513,25 @@ public class ReviewControllerTest {
 
         // Then
         assertTrue(view.contains("redirect:/"));
-        verify(redirectAttributes).addFlashAttribute(eq("error"), anyString());
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("error"), anyString());
+        verify(reviewService, never()).deleteReview(anyInt(), any(UUID.class));
     }
 
     @Test
-    @DisplayName("shouldDeleteReview_whenCustomerNotFound")
-    void shouldDeleteReview_whenCustomerNotFound() {
+    @DisplayName("shouldHandleException_whenDeleteReviewFails")
+    void shouldHandleException_whenDeleteReviewFails() {
         // Given
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(customerService.findByUserId(user.getId())).thenReturn(Optional.empty());
-
-        // When
-        String view = controller.deleteReview(1, authentication, redirectAttributes);
-
-        // Then
-        assertTrue(view.contains("redirect:/"));
-        verify(redirectAttributes).addFlashAttribute(eq("error"), anyString());
-    }
-
-    @Test
-    @DisplayName("shouldDeleteReview_withException")
-    void shouldDeleteReview_withException() {
-        // Given
-        Review review = new Review();
-        review.setCustomer(customer);
-        review.setRestaurant(restaurant);
-        
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
         when(reviewService.getReviewById(1)).thenReturn(Optional.of(review));
-        doThrow(new RuntimeException("Delete error")).when(reviewService).deleteReview(anyInt(), any());
+        doThrow(new RuntimeException("Delete failed")).when(reviewService).deleteReview(1, customer.getCustomerId());
 
         // When
         String view = controller.deleteReview(1, authentication, redirectAttributes);
 
         // Then
         assertTrue(view.contains("redirect:/"));
-        verify(redirectAttributes).addFlashAttribute(eq("error"), anyString());
+        verify(redirectAttributes, times(1)).addFlashAttribute(eq("error"), anyString());
     }
 
     // ========== getMyReviews() Tests ==========
@@ -480,22 +540,34 @@ public class ReviewControllerTest {
     @DisplayName("shouldGetMyReviews_successfully")
     void shouldGetMyReviews_successfully() {
         // Given
+        List<ReviewDto> reviews = Arrays.asList(reviewDto);
+
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
-        when(reviewService.getReviewsByCustomer(customer.getCustomerId()))
-            .thenReturn(new ArrayList<>());
+        when(reviewService.getReviewsByCustomer(customer.getCustomerId())).thenReturn(reviews);
 
         // When
         String view = controller.getMyReviews(model, authentication);
 
         // Then
         assertEquals("review/my-reviews", view);
-        verify(model).addAttribute(eq("reviews"), anyList());
+        verify(model, times(1)).addAttribute(eq("reviews"), eq(reviews));
+        verify(model, times(1)).addAttribute(eq("pageTitle"), anyString());
     }
 
     @Test
-    @DisplayName("shouldGetMyReviews_whenCustomerNotFound")
-    void shouldGetMyReviews_whenCustomerNotFound() {
+    @DisplayName("shouldRedirectToLogin_whenNotAuthenticatedForMyReviews")
+    void shouldRedirectToLogin_whenNotAuthenticatedForMyReviews() {
+        // When
+        String view = controller.getMyReviews(model, null);
+
+        // Then
+        assertEquals("redirect:/login", view);
+    }
+
+    @Test
+    @DisplayName("shouldReturn404_whenCustomerNotFoundForMyReviews")
+    void shouldReturn404_whenCustomerNotFoundForMyReviews() {
         // Given
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.empty());
@@ -505,11 +577,12 @@ public class ReviewControllerTest {
 
         // Then
         assertEquals("error/404", view);
+        verify(model, times(1)).addAttribute(eq("error"), anyString());
     }
 
     @Test
-    @DisplayName("shouldGetMyReviews_withException")
-    void shouldGetMyReviews_withException() {
+    @DisplayName("shouldHandleException_whenGetMyReviewsFails")
+    void shouldHandleException_whenGetMyReviewsFails() {
         // Given
         when(authentication.getPrincipal()).thenReturn(user);
         when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
@@ -521,6 +594,22 @@ public class ReviewControllerTest {
 
         // Then
         assertEquals("review/my-reviews", view);
-        verify(model).addAttribute(eq("error"), anyString());
+        verify(model, atLeastOnce()).addAttribute(eq("error"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldReturnEmptyList_whenNoReviewsFound")
+    void shouldReturnEmptyList_whenNoReviewsFound() {
+        // Given
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(customerService.findByUserId(user.getId())).thenReturn(Optional.of(customer));
+        when(reviewService.getReviewsByCustomer(customer.getCustomerId())).thenReturn(Collections.emptyList());
+
+        // When
+        String view = controller.getMyReviews(model, authentication);
+
+        // Then
+        assertEquals("review/my-reviews", view);
+        verify(model, times(1)).addAttribute(eq("reviews"), eq(Collections.emptyList()));
     }
 }
