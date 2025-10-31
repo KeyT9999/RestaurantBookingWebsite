@@ -181,4 +181,191 @@ public class AuthControllerTest {
         assertEquals("redirect:/login", view);
         verify(userService, times(1)).resetPassword("valid-token", "newpassword123");
     }
+
+    // ========== Additional Comprehensive Tests ==========
+
+    @Test
+    @DisplayName("shouldRegisterUser_withPasswordMismatch")
+    void shouldRegisterUser_withPasswordMismatch() {
+        // Given
+        RegisterForm form = new RegisterForm();
+        form.setUsername("newuser");
+        form.setEmail("newuser@example.com");
+        form.setPassword("password123");
+        form.setConfirmPassword("password456");
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+
+        // When
+        String view = controller.registerUser(form, bindingResult, model, redirectAttributes);
+
+        // Then
+        assertEquals("auth/register", view);
+        verify(model).addAttribute(eq("errorMessage"), anyString());
+        verify(userService, never()).registerUser(any(RegisterForm.class));
+    }
+
+    @Test
+    @DisplayName("shouldHandleRegisterException")
+    void shouldHandleRegisterException() {
+        // Given
+        RegisterForm form = new RegisterForm();
+        form.setUsername("newuser");
+        form.setEmail("newuser@example.com");
+        form.setPassword("password123");
+        form.setConfirmPassword("password123");
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(userService.registerUser(any(RegisterForm.class)))
+            .thenThrow(new RuntimeException("Email already exists"));
+
+        // When
+        String view = controller.registerUser(form, bindingResult, model, redirectAttributes);
+
+        // Then
+        assertEquals("auth/register", view);
+        verify(model).addAttribute(eq("errorMessage"), eq("Email already exists"));
+    }
+
+    @Test
+    @DisplayName("shouldShowRegisterSuccessPage")
+    void shouldShowRegisterSuccessPage() {
+        // When
+        String view = controller.showRegisterSuccess();
+
+        // Then
+        assertEquals("auth/register-success", view);
+    }
+
+    @Test
+    @DisplayName("shouldVerifyEmail_successfully")
+    void shouldVerifyEmail_successfully() {
+        // Given
+        when(userService.verifyEmail("valid-token")).thenReturn(true);
+
+        // When
+        String view = controller.verifyEmail("valid-token", redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/login", view);
+        verify(redirectAttributes).addFlashAttribute(eq("successMessage"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldVerifyEmail_withInvalidToken")
+    void shouldVerifyEmail_withInvalidToken() {
+        // Given
+        when(userService.verifyEmail("invalid-token")).thenReturn(false);
+
+        // When
+        String view = controller.verifyEmail("invalid-token", redirectAttributes);
+
+        // Then
+        assertEquals("redirect:/auth/verify-result", view);
+        verify(redirectAttributes).addFlashAttribute(eq("errorMessage"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldShowVerifyResultPage")
+    void shouldShowVerifyResultPage() {
+        // When
+        String view = controller.showVerifyResult();
+
+        // Then
+        assertEquals("auth/verify-result", view);
+    }
+
+    @Test
+    @DisplayName("shouldProcessForgotPassword_withValidationErrors")
+    void shouldProcessForgotPassword_withValidationErrors() {
+        // Given
+        ForgotPasswordForm form = new ForgotPasswordForm();
+        when(bindingResult.hasErrors()).thenReturn(true);
+
+        // When
+        String view = controller.processForgotPassword(form, bindingResult, model, redirectAttributes);
+
+        // Then
+        assertEquals("auth/forgot-password", view);
+        verify(userService, never()).sendPasswordResetToken(anyString());
+    }
+
+    @Test
+    @DisplayName("shouldProcessForgotPassword_withException")
+    void shouldProcessForgotPassword_withException() {
+        // Given
+        ForgotPasswordForm form = new ForgotPasswordForm();
+        form.setEmail("test@example.com");
+        when(bindingResult.hasErrors()).thenReturn(false);
+        doThrow(new RuntimeException("Email service error"))
+            .when(userService).sendPasswordResetToken(anyString());
+
+        // When
+        String view = controller.processForgotPassword(form, bindingResult, model, redirectAttributes);
+
+        // Then
+        assertEquals("auth/forgot-password", view);
+        verify(model).addAttribute(eq("errorMessage"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldResetPassword_withPasswordMismatch")
+    void shouldResetPassword_withPasswordMismatch() {
+        // Given
+        ResetPasswordForm form = new ResetPasswordForm();
+        form.setToken("valid-token");
+        form.setNewPassword("newpassword123");
+        form.setConfirmNewPassword("differentpassword");
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+
+        // When
+        String view = controller.processResetPassword(form, bindingResult, model, redirectAttributes);
+
+        // Then
+        assertEquals("auth/reset-password", view);
+        verify(model).addAttribute(eq("errorMessage"), anyString());
+        verify(userService, never()).resetPassword(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldResetPassword_withInvalidToken")
+    void shouldResetPassword_withInvalidToken() {
+        // Given
+        ResetPasswordForm form = new ResetPasswordForm();
+        form.setToken("invalid-token");
+        form.setNewPassword("newpassword123");
+        form.setConfirmNewPassword("newpassword123");
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(userService.resetPassword("invalid-token", "newpassword123")).thenReturn(false);
+
+        // When
+        String view = controller.processResetPassword(form, bindingResult, model, redirectAttributes);
+
+        // Then
+        assertEquals("auth/reset-password", view);
+        verify(model).addAttribute(eq("errorMessage"), anyString());
+    }
+
+    @Test
+    @DisplayName("shouldResetPassword_withException")
+    void shouldResetPassword_withException() {
+        // Given
+        ResetPasswordForm form = new ResetPasswordForm();
+        form.setToken("valid-token");
+        form.setNewPassword("newpassword123");
+        form.setConfirmNewPassword("newpassword123");
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(userService.resetPassword(anyString(), anyString()))
+            .thenThrow(new RuntimeException("Database error"));
+
+        // When
+        String view = controller.processResetPassword(form, bindingResult, model, redirectAttributes);
+
+        // Then
+        assertEquals("auth/reset-password", view);
+        verify(model).addAttribute(eq("errorMessage"), anyString());
+    }
 }
