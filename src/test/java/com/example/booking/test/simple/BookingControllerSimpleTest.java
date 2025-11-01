@@ -125,7 +125,7 @@ class BookingControllerSimpleTest {
         when(restaurantService.findAllRestaurants()).thenReturn(restaurants);
 
         // When
-        String result = bookingController.showBookingForm(null, null, null, null, model, authentication);
+        String result = bookingController.showBookingForm(null, null, null, null, null, null, null, model, authentication);
 
         // Then
         assertEquals("booking/form", result);
@@ -141,7 +141,7 @@ class BookingControllerSimpleTest {
         when(restaurantService.findAllRestaurants()).thenReturn(List.of());
 
         // When
-        String result = bookingController.showBookingForm(null, null, null, null, model, authentication);
+        String result = bookingController.showBookingForm(null, null, null, null, null, null, null, model, authentication);
 
         // Then
         assertEquals("booking/form", result);
