@@ -333,7 +333,7 @@ html {
 }
 
 .room-unread {
-    background: #000000;
+    background: #FF0000;
     color: #FFFFFF;
     border-radius: 10px;
     padding: 2px 6px;
@@ -341,6 +341,7 @@ html {
     font-weight: 600;
     min-width: 18px;
     text-align: center;
+    display: none;
 }
 
 .role-badge {

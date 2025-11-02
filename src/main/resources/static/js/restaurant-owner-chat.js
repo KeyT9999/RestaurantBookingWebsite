@@ -236,8 +236,11 @@ class RestaurantOwnerChatManager {
     // Load messages
     await this.loadMessages(roomId);
 
-    // Mark messages as read
+    // Mark messages as read and clear badge immediately
     await this.markMessagesAsRead(roomId);
+    
+    // Clear badge immediately in UI (don't wait for server response)
+    this.clearRoomUnreadBadge(roomId);
 
     // Join room via WebSocket
     this.joinRoom(roomId);
@@ -508,6 +511,59 @@ class RestaurantOwnerChatManager {
            data.senderId === this.currentParticipantId?.toString())) {
         this.showOnlineStatus();
       }
+    } else {
+      // Message from another room - update room info, move to top, and show notification
+      const roomElement = document.querySelector(`[data-room-id="${data.roomId}"]`);
+      if (roomElement) {
+        // Update last message content
+        const lastMessageElement = roomElement.querySelector(".room-last-message");
+        if (lastMessageElement) {
+          lastMessageElement.textContent = data.content || "Tin nhắn mới";
+        }
+        
+        // Update timestamp
+        const timeElement = roomElement.querySelector(".room-time");
+        if (timeElement && data.sentAt) {
+          timeElement.textContent = this.formatTime(data.sentAt);
+        }
+        
+        // Update unread count - increment if exists, otherwise set to 1
+        const unreadElement = roomElement.querySelector(".room-unread");
+        const roomMeta = roomElement.querySelector(".room-meta");
+        
+        if (unreadElement) {
+          const currentCount = parseInt(unreadElement.textContent) || 0;
+          unreadElement.textContent = currentCount + 1;
+          unreadElement.style.display = "flex";
+        } else if (roomMeta) {
+          // Create unread badge if it doesn't exist
+          const unreadBadge = document.createElement("span");
+          unreadBadge.className = "room-unread";
+          unreadBadge.textContent = "1";
+          unreadBadge.style.display = "flex";
+          roomMeta.appendChild(unreadBadge);
+        }
+        
+        // Move room to top of list
+        const roomsList = document.getElementById("chat-rooms-list");
+        if (roomsList && roomElement.parentNode === roomsList) {
+          roomsList.insertBefore(roomElement, roomsList.firstChild);
+        }
+        
+        // Update total unread badge
+        this.updateTotalUnreadBadge();
+        
+        // Show notification
+        this.showNotification(data.senderName || "Có người", data.roomId);
+      } else {
+        // Room not in list yet - need to refresh list to get it
+        // But first check if it belongs to current restaurant
+        const currentRestaurantId = this.getCurrentRestaurantId();
+        if (!currentRestaurantId || (data.restaurantId && data.restaurantId.toString() === currentRestaurantId.toString())) {
+          // Refresh room list to get the new room
+          this.updateRoomList();
+        }
+      }
     }
 
     // Check if message belongs to current restaurant before updating room list
@@ -534,7 +590,7 @@ class RestaurantOwnerChatManager {
       const messageRestaurantIdStr = roomRestaurantId.toString();
       
       if (currentRestaurantIdStr === messageRestaurantIdStr) {
-        // Message is from current restaurant, update room list
+        // Message is from current restaurant, update room list (will be sorted by lastMessageAt)
         this.updateRoomList();
       }
       // Otherwise, ignore - message is for another restaurant
@@ -662,9 +718,41 @@ class RestaurantOwnerChatManager {
   // Mark messages as read
   async markMessagesAsRead(roomId) {
     try {
-      await fetch(`/api/chat/rooms/${roomId}/read`, { method: "POST" });
+      const response = await fetch(`/api/chat/rooms/${roomId}/read`, { method: "POST" });
+      if (response.ok) {
+        // Refresh room list to get updated unread counts from server
+        // This ensures badge is cleared on server-side
+        setTimeout(() => {
+          this.updateRoomList();
+        }, 300);
+      }
     } catch (error) {
       console.error("Failed to mark messages as read:", error);
+    }
+  }
+  
+  // Clear unread badge for a room
+  clearRoomUnreadBadge(roomId) {
+    const roomElement = document.querySelector(`[data-room-id="${roomId}"]`);
+    if (roomElement) {
+      const unreadElement = roomElement.querySelector(".room-unread");
+      if (unreadElement) {
+        unreadElement.textContent = "0";
+        unreadElement.style.display = "none";
+      } else {
+        // Ensure unread element exists but hidden
+        const roomMeta = roomElement.querySelector(".room-meta");
+        if (roomMeta) {
+          const unreadBadge = document.createElement("span");
+          unreadBadge.className = "room-unread";
+          unreadBadge.textContent = "0";
+          unreadBadge.style.display = "none";
+          roomMeta.appendChild(unreadBadge);
+        }
+      }
+      
+      // Update total unread badge
+      this.updateTotalUnreadBadge();
     }
   }
 
@@ -683,8 +771,23 @@ class RestaurantOwnerChatManager {
       const response = await fetch(url);
       if (response.ok) {
         const rooms = await response.json();
+        
+        // If current room is open, force its unread count to 0
+        if (this.currentRoomId) {
+          rooms.forEach(room => {
+            if (room.roomId === this.currentRoomId) {
+              room.unreadCount = 0;
+            }
+          });
+        }
+        
         this.updateRoomsDisplay(rooms);
         this.updateTotalUnreadBadge(rooms);
+        
+        // After updating room list, ensure current room has no unread badge
+        if (this.currentRoomId) {
+          this.clearRoomUnreadBadge(this.currentRoomId);
+        }
       }
     } catch (error) {
       console.error("Failed to update room list:", error);
@@ -706,7 +809,14 @@ class RestaurantOwnerChatManager {
       return;
     }
 
-    rooms.forEach((room) => {
+    // Sort rooms by lastMessageAt (newest first)
+    const sortedRooms = [...rooms].sort((a, b) => {
+      const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(a.createdAt || 0);
+      const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(b.createdAt || 0);
+      return dateB - dateA; // Descending order (newest first)
+    });
+
+    sortedRooms.forEach((room) => {
       const roomElement = this.createRoomElement(room);
       roomsList.appendChild(roomElement);
     });
@@ -768,8 +878,8 @@ class RestaurantOwnerChatManager {
                     )}</span>
                     ${
                       room.unreadCount > 0
-                        ? `<span class="room-unread">${room.unreadCount}</span>`
-                        : ""
+                        ? `<span class="room-unread" style="display: flex;">${room.unreadCount}</span>`
+                        : `<span class="room-unread" style="display: none;">0</span>`
                     }
                 </div>
             </div>
@@ -780,14 +890,29 @@ class RestaurantOwnerChatManager {
 
   // Update total unread badge
   updateTotalUnreadBadge(rooms) {
-    const totalUnread = rooms.reduce(
-      (sum, room) => sum + (room.unreadCount || 0),
-      0
-    );
+    let totalUnread = 0;
+    
+    if (rooms && Array.isArray(rooms)) {
+      // Calculate from rooms array if provided
+      totalUnread = rooms.reduce(
+        (sum, room) => sum + (room.unreadCount || 0),
+        0
+      );
+    } else {
+      // Calculate from DOM elements if rooms not provided
+      const roomElements = document.querySelectorAll(".chat-room-item .room-unread");
+      roomElements.forEach((unreadElement) => {
+        if (unreadElement.style.display !== "none") {
+          const count = parseInt(unreadElement.textContent) || 0;
+          totalUnread += count;
+        }
+      });
+    }
+    
     const badge = document.getElementById("total-unread-badge");
+    const totalUnreadCount = document.getElementById("total-unread-count");
 
     if (totalUnread > 0) {
-      const totalUnreadCount = document.getElementById("total-unread-count");
       if (totalUnreadCount) totalUnreadCount.textContent = totalUnread;
       if (badge) badge.style.display = "flex";
     } else {
@@ -1109,6 +1234,22 @@ function openChatRoom(roomId) {
 function handleUnreadCountUpdate(data) {
   console.log("Received unread count update:", data);
 
+  // Don't update if this is the current room (user is viewing it)
+  if (data.roomId === chatManager?.currentRoomId) {
+    // Current room should have 0 unread - force clear badge
+    const roomItem = document.querySelector(`[data-room-id="${data.roomId}"]`);
+    if (roomItem) {
+      const unreadElement = roomItem.querySelector(".room-unread");
+      if (unreadElement) {
+        unreadElement.textContent = "0";
+        unreadElement.style.display = "none";
+      }
+    }
+    // Still update total count
+    updateTotalUnreadCount(data.totalUnreadCount);
+    return;
+  }
+
   // Update room-specific unread count
   const roomItem = document.querySelector(`[data-room-id="${data.roomId}"]`);
   if (roomItem) {
@@ -1124,11 +1265,13 @@ function handleUnreadCountUpdate(data) {
           const unreadBadge = document.createElement("span");
           unreadBadge.className = "room-unread";
           unreadBadge.textContent = data.roomUnreadCount;
+          unreadBadge.style.display = "flex";
           roomMeta.appendChild(unreadBadge);
         }
       }
     } else {
       if (unreadElement) {
+        unreadElement.textContent = "0";
         unreadElement.style.display = "none";
       }
     }
@@ -1138,7 +1281,7 @@ function handleUnreadCountUpdate(data) {
   updateTotalUnreadCount(data.totalUnreadCount);
 
   // Show notification if not in current room
-  if (data.roomId !== chatManager.currentRoomId) {
+  if (data.roomId !== chatManager?.currentRoomId) {
     showNotification(data.roomId, data.roomUnreadCount);
   }
 }
