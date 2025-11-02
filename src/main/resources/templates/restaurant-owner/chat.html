@@ -5,11 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat - Restaurant Owner</title>
     
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
+    <!-- Custom Chat CSS -->
     <link th:href="@{/css/restaurant-owner-chat.css}" rel="stylesheet">
     <style>
         .search-box .input-group-text {
@@ -25,17 +30,95 @@
             border-color: #ffc107;
             box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
         }
+        
+        .chat-container {
+            height: calc(100vh - 80px);
+            margin-top: 0;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div th:replace="fragments/header :: site-header"></div>
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+                
+                <!-- Restaurant Selector -->
+                <div class="restaurant-selector" th:if="${restaurants != null and !restaurants.empty}">
+                    <div class="restaurant-dropdown" onclick="toggleRestaurantMenu()">
+                        <div class="restaurant-info">
+                            <div class="restaurant-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="restaurant-details">
+                                <h4 th:text="${currentRestaurant != null ? currentRestaurant.restaurantName : 'Chọn nhà hàng'}">Nhà hàng mặc định</h4>
+                                <p th:text="${currentRestaurant != null ? currentRestaurant.address : 'Địa chỉ nhà hàng'}">Địa chỉ nhà hàng</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    
+                    <div class="restaurant-menu" id="restaurantMenu">
+                        <div th:each="restaurant : ${restaurants}" 
+                             class="restaurant-item" 
+                             th:classappend="${restaurant.restaurantId == restaurantId ? 'active' : ''}"
+                             th:onclick="'selectRestaurant(' + ${restaurant.restaurantId} + ')'">
+                            <div class="restaurant-info">
+                                <div class="restaurant-icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="restaurant-details">
+                                    <h4 th:text="${restaurant.restaurantName}">Tên nhà hàng</h4>
+                                    <p th:text="${restaurant.address}">Địa chỉ</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
+                </div>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
     
     <!-- Main Content -->
-    <div class="container-fluid chat-container">
-        <div class="row h-100">
-            <!-- Sidebar - Chat Rooms List -->
-            <div class="col-md-4 col-lg-3 chat-sidebar" id="chat-sidebar">
+    <div class="chat-container">
+        <!-- Sidebar - Chat Rooms List -->
+        <div class="chat-sidebar" id="chat-sidebar">
                 <div class="chat-sidebar-header">
                     <h5 class="mb-0">
                         <i class="fas fa-comments text-gold"></i>
@@ -46,30 +129,8 @@
                     </div>
                 </div>
                 
-                <!-- Available Admins Section -->
-                <div class="chat-admin-section mb-3">
-                    <h6 class="admin-section-title">
-                        <i class="fas fa-user-shield text-gold"></i>
-                        Admin có sẵn
-                    </h6>
-                    <div class="admin-list" id="admin-list">
-                        <!-- Admin list will be loaded here -->
-                        <div class="text-center text-muted">
-                            <div class="spinner-border spinner-border-sm text-gold" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <small>Đang tải...</small>
-                        </div>
-                    </div>
-                </div>
-                
                 <!-- Chat Rooms Section -->
                 <div class="chat-rooms-section">
-                    <h6 class="rooms-section-title">
-                        <i class="fas fa-comments text-gold"></i>
-                        Cuộc trò chuyện
-                    </h6>
-                    
                     <!-- Search Box -->
                     <div class="search-box mb-3">
                         <div class="input-group">
@@ -86,8 +147,15 @@
                     <!-- Dynamic chat rooms will be loaded here -->
                     <div th:each="room : ${chatRooms}" class="chat-room-item" th:data-room-id="${room.roomId}">
                         <div class="room-avatar">
-                            <i class="fas fa-user" th:if="${room.participantRole == 'CUSTOMER'}"></i>
-                            <i class="fas fa-user-shield" th:if="${room.participantRole == 'ADMIN'}"></i>
+                            <img th:if="${room.participantAvatarUrl != null and room.participantAvatarUrl != ''}" 
+                                 th:src="${room.participantAvatarUrl}" 
+                                 th:alt="${room.participantName}"
+                                 class="avatar-image"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="avatar-fallback" th:attr="style=${room.participantAvatarUrl != null and room.participantAvatarUrl != ''} ? 'display:none;' : ''">
+                                <i class="fas fa-user" th:if="${room.participantRole == 'CUSTOMER'}"></i>
+                                <i class="fas fa-user-shield" th:if="${room.participantRole == 'ADMIN'}"></i>
+                            </div>
                         </div>
                         <div class="room-info">
                             <div class="room-name">
@@ -96,7 +164,6 @@
                                     <span th:text="${room.participantRole == 'ADMIN'} ? 'Admin' : 'Khách hàng'">Role</span>
                                 </span>
                             </div>
-                            <div class="room-restaurant" th:text="${room.restaurantName}">Restaurant Name</div>
                             <div class="room-last-message" th:text="${room.lastMessage ?: 'Chưa có tin nhắn'}">Last message</div>
                             <div class="room-meta">
                                 <span class="room-time" th:text="${#temporals.format(room.lastMessageAt, 'HH:mm')}">Time</span>
@@ -112,17 +179,35 @@
                     </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Main Chat Area -->
-            <div class="col-md-8 col-lg-9 chat-main">
+                
+                <!-- Available Admins Section - Moved to bottom -->
+                <div class="chat-admin-section">
+                    <h6 class="admin-section-title">
+                        <i class="fas fa-user-shield text-gold"></i>
+                        Admin có sẵn
+                    </h6>
+                    <div class="admin-list" id="admin-list">
+                        <!-- Admin list will be loaded here -->
+                        <div class="text-center text-muted">
+                            <div class="spinner-border spinner-border-sm text-gold" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <small>Đang tải...</small>
+                        </div>
+                    </div>
+                </div>
+        </div>
+        
+        <!-- Main Chat Area -->
+        <div class="chat-main">
                 <div class="chat-main-content">
                     <!-- Welcome Screen -->
                     <div id="welcome-screen" class="welcome-screen">
                         <div class="welcome-content">
                             <i class="fas fa-comments text-gold"></i>
                             <h4>Chào mừng đến với Chat</h4>
-                            <p>Chọn một cuộc trò chuyện để bắt đầu</p>
+                            <p th:if="${currentRestaurant != null}" th:text="'Chọn một cuộc trò chuyện của ' + ${currentRestaurant.restaurantName} + ' để bắt đầu'">Chọn một cuộc trò chuyện để bắt đầu</p>
+                            <p th:if="${currentRestaurant == null}">Chọn một cuộc trò chuyện để bắt đầu</p>
                         </div>
                     </div>
                     
@@ -135,11 +220,7 @@
                                     <i class="fas fa-user" id="participant-icon"></i>
                                     <span id="participant-name">Participant Name</span>
                                 </div>
-                                <div class="chat-restaurant">
-                                    <i class="fas fa-store"></i>
-                                    <span id="restaurant-name">Restaurant Name</span>
-                                </div>
-                                <div class="chat-status">
+                                <div class="chat-status" id="chat-status" style="display: none;">
                                     <span class="status-dot"></span>
                                     <span>Online</span>
                                 </div>
@@ -181,7 +262,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     </div>
     
@@ -223,14 +303,9 @@
             <div class="admin-info">
                 <div class="admin-name"></div>
                 <div class="admin-email"></div>
-                <div class="admin-restaurant-select">
-                    <select class="form-select form-select-sm restaurant-select">
-                        <option value="">Chọn nhà hàng...</option>
-                    </select>
-                </div>
             </div>
             <div class="admin-actions">
-                <button class="btn btn-gold btn-sm start-chat-btn" disabled>
+                <button class="btn btn-gold btn-sm start-chat-btn">
                     <i class="fas fa-comments"></i>
                     Chat
                 </button>
@@ -238,156 +313,66 @@
         </div>
     </template>
     
+    <!-- Hidden restaurant ID from URL -->
+    <input type="hidden" id="current-restaurant-id" th:value="${restaurantId}">
+    
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <script th:src="@{/js/restaurant-owner-chat.js}"></script>
     
-    <!-- Debug auto-select data -->
+    <!-- Restaurant Selector Script -->
     <script>
-        console.log('🔍 All restaurants:', /*[[${restaurants}]]*/ null);
-        console.log('🔍 Restaurants count:', /*[[${restaurants?.size()}]]*/ null);
-        console.log('🔍 Auto-select restaurant:', /*[[${autoSelectRestaurant}]]*/ null);
-        console.log('🔍 Auto-select restaurant ID:', /*[[${autoSelectRestaurant?.restaurantId}]]*/ null);
-        console.log('🔍 Auto-select restaurant Name:', /*[[${autoSelectRestaurant?.restaurantName}]]*/ null);
-    </script>
-    
-    <!-- Global auto-select function with Promise -->
-    <script th:if="${autoSelectRestaurant != null}">
-        // Promise-based auto-select function
-        window.autoSelectRestaurantPromise = function() {
-            return new Promise((resolve, reject) => {
-                const autoSelectRestaurantId = /*[[${autoSelectRestaurant?.restaurantId}]]*/ null;
-                const autoSelectRestaurantName = /*[[${autoSelectRestaurant?.restaurantName}]]*/ null;
-                
-                console.log('🔍 Debug auto-select data:', {
-                    autoSelectRestaurantId,
-                    autoSelectRestaurantName,
-                    autoSelectRestaurant: /*[[${autoSelectRestaurant}]]*/ null
-                });
-                
-                if (!autoSelectRestaurantId || !autoSelectRestaurantName) {
-                    console.log('❌ Auto-select data missing:', {
-                        id: autoSelectRestaurantId,
-                        name: autoSelectRestaurantName
-                    });
-                    reject('Auto-select restaurant data not available');
-                    return;
-                }
-                
-                console.log('🔄 Promise-based auto-select triggered for:', autoSelectRestaurantName, 'ID:', autoSelectRestaurantId);
-                
-                // Function to check and auto-select
-                function checkAndSelect() {
-                    const restaurantSelects = document.querySelectorAll('.restaurant-select');
-                    console.log('Found', restaurantSelects.length, 'restaurant selects');
-                    
-                    if (restaurantSelects.length === 0) {
-                        console.log('⏳ No restaurant selects found yet, retrying...');
-                        return false;
-                    }
-                    
-                    let success = false;
-                    restaurantSelects.forEach((select, index) => {
-                        if (select && select.options && select.options.length > 1) {
-                            console.log('Processing select', index, 'with', select.options.length, 'options');
-                            
-                            const option = Array.from(select.options).find(opt => 
-                                opt.value == autoSelectRestaurantId
-                            );
-                            
-                            if (option) {
-                                select.value = autoSelectRestaurantId;
-                                select.dispatchEvent(new Event('change'));
-                                console.log('✅ Auto-selected restaurant in dropdown:', autoSelectRestaurantName);
-                                
-                                // Enable chat buttons
-                                const chatButtons = document.querySelectorAll('.start-chat-btn');
-                                chatButtons.forEach(btn => {
-                                    if (btn) {
-                                        btn.disabled = false;
-                                        console.log('✅ Enabled chat button');
-                                    }
-                                });
-                                success = true;
-                            } else {
-                                console.log('❌ Restaurant option not found in select', index);
-                                console.log('Available options:', Array.from(select.options).map(opt => opt.value + ':' + opt.text));
-                            }
-                        } else {
-                            console.log('⏳ Select', index, 'not ready yet (options:', select?.options?.length || 0, ')');
-                        }
-                    });
-                    
-                    return success;
-                }
-                
-                // Try immediately
-                if (checkAndSelect()) {
-                    resolve('Restaurant auto-selected successfully');
-                    return;
-                }
-                
-                // Retry with intervals
-                let attempts = 0;
-                const maxAttempts = 10;
-                const interval = 500; // 500ms
-                
-                const retryInterval = setInterval(() => {
-                    attempts++;
-                    console.log(`🔄 Auto-select attempt ${attempts}/${maxAttempts}`);
-                    
-                    if (checkAndSelect()) {
-                        clearInterval(retryInterval);
-                        resolve('Restaurant auto-selected successfully');
-                    } else if (attempts >= maxAttempts) {
-                        clearInterval(retryInterval);
-                        reject('Failed to auto-select restaurant after maximum attempts');
-                    }
-                }, interval);
-            });
-        };
-        
-        // Legacy function for backward compatibility
-        window.autoSelectRestaurant = function() {
-            window.autoSelectRestaurantPromise().catch(error => {
-                console.error('Auto-select failed:', error);
-            });
-        };
-        
-        // Hook into admin loading completion
-        window.onAdminsLoaded = function() {
-            console.log('📞 Admins loaded callback triggered, attempting auto-select...');
-            window.autoSelectRestaurantPromise()
-                .then(result => {
-                    console.log('✅ Auto-select after admin load completed:', result);
-                })
-                .catch(error => {
-                    console.error('❌ Auto-select after admin load failed:', error);
-                });
-        };
-    </script>
-    
-    <!-- Auto-select restaurant if only one available -->
-    <script th:if="${autoSelectRestaurant != null}">
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 DOM loaded, starting Promise-based auto-select...');
+        // Restaurant Selector - From Dashboard
+        function toggleRestaurantMenu() {
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
             
-            // Use Promise-based auto-select
-            window.autoSelectRestaurantPromise()
-                .then(result => {
-                    console.log('✅ Auto-select completed:', result);
-                })
-                .catch(error => {
-                    console.error('❌ Auto-select failed:', error);
-                    
-                    // Fallback: try legacy method
-                    console.log('🔄 Trying fallback auto-select method...');
-                    setTimeout(() => {
-                        window.autoSelectRestaurant();
-                    }, 2000);
-                });
+            menu.classList.toggle('show');
+            dropdown.classList.toggle('active');
+        }
+
+        function selectRestaurant(restaurantId) {
+            // Update UI to show selected restaurant immediately
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            const selectedItem = event.target.closest('.restaurant-item');
+            
+            // Get restaurant info from selected item
+            const restaurantName = selectedItem.querySelector('h4').textContent;
+            const restaurantAddress = selectedItem.querySelector('p').textContent;
+            
+            // Update dropdown display
+            const dropdownInfo = dropdown.querySelector('.restaurant-details');
+            dropdownInfo.querySelector('h4').textContent = restaurantName;
+            dropdownInfo.querySelector('p').textContent = restaurantAddress;
+            
+            // Remove active class from all items
+            document.querySelectorAll('.restaurant-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to selected item
+            selectedItem.classList.add('active');
+            
+            // Close menu
+            menu.classList.remove('show');
+            dropdown.classList.remove('active');
+            
+            // Reload page with selected restaurant
+            window.location.href = '/restaurant-owner/chat?restaurantId=' + restaurantId;
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const selector = document.querySelector('.restaurant-selector');
+            const menu = document.getElementById('restaurantMenu');
+            
+            if (selector && menu && !selector.contains(event.target)) {
+                menu.classList.remove('show');
+                document.querySelector('.restaurant-dropdown')?.classList.remove('active');
+            }
         });
     </script>
     

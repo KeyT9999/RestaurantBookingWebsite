@@ -17,6 +17,7 @@ public class ChatRoomDto {
     private LocalDateTime lastMessageAt;
     private Long unreadCount;
     private Boolean isActive;
+    private String participantAvatarUrl;
     
     // Constructors
     public ChatRoomDto() {}
@@ -24,6 +25,14 @@ public class ChatRoomDto {
     public ChatRoomDto(String roomId, UUID participantId, String participantName, 
                       String participantRole, Integer restaurantId, String restaurantName,
                       String lastMessage, LocalDateTime lastMessageAt, Long unreadCount, Boolean isActive) {
+        this(roomId, participantId, participantName, participantRole, restaurantId, restaurantName,
+             lastMessage, lastMessageAt, unreadCount, isActive, null);
+    }
+    
+    public ChatRoomDto(String roomId, UUID participantId, String participantName, 
+                      String participantRole, Integer restaurantId, String restaurantName,
+                      String lastMessage, LocalDateTime lastMessageAt, Long unreadCount, Boolean isActive,
+                      String participantAvatarUrl) {
         this.roomId = roomId;
         this.participantId = participantId;
         this.participantName = participantName;
@@ -34,6 +43,7 @@ public class ChatRoomDto {
         this.lastMessageAt = lastMessageAt;
         this.unreadCount = unreadCount;
         this.isActive = isActive;
+        this.participantAvatarUrl = participantAvatarUrl;
     }
     
     // Getters and Setters
@@ -115,5 +125,13 @@ public class ChatRoomDto {
     
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+    
+    public String getParticipantAvatarUrl() {
+        return participantAvatarUrl;
+    }
+    
+    public void setParticipantAvatarUrl(String participantAvatarUrl) {
+        this.participantAvatarUrl = participantAvatarUrl;
     }
 }
