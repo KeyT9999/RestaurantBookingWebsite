@@ -603,6 +603,7 @@ public class ChatService {
         UUID participantId;
         String participantName;
         String participantRole;
+        String participantAvatarUrl = null;
         
         if (room.isCustomerRestaurantChat()) {
             participantId = room.getCustomer() != null ? room.getCustomer().getUser().getId() : null;
@@ -626,6 +627,9 @@ public class ChatService {
                 if (participantName == null || participantName.trim().isEmpty()) {
                     participantName = "Unknown Customer";
                 }
+                
+                // Get avatar URL from user
+                participantAvatarUrl = room.getCustomer().getUser().getProfileImageUrl();
             } else {
                 participantName = "Unknown Customer";
             }
@@ -640,6 +644,9 @@ public class ChatService {
                 if (participantName == null || participantName.trim().isEmpty()) {
                     participantName = "Unknown Admin";
                 }
+                
+                // Get avatar URL from admin (admin is User directly)
+                participantAvatarUrl = room.getAdmin().getProfileImageUrl();
             } else {
                 participantName = "Unknown Admin";
             }
@@ -659,8 +666,9 @@ public class ChatService {
             room.getRestaurant() != null ? room.getRestaurant().getRestaurantName() : "Unknown Restaurant",
             lastMessageContent,
             lastMessageAt,
-                unreadCount,
-            room.getIsActive()
+            unreadCount,
+            room.getIsActive(),
+            participantAvatarUrl
         );
     }
     

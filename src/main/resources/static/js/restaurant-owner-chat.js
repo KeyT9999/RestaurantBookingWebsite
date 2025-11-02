@@ -8,11 +8,14 @@ class RestaurantOwnerChatManager {
     this.socket = null;
     this.stompClient = null;
     this.currentRoomId = null;
+    this.currentParticipantId = null;
+    this.typingSubscription = null;
     this.currentUserId = null;
     this.userRole = null;
     this.isConnected = false;
     this.typingTimer = null;
     this.reconnectAttempts = 0;
+    this.onlineStatusTimer = null;
     
     // Infinite scroll properties
     this.currentPage = 0;
@@ -90,11 +93,8 @@ class RestaurantOwnerChatManager {
       this.handleIncomingMessage(data);
     });
 
-    // Subscribe to typing indicators
-    this.stompClient.subscribe("/topic/room/*/typing", (message) => {
-      const data = JSON.parse(message.body);
-      this.handleTypingIndicator(data);
-    });
+    // Subscribe to typing indicators - need to subscribe to specific room
+    // Will be subscribed when opening a room
 
     // Subscribe to user-specific errors
     this.stompClient.subscribe("/user/queue/errors", (message) => {
@@ -184,7 +184,24 @@ class RestaurantOwnerChatManager {
 
   // Open chat room
   async openChatRoom(roomId) {
+    // Unsubscribe from previous room's typing indicator
+    if (this.typingSubscription) {
+      this.typingSubscription.unsubscribe();
+      this.typingSubscription = null;
+    }
+    
+    // Hide online status when switching rooms
+    this.hideOnlineStatus();
+    
     this.currentRoomId = roomId;
+
+    // Find room data to get participantId
+    const roomElement = document.querySelector(`[data-room-id="${roomId}"]`);
+    if (roomElement) {
+      // Try to get participantId from room data attribute
+      const participantId = roomElement.getAttribute("data-participant-id");
+      this.currentParticipantId = participantId || null;
+    }
 
     // Update active room
     document.querySelectorAll(".chat-room-item").forEach((item) => {
@@ -224,6 +241,17 @@ class RestaurantOwnerChatManager {
 
     // Join room via WebSocket
     this.joinRoom(roomId);
+    
+    // Subscribe to typing indicator for this specific room
+    if (this.isConnected && this.stompClient && roomId) {
+      this.typingSubscription = this.stompClient.subscribe(
+        `/topic/room/${roomId}/typing`,
+        (message) => {
+          const data = JSON.parse(message.body);
+          this.handleTypingIndicator(data, roomId);
+        }
+      );
+    }
 
     // Update room info
     this.updateRoomInfo(roomId);
@@ -471,23 +499,106 @@ class RestaurantOwnerChatManager {
       const messageElement = this.createMessageElement(data);
       document.getElementById("messages-container").appendChild(messageElement);
       this.scrollToBottom();
+      
+      // Show online status when receiving message from participant (not from self)
+      if (data.senderId !== this.currentUserId && 
+          data.senderId !== this.currentUserId?.toString() &&
+          (this.currentParticipantId === null || 
+           data.senderId === this.currentParticipantId || 
+           data.senderId === this.currentParticipantId?.toString())) {
+        this.showOnlineStatus();
+      }
     }
 
-    // Update rooms list
-    this.updateRoomList();
+    // Check if message belongs to current restaurant before updating room list
+    const currentRestaurantId = this.getCurrentRestaurantId();
+    
+    // Find room element to check its restaurantId
+    const roomElement = document.querySelector(`[data-room-id="${data.roomId}"]`);
+    let roomRestaurantId = null;
+    
+    if (roomElement) {
+      // Get restaurantId from room element
+      roomRestaurantId = roomElement.getAttribute("data-restaurant-id");
+    }
+    
+    // If we have restaurantId in message data, use it as fallback
+    if (!roomRestaurantId && data.restaurantId) {
+      roomRestaurantId = data.restaurantId.toString();
+    }
+    
+    // Only update room list if message is from current restaurant
+    if (currentRestaurantId && roomRestaurantId) {
+      // Compare restaurant IDs
+      const currentRestaurantIdStr = currentRestaurantId.toString();
+      const messageRestaurantIdStr = roomRestaurantId.toString();
+      
+      if (currentRestaurantIdStr === messageRestaurantIdStr) {
+        // Message is from current restaurant, update room list
+        this.updateRoomList();
+      }
+      // Otherwise, ignore - message is for another restaurant
+    } else if (!currentRestaurantId) {
+      // No restaurant selected, update anyway (for backward compatibility)
+      this.updateRoomList();
+    } else if (data.roomId === this.currentRoomId) {
+      // If it's the current room but restaurantId not found, update for safety
+      this.updateRoomList();
+    }
+    // Otherwise, ignore - message is for another restaurant
   }
 
   // Handle typing indicator
-  handleTypingIndicator(data) {
-    if (data.userId === this.currentUserId) return;
+  handleTypingIndicator(data, roomId) {
+    // Only process typing indicator for current room
+    if (roomId && roomId !== this.currentRoomId) {
+      return;
+    }
+    
+    // Don't show typing indicator for own messages
+    if (data.userId === this.currentUserId || data.userId === this.currentUserId?.toString()) {
+      return;
+    }
 
     const typingIndicator = document.getElementById("typing-indicator");
     if (typingIndicator) {
       if (data.typing) {
         typingIndicator.style.display = "flex";
+        // Show online status when participant is typing
+        this.showOnlineStatus();
       } else {
         typingIndicator.style.display = "none";
       }
+    }
+  }
+
+  // Show online status
+  showOnlineStatus() {
+    const chatStatus = document.getElementById("chat-status");
+    if (chatStatus) {
+      chatStatus.style.display = "flex";
+    }
+    
+    // Hide online status after 30 seconds of inactivity
+    if (this.onlineStatusTimer) {
+      clearTimeout(this.onlineStatusTimer);
+    }
+    
+    this.onlineStatusTimer = setTimeout(() => {
+      this.hideOnlineStatus();
+    }, 30000); // 30 seconds
+  }
+
+  // Hide online status
+  hideOnlineStatus() {
+    const chatStatus = document.getElementById("chat-status");
+    if (chatStatus) {
+      chatStatus.style.display = "none";
+    }
+    
+    if (this.onlineStatusTimer) {
+      clearTimeout(this.onlineStatusTimer);
+      this.onlineStatusTimer = null;
     }
   }
 
@@ -560,7 +671,16 @@ class RestaurantOwnerChatManager {
   // Update room list
   async updateRoomList() {
     try {
-      const response = await fetch("/api/chat/rooms");
+      // Get current restaurantId from URL or hidden input
+      const restaurantId = this.getCurrentRestaurantId();
+      
+      // Build URL with restaurantId if available
+      let url = "/api/chat/rooms";
+      if (restaurantId) {
+        url += `?restaurantId=${restaurantId}`;
+      }
+      
+      const response = await fetch(url);
       if (response.ok) {
         const rooms = await response.json();
         this.updateRoomsDisplay(rooms);
@@ -600,13 +720,29 @@ class RestaurantOwnerChatManager {
     const roomItem = document.createElement("div");
     roomItem.className = "chat-room-item";
     roomItem.setAttribute("data-room-id", room.roomId);
+    if (room.participantId) {
+      roomItem.setAttribute("data-participant-id", room.participantId);
+    }
+    if (room.restaurantId) {
+      roomItem.setAttribute("data-restaurant-id", room.restaurantId);
+    }
 
     const iconClass =
       room.participantRole === "CUSTOMER" ? "fa-user" : "fa-user-shield";
+    
+    // Avatar HTML - show image if available, otherwise show icon
+    const avatarHtml = room.participantAvatarUrl
+      ? `<img src="${room.participantAvatarUrl}" alt="${room.participantName || 'Avatar'}" class="avatar-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+         <div class="avatar-fallback" style="display:none;">
+             <i class="fas ${iconClass}"></i>
+         </div>`
+      : `<div class="avatar-fallback">
+             <i class="fas ${iconClass}"></i>
+         </div>`;
 
     roomItem.innerHTML = `
             <div class="room-avatar">
-                <i class="fas ${iconClass}"></i>
+                ${avatarHtml}
             </div>
             <div class="room-info">
                 <div class="room-name">
@@ -623,7 +759,6 @@ class RestaurantOwnerChatManager {
                         }
                     </span>
                 </div>
-                <div class="room-restaurant">${room.restaurantName}</div>
                 <div class="room-last-message">${
                   room.lastMessage || "Chưa có tin nhắn"
                 }</div>
@@ -672,30 +807,25 @@ class RestaurantOwnerChatManager {
       const participantName = participantNameSpan
         ? participantNameSpan.textContent
         : "Participant";
-
-      const restaurantElement = roomElement.querySelector(".room-restaurant");
-      const restaurantName = restaurantElement
-        ? restaurantElement.textContent
-        : "Restaurant";
+      
+      // Update currentParticipantId from room element
+      const participantId = roomElement.getAttribute("data-participant-id");
+      this.currentParticipantId = participantId || null;
 
       const participantNameElement =
         document.getElementById("participant-name");
-      const restaurantNameElement = document.getElementById("restaurant-name");
 
       if (participantNameElement)
         participantNameElement.textContent = participantName;
-      if (restaurantNameElement)
-        restaurantNameElement.textContent = restaurantName;
     } else {
       // Fallback if room element not found
       const participantNameElement =
         document.getElementById("participant-name");
-      const restaurantNameElement = document.getElementById("restaurant-name");
 
       if (participantNameElement)
         participantNameElement.textContent = "Participant";
-      if (restaurantNameElement)
-        restaurantNameElement.textContent = "Restaurant";
+      
+      this.currentParticipantId = null;
     }
   }
 
@@ -712,7 +842,17 @@ class RestaurantOwnerChatManager {
       item.classList.remove("active");
     });
 
+    // Unsubscribe from typing indicator
+    if (this.typingSubscription) {
+      this.typingSubscription.unsubscribe();
+      this.typingSubscription = null;
+    }
+    
+    // Hide online status when leaving room
+    this.hideOnlineStatus();
+
     this.currentRoomId = null;
+    this.currentParticipantId = null;
   }
 
   // Scroll to bottom of messages
@@ -861,48 +1001,53 @@ class RestaurantOwnerChatManager {
     adminDiv.querySelector(".admin-name").textContent = admin.adminName;
     adminDiv.querySelector(".admin-email").textContent = admin.adminEmail;
 
-    // Populate restaurant select for this admin
-    console.log("Admin restaurants:", admin.restaurants);
-    this.populateRestaurantSelect(adminDiv, admin.restaurants);
-
-    // Add click handler for chat button
+    // Add click handler for chat button - automatically use current restaurant
     adminDiv.querySelector(".start-chat-btn").addEventListener("click", () => {
-      const restaurantSelect = adminDiv.querySelector(".restaurant-select");
-      const selectedRestaurantId = restaurantSelect.value;
-      if (selectedRestaurantId) {
-        this.startChatWithAdmin(admin.adminId, selectedRestaurantId);
+      const restaurantId = this.getCurrentRestaurantId();
+      if (restaurantId) {
+        this.startChatWithAdmin(admin.adminId, restaurantId);
+      } else {
+        this.showError("Vui lòng chọn nhà hàng ở header trước khi chat với admin");
       }
     });
 
     return adminDiv;
   }
 
-  populateRestaurantSelect(adminDiv, restaurants) {
-    console.log("Populating restaurant select with:", restaurants);
-    const restaurantSelect = adminDiv.querySelector(".restaurant-select");
-    const startBtn = adminDiv.querySelector(".start-chat-btn");
-
-    if (!restaurantSelect || !restaurants) {
-      console.error("Restaurant select or restaurants not found");
-      return;
+  // Get current restaurant ID from URL parameter or hidden input
+  getCurrentRestaurantId() {
+    // Try to get from URL parameter first
+    const urlParams = new URLSearchParams(window.location.search);
+    const restaurantIdFromUrl = urlParams.get('restaurantId');
+    
+    if (restaurantIdFromUrl) {
+      return restaurantIdFromUrl;
     }
-
-    // Clear existing options
-    restaurantSelect.innerHTML = '<option value="">Chọn nhà hàng...</option>';
-
-    // Add restaurant options
-    restaurants.forEach((restaurant) => {
-      console.log("Adding restaurant option:", restaurant);
-      const option = document.createElement("option");
-      option.value = restaurant.restaurantId;
-      option.textContent = restaurant.restaurantName;
-      restaurantSelect.appendChild(option);
-    });
-
-    // Enable/disable chat button based on selection
-    restaurantSelect.addEventListener("change", () => {
-      startBtn.disabled = !restaurantSelect.value;
-    });
+    
+    // Try to get from hidden input
+    const hiddenInput = document.getElementById('current-restaurant-id');
+    if (hiddenInput && hiddenInput.value) {
+      return hiddenInput.value;
+    }
+    
+    // Try to get from restaurant dropdown in header
+    const restaurantDropdown = document.querySelector('.restaurant-dropdown .restaurant-details');
+    if (restaurantDropdown) {
+      // Try to find restaurantId from data attribute or other sources
+      const restaurantItems = document.querySelectorAll('.restaurant-item.active');
+      if (restaurantItems.length > 0) {
+        const activeItem = restaurantItems[0];
+        const onclickAttr = activeItem.getAttribute('onclick');
+        if (onclickAttr) {
+          const match = onclickAttr.match(/selectRestaurant\((\d+)\)/);
+          if (match && match[1]) {
+            return match[1];
+          }
+        }
+      }
+    }
+    
+    return null;
   }
 
   async startChatWithAdmin(adminId, restaurantId) {
