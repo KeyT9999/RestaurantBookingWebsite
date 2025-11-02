@@ -376,7 +376,7 @@ public class ChatApiControllerTest {
         when(chatService.getUserChatRooms(user.getId(), user.getRole())).thenReturn(rooms);
 
         // When
-        ResponseEntity<?> response = controller.getUserChatRooms(authentication);
+        ResponseEntity<?> response = controller.getUserChatRooms(null, authentication);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -392,7 +392,7 @@ public class ChatApiControllerTest {
             .thenThrow(new RuntimeException("Service error"));
 
         // When
-        ResponseEntity<?> response = controller.getUserChatRooms(authentication);
+        ResponseEntity<?> response = controller.getUserChatRooms(null, authentication);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());

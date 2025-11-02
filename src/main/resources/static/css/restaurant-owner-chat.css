@@ -45,9 +45,23 @@ html {
     overflow-x: hidden;
 }
 
+/* Chat Page Layout with Dashboard Sidebar */
+.chat-page-layout {
+    display: flex;
+    min-height: calc(100vh - 80px);
+    background: var(--messenger-bg);
+}
+
+.chat-container-wrapper {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-width: 0;
+}
+
 /* Chat Container */
 .chat-container {
-    height: calc(100vh - 80px);
+    height: 100%;
     margin-top: 0;
     padding: 0;
     background: var(--messenger-bg);
@@ -55,6 +69,7 @@ html {
     overflow: hidden;
     width: 100%;
     max-width: 100%;
+    flex: 1;
 }
 
 /* Sidebar - Messenger Style */
@@ -959,6 +974,14 @@ html {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .chat-page-layout {
+        flex-direction: column;
+    }
+    
+    .chat-container-wrapper {
+        width: 100%;
+    }
+    
     .chat-container {
         height: calc(100vh - 60px);
     }
