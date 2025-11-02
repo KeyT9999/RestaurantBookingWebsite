@@ -94,7 +94,7 @@ public class RestaurantOwnerChatControllerTest {
         when(restaurantOwnerService.getRestaurantsByUserId(userId)).thenReturn(restaurants);
 
         // When
-        String view = restaurantOwnerChatController.chatPage(null, authentication, model);
+        String view = restaurantOwnerChatController.chatPage(null, null, authentication, model);
 
         // Then
         assertEquals("restaurant-owner/chat", view);
@@ -118,7 +118,7 @@ public class RestaurantOwnerChatControllerTest {
         when(chatService.createCustomerRestaurantRoom(any(), anyInt())).thenReturn(mockRoom);
 
         // When
-        String view = restaurantOwnerChatController.chatPage(1, authentication, model);
+        String view = restaurantOwnerChatController.chatPage(1, null, authentication, model);
 
         // Then
         assertEquals("redirect:/restaurant-owner/chat", view);
@@ -139,7 +139,7 @@ public class RestaurantOwnerChatControllerTest {
         when(chatService.getRoomId(any(), any(), anyInt())).thenReturn("existing-room-123");
 
         // When
-        String view = restaurantOwnerChatController.chatPage(1, authentication, model);
+        String view = restaurantOwnerChatController.chatPage(1, null, authentication, model);
 
         // Then
         assertEquals("redirect:/restaurant-owner/chat", view);
@@ -155,7 +155,7 @@ public class RestaurantOwnerChatControllerTest {
         when(restaurantOwnerService.getRestaurantsByUserId(userId)).thenReturn(restaurants);
 
         // When
-        String view = restaurantOwnerChatController.chatPage(1, authentication, model);
+        String view = restaurantOwnerChatController.chatPage(1, null, authentication, model);
 
         // Then
         assertEquals("restaurant-owner/chat", view);
@@ -168,7 +168,7 @@ public class RestaurantOwnerChatControllerTest {
         when(restaurantOwnerService.getRestaurantsByUserId(userId)).thenReturn(new ArrayList<>());
 
         // When
-        String view = restaurantOwnerChatController.chatPage(null, authentication, model);
+        String view = restaurantOwnerChatController.chatPage(null, null, authentication, model);
 
         // Then
         assertEquals("restaurant-owner/chat", view);
@@ -184,7 +184,7 @@ public class RestaurantOwnerChatControllerTest {
         when(restaurantOwnerService.getRestaurantsByUserId(userId)).thenReturn(restaurants);
 
         // When
-        String view = restaurantOwnerChatController.chatPage(null, authentication, model);
+        String view = restaurantOwnerChatController.chatPage(null, null, authentication, model);
 
         // Then
         assertEquals("restaurant-owner/chat", view);
