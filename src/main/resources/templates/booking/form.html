@@ -422,6 +422,12 @@
                                     <span class="optional-label">(không bắt buộc)</span>
                                 </label>
                                 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary"
+                                            id="selectMenuBtn"
+                                            onclick="openMenuPopup()">
+                                        <i class="fas fa-utensils"></i> Chọn món ăn
+                                    </button>
                                     <span id="selectedDishesCount" class="text-muted small">Chưa chọn món</span>
                                 </div>
                                 
@@ -3069,18 +3075,26 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔍 DEBUG: Booking form JavaScript loaded');
             
-            // Get URL parameters
+            // Get URL parameters - support both 'date/time/guests' and 'prefillDate/prefillTime/prefillGuests'
             const urlParams = new URLSearchParams(window.location.search);
+            const date = urlParams.get('date');
+            const time = urlParams.get('time');
+            const guests = urlParams.get('guests');
             const prefillDate = urlParams.get('prefillDate');
             const prefillTime = urlParams.get('prefillTime');
             const prefillGuests = urlParams.get('prefillGuests');
             const restaurantId = urlParams.get('restaurantId');
             
+            // Use date/time/guests if provided (from restaurant detail page), otherwise use prefill* parameters
+            const finalDate = date || prefillDate;
+            const finalTime = time || prefillTime;
+            const finalGuests = guests || prefillGuests;
+            
             console.log('🔍 DEBUG: URL parameters:');
             console.log('  restaurantId:', restaurantId);
-            console.log('  prefillDate:', prefillDate);
-            console.log('  prefillTime:', prefillTime);
-            console.log('  prefillGuests:', prefillGuests);
+            console.log('  date:', date, 'prefillDate:', prefillDate, '-> finalDate:', finalDate);
+            console.log('  time:', time, 'prefillTime:', prefillTime, '-> finalTime:', finalTime);
+            console.log('  guests:', guests, 'prefillGuests:', prefillGuests, '-> finalGuests:', finalGuests);
             
             // Pre-fill restaurant selection
             if (restaurantId) {
@@ -3098,8 +3112,17 @@
             }
             
             // Pre-fill date and time
-            if (prefillDate && prefillTime) {
-                const dateTimeString = prefillDate + 'T' + prefillTime;
+            if (finalDate && finalTime) {
+                // Format date if needed (YYYY-MM-DD) and time (HH:mm)
+                let dateValue = finalDate;
+                let timeValue = finalTime;
+                
+                // Ensure time is in HH:mm format (remove any :ss if present)
+                if (timeValue && timeValue.length > 5) {
+                    timeValue = timeValue.substring(0, 5);
+                }
+                
+                const dateTimeString = dateValue + 'T' + timeValue;
                 console.log('🔍 DEBUG: Combined datetime:', dateTimeString);
                 
                 const bookingTimeInput = document.getElementById('bookingTime');
@@ -3110,24 +3133,24 @@
                     console.log('❌ DEBUG: bookingTime input not found');
                 }
             } else {
-                console.log('⚠️ DEBUG: Missing prefill date/time data');
+                console.log('⚠️ DEBUG: Missing date/time data. finalDate:', finalDate, 'finalTime:', finalTime);
             }
             
             // Pre-fill guest count
-            if (prefillGuests) {
+            if (finalGuests) {
                 const guestCountInput = document.getElementById('guestCount');
                 if (guestCountInput) {
-                    guestCountInput.value = prefillGuests;
-                    console.log('✅ DEBUG: Set guestCount to:', prefillGuests);
+                    guestCountInput.value = finalGuests;
+                    console.log('✅ DEBUG: Set guestCount to:', finalGuests);
                 } else {
                     console.log('❌ DEBUG: guestCount input not found');
                 }
             } else {
-                console.log('⚠️ DEBUG: prefillGuests is null or empty');
+                console.log('⚠️ DEBUG: finalGuests is null or empty');
             }
             
             // Show success message if all data is pre-filled
-            if (restaurantId && prefillDate && prefillTime && prefillGuests) {
+            if (restaurantId && finalDate && finalTime && finalGuests) {
                 console.log('🎉 DEBUG: All data successfully pre-filled!');
                 
                 // Optional: Show a success message to user

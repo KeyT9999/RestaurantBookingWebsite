@@ -96,6 +96,9 @@ public class BookingController {
             @RequestParam(value = "prefillDate", required = false) String prefillDate,
             @RequestParam(value = "prefillTime", required = false) String prefillTime,
             @RequestParam(value = "prefillGuests", required = false) Integer prefillGuests,
+            @RequestParam(value = "date", required = false) String date,
+            @RequestParam(value = "time", required = false) String time,
+            @RequestParam(value = "guests", required = false) Integer guests,
             Model model, Authentication authentication) {
         Authentication auth = authentication != null ? authentication : SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
@@ -106,18 +109,23 @@ public class BookingController {
             return "redirect:http://localhost/oauth2/authorization/google";
         }
         
+        // Use date/time/guests if provided (from restaurant detail page), otherwise use prefill* parameters
+        String finalDate = date != null ? date : prefillDate;
+        String finalTime = time != null ? time : prefillTime;
+        Integer finalGuests = guests != null ? guests : prefillGuests;
+        
         // Debug logging
         System.out.println("🔍 DEBUG: BookingController /new called with:");
         System.out.println("  restaurantId: " + restaurantId);
-        System.out.println("  prefillDate: " + prefillDate);
-        System.out.println("  prefillTime: " + prefillTime);
-        System.out.println("  prefillGuests: " + prefillGuests);
+        System.out.println("  date: " + date + ", prefillDate: " + prefillDate + " -> finalDate: " + finalDate);
+        System.out.println("  time: " + time + ", prefillTime: " + prefillTime + " -> finalTime: " + finalTime);
+        System.out.println("  guests: " + guests + ", prefillGuests: " + prefillGuests + " -> finalGuests: " + finalGuests);
         
         // Pass parameters to view for JavaScript to handle
         model.addAttribute("prefillRestaurantId", restaurantId);
-        model.addAttribute("prefillDate", prefillDate);
-        model.addAttribute("prefillTime", prefillTime);
-        model.addAttribute("prefillGuests", prefillGuests);
+        model.addAttribute("prefillDate", finalDate);
+        model.addAttribute("prefillTime", finalTime);
+        model.addAttribute("prefillGuests", finalGuests);
         if (auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_RESTAURANT_OWNER"))) {
             return "redirect:/restaurant-owner/dashboard?error=cannot_book_public";

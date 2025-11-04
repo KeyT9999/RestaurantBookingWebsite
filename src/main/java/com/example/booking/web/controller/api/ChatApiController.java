@@ -170,13 +170,27 @@ public class ChatApiController {
     
     /**
      * Get chat rooms for current user
+     * Optionally filter by restaurantId
      */
     @GetMapping("/rooms")
     @RateLimited(value = RateLimited.OperationType.CHAT, message = "Quá nhiều yêu cầu lấy danh sách chat. Vui lòng thử lại sau.")
-    public ResponseEntity<?> getUserChatRooms(Authentication authentication) {
+    public ResponseEntity<?> getUserChatRooms(
+            @RequestParam(required = false) Integer restaurantId,
+            Authentication authentication) {
         try {
             User user = getUserFromAuthentication(authentication);
             List<ChatRoomDto> rooms = chatService.getUserChatRooms(user.getId(), user.getRole());
+            
+            // Filter by restaurantId if provided
+            if (restaurantId != null) {
+                rooms = rooms.stream()
+                        .filter(room -> {
+                            Integer roomRestaurantId = room.getRestaurantId();
+                            return roomRestaurantId != null && roomRestaurantId.equals(restaurantId);
+                        })
+                        .collect(java.util.stream.Collectors.toList());
+            }
+            
             return ResponseEntity.ok(rooms);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());

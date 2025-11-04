@@ -148,10 +148,10 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/restaurant-owner/messages">
-                            <i class="fas fa-envelope"></i>
+                        <a href="/restaurant-owner/chat" th:href="${restaurantId != null ? '/restaurant-owner/chat?restaurantId=' + restaurantId : '/restaurant-owner/chat'}">
+                            <i class="fas fa-comments"></i>
                             Tin nhắn
-                            <span class="menu-badge">6</span>
+                            <span class="menu-badge" id="dashboard-unread-badge" style="display: none;">0</span>
                         </a>
                     </li>
                     <li>

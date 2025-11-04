@@ -10,6 +10,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -742,5 +744,234 @@ class PaymentServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(PaymentStatus.COMPLETED, result.get(0).getStatus());
+    }
+
+    // ==================== CALCULATE TOTAL AMOUNT WITH BOOKING DISHES AND SERVICES
+    // ====================
+
+    @Test
+    @DisplayName("testCalculateTotalAmount_WithBookingDishes_ShouldIncludeDishPrices")
+    void testCalculateTotalAmount_WithBookingDishes_ShouldIncludeDishPrices() {
+        // Given
+        com.example.booking.domain.Dish dish1 = new com.example.booking.domain.Dish();
+        dish1.setDishId(1);
+        dish1.setPrice(new BigDecimal("50000"));
+        dish1.setName("Test Dish 1");
+
+        com.example.booking.domain.Dish dish2 = new com.example.booking.domain.Dish();
+        dish2.setDishId(2);
+        dish2.setPrice(new BigDecimal("75000"));
+        dish2.setName("Test Dish 2");
+
+        com.example.booking.domain.BookingDish bookingDish1 = new com.example.booking.domain.BookingDish();
+        bookingDish1.setBookingDishId(1);
+        bookingDish1.setBooking(booking);
+        bookingDish1.setDish(dish1);
+        bookingDish1.setQuantity(2);
+
+        com.example.booking.domain.BookingDish bookingDish2 = new com.example.booking.domain.BookingDish();
+        bookingDish2.setBookingDishId(2);
+        bookingDish2.setBooking(booking);
+        bookingDish2.setDish(dish2);
+        bookingDish2.setQuantity(1);
+
+        booking.setBookingDishes(java.util.Arrays.asList(bookingDish1, bookingDish2));
+        booking.setDepositAmount(new BigDecimal("200000"));
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(paymentRepository.findByBookingAndPaymentType(booking, PaymentType.DEPOSIT))
+                .thenReturn(Optional.empty());
+        when(paymentRepository.existsByOrderCode(any())).thenReturn(false);
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When - createPayment internally calls calculateTotalAmount
+        Payment result = paymentService.createPayment(
+                bookingId, customerId, PaymentMethod.PAYOS, PaymentType.DEPOSIT, null);
+
+        // Then - Deposit should be 10% of total (200000 + 100000 + 75000 = 375000)
+        // 10% = 37500
+        assertNotNull(result);
+        assertEquals(new BigDecimal("37500.0"), result.getAmount());
+    }
+
+    @Test
+    @DisplayName("testCalculateTotalAmount_WithBookingServices_ShouldIncludeServicePrices")
+    void testCalculateTotalAmount_WithBookingServices_ShouldIncludeServicePrices() {
+        // Given
+        com.example.booking.domain.RestaurantService service1 = new com.example.booking.domain.RestaurantService();
+        service1.setServiceId(1);
+        service1.setPrice(new BigDecimal("30000"));
+        service1.setName("Test Service 1");
+
+        com.example.booking.domain.RestaurantService service2 = new com.example.booking.domain.RestaurantService();
+        service2.setServiceId(2);
+        service2.setPrice(new BigDecimal("40000"));
+        service2.setName("Test Service 2");
+
+        com.example.booking.domain.BookingService bookingService1 = new com.example.booking.domain.BookingService();
+        bookingService1.setBookingServiceId(1);
+        bookingService1.setBooking(booking);
+        bookingService1.setService(service1);
+        bookingService1.setQuantity(2);
+
+        com.example.booking.domain.BookingService bookingService2 = new com.example.booking.domain.BookingService();
+        bookingService2.setBookingServiceId(2);
+        bookingService2.setBooking(booking);
+        bookingService2.setService(service2);
+        bookingService2.setQuantity(1);
+
+        booking.setBookingServices(java.util.Arrays.asList(bookingService1, bookingService2));
+        booking.setBookingDishes(null); // No dishes
+        booking.setDepositAmount(new BigDecimal("150000"));
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(paymentRepository.findByBookingAndPaymentType(booking, PaymentType.DEPOSIT))
+                .thenReturn(Optional.empty());
+        when(paymentRepository.existsByOrderCode(any())).thenReturn(false);
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When - createPayment internally calls calculateTotalAmount
+        Payment result = paymentService.createPayment(
+                bookingId, customerId, PaymentMethod.PAYOS, PaymentType.DEPOSIT, null);
+
+        // Then - Deposit should be 10% of total (150000 + 60000 + 40000 = 250000)
+        // 10% = 25000
+        assertNotNull(result);
+        assertEquals(new BigDecimal("25000.0"), result.getAmount());
+    }
+
+    @Test
+    @DisplayName("testCalculateTotalAmount_WithNullBookingDishes_ShouldNotThrowException")
+    void testCalculateTotalAmount_WithNullBookingDishes_ShouldNotThrowException() {
+        // Given
+        booking.setBookingDishes(null);
+        booking.setBookingServices(null);
+        booking.setDepositAmount(new BigDecimal("100000"));
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(paymentRepository.findByBookingAndPaymentType(booking, PaymentType.DEPOSIT))
+                .thenReturn(Optional.empty());
+        when(paymentRepository.existsByOrderCode(any())).thenReturn(false);
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Payment result = paymentService.createPayment(
+                bookingId, customerId, PaymentMethod.PAYOS, PaymentType.DEPOSIT, null);
+
+        // Then - Should only calculate deposit amount (10% of 100000 = 10000)
+        assertNotNull(result);
+        assertEquals(new BigDecimal("10000.0"), result.getAmount());
+    }
+
+    @Test
+    @DisplayName("testCalculateTotalAmount_WithNullBookingServices_ShouldNotThrowException")
+    void testCalculateTotalAmount_WithNullBookingServices_ShouldNotThrowException() {
+        // Given
+        com.example.booking.domain.Dish dish1 = new com.example.booking.domain.Dish();
+        dish1.setDishId(1);
+        dish1.setPrice(new BigDecimal("50000"));
+
+        com.example.booking.domain.BookingDish bookingDish1 = new com.example.booking.domain.BookingDish();
+        bookingDish1.setBooking(booking);
+        bookingDish1.setDish(dish1);
+        bookingDish1.setQuantity(1);
+
+        booking.setBookingDishes(java.util.Arrays.asList(bookingDish1));
+        booking.setBookingServices(null); // Null services
+        booking.setDepositAmount(new BigDecimal("100000"));
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(paymentRepository.findByBookingAndPaymentType(booking, PaymentType.DEPOSIT))
+                .thenReturn(Optional.empty());
+        when(paymentRepository.existsByOrderCode(any())).thenReturn(false);
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When
+        Payment result = paymentService.createPayment(
+                bookingId, customerId, PaymentMethod.PAYOS, PaymentType.DEPOSIT, null);
+
+        // Then - Deposit = 10% of (100000 + 50000) = 15000
+        assertNotNull(result);
+        assertEquals(new BigDecimal("15000.0"), result.getAmount());
+    }
+
+    @Test
+    @DisplayName("testCreatePayment_WithAmountChanged_ShouldResetOrderCode")
+    void testCreatePayment_WithAmountChanged_ShouldResetOrderCode() {
+        // Given - existing payment with different amount
+        Payment existingPayment = new Payment();
+        existingPayment.setPaymentId(1);
+        existingPayment.setStatus(PaymentStatus.PENDING);
+        existingPayment.setAmount(new BigDecimal("50000")); // Old amount
+        existingPayment.setOrderCode(123456L);
+        existingPayment.setPayosCheckoutUrl("https://checkout.url");
+        existingPayment.setPayosPaymentLinkId("LINK123");
+        existingPayment.setBooking(booking);
+        existingPayment.setCustomer(customer);
+
+        booking.setDepositAmount(new BigDecimal("200000")); // New deposit amount
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(paymentRepository.findByBookingAndPaymentType(booking, PaymentType.DEPOSIT))
+                .thenReturn(Optional.of(existingPayment));
+        when(paymentRepository.existsByOrderCode(any())).thenReturn(false);
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // When - amount should change from 50000 to 20000 (10% of 200000)
+        Payment result = paymentService.createPayment(
+                bookingId, customerId, PaymentMethod.PAYOS, PaymentType.DEPOSIT, null);
+
+        // Then - orderCode should be reset and new amount set
+        assertNotNull(result);
+        assertNull(result.getOrderCode()); // First save resets orderCode
+        verify(paymentRepository, atLeastOnce()).save(any(Payment.class));
+    }
+
+    @Test
+    @DisplayName("testCreatePayment_WithAmountUnchanged_ShouldReuseExistingPayment")
+    void testCreatePayment_WithAmountUnchanged_ShouldReuseExistingPayment() {
+        // Given - existing payment with same amount
+        Payment existingPayment = new Payment();
+        existingPayment.setPaymentId(1);
+        existingPayment.setStatus(PaymentStatus.PENDING);
+        existingPayment.setAmount(new BigDecimal("10000")); // Same as calculated amount
+        existingPayment.setBooking(booking);
+        existingPayment.setCustomer(customer);
+
+        booking.setDepositAmount(new BigDecimal("100000")); // 10% = 10000
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
+        when(paymentRepository.findByBookingAndPaymentType(booking, PaymentType.DEPOSIT))
+                .thenReturn(Optional.of(existingPayment));
+
+        // When
+        Payment result = paymentService.createPayment(
+                bookingId, customerId, PaymentMethod.PAYOS, PaymentType.DEPOSIT, null);
+
+        // Then - should return existing payment without saving
+        assertNotNull(result);
+        assertEquals(existingPayment.getPaymentId(), result.getPaymentId());
+        verify(paymentRepository, never()).save(any(Payment.class));
+    }
+
+    @Test
+    @DisplayName("testHandlePayOsWebhook_WithNullWebhookRequest_ShouldReturnFalse")
+    void testHandlePayOsWebhook_WithNullWebhookRequest_ShouldReturnFalse() throws Exception {
+        // Given
+        String rawBody = "{}";
+
+        when(objectMapper.readValue(rawBody, PayOsService.WebhookRequest.class)).thenReturn(null);
+
+        // When
+        boolean result = paymentService.handlePayOsWebhook(rawBody);
+
+        // Then
+        assertFalse(result);
     }
 }

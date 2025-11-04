@@ -44,14 +44,66 @@ public class RestaurantOwnerChatController {
      */
     @GetMapping
     public String chatPage(@RequestParam(required = false) Integer bookingId,
+            @RequestParam(required = false) Integer restaurantId,
             Authentication authentication, Model model) {
         User user = getUserFromAuthentication(authentication);
         
-        // Get all chat rooms for this restaurant owner
-        List<ChatRoomDto> chatRooms = chatService.getUserChatRooms(user.getId(), user.getRole());
-        
         // Get restaurants owned by this user
         List<RestaurantProfile> restaurants = restaurantOwnerService.getRestaurantsByUserId(user.getId());
+        
+        // Get all chat rooms for this restaurant owner
+        List<ChatRoomDto> allChatRooms = chatService.getUserChatRooms(user.getId(), user.getRole());
+        
+        // Auto-select restaurant with most recent activity if restaurantId is not provided
+        Integer selectedRestaurantId = restaurantId;
+        if (selectedRestaurantId == null && !allChatRooms.isEmpty()) {
+            // Find restaurant with the most recent message
+            ChatRoomDto mostRecentRoom = allChatRooms.stream()
+                    .filter(room -> room.getLastMessageAt() != null && room.getRestaurantId() != null)
+                    .max((r1, r2) -> r1.getLastMessageAt().compareTo(r2.getLastMessageAt()))
+                    .orElse(null);
+            
+            if (mostRecentRoom != null && mostRecentRoom.getRestaurantId() != null) {
+                selectedRestaurantId = mostRecentRoom.getRestaurantId();
+            } else if (restaurants.size() == 1) {
+                // Fallback: if only one restaurant, select it
+                selectedRestaurantId = restaurants.get(0).getRestaurantId();
+            }
+        } else if (selectedRestaurantId == null && restaurants.size() == 1) {
+            // If no chat rooms but only one restaurant, select it
+            selectedRestaurantId = restaurants.get(0).getRestaurantId();
+        }
+        
+        // Filter chat rooms by restaurant if restaurantId is provided
+        final Integer finalRestaurantId = selectedRestaurantId;
+        List<ChatRoomDto> chatRooms;
+        if (finalRestaurantId != null) {
+            chatRooms = allChatRooms.stream()
+                    .filter(room -> {
+                        // Check if room's restaurant ID matches the selected restaurant
+                        Integer roomRestaurantId = room.getRestaurantId();
+                        return roomRestaurantId != null && roomRestaurantId.equals(finalRestaurantId);
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+        } else {
+            // If still no restaurant selected, show empty list instead of all rooms
+            chatRooms = java.util.Collections.emptyList();
+        }
+        
+        // Determine current restaurant
+        RestaurantProfile currentRestaurant = null;
+        if (finalRestaurantId != null) {
+            currentRestaurant = restaurants.stream()
+                    .filter(r -> r.getRestaurantId().equals(finalRestaurantId))
+                    .findFirst()
+                    .orElse(null);
+        } else if (restaurants.size() == 1) {
+            currentRestaurant = restaurants.get(0);
+        }
+        
+        // Update restaurantId for model
+        restaurantId = finalRestaurantId;
+        
 
         // Handle bookingId parameter - create chat room with customer if not exists
         if (bookingId != null) {
@@ -87,17 +139,26 @@ public class RestaurantOwnerChatController {
                 System.err.println("Error handling bookingId: " + e.getMessage());
             }
 
-            // Redirect to main chat page without bookingId parameter
-            return "redirect:/restaurant-owner/chat";
+            // Redirect to main chat page with restaurantId if available
+            if (restaurantId != null) {
+                return "redirect:/restaurant-owner/chat?restaurantId=" + restaurantId;
+            } else {
+                return "redirect:/restaurant-owner/chat";
+            }
         }
 
         model.addAttribute("chatRooms", chatRooms);
         model.addAttribute("currentUser", user);
         model.addAttribute("restaurants", restaurants);
+        model.addAttribute("currentRestaurant", currentRestaurant);
+        model.addAttribute("restaurantId", restaurantId);
 
         // If only one restaurant, auto-select it
-        if (restaurants.size() == 1) {
-            model.addAttribute("autoSelectRestaurant", restaurants.get(0));
+        if (restaurants.size() == 1 && currentRestaurant == null) {
+            currentRestaurant = restaurants.get(0);
+            model.addAttribute("autoSelectRestaurant", currentRestaurant);
+            model.addAttribute("currentRestaurant", currentRestaurant);
+            model.addAttribute("restaurantId", currentRestaurant.getRestaurantId());
         }
         
         return "restaurant-owner/chat";
