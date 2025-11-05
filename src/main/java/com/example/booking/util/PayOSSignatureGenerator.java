@@ -93,13 +93,13 @@ public class PayOSSignatureGenerator {
      * Test method để generate signature cho test
      */
     public static void main(String[] args) {
-        // Test data
+        // Test data - Replace with your actual values
         long orderCode = 20251007001L;
         long amount = 20000L;
         String description = "Test PayOS 20k - BookEat";
         String cancelUrl = "http://localhost:8080/payment/payos/cancel";
         String returnUrl = "http://localhost:8080/payment/payos/return";
-        String checksumKey = "eb7485ce4c656e02cae0629fcce02b2933d5b2a9b0a10447c9aa0662125835cf";
+        String checksumKey = "your_payos_checksum_key"; // Replace with your actual checksum key
         
         String signature = generateSignature(orderCode, amount, description, cancelUrl, returnUrl, checksumKey);
         
@@ -128,8 +128,8 @@ public class PayOSSignatureGenerator {
         System.out.println("\n=== cURL Command ===");
         System.out.println("curl -X POST 'https://api-merchant.payos.vn/v2/payment-requests' \\");
         System.out.println("  -H 'Content-Type: application/json' \\");
-        System.out.println("  -H 'x-client-id: 59e68d4d-6eb8-4259-93ab-b4c6c3a6af6f' \\");
-        System.out.println("  -H 'x-api-key: 9956541e-86ab-470a-a03c-6d1cc67d95b1' \\");
+        System.out.println("  -H 'x-client-id: your_payos_client_id' \\");
+        System.out.println("  -H 'x-api-key: your_payos_api_key' \\");
         System.out.println("  -d '{");
         System.out.println("    \"orderCode\": " + orderCode + ",");
         System.out.println("    \"amount\": " + amount + ",");
