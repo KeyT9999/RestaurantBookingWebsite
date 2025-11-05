@@ -66,13 +66,6 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-
-        <!-- Embedded database for JPA tests -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>test</scope>
-        </dependency>
         
         <!-- Testing -->
         <dependency>
@@ -86,24 +79,10 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-inline</artifactId>
-            <version>5.2.0</version>
-            <scope>test</scope>
-        </dependency>
         
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        
-        <!-- WireMock for HTTP stubbing in tests -->
-        <dependency>
-            <groupId>com.github.tomakehurst</groupId>
-            <artifactId>wiremock-jre8</artifactId>
-            <version>2.35.0</version>
             <scope>test</scope>
         </dependency>
         

@@ -1,5 +1,7 @@
 package com.example.booking.web.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -46,6 +48,10 @@ import java.util.stream.Collectors;
  */
 @Controller
 public class HomeController {
+    
+    private static final Logger log = LoggerFactory.getLogger(HomeController.class);
+    
+    private static final int DEFAULT_TOP_RESTAURANTS_COUNT = 3;
     
     private static final String[] POPULAR_CARD_GRADIENTS = {
             "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -118,12 +124,138 @@ public class HomeController {
             }
         }
 
-        // Popular restaurants for home page
-        List<RestaurantProfile> topRestaurants = restaurantService.findTopRatedRestaurants(6);
-        List<PopularRestaurantDto> popularRestaurants = buildPopularRestaurantCards(topRestaurants);
+        // Popular restaurants for home page - với exception handling và fallback
+        List<PopularRestaurantDto> popularRestaurants = loadPopularRestaurants();
         model.addAttribute("popularRestaurants", popularRestaurants);
         
         return "public/home";
+    }
+    
+    /**
+     * Load popular restaurants với fallback mechanism và prioritize specific restaurants
+     * Ưu tiên: Thai Market Restaurant và Danh Restaurant -> findTopRatedRestaurants -> findApprovedRestaurantsSimple -> empty list
+     */
+    private List<PopularRestaurantDto> loadPopularRestaurants() {
+        try {
+            // Step 1: Tìm và prioritize 2 nhà hàng cụ thể
+            List<RestaurantProfile> prioritizedRestaurants = new ArrayList<>();
+            
+            // Tìm "Thai Market Restaurant"
+            List<RestaurantProfile> thaiMarket = restaurantService.findRestaurantsByName("Thai Market Restaurant");
+            if (!thaiMarket.isEmpty()) {
+                prioritizedRestaurants.add(thaiMarket.get(0));
+                log.debug("Found Thai Market Restaurant: {}", thaiMarket.get(0).getRestaurantId());
+            }
+            
+            // Tìm "Danh Restaurant"
+            List<RestaurantProfile> danhRestaurant = restaurantService.findRestaurantsByName("Danh Restaurant");
+            if (!danhRestaurant.isEmpty()) {
+                prioritizedRestaurants.add(danhRestaurant.get(0));
+                log.debug("Found Danh Restaurant: {}", danhRestaurant.get(0).getRestaurantId());
+            }
+            
+            // Step 2: Nếu đã có 2 nhà hàng, chỉ cần thêm 1 nhà hàng nữa
+            if (prioritizedRestaurants.size() >= 2) {
+                // Lấy thêm nhà hàng khác để đủ 3
+                List<RestaurantProfile> additionalRestaurants = restaurantService.findTopRatedRestaurants(DEFAULT_TOP_RESTAURANTS_COUNT + 5);
+                if (additionalRestaurants != null) {
+                    for (RestaurantProfile restaurant : additionalRestaurants) {
+                        // Chỉ thêm nhà hàng chưa có trong list
+                        if (!prioritizedRestaurants.contains(restaurant) && 
+                            !prioritizedRestaurants.stream().anyMatch(r -> r.getRestaurantId().equals(restaurant.getRestaurantId()))) {
+                            prioritizedRestaurants.add(restaurant);
+                            if (prioritizedRestaurants.size() >= DEFAULT_TOP_RESTAURANTS_COUNT) {
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Nếu vẫn chưa đủ, dùng fallback
+                if (prioritizedRestaurants.size() < DEFAULT_TOP_RESTAURANTS_COUNT) {
+                    List<RestaurantProfile> approvedRestaurants = restaurantService.findApprovedRestaurantsSimple(DEFAULT_TOP_RESTAURANTS_COUNT + 5);
+                    if (approvedRestaurants != null) {
+                        for (RestaurantProfile restaurant : approvedRestaurants) {
+                            if (!prioritizedRestaurants.contains(restaurant) && 
+                                !prioritizedRestaurants.stream().anyMatch(r -> r.getRestaurantId().equals(restaurant.getRestaurantId()))) {
+                                prioritizedRestaurants.add(restaurant);
+                                if (prioritizedRestaurants.size() >= DEFAULT_TOP_RESTAURANTS_COUNT) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Giới hạn chỉ 3 nhà hàng
+                if (prioritizedRestaurants.size() > DEFAULT_TOP_RESTAURANTS_COUNT) {
+                    prioritizedRestaurants = prioritizedRestaurants.subList(0, DEFAULT_TOP_RESTAURANTS_COUNT);
+                }
+                
+                log.info("Loaded {} prioritized restaurants (including Thai Market and Danh Restaurant)", prioritizedRestaurants.size());
+                return buildPopularRestaurantCards(prioritizedRestaurants);
+            }
+            
+            // Step 3: Nếu không tìm thấy đủ 2 nhà hàng cụ thể, fallback về logic cũ
+            log.debug("Could not find both prioritized restaurants, falling back to top-rated query");
+            List<RestaurantProfile> topRestaurants = restaurantService.findTopRatedRestaurants(DEFAULT_TOP_RESTAURANTS_COUNT);
+            
+            if (topRestaurants != null && !topRestaurants.isEmpty()) {
+                // Nếu có 1 trong 2 nhà hàng cụ thể, thêm vào đầu danh sách
+                if (!prioritizedRestaurants.isEmpty()) {
+                    for (RestaurantProfile prioritized : prioritizedRestaurants) {
+                        topRestaurants.removeIf(r -> r.getRestaurantId().equals(prioritized.getRestaurantId()));
+                        topRestaurants.add(0, prioritized);
+                    }
+                    if (topRestaurants.size() > DEFAULT_TOP_RESTAURANTS_COUNT) {
+                        topRestaurants = topRestaurants.subList(0, DEFAULT_TOP_RESTAURANTS_COUNT);
+                    }
+                }
+                
+                log.debug("Successfully loaded {} top-rated restaurants", topRestaurants.size());
+                return buildPopularRestaurantCards(topRestaurants);
+            }
+            
+            // Fallback: get any approved restaurants (simple query, no complex calculations)
+            log.warn("No top-rated restaurants found, falling back to simple approved restaurants query");
+            List<RestaurantProfile> approvedRestaurants = restaurantService.findApprovedRestaurantsSimple(DEFAULT_TOP_RESTAURANTS_COUNT);
+            
+            if (approvedRestaurants != null && !approvedRestaurants.isEmpty()) {
+                // Nếu có 1 trong 2 nhà hàng cụ thể, thêm vào đầu danh sách
+                if (!prioritizedRestaurants.isEmpty()) {
+                    for (RestaurantProfile prioritized : prioritizedRestaurants) {
+                        approvedRestaurants.removeIf(r -> r.getRestaurantId().equals(prioritized.getRestaurantId()));
+                        approvedRestaurants.add(0, prioritized);
+                    }
+                    if (approvedRestaurants.size() > DEFAULT_TOP_RESTAURANTS_COUNT) {
+                        approvedRestaurants = approvedRestaurants.subList(0, DEFAULT_TOP_RESTAURANTS_COUNT);
+                    }
+                }
+                
+                log.info("Loaded {} approved restaurants as fallback", approvedRestaurants.size());
+                return buildPopularRestaurantCards(approvedRestaurants);
+            }
+            
+            log.warn("No approved restaurants found in database");
+            return Collections.emptyList();
+            
+        } catch (Exception e) {
+            log.error("Error loading popular restaurants, attempting fallback: {}", e.getMessage(), e);
+            
+            // Final fallback: try simple query even if top-rated failed
+            try {
+                List<RestaurantProfile> approvedRestaurants = restaurantService.findApprovedRestaurantsSimple(DEFAULT_TOP_RESTAURANTS_COUNT);
+                if (approvedRestaurants != null && !approvedRestaurants.isEmpty()) {
+                    log.info("Fallback successful: loaded {} approved restaurants", approvedRestaurants.size());
+                    return buildPopularRestaurantCards(approvedRestaurants);
+                }
+            } catch (Exception fallbackException) {
+                log.error("Fallback also failed: {}", fallbackException.getMessage(), fallbackException);
+            }
+            
+            // Return empty list to prevent page crash
+            return Collections.emptyList();
+        }
     }
     
     private List<PopularRestaurantDto> buildPopularRestaurantCards(List<RestaurantProfile> restaurants) {
@@ -131,39 +263,72 @@ public class HomeController {
             return Collections.emptyList();
         }
 
-        List<RestaurantMedia> coverMedia = restaurantMediaRepository.findByRestaurantsAndType(restaurants, "cover");
-        Map<Integer, String> coverMap = coverMedia.stream()
-                .collect(Collectors.toMap(
-                        media -> media.getRestaurant().getRestaurantId(),
-                        RestaurantMedia::getUrl,
-                        (existing, ignored) -> existing,
-                        LinkedHashMap::new));
+        // Filter out null restaurants để tránh NPE
+        List<RestaurantProfile> validRestaurants = restaurants.stream()
+                .filter(r -> r != null && r.getRestaurantId() != null)
+                .collect(Collectors.toList());
+        
+        if (validRestaurants.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Safe query với null checks
+        Map<Integer, String> coverMap = Collections.emptyMap();
+        try {
+            List<RestaurantMedia> coverMedia = restaurantMediaRepository.findByRestaurantsAndType(validRestaurants, "cover");
+            if (coverMedia != null && !coverMedia.isEmpty()) {
+                coverMap = coverMedia.stream()
+                        .filter(media -> media != null && media.getRestaurant() != null && media.getUrl() != null)
+                        .collect(Collectors.toMap(
+                                media -> media.getRestaurant().getRestaurantId(),
+                                RestaurantMedia::getUrl,
+                                (existing, ignored) -> existing,
+                                LinkedHashMap::new));
+            }
+        } catch (Exception e) {
+            log.warn("Error loading cover media, continuing without images: {}", e.getMessage());
+            // Continue without cover images
+        }
 
         List<PopularRestaurantDto> cards = new ArrayList<>();
-        for (int i = 0; i < restaurants.size(); i++) {
-            RestaurantProfile restaurant = restaurants.get(i);
+        for (int i = 0; i < validRestaurants.size(); i++) {
+            RestaurantProfile restaurant = validRestaurants.get(i);
+            
+            // Safe access với null checks
+            Integer restaurantId = restaurant.getRestaurantId();
+            String restaurantName = restaurant.getRestaurantName() != null ? restaurant.getRestaurantName() : "Nhà hàng";
+            String cuisineType = restaurant.getCuisineType() != null ? restaurant.getCuisineType() : "";
+            String address = restaurant.getAddress() != null ? restaurant.getAddress() : "";
+            
+            // Try to get review statistics, but don't fail if it errors
             ReviewStatisticsDto statistics = null;
             try {
-                statistics = reviewService.getRestaurantReviewStatistics(restaurant.getRestaurantId());
+                if (restaurantId != null) {
+                    statistics = reviewService.getRestaurantReviewStatistics(restaurantId);
+                }
             } catch (Exception ex) {
-                System.err.println("⚠️ Unable to load review statistics for restaurant "
-                        + restaurant.getRestaurantId() + ": " + ex.getMessage());
+                log.debug("Unable to load review statistics for restaurant {}: {}", restaurantId, ex.getMessage());
             }
 
-            double averageRating = statistics != null ? statistics.getAverageRating() : restaurant.getAverageRating();
+            double averageRating = statistics != null ? statistics.getAverageRating() : 
+                                   (restaurant.getAverageRating() > 0 ? restaurant.getAverageRating() : 0.0);
             int reviewCount = statistics != null ? statistics.getTotalReviews() : restaurant.getReviewCount();
+            
+            // Get cover image URL safely
+            String coverImageUrl = coverMap.get(restaurantId);
+            String gradient = POPULAR_CARD_GRADIENTS[i % POPULAR_CARD_GRADIENTS.length];
 
             cards.add(new PopularRestaurantDto(
-                    restaurant.getRestaurantId(),
-                    restaurant.getRestaurantName(),
-                    restaurant.getCuisineType(),
-                    restaurant.getAddress(),
+                    restaurantId,
+                    restaurantName,
+                    cuisineType,
+                    address,
                     averageRating,
                     reviewCount,
                     resolvePriceLabel(restaurant),
                     resolveBadge(i, reviewCount),
-                    coverMap.get(restaurant.getRestaurantId()),
-                    POPULAR_CARD_GRADIENTS[i % POPULAR_CARD_GRADIENTS.length]
+                    coverImageUrl,
+                    gradient
             ));
         }
 
@@ -408,7 +573,16 @@ public class HomeController {
             return "public/restaurant-detail-simple";
             
         } catch (Exception e) {
-            return "redirect:/restaurants?error=" + e.getMessage();
+            log.error("Error loading restaurant detail for ID {}: {}", id, e.getMessage(), e);
+            // Redirect with encoded error message to prevent URL issues
+            String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error";
+            // URL encode error message to prevent issues with special characters
+            try {
+                errorMessage = java.net.URLEncoder.encode(errorMessage, java.nio.charset.StandardCharsets.UTF_8);
+            } catch (Exception encodeEx) {
+                log.warn("Failed to encode error message", encodeEx);
+            }
+            return "redirect:/restaurants?error=" + errorMessage;
         }
     }
 }

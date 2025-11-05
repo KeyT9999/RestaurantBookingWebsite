@@ -100,7 +100,7 @@ public class RestaurantReviewControllerTest {
         when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(stats);
 
         // When
-        String view = restaurantReviewController.manageReviews(0, 10, null, model, authentication);
+        String view = restaurantReviewController.manageReviews(0, 10, null, null, model, authentication);
 
         // Then
         assertNotNull(view);
@@ -121,7 +121,7 @@ public class RestaurantReviewControllerTest {
         when(reviewService.getRestaurantReviewStatistics(1)).thenReturn(stats);
 
         // When
-        String view = restaurantReviewController.manageReviews(0, 10, 5, model, authentication);
+        String view = restaurantReviewController.manageReviews(0, 10, 5, null, model, authentication);
 
         // Then
         assertNotNull(view);
@@ -135,7 +135,7 @@ public class RestaurantReviewControllerTest {
         when(restaurantOwnerService.getRestaurantOwnerByUserId(userId)).thenReturn(Optional.empty());
 
         // When
-        String view = restaurantReviewController.manageReviews(0, 10, null, model, authentication);
+        String view = restaurantReviewController.manageReviews(0, 10, null, null, model, authentication);
 
         // Then
         assertEquals("error/404", view);
@@ -149,7 +149,7 @@ public class RestaurantReviewControllerTest {
         when(restaurantOwnerService.getRestaurantsByOwnerId(any())).thenReturn(Arrays.asList());
 
         // When
-        String view = restaurantReviewController.manageReviews(0, 10, null, model, authentication);
+        String view = restaurantReviewController.manageReviews(0, 10, null, null, model, authentication);
 
         // Then
         assertEquals("error/404", view);
@@ -241,7 +241,7 @@ public class RestaurantReviewControllerTest {
         when(reviewService.getRecentReviewsByRestaurant(1, 10)).thenReturn(recentReviews);
 
         // When
-        String view = restaurantReviewController.reviewStatistics(model, authentication);
+        String view = restaurantReviewController.reviewStatistics(null, model, authentication);
 
         // Then
         assertNotNull(view);
@@ -255,7 +255,7 @@ public class RestaurantReviewControllerTest {
         when(restaurantOwnerService.getRestaurantOwnerByUserId(userId)).thenReturn(Optional.empty());
 
         // When
-        String view = restaurantReviewController.reviewStatistics(model, authentication);
+        String view = restaurantReviewController.reviewStatistics(null, model, authentication);
 
         // Then
         assertEquals("error/404", view);
@@ -269,7 +269,7 @@ public class RestaurantReviewControllerTest {
         when(restaurantOwnerService.getRestaurantsByOwnerId(any())).thenReturn(Arrays.asList());
 
         // When
-        String view = restaurantReviewController.reviewStatistics(model, authentication);
+        String view = restaurantReviewController.reviewStatistics(null, model, authentication);
 
         // Then
         assertEquals("error/404", view);

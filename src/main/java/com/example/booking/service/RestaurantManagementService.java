@@ -135,6 +135,32 @@ public class RestaurantManagementService {
     }
 
     /**
+     * Lấy danh sách nhà hàng approved đơn giản (fallback method)
+     * Không cần tính toán phức tạp, chỉ lấy bất kỳ nhà hàng approved nào
+     * Sử dụng khi findTopRatedRestaurants() fail hoặc không có dữ liệu
+     */
+    @Transactional(readOnly = true)
+    public List<RestaurantProfile> findApprovedRestaurantsSimple(int limit) {
+        if (limit <= 0) {
+            return Collections.emptyList();
+        }
+        try {
+            // Sử dụng query đơn giản, không có JOIN phức tạp
+            List<RestaurantProfile> allApproved = restaurantProfileRepository.findApprovedExcludingAI();
+            
+            // Limit kết quả và return
+            if (allApproved.size() <= limit) {
+                return allApproved;
+            }
+            return allApproved.subList(0, limit);
+        } catch (Exception e) {
+            // Log error nhưng return empty list thay vì throw
+            // Method này là fallback nên không nên throw exception
+            return Collections.emptyList();
+        }
+    }
+
+    /**
      * Tìm bàn theo ID
      */
     @Transactional(readOnly = true)
@@ -309,6 +335,7 @@ public class RestaurantManagementService {
 
     /**
      * Get dish image URL by restaurant and dish ID
+     * First tries pattern-based lookup, then falls back to type-based lookup
      */
     private String getDishImageUrl(Integer restaurantId, Integer dishId) {
         try {
@@ -317,11 +344,43 @@ public class RestaurantManagementService {
                 return null;
             }
 
+            // Try pattern-based lookup first (for backward compatibility)
             String dishIdPattern = "/dish_" + dishId + "_";
             RestaurantMedia dishImage = restaurantMediaRepository
                     .findDishImageByRestaurantAndDishId(restaurant.get(), dishIdPattern);
 
-            return dishImage != null ? dishImage.getUrl() : null;
+            if (dishImage != null) {
+                return dishImage.getUrl();
+            }
+
+            // Fallback: Get all dish images and map by order
+            // This handles cases where images are added without pattern in URL
+            List<RestaurantMedia> allDishImages = restaurantMediaRepository
+                    .findByRestaurantAndType(restaurant.get(), "dish");
+            
+            if (allDishImages != null && !allDishImages.isEmpty()) {
+                // Get all dishes for this restaurant to find index
+                List<Dish> allDishes = dishRepository.findByRestaurantRestaurantIdOrderByNameAsc(restaurantId);
+                int dishIndex = -1;
+                for (int i = 0; i < allDishes.size(); i++) {
+                    if (allDishes.get(i).getDishId().equals(dishId)) {
+                        dishIndex = i;
+                        break;
+                    }
+                }
+                
+                // Return image at same index if available
+                if (dishIndex >= 0 && dishIndex < allDishImages.size()) {
+                    return allDishImages.get(dishIndex).getUrl();
+                }
+                
+                // If no exact match, return first dish image
+                if (!allDishImages.isEmpty()) {
+                    return allDishImages.get(0).getUrl();
+                }
+            }
+
+            return null;
         } catch (Exception e) {
             System.err.println("Error getting dish image URL: " + e.getMessage());
             return null;

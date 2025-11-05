@@ -55,14 +55,6 @@ payment:
     return-url: ${APP_BASE_URL}/payment/payos/return
     cancel-url: ${APP_BASE_URL}/payment/payos/cancel
     webhook-url: ${APP_BASE_URL}/payment/api/payos/webhook
-    # Payment link expiration time in minutes (default: 15, max recommended: 1440 = 24 hours)
-    expiration-minutes: ${PAYOS_EXPIRATION_MINUTES:1440}
-
-# AI Server Configuration for Production
-ai:
-  server:
-    url: ${AI_SERVER_URL:https://restaurant-chatbot-service.onrender.com}
-    timeout: ${AI_SERVER_TIMEOUT:60000}
 
 # Cloudinary Configuration - với fallback để tránh lỗi khi không có config
 cloudinary:
