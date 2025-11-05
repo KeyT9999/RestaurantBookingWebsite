@@ -4,15 +4,31 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title th:text="${pageTitle}">Tạo nhà hàng mới</title>
-    <link rel="stylesheet" th:href="@{/css/restaurant-admin.css}" />
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet" />
+    
     <style>
+        .restaurant-form-page {
+            background: var(--dashboard-light-gray);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
         .form-section {
-            margin-top: var(--spacing-xl);
-            padding-top: var(--spacing-lg);
-            border-top: 1px solid rgba(90, 108, 125, 0.12);
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--dashboard-border);
             display: flex;
             flex-direction: column;
-            gap: var(--spacing-lg);
+            gap: 1.5rem;
         }
 
         .form-section:first-of-type {
@@ -24,45 +40,286 @@
         .form-section-header h2 {
             font-size: 1.5rem;
             font-weight: 600;
-            color: var(--gray-800);
+            color: var(--dashboard-black);
+            margin-bottom: 0.5rem;
         }
 
         .form-section-header p {
-            color: var(--gray-500);
+            color: var(--dashboard-gray);
             max-width: 720px;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .form-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--dashboard-black);
+            font-size: 0.9rem;
+        }
+
+        .form-item input,
+        .form-item textarea,
+        .form-item select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: var(--font-family-primary);
+            transition: all 0.2s ease;
+            background: var(--dashboard-white);
+            color: var(--dashboard-black);
+        }
+
+        .form-item input:focus,
+        .form-item textarea:focus,
+        .form-item select:focus {
+            outline: none;
+            border-color: var(--dashboard-accent);
+            box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
         }
 
         .form-item textarea.long-text {
             min-height: 160px;
             resize: vertical;
         }
+
+        .form-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-header {
+            margin-bottom: 2rem;
+        }
+
+        .form-header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: var(--dashboard-gray);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .breadcrumb-nav {
+            background: var(--dashboard-white);
+            border-bottom: 1px solid var(--dashboard-border);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .breadcrumb-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .breadcrumb-nav a {
+            color: var(--dashboard-gray);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-nav a:hover {
+            color: var(--dashboard-black);
+        }
+
+        .breadcrumb-nav .nav-separator {
+            color: var(--dashboard-border);
+            margin: 0 0.5rem;
+        }
+
+        .breadcrumb-nav .nav-current {
+            color: var(--dashboard-black);
+            font-weight: 500;
+        }
+
+        .form-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #10B981;
+        }
+
+        .alert-danger {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #DC2626;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--dashboard-border);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--dashboard-black);
+            color: var(--dashboard-white);
+        }
+
+        .btn-primary:hover {
+            background: var(--dashboard-accent);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--dashboard-black);
+            border: 1px solid var(--dashboard-border);
+        }
+
+        .btn-ghost:hover {
+            background: var(--dashboard-light-gray);
+            border-color: var(--dashboard-accent);
+        }
+
+        .terms-content {
+            margin-bottom: 1.5rem;
+            color: var(--dashboard-gray);
+        }
+
+        .terms-content ul {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .terms-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-top: 0.25rem;
+            cursor: pointer;
+        }
+
+        .checkbox-label {
+            color: var(--dashboard-black);
+            font-size: 0.95rem;
+        }
+
+        .checkbox-label a {
+            color: var(--dashboard-black);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .form-container {
+                padding: 0 1rem;
+            }
+
+            .form-card {
+                padding: 1.5rem;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="restaurant-form-page">
     <!-- Breadcrumb Navigation -->
-    <nav class="page-switch card">
-        <div class="nav-breadcrumb">
-            <a th:href="@{/}" class="nav-link">← Trang chủ</a>
-            <span class="nav-separator">|</span>
-            <a th:href="@{/restaurant-owner/profile}" class="nav-link">Hồ sơ Nhà hàng</a>
-            <span class="nav-separator">|</span>
-            <span class="nav-current" th:text="${pageTitle}">Tạo nhà hàng mới</span>
+    <nav class="breadcrumb-nav">
+        <div class="breadcrumb-content">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <a th:href="@{/}">← Trang chủ</a>
+                <span class="nav-separator">|</span>
+                <a th:href="@{/restaurant-owner/profile}">Hồ sơ Nhà hàng</a>
+                <span class="nav-separator">|</span>
+                <span class="nav-current" th:text="${pageTitle}">Tạo nhà hàng mới</span>
+            </div>
         </div>
     </nav>
 
-    <div class="container">
+    <div class="form-container">
         <!-- Flash Messages -->
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
         <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
         <!-- Form Header -->
-        <div class="card">
-            <h1 class="h1" th:text="${pageTitle}">Tạo nhà hàng mới</h1>
-            <p class="muted">Điền thông tin chi tiết về nhà hàng của bạn</p>
-        </div>
+        <div class="form-card">
+            <div class="form-header">
+                <h1 th:text="${pageTitle}">Tạo nhà hàng mới</h1>
+                <p>Điền thông tin chi tiết về nhà hàng của bạn</p>
+            </div>
 
-        <!-- Restaurant Form -->
-        <div class="card">
             <form th:action="${restaurant.restaurantId != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/edit' : '/restaurant-owner/restaurants/create'}" 
                   th:object="${restaurant}" 
                   method="post" 
@@ -70,60 +327,60 @@
                 
                 <div class="grid grid-3">
                     <!-- Basic Information -->
-                    <label class="form-item">
+                    <div class="form-item">
                         <span class="form-label">Tên nhà hàng *</span>
                         <input type="text" th:field="*{restaurantName}" placeholder="Nhập tên nhà hàng" required />
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item">
                         <span class="form-label">Số điện thoại</span>
                         <input type="tel" th:field="*{phone}" placeholder="0123 456 789" />
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item">
                         <span class="form-label">Website</span>
                         <input type="url" th:field="*{websiteUrl}" placeholder="https://example.com" />
-                    </label>
+                    </div>
                     
-                    <label class="form-item full">
+                    <div class="form-item full">
                         <span class="form-label">Địa chỉ</span>
                         <input type="text" th:field="*{address}" placeholder="123 Đường ABC, Quận 1, TP.HCM" />
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item">
                         <span class="form-label">Loại ẩm thực</span>
                         <input type="text" th:field="*{cuisineType}" placeholder="Vietnamese, Italian, Chinese..." />
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item">
                         <span class="form-label">Giờ mở cửa</span>
                         <input type="text" th:field="*{openingHours}" placeholder="10:00 - 22:00" />
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item">
                         <span class="form-label">Giá trung bình (VNĐ)</span>
                         <input type="number" th:field="*{averagePrice}" placeholder="100000" min="0" step="1000" />
-                    </label>
+                    </div>
                     
-                    <label class="form-item full">
+                    <div class="form-item full">
                         <span class="form-label">Mô tả ngắn</span>
                         <textarea th:field="*{description}" rows="3" placeholder="Mô tả ngắn gọn về nhà hàng..."></textarea>
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item">
                         <span class="form-label">Giá thấp nhất (VNĐ)</span>
                         <input type="number" th:field="*{priceRangeMin}" placeholder="80000" min="0" step="1000" />
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item">
                         <span class="form-label">Giá cao nhất (VNĐ)</span>
                         <input type="number" th:field="*{priceRangeMax}" placeholder="290000" min="0" step="1000" />
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
+                    <div class="form-item">
                         <span class="form-label">Thông báo trạng thái mở cửa</span>
                         <input type="text" th:field="*{statusMessage}" placeholder="Đang mở cửa: 10:30 - 22:00" />
-                    </label>
+                    </div>
                 </div>
 
                 <div class="form-section">
@@ -132,35 +389,35 @@
                         <p>Điền thông tin hero và hotline để khách hàng nhanh chóng nắm bắt thông tin quan trọng của nhà hàng.</p>
                     </div>
                     <div class="grid grid-3">
-                        <label class="form-item">
+                        <div class="form-item">
                             <span class="form-label">Thành phố hiển thị</span>
                             <input type="text" th:field="*{heroCity}" placeholder="Đà Nẵng" />
-                        </label>
+                        </div>
                         
-                        <label class="form-item">
+                        <div class="form-item">
                             <span class="form-label">Tiêu đề hero</span>
                             <input type="text" th:field="*{heroHeadline}" placeholder="Bạn muốn đặt chỗ đến đâu" />
-                        </label>
+                        </div>
                         
-                        <label class="form-item">
+                        <div class="form-item">
                             <span class="form-label">Thông điệp bổ sung</span>
                             <input type="text" th:field="*{heroSubheadline}" placeholder="Khám phá những trải nghiệm ẩm thực tốt nhất" />
-                        </label>
+                        </div>
                         
-                        <label class="form-item">
+                        <div class="form-item">
                             <span class="form-label">Placeholder ô tìm kiếm</span>
                             <input type="text" th:field="*{heroSearchPlaceholder}" placeholder="Tìm kiếm nhà hàng, món ăn, ưu đãi..." />
-                        </label>
+                        </div>
                         
-                        <label class="form-item">
+                        <div class="form-item">
                             <span class="form-label">Hotline đặt chỗ</span>
                             <input type="text" th:field="*{contactHotline}" placeholder="1900 6005" />
-                        </label>
+                        </div>
                         
-                        <label class="form-item">
+                        <div class="form-item">
                             <span class="form-label">Điện thoại liên hệ bổ sung</span>
                             <input type="text" th:field="*{contactSecondaryPhone}" placeholder="085 805 2718" />
-                        </label>
+                        </div>
                     </div>
                 </div>
 
@@ -170,30 +427,30 @@
                         <p>Giải thích rõ quy trình đặt bàn, quy định giữ bàn và các chương trình ưu đãi đang áp dụng.</p>
                     </div>
                     <div class="grid grid-2">
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Thông tin đặt chỗ chi tiết</span>
                             <textarea th:field="*{bookingInformation}" class="long-text" placeholder="I. Đặt chỗ PasGo: Tư vấn - Giữ chỗ&#10;- Quý khách vui lòng đặt chỗ trước ít nhất 01 tiếng..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Ghi chú đặt chỗ / chính sách</span>
                             <textarea th:field="*{bookingNotes}" class="long-text" placeholder="Nhà hàng xin giữ bàn trong vòng 15 phút..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item">
+                        <div class="form-item">
                             <span class="form-label">Ưu đãi chung</span>
                             <textarea th:field="*{generalPromotions}" class="long-text" placeholder="Ưu đãi 1: Giảm 15% từ thứ 2..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item">
+                        <div class="form-item">
                             <span class="form-label">Ưu đãi dành cho nhóm</span>
                             <textarea th:field="*{groupPromotions}" class="long-text" placeholder="Ưu đãi 2: Giảm 10% cho nhóm từ 10 người..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Ghi chú về ưu đãi</span>
                             <textarea th:field="*{promotionNotes}" class="long-text" placeholder="*Ưu đãi được phép cộng dồn..."></textarea>
-                        </label>
+                        </div>
                     </div>
                 </div>
 
@@ -203,30 +460,30 @@
                         <p>Mô tả điểm mạnh, món nổi bật và không gian của nhà hàng để tăng sức thuyết phục.</p>
                     </div>
                     <div class="grid grid-2">
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Tóm tắt nhà hàng</span>
                             <textarea th:field="*{summaryHighlights}" class="long-text" placeholder="Tóm tắt Thai Market - Yên Bái..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Phù hợp với</span>
                             <textarea th:field="*{suitableFor}" class="long-text" placeholder="- Tất cả các loại tiệc, ăn gia đình..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Món đặc sắc</span>
                             <textarea th:field="*{signatureDishes}" class="long-text" placeholder="- Pad Thai, Canh Tomyum, Gỏi đu đủ Somtam..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Không gian &amp; thiết kế</span>
                             <textarea th:field="*{spaceDescriptionDetail}" class="long-text" placeholder="- Truyền thống kết hợp hiện đại, sức chứa 127 khách..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Điểm đặc trưng</span>
                             <textarea th:field="*{uniqueFeatures}" class="long-text" placeholder="- Khám phá ẩm thực đậm vị Thái..."></textarea>
-                        </label>
+                        </div>
                     </div>
                 </div>
 
@@ -236,25 +493,25 @@
                         <p>Cung cấp chi tiết bảng giá, menu nổi bật và các quy định quan trọng cho khách hàng.</p>
                     </div>
                     <div class="grid grid-2">
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Bảng giá chi tiết</span>
                             <textarea th:field="*{pricingDetails}" class="long-text" placeholder="Bảng giá Thai Market Restaurant - Yên Bái..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Menu nổi bật</span>
                             <textarea th:field="*{menuHighlights}" class="long-text" placeholder="Menu Thai Market - Danh sách món..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Quy định &amp; chính sách</span>
                             <textarea th:field="*{policyRules}" class="long-text" placeholder="1. Quy định về đặt cọc..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Tiện ích &amp; dịch vụ</span>
                             <textarea th:field="*{amenities}" class="long-text" placeholder="Tiện ích: Wifi, Hóa đơn VAT, Ghế trẻ em..."></textarea>
-                        </label>
+                        </div>
                     </div>
                 </div>
 
@@ -264,25 +521,25 @@
                         <p>Giúp khách hàng dễ dàng lên kế hoạch di chuyển và biết rõ thời gian phục vụ.</p>
                     </div>
                     <div class="grid grid-2">
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Thông tin chỗ đỗ xe</span>
                             <textarea th:field="*{parkingDetails}" class="long-text" placeholder="Xe máy: để trước cửa... Xe ô tô: đỗ dọc đường Yên Bái..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Ghi chú thư viện ảnh</span>
                             <textarea th:field="*{galleryNotes}" class="long-text" placeholder="Hình ảnh Thai Market Restaurant - bộ sưu tập..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Chỉ đường</span>
                             <textarea th:field="*{directionInfo}" class="long-text" placeholder="Số 124 Đường Yên Bái, Phước Ninh, Hải Châu..."></textarea>
-                        </label>
+                        </div>
                         
-                        <label class="form-item full">
+                        <div class="form-item full">
                             <span class="form-label">Giờ hoạt động chi tiết</span>
                             <textarea th:field="*{operatingSchedule}" class="long-text" placeholder="Thứ hai: 10:30 - 22:00&#10;Thứ ba: 10:30 - 22:00..."></textarea>
-                        </label>
+                        </div>
                     </div>
                 </div>
                     
@@ -380,8 +637,10 @@
                 </div>
                 
                 <!-- Terms of Service -->
-                <div class="card mt-4">
-                    <h3>Điều khoản sử dụng</h3>
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <h2>Điều khoản sử dụng</h2>
+                    </div>
                     <div class="terms-content">
                         <p>Bằng việc đăng ký nhà hàng, bạn đồng ý với các điều khoản sau:</p>
                         <ul>
@@ -398,16 +657,22 @@
                 </div>
                 
                 <!-- Form Actions -->
-                <div class="actions mt-8">
-                    <button type="submit" class="btn">Lưu nhà hàng</button>
-                    <a th:href="@{/restaurant-owner/profile}" class="btn btn-ghost">Hủy</a>
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Lưu nhà hàng
+                    </button>
+                    <a th:href="@{/restaurant-owner/profile}" class="btn btn-ghost">
+                        <i class="fas fa-times"></i>
+                        Hủy
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 
     <style>
-        /* Image Upload Styles */
+        /* Image Upload Styles - Design System */
         .image-upload-container {
             margin-bottom: 1rem;
         }
@@ -417,7 +682,7 @@
         }
         
         .image-preview {
-            border: 2px dashed #ddd;
+            border: 2px dashed var(--dashboard-border);
             border-radius: 8px;
             padding: 20px;
             text-align: center;
@@ -427,11 +692,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            background: var(--dashboard-white);
         }
         
         .image-preview:hover {
-            border-color: #007bff;
-            background-color: #f8f9fa;
+            border-color: var(--dashboard-accent);
+            background-color: var(--dashboard-light-gray);
         }
         
         .preview-placeholder {
@@ -439,7 +705,7 @@
             flex-direction: column;
             align-items: center;
             gap: 8px;
-            color: #666;
+            color: var(--dashboard-gray);
         }
         
         .preview-placeholder .icon {
@@ -449,8 +715,8 @@
         .image-preview img {
             max-width: 100%;
             max-height: 200px;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
         }
         
         .file-upload-container {
@@ -462,7 +728,7 @@
         }
         
         .file-preview {
-            border: 2px dashed #ddd;
+            border: 2px dashed var(--dashboard-border);
             border-radius: 8px;
             padding: 20px;
             text-align: center;
@@ -472,11 +738,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            background: var(--dashboard-white);
         }
         
         .file-preview:hover {
-            border-color: #007bff;
-            background-color: #f8f9fa;
+            border-color: var(--dashboard-accent);
+            background-color: var(--dashboard-light-gray);
         }
         
         .file-preview .file-info {
@@ -484,7 +751,7 @@
             flex-direction: column;
             align-items: center;
             gap: 8px;
-            color: #666;
+            color: var(--dashboard-gray);
         }
         
         .file-preview .file-info .icon {
@@ -494,9 +761,9 @@
         /* Current file/image info styles */
         .current-image-info, .file-info {
             position: relative;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px;
+            background: var(--dashboard-accent);
+            color: var(--dashboard-white);
+            padding: 1rem;
             border-radius: 8px;
             margin-top: 10px;
         }
@@ -509,53 +776,62 @@
         }
         
         .image-name, .file-name {
-            font-weight: bold;
-            font-size: 14px;
+            font-weight: 500;
+            font-size: 0.9rem;
         }
         
         .image-type, .file-type {
-            background: #007bff;
-            color: white;
-            padding: 2px 8px;
+            background: var(--dashboard-black);
+            color: var(--dashboard-white);
+            padding: 0.25rem 0.75rem;
             border-radius: 12px;
-            font-size: 12px;
+            font-size: 0.75rem;
             text-transform: uppercase;
+            font-weight: 500;
         }
         
         .image-actions, .file-actions {
             display: flex;
-            gap: 8px;
+            gap: 0.5rem;
             justify-content: center;
+            margin-top: 0.5rem;
         }
         
         .btn-sm {
-            padding: 4px 12px;
-            font-size: 12px;
-            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            border-radius: 6px;
             text-decoration: none;
             border: none;
             cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
         }
         
-        .btn-primary {
-            background: #007bff;
-            color: white;
+        .btn-sm.btn-primary {
+            background: var(--dashboard-white);
+            color: var(--dashboard-black);
         }
         
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
+        .btn-sm.btn-primary:hover {
+            background: var(--dashboard-light-gray);
         }
         
-        .btn-sm:hover {
-            opacity: 0.8;
+        .btn-sm.btn-secondary {
+            background: transparent;
+            color: var(--dashboard-white);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn-sm.btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .remove-image {
             position: absolute;
             top: 5px;
             right: 5px;
-            background: #dc3545;
+            background: var(--dashboard-danger);
             color: white;
             border: none;
             border-radius: 50%;
@@ -566,6 +842,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .remove-image:hover {
+            background: #B91C1C;
         }
         
         .image-preview.has-image {
@@ -580,49 +861,11 @@
             border-radius: 8px;
         }
         
-        .image-upload-container {
-            margin-bottom: 1rem;
-        }
-        
-        .image-upload-container input[type="file"] {
-            display: none;
-        }
-        
-        .image-preview {
-            border: 2px dashed #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .image-preview:hover {
-            border-color: #007bff;
-            background-color: #f8f9fa;
-        }
-        
-        .preview-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            color: #666;
-        }
-        
-        .preview-placeholder .icon {
-            font-size: 2rem;
-        }
-        
-        .image-preview img {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        .muted {
+            color: var(--dashboard-gray);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            display: block;
         }
     </style>
 

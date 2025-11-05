@@ -17,6 +17,15 @@ public interface RestaurantTableRepository extends JpaRepository<RestaurantTable
     List<RestaurantTable> findByRestaurantRestaurantIdOrderByTableName(Integer restaurantId);
     
     /**
+     * Find tables by restaurant ID with eager loading of restaurant
+     */
+    @Query("SELECT DISTINCT t FROM RestaurantTable t " +
+            "LEFT JOIN FETCH t.restaurant r " +
+            "WHERE t.restaurant.restaurantId = :restaurantId " +
+            "ORDER BY t.tableName")
+    List<RestaurantTable> findByRestaurantRestaurantIdWithEagerFetch(@Param("restaurantId") Integer restaurantId);
+
+    /**
      * Find tables by restaurant ID
      */
     List<RestaurantTable> findByRestaurantRestaurantId(Integer restaurantId);

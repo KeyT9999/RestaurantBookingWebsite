@@ -435,11 +435,19 @@ public class RestaurantOwnerControllerTest {
     void restaurantDishes_WithValidRestaurantId_ShouldReturnDishesView() {
         // Given
         Integer restaurantId = 1;
+        when(authentication.getName()).thenReturn(testUser.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testUser);
+        when(restaurantOwnerService.getRestaurantOwnerByUserId(testUser.getId()))
+                .thenReturn(Optional.of(testRestaurantOwner));
+        when(restaurantOwnerService.getRestaurantsByOwnerId(testRestaurantOwner.getOwnerId()))
+                .thenReturn(testRestaurants);
         when(restaurantOwnerService.getRestaurantById(restaurantId))
                 .thenReturn(Optional.of(testRestaurants.get(0)));
+        when(restaurantOwnerService.getDishesByRestaurantWithImages(restaurantId))
+                .thenReturn(new ArrayList<>());
 
         // When
-        String result = restaurantOwnerController.restaurantDishes(restaurantId, model);
+        String result = restaurantOwnerController.restaurantDishes(restaurantId, authentication, model);
 
         // Then
         assertEquals("restaurant-owner/restaurant-dishes", result);
@@ -469,11 +477,19 @@ public class RestaurantOwnerControllerTest {
     void restaurantTables_WithValidRestaurantId_ShouldReturnTablesView() {
         // Given
         Integer restaurantId = 1;
+        when(authentication.getName()).thenReturn(testUser.getUsername());
+        when(authentication.getPrincipal()).thenReturn(testUser);
+        when(restaurantOwnerService.getRestaurantOwnerByUserId(testUser.getId()))
+                .thenReturn(Optional.of(testRestaurantOwner));
+        when(restaurantOwnerService.getRestaurantsByOwnerId(testRestaurantOwner.getOwnerId()))
+                .thenReturn(testRestaurants);
         when(restaurantOwnerService.getRestaurantById(restaurantId))
                 .thenReturn(Optional.of(testRestaurants.get(0)));
+        when(restaurantService.findTablesByRestaurant(restaurantId))
+                .thenReturn(new ArrayList<>());
 
         // When
-        String result = restaurantOwnerController.restaurantTables(restaurantId, model);
+        String result = restaurantOwnerController.restaurantTables(restaurantId, authentication, model);
 
         // Then
         assertEquals("restaurant-owner/restaurant-tables", result);

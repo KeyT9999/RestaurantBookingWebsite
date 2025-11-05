@@ -139,6 +139,18 @@
                         </a>
                     </li>
                     <li>
+                        <a href="#" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/services' : '#'}">
+                            <i class="fas fa-concierge-bell"></i>
+                            Dịch vụ
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/media' : '#'}">
+                            <i class="fas fa-images"></i>
+                            Media
+                        </a>
+                    </li>
+                    <li>
                         <a href="/restaurant-owner/payments">
                             <i class="fas fa-credit-card"></i>
                             Thanh toán
@@ -152,9 +164,9 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/restaurant-owner/reports">
-                            <i class="fas fa-chart-bar"></i>
-                            Báo cáo
+                        <a href="/restaurant-owner/reviews">
+                            <i class="fas fa-star"></i>
+                            Đánh giá
                         </a>
                     </li>
                 </ul>

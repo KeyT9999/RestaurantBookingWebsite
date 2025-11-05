@@ -1,143 +1,443 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Thêm món mới</title>
-    <link rel="stylesheet" th:href="@{/css/restaurant-admin.css}" />
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
+
+    <style>
+        .dish-form-page {
+            background: var(--dashboard-bg);
+            min-height: 100vh;
+        }
+
+        .form-content-header {
+            margin-bottom: 2rem;
+        }
+
+        .form-content-header .content-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-content-header .content-subtitle {
+            color: var(--dashboard-gray);
+            font-size: 0.95rem;
+        }
+
+        .form-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: var(--dashboard-black);
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            background: var(--dashboard-white);
+            color: var(--dashboard-black);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--dashboard-accent);
+            box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group small {
+            color: var(--dashboard-gray);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--dashboard-border);
+        }
+
+        /* Image Upload Styles */
+        .image-upload-container {
+            margin-bottom: 1rem;
+        }
+        
+        .image-upload-container input[type="file"] {
+            display: none;
+        }
+        
+        .image-preview {
+            border: 2px dashed var(--dashboard-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: var(--dashboard-bg);
+        }
+        
+        .image-preview:hover {
+            border-color: var(--dashboard-accent);
+            background: var(--dashboard-white);
+        }
+        
+        .preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--dashboard-gray);
+        }
+        
+        .preview-placeholder i {
+            font-size: 3rem;
+            color: var(--dashboard-gray);
+        }
+        
+        .image-preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .current-image-item,
+        .new-image-item {
+            width: 100%;
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .new-image-item {
+            border-color: var(--primary-color);
+        }
+        
+        .image-info,
+        .current-image-info {
+            margin-top: 1rem;
+        }
+        
+        .image-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .image-name {
+            font-weight: 600;
+            color: var(--dashboard-black);
+            font-size: 0.875rem;
+        }
+        
+        .image-type {
+            background: var(--dashboard-bg);
+            color: var(--dashboard-gray);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .image-size {
+            background: #DBEAFE;
+            color: #1E40AF;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .image-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .breadcrumb-nav {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .breadcrumb-nav a {
+            color: var(--dashboard-accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb-nav a:hover {
+            color: var(--primary-color);
+        }
+
+        .breadcrumb-nav .nav-separator {
+            color: var(--dashboard-gray);
+            margin: 0 0.5rem;
+        }
+
+        .breadcrumb-nav .nav-current {
+            color: var(--dashboard-black);
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
-<body>
-    <!-- Breadcrumb Navigation -->
-    <nav class="page-switch card">
-        <div class="nav-breadcrumb">
-            <a th:href="@{/}" class="nav-link">← Trang chủ</a>
+<body class="dish-form-page">
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+            </div>
+            <div class="header-right">
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" style="padding: 2rem;">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb-nav">
+            <a th:href="@{/}">← Trang chủ</a>
             <span class="nav-separator">|</span>
-            <a th:href="@{/restaurant-owner/profile}" class="nav-link">Hồ sơ Nhà hàng</a>
+            <a th:href="@{/restaurant-owner/profile}">Hồ sơ Nhà hàng</a>
             <span class="nav-separator">|</span>
             <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}" 
-               class="nav-link" th:text="${restaurant.restaurantName}">Tên nhà hàng</a>
+               th:text="${restaurant.restaurantName}">Tên nhà hàng</a>
             <span class="nav-separator">|</span>
             <span class="nav-current" th:text="${pageTitle}">Thêm món mới</span>
-        </div>
-    </nav>
+        </nav>
 
-    <div class="container">
         <!-- Flash Messages -->
-        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        <div th:if="${success}" class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span th:text="${error}"></span>
+        </div>
 
         <!-- Form Header -->
-        <div class="card">
-            <h1 class="h1" th:text="${pageTitle}">Thêm món mới</h1>
-            <p class="muted" th:text="'Thêm món ăn mới vào menu của ' + ${restaurant.restaurantName}">Thêm món ăn mới vào menu nhà hàng</p>
+        <div class="form-content-header">
+            <h1 class="content-title" th:text="${pageTitle}">Thêm món mới</h1>
+            <p class="content-subtitle" th:text="'Thêm món ăn mới vào menu của ' + ${restaurant.restaurantName}">Thêm món ăn mới vào menu nhà hàng</p>
         </div>
 
         <!-- Dish Form -->
-        <div class="card">
+        <div class="form-card">
             <form th:action="${dish.dishId != null ? 
                 '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/dishes/' + dish.dishId + '/edit' : 
                 '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/dishes/create'}" 
                   method="post" 
                   enctype="multipart/form-data">
                 
-                <div class="grid grid-2">
-                    <label class="form-item">
-                        <span class="form-label">Tên món *</span>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">Tên món *</label>
                         <input type="text" 
+                               id="name"
                                name="name" 
                                th:value="${dish.name}"
                                placeholder="Phở bò đặc biệt" 
                                required />
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
-                        <span class="form-label">Danh mục *</span>
-                        <select name="category" required>
+                    <div class="form-group">
+                        <label for="category">Danh mục *</label>
+                        <select id="category" name="category" required>
                             <option value="">Chọn danh mục</option>
                             <option value="Starter" th:selected="${dish.category == 'Starter'}">Khai vị</option>
                             <option value="Main" th:selected="${dish.category == 'Main'}">Món chính</option>
                             <option value="Dessert" th:selected="${dish.category == 'Dessert'}">Tráng miệng</option>
                             <option value="Drink" th:selected="${dish.category == 'Drink'}">Đồ uống</option>
                         </select>
-                    </label>
+                    </div>
                     
-                    <label class="form-item">
-                        <span class="form-label">Giá (VNĐ) *</span>
+                    <div class="form-group">
+                        <label for="price">Giá (VNĐ) *</label>
                         <input type="number" 
+                               id="price"
                                name="price" 
                                th:value="${dish.price}"
                                placeholder="85000" 
                                min="0" 
                                step="1000" 
                                required />
-                    </label>
+                        <small>Nhập giá bằng VNĐ (ví dụ: 85000)</small>
+                    </div>
                     
-                    <label class="form-item">
-                        <span class="form-label">Trạng thái *</span>
-                        <select name="status" required>
+                    <div class="form-group">
+                        <label for="status">Trạng thái *</label>
+                        <select id="status" name="status" required>
                             <option value="AVAILABLE" th:selected="${dish.status != null and dish.status.name() == 'AVAILABLE'}">Có sẵn</option>
                             <option value="OUT_OF_STOCK" th:selected="${dish.status != null and dish.status.name() == 'OUT_OF_STOCK'}">Hết hàng</option>
                             <option value="DISCONTINUED" th:selected="${dish.status != null and dish.status.name() == 'DISCONTINUED'}">Ngừng phục vụ</option>
                         </select>
-                    </label>
+                    </div>
                     
-                    <label class="form-item full">
-                        <span class="form-label">Mô tả món</span>
-                        <textarea name="description" 
+                    <div class="form-group full">
+                        <label for="description">Mô tả món</label>
+                        <textarea id="description"
+                                  name="description" 
                                   rows="3" 
                                   th:text="${dish.description}"
                                   placeholder="Mô tả chi tiết về món ăn..."></textarea>
-                    </label>
+                    </div>
                     
-                    <label class="form-item full">
-                        <span class="form-label">Ảnh món ăn</span>
+                    <div class="form-group full">
+                        <label>Ảnh món ăn</label>
                         <div class="image-upload-container">
                             <input type="file" 
                                    id="dishImage" 
                                    name="dishImage" 
                                    accept="image/*" 
                                    onchange="previewSingleImage(this, 'dish-image-preview')" />
-                            <div class="image-preview" id="dish-image-preview">
+                            <div class="image-preview" id="dish-image-preview" onclick="document.getElementById('dishImage').click()">
                                 <!-- Hiển thị ảnh hiện tại nếu có (edit mode) -->
                                 <div th:if="${dishImageUrl != null and !dishImageUrl.isEmpty()}">
                                     <div class="current-image-item">
                                         <img th:src="${dishImageUrl}" 
                                              alt="Current Dish Image" 
-                                             style="max-width: 100%; max-height: 200px; border-radius: 4px;">
+                                             style="max-width: 100%; max-height: 300px; border-radius: 8px;">
                                         <div class="current-image-info">
                                             <div class="image-details">
-                                                <span class="image-name">dish_image.jpg</span>
-                                                <span class="image-type">jpg</span>
+                                                <span class="image-name">Ảnh hiện tại</span>
+                                                <span class="image-type">JPG</span>
                                             </div>
                                             <div class="image-actions">
-                                                <a th:href="${dishImageUrl}" target="_blank" class="btn btn-sm btn-primary">Xem ảnh</a>
-                                                <button type="button" class="btn btn-sm btn-secondary" onclick="removeCurrentImage('dishImage', 'dish-image-preview')">Thay đổi</button>
+                                                <a th:href="${dishImageUrl}" target="_blank" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i> Xem ảnh
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="removeCurrentImage('dishImage', 'dish-image-preview')">
+                                                    <i class="fas fa-upload"></i> Thay đổi
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <!-- Placeholder nếu không có ảnh -->
                                 <div th:unless="${dishImageUrl != null and !dishImageUrl.isEmpty()}" class="preview-placeholder">
-                                    <i class="icon">🍽️</i>
+                                    <i class="fas fa-image"></i>
                                     <span>Chọn ảnh món ăn</span>
+                                    <small style="color: var(--dashboard-gray); font-size: 0.85rem;">PNG, JPG, WebP. Tối đa 5MB</small>
                                 </div>
                             </div>
-                            <small class="muted">PNG, JPG, WebP. Tối đa 5MB. Tỷ lệ khuyến nghị: 16:9</small>
+                            <small>PNG, JPG, WebP. Tối đa 5MB. Tỷ lệ khuyến nghị: 16:9</small>
                         </div>
-                    </label>
+                    </div>
                 </div>
                 
                 <!-- Form Actions -->
-                <div class="actions mt-8">
-                    <button type="submit" class="btn">
+                <div class="form-actions">
+                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}" 
+                       class="btn btn-secondary text-dark">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                    <button type="submit" class="btn btn-primary text-dark">
+                        <i class="fas fa-save"></i>
                         <span th:text="${dish.dishId != null ? 'Cập nhật món' : 'Thêm món'}">Thêm món</span>
                     </button>
-                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}" 
-                       class="btn btn-ghost">Hủy</a>
                 </div>
             </form>
         </div>
-    </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         // Image preview functionality
@@ -166,7 +466,7 @@
                 reader.onload = function(e) {
                     preview.innerHTML = `
                         <div class="new-image-item">
-                            <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 4px;">
+                            <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
                             <div class="image-info">
                                 <div class="image-details">
                                     <span class="image-name">${file.name}</span>
@@ -174,7 +474,9 @@
                                     <span class="image-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
                                 </div>
                                 <div class="image-actions">
-                                    <button type="button" class="btn btn-sm btn-secondary" onclick="removeNewImage('${input.id}', '${previewId}')">Xóa</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="removeNewImage('${input.id}', '${previewId}')">
+                                        <i class="fas fa-times"></i> Xóa
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -195,8 +497,9 @@
             input.value = '';
             preview.innerHTML = `
                 <div class="preview-placeholder">
-                    <i class="icon">🍽️</i>
+                    <i class="fas fa-image"></i>
                     <span>Chọn ảnh món ăn</span>
+                    <small style="color: var(--dashboard-gray); font-size: 0.85rem;">PNG, JPG, WebP. Tối đa 5MB</small>
                 </div>
             `;
         }
@@ -208,163 +511,13 @@
             input.value = '';
             preview.innerHTML = `
                 <div class="preview-placeholder">
-                    <i class="icon">🍽️</i>
+                    <i class="fas fa-image"></i>
                     <span>Chọn ảnh món ăn</span>
+                    <small style="color: var(--dashboard-gray); font-size: 0.85rem;">PNG, JPG, WebP. Tối đa 5MB</small>
                 </div>
             `;
         }
     </script>
-
-    <style>
-        /* Image Upload Styles */
-        .image-upload-container {
-            margin-bottom: 1rem;
-        }
-        
-        .image-upload-container input[type="file"] {
-            display: none;
-        }
-        
-        .image-preview {
-            border: 2px dashed #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        
-        .image-preview:hover {
-            border-color: #007bff;
-            background-color: #f8f9fa;
-        }
-        
-        .preview-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            color: #666;
-        }
-        
-        .preview-placeholder .icon {
-            font-size: 2rem;
-        }
-        
-        .image-preview img {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        /* Current image styles */
-        .current-image-item {
-            position: relative;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .current-image-info {
-            margin-top: 12px;
-        }
-        
-        .image-details {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        .image-name {
-            font-weight: 600;
-            color: #374151;
-            font-size: 0.875rem;
-        }
-        
-        .image-type {
-            background: #f3f4f6;
-            color: #6b7280;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        
-        .image-size {
-            background: #dbeafe;
-            color: #1e40af;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        
-        .image-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        
-        /* New image styles */
-        .new-image-item {
-            position: relative;
-            background: white;
-            border: 1px solid #10b981;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 5px;
-            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
-        }
-        
-        .new-image-item .image-info {
-            margin-top: 12px;
-        }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .image-details {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .image-actions {
-                flex-direction: column;
-            }
-            
-            .image-preview {
-                min-height: 100px;
-                padding: 15px;
-            }
-        }
-        
-        /* Form improvements */
-        .grid.grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-        
-        .grid.grid-2 .form-item.full {
-            grid-column: 1 / -1;
-        }
-        
-        @media (max-width: 768px) {
-            .grid.grid-2 {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </body>
 </html>
+

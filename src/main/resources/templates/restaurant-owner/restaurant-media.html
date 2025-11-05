@@ -1,84 +1,635 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Media - [[${restaurant.restaurantName}]]</title>
-    <link rel="stylesheet" th:href="@{/css/restaurant-media.css}">
-    <link rel="stylesheet" th:href="@{/css/luxury.css}">
+    <title th:text="${pageTitle}">Quản lý Media</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
+    
+    <style>
+        .media-page {
+            background: var(--dashboard-light-gray);
+            min-height: 100vh;
+        }
+
+        .page-content {
+            width: 100%;
+            max-width: none;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        .page-header-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .page-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .page-header-info h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .page-header-info p {
+            color: var(--dashboard-gray);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .page-header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .media-filters {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            flex-direction: row!important;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-weight: 500;
+            color: var(--dashboard-black);
+            font-size: 0.9rem;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 8px;
+            background: var(--dashboard-white);
+            color: var(--dashboard-gray);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-btn:hover {
+            background: var(--dashboard-light-gray);
+            border-color: var(--dashboard-accent);
+        }
+
+        .filter-btn.active {
+            background: var(--dashboard-black);
+            color: var(--dashboard-white);
+            border-color: var(--dashboard-black);
+        }
+
+        .media-card-container {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+        }
+
+        .media-card-body {
+            padding: 2rem;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .media-card {
+            border: 1px solid var(--dashboard-border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--dashboard-white);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .media-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+        }
+
+        .media-image {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            background: var(--dashboard-light-gray);
+        }
+
+        .media-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .media-card:hover .media-img {
+            transform: scale(1.05);
+        }
+
+        .media-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--dashboard-gray);
+            font-size: 3rem;
+        }
+
+        .media-info {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--dashboard-border);
+        }
+
+        .media-type {
+            flex: 1;
+        }
+
+        .type-label {
+            padding: 0.375rem 0.75rem;
+            background: var(--dashboard-light-gray);
+            color: var(--dashboard-black);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .media-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--dashboard-black);
+            color: var(--dashboard-white);
+        }
+
+        .btn-primary:hover {
+            background: var(--dashboard-accent);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-danger {
+            background: var(--dashboard-danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #B91C1C;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #10B981;
+        }
+
+        .alert-error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #DC2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-content i {
+            font-size: 4rem;
+            color: var(--dashboard-gray);
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .empty-content h3 {
+            font-size: 1.5rem;
+            color: var(--dashboard-black);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .empty-content p {
+            color: var(--dashboard-gray);
+            margin: 0 0 1.5rem 0;
+        }
+
+        /* Delete Modal */
+        .delete-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .delete-modal-overlay.show {
+            display: flex;
+        }
+
+        .delete-modal {
+            background: var(--dashboard-white);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.3);
+            max-width: 480px;
+            width: 90%;
+            animation: slideUp 0.3s ease-out;
+            border: 1px solid var(--dashboard-border);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .delete-modal-header {
+            padding: 2rem 2rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid var(--dashboard-border);
+        }
+
+        .delete-modal-header h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin: 0;
+        }
+
+        .delete-modal-body {
+            padding: 1.5rem 2rem;
+        }
+
+        .media-preview {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .media-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+        }
+
+        .delete-modal-footer {
+            padding: 1rem 2rem 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--dashboard-black);
+            border: 1px solid var(--dashboard-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--dashboard-light-gray);
+            border-color: var(--dashboard-accent);
+        }
+
+        @media (max-width: 768px) {
+            .page-content {
+                padding: 1rem;
+            }
+
+            .page-header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .page-header-actions .btn {
+                width: 100%;
+            }
+
+            .media-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="page-header">
+<body class="media-page">
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
             <div class="header-content">
-                <h1 class="page-title">
-                    <i class="icon">🖼️</i>
-                    Quản lý Media
-                </h1>
-                <p class="page-subtitle">[[${restaurant.restaurantName}]]</p>
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+                
+                <!-- Restaurant Selector -->
+                <div class="restaurant-selector" th:if="${restaurants != null and !restaurants.empty}">
+                    <div class="restaurant-dropdown" onclick="toggleRestaurantMenu()">
+                        <div class="restaurant-info">
+                            <div class="restaurant-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="restaurant-details">
+                                <h4 th:text="${currentRestaurant.restaurantName}">Nhà hàng mặc định</h4>
+                                <p th:text="${currentRestaurant.address}">Địa chỉ nhà hàng</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    
+                    <div class="restaurant-menu" id="restaurantMenu">
+                        <div th:each="restaurant, iterStat : ${restaurants}" 
+                             class="restaurant-item" 
+                             th:classappend="${restaurant.restaurantId == restaurantId ? 'active' : ''}"
+                             th:onclick="'selectRestaurant(' + ${restaurant.restaurantId} + ')'">
+                            <div class="restaurant-info">
+                                <div class="restaurant-icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="restaurant-details">
+                                    <h4 th:text="${restaurant.restaurantName}">Tên nhà hàng</h4>
+                                    <p th:text="${restaurant.address}">Địa chỉ</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="header-actions">
-                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media/upload'}" 
-                   class="btn btn-primary">
-                    <i class="icon">📤</i>
-                    Upload Media
-                </a>
-                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables'}" 
-                   class="btn btn-secondary">
-                    <i class="icon">🪑</i>
-                    Quản lý Bàn
-                </a>
-                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}" 
-                   class="btn btn-secondary">
-                    <i class="icon">🍽️</i>
-                    Quản lý Món ăn
-                </a>
+            
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
+                </div>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
+    </header>
 
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <h3>Dashboard</h3>
+                        <p>V 1.0</p>
+                    </div>
+                </div>
+                
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/restaurant-owner/dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            Tổng quan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/bookings" th:href="${restaurantId != null ? '/restaurant-owner/bookings?restaurantId=' + restaurantId : '/restaurant-owner/bookings'}">
+                            <i class="fas fa-calendar-check"></i>
+                            Booking
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/tables" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/tables' : '/restaurant-owner/tables'}">
+                            <i class="fas fa-chair"></i>
+                            Quản lý bàn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/profile">
+                            <i class="fas fa-store"></i>
+                            Hồ sơ nhà hàng
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/menu" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/dishes' : '/restaurant-owner/menu'}">
+                            <i class="fas fa-utensils"></i>
+                            Thực đơn
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/services' : '#'}">
+                            <i class="fas fa-concierge-bell"></i>
+                            Dịch vụ
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/media' : '#'}" class="active">
+                            <i class="fas fa-images"></i>
+                            Media
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/payments">
+                            <i class="fas fa-credit-card"></i>
+                            Thanh toán
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/chat" th:href="${restaurantId != null ? '/restaurant-owner/chat?restaurantId=' + restaurantId : '/restaurant-owner/chat'}">
+                            <i class="fas fa-comments"></i>
+                            Tin nhắn
+                            <span class="menu-badge" id="dashboard-unread-badge" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/reviews">
+                            <i class="fas fa-star"></i>
+                            Đánh giá
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-content">
         <!-- Flash Messages -->
         <div th:if="${success}" class="alert alert-success">
-            <i class="icon">✅</i>
+                    <i class="fas fa-check-circle"></i>
             <span th:text="${success}">Thành công!</span>
         </div>
         <div th:if="${error}" class="alert alert-error">
-            <i class="icon">❌</i>
+                    <i class="fas fa-exclamation-circle"></i>
             <span th:text="${error}">Có lỗi xảy ra!</span>
         </div>
+
+                <!-- Page Header -->
+                <div class="page-header-card">
+                    <div class="page-header-content">
+                        <div class="page-header-info">
+                            <h1>
+                                <i class="fas fa-images"></i>
+                                Quản lý Media
+                            </h1>
+                            <p th:text="${restaurant.restaurantName}">Tên nhà hàng</p>
+                        </div>
+                        <div class="page-header-actions">
+                            <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media/upload'}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-upload"></i>
+                                Upload Media
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
         <!-- Media Filters -->
         <div class="media-filters">
             <div class="filter-group">
                 <span class="filter-label">Lọc theo loại:</span>
                 <button class="filter-btn active" data-type="all">
-                    <i class="icon">📁</i>
+                            <i class="fas fa-folder"></i>
                     Tất cả
                 </button>
                 <button class="filter-btn" data-type="gallery">
-                    <i class="icon">🖼️</i>
+                            <i class="fas fa-images"></i>
                     Gallery
                 </button>
                 <button class="filter-btn" data-type="menu">
-                    <i class="icon">📋</i>
+                            <i class="fas fa-clipboard-list"></i>
                     Menu
                 </button>
                 <button class="filter-btn" data-type="interior">
-                    <i class="icon">🏠</i>
+                            <i class="fas fa-home"></i>
                     Nội thất
                 </button>
                 <button class="filter-btn" data-type="exterior">
-                    <i class="icon">🏢</i>
+                            <i class="fas fa-building"></i>
                     Ngoại thất
                 </button>
                 <button class="filter-btn" data-type="table_layout">
-                    <i class="icon">🗺️</i>
+                            <i class="fas fa-map"></i>
                     Layout bàn
                 </button>
             </div>
         </div>
 
         <!-- Media Grid -->
+                <div class="media-card-container">
+                    <div class="media-card-body">
         <div class="media-grid" id="mediaGrid">
             <div th:each="media : ${mediaList}" 
                  th:data-type="${media.type}"
@@ -93,14 +644,8 @@
                          loading="lazy"
                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                     <div class="media-placeholder" style="display: none;">
-                        <i class="icon">🖼️</i>
+                                        <i class="fas fa-image"></i>
                         <span>Không thể tải ảnh</span>
-                    </div>
-                    
-                    <!-- Loading indicator -->
-                    <div class="media-loading" style="display: none;">
-                        <div class="loading-spinner"></div>
-                        <span>Đang tải...</span>
                     </div>
                 </div>
 
@@ -113,14 +658,14 @@
                         <a th:href="${media.url}" 
                            target="_blank" 
                            class="btn btn-sm btn-primary">
-                            <i class="icon">👁️</i>
+                                            <i class="fas fa-eye"></i>
                             Xem
                         </a>
                         <button type="button"
                                 class="btn btn-sm btn-danger delete-media-btn"
                                 th:data-media-id="${media.mediaId}"
                                 th:data-media-type="${media.type}">
-                            <i class="icon">🗑️</i>
+                                            <i class="fas fa-trash"></i>
                             Xóa
                         </button>
                     </div>
@@ -130,50 +675,152 @@
             <!-- Empty State -->
             <div th:if="${#lists.isEmpty(mediaList)}" class="empty-state">
                 <div class="empty-content">
-                    <i class="icon">🖼️</i>
+                                    <i class="fas fa-images"></i>
                     <h3>Chưa có media nào</h3>
                     <p>Hãy upload media đầu tiên cho nhà hàng của bạn</p>
                     <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media/upload'}" 
                        class="btn btn-primary">
-                        <i class="icon">📤</i>
+                                        <i class="fas fa-upload"></i>
                         Upload Media
                     </a>
                 </div>
             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
         </div>
 
         <!-- Delete Confirmation Modal -->
-        <div id="deleteModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
+    <div id="deleteModal" class="delete-modal-overlay">
+        <div class="delete-modal">
+            <div class="delete-modal-header">
                     <h3>Xác nhận xóa</h3>
-                    <button type="button" class="close-btn" onclick="closeDeleteModal()">
-                        <i class="icon">✕</i>
-                    </button>
                 </div>
-                <div class="modal-body">
+            <div class="delete-modal-body">
                     <p>Bạn có chắc chắn muốn xóa media này không?</p>
                     <div class="media-preview" id="mediaPreview"></div>
                 </div>
-                <div class="modal-footer">
+            <div class="delete-modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
                         Hủy
                     </button>
                     <form id="deleteForm" method="post" style="display: inline;">
+                    <input type="hidden" 
+                           th:if="${_csrf != null}"
+                           th:name="${_csrf.parameterName}" 
+                           th:value="${_csrf.token}"/>
                         <button type="submit" class="btn btn-danger">
-                            <i class="icon">🗑️</i>
+                        <i class="fas fa-trash"></i>
                             Xóa
                         </button>
                     </form>
-                </div>
             </div>
         </div>
     </div>
 
-    <script th:src="@{/js/restaurant-media.js}"></script>
-    <script>
+    <script th:inline="javascript">
         // Set restaurant ID for JavaScript
-        window.restaurantId = [[${restaurant.restaurantId}]];
+        const restaurantId = /*[[${restaurant.restaurantId}]]*/ null;
+
+        // Restaurant menu toggle
+        function toggleRestaurantMenu() {
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            
+            if (menu) {
+                menu.classList.toggle('show');
+            }
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
+        }
+
+        function selectRestaurant(restaurantId) {
+            window.location.href = '/restaurant-owner/restaurants/' + restaurantId + '/media';
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const selector = document.querySelector('.restaurant-selector');
+            if (selector && !selector.contains(event.target)) {
+                const menu = document.getElementById('restaurantMenu');
+                const dropdown = document.querySelector('.restaurant-dropdown');
+                if (menu) menu.classList.remove('show');
+                if (dropdown) dropdown.classList.remove('active');
+            }
+        });
+
+        // Media filter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const mediaCards = document.querySelectorAll('.media-card');
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+
+                    const filterType = this.dataset.type;
+
+                    // Filter media cards
+                    mediaCards.forEach(card => {
+                        if (filterType === 'all' || card.dataset.type === filterType) {
+                            card.style.display = 'flex';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+
+        // Delete confirmation with event delegation
+        document.addEventListener('click', function(event) {
+            if (event.target.closest('.delete-media-btn')) {
+                const button = event.target.closest('.delete-media-btn');
+                const mediaId = button.dataset.mediaId;
+                const mediaType = button.dataset.mediaType;
+                const mediaCard = button.closest('.media-card');
+                const mediaImg = mediaCard.querySelector('.media-img');
+                
+                if (mediaImg) {
+                    document.getElementById('mediaPreview').innerHTML = 
+                        '<img src="' + mediaImg.src + '" alt="Preview">';
+                }
+                
+                document.getElementById('deleteForm').action = 
+                    '/restaurant-owner/restaurants/' + restaurantId + '/media/' + mediaId + '/delete';
+                document.getElementById('deleteModal').classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+        });
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal when clicking overlay
+        document.getElementById('deleteModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('deleteModal');
+                if (modal && modal.classList.contains('show')) {
+                    closeDeleteModal();
+                }
+            }
+        });
     </script>
 </body>
 </html>
