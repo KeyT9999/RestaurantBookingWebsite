@@ -30,13 +30,15 @@ if errorlevel 1 (
 
 REM Set Cloudinary credentials (nếu chưa có trong environment)
 if "%CLOUDINARY_CLOUD_NAME%"=="" (
-    echo Setting Cloudinary credentials...
-    set CLOUDINARY_CLOUD_NAME=drcly5nge
-    set CLOUDINARY_API_KEY=574438289271325
-    set CLOUDINARY_API_SECRET=dDyQjA3bmFgf_7fdsJFEXs4DTSA
-    set CLOUDINARY_SECURE=true
-    echo Credentials set successfully!
+    echo ERROR: Cloudinary credentials not set!
+    echo Please set the following environment variables:
+    echo   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+    echo   CLOUDINARY_API_KEY=your_cloudinary_api_key
+    echo   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
     echo.
+    echo Or create a .env file with these values.
+    pause
+    exit /b 1
 )
 
 echo Running upload script...
