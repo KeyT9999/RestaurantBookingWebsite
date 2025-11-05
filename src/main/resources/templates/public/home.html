@@ -754,52 +754,104 @@
     </section>
     -->
 
-    <!-- Popular Restaurants -->
-    <section class="popular-section" id="restaurants">
+    <!-- Popular Restaurants - New Design -->
+    <section class="featured-restaurants-section" id="restaurants">
         <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">Nhà hàng phổ biến</h2>
-                <p class="section-subtitle">Những nhà hàng được yêu thích nhất</p>
+            <div class="featured-section-header">
+                <div class="featured-header-content">
+                    <h2 class="featured-title">Nhà hàng nổi bật</h2>
+                    <p class="featured-subtitle">Khám phá những địa điểm ẩm thực được yêu thích nhất</p>
+                </div>
+                <a th:href="@{/restaurants}" class="featured-view-all">
+                    Xem tất cả
+                    <i class="fas fa-arrow-right"></i>
+                </a>
             </div>
             
-            <div class="alert alert-light text-center" role="status"
-                 th:if="${#lists.isEmpty(popularRestaurants)}">
-                Dữ liệu nhà hàng phổ biến đang được cập nhật.
+            <!-- Empty State -->
+            <div class="featured-empty-state" th:if="${#lists.isEmpty(popularRestaurants)}">
+                <div class="empty-icon">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <h3>Đang cập nhật</h3>
+                <p>Dữ liệu nhà hàng nổi bật đang được cập nhật. Vui lòng quay lại sau.</p>
+                <a th:href="@{/restaurants}" class="btn-featured-primary">Xem tất cả nhà hàng</a>
             </div>
 
-            <!-- Popular Restaurants - Simple Grid -->
-            <div class="restaurant-grid" th:if="${!#lists.isEmpty(popularRestaurants)}">
-                <div class="restaurant-card" th:each="restaurant, iterStat : ${popularRestaurants}" th:if="${iterStat.index < 3}">
-                    <div class="restaurant-image"
-                         th:style="${restaurant.hasCoverImage()} ? 'background-image: url(' + restaurant.coverImageUrl + ');' : 'background: ' + restaurant.fallbackGradient + ';'">
-                        <div class="restaurant-badge"
+            <!-- Featured Restaurants Grid -->
+            <div class="featured-restaurants-grid" th:if="${!#lists.isEmpty(popularRestaurants)}">
+                <article class="featured-restaurant-card" 
+                         th:each="restaurant, iterStat : ${popularRestaurants}" 
+                         th:if="${iterStat.index < 3}"
+                         th:data-restaurant-id="${restaurant.id}"
+                         onclick="const id = this.getAttribute('data-restaurant-id'); if(id) window.location.href = '/restaurants/' + id;"
+                         style="cursor: pointer;">
+                    <!-- Card Image -->
+                    <div class="featured-card-image">
+                        <img th:if="${restaurant.hasCoverImage()}" 
+                             th:src="${restaurant.coverImageUrl}"
+                             th:alt="${restaurant.name}"
+                             loading="lazy"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div class="featured-card-image-placeholder" 
+                             th:style="'background: ' + ${restaurant.fallbackGradient}"
+                             th:if="${!restaurant.hasCoverImage()}">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        
+                        <!-- Badge -->
+                        <div class="featured-card-badge" 
                              th:text="${restaurant.badge}"
                              th:if="${restaurant.badge != null}"></div>
-                    </div>
-                    <div class="restaurant-info">
-                        <h3 class="restaurant-name" th:text="${restaurant.name}">Tên nhà hàng</h3>
-                        <p class="restaurant-cuisine"
-                           th:text="${#strings.defaultString(restaurant.cuisineType, 'Đang cập nhật')} + (restaurant.address != null ? ' • ' + restaurant.address : '')">
-                            Ẩm thực • Địa chỉ
-                        </p>
-                        <div class="restaurant-rating">
-                            <div class="stars">
-                                <i class="fas fa-star"
-                                   th:each="star : ${#numbers.sequence(1, 5)}"
-                                   th:classappend="${star <= restaurant.roundedRating} ? ' text-warning' : ' text-muted'"></i>
-                            </div>
-                            <span class="rating-text"
-                                  th:text="${restaurant.formattedRating} + ' (' + restaurant.reviewCount + ' đánh giá)'">
-                                4.5 (20 đánh giá)
-                            </span>
+                        
+                        <!-- Image Overlay on Hover -->
+                        <div class="featured-card-overlay">
+                            <span class="overlay-text">Xem chi tiết</span>
                         </div>
-                        <div class="restaurant-price" th:text="${restaurant.priceLabel}">₫120,000</div>
-                        <a class="book-btn"
-                           th:href="@{/restaurants/{id}(id=${restaurant.id})}">
-                            Đặt bàn
-                        </a>
                     </div>
-                </div>
+                    
+                    <!-- Card Content -->
+                    <div class="featured-card-content">
+                        <div class="featured-card-header">
+                            <h3 class="featured-card-title" th:text="${restaurant.name}">Tên nhà hàng</h3>
+                            <div class="featured-card-rating">
+                                <div class="featured-stars">
+                                    <i class="fas fa-star featured-star-filled"
+                                       th:each="star : ${#numbers.sequence(1, 5)}"
+                                       th:if="${star <= restaurant.roundedRating}"></i>
+                                    <i class="fas fa-star featured-star-empty"
+                                       th:each="star : ${#numbers.sequence(1, 5)}"
+                                       th:if="${star > restaurant.roundedRating}"></i>
+                                </div>
+                                <span class="featured-rating-score" 
+                                      th:text="${restaurant.formattedRating}">5.0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="featured-card-meta">
+                            <span class="featured-cuisine-type" 
+                                  th:text="${#strings.defaultString(restaurant.cuisineType, 'Đang cập nhật')}">Italian</span>
+                            <span class="featured-meta-separator" th:if="${restaurant.address != null and !#strings.isEmpty(restaurant.address)}">•</span>
+                            <span class="featured-location" 
+                                  th:text="${restaurant.address}"
+                                  th:if="${restaurant.address != null and !#strings.isEmpty(restaurant.address)}">Địa chỉ</span>
+                        </div>
+                        
+                        <div class="featured-card-footer">
+                            <div class="featured-card-stats">
+                                <span class="featured-review-count" 
+                                      th:text="|${restaurant.reviewCount} đánh giá|">20 đánh giá</span>
+                                <span class="featured-price" th:text="${restaurant.priceLabel}">₫200,000</span>
+                            </div>
+                            <a th:href="@{/restaurants/{id}(id=${restaurant.id})}" 
+                               class="featured-book-button"
+                               onclick="event.stopPropagation();">
+                                <i class="fas fa-calendar-check"></i>
+                                Đặt bàn ngay
+                            </a>
+                        </div>
+                    </div>
+                </article>
             </div>
         </div>
     </section>
@@ -1072,6 +1124,7 @@
                 }
             }
         });
+        
     </script>
 </body>
 </html>

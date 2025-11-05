@@ -820,17 +820,29 @@ public class RestaurantOwnerService {
      * Get dish image URL by restaurant and dish ID
      */
     public String getDishImageUrl(Integer restaurantId, Integer dishId) {
-        Optional<RestaurantProfile> restaurant = getRestaurantById(restaurantId);
-        if (restaurant.isEmpty()) {
-            logger.warn("Restaurant not found for ID: {}", restaurantId);
+        try {
+            Optional<RestaurantProfile> restaurant = getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                logger.warn("Restaurant not found for ID: {}", restaurantId);
+                return null;
+            }
+
+            String dishIdPattern = "/dish_" + dishId + "_";
+            // Use List method to avoid "Query did not return a unique result" error
+            List<RestaurantMedia> dishImages = restaurantMediaRepository
+                    .findDishImagesByRestaurantAndDishId(restaurant.get(), dishIdPattern);
+            
+            // Return first image if available
+            if (dishImages != null && !dishImages.isEmpty()) {
+                return dishImages.get(0).getUrl();
+            }
+            
+            return null;
+        } catch (Exception e) {
+            logger.error("Error getting dish image URL for restaurant {} dish {}: {}", 
+                    restaurantId, dishId, e.getMessage());
             return null;
         }
-
-        String dishIdPattern = "/dish_" + dishId + "_";
-        RestaurantMedia dishImage = restaurantMediaRepository.findDishImageByRestaurantAndDishId(restaurant.get(),
-                dishIdPattern);
-
-        return dishImage != null ? dishImage.getUrl() : null;
     }
 
     // ===== TABLE IMAGE MANAGEMENT =====
