@@ -33,8 +33,8 @@
                                 <i class="fas fa-store"></i>
                             </div>
                             <div class="restaurant-details">
-                                <h4 th:text="${selectedRestaurant.restaurantName}">Nhà hàng mặc định</h4>
-                                <p th:text="${selectedRestaurant.address}">Địa chỉ nhà hàng</p>
+                                <h4 th:text="${selectedRestaurant != null ? selectedRestaurant.restaurantName : (restaurants != null and !restaurants.empty ? restaurants[0].restaurantName : 'Chọn nhà hàng')}">Nhà hàng mặc định</h4>
+                                <p th:text="${selectedRestaurant != null ? selectedRestaurant.address : (restaurants != null and !restaurants.empty ? restaurants[0].address : 'Địa chỉ nhà hàng')}">Địa chỉ nhà hàng</p>
                             </div>
                         </div>
                         <i class="fas fa-chevron-down dropdown-arrow"></i>
@@ -44,7 +44,8 @@
                         <div th:each="restaurant, iterStat : ${restaurants}" 
                              class="restaurant-item" 
                              th:classappend="${restaurant.restaurantId == restaurantId ? 'active' : ''}"
-                             th:onclick="'selectRestaurant(' + ${restaurant.restaurantId} + ')'">
+                             th:attr="data-restaurant-id=${restaurant.restaurantId}"
+                             onclick="selectRestaurant(this.dataset.restaurantId)">
                             <div class="restaurant-info">
                                 <div class="restaurant-icon">
                                     <i class="fas fa-store"></i>
@@ -142,6 +143,18 @@
                         </a>
                     </li>
                     <li>
+                        <a href="#" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/services' : '#'}">
+                            <i class="fas fa-concierge-bell"></i>
+                            Dịch vụ
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/media' : '#'}">
+                            <i class="fas fa-images"></i>
+                            Media
+                        </a>
+                    </li>
+                    <li>
                         <a href="/restaurant-owner/payments">
                             <i class="fas fa-credit-card"></i>
                             Thanh toán
@@ -155,9 +168,9 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/restaurant-owner/reports">
-                            <i class="fas fa-chart-bar"></i>
-                            Báo cáo
+                        <a href="/restaurant-owner/reviews" th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId : '/restaurant-owner/reviews'}">
+                            <i class="fas fa-star"></i>
+                            Đánh giá
                         </a>
                     </li>
                 </ul>
@@ -319,10 +332,11 @@
                                 <div class="dashboard-booking-meta">
                                     <span class="chip" 
                                           th:if="${booking.status != null}"
-                                          th:classappend="${booking.status.name() == 'PENDING'} ? 'chip-pending' : 
-                                                         ${booking.status.name() == 'CONFIRMED'} ? 'chip-confirmed' : 
-                                                         ${booking.status.name() == 'CANCELLED'} ? 'chip-cancelled' : 
-                                                         ${booking.status.name() == 'COMPLETED'} ? 'chip-completed' : 'chip-default'"
+                                          th:classappend="${booking.status.name() == 'PENDING' ? 'chip-pending' : 
+                                                         booking.status.name() == 'CONFIRMED' ? 'chip-confirmed' : 
+                                                         booking.status.name() == 'CANCELLED' ? 'chip-cancelled' : 
+                                                         booking.status.name() == 'COMPLETED' ? 'chip-completed' : 
+                                                         'chip-default'}"
                                           th:text="${booking.status.name()}">CONFIRMED</span>
                                     <span th:unless="${booking.status != null}" 
                                           class="chip chip-default"
@@ -389,57 +403,83 @@
             dropdown.classList.toggle('active');
         }
 
-        function selectRestaurant(restaurantId) {
+        function selectRestaurant(selectedRestaurantId) {
+            // Convert to number if it's a string
+            selectedRestaurantId = parseInt(selectedRestaurantId);
+            
+            // Find the clicked restaurant item
+            const restaurantItems = document.querySelectorAll('.restaurant-item');
+            let selectedItem = null;
+            
+            restaurantItems.forEach(item => {
+                if (parseInt(item.dataset.restaurantId) === selectedRestaurantId) {
+                    selectedItem = item;
+                }
+            });
+            
             // Update UI to show selected restaurant immediately
             const menu = document.getElementById('restaurantMenu');
             const dropdown = document.querySelector('.restaurant-dropdown');
-            const selectedItem = event.target.closest('.restaurant-item');
             
-            // Get restaurant info from selected item
-            const restaurantName = selectedItem.querySelector('h4').textContent;
-            const restaurantAddress = selectedItem.querySelector('p').textContent;
-            
-            // Update dropdown display
-            const dropdownInfo = dropdown.querySelector('.restaurant-details');
-            dropdownInfo.querySelector('h4').textContent = restaurantName;
-            dropdownInfo.querySelector('p').textContent = restaurantAddress;
-            
-            // Remove active class from all items
-            document.querySelectorAll('.restaurant-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Add active class to selected item
-            selectedItem.classList.add('active');
+            if (selectedItem) {
+                const restaurantName = selectedItem.querySelector('h4').textContent;
+                const restaurantAddress = selectedItem.querySelector('p').textContent;
+                
+                const dropdownInfo = dropdown ? dropdown.querySelector('.restaurant-details') : null;
+                if (dropdownInfo) {
+                    const h4 = dropdownInfo.querySelector('h4');
+                    const p = dropdownInfo.querySelector('p');
+                    if (h4) h4.textContent = restaurantName;
+                    if (p) p.textContent = restaurantAddress;
+                }
+                
+                // Update active state
+                restaurantItems.forEach(item => {
+                    item.classList.remove('active');
+                });
+                selectedItem.classList.add('active');
+            }
             
             // Close menu
-            menu.classList.remove('show');
-            dropdown.classList.remove('active');
+            if (menu) menu.classList.remove('show');
+            if (dropdown) dropdown.classList.remove('active');
             
             // Reload page with selected restaurant
-            window.location.href = '/restaurant-owner/dashboard?restaurantId=' + restaurantId;
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('restaurantId', selectedRestaurantId);
+            window.location.href = currentUrl.toString();
         }
 
         // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const selector = document.querySelector('.restaurant-selector');
-            if (!selector.contains(event.target)) {
+            if (selector && !selector.contains(event.target)) {
                 const menu = document.getElementById('restaurantMenu');
                 const dropdown = document.querySelector('.restaurant-dropdown');
-                menu.classList.remove('show');
-                dropdown.classList.remove('active');
+                if (menu) menu.classList.remove('show');
+                if (dropdown) dropdown.classList.remove('active');
             }
         });
 
         // Charts with real data
         // Revenue Chart
-        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        const revenueCtx = document.getElementById('revenueChart');
         const dailyRevenueData = /*[[${dailyRevenueData}]]*/ [];
         const currentPeriod = /*[[${currentPeriod}]]*/ 'week';
         
         let revenueChart;
         
         function updateRevenueChart() {
+            // Check if data is empty
+            if (!dailyRevenueData || dailyRevenueData.length === 0) {
+                // Show empty state message
+                const chartContent = document.querySelector('#revenueChart').closest('.chart-content');
+                if (chartContent) {
+                    chartContent.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 300px; color: #6B7280; flex-direction: column;"><i class="fas fa-chart-bar" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Chưa có dữ liệu doanh thu</p></div>';
+                }
+                return;
+            }
+            
             const revenueLabels = dailyRevenueData.map(data => {
                 const date = new Date(data.date);
                 if (currentPeriod === 'year') {
@@ -454,7 +494,13 @@
                 revenueChart.destroy();
             }
             
-            revenueChart = new Chart(revenueCtx, {
+            // Ensure canvas exists
+            if (!revenueCtx) {
+                console.error('Revenue chart canvas not found');
+                return;
+            }
+            
+            revenueChart = new Chart(revenueCtx.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: revenueLabels,
@@ -506,41 +552,57 @@
         updateRevenueChart();
 
         // Popular Dishes Chart
-        const dishesCtx = document.getElementById('popularDishesChart').getContext('2d');
+        const dishesCtx = document.getElementById('popularDishesChart');
         const popularDishesData = /*[[${popularDishesData}]]*/ [];
-        const dishLabels = popularDishesData.map(dish => dish.dishName);
-        const dishValues = popularDishesData.map(dish => dish.quantitySold);
         
-        new Chart(dishesCtx, {
-            type: 'doughnut',
-            data: {
-                labels: dishLabels,
-                datasets: [{
-                    data: dishValues,
-                    backgroundColor: [
-                        '#374151',
-                        '#6B7280',
-                        '#9CA3AF',
-                        '#D1D5DB',
-                        '#F3F4F6'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true
+        // Check if data is empty
+        if (!popularDishesData || popularDishesData.length === 0) {
+            // Show empty state message
+            const chartContent = document.querySelector('#popularDishesChart').closest('.chart-content');
+            if (chartContent) {
+                chartContent.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 300px; color: #6B7280; flex-direction: column;"><i class="fas fa-chart-pie" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Chưa có dữ liệu món ăn bán chạy</p></div>';
+            }
+        } else {
+            const dishLabels = popularDishesData.map(dish => dish.dishName);
+            const dishValues = popularDishesData.map(dish => dish.quantitySold);
+            
+            // Ensure canvas exists
+            if (!dishesCtx) {
+                console.error('Popular dishes chart canvas not found');
+                return;
+            }
+            
+            new Chart(dishesCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: dishLabels,
+                    datasets: [{
+                        data: dishValues,
+                        backgroundColor: [
+                            '#374151',
+                            '#6B7280',
+                            '#9CA3AF',
+                            '#D1D5DB',
+                            '#F3F4F6'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
     </script>
 </body>
 </html>

@@ -5,32 +5,211 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Quản lý đánh giá</title>
     
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap 5 -->
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Luxury CSS -->
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
     
     <style>
-        .review-card {
-            
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1.5rem;
+        .reviews-page {
+            background: var(--dashboard-bg);
+        }
+
+        .page-header {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        .restaurant-name {
+            color: var(--dashboard-black);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .restaurant-address {
+            color: var(--dashboard-gray);
+            font-size: 1rem;
             margin-bottom: 1rem;
+        }
+
+        .quick-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--dashboard-border);
+        }
+
+        .quick-stat {
+            text-align: center;
+        }
+
+        .quick-stat-number {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .quick-stat-label {
+            color: var(--dashboard-gray);
+            font-size: 0.9rem;
+        }
+
+        .statistics-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        .rating-summary {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .average-rating {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        .star-rating {
+            color: #FBBF24;
+            font-size: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .total-reviews {
+            color: var(--dashboard-gray);
+            font-size: 1.1rem;
+        }
+
+        .rating-distribution {
+            margin-top: 1rem;
+        }
+
+        .rating-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .rating-label {
+            width: 60px;
+            color: var(--dashboard-black);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .rating-progress {
+            flex: 1;
+            height: 10px;
+            background: var(--dashboard-bg);
+            border-radius: 8px;
+            margin: 0 0.75rem;
+            overflow: hidden;
+        }
+
+        .rating-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), #FBBF24);
+            transition: width 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .rating-count {
+            width: 50px;
+            color: var(--dashboard-gray);
+            font-size: 0.9rem;
+            text-align: right;
+            font-weight: 500;
+        }
+
+        .filter-section {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        .filter-section h5 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-section h5 i {
+            color: var(--primary-color);
+        }
+
+        .filter-btn {
+            background: var(--dashboard-bg);
+            color: var(--dashboard-black);
+            border: 1px solid var(--dashboard-border);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            background: var(--dashboard-white);
+            border-color: var(--dashboard-accent);
+            color: var(--dashboard-black);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .filter-btn.active:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .review-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
             transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
         }
         
         .review-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.2);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
         }
         
         .review-header {
@@ -43,228 +222,337 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--luxury-gold), #d4af37);
+            background: linear-gradient(135deg, var(--primary-color), #FBBF24);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--luxury-black);
-            font-weight: bold;
+            color: white;
+            font-weight: 600;
             margin-right: 1rem;
+            overflow: hidden;
+        }
+
+        .review-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         
         .review-info h6 {
-            color: var(--luxury-white);
+            color: var(--dashboard-black);
             margin: 0;
             font-weight: 600;
+            font-size: 1rem;
         }
         
         .review-date {
-            color: var(--luxury-gray);
-            font-size: 0.9rem;
+            color: var(--dashboard-gray);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
         }
         
         .star-rating {
-            color: var(--luxury-gold);
-            font-size: 1.2rem;
-            margin-bottom: 0.5rem;
+            color: #FBBF24;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
         }
         
         .review-comment {
-            color: var(--luxury-white);
+            color: var(--dashboard-black);
             line-height: 1.6;
             margin-bottom: 1rem;
+            font-size: 0.95rem;
         }
         
         .review-actions {
             display: flex;
             gap: 0.5rem;
+            justify-content: flex-end;
+            align-items: center;
         }
-        
+
         .btn-review {
-            background: var(--luxury-gold);
-            color: var(--luxury-black);
+            background: var(--primary-color);
+            color: white;
             border: none;
             padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
         }
         
         .btn-review:hover {
-            background: #d4af37;
+            background: var(--dashboard-accent);
             transform: translateY(-1px);
-            color: var(--luxury-black);
+            color: white;
         }
         
         .btn-outline-review {
             background: transparent;
-            color: var(--luxury-gold);
-            border: 1px solid var(--luxury-gold);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
             padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
         }
         
         .btn-outline-review:hover {
-            background: var(--luxury-gold);
-            color: var(--luxury-black);
+            background: var(--primary-color);
+            color: white;
         }
-        
-        .statistics-card {
-            
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
+
+        .btn-outline-review:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
-        
-        .rating-summary {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        
-        .average-rating {
-            font-size: 3rem;
-            font-weight: bold;
-            color: var(--luxury-gold);
-            margin-bottom: 0.5rem;
-        }
-        
-        .total-reviews {
-            color: var(--luxury-gray);
-            font-size: 1.1rem;
-        }
-        
-        .rating-distribution {
-            margin-top: 1rem;
-        }
-        
-        .rating-bar {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-        
-        .rating-label {
-            width: 60px;
-            color: var(--luxury-white);
-            font-size: 0.9rem;
-        }
-        
-        .rating-progress {
-            flex: 1;
-            height: 8px;
-            background: rgba(212, 175, 55, 0.2);
-            border-radius: 4px;
-            margin: 0 0.5rem;
-            overflow: hidden;
-        }
-        
-        .rating-fill {
-            height: 100%;
-            background: var(--luxury-gold);
-            transition: width 0.3s ease;
-        }
-        
-        .rating-count {
-            width: 40px;
-            color: var(--luxury-gray);
-            font-size: 0.9rem;
-            text-align: right;
-        }
-        
-        .filter-section {
-            
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        .filter-btn {
+
+        .btn-outline-review:disabled:hover {
             background: transparent;
-            color: var(--luxury-gold);
-            border: 1px solid var(--luxury-gold);
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .filter-btn:hover,
-        .filter-btn.active {
-            background: var(--luxury-gold);
-            color: var(--luxury-black);
+            color: var(--primary-color);
         }
         
         .no-reviews {
             text-align: center;
-            padding: 3rem;
-            color: var(--luxury-gray);
+            padding: 4rem 2rem;
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
         }
         
         .no-reviews i {
             font-size: 4rem;
-            color: var(--luxury-gold);
+            color: var(--dashboard-gray);
             margin-bottom: 1rem;
         }
-        
-        .page-header {
-            
-            border: 1px solid var(--luxury-gold);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        
-        .restaurant-name {
-            color: var(--luxury-white);
-            font-size: 1.8rem;
-            font-weight: 700;
+
+        .no-reviews h4 {
+            color: var(--dashboard-black);
+            font-weight: 600;
             margin-bottom: 0.5rem;
         }
-        
-        .restaurant-address {
-            color: var(--luxury-gray);
-            font-size: 1rem;
+
+        .no-reviews p {
+            color: var(--dashboard-gray);
+            margin-bottom: 1.5rem;
         }
-        
-        .quick-stats {
+
+        .reviews-list-header {
             display: flex;
-            gap: 2rem;
-            margin-top: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
         }
-        
-        .quick-stat {
-            text-align: center;
+
+        .reviews-list-header h5 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        
-        .quick-stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--luxury-gold);
+
+        .reviews-list-header h5 i {
+            color: var(--primary-color);
         }
-        
-        .quick-stat-label {
-            color: var(--luxury-gray);
-            font-size: 0.9rem;
+
+        @media (max-width: 768px) {
+            .quick-stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .rating-bar {
+                flex-wrap: wrap;
+            }
+
+            .rating-label,
+            .rating-count {
+                width: 100%;
+                text-align: left;
+                margin-bottom: 0.25rem;
+            }
         }
     </style>
 </head>
-<body>
-    <!-- Header -->
-    <div th:insert="fragments/header :: site-header"></div>
-    
-    <main class="main-content">
-        <div class="container py-5">
+<body class="reviews-page">
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+                
+                <!-- Restaurant Selector -->
+                <div class="restaurant-selector" th:if="${restaurants != null and !restaurants.empty}">
+                    <div class="restaurant-dropdown" onclick="toggleRestaurantMenu()">
+                        <div class="restaurant-info">
+                            <div class="restaurant-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="restaurant-details">
+                                <h4 th:text="${currentRestaurant != null ? currentRestaurant.restaurantName : (restaurants != null and !restaurants.empty ? restaurants[0].restaurantName : 'Chọn nhà hàng')}">Nhà hàng mặc định</h4>
+                                <p th:text="${currentRestaurant != null ? currentRestaurant.address : (restaurants != null and !restaurants.empty ? restaurants[0].address : 'Địa chỉ nhà hàng')}">Địa chỉ nhà hàng</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    
+                    <div class="restaurant-menu" id="restaurantMenu">
+                        <div th:each="restaurant, iterStat : ${restaurants}" 
+                             class="restaurant-item" 
+                             th:classappend="${restaurant.restaurantId == restaurantId ? 'active' : ''}"
+                             th:attr="data-restaurant-id=${restaurant.restaurantId}"
+                             onclick="selectRestaurant(this.dataset.restaurantId)">
+                            <div class="restaurant-info">
+                                <div class="restaurant-icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="restaurant-details">
+                                    <h4 th:text="${restaurant.restaurantName}">Tên nhà hàng</h4>
+                                    <p th:text="${restaurant.address}">Địa chỉ</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
+                </div>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <h3>Dashboard</h3>
+                        <p>V 1.0</p>
+                    </div>
+                </div>
+                
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/restaurant-owner/dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            Tổng quan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/bookings">
+                            <i class="fas fa-calendar-check"></i>
+                            Booking
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/tables">
+                            <i class="fas fa-chair"></i>
+                            Quản lý bàn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/profile">
+                            <i class="fas fa-store"></i>
+                            Hồ sơ nhà hàng
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/menu">
+                            <i class="fas fa-utensils"></i>
+                            Thực đơn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-concierge-bell"></i>
+                            Dịch vụ
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <i class="fas fa-images"></i>
+                            Media
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/payments">
+                            <i class="fas fa-credit-card"></i>
+                            Thanh toán
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/chat">
+                            <i class="fas fa-comments"></i>
+                            Tin nhắn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/reviews" class="active">
+                            <i class="fas fa-star"></i>
+                            Đánh giá
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1 class="content-title">Quản lý Đánh giá</h1>
+                <p class="content-subtitle">Xem và quản lý đánh giá từ khách hàng</p>
+            </div>
+
             <!-- Page Header -->
             <div class="page-header">
                 <div class="row align-items-center">
@@ -274,7 +562,7 @@
                     </div>
                     <div class="col-md-4 text-md-end">
                         <a th:href="@{/restaurant-owner/reviews/statistics}" class="btn-review">
-                            <i class="fas fa-chart-bar me-2"></i>
+                            <i class="fas fa-chart-bar"></i>
                             Xem thống kê
                         </a>
                     </div>
@@ -369,37 +657,37 @@
             
             <!-- Filter Section -->
             <div class="filter-section">
-                <h5 class="luxury-title mb-3">
-                    <i class="fas fa-filter me-2"></i>
+                <h5>
+                    <i class="fas fa-filter"></i>
                     Lọc theo đánh giá
                 </h5>
                 <div>
-                    <a th:href="@{/restaurant-owner/reviews}" 
+                    <a th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId : '/restaurant-owner/reviews'}" 
                        class="filter-btn" 
                        th:classappend="${selectedRating == null} ? 'active' : ''">
                         Tất cả
                     </a>
-                    <a th:href="@{/restaurant-owner/reviews(rating=5)}" 
+                    <a th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId + '&rating=5' : '/restaurant-owner/reviews?rating=5'}" 
                        class="filter-btn" 
                        th:classappend="${selectedRating == 5} ? 'active' : ''">
                         <i class="fas fa-star"></i> 5 sao
                     </a>
-                    <a th:href="@{/restaurant-owner/reviews(rating=4)}" 
+                    <a th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId + '&rating=4' : '/restaurant-owner/reviews?rating=4'}" 
                        class="filter-btn" 
                        th:classappend="${selectedRating == 4} ? 'active' : ''">
                         <i class="fas fa-star"></i> 4 sao
                     </a>
-                    <a th:href="@{/restaurant-owner/reviews(rating=3)}" 
+                    <a th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId + '&rating=3' : '/restaurant-owner/reviews?rating=3'}" 
                        class="filter-btn" 
                        th:classappend="${selectedRating == 3} ? 'active' : ''">
                         <i class="fas fa-star"></i> 3 sao
                     </a>
-                    <a th:href="@{/restaurant-owner/reviews(rating=2)}" 
+                    <a th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId + '&rating=2' : '/restaurant-owner/reviews?rating=2'}" 
                        class="filter-btn" 
                        th:classappend="${selectedRating == 2} ? 'active' : ''">
                         <i class="fas fa-star"></i> 2 sao
                     </a>
-                    <a th:href="@{/restaurant-owner/reviews(rating=1)}" 
+                    <a th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId + '&rating=1' : '/restaurant-owner/reviews?rating=1'}" 
                        class="filter-btn" 
                        th:classappend="${selectedRating == 1} ? 'active' : ''">
                         <i class="fas fa-star"></i> 1 sao
@@ -409,10 +697,12 @@
             
             <!-- Reviews List -->
             <div th:if="${reviews != null and !reviews.isEmpty()}">
-                <h5 class="luxury-title mb-4">
-                    <i class="fas fa-comments me-2"></i>
-                    Danh sách đánh giá
-                </h5>
+                <div class="reviews-list-header">
+                    <h5>
+                        <i class="fas fa-comments"></i>
+                        Danh sách đánh giá
+                    </h5>
+                </div>
                 
                 <div th:each="review : ${reviews}" class="review-card">
                     <div class="review-header">
@@ -433,21 +723,21 @@
                         <span th:each="i : ${#numbers.sequence(1, review.rating)}">
                             <i class="fas fa-star"></i>
                         </span>
-                        <span th:each="i : ${#numbers.sequence(review.rating + 1, 5)}">
-                            <i class="far fa-star"></i>
-                        </span>
                     </div>
                     
                     <div class="review-comment" th:text="${review.comment}">Bình luận của khách hàng</div>
                     
-                    <div class="review-actions" style="justify-content: flex-end;">
-                        <div th:if="${reportStatusMap != null and reportStatusMap.containsKey(review.reviewId)}" class="badge bg-secondary align-self-center me-2">
+                    <div class="review-actions">
+                        <div th:if="${reportStatusMap != null and reportStatusMap.containsKey(review.reviewId)}" 
+                             class="badge bg-secondary align-self-center me-2">
                             <span th:text="${reportStatusMap.get(review.reviewId).status.displayName}">Đang xử lý</span>
                         </div>
-                        <button type="button" class="btn-outline-review btn-sm" data-bs-toggle="modal"
+                        <button type="button" 
+                                class="btn-outline-review btn-sm" 
+                                data-bs-toggle="modal"
                                 th:attr="data-bs-target=${'#reportModal-' + review.reviewId}"
                                 th:disabled="${reportStatusMap != null and reportStatusMap.containsKey(review.reviewId) and reportStatusMap.get(review.reviewId).status.name() == 'PENDING'}">
-                            <i class="fas fa-flag me-1"></i>
+                            <i class="fas fa-flag"></i>
                             <span th:text="${(reportStatusMap != null and reportStatusMap.containsKey(review.reviewId) and reportStatusMap.get(review.reviewId).status.name() == 'PENDING') ? 'Đã báo cáo' : 'Báo cáo'}">Báo cáo</span>
                         </button>
                     </div>
@@ -503,7 +793,7 @@
                     <ul class="pagination justify-content-center">
                         <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
                             <a class="page-link" 
-                               th:href="@{/restaurant-owner/reviews(page=${currentPage - 1})}"
+                               th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId + '&page=' + (currentPage - 1) : '/restaurant-owner/reviews?page=' + (currentPage - 1)}"
                                th:if="${currentPage > 0}">Trước</a>
                             <span class="page-link" th:unless="${currentPage > 0}">Trước</span>
                         </li>
@@ -512,13 +802,13 @@
                             th:each="page : ${#numbers.sequence(0, totalPages - 1)}"
                             th:classappend="${page == currentPage} ? 'active' : ''">
                             <a class="page-link" 
-                               th:href="@{/restaurant-owner/reviews(page=${page})}"
+                               th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId + '&page=' + page : '/restaurant-owner/reviews?page=' + page}"
                                th:text="${page + 1}">1</a>
                         </li>
                         
                         <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''">
                             <a class="page-link" 
-                               th:href="@{/restaurant-owner/reviews(page=${currentPage + 1})}"
+                               th:href="${restaurantId != null ? '/restaurant-owner/reviews?restaurantId=' + restaurantId + '&page=' + (currentPage + 1) : '/restaurant-owner/reviews?page=' + (currentPage + 1)}"
                                th:if="${currentPage < totalPages - 1}">Sau</a>
                             <span class="page-link" th:unless="${currentPage < totalPages - 1}">Sau</span>
                         </li>
@@ -532,17 +822,92 @@
                 <h4>Chưa có đánh giá nào</h4>
                 <p>Khách hàng chưa để lại đánh giá cho nhà hàng của bạn.</p>
                 <a th:href="@{/restaurant-owner/dashboard}" class="btn-review">
-                    <i class="fas fa-tachometer-alt me-2"></i>
+                    <i class="fas fa-tachometer-alt"></i>
                     Về Dashboard
                 </a>
             </div>
-        </div>
-    </main>
-    
-    <!-- Footer -->
-    <div th:insert="fragments/footer :: site-footer"></div>
+        </main>
+    </div>
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script th:inline="javascript">
+        // Set restaurant ID for JavaScript
+        const restaurantId = /*[[${restaurantId}]]*/ null;
+
+        // Restaurant menu toggle
+        function toggleRestaurantMenu() {
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            
+            if (!menu || !dropdown) {
+                return;
+            }
+            
+            menu.classList.toggle('show');
+            dropdown.classList.toggle('active');
+        }
+
+        function selectRestaurant(selectedRestaurantId) {
+            // Convert to number if it's a string
+            selectedRestaurantId = parseInt(selectedRestaurantId);
+            
+            // Find the clicked restaurant item
+            const restaurantItems = document.querySelectorAll('.restaurant-item');
+            let selectedItem = null;
+            
+            restaurantItems.forEach(item => {
+                if (parseInt(item.dataset.restaurantId) === selectedRestaurantId) {
+                    selectedItem = item;
+                }
+            });
+            
+            // Update UI to show selected restaurant immediately
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            
+            if (selectedItem) {
+                const restaurantName = selectedItem.querySelector('h4').textContent;
+                const restaurantAddress = selectedItem.querySelector('p').textContent;
+                
+                const dropdownInfo = dropdown ? dropdown.querySelector('.restaurant-details') : null;
+                if (dropdownInfo) {
+                    const h4 = dropdownInfo.querySelector('h4');
+                    const p = dropdownInfo.querySelector('p');
+                    if (h4) h4.textContent = restaurantName;
+                    if (p) p.textContent = restaurantAddress;
+                }
+                
+                // Update active state
+                restaurantItems.forEach(item => {
+                    item.classList.remove('active');
+                });
+                selectedItem.classList.add('active');
+            }
+            
+            // Close menu
+            if (menu) menu.classList.remove('show');
+            if (dropdown) dropdown.classList.remove('active');
+            
+            // Redirect to reviews page with restaurantId
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('restaurantId', selectedRestaurantId);
+            // Remove page parameter to go to page 0
+            currentUrl.searchParams.delete('page');
+            window.location.href = currentUrl.toString();
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const selector = document.querySelector('.restaurant-selector');
+            if (selector && !selector.contains(event.target)) {
+                const menu = document.getElementById('restaurantMenu');
+                const dropdown = document.querySelector('.restaurant-dropdown');
+                if (menu) menu.classList.remove('show');
+                if (dropdown) dropdown.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>

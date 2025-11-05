@@ -57,12 +57,14 @@ public class RestaurantReviewController {
     public String manageReviews(@RequestParam(defaultValue = "0") int page,
                               @RequestParam(defaultValue = "10") int size,
                               @RequestParam(required = false) Integer rating,
+            @RequestParam(required = false) Integer restaurantId,
                               Model model,
                               Authentication authentication) {
         
         System.out.println("🔍 RestaurantReviewController.manageReviews() called");
         System.out.println("   Page: " + page + ", Size: " + size);
         System.out.println("   Rating filter: " + rating);
+        System.out.println("   RestaurantId: " + restaurantId);
         
         try {
             User user = (User) authentication.getPrincipal();
@@ -75,30 +77,56 @@ public class RestaurantReviewController {
             
             RestaurantOwner owner = ownerOpt.get();
             
-            // Lấy restaurant đầu tiên của owner (có thể mở rộng để hỗ trợ nhiều restaurant)
+            // Get all restaurants owned by current user
             List<RestaurantProfile> restaurants = restaurantOwnerService.getRestaurantsByOwnerId(owner.getOwnerId());
             if (restaurants.isEmpty()) {
                 model.addAttribute("error", "No restaurants found for this owner");
                 return "error/404";
             }
             
-            RestaurantProfile restaurant = restaurants.get(0);
-            Integer restaurantId = restaurant.getRestaurantId();
+            // Add restaurants list to model for header
+            model.addAttribute("restaurants", restaurants != null ? restaurants : new ArrayList<>());
+
+            // Get restaurant - use restaurantId from param if provided, otherwise use first
+            // restaurant
+            RestaurantProfile restaurant;
+            Integer finalRestaurantId;
+
+            if (restaurantId != null) {
+                // Find restaurant by ID from the owner's restaurants
+                Optional<RestaurantProfile> restaurantOpt = restaurants.stream()
+                        .filter(r -> r.getRestaurantId().equals(restaurantId))
+                        .findFirst();
+
+                if (restaurantOpt.isEmpty()) {
+                    model.addAttribute("error", "Bạn không có quyền truy cập nhà hàng này.");
+                    // Fallback to first restaurant
+                    restaurant = restaurants.get(0);
+                    finalRestaurantId = restaurant.getRestaurantId();
+                } else {
+                    restaurant = restaurantOpt.get();
+                    finalRestaurantId = restaurantId;
+                }
+            } else {
+                // Use first restaurant if no restaurantId provided
+                restaurant = restaurants.get(0);
+                finalRestaurantId = restaurant.getRestaurantId();
+            }
             
             // Lấy review theo filter
             List<ReviewDto> reviews;
             if (rating != null) {
-                reviews = reviewService.getReviewsByRestaurantAndRating(restaurantId, rating);
+                reviews = reviewService.getReviewsByRestaurantAndRating(finalRestaurantId, rating);
             } else {
                 Pageable pageable = PageRequest.of(page, size);
-                Page<ReviewDto> reviewPage = reviewService.getReviewsByRestaurant(restaurantId, pageable);
+                Page<ReviewDto> reviewPage = reviewService.getReviewsByRestaurant(finalRestaurantId, pageable);
                 reviews = reviewPage.getContent();
                 model.addAttribute("totalPages", reviewPage.getTotalPages());
                 model.addAttribute("currentPage", page);
             }
             
             // Lấy thống kê review
-            ReviewStatisticsDto statistics = reviewService.getRestaurantReviewStatistics(restaurantId);
+            ReviewStatisticsDto statistics = reviewService.getRestaurantReviewStatistics(finalRestaurantId);
 
             // Lấy trạng thái report cho từng review
             Map<Integer, ReviewReportView> reportStatusMap = new HashMap<>();
@@ -109,7 +137,8 @@ public class RestaurantReviewController {
             }
 
             model.addAttribute("restaurant", restaurant);
-            model.addAttribute("restaurantId", restaurantId);
+            model.addAttribute("currentRestaurant", restaurant);
+            model.addAttribute("restaurantId", finalRestaurantId);
             model.addAttribute("reviews", reviews);
             model.addAttribute("statistics", statistics);
             model.addAttribute("selectedRating", rating);
@@ -199,14 +228,16 @@ public class RestaurantReviewController {
             redirectAttributes.addFlashAttribute("error", "Không thể gửi báo cáo: " + e.getMessage());
         }
 
-        return "redirect:/restaurant-owner/reviews";
+        return "redirect:/restaurant-owner/reviews?restaurantId=" + restaurantId;
     }
     
     /**
      * Hiển thị thống kê chi tiết review
      */
     @GetMapping("/statistics")
-    public String reviewStatistics(Model model, Authentication authentication) {
+    public String reviewStatistics(@RequestParam(required = false) Integer restaurantId,
+            Model model,
+            Authentication authentication) {
         
         System.out.println("🔍 RestaurantReviewController.reviewStatistics() called");
         
@@ -221,23 +252,51 @@ public class RestaurantReviewController {
             
             RestaurantOwner owner = ownerOpt.get();
             
-            // Lấy restaurant đầu tiên của owner
+            // Get all restaurants owned by current user
             List<RestaurantProfile> restaurants = restaurantOwnerService.getRestaurantsByOwnerId(owner.getOwnerId());
             if (restaurants.isEmpty()) {
                 model.addAttribute("error", "No restaurants found for this owner");
                 return "error/404";
             }
             
-            RestaurantProfile restaurant = restaurants.get(0);
-            Integer restaurantId = restaurant.getRestaurantId();
+            // Add restaurants list to model for header
+            model.addAttribute("restaurants", restaurants != null ? restaurants : new ArrayList<>());
+
+            // Get restaurant - use restaurantId from param if provided, otherwise use first
+            // restaurant
+            RestaurantProfile restaurant;
+            Integer finalRestaurantId;
+
+            if (restaurantId != null) {
+                // Find restaurant by ID from the owner's restaurants
+                Optional<RestaurantProfile> restaurantOpt = restaurants.stream()
+                        .filter(r -> r.getRestaurantId().equals(restaurantId))
+                        .findFirst();
+
+                if (restaurantOpt.isEmpty()) {
+                    model.addAttribute("error", "Bạn không có quyền truy cập nhà hàng này.");
+                    // Fallback to first restaurant
+                    restaurant = restaurants.get(0);
+                    finalRestaurantId = restaurant.getRestaurantId();
+                } else {
+                    restaurant = restaurantOpt.get();
+                    finalRestaurantId = restaurantId;
+                }
+            } else {
+                // Use first restaurant if no restaurantId provided
+                restaurant = restaurants.get(0);
+                finalRestaurantId = restaurant.getRestaurantId();
+            }
             
             // Lấy thống kê chi tiết
-            ReviewStatisticsDto statistics = reviewService.getRestaurantReviewStatistics(restaurantId);
+            ReviewStatisticsDto statistics = reviewService.getRestaurantReviewStatistics(finalRestaurantId);
             
             // Lấy review mới nhất
-            List<ReviewDto> recentReviews = reviewService.getRecentReviewsByRestaurant(restaurantId, 10);
+            List<ReviewDto> recentReviews = reviewService.getRecentReviewsByRestaurant(finalRestaurantId, 10);
             
             model.addAttribute("restaurant", restaurant);
+            model.addAttribute("currentRestaurant", restaurant);
+            model.addAttribute("restaurantId", finalRestaurantId);
             model.addAttribute("statistics", statistics);
             model.addAttribute("recentReviews", recentReviews);
             model.addAttribute("pageTitle", "Thống kê đánh giá");

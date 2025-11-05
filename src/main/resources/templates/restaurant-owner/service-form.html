@@ -1,168 +1,103 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${isEdit ? 'Sửa Dịch vụ' : 'Thêm Dịch vụ Mới'}">Thêm Dịch vụ Mới</title>
-    <link rel="stylesheet" href="/css/restaurant-admin.css" />
-</head>
-<body>
-    <nav class="page-switch card">
-        <a class="nav-btn" th:href="@{/restaurant-owner/restaurants/{id}/services(id=${restaurant.restaurantId})}" 
-           title="Về danh sách dịch vụ">← Danh sách Dịch vụ</a>
-    </nav>
 
-    <div class="container">
-        <header class="nav card">
-            <div class="nav-left">
-                <h1 class="h1" th:text="${isEdit ? 'Sửa Dịch vụ' : 'Thêm Dịch vụ Mới'}">Thêm Dịch vụ Mới</h1>
-                <p class="muted" th:text="'Nhà hàng: ' + ${restaurant.restaurantName}">Nhà hàng: ABC Restaurant</p>
-            </div>
-        </header>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        <div class="card">
-            <div class="card-header">
-                <h2 class="h2" th:text="${isEdit ? 'Chỉnh sửa thông tin dịch vụ' : 'Thông tin dịch vụ mới'}">Thông tin dịch vụ mới</h2>
-            </div>
-
-            <form th:action="${isEdit ? 
-                '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/services/' + service.serviceId : 
-                '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/services'}" 
-                  method="post" enctype="multipart/form-data" class="service-form">
-                
-                <div class="form-group">
-                    <label for="name" class="form-label">Tên dịch vụ *</label>
-                    <input type="text" id="name" name="name" class="form-control" 
-                           th:value="${service.name}" 
-                           placeholder="Ví dụ: Dịch vụ phục vụ tận bàn, Dịch vụ giao hàng..."
-                           required>
-                    <small class="form-text">Tên dịch vụ sẽ hiển thị cho khách hàng</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="category" class="form-label">Danh mục</label>
-                    <select id="category" name="category" class="form-control">
-                        <option value="">Chọn danh mục</option>
-                        <option value="Phục vụ" th:selected="${service.category == 'Phục vụ'}">Phục vụ</option>
-                        <option value="Giao hàng" th:selected="${service.category == 'Giao hàng'}">Giao hàng</option>
-                        <option value="Đặt bàn" th:selected="${service.category == 'Đặt bàn'}">Đặt bàn</option>
-                        <option value="Sự kiện" th:selected="${service.category == 'Sự kiện'}">Sự kiện</option>
-                        <option value="Khác" th:selected="${service.category == 'Khác'}">Khác</option>
-                    </select>
-                    <small class="form-text">Phân loại dịch vụ để dễ quản lý</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="description" class="form-label">Mô tả</label>
-                    <textarea id="description" name="description" class="form-control" rows="3" 
-                              placeholder="Mô tả chi tiết về dịch vụ...">[[${service.description}]]</textarea>
-                    <small class="form-text">Mô tả chi tiết về dịch vụ (không bắt buộc)</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="price" class="form-label">Giá dịch vụ (VNĐ) *</label>
-                    <input type="number" id="price" name="price" class="form-control" 
-                           th:value="${service.price != null ? service.price : ''}" 
-                           placeholder="0" 
-                           min="0" 
-                           step="1000"
-                           required>
-                    <small class="form-text">Giá dịch vụ tính bằng VNĐ (0 nếu miễn phí)</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="status" class="form-label">Trạng thái</label>
-                    <select id="status" name="status" class="form-control">
-                        <option value="AVAILABLE" th:selected="${service.status != null and service.status.name() == 'AVAILABLE'}">Có sẵn</option>
-                        <option value="UNAVAILABLE" th:selected="${service.status != null and service.status.name() == 'UNAVAILABLE'}">Không có sẵn</option>
-                        <option value="DISCONTINUED" th:selected="${service.status != null and service.status.name() == 'DISCONTINUED'}">Ngừng cung cấp</option>
-                    </select>
-                    <small class="form-text">Trạng thái hiện tại của dịch vụ</small>
-                </div>
-
-                <!-- Service Image Upload - For Create Mode -->
-                <div class="form-group" th:if="${!isEdit}">
-                    <label for="serviceImage" class="form-label">Ảnh dịch vụ</label>
-                    <input type="file" id="serviceImage" name="serviceImage" accept="image/*" class="form-control">
-                    <small class="form-text">Chọn ảnh cho dịch vụ (không bắt buộc)</small>
-                    <div id="imagePreview" class="image-preview" style="display: none;">
-                        <img id="previewImg" src="" alt="Preview" class="preview-image">
-                    </div>
-                </div>
-
-                <!-- Service Image Upload - For Edit Mode -->
-                <div class="form-group" th:if="${isEdit}">
-                    <label for="serviceImage" class="form-label">Ảnh dịch vụ</label>
-                    
-                    <!-- Current Image Display -->
-                    <div th:if="${service.serviceId != null and restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) != null and !restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty()}" class="current-image">
-                        <img th:src="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId)}" alt="Current Service Image" class="current-image-preview">
-                        <p class="form-text text-muted">Ảnh hiện tại của dịch vụ</p>
-                    </div>
-                    
-                    <!-- No Image State -->
-                    <div th:if="${service.serviceId != null and (restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) == null or restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty())}" class="no-image-state">
-                        <div class="no-image">
-                            <i class="fas fa-image"></i>
-                            <span>Chưa có ảnh</span>
-                        </div>
-                    </div>
-                    
-                    <!-- File Input for Edit Mode -->
-                    <input type="file" id="serviceImage" name="serviceImage" accept="image/*" class="form-control">
-                    <small class="form-text">Chọn ảnh mới để thay thế (không bắt buộc)</small>
-                    <div id="imagePreview" class="image-preview" style="display: none;">
-                        <img id="previewImg" src="" alt="Preview" class="preview-image">
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary" 
-                            th:text="${isEdit ? 'Cập nhật Dịch vụ' : 'Tạo Dịch vụ'}">Tạo Dịch vụ</button>
-                    <a th:href="@{/restaurant-owner/restaurants/{id}/services(id=${restaurant.restaurantId})}" 
-                       class="btn btn-secondary">Hủy</a>
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
 
     <style>
-        .service-form {
-            max-width: 600px;
-            margin: 0 auto;
+        .service-form-page {
+            background: var(--dashboard-bg);
+            min-height: 100vh;
+        }
+
+        .form-content-header {
+            margin-bottom: 2rem;
+        }
+
+        .form-content-header .content-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-content-header .content-subtitle {
+            color: var(--dashboard-gray);
+            font-size: 0.95rem;
+        }
+
+        .form-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
 
         .form-group {
-            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
 
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
             font-weight: 500;
-            color: #333;
+            color: var(--dashboard-black);
+            font-size: 0.9rem;
         }
 
-        .form-control {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-            transition: border-color 0.2s ease;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            background: var(--dashboard-white);
+            color: var(--dashboard-black);
         }
 
-        .form-control:focus {
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
-            border-color: #2c5aa0;
-            box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
+            border-color: var(--dashboard-accent);
+            box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
         }
 
-        .form-text {
-            display: block;
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group small {
+            color: var(--dashboard-gray);
+            font-size: 0.85rem;
             margin-top: 0.25rem;
-            font-size: 0.875rem;
-            color: #666;
         }
 
         .form-actions {
@@ -170,50 +105,15 @@
             gap: 1rem;
             justify-content: flex-end;
             margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid #eee;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--dashboard-border);
         }
 
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.2s ease;
+        /* Image Upload Styles */
+        .image-upload-container {
+            margin-bottom: 1rem;
         }
 
-        .btn-primary {
-            background-color: #2c5aa0;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #1e3d6f;
-        }
-
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background-color: #545b62;
-        }
-
-        textarea.form-control {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        input[type="number"].form-control {
-            text-align: right;
-        }
-
-        /* Service Image Styles */
         .current-image {
             margin: 1rem 0;
             text-align: center;
@@ -222,17 +122,10 @@
         .current-image-preview {
             max-width: 100%;
             max-height: 300px;
-            border-radius: 8px;
+            border-radius: 12px;
             object-fit: cover;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             margin-bottom: 1rem;
-        }
-
-        .image-actions {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-            flex-wrap: wrap;
         }
 
         .no-image-state {
@@ -245,37 +138,19 @@
             flex-direction: column;
             align-items: center;
             padding: 2rem;
-            background: #f8f9fa;
-            border: 2px dashed #dee2e6;
-            border-radius: 8px;
-            color: #6c757d;
+            background: var(--dashboard-bg);
+            border: 2px dashed var(--dashboard-border);
+            border-radius: 12px;
+            color: var(--dashboard-gray);
             margin-bottom: 1rem;
         }
 
         .no-image i {
             font-size: 2rem;
             margin-bottom: 0.5rem;
+            color: var(--dashboard-gray);
         }
 
-        .file-input {
-            display: none;
-        }
-
-        .btn-image {
-            background-color: #17a2b8;
-            color: white;
-            border: none;
-        }
-
-        .btn-image:hover {
-            background-color: #138496;
-        }
-
-        .btn-image:active {
-            background-color: #117a8b;
-        }
-
-        /* Image Preview Styles */
         .image-preview {
             margin-top: 1rem;
             text-align: center;
@@ -284,12 +159,222 @@
         .preview-image {
             max-width: 100%;
             max-height: 200px;
-            border-radius: 8px;
+            border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-    </style>
 
-    <script>
+        .breadcrumb-nav {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .breadcrumb-nav a {
+            color: var(--dashboard-accent);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .breadcrumb-nav a:hover {
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="service-form-page">
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+            </div>
+            <div class="header-right">
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" style="padding: 2rem;">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb-nav">
+            <a th:href="@{/restaurant-owner/restaurants/{id}/services(id=${restaurant.restaurantId})}" 
+               title="Về danh sách dịch vụ">
+                <i class="fas fa-arrow-left"></i> Danh sách Dịch vụ
+            </a>
+        </nav>
+
+        <!-- Form Header -->
+        <div class="form-content-header">
+            <h1 class="content-title" th:text="${isEdit ? 'Sửa Dịch vụ' : 'Thêm Dịch vụ Mới'}">Thêm Dịch vụ Mới</h1>
+            <p class="content-subtitle" th:text="'Nhà hàng: ' + ${restaurant.restaurantName}">Nhà hàng: ABC Restaurant</p>
+        </div>
+
+        <!-- Service Form -->
+        <div class="form-card">
+            <form th:action="${isEdit ? 
+                '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/services/' + service.serviceId : 
+                '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/services'}" 
+                  method="post" 
+                  enctype="multipart/form-data" 
+                  class="service-form">
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="name">Tên dịch vụ *</label>
+                        <input type="text" 
+                               id="name" 
+                               name="name" 
+                               th:value="${service.name}" 
+                               placeholder="Ví dụ: Dịch vụ phục vụ tận bàn, Dịch vụ giao hàng..."
+                               required>
+                        <small>Tên dịch vụ sẽ hiển thị cho khách hàng</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">Danh mục</label>
+                        <select id="category" name="category">
+                            <option value="">Chọn danh mục</option>
+                            <option value="Phục vụ" th:selected="${service.category == 'Phục vụ'}">Phục vụ</option>
+                            <option value="Giao hàng" th:selected="${service.category == 'Giao hàng'}">Giao hàng</option>
+                            <option value="Đặt bàn" th:selected="${service.category == 'Đặt bàn'}">Đặt bàn</option>
+                            <option value="Sự kiện" th:selected="${service.category == 'Sự kiện'}">Sự kiện</option>
+                            <option value="Khác" th:selected="${service.category == 'Khác'}">Khác</option>
+                        </select>
+                        <small>Phân loại dịch vụ để dễ quản lý</small>
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="description">Mô tả</label>
+                        <textarea id="description" 
+                                  name="description" 
+                                  rows="3" 
+                                  placeholder="Mô tả chi tiết về dịch vụ...">[[${service.description}]]</textarea>
+                        <small>Mô tả chi tiết về dịch vụ (không bắt buộc)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price">Giá dịch vụ (VNĐ) *</label>
+                        <input type="number" 
+                               id="price" 
+                               name="price" 
+                               th:value="${service.price != null ? service.price : ''}" 
+                               placeholder="0" 
+                               min="0" 
+                               step="1000"
+                               required>
+                        <small>Giá dịch vụ tính bằng VNĐ (0 nếu miễn phí)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Trạng thái</label>
+                        <select id="status" name="status">
+                            <option value="AVAILABLE" th:selected="${service.status != null and service.status.name() == 'AVAILABLE'}">Có sẵn</option>
+                            <option value="UNAVAILABLE" th:selected="${service.status != null and service.status.name() == 'UNAVAILABLE'}">Không có sẵn</option>
+                            <option value="DISCONTINUED" th:selected="${service.status != null and service.status.name() == 'DISCONTINUED'}">Ngừng cung cấp</option>
+                        </select>
+                        <small>Trạng thái hiện tại của dịch vụ</small>
+                    </div>
+
+                    <!-- Service Image Upload - For Create Mode -->
+                    <div class="form-group full" th:if="${!isEdit}">
+                        <label for="serviceImage">Ảnh dịch vụ</label>
+                        <input type="file" 
+                               id="serviceImage" 
+                               name="serviceImage" 
+                               accept="image/*" 
+                               class="form-control">
+                        <small>Chọn ảnh cho dịch vụ (không bắt buộc)</small>
+                        <div id="imagePreview" class="image-preview" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview" class="preview-image">
+                        </div>
+                    </div>
+
+                    <!-- Service Image Upload - For Edit Mode -->
+                    <div class="form-group full" th:if="${isEdit}">
+                        <label for="serviceImage">Ảnh dịch vụ</label>
+                        
+                        <!-- Current Image Display -->
+                        <div th:if="${service.serviceId != null and restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) != null and !restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty()}" 
+                             class="current-image">
+                            <img th:src="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId)}" 
+                                 alt="Current Service Image" 
+                                 class="current-image-preview">
+                            <p class="form-text" style="color: var(--dashboard-gray);">Ảnh hiện tại của dịch vụ</p>
+                        </div>
+                        
+                        <!-- No Image State -->
+                        <div th:if="${service.serviceId != null and (restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) == null or restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty())}" 
+                             class="no-image-state">
+                            <div class="no-image">
+                                <i class="fas fa-image"></i>
+                                <span>Chưa có ảnh</span>
+                            </div>
+                        </div>
+                        
+                        <!-- File Input for Edit Mode -->
+                        <input type="file" 
+                               id="serviceImage" 
+                               name="serviceImage" 
+                               accept="image/*" 
+                               class="form-control">
+                        <small>Chọn ảnh mới để thay thế (không bắt buộc)</small>
+                        <div id="imagePreview" class="image-preview" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview" class="preview-image">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a th:href="@{/restaurant-owner/restaurants/{id}/services(id=${restaurant.restaurantId})}" 
+                       class="btn btn-secondary text-dark">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                    <button type="submit" class="btn btn-primary text-dark" 
+                            th:text="${isEdit ? 'Cập nhật Dịch vụ' : 'Tạo Dịch vụ'}">
+                        Tạo Dịch vụ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script th:inline="javascript">
+        const isEditMode = /*[[${isEdit}]]*/ false;
+
         // Format price input
         document.getElementById('price').addEventListener('input', function(e) {
             let value = e.target.value;
@@ -323,7 +408,6 @@
 
         // Auto-save form data to localStorage (only for create mode)
         const form = document.querySelector('.service-form');
-        const isEditMode = /*[[${isEdit}]]*/ false;
         
         // Load saved data (only for create mode)
         if (!isEditMode) {

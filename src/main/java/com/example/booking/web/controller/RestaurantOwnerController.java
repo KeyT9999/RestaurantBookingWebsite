@@ -230,9 +230,15 @@ public class RestaurantOwnerController {
         model.addAttribute("pageTitle", "Hồ sơ Nhà hàng - Restaurant Profile");
         
         try {
+            // Check authentication
+            if (authentication == null || !authentication.isAuthenticated()) {
+                logger.warn("Unauthenticated access to profile page");
+                return "redirect:/login";
+            }
+
             // Get restaurants owned by current user
             List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
-            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("restaurants", restaurants != null ? restaurants : new ArrayList<>());
         } catch (Exception e) {
             logger.error("Error loading restaurants for profile: {}", e.getMessage(), e);
             model.addAttribute("error", "Lỗi khi tải danh sách nhà hàng: " + e.getMessage());
@@ -428,31 +434,45 @@ public class RestaurantOwnerController {
      * Show dish management page for specific restaurant
      */
     @GetMapping("/restaurants/{restaurantId}/dishes")
-    public String restaurantDishes(@PathVariable Integer restaurantId, Model model) {
+    public String restaurantDishes(@PathVariable Integer restaurantId,
+            Authentication authentication,
+            Model model) {
         model.addAttribute("pageTitle", "Quản lý Món ăn - Dish Management");
 
-        // Get restaurant info
-        var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
-        if (restaurant.isEmpty()) {
-            return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
+        try {
+            // Get restaurants for header
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
+            model.addAttribute("restaurants", restaurants != null ? restaurants : new ArrayList<>());
+
+            // Get restaurant info
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
+            }
+
+            RestaurantProfile restaurantProfile = restaurant.get();
+            model.addAttribute("restaurant", restaurantProfile);
+            model.addAttribute("currentRestaurant", restaurantProfile);
+            model.addAttribute("restaurantId", restaurantId);
+
+            // Get dishes for this restaurant
+            List<DishWithImageDto> dishes = restaurantOwnerService.getDishesByRestaurantWithImages(restaurantId);
+            model.addAttribute("dishes", dishes);
+
+            // Calculate statistics
+            long totalDishes = dishes.size();
+            long availableDishes = dishes.stream().filter(d -> d.getStatus() == DishStatus.AVAILABLE).count();
+            long outOfStockDishes = dishes.stream().filter(d -> d.getStatus() == DishStatus.OUT_OF_STOCK).count();
+            long discontinuedDishes = dishes.stream().filter(d -> d.getStatus() == DishStatus.DISCONTINUED).count();
+
+            model.addAttribute("totalDishes", totalDishes);
+            model.addAttribute("availableDishes", availableDishes);
+            model.addAttribute("outOfStockDishes", outOfStockDishes);
+            model.addAttribute("discontinuedDishes", discontinuedDishes);
+        } catch (Exception e) {
+            logger.error("Error loading dishes page: {}", e.getMessage(), e);
+            model.addAttribute("error", "Lỗi khi tải dữ liệu: " + e.getMessage());
         }
-
-        model.addAttribute("restaurant", restaurant.get());
-
-        // Get dishes for this restaurant
-        List<DishWithImageDto> dishes = restaurantOwnerService.getDishesByRestaurantWithImages(restaurantId);
-        model.addAttribute("dishes", dishes);
-
-        // Calculate statistics
-        long totalDishes = dishes.size();
-        long availableDishes = dishes.stream().filter(d -> d.getStatus() == DishStatus.AVAILABLE).count();
-        long outOfStockDishes = dishes.stream().filter(d -> d.getStatus() == DishStatus.OUT_OF_STOCK).count();
-        long discontinuedDishes = dishes.stream().filter(d -> d.getStatus() == DishStatus.DISCONTINUED).count();
-
-        model.addAttribute("totalDishes", totalDishes);
-        model.addAttribute("availableDishes", availableDishes);
-        model.addAttribute("outOfStockDishes", outOfStockDishes);
-        model.addAttribute("discontinuedDishes", discontinuedDishes);
 
         return "restaurant-owner/restaurant-dishes";
     }
@@ -906,23 +926,26 @@ public class RestaurantOwnerController {
     @GetMapping("/restaurants/{restaurantId}/media")
     public String showRestaurantMedia(@PathVariable Integer restaurantId, Model model, Authentication authentication) {
         try {
+            // Get restaurants for header
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
+            model.addAttribute("restaurants", restaurants != null ? restaurants : new ArrayList<>());
+
             // Verify ownership
             var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
             if (restaurant.isEmpty()) {
                 return "redirect:/restaurant-owner/profile";
             }
 
-            // Check if user owns this restaurant
-            String username = authentication.getName();
-            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
-                return "redirect:/restaurant-owner/profile";
-            }
+            RestaurantProfile restaurantProfile = restaurant.get();
+            model.addAttribute("restaurant", restaurantProfile);
+            model.addAttribute("currentRestaurant", restaurantProfile);
+            model.addAttribute("restaurantId", restaurantId);
 
             // Get media for management
             List<RestaurantMedia> mediaList = restaurantOwnerService.getRestaurantMediaForManagement(restaurantId);
 
-            model.addAttribute("restaurant", restaurant.get());
             model.addAttribute("mediaList", mediaList);
+            model.addAttribute("pageTitle", "Quản lý Media - " + restaurantProfile.getRestaurantName());
             return "restaurant-owner/restaurant-media";
         } catch (Exception e) {
             logger.error("Error showing restaurant media: {}", e.getMessage(), e);
@@ -2349,7 +2372,15 @@ public class RestaurantOwnerController {
      * Helper method để lấy User từ authentication (xử lý cả User và OAuth2User)
      */
     private User getUserFromAuthentication(Authentication authentication) {
+        if (authentication == null) {
+            throw new IllegalArgumentException("Authentication cannot be null");
+        }
+
         Object principal = authentication.getPrincipal();
+
+        if (principal == null) {
+            throw new IllegalArgumentException("Authentication principal cannot be null");
+        }
 
         // Nếu là User object trực tiếp (regular login)
         if (principal instanceof User) {
@@ -2484,17 +2515,20 @@ public class RestaurantOwnerController {
     public String showRestaurantServices(@PathVariable Integer restaurantId, Model model,
             Authentication authentication) {
         try {
+            // Get restaurants for header
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
+            model.addAttribute("restaurants", restaurants != null ? restaurants : new ArrayList<>());
+
             // Verify ownership
             var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
             if (restaurant.isEmpty()) {
                 return "redirect:/restaurant-owner/profile";
             }
 
-            // Check if user owns this restaurant
-            String username = authentication.getName();
-            if (!restaurant.get().getOwner().getUser().getUsername().equals(username)) {
-                return "redirect:/restaurant-owner/profile";
-            }
+            RestaurantProfile restaurantProfile = restaurant.get();
+            model.addAttribute("restaurant", restaurantProfile);
+            model.addAttribute("currentRestaurant", restaurantProfile);
+            model.addAttribute("restaurantId", restaurantId);
 
             // Get services for this restaurant
             List<RestaurantService> services = restaurantOwnerService.getServicesByRestaurant(restaurantId);
@@ -2505,9 +2539,9 @@ public class RestaurantOwnerController {
             // Clean up any duplicate service media records
             restaurantOwnerService.cleanupDuplicateServiceMedia(restaurantId);
 
-            model.addAttribute("restaurant", restaurant.get());
             model.addAttribute("services", services);
             model.addAttribute("restaurantOwnerService", restaurantOwnerService);
+            model.addAttribute("pageTitle", "Quản lý Dịch vụ - Service Management");
             return "restaurant-owner/restaurant-services";
         } catch (Exception e) {
             logger.error("Error showing restaurant services: {}", e.getMessage(), e);

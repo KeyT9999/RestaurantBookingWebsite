@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Hồ sơ Nhà hàng - Restaurant Profile</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
+
+    <style>
+        .profile-page {
+            background: var(--dashboard-bg);
+        }
+
+        .profile-actions {
+            margin-bottom: 2rem;
+        }
+
+        .restaurants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .restaurant-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .restaurant-card:hover {
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .restaurant-card-header {
+            position: relative;
+            height: 180px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+
+        .restaurant-image {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .restaurant-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .restaurant-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+        }
+
+        .restaurant-placeholder i {
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .restaurant-status-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: white;
+        }
+
+        .status-approved {
+            background: rgba(5, 150, 105, 0.9);
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.9);
+        }
+
+        .status-rejected {
+            background: rgba(220, 38, 38, 0.9);
+        }
+
+        .status-unknown {
+            background: rgba(107, 114, 128, 0.9);
+        }
+
+        .restaurant-card-body {
+            padding: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .restaurant-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin-bottom: 0.5rem;
+        }
+
+        .restaurant-address {
+            color: var(--dashboard-gray);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .restaurant-address::before {
+            content: "\f3c5";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: var(--dashboard-gray);
+            margin-top: 0.2rem;
+        }
+
+        .restaurant-info {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--dashboard-gray);
+            font-size: 0.9rem;
+        }
+
+        .info-item i {
+            width: 20px;
+            color: var(--primary-color);
+        }
+
+        .restaurant-card-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--dashboard-border);
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .restaurant-card-footer .btn {
+            flex: 1;
+            min-width: 100px;
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .restaurant-card-footer form {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .restaurant-card-footer .btn-danger {
+            background: #DC2626;
+            color: white;
+            border: 1px solid #DC2626;
+        }
+
+        .restaurant-card-footer .btn-danger:hover {
+            background: #B91C1C;
+            border-color: #B91C1C;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            margin-top: 2rem;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            color: var(--dashboard-gray);
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: var(--dashboard-black);
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: var(--dashboard-gray);
+            margin-bottom: 2rem;
+        }
+
+        /* Delete Confirmation Modal */
+        .delete-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .delete-modal-overlay.show {
+            display: flex;
+        }
+
+        .delete-modal {
+            background: var(--dashboard-white);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.3);
+            max-width: 480px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+            border: 1px solid var(--dashboard-border);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .delete-modal-header {
+            padding: 2rem 2rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid var(--dashboard-border);
+        }
+
+        .delete-modal-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .delete-modal-icon i {
+            font-size: 2.5rem;
+            color: #DC2626;
+        }
+
+        .delete-modal-header h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin: 0;
+            margin-bottom: 0.5rem;
+        }
+
+        .delete-modal-header p {
+            color: var(--dashboard-gray);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .delete-modal-body {
+            padding: 1.5rem 2rem;
+        }
+
+        .delete-modal-restaurant-name {
+            background: var(--dashboard-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            border-left: 4px solid #DC2626;
+        }
+
+        .delete-modal-restaurant-name strong {
+            color: var(--dashboard-black);
+            font-size: 1.1rem;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .delete-modal-restaurant-name span {
+            color: var(--dashboard-gray);
+            font-size: 0.9rem;
+        }
+
+        .delete-modal-warning {
+            background: #FEF3C7;
+            border: 1px solid #FCD34D;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .delete-modal-warning i {
+            color: #D97706;
+            font-size: 1.25rem;
+            margin-top: 0.125rem;
+            flex-shrink: 0;
+        }
+
+        .delete-modal-warning-text {
+            color: #92400E;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .delete-modal-footer {
+            padding: 1rem 2rem 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .delete-modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .delete-modal-btn-cancel {
+            background: var(--dashboard-bg);
+            color: var(--dashboard-black);
+            border: 1px solid var(--dashboard-border);
+        }
+
+        .delete-modal-btn-cancel:hover {
+            background: #E2E8F0;
+            border-color: #CBD5E1;
+        }
+
+        .delete-modal-btn-confirm {
+            background: #DC2626;
+            color: white;
+        }
+
+        .delete-modal-btn-confirm:hover {
+            background: #B91C1C;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .delete-modal-btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .restaurants-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="profile-page">
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+                
+                <!-- Restaurant Selector -->
+                <div class="restaurant-selector" th:if="${restaurants != null and !restaurants.empty}">
+                    <div class="restaurant-dropdown" onclick="toggleRestaurantMenu()">
+                        <div class="restaurant-info">
+                            <div class="restaurant-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="restaurant-details">
+                                <h4 th:text="${restaurants != null and !restaurants.empty ? restaurants[0].restaurantName : 'Chọn nhà hàng'}">Nhà hàng</h4>
+                                <p th:text="${restaurants != null and !restaurants.empty ? restaurants[0].address : 'Địa chỉ nhà hàng'}">Địa chỉ nhà hàng</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    
+                    <div class="restaurant-menu" id="restaurantMenu">
+                        <div th:each="restaurant, iterStat : ${restaurants}" 
+                             class="restaurant-item" 
+                             th:attr="data-restaurant-id=${restaurant.restaurantId}"
+                             onclick="selectRestaurant(this.dataset.restaurantId)">
+                            <div class="restaurant-info">
+                                <div class="restaurant-icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="restaurant-details">
+                                    <h4 th:text="${restaurant.restaurantName}">Tên nhà hàng</h4>
+                                    <p th:text="${restaurant.address}">Địa chỉ</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
+                </div>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <h3>Dashboard</h3>
+                        <p>V 1.0</p>
+                    </div>
+                </div>
+                
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/restaurant-owner/dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            Tổng quan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/bookings">
+                            <i class="fas fa-calendar-check"></i>
+                            Booking
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/tables">
+                            <i class="fas fa-chair"></i>
+                            Quản lý bàn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/profile" class="active">
+                            <i class="fas fa-store"></i>
+                            Hồ sơ nhà hàng
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/menu">
+                            <i class="fas fa-utensils"></i>
+                            Thực đơn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" th:href="${restaurants != null and !restaurants.empty ? '/restaurant-owner/restaurants/' + restaurants[0].restaurantId + '/services' : '#'}">
+                            <i class="fas fa-concierge-bell"></i>
+                            Dịch vụ
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" th:href="${restaurants != null and !restaurants.empty ? '/restaurant-owner/restaurants/' + restaurants[0].restaurantId + '/media' : '#'}">
+                            <i class="fas fa-images"></i>
+                            Media
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/payments">
+                            <i class="fas fa-credit-card"></i>
+                            Thanh toán
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/chat">
+                            <i class="fas fa-comments"></i>
+                            Tin nhắn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/reviews">
+                            <i class="fas fa-star"></i>
+                            Đánh giá
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1 class="content-title">Hồ sơ Nhà hàng</h1>
+                <p class="content-subtitle">Quản lý thông tin và cài đặt nhà hàng của bạn</p>
+            </div>
+
+            <!-- Error Message -->
+            <div th:if="${error != null}" class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span th:text="${error}">Có lỗi xảy ra</span>
+            </div>
+
+            <!-- Success Message -->
+            <div th:if="${success != null}" class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${success}"></span>
+            </div>
+
+            <!-- Create New Restaurant Button -->
+            <div class="profile-actions">
+                <a th:href="@{/restaurant-owner/restaurants/create}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Tạo nhà hàng mới
+                </a>
+            </div>
+
+            <!-- Restaurants List -->
+            <div class="restaurants-grid" th:if="${restaurants != null and !restaurants.empty}">
+                <div th:each="restaurant : ${restaurants}" class="restaurant-card">
+                    <div class="restaurant-card-header">
+                        <div class="restaurant-image">
+                            <div class="restaurant-placeholder">
+                                <i class="fas fa-store"></i>
+                            </div>
+                        </div>
+                        <div class="restaurant-status-badge" 
+                             th:class="${'restaurant-status-badge ' + 
+                                (restaurant.approvalStatus != null and restaurant.approvalStatus.name() == 'APPROVED' ? 'status-approved' : 
+                                (restaurant.approvalStatus != null and restaurant.approvalStatus.name() == 'PENDING' ? 'status-pending' : 
+                                (restaurant.approvalStatus != null and restaurant.approvalStatus.name() == 'REJECTED' ? 'status-rejected' : 'status-unknown')))}">
+                            <span th:text="${restaurant.approvalStatus != null ? restaurant.approvalStatus.name() : 'UNKNOWN'}">APPROVED</span>
+                        </div>
+                    </div>
+
+                    <div class="restaurant-card-body">
+                        <h3 class="restaurant-name" th:text="${restaurant.restaurantName}">Tên nhà hàng</h3>
+                        <p class="restaurant-address" th:text="${restaurant.address}">Địa chỉ nhà hàng</p>
+                        
+                        <div class="restaurant-info">
+                            <div class="info-item">
+                                <i class="fas fa-phone"></i>
+                                <span th:text="${restaurant.phone != null ? restaurant.phone : 'Chưa có'}">0123 456 789</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-globe"></i>
+                                <span th:text="${restaurant.websiteUrl != null and !restaurant.websiteUrl.isEmpty() ? restaurant.websiteUrl : 'Chưa có'}">https://example.com</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="restaurant-card-footer">
+                        <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables'}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-chair"></i> Bàn
+                        </a>
+                        <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-utensils"></i> Món ăn
+                        </a>
+                        <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/edit'}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i> Chỉnh sửa
+                        </a>
+                        <form th:action="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/delete'}" 
+                              method="post" 
+                              style="display: inline;"
+                              th:attr="data-restaurant-name=${restaurant.restaurantName},data-restaurant-id=${restaurant.restaurantId}"
+                              class="delete-restaurant-form"
+                              onsubmit="event.preventDefault(); showDeleteModal(this);">
+                            <input type="hidden" 
+                                   th:if="${_csrf != null}"
+                                   th:name="${_csrf.parameterName}" 
+                                   th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i> Xóa
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" th:if="${restaurants == null or restaurants.empty}">
+                <div class="empty-state-icon">
+                    <i class="fas fa-store"></i>
+                </div>
+                <h3>Chưa có nhà hàng nào</h3>
+                <p>Tạo nhà hàng đầu tiên của bạn để bắt đầu quản lý</p>
+                <a th:href="@{/restaurant-owner/restaurants/create}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Tạo nhà hàng mới
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function toggleRestaurantMenu() {
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            if (menu && dropdown) {
+                menu.classList.toggle('show');
+                dropdown.classList.toggle('active');
+            }
+        }
+
+        function selectRestaurant(restaurantId) {
+            restaurantId = parseInt(restaurantId);
+            const restaurantItems = document.querySelectorAll('.restaurant-item');
+            let selectedItem = null;
+            
+            restaurantItems.forEach(item => {
+                if (parseInt(item.dataset.restaurantId) === restaurantId) {
+                    selectedItem = item;
+                }
+            });
+            
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            
+            if (selectedItem) {
+                const restaurantName = selectedItem.querySelector('h4').textContent;
+                const restaurantAddress = selectedItem.querySelector('p').textContent;
+                
+                const dropdownInfo = dropdown ? dropdown.querySelector('.restaurant-details') : null;
+                if (dropdownInfo) {
+                    const h4 = dropdownInfo.querySelector('h4');
+                    const p = dropdownInfo.querySelector('p');
+                    if (h4) h4.textContent = restaurantName;
+                    if (p) p.textContent = restaurantAddress;
+                }
+                
+                restaurantItems.forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                selectedItem.classList.add('active');
+            }
+            
+            if (menu) menu.classList.remove('show');
+            if (dropdown) dropdown.classList.remove('active');
+            
+            window.location.href = '/restaurant-owner/restaurants/' + restaurantId + '/tables';
+        }
+
+        document.addEventListener('click', function(event) {
+            const selector = document.querySelector('.restaurant-selector');
+            if (selector && !selector.contains(event.target)) {
+                const menu = document.getElementById('restaurantMenu');
+                const dropdown = document.querySelector('.restaurant-dropdown');
+                if (menu) menu.classList.remove('show');
+                if (dropdown) dropdown.classList.remove('active');
+            }
+        });
+
+        // Delete Modal Functions
+        let pendingDeleteForm = null;
+
+        function showDeleteModal(form) {
+            const restaurantName = form.dataset.restaurantName;
+            const restaurantId = form.dataset.restaurantId;
+            
+            // Store form reference
+            pendingDeleteForm = form;
+            
+            // Update modal content
+            document.getElementById('deleteModalRestaurantName').textContent = restaurantName;
+            document.getElementById('deleteModalRestaurantId').textContent = 'ID: ' + restaurantId;
+            
+            // Show modal
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = ''; // Restore scroll
+            pendingDeleteForm = null;
+        }
+
+        function confirmDelete() {
+            if (pendingDeleteForm) {
+                // Remove preventDefault handler
+                pendingDeleteForm.onsubmit = null;
+                
+                // Close modal first
+                closeDeleteModal();
+                
+                // Submit form
+                pendingDeleteForm.submit();
+            }
+        }
+
+        // Close modal when clicking overlay
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('deleteModal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeDeleteModal();
+                }
+            });
+
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.classList.contains('show')) {
+                    closeDeleteModal();
+                }
+            });
+        });
+    </script>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="delete-modal-overlay">
+        <div class="delete-modal">
+            <div class="delete-modal-header">
+                <div class="delete-modal-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>Xác nhận xóa nhà hàng</h3>
+                <p>Hành động này không thể hoàn tác</p>
+            </div>
+            
+            <div class="delete-modal-body">
+                <div class="delete-modal-restaurant-name">
+                    <strong id="deleteModalRestaurantName">Tên nhà hàng</strong>
+                    <span id="deleteModalRestaurantId">ID: ---</span>
+                </div>
+                
+                <div class="delete-modal-warning">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p class="delete-modal-warning-text">
+                        <strong>Cảnh báo:</strong> Việc xóa nhà hàng sẽ xóa vĩnh viễn tất cả dữ liệu liên quan bao gồm:
+                    </p>
+                </div>
+                
+                <ul style="margin: 1rem 0; padding-left: 1.5rem; color: var(--dashboard-gray); line-height: 1.8;">
+                    <li>Tất cả các bàn ăn</li>
+                    <li>Tất cả các món ăn</li>
+                    <li>Tất cả hình ảnh và media</li>
+                    <li>Tất cả lịch sử đặt bàn</li>
+                    <li>Các thông tin cấu hình khác</li>
+                </ul>
+            </div>
+            
+            <div class="delete-modal-footer">
+                <button type="button" class="delete-modal-btn delete-modal-btn-cancel" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button type="button" class="delete-modal-btn delete-modal-btn-confirm" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i>
+                    Xác nhận xóa
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

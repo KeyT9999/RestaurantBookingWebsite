@@ -1,264 +1,680 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Quản lý Dịch vụ - Service Management</title>
-    <link rel="stylesheet" href="/css/restaurant-admin.css" />
-</head>
-<body>
-    <nav class="page-switch card">
-        <a class="nav-btn" href="/restaurant-owner/dashboard" title="Về FOH Dashboard">← FOH Dashboard</a>
-        <a class="nav-btn" href="/restaurant-owner/restaurants/[[${restaurant.restaurantId}]]/dishes" title="Quản lý Món ăn">→ Món ăn</a>
-    </nav>
-
-    <div class="container">
-        <header class="nav card">
-            <div class="nav-left">
-                <h1 class="h1">Quản lý Dịch vụ</h1>
-                <p class="muted">Quản lý các dịch vụ của nhà hàng [[${restaurant.restaurantName}]]</p>
-            </div>
-            <div class="actions">
-                <a th:href="@{/restaurant-owner/restaurants/{id}/services/form(id=${restaurant.restaurantId})}" 
-                   class="btn">+ Thêm dịch vụ mới</a>
-            </div>
-        </header>
-
-        <!-- Success/Error Messages -->
-        <div th:if="${param.success}" class="card" style="background: #d4edda; border-color: #c3e6cb; margin-bottom: 1rem;">
-            <div th:switch="${param.success[0]}">
-                <p th:case="'created'" style="color: #155724;">✅ Dịch vụ đã được tạo thành công!</p>
-                <p th:case="'updated'" style="color: #155724;">✅ Dịch vụ đã được cập nhật thành công!</p>
-                <p th:case="'deleted'" style="color: #155724;">✅ Dịch vụ đã được xóa thành công!</p>
-                <p th:case="'status_updated'" style="color: #155724;">✅ Trạng thái dịch vụ đã được cập nhật!</p>
-            </div>
-        </div>
-
-        <div th:if="${param.error}" class="card" style="background: #f8d7da; border-color: #f5c6cb; margin-bottom: 1rem;">
-            <div th:switch="${param.error[0]}">
-                <p th:case="'create_failed'" style="color: #721c24;">❌ Lỗi khi tạo dịch vụ!</p>
-                <p th:case="'update_failed'" style="color: #721c24;">❌ Lỗi khi cập nhật dịch vụ!</p>
-                <p th:case="'delete_failed'" style="color: #721c24;">❌ Lỗi khi xóa dịch vụ!</p>
-                <p th:case="'status_update_failed'" style="color: #721c24;">❌ Lỗi khi cập nhật trạng thái!</p>
-            </div>
-        </div>
-
-        <!-- Services List -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="h2">Danh sách Dịch vụ</h2>
-                <p class="muted" th:text="'Tổng cộng: ' + ${#lists.size(services)} + ' dịch vụ'">Tổng cộng: 0 dịch vụ</p>
-            </div>
-
-        <div th:if="${services != null and !services.empty}" class="services-grid">
-            <div th:each="service : ${services}" class="service-card card">
-                <div class="service-header">
-                    <h3 class="h3" th:text="${service.name}">Tên dịch vụ</h3>
-                    <div class="service-status">
-                        <span th:class="'status-badge ' + ${service.status != null ? service.status.name().toLowerCase() : 'available'}" 
-                              th:text="${service.status != null ? service.status.name() : 'AVAILABLE'}">AVAILABLE</span>
-                    </div>
-                </div>
-                
-                <!-- Service Image - Display Only -->
-                <div class="service-image-section" th:if="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) != null and !restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty()}">
-                    <img th:src="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId)}" alt="Service Image" class="service-image">
-                </div>
-                <div class="service-image-placeholder" th:if="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) == null or restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty()}">
-                    <div class="no-image">
-                        <i class="fas fa-image"></i>
-                        <span>Chưa có ảnh</span>
-                    </div>
-                </div>
-                
-                <div class="service-details">
-                    <div class="service-info">
-                        <p class="service-category" th:if="${service.category != null and !service.category.isEmpty()}" 
-                           th:text="'Danh mục: ' + ${service.category}">Danh mục: Khác</p>
-                        <p class="service-price" th:text="'Giá: ' + ${service.price != null ? #numbers.formatDecimal(service.price, 0, 'COMMA', 0, 'POINT') : '0'} + ' VNĐ'">Giá: 0 VNĐ</p>
-                        <p class="service-description" th:if="${service.description != null and !service.description.isEmpty()}" 
-                           th:text="${service.description}">Mô tả dịch vụ</p>
-                    </div>
-                </div>
-
-                    <div class="service-actions">
-                        <a th:href="@{/restaurant-owner/restaurants/{restaurantId}/services/form(restaurantId=${restaurant.restaurantId}, serviceId=${service.serviceId})}" 
-                           class="btn btn-sm">✏️ Sửa</a>
-                        
-                        
-                        <form th:action="@{/restaurant-owner/restaurants/{restaurantId}/services/{serviceId}/status(restaurantId=${restaurant.restaurantId}, serviceId=${service.serviceId})}" 
-                              method="post" style="display: inline;">
-                            <select name="status" onchange="this.form.submit()" class="form-select form-select-sm">
-                                <option value="AVAILABLE" th:selected="${service.status != null and service.status.name() == 'AVAILABLE'}">Có sẵn</option>
-                                <option value="UNAVAILABLE" th:selected="${service.status != null and service.status.name() == 'UNAVAILABLE'}">Không có sẵn</option>
-                                <option value="DISCONTINUED" th:selected="${service.status != null and service.status.name() == 'DISCONTINUED'}">Ngừng cung cấp</option>
-                            </select>
-                        </form>
-                        
-                        <form th:action="@{/restaurant-owner/restaurants/{restaurantId}/services/{serviceId}/delete(restaurantId=${restaurant.restaurantId}, serviceId=${service.serviceId})}" 
-                              method="post" style="display: inline;" 
-                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')">
-                            <button type="submit" class="btn btn-sm btn-danger">🗑️ Xóa</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <div th:if="${services == null or services.empty}" class="empty-state">
-                <div class="empty-icon">📋</div>
-                <h3>Chưa có dịch vụ nào</h3>
-                <p>Bắt đầu bằng cách thêm dịch vụ đầu tiên cho nhà hàng của bạn.</p>
-                <a th:href="@{/restaurant-owner/restaurants/{id}/services/form(id=${restaurant.restaurantId})}" 
-                   class="btn">+ Thêm dịch vụ đầu tiên</a>
-            </div>
-        </div>
-    </div>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Quản lý Dịch vụ - Service Management</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
+    
     <style>
+        .services-page {
+            background: var(--dashboard-light-gray);
+            min-height: 100vh;
+        }
+
+        .page-content {
+            width: 100%;
+            max-width: none;
+            padding: 2rem;
+            margin: 0;
+        }
+
+        .page-header-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .page-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .page-header-info h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .page-header-info p {
+            color: var(--dashboard-gray);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .page-header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .services-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+        }
+
+        .services-card-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--dashboard-border);
+        }
+
+        .services-card-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .services-card-header p {
+            color: var(--dashboard-gray);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .services-card-body {
+            padding: 2rem;
+        }
+
         .services-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
         }
 
         .service-card {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1rem;
-            transition: box-shadow 0.2s ease;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--dashboard-white);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
         }
 
         .service-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
         }
 
         .service-header {
+            padding: 1.25rem;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--dashboard-border);
         }
 
-        .service-header .h3 {
+        .service-header h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
             margin: 0;
-            color: #333;
-        }
-
-        .service-status {
-            margin-left: 1rem;
+            color: var(--dashboard-black);
+            flex: 1;
         }
 
         .status-badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
             font-size: 0.75rem;
-            font-weight: 500;
+            font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
         }
 
         .status-badge.available {
-            background-color: #d4edda;
-            color: #155724;
+            background: #D1FAE5;
+            color: #065F46;
         }
 
         .status-badge.unavailable {
-            background-color: #fff3cd;
-            color: #856404;
+            background: #FEF3C7;
+            color: #92400E;
         }
 
         .status-badge.discontinued {
-            background-color: #f8d7da;
-            color: #721c24;
+            background: #FEE2E2;
+            color: #991B1B;
         }
 
-        .service-details {
-            margin-bottom: 1rem;
-        }
-
-        .service-info p {
-            margin: 0.25rem 0;
-            color: #666;
-        }
-
-        .service-price {
-            font-weight: 600;
-            color: #2c5aa0 !important;
-        }
-
-        .service-actions {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .service-actions .btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-        }
-
-        .service-actions .form-select {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: #666;
-        }
-
-        .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .empty-state h3 {
-            margin-bottom: 0.5rem;
-            color: #333;
-        }
-
-        .empty-state p {
-            margin-bottom: 1.5rem;
-        }
-
-        /* Service Image Styles */
         .service-image-section {
-            margin: 1rem 0;
+            margin: 0;
             text-align: center;
+            background: var(--dashboard-light-gray);
         }
 
         .service-image {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: 8px;
+            width: 100%;
+            height: 200px;
             object-fit: cover;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .service-image-placeholder {
-            margin: 1rem 0;
+            margin: 0;
             text-align: center;
+            background: var(--dashboard-light-gray);
+            padding: 2rem;
         }
 
         .no-image {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 2rem;
-            background: #f8f9fa;
-            border: 2px dashed #dee2e6;
-            border-radius: 8px;
-            color: #6c757d;
+            justify-content: center;
+            height: 200px;
+            color: var(--dashboard-gray);
         }
 
         .no-image i {
-            font-size: 2rem;
+            font-size: 3rem;
             margin-bottom: 0.5rem;
         }
 
+        .service-details {
+            padding: 1.25rem;
+            flex: 1;
+        }
 
+        .service-info p {
+            margin: 0.5rem 0;
+            color: var(--dashboard-gray);
+            font-size: 0.9rem;
+        }
+
+        .service-category {
+            color: var(--dashboard-gray);
+        }
+
+        .service-price {
+            font-weight: 600;
+            color: var(--dashboard-success);
+            font-size: 1rem;
+        }
+
+        .service-description {
+            color: var(--dashboard-gray);
+            line-height: 1.5;
+            margin-top: 0.75rem;
+        }
+
+        .service-actions {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--dashboard-border);
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--dashboard-black);
+            color: var(--dashboard-white);
+        }
+
+        .btn-primary:hover {
+            background: var(--dashboard-accent);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .btn-danger {
+            background: var(--dashboard-danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #B91C1C;
+        }
+
+        .form-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: var(--dashboard-white);
+            color: var(--dashboard-black);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--dashboard-accent);
+            box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #10B981;
+        }
+
+        .alert-danger {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #DC2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: var(--dashboard-gray);
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            color: var(--dashboard-black);
+            margin: 0 0 0.5rem 0;
+        }
+
+        .empty-state p {
+            color: var(--dashboard-gray);
+            margin: 0 0 1.5rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .page-content {
+                padding: 1rem;
+            }
+
+            .page-header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .page-header-actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .page-header-actions .btn {
+                width: 100%;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
+</head>
+<body class="services-page">
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+                
+                <!-- Restaurant Selector -->
+                <div class="restaurant-selector" th:if="${restaurants != null and !restaurants.empty}">
+                    <div class="restaurant-dropdown" onclick="toggleRestaurantMenu()">
+                        <div class="restaurant-info">
+                            <div class="restaurant-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="restaurant-details">
+                                <h4 th:text="${currentRestaurant.restaurantName}">Nhà hàng mặc định</h4>
+                                <p th:text="${currentRestaurant.address}">Địa chỉ nhà hàng</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    
+                    <div class="restaurant-menu" id="restaurantMenu">
+                        <div th:each="restaurant, iterStat : ${restaurants}" 
+                             class="restaurant-item" 
+                             th:classappend="${restaurant.restaurantId == restaurantId ? 'active' : ''}"
+                             th:onclick="'selectRestaurant(' + ${restaurant.restaurantId} + ')'">
+                            <div class="restaurant-info">
+                                <div class="restaurant-icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="restaurant-details">
+                                    <h4 th:text="${restaurant.restaurantName}">Tên nhà hàng</h4>
+                                    <p th:text="${restaurant.address}">Địa chỉ</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
+                </div>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <h3>Dashboard</h3>
+                        <p>V 1.0</p>
+                    </div>
+                </div>
+                
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/restaurant-owner/dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            Tổng quan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/bookings" th:href="${restaurantId != null ? '/restaurant-owner/bookings?restaurantId=' + restaurantId : '/restaurant-owner/bookings'}">
+                            <i class="fas fa-calendar-check"></i>
+                            Booking
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/tables" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/tables' : '/restaurant-owner/tables'}">
+                            <i class="fas fa-chair"></i>
+                            Quản lý bàn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/profile">
+                            <i class="fas fa-store"></i>
+                            Hồ sơ nhà hàng
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/menu" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/dishes' : '/restaurant-owner/menu'}">
+                            <i class="fas fa-utensils"></i>
+                            Thực đơn
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/services' : '#'}" class="active">
+                            <i class="fas fa-concierge-bell"></i>
+                            Dịch vụ
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/media' : '#'}">
+                            <i class="fas fa-images"></i>
+                            Media
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/payments">
+                            <i class="fas fa-credit-card"></i>
+                            Thanh toán
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/chat" th:href="${restaurantId != null ? '/restaurant-owner/chat?restaurantId=' + restaurantId : '/restaurant-owner/chat'}">
+                            <i class="fas fa-comments"></i>
+                            Tin nhắn
+                            <span class="menu-badge" id="dashboard-unread-badge" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/reviews">
+                            <i class="fas fa-star"></i>
+                            Đánh giá
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="page-content">
+                <!-- Flash Messages -->
+                <div th:if="${param.success}" class="alert alert-success">
+                    <div th:switch="${param.success[0]}">
+                        <p th:case="'created'" style="margin: 0;">✅ Dịch vụ đã được tạo thành công!</p>
+                        <p th:case="'updated'" style="margin: 0;">✅ Dịch vụ đã được cập nhật thành công!</p>
+                        <p th:case="'deleted'" style="margin: 0;">✅ Dịch vụ đã được xóa thành công!</p>
+                        <p th:case="'status_updated'" style="margin: 0;">✅ Trạng thái dịch vụ đã được cập nhật!</p>
+                    </div>
+                </div>
+
+                <div th:if="${param.error}" class="alert alert-danger">
+                    <div th:switch="${param.error[0]}">
+                        <p th:case="'create_failed'" style="margin: 0;">❌ Lỗi khi tạo dịch vụ!</p>
+                        <p th:case="'update_failed'" style="margin: 0;">❌ Lỗi khi cập nhật dịch vụ!</p>
+                        <p th:case="'delete_failed'" style="margin: 0;">❌ Lỗi khi xóa dịch vụ!</p>
+                        <p th:case="'status_update_failed'" style="margin: 0;">❌ Lỗi khi cập nhật trạng thái!</p>
+                    </div>
+                </div>
+
+                <!-- Page Header -->
+                <div class="page-header-card">
+                    <div class="page-header-content">
+                        <div class="page-header-info">
+                            <h1>Quản lý Dịch vụ</h1>
+                            <p th:text="'Quản lý các dịch vụ của nhà hàng ' + ${restaurant.restaurantName}">Quản lý các dịch vụ của nhà hàng</p>
+                        </div>
+                        <div class="page-header-actions">
+                            <a th:href="@{/restaurant-owner/restaurants/{id}/services/form(id=${restaurant.restaurantId})}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                Thêm dịch vụ mới
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Services List -->
+                <div class="services-card">
+                    <div class="services-card-header">
+                        <h2>Danh sách Dịch vụ</h2>
+                        <p th:text="'Tổng cộng: ' + ${#lists.size(services)} + ' dịch vụ'">Tổng cộng: 0 dịch vụ</p>
+                    </div>
+
+                    <div class="services-card-body">
+                        <div th:if="${services != null and !services.empty}" class="services-grid">
+                            <div th:each="service : ${services}" class="service-card">
+                                <div class="service-header">
+                                    <h3 th:text="${service.name}">Tên dịch vụ</h3>
+                                    <div class="service-status">
+                                        <span th:class="${'status-badge ' + (service.status != null ? service.status.name().toLowerCase() : 'available')}" 
+                                              th:text="${service.status != null ? service.status.name() : 'AVAILABLE'}">AVAILABLE</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Service Image -->
+                                <div class="service-image-section" 
+                                     th:if="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) != null and !restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty()}">
+                                    <img th:src="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId)}" 
+                                         alt="Service Image" 
+                                         class="service-image">
+                                </div>
+                                <div class="service-image-placeholder" 
+                                     th:unless="${restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId) != null and !restaurantOwnerService.getServiceImageUrl(restaurant.restaurantId, service.serviceId).isEmpty()}">
+                                    <div class="no-image">
+                                        <i class="fas fa-image"></i>
+                                        <span>Chưa có ảnh</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="service-details">
+                                    <div class="service-info">
+                                        <p class="service-category" 
+                                           th:if="${service.category != null and !service.category.isEmpty()}" 
+                                           th:text="'Danh mục: ' + ${service.category}">Danh mục: Khác</p>
+                                        <p class="service-price" 
+                                           th:text="'Giá: ' + ${service.price != null ? #numbers.formatDecimal(service.price, 0, 'COMMA', 0, 'POINT') : '0'} + ' VNĐ'">Giá: 0 VNĐ</p>
+                                        <p class="service-description" 
+                                           th:if="${service.description != null and !service.description.isEmpty()}" 
+                                           th:text="${service.description}">Mô tả dịch vụ</p>
+                                    </div>
+                                </div>
+
+                                <div class="service-actions">
+                                    <a th:href="@{/restaurant-owner/restaurants/{restaurantId}/services/form(restaurantId=${restaurant.restaurantId}, serviceId=${service.serviceId})}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                        Sửa
+                                    </a>
+                                    
+                                    <form th:action="@{/restaurant-owner/restaurants/{restaurantId}/services/{serviceId}/status(restaurantId=${restaurant.restaurantId}, serviceId=${service.serviceId})}" 
+                                          method="post" 
+                                          style="display: inline;">
+                                        <input type="hidden" 
+                                               th:if="${_csrf != null}"
+                                               th:name="${_csrf.parameterName}" 
+                                               th:value="${_csrf.token}"/>
+                                        <select name="status" 
+                                                onchange="this.form.submit()" 
+                                                class="form-select">
+                                            <option value="AVAILABLE" th:selected="${service.status != null and service.status.name() == 'AVAILABLE'}">Có sẵn</option>
+                                            <option value="UNAVAILABLE" th:selected="${service.status != null and service.status.name() == 'UNAVAILABLE'}">Không có sẵn</option>
+                                            <option value="DISCONTINUED" th:selected="${service.status != null and service.status.name() == 'DISCONTINUED'}">Ngừng cung cấp</option>
+                                        </select>
+                                    </form>
+                                    
+                                    <form th:action="@{/restaurant-owner/restaurants/{restaurantId}/services/{serviceId}/delete(restaurantId=${restaurant.restaurantId}, serviceId=${service.serviceId})}" 
+                                          method="post" 
+                                          style="display: inline;" 
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')">
+                                        <input type="hidden" 
+                                               th:if="${_csrf != null}"
+                                               th:name="${_csrf.parameterName}" 
+                                               th:value="${_csrf.token}"/>
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                            Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div th:if="${services == null or services.empty}" class="empty-state">
+                            <i class="fas fa-concierge-bell empty-icon"></i>
+                            <h3>Chưa có dịch vụ nào</h3>
+                            <p>Bắt đầu bằng cách thêm dịch vụ đầu tiên cho nhà hàng của bạn.</p>
+                            <a th:href="@{/restaurant-owner/restaurants/{id}/services/form(id=${restaurant.restaurantId})}" 
+                               class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                Thêm dịch vụ đầu tiên
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Restaurant menu toggle
+        function toggleRestaurantMenu() {
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            
+            if (menu) {
+                menu.classList.toggle('show');
+            }
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
+        }
+
+        function selectRestaurant(restaurantId) {
+            window.location.href = '/restaurant-owner/restaurants/' + restaurantId + '/services';
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const selector = document.querySelector('.restaurant-selector');
+            if (selector && !selector.contains(event.target)) {
+                const menu = document.getElementById('restaurantMenu');
+                const dropdown = document.querySelector('.restaurant-dropdown');
+                if (menu) menu.classList.remove('show');
+                if (dropdown) dropdown.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
