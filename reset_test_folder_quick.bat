@@ -10,3 +10,16 @@ if exist "target\site\jacoco" rmdir /s /q "target\site\jacoco" >nul 2>&1
 echo Done! Test results cleared.
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
