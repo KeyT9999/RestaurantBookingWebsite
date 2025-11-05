@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script để upload ảnh nhà hàng "Country BBQ & Beer" lên Cloudinary
+Script để upload ảnh nhà hàng "Hải Sản Bà Cường – Hoàng Sa" lên Cloudinary
 """
 
 import os
@@ -31,17 +31,21 @@ cloudinary.config(
     secure=True
 )
 
-IMAGE_FOLDER = r"C:\Users\ASUS\Desktop\RestaurantBookingWebsite\Media_update\Country BBQ & Beer - Trần Bạch Đằng"
+IMAGE_FOLDER = r"C:\Users\ASUS\Desktop\RestaurantBookingWebsite\Media_update\Hải Sản Bà Cường – Hoàng Sa"
 
 IMAGE_FILES = [
-    "slide-country-bbq-1-300-2710885070324.webp",
-    "slide-country-bbq-2-300-2710885170325.webp",
-    "slide-country-bbq-5-300-2710885470328.webp",
-    "slide-country-bbq-6-300-2710885570329.webp",
-    "slide-country-bbq-7-300-2710885670330.webp",
-    "slide-country-bbq-8-300-2710885770331.webp",
-    "slide-country-bbq-11-300-2710886070334.webp",
-    "slide-country-bbq-12-300-2710886170335.webp"
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-1-normal-370663927631.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-2-normal-370664227632.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-3-300-370664327633.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-4-300-370665627634.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-5-normal-370666527635.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-6-normal-370667327636.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-7-normal-370667627637.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-8-normal-370668327638.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-9-normal-370668627639.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-10-normal-370669127640.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-11-300-370669827641.webp",
+    "hai-san-ba-cuong-vo-nguyen-giap-slide-12-300-370669927642.webp"
 ]
 
 def upload_image(file_path, restaurant_id, media_type, index):
@@ -70,7 +74,7 @@ def generate_sql_script(urls, restaurant_id):
         return None
     
     sql_content = f"""-- =====================================================
--- SQL Script: Thêm ảnh cho nhà hàng "Country BBQ & Beer"
+-- SQL Script: Thêm ảnh cho nhà hàng "Hải Sản Bà Cường – Hoàng Sa"
 -- Restaurant ID: {restaurant_id}
 -- =====================================================
 
@@ -109,7 +113,7 @@ END $$;
 
 def main():
     print("="*60)
-    print("UPLOAD ẢNH: Country BBQ & Beer")
+    print("UPLOAD ẢNH: Hải Sản Bà Cường – Hoàng Sa")
     print("="*60)
     print()
     
@@ -125,7 +129,7 @@ def main():
             restaurant_id_str = input("Nhập restaurant_id (từ kết quả SQL script): ").strip()
         except (EOFError, KeyboardInterrupt):
             print("\n❌ ERROR: Bạn cần cung cấp restaurant_id!")
-            print("   Cách 1: Chạy với argument: python scripts/upload_country_bbq_images.py <restaurant_id>")
+            print("   Cách 1: Chạy với argument: python scripts/upload_hai_san_images.py <restaurant_id>")
             print("   Cách 2: Chạy script và nhập ID khi được hỏi")
             sys.exit(1)
     
@@ -162,7 +166,7 @@ def main():
     
     sql_content = generate_sql_script(uploaded_urls, restaurant_id)
     if sql_content:
-        output_file = "scripts/insert_country_bbq_images.sql"
+        output_file = "scripts/insert_hai_san_images.sql"
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(sql_content)
         print(f"✅ SQL script saved: {output_file}")
@@ -172,4 +176,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
