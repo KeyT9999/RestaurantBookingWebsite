@@ -636,29 +636,62 @@ public class RestaurantOwnerController {
      * Show table management page for specific restaurant
      */
     @GetMapping("/restaurants/{restaurantId}/tables")
-    public String restaurantTables(@PathVariable Integer restaurantId, Model model) {
+    public String restaurantTables(@PathVariable Integer restaurantId,
+            Authentication authentication,
+            Model model) {
         model.addAttribute("pageTitle", "Quản lý Bàn - Table Management");
 
-        // Get restaurant info
-        var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
-        if (restaurant.isEmpty()) {
-            return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
+        try {
+            // Get all restaurants owned by current user
+            List<RestaurantProfile> restaurants = getAllRestaurantsByOwner(authentication);
+            model.addAttribute("restaurants", restaurants);
+
+            // Get restaurant info
+            var restaurant = restaurantOwnerService.getRestaurantById(restaurantId);
+            if (restaurant.isEmpty()) {
+                return "redirect:/restaurant-owner/profile?error=restaurant_not_found";
+            }
+
+            RestaurantProfile restaurantProfile = restaurant.get();
+            model.addAttribute("restaurant", restaurantProfile);
+            model.addAttribute("currentRestaurant", restaurantProfile);
+            model.addAttribute("restaurantId", restaurantId);
+
+            // Get tables for this restaurant
+            List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(restaurantId);
+
+            // Debug logging
+            System.out.println("🔍 Controller: Found " + tables.size() + " tables for restaurant ID: " + restaurantId);
+            tables.forEach(table -> {
+                System.out.println("   Table ID: " + table.getTableId() +
+                        ", Name: " + table.getTableName() +
+                        ", Capacity: " + table.getCapacity() +
+                        ", Status: " + (table.getStatus() != null ? table.getStatus().name() : "NULL") +
+                        ", Deposit: " + table.getDepositAmount());
+            });
+
+            model.addAttribute("tables", tables);
+
+            // Calculate statistics
+            int totalCapacity = tables.stream().mapToInt(RestaurantTable::getCapacity).sum();
+            long availableTables = tables.stream()
+                    .filter(t -> t.getStatus() != null
+                            && t.getStatus() == com.example.booking.common.enums.TableStatus.AVAILABLE)
+                    .count();
+            long occupiedTables = tables.stream()
+                    .filter(t -> t.getStatus() != null
+                            && t.getStatus() == com.example.booking.common.enums.TableStatus.OCCUPIED)
+                    .count();
+
+            model.addAttribute("totalCapacity", totalCapacity);
+            model.addAttribute("availableTables", availableTables);
+            model.addAttribute("occupiedTables", occupiedTables);
+
+        } catch (Exception e) {
+            model.addAttribute("error", "Lỗi khi tải dữ liệu: " + e.getMessage());
+            System.err.println("❌ Error in restaurantTables: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        model.addAttribute("restaurant", restaurant.get());
-
-        // Get tables for this restaurant
-        List<RestaurantTable> tables = restaurantService.findTablesByRestaurant(restaurantId);
-        model.addAttribute("tables", tables);
-
-        // Calculate statistics
-        int totalCapacity = tables.stream().mapToInt(RestaurantTable::getCapacity).sum();
-        long availableTables = tables.stream().filter(t -> "AVAILABLE".equals(t.getStatus())).count();
-        long occupiedTables = tables.stream().filter(t -> "OCCUPIED".equals(t.getStatus())).count();
-
-        model.addAttribute("totalCapacity", totalCapacity);
-        model.addAttribute("availableTables", availableTables);
-        model.addAttribute("occupiedTables", occupiedTables);
 
         return "restaurant-owner/restaurant-tables";
     }

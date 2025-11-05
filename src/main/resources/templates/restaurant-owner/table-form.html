@@ -3,97 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${pageTitle} ?: 'Quản lý bàn - Book Eat'">Quản lý bàn - Book Eat</title>
+    <title th:text="${pageTitle}">Chỉnh sửa bàn - Table Management</title>
 
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link th:href="@{/css/design-system.css}" rel="stylesheet">
-    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
+
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
+        .table-form-page {
+            background: var(--dashboard-bg);
         }
 
-        .table-form-hero {
-            background: linear-gradient(135deg, #0f172a, #1f2937);
-            color: #f8fafc;
-            padding: var(--ds-space-12) 0;
-            position: relative;
+        .form-content-header {
+            margin-bottom: 2rem;
         }
 
-        .table-form-hero::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(59, 130, 246, 0.18));
-            pointer-events: none;
-        }
-
-        .table-form-hero > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        .table-form-breadcrumb {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--ds-space-2);
-            font-size: 0.9rem;
-            margin-bottom: var(--ds-space-4);
-            align-items: center;
-        }
-
-        .table-form-breadcrumb a {
-            color: rgba(248, 250, 252, 0.8);
-            text-decoration: none;
-        }
-
-        .table-form-wrapper {
-            display: grid;
-            gap: var(--ds-space-5);
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        }
-
-        .table-form-grid {
-            display: grid;
-            gap: var(--ds-space-4);
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        }
-
-        .table-form-grid label span {
+        .form-content-header .content-title {
+            font-size: 1.75rem;
             font-weight: 600;
-            display: block;
-            margin-bottom: 0.35rem;
-            color: #0f172a;
+            color: var(--dashboard-black);
+            margin-bottom: 0.5rem;
         }
 
-        .table-form-grid input,
-        .table-form-grid select,
-        .table-form-grid textarea {
-            width: 100%;
-            border-radius: var(--ds-radius-lg);
-            border: 1px solid #cbd5f5;
-            padding: 0.75rem 1rem;
+        .form-content-header .content-subtitle {
+            color: var(--dashboard-gray);
             font-size: 0.95rem;
         }
 
-        .table-form-grid textarea {
+        .form-card {
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-card-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--dashboard-border);
+        }
+
+        .form-card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dashboard-black);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-card-header h2 i {
+            color: var(--primary-color);
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: var(--dashboard-black);
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            background: var(--dashboard-white);
+            color: var(--dashboard-black);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-group textarea {
             min-height: 120px;
             resize: vertical;
         }
 
-        .table-form-grid .full-col {
+        .form-group.full-width {
             grid-column: 1 / -1;
         }
 
         .image-upload-panel {
-            border: 2px dashed #cbd5f5;
-            border-radius: var(--ds-radius-2xl);
-            padding: var(--ds-space-5);
-            background: #f8fafc;
+            border: 2px dashed var(--dashboard-border);
+            border-radius: 12px;
+            padding: 2rem;
+            background: var(--dashboard-bg);
             text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .image-upload-panel:hover {
+            border-color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.05);
         }
 
         .image-upload-panel input[type="file"] {
@@ -103,31 +135,30 @@
         .image-upload-placeholder {
             display: flex;
             flex-direction: column;
-            gap: var(--ds-space-3);
+            gap: 1rem;
             align-items: center;
-            color: #475569;
+            color: var(--dashboard-gray);
         }
 
         .image-upload-placeholder i {
-            font-size: 2.2rem;
-            color: #94a3b8;
+            font-size: 3rem;
+            color: var(--dashboard-gray);
+            opacity: 0.5;
         }
 
         .current-images-grid {
             display: grid;
-            gap: var(--ds-space-4);
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            margin-top: var(--ds-space-4);
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            margin-top: 1.5rem;
         }
 
         .current-image-card {
-            background: var(--ds-primary-white);
-            border-radius: var(--ds-radius-xl);
-            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+            background: var(--dashboard-white);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 12px;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: var(--ds-space-3);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
         }
 
         .current-image-card img {
@@ -138,23 +169,23 @@
 
         .current-image-actions {
             display: flex;
-            gap: var(--ds-space-2);
+            gap: 0.5rem;
             justify-content: center;
-            padding-bottom: var(--ds-space-3);
+            padding: 1rem;
         }
 
         .multiple-images-preview {
             display: grid;
-            gap: var(--ds-space-3);
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            margin-top: var(--ds-space-4);
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            margin-top: 1.5rem;
         }
 
         .preview-image-item {
             position: relative;
-            border-radius: var(--ds-radius-lg);
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
         }
 
         .preview-image-item img {
@@ -165,183 +196,350 @@
 
         .remove-preview-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(220, 38, 38, 0.88);
+            top: 8px;
+            right: 8px;
+            background: rgba(220, 38, 38, 0.9);
             border: none;
             color: #fff;
             width: 28px;
             height: 28px;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s;
         }
 
-        .ds-btn-sm {
-            padding: 0.45rem 0.85rem;
+        .remove-preview-btn:hover {
+            background: rgba(220, 38, 38, 1);
+            transform: scale(1.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--dashboard-border);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--dashboard-white);
+            color: var(--dashboard-black);
+            border: 1px solid var(--dashboard-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--dashboard-bg);
+            border-color: var(--dashboard-gray);
+        }
+
+        .btn-danger {
+            background: #DC2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #B91C1C;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
             font-size: 0.85rem;
         }
 
-        .ds-btn-secondary {
-            background: linear-gradient(135deg, #e2e8f0, #cbd5f5);
-            color: #0f172a;
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
         }
 
-        .ds-btn-secondary:hover {
-            background: linear-gradient(135deg, #cbd5f5, #94a3b8);
-            color: #0f172a;
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+
+        .alert-error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
         }
 
         @media (max-width: 768px) {
-            .table-form-wrapper {
+            .form-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .form-card {
+                padding: 1.5rem;
             }
         }
     </style>
 </head>
-<body class="ds-bg-gray-50">
-    <div th:with="activeNav='restaurants'"
-         th:replace="~{fragments/design-system-components :: unified-header}"></div>
-
-    <main>
-        <section class="table-form-hero">
-            <div class="ds-container ds-flex ds-flex-col ds-gap-4">
-                <div class="table-form-breadcrumb">
-                    <a th:href="@{/restaurant-owner/dashboard}">
-                        <i class="fas fa-arrow-left me-1"></i>Dashboard
-                    </a>
-                    <span>/</span>
-                    <a th:href="@{/restaurant-owner/profile}">Hồ sơ nhà hàng</a>
-                    <span>/</span>
-                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables'}"
-                       th:text="${restaurant.restaurantName}">Nhà hàng</a>
-                    <span>/</span>
-                    <span th:text="${pageTitle}">Tạo bàn mới</span>
+<body class="table-form-page">
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+            </div>
+            
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
                 </div>
-
-                <div>
-                    <h1 class="ds-heading-2 ds-mb-2" th:text="${pageTitle}">Quản lý bàn</h1>
-                    <p class="ds-text-large ds-text-secondary ds-mb-0">
-                        Cập nhật thông tin bàn cho <strong th:text="${restaurant.restaurantName}">Tên nhà hàng</strong>.
-                        Giữ sơ đồ chỗ ngồi nhất quán và dễ quản lý.
-                    </p>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-        </section>
+        </div>
+    </header>
 
-        <section class="ds-container ds-flex ds-flex-col ds-gap-5 ds-mt-6">
-            <div th:if="${success}" class="ds-alert ds-alert-success" th:text="${success}"></div>
-            <div th:if="${error}" class="ds-alert ds-alert-error" th:text="${error}"></div>
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <h3>Dashboard</h3>
+                        <p>V 1.0</p>
+                    </div>
+                </div>
+                
+                <ul class="sidebar-menu">
+                    <li>
+                        <a th:href="${restaurant != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/dashboard' : '/restaurant-owner/dashboard'}">
+                            <i class="fas fa-chart-line"></i>
+                            Tổng quan
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="${restaurant != null ? '/restaurant-owner/bookings?restaurantId=' + restaurant.restaurantId : '/restaurant-owner/bookings'}">
+                            <i class="fas fa-calendar-check"></i>
+                            Booking
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="${restaurant != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/tables' : '/restaurant-owner/tables'}" class="active">
+                            <i class="fas fa-chair"></i>
+                            Quản lý bàn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/profile">
+                            <i class="fas fa-store"></i>
+                            Hồ sơ nhà hàng
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="${restaurant != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/dishes' : '/restaurant-owner/menu'}">
+                            <i class="fas fa-utensils"></i>
+                            Thực đơn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/payments">
+                            <i class="fas fa-credit-card"></i>
+                            Thanh toán
+                        </a>
+                    </li>
+                    <li>
+                        <a th:href="${restaurant != null ? '/restaurant-owner/chat?restaurantId=' + restaurant.restaurantId : '/restaurant-owner/chat'}">
+                            <i class="fas fa-comments"></i>
+                            Tin nhắn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/reports">
+                            <i class="fas fa-chart-bar"></i>
+                            Báo cáo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
 
-            <div class="ds-card ds-card-elevated">
-                <div class="ds-card-body ds-flex ds-flex-col ds-gap-5">
-                    <h2 class="ds-heading-4 ds-mb-0">
-                        <i class="fas fa-chair me-2 text-primary"></i>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="form-content-header">
+                <h1 class="content-title" th:text="${pageTitle}">Chỉnh sửa bàn</h1>
+                <p class="content-subtitle">
+                    Cập nhật thông tin bàn cho <strong th:text="${restaurant.restaurantName}">Nhà hàng</strong>.
+                    Giữ sơ đồ chỗ ngồi nhất quán và dễ quản lý.
+                </p>
+            </div>
+
+            <!-- Flash Messages -->
+            <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+            <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+            <!-- Form Card -->
+            <div class="form-card">
+                <div class="form-card-header">
+                    <h2>
+                        <i class="fas fa-chair"></i>
                         Thông tin bàn
                     </h2>
+                </div>
 
-                    <form th:action="${table.tableId != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/tables/' + table.tableId + '/edit' : '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/tables/create'}"
-                          th:object="${table}"
-                          method="post"
-                          enctype="multipart/form-data"
-                          class="ds-flex ds-flex-col ds-gap-5">
+                <form th:action="${table.tableId != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/tables/' + table.tableId + '/edit' : '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/tables/create'}"
+                      th:object="${table}"
+                      method="post"
+                      enctype="multipart/form-data">
 
-                        <div class="table-form-grid">
-                            <label>
-                                <span>Tên bàn *</span>
-                                <input type="text" th:field="*{tableName}" placeholder="Bàn VIP 01" required>
-                            </label>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tên bàn *</label>
+                            <input type="text" th:field="*{tableName}" placeholder="Bàn VIP 01" required>
+                        </div>
 
-                            <label>
-                                <span>Sức chứa *</span>
-                                <input type="number" th:field="*{capacity}" min="1" max="20" placeholder="4" required>
-                            </label>
+                        <div class="form-group">
+                            <label>Sức chứa *</label>
+                            <input type="number" th:field="*{capacity}" min="1" max="20" placeholder="4" required>
+                        </div>
 
-                            <label>
-                                <span>Trạng thái *</span>
-                                <select th:field="*{status}" required>
-                                    <option value="AVAILABLE">Có sẵn</option>
-                                    <option value="OCCUPIED">Đang sử dụng</option>
-                                    <option value="MAINTENANCE">Bảo trì</option>
-                                    <option value="CLEANING">Đang dọn dẹp</option>
-                                </select>
-                            </label>
+                        <div class="form-group">
+                            <label>Trạng thái *</label>
+                            <select th:field="*{status}" required>
+                                <option value="AVAILABLE">Có sẵn</option>
+                                <option value="OCCUPIED">Đang sử dụng</option>
+                                <option value="MAINTENANCE">Bảo trì</option>
+                                <option value="CLEANING">Đang dọn dẹp</option>
+                                <option value="RESERVED">Đã đặt</option>
+                            </select>
+                        </div>
 
-                            <label>
-                                <span>Số tiền đặt cọc (VNĐ) *</span>
-                                <input type="number" th:field="*{depositAmount}" placeholder="100000" min="0" step="1000" required>
-                            </label>
+                        <div class="form-group">
+                            <label>Số tiền đặt cọc (VNĐ) *</label>
+                            <input type="number" th:field="*{depositAmount}" placeholder="100000" min="0" step="1000" required>
+                        </div>
 
-                            <label class="full-col">
-                                <span>Ảnh bàn (có thể tải nhiều ảnh)</span>
-                                <div class="image-upload-panel" onclick="document.getElementById('tableImages').click()">
-                                    <input type="file"
-                                           id="tableImages"
-                                           name="tableImages"
-                                           accept="image/*"
-                                           multiple
-                                           onchange="previewMultipleImages(this, 'table-images-preview')">
+                        <div class="form-group full-width">
+                            <label>Ảnh bàn (có thể tải nhiều ảnh)</label>
+                            <div class="image-upload-panel" onclick="document.getElementById('tableImages').click()">
+                                <input type="file"
+                                       id="tableImages"
+                                       name="tableImages"
+                                       accept="image/*"
+                                       multiple
+                                       onchange="previewMultipleImages(this, 'table-images-preview')">
 
-                                    <div class="image-upload-placeholder" id="table-images-preview">
-                                        <i class="fas fa-images"></i>
-                                        <div>
-                                            <strong>Thả ảnh của bạn vào đây hoặc bấm để chọn</strong>
-                                            <p class="ds-text-small ds-text-secondary ds-mb-0">Hỗ trợ PNG, JPG, WebP (tối đa 20MB mỗi ảnh)</p>
-                                        </div>
-                                    </div>
-
-                                    <div th:if="${table.hasImages()}" class="ds-flex ds-flex-col ds-gap-4 ds-mt-4">
-                                        <h3 class="ds-heading-6 ds-mb-0">Ảnh đã tải lên</h3>
-                                        <div class="current-images-grid">
-                                            <div th:each="image, iterStat : ${table.tableImages}" class="current-image-card">
-                                                <img th:src="${image.url}"
-                                                     th:alt="${table.tableName + ' - Ảnh ' + (iterStat.index + 1)}"
-                                                     loading="lazy">
-                                                <div class="current-image-actions">
-                                                    <a th:href="${image.url}" target="_blank" class="ds-btn ds-btn-secondary ds-btn-sm">
-                                                        <i class="fas fa-eye"></i> Xem
-                                                    </a>
-                                                    <button type="button"
-                                                            class="ds-btn ds-btn-danger ds-btn-sm"
-                                                            th:onclick="'deleteTableImage(' + ${image.mediaId} + ')'">
-                                                        <i class="fas fa-trash"></i> Xóa
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="ds-flex ds-justify-center">
-                                            <button type="button"
-                                                    class="ds-btn ds-btn-secondary ds-btn-sm"
-                                                    onclick="removeCurrentImages('tableImages', 'table-images-preview')">
-                                                <i class="fas fa-upload"></i> Tải ảnh khác
-                                            </button>
-                                        </div>
+                                <div class="image-upload-placeholder" id="table-images-preview">
+                                    <i class="fas fa-images"></i>
+                                    <div>
+                                        <strong>Thả ảnh của bạn vào đây hoặc bấm để chọn</strong>
+                                        <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; opacity: 0.7;">Hỗ trợ PNG, JPG, WebP (tối đa 20MB mỗi ảnh)</p>
                                     </div>
                                 </div>
-                            </label>
-                        </div>
 
-                        <div class="ds-flex ds-gap-3 ds-flex-wrap">
-                            <button type="submit" class="ds-btn ds-btn-primary ds-btn-lg">
-                                <i class="fas fa-save"></i>
-                                <span th:text="${table.tableId != null ? 'Cập nhật bàn' : 'Tạo bàn mới'}">Tạo bàn mới</span>
-                            </button>
-                            <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables'}"
-                               class="ds-btn ds-btn-secondary ds-btn-lg">
-                                <i class="fas fa-rotate-left"></i> Hủy
-                            </a>
+                                <div th:if="${table.hasImages()}" style="margin-top: 1.5rem;">
+                                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--dashboard-black);">Ảnh đã tải lên</h3>
+                                    <div class="current-images-grid">
+                                        <div th:each="image, iterStat : ${table.tableImages}" class="current-image-card">
+                                            <img th:src="${image.url}"
+                                                 th:alt="${table.tableName + ' - Ảnh ' + (iterStat.index + 1)}"
+                                                 loading="lazy">
+                                            <div class="current-image-actions">
+                                                <a th:href="${image.url}" target="_blank" class="btn btn-secondary btn-sm">
+                                                    <i class="fas fa-eye"></i> Xem
+                                                </a>
+                                                <button type="button"
+                                                        class="btn btn-danger btn-sm"
+                                                        th:attr="data-media-id=${image.mediaId}"
+                                                        onclick="deleteTableImage(this.dataset.mediaId)">
+                                                    <i class="fas fa-trash"></i> Xóa
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: center; margin-top: 1rem;">
+                                        <button type="button"
+                                                class="btn btn-secondary btn-sm"
+                                                onclick="removeCurrentImages('tableImages', 'table-images-preview')">
+                                            <i class="fas fa-upload"></i> Tải ảnh khác
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary text-dark">
+                            <i class="fas fa-save"></i>
+                            <span th:text="${table.tableId != null ? 'Cập nhật bàn' : 'Tạo bàn mới'}">Tạo bàn mới</span>
+                        </button>
+                        <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables'}"
+                           class="btn btn-secondary text-dark">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                    </div>
+                </form>
             </div>
-        </section>
-    </main>
+        </main>
+    </div>
 
-    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
-    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         function previewMultipleImages(input, previewId) {
@@ -356,7 +554,7 @@
                         <i class="fas fa-images"></i>
                         <div>
                             <strong>Thả ảnh của bạn vào đây hoặc bấm để chọn</strong>
-                            <p class="ds-text-small ds-text-secondary ds-mb-0">Hỗ trợ PNG, JPG, WebP (tối đa 20MB mỗi ảnh)</p>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; opacity: 0.7;">Hỗ trợ PNG, JPG, WebP (tối đa 20MB mỗi ảnh)</p>
                         </div>
                     </div>
                 `;
@@ -364,6 +562,8 @@
             }
 
             let html = '<div class="multiple-images-preview">';
+            let loadedCount = 0;
+            
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = (event) => {
@@ -377,7 +577,8 @@
                             </button>
                         </div>
                     `;
-                    if (index === files.length - 1) {
+                    loadedCount++;
+                    if (loadedCount === files.length) {
                         preview.innerHTML = html + '</div>';
                     }
                 };

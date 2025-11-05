@@ -881,6 +881,7 @@ public class RestaurantOwnerService {
                 logger.error("Failed to upload table image for restaurant {} table {}: {}", restaurantId, tableId,
                         e.getMessage());
             }
+
         }
         return savedImages;
     }
@@ -1107,3 +1108,4 @@ public class RestaurantOwnerService {
         public void setAverageRating(double averageRating) { this.averageRating = averageRating; }
     }
 }
+

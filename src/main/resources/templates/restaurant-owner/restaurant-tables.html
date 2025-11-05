@@ -3,527 +3,412 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${pageTitle} ?: 'Quản lý bàn - Book Eat'">Quản lý bàn - Book Eat</title>
+    <title th:text="${pageTitle}">Quản lý Bàn - Table Management</title>
 
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link th:href="@{/css/design-system.css}" rel="stylesheet">
-    <link th:href="@{/css/restaurant-admin.css}" rel="stylesheet">
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .tables-hero {
-            background: linear-gradient(135deg, #1f2937, #111827);
-            color: #f8fafc;
-            padding: var(--ds-space-12) 0;
-            position: relative;
-        }
-
-        .tables-hero::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2));
-            pointer-events: none;
-        }
-
-        .tables-hero > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        .tables-hero-breadcrumb {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--ds-space-2);
-            font-size: 0.9rem;
-            margin-bottom: var(--ds-space-4);
-            align-items: center;
-        }
-
-        .tables-hero-breadcrumb a {
-            color: rgba(248, 250, 252, 0.8);
-            text-decoration: none;
-        }
-
-        .tables-hero-actions {
-            margin-top: var(--ds-space-5);
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--ds-space-3);
-        }
-
-        .tables-quick-link {
-            display: inline-flex;
-            align-items: center;
-            gap: var(--ds-space-2);
-            padding: 0.6rem 1.1rem;
-            border-radius: var(--ds-radius-full);
-            background: rgba(248, 250, 252, 0.14);
-            color: #f8fafc;
-            font-weight: 500;
-            text-decoration: none;
-            transition: transform 0.2s ease, background 0.2s ease;
-        }
-
-        .tables-quick-link:hover {
-            transform: translateY(-2px);
-            background: rgba(248, 250, 252, 0.22);
-        }
-
-        .ds-btn-danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: #fff;
-        }
-
-        .ds-btn-danger:hover {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            color: #fff;
-        }
-
-        .ds-btn-secondary {
-            background: linear-gradient(135deg, #e2e8f0, #cbd5f5);
-            color: #0f172a;
-        }
-
-        .ds-btn-secondary:hover {
-            background: linear-gradient(135deg, #cbd5f5, #94a3b8);
-            color: #0f172a;
-        }
-
-        .tables-stat-grid {
-            display: grid;
-            gap: var(--ds-space-4);
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        }
-
-        .tables-stat-card {
-            border-radius: var(--ds-radius-2xl);
-            padding: var(--ds-space-5);
-            background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-            display: flex;
-            flex-direction: column;
-            gap: var(--ds-space-2);
-            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
-        }
-
-        .tables-stat-card.success {
-            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-        }
-
-        .tables-stat-card.warning {
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-        }
-
-        .tables-stat-card.accent {
-            background: linear-gradient(135deg, #ede9fe, #ddd6fe);
-        }
-
-        .tables-stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: var(--ds-radius-xl);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            background: rgba(15, 23, 42, 0.08);
-            color: #0f172a;
-        }
-
-        .tables-stat-value {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .tables-grid {
-            display: grid;
-            gap: var(--ds-space-4);
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        }
-
-        .table-card {
-            background: var(--ds-primary-white);
-            border-radius: var(--ds-radius-2xl);
-            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.1);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .table-card-header {
-            padding: var(--ds-space-5);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .table-card-header h3 {
-            margin: 0;
-            font-size: 1.4rem;
-        }
-
-        .table-status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.35rem 0.85rem;
-            border-radius: var(--ds-radius-full);
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .table-status-AVAILABLE {
-            background: rgba(34, 197, 94, 0.15);
-            color: #15803d;
-        }
-
-        .table-status-OCCUPIED {
-            background: rgba(234, 179, 8, 0.2);
-            color: #b45309;
-        }
-
-        .table-status-MAINTENANCE {
-            background: rgba(59, 130, 246, 0.18);
-            color: #1d4ed8;
-        }
-
-        .table-status-CLEANING {
-            background: rgba(16, 185, 129, 0.18);
-            color: #0f766e;
-        }
-
-        .table-status-RESERVED {
-            background: rgba(99, 102, 241, 0.18);
-            color: #4338ca;
-        }
-
-        .table-carousel {
-            position: relative;
-            background: #0f172a;
-            min-height: 220px;
-        }
-
-        .table-carousel img {
-            width: 100%;
-            height: 220px;
-            object-fit: cover;
-        }
-
-        .carousel-slide {
-            display: none;
-        }
-
-        .carousel-slide.active {
-            display: block;
-        }
-
-        .carousel-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(15, 23, 42, 0.5);
-            color: white;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        .carousel-btn:hover {
-            background: rgba(15, 23, 42, 0.8);
-        }
-
-        .carousel-btn.prev {
-            left: 12px;
-        }
-
-        .carousel-btn.next {
-            right: 12px;
-        }
-
-        .carousel-dots {
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 0.4rem;
-        }
-
-        .carousel-dots .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: rgba(248, 250, 252, 0.4);
-            border: none;
-            cursor: pointer;
-        }
-
-        .carousel-dots .dot.active {
-            background: #f8fafc;
-        }
-
-        .table-info {
-            padding: var(--ds-space-4) var(--ds-space-5);
-            display: flex;
-            flex-direction: column;
-            gap: var(--ds-space-3);
-        }
-
-        .table-info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.95rem;
-            color: #475569;
-        }
-
-        .table-info-row strong {
-            color: #0f172a;
-        }
-
-        .table-actions {
-            padding: var(--ds-space-4) var(--ds-space-5);
-            display: flex;
-            gap: var(--ds-space-3);
-            border-top: 1px solid #e2e8f0;
-            flex-wrap: wrap;
-        }
-
-        .table-actions form {
-            display: inline;
-        }
-
-        .tables-empty {
-            text-align: center;
-            padding: var(--ds-space-10);
-            border-radius: var(--ds-radius-2xl);
-            background: #f8fafc;
-            border: 1px dashed #cbd5f5;
-            color: #475569;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: var(--ds-space-4);
-        }
-
-        .tables-empty i {
-            font-size: 2.5rem;
-            color: #94a3b8;
-        }
-
-        @media (max-width: 768px) {
-            .tables-hero-actions {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .table-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
-    </style>
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
 </head>
-<body class="ds-bg-gray-50">
-    <div th:with="activeNav='restaurants'"
-         th:replace="~{fragments/design-system-components :: unified-header}"></div>
-
-    <main>
-        <section class="tables-hero">
-            <div class="ds-container ds-flex ds-flex-col ds-gap-4">
-                <div class="tables-hero-breadcrumb">
-                    <a th:href="@{/restaurant-owner/dashboard}">
-                        <i class="fas fa-arrow-left me-1"></i>Dashboard
-                    </a>
-                    <span>/</span>
-                    <a th:href="@{/restaurant-owner/profile}">Hồ sơ nhà hàng</a>
-                    <span>/</span>
-                    <span th:text="${restaurant.restaurantName}">Nhà hàng</span>
-                    <span>/</span>
-                    <span>Quản lý bàn</span>
-                </div>
-
-                <div>
-                    <h1 class="ds-heading-2 ds-mb-2">Quản lý bàn</h1>
-                    <p class="ds-text-large ds-text-secondary ds-mb-0">
-                        Theo dõi trạng thái bàn, sức chứa và cập nhật thông tin chỗ ngồi cho
-                        <strong th:text="${restaurant.restaurantName}">Nhà hàng</strong>.
-                    </p>
-                </div>
-
-                <div class="tables-hero-actions">
-                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/create'}"
-                       class="tables-quick-link">
-                        <i class="fas fa-plus-circle"></i> Thêm bàn mới
-                    </a>
-                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/dishes'}"
-                       class="tables-quick-link">
-                        <i class="fas fa-utensils"></i> Quản lý món ăn
-                    </a>
-                    <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/media'}"
-                       class="tables-quick-link">
-                        <i class="fas fa-camera"></i> Quản lý media
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <section class="ds-container ds-flex ds-flex-col ds-gap-5 ds-mt-6">
-            <div th:if="${success}" class="ds-alert ds-alert-success" th:text="${success}"></div>
-            <div th:if="${error}" class="ds-alert ds-alert-error" th:text="${error}"></div>
-
-            <div class="ds-card ds-card-elevated">
-                <div class="ds-card-body">
-                    <div class="tables-stat-grid">
-                        <div class="tables-stat-card">
-                            <div class="tables-stat-icon"><i class="fas fa-table"></i></div>
-                            <div class="tables-stat-value"
-                                 th:text="${tables != null ? tables.size() : 0}">0</div>
-                            <div class="ds-text-secondary">Tổng số bàn</div>
+<body class="tables-page">
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+                
+                <!-- Restaurant Selector -->
+                <div class="restaurant-selector" th:if="${restaurants != null and !restaurants.empty}">
+                    <div class="restaurant-dropdown" onclick="toggleRestaurantMenu()">
+                        <div class="restaurant-info">
+                            <div class="restaurant-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="restaurant-details">
+                                <h4 th:text="${currentRestaurant != null ? currentRestaurant.restaurantName : 'Chọn nhà hàng'}">Nhà hàng mặc định</h4>
+                                <p th:text="${currentRestaurant != null ? currentRestaurant.address : 'Địa chỉ nhà hàng'}">Địa chỉ nhà hàng</p>
+                            </div>
                         </div>
-                        <div class="tables-stat-card success">
-                            <div class="tables-stat-icon"><i class="fas fa-check-circle"></i></div>
-                            <div class="tables-stat-value"
-                                 th:text="${availableTables != null ? availableTables : 0}">0</div>
-                            <div class="ds-text-secondary">Bàn đang trống</div>
-                        </div>
-                        <div class="tables-stat-card warning">
-                            <div class="tables-stat-icon"><i class="fas fa-chair"></i></div>
-                            <div class="tables-stat-value"
-                                 th:text="${occupiedTables != null ? occupiedTables : 0}">0</div>
-                            <div class="ds-text-secondary">Bàn đang phục vụ</div>
-                        </div>
-                        <div class="tables-stat-card accent">
-                            <div class="tables-stat-icon"><i class="fas fa-users"></i></div>
-                            <div class="tables-stat-value"
-                                 th:text="${totalCapacity != null ? totalCapacity : 0}">0</div>
-                            <div class="ds-text-secondary">Tổng sức chứa</div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    
+                    <div class="restaurant-menu" id="restaurantMenu">
+                        <div th:each="restaurant, iterStat : ${restaurants}" 
+                             class="restaurant-item" 
+                             th:classappend="${restaurant.restaurantId == restaurantId ? 'active' : ''}"
+                             th:attr="data-restaurant-id=${restaurant.restaurantId}"
+                             onclick="selectRestaurant(this.dataset.restaurantId)">
+                            <div class="restaurant-info">
+                                <div class="restaurant-icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="restaurant-details">
+                                    <h4 th:text="${restaurant.restaurantName}">Tên nhà hàng</h4>
+                                    <p th:text="${restaurant.address}">Địa chỉ</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
+                </div>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/logout}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Đăng xuất
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
 
-            <div class="ds-card ds-card-elevated">
-                <div class="ds-card-body ds-flex ds-flex-col ds-gap-4">
-                    <h2 class="ds-heading-4 ds-mb-0">
-                        <i class="fas fa-layer-group me-2 text-primary"></i>Danh sách bàn
-                    </h2>
+    <!-- Main Dashboard Layout -->
+    <div class="dashboard-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <div class="sidebar-brand-text">
+                        <h3>Dashboard</h3>
+                        <p>V 1.0</p>
+                    </div>
+                </div>
+                
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="/restaurant-owner/dashboard" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/dashboard' : '/restaurant-owner/dashboard'}">
+                            <i class="fas fa-chart-line"></i>
+                            Tổng quan
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/bookings" th:href="${restaurantId != null ? '/restaurant-owner/bookings?restaurantId=' + restaurantId : '/restaurant-owner/bookings'}">
+                            <i class="fas fa-calendar-check"></i>
+                            Booking
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/tables" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/tables' : '/restaurant-owner/tables'}" class="active">
+                            <i class="fas fa-chair"></i>
+                            Quản lý bàn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/profile">
+                            <i class="fas fa-store"></i>
+                            Hồ sơ nhà hàng
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/menu" th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/dishes' : '/restaurant-owner/menu'}">
+                            <i class="fas fa-utensils"></i>
+                            Thực đơn
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/payments">
+                            <i class="fas fa-credit-card"></i>
+                            Thanh toán
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/chat" th:href="${restaurantId != null ? '/restaurant-owner/chat?restaurantId=' + restaurantId : '/restaurant-owner/chat'}">
+                            <i class="fas fa-comments"></i>
+                            Tin nhắn
+                            <span class="menu-badge" id="bookings-unread-badge" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/reports">
+                            <i class="fas fa-chart-bar"></i>
+                            Báo cáo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
 
-                    <div th:if="${tables != null and !tables.isEmpty()}" class="tables-grid">
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1 class="content-title">Quản lý Bàn</h1>
+                <p class="content-subtitle">Quản lý và theo dõi trạng thái bàn của nhà hàng</p>
+            </div>
+
+            <!-- Error Message -->
+            <div th:if="${error != null}" class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span th:text="${error}">Có lỗi xảy ra</span>
+            </div>
+
+            <!-- Success Message -->
+            <div th:if="${success != null}" class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${success}"></span>
+            </div>
+
+            <div class="kpi-grid tables-kpi">
+                <div class="kpi-card total">
+                    <div class="kpi-label">Tổng số bàn</div>
+                    <div class="kpi-value" th:text="${tables != null ? tables.size() : 0}">0</div>
+                    <div class="kpi-meta" th:text="${totalCapacity != null ? totalCapacity + ' chỗ ngồi' : '0 chỗ ngồi'}">0 chỗ ngồi</div>
+                </div>
+                <div class="kpi-card available">
+                    <div class="kpi-label">Bàn đang trống</div>
+                    <div class="kpi-value" th:text="${availableTables != null ? availableTables : 0}">0</div>
+                    <div class="kpi-meta">Sẵn sàng đón khách</div>
+                </div>
+                <div class="kpi-card occupied">
+                    <div class="kpi-label">Bàn đang phục vụ</div>
+                    <div class="kpi-value" th:text="${occupiedTables != null ? occupiedTables : 0}">0</div>
+                    <div class="kpi-meta">Cần được theo dõi</div>
+                </div>
+            </div>
+
+            <div class="chart-card tables-catalog">
+                <div class="chart-header">
+                    <h3 class="chart-title">Danh sách bàn</h3>
+                    <div class="chart-actions">
+                        <a class="btn btn-ghost"
+                           th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/tables/create' : '/restaurant-owner/tables/create'}">
+                            <i class="fas fa-plus"></i>
+                            Thêm bàn
+                        </a>
+                    </div>
+                </div>
+                <div class="chart-content">
+                    <div class="tables-grid" th:if="${tables != null and !tables.isEmpty()}">
                         <article class="table-card" th:each="table : ${tables}">
                             <div class="table-card-header">
                                 <div>
-                                    <h3 class="ds-heading-5 ds-mb-1" th:text="${table.tableName}">Bàn A1</h3>
-                                    <p class="ds-text-secondary ds-mb-0">
-                                        ID: <span th:text="${table.tableId}">1</span>
-                                    </p>
+                                    <h3 class="table-title" th:text="${table.tableName}">Table name</h3>
+                                    <div class="table-subtitle" th:text="${table.restaurant != null ? table.restaurant.restaurantName : 'Nhà hàng'}">Nhà hàng</div>
                                 </div>
-                                <span class="table-status-badge"
-                                      th:classappend="' table-status-' + ${table.status}"
-                                      th:text="${table.status != null ? table.status.displayName : 'Không xác định'}">
+                                <span th:class="${'chip ' + 
+                                    (table.status == null ? 'chip-default' :
+                                    (table.status.name() == 'AVAILABLE' ? 'chip-available' :
+                                    (table.status.name() == 'OCCUPIED' ? 'chip-occupied' :
+                                    (table.status.name() == 'RESERVED' ? 'chip-reserved' :
+                                    (table.status.name() == 'MAINTENANCE' ? 'chip-maintenance' : 'chip-default')))))}"
+                                      th:text="${table.status != null ? table.status.name() : 'UNKNOWN'}">
                                 </span>
                             </div>
 
-                            <div class="table-carousel" th:if="${table.hasImages()}"
-                                 th:id="'carousel-' + ${table.tableId}">
-                                <div th:each="image, iterStat : ${table.tableImages}"
-                                     th:class="'carousel-slide' + (${iterStat.first} ? ' active' : '')">
-                                    <img th:src="${image.url}"
-                                         th:alt="${table.tableName + ' - Ảnh ' + (iterStat.index + 1)}"
-                                         loading="lazy">
+                            <div class="table-carousel" th:if="${table.tableImages != null and !table.tableImages.isEmpty()}"
+                                 th:id="|carousel-${table.tableId}|">
+                                <div class="carousel-track">
+                                    <div th:each="image, iterStat : ${table.tableImages}"
+                                         class="carousel-slide"
+                                         th:classappend="${iterStat.first} ? 'active' : ''">
+                                        <img th:src="${image.url}"
+                                             th:alt="|Hình ảnh ${table.tableName} - ${iterStat.index + 1}|"
+                                             loading="lazy">
+                                    </div>
                                 </div>
                                 <button class="carousel-btn prev"
                                         th:if="${#lists.size(table.tableImages) > 1}"
-                                        th:onclick="'prevSlide(' + ${table.tableId} + ')'">
+                                        th:attr="data-table-id=${table.tableId}"
+                                        onclick="prevSlide(this.dataset.tableId)">
                                     <i class="fas fa-chevron-left"></i>
                                 </button>
                                 <button class="carousel-btn next"
                                         th:if="${#lists.size(table.tableImages) > 1}"
-                                        th:onclick="'nextSlide(' + ${table.tableId} + ')'">
+                                        th:attr="data-table-id=${table.tableId}"
+                                        onclick="nextSlide(this.dataset.tableId)">
                                     <i class="fas fa-chevron-right"></i>
                                 </button>
                                 <div class="carousel-dots"
                                      th:if="${#lists.size(table.tableImages) > 1}">
                                     <button class="dot"
                                             th:each="image, iterStat : ${table.tableImages}"
-                                            th:classappend="${iterStat.first} ? 'active' : ''"
-                                            th:onclick="'goToSlide(' + ${table.tableId} + ',' + ${iterStat.index} + ')'">
+                                            th:classappend="${iterStat.first} ? ' active' : ''"
+                                            th:attr="data-table-id=${table.tableId}, data-slide-index=${iterStat.index}"
+                                            onclick="goToSlide(this.dataset.tableId, this.dataset.slideIndex)">
                                     </button>
                                 </div>
                             </div>
-                            <div class="table-carousel ds-flex ds-align-center ds-justify-center ds-py-6"
-                                 th:unless="${table.hasImages()}">
-                                <div class="ds-flex ds-flex-col ds-items-center ds-gap-2 ds-text-secondary">
-                                    <i class="fas fa-images fa-2x"></i>
-                                    <span>Chưa có hình ảnh cho bàn này</span>
+                            <div class="table-carousel placeholder"
+                                 th:if="${table.tableImages == null or table.tableImages.isEmpty()}">
+                                <div class="placeholder-content">
+                                    <i class="fas fa-images"></i>
+                                    <span>Chưa có hình ảnh</span>
                                 </div>
                             </div>
 
-                            <div class="table-info">
-                                <div class="table-info-row">
-                                    <span>Sức chứa</span>
-                                    <strong th:text="${table.capacity} + ' khách'">4 khách</strong>
+                            <div class="table-meta">
+                                <div class="table-meta-item">
+                                    <span class="label">Sức chứa</span>
+                                    <span class="value" th:text="${table.capacity} + ' khách'">0 khách</span>
                                 </div>
-                                <div class="table-info-row">
-                                    <span>Đặt cọc</span>
-                                    <strong th:text="${#numbers.formatDecimal(table.depositAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</strong>
+                                <div class="table-meta-item">
+                                    <span class="label">Đặt cọc</span>
+                                    <span class="value"
+                                          th:text="${#numbers.formatDecimal(table.depositAmount, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</span>
                                 </div>
                             </div>
 
                             <div class="table-actions">
-                                <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/' + ${table.tableId} + '/edit'}"
-                                   class="ds-btn ds-btn-secondary">
-                                    <i class="fas fa-pen-to-square"></i> Chỉnh sửa
+                                <a class="btn btn-secondary small"
+                                   th:href="@{/restaurant-owner/restaurants/{restaurantId}/tables/{tableId}/edit(restaurantId=${restaurantId}, tableId=${table.tableId})}">
+                                    <i class="fas fa-pen-to-square"></i>
+                                    Chỉnh sửa
                                 </a>
-                                <form th:action="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/' + ${table.tableId} + '/delete'}"
+                                <form th:action="@{/restaurant-owner/restaurants/{restaurantId}/tables/{tableId}/delete(restaurantId=${restaurantId}, tableId=${table.tableId})}"
                                       method="post"
                                       onsubmit="return confirmDelete(this);">
-                                    <button type="submit" class="ds-btn ds-btn-danger">
-                                        <i class="fas fa-trash"></i> Xóa
+                                    <button type="submit" class="btn btn-danger small">
+                                        <i class="fas fa-trash"></i>
+                                        Xóa
                                     </button>
                                 </form>
                             </div>
                         </article>
                     </div>
 
-                    <div th:if="${tables == null or tables.isEmpty()}" class="tables-empty">
-                        <i class="fas fa-chair"></i>
-                        <div>
-                            <h3 class="ds-heading-5 ds-mb-1">Chưa có bàn nào được tạo</h3>
-                            <p class="ds-text-secondary ds-mb-0">
-                                Tạo bàn đầu tiên để quản lý sơ đồ chỗ ngồi và tối ưu hóa phục vụ.
-                            </p>
+                    <div class="tables-empty" th:if="${tables == null or tables.isEmpty()}">
+                        <div class="empty-icon">
+                            <i class="fas fa-chair"></i>
                         </div>
-                        <a th:href="@{'/restaurant-owner/restaurants/' + ${restaurant.restaurantId} + '/tables/create'}"
-                           class="ds-btn ds-btn-primary ds-btn-lg">
-                            <i class="fas fa-plus-circle"></i> Thêm bàn mới
+                        <h3>Chưa có bàn nào</h3>
+                        <p>Tạo bàn đầu tiên để bắt đầu quản lý sơ đồ phục vụ.</p>
+                        <a class="btn btn-primary"
+                           th:href="${restaurantId != null ? '/restaurant-owner/restaurants/' + restaurantId + '/tables/create' : '/restaurant-owner/tables/create'}">
+                            <i class="fas fa-plus-circle"></i>
+                            Tạo bàn mới
                         </a>
                     </div>
                 </div>
             </div>
-        </section>
-    </main>
+        </main>
+    </div>
 
-    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
-    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // Restaurant Selector - From Dashboard/Bookings
+        function toggleRestaurantMenu() {
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            
+            if (!menu || !dropdown) {
+                return;
+            }
+            
+            menu.classList.toggle('show');
+            dropdown.classList.toggle('active');
+        }
+
+        function selectRestaurant(restaurantId) {
+            // Convert to number if it's a string
+            restaurantId = parseInt(restaurantId);
+            
+            // Find the clicked restaurant item
+            const restaurantItems = document.querySelectorAll('.restaurant-item');
+            let selectedItem = null;
+            
+            restaurantItems.forEach(item => {
+                if (parseInt(item.dataset.restaurantId) === restaurantId) {
+                    selectedItem = item;
+                }
+            });
+            
+            // Update UI to show selected restaurant immediately
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            
+            if (selectedItem) {
+                // Get restaurant info from selected item
+                const restaurantName = selectedItem.querySelector('h4').textContent;
+                const restaurantAddress = selectedItem.querySelector('p').textContent;
+                
+                // Update dropdown display
+                const dropdownInfo = dropdown ? dropdown.querySelector('.restaurant-details') : null;
+                if (dropdownInfo) {
+                    const h4 = dropdownInfo.querySelector('h4');
+                    const p = dropdownInfo.querySelector('p');
+                    if (h4) h4.textContent = restaurantName;
+                    if (p) p.textContent = restaurantAddress;
+                }
+                
+                // Remove active class from all items
+                restaurantItems.forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Add active class to selected item
+                selectedItem.classList.add('active');
+            }
+            
+            // Close menu
+            if (menu) menu.classList.remove('show');
+            if (dropdown) dropdown.classList.remove('active');
+            
+            // Reload page with selected restaurant
+            window.location.href = '/restaurant-owner/restaurants/' + restaurantId + '/tables';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const selector = document.querySelector('.restaurant-selector');
+            if (selector && !selector.contains(event.target)) {
+                const menu = document.getElementById('restaurantMenu');
+                const dropdown = document.querySelector('.restaurant-dropdown');
+                if (menu && dropdown) {
+                    menu.classList.remove('show');
+                    dropdown.classList.remove('active');
+                }
+            }
+        });
+
+        function getCarousel(tableId) {
+            // Convert to string to ensure correct ID format
+            const id = 'carousel-' + tableId;
+            return document.getElementById(id);
+        }
+
         function prevSlide(tableId) {
-            const carousel = document.getElementById('carousel-' + tableId);
+            // Convert to number if it's a string
+            tableId = parseInt(tableId);
+            const carousel = getCarousel(tableId);
+            if (!carousel) { return; }
             const slides = carousel.querySelectorAll('.carousel-slide');
             const dots = carousel.querySelectorAll('.dot');
+            if (!slides.length) { return; }
 
             let currentIndex = 0;
             slides.forEach((slide, index) => {
@@ -533,18 +418,26 @@
             });
 
             slides[currentIndex].classList.remove('active');
-            dots[currentIndex]?.classList.remove('active');
+            if (dots[currentIndex]) {
+                dots[currentIndex].classList.remove('active');
+            }
 
             const prevIndex = currentIndex === 0 ? slides.length - 1 : currentIndex - 1;
 
             slides[prevIndex].classList.add('active');
-            dots[prevIndex]?.classList.add('active');
+            if (dots[prevIndex]) {
+                dots[prevIndex].classList.add('active');
+            }
         }
 
         function nextSlide(tableId) {
-            const carousel = document.getElementById('carousel-' + tableId);
+            // Convert to number if it's a string
+            tableId = parseInt(tableId);
+            const carousel = getCarousel(tableId);
+            if (!carousel) { return; }
             const slides = carousel.querySelectorAll('.carousel-slide');
             const dots = carousel.querySelectorAll('.dot');
+            if (!slides.length) { return; }
 
             let currentIndex = 0;
             slides.forEach((slide, index) => {
@@ -554,24 +447,37 @@
             });
 
             slides[currentIndex].classList.remove('active');
-            dots[currentIndex]?.classList.remove('active');
+            if (dots[currentIndex]) {
+                dots[currentIndex].classList.remove('active');
+            }
 
             const nextIndex = currentIndex === slides.length - 1 ? 0 : currentIndex + 1;
 
             slides[nextIndex].classList.add('active');
-            dots[nextIndex]?.classList.add('active');
+            if (dots[nextIndex]) {
+                dots[nextIndex].classList.add('active');
+            }
         }
 
         function goToSlide(tableId, slideIndex) {
-            const carousel = document.getElementById('carousel-' + tableId);
+            // Convert to numbers if they're strings
+            tableId = parseInt(tableId);
+            slideIndex = parseInt(slideIndex);
+            const carousel = getCarousel(tableId);
+            if (!carousel) { return; }
             const slides = carousel.querySelectorAll('.carousel-slide');
             const dots = carousel.querySelectorAll('.dot');
+            if (!slides.length) { return; }
 
             slides.forEach(slide => slide.classList.remove('active'));
             dots.forEach(dot => dot.classList.remove('active'));
 
-            slides[slideIndex].classList.add('active');
-            dots[slideIndex]?.classList.add('active');
+            if (slides[slideIndex]) {
+                slides[slideIndex].classList.add('active');
+            }
+            if (dots[slideIndex]) {
+                dots[slideIndex].classList.add('active');
+            }
         }
 
         function confirmDelete(form) {

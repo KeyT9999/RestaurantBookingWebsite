@@ -92,8 +92,9 @@ public class RestaurantManagementService {
             // Thêm logging để debug
             System.out.println("🔍 Finding tables for restaurant ID: " + restaurantId);
 
+            // Use eager fetch query to avoid lazy loading issues
             List<RestaurantTable> tables = restaurantTableRepository
-                    .findByRestaurantRestaurantIdOrderByTableName(restaurantId);
+                    .findByRestaurantRestaurantIdWithEagerFetch(restaurantId);
 
             System.out.println("✅ Found " + tables.size() + " tables");
             tables.forEach(table -> {
