@@ -26,6 +26,8 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
@@ -158,6 +160,24 @@ public class SecurityConfig {
 				.key("bookeat-remember-me-key")
 			)
 			.exceptionHandling(exceptions -> exceptions
+				// API: 401 for unauthenticated - return JSON
+				.defaultAuthenticationEntryPointFor(
+					(request, response, authException) -> {
+						response.setStatus(HttpStatus.UNAUTHORIZED.value());
+						response.setContentType("application/json;charset=UTF-8");
+						response.getWriter().write("{\"success\":false,\"error\":\"Authentication required\",\"message\":\"Please login to access this resource.\",\"status\":401}");
+					},
+					new AntPathRequestMatcher("/api/**")
+				)
+				// API: 403 for access denied - return JSON
+				.defaultAccessDeniedHandlerFor(
+					(request, response, accessDeniedException) -> {
+						response.setStatus(HttpStatus.FORBIDDEN.value());
+						response.setContentType("application/json;charset=UTF-8");
+						response.getWriter().write("{\"success\":false,\"error\":\"Access denied\",\"message\":\"You do not have permission to access this resource. Please check your user role.\",\"status\":403}");
+					},
+					new AntPathRequestMatcher("/api/**")
+				)
 				.accessDeniedPage("/403")
 			)
 			.logout(logout -> logout

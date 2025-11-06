@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,6 +24,12 @@ public class TestController {
     
     @Autowired
     private OpenAITest openAITest;
+    
+    @Autowired
+    private Environment environment;
+    
+    @Value("${ai.openai.api-key:}")
+    private String openaiApiKey;
     
     /**
      * Test OpenAI API key
@@ -84,10 +92,25 @@ public class TestController {
             
             System.out.println("🧪 Testing custom query: " + query);
             
+            // Get API key from Spring Environment (supports .env file via DotenvConfig)
+            String apiKey = openaiApiKey;
+            if (apiKey == null || apiKey.isEmpty()) {
+                // Fallback to environment variable or system property
+                apiKey = environment.getProperty("OPENAI_API_KEY", 
+                    System.getProperty("OPENAI_API_KEY", 
+                    System.getenv("OPENAI_API_KEY")));
+            }
+            
+            if (apiKey == null || apiKey.isEmpty()) {
+                result.put("status", "error");
+                result.put("message", "OpenAI API key not found. Please set OPENAI_API_KEY in .env file or environment variables.");
+                return ResponseEntity.badRequest().body(result);
+            }
+            
             // Test the query with OpenAI
             com.theokanning.openai.service.OpenAiService service = 
                 new com.theokanning.openai.service.OpenAiService(
-                    System.getenv("OPENAI_API_KEY"), 
+                    apiKey, 
                     java.time.Duration.ofSeconds(30)
                 );
             

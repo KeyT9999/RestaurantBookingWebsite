@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle}">OpenAI Debug</title>
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}" />
+    <style>
+        body { font-family: Inter, system-ui, Arial, sans-serif; margin: 24px; }
+        .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .row { display: flex; gap: 12px; align-items: center; }
+        textarea { width: 100%; min-height: 120px; padding: 10px; }
+        button { padding: 8px 14px; border-radius: 8px; border: 1px solid #111827; background: #111827; color: #fff; cursor: pointer; }
+        pre { background: #0b1020; color: #e5e7eb; padding: 12px; border-radius: 8px; overflow: auto; }
+        .muted { color: #6b7280; }
+        .grid { display: grid; gap: 10px; }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        input { width: 100%; padding: 8px 10px; }
+        label { font-size: 12px; color: #374151; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+</head>
+<body>
+    <h1>OpenAI Debug</h1>
+
+    <div class="card">
+        <h3>1) Check API key</h3>
+        <div class="row">
+            <button id="btn-check"><i class="fa-solid fa-heart-pulse"></i> Check</button>
+            <span class="muted">GET /api/openai/check</span>
+        </div>
+        <pre id="out-check">(chưa chạy)</pre>
+    </div>
+
+    <div class="card">
+        <h3>2) Thử viết lại</h3>
+        <textarea id="text-input">Quán khá ổn, món nướng thơm, phục vụ nhanh.</textarea>
+        <div class="row">
+            <button id="btn-rewrite"><i class="fa-solid fa-wand-magic-sparkles"></i> Rewrite</button>
+            <span class="muted">POST /api/openai/improve-sample</span>
+        </div>
+        <pre id="out-rewrite">(chưa chạy)</pre>
+    </div>
+
+    <div class="card">
+        <h3>3) 🤖 Điền tự động bằng AI</h3>
+        <textarea id="autofill-input">Nhà hàng: Country BBQ & Beer – Trần Bạch Đằng
+Địa chỉ: 45 Trần Bạch Đằng, Sơn Trà, Đà Nẵng
+Điện thoại: 0901 234 567
+Loại ẩm thực: Vietnamese BBQ, Grill, Beer Garden
+Giờ mở cửa: 10:30 - 22:30
+Giá trung bình: 180000 VNĐ
+Khoảng giá: 80000 - 290000 VNĐ
+Thông báo: Đang mở cửa: 10:30 - 22:30
+Mô tả: BBQ ngoài trời thoáng mát, món nướng than hồng, bia lạnh.
+Món đặc sắc: sườn nướng mật ong, bạch tuộc sa tế, hàu nướng mỡ hành.
+Tổng quan: phù hợp tụ tập bạn bè, liên hoan công ty.</textarea>
+        <div class="row">
+            <button id="btn-autofill"><i class="fa-solid fa-robot"></i> Auto-Fill</button>
+            <span class="muted">POST /api/restaurant/ai/auto-fill</span>
+        </div>
+        <pre id="out-autofill">(chưa chạy)</pre>
+    </div>
+
+    <div class="card">
+        <h3>4) Boxes xem trước kết quả Auto-Fill</h3>
+        <div class="row">
+            <button id="btn-autofill-and-fill"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill → Điền vào boxes</button>
+            <span class="muted">Sử dụng nội dung ở mục 3, gọi API rồi điền vào các ô bên dưới</span>
+        </div>
+        <div class="grid grid-3" style="margin-top:12px">
+            <div>
+                <label>Tên nhà hàng</label>
+                <input id="box-restaurantName" />
+            </div>
+            <div>
+                <label>Số điện thoại</label>
+                <input id="box-phone" />
+            </div>
+            <div>
+                <label>Loại ẩm thực</label>
+                <input id="box-cuisineType" />
+            </div>
+            <div class="grid-2" style="grid-column:1 / -1; display:grid; gap:10px;">
+                <div>
+                    <label>Giờ mở cửa</label>
+                    <input id="box-openingHours" />
+                </div>
+                <div>
+                    <label>Trạng thái</label>
+                    <input id="box-statusMessage" />
+                </div>
+            </div>
+            <div>
+                <label>Giá trung bình</label>
+                <input id="box-averagePrice" />
+            </div>
+            <div>
+                <label>Giá thấp nhất</label>
+                <input id="box-priceRangeMin" />
+            </div>
+            <div>
+                <label>Giá cao nhất</label>
+                <input id="box-priceRangeMax" />
+            </div>
+            <div style="grid-column:1 / -1;">
+                <label>Địa chỉ</label>
+                <input id="box-address" />
+            </div>
+            <div style="grid-column:1 / -1;">
+                <label>Mô tả ngắn</label>
+                <input id="box-description" />
+            </div>
+            <div style="grid-column:1 / -1;">
+                <label>Món đặc sắc</label>
+                <input id="box-signatureDishes" />
+            </div>
+            <div style="grid-column:1 / -1;">
+                <label>Tổng quan</label>
+                <input id="box-summaryHighlights" />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getCsrfHeaders() {
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+            return token ? { [header]: token } : {};
+        }
+
+        document.getElementById('btn-check').addEventListener('click', async () => {
+            const out = document.getElementById('out-check');
+            out.textContent = 'Loading...';
+            try {
+                const res = await fetch('/api/openai/check');
+                const data = await res.json();
+                out.textContent = JSON.stringify(data, null, 2);
+            } catch (e) {
+                out.textContent = e.message;
+            }
+        });
+
+        document.getElementById('btn-rewrite').addEventListener('click', async () => {
+            const out = document.getElementById('out-rewrite');
+            const text = document.getElementById('text-input').value;
+            out.textContent = 'Loading...';
+            try {
+                const res = await fetch('/api/openai/improve-sample', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeaders() },
+                    body: JSON.stringify({ text })
+                });
+                const data = await res.json();
+                out.textContent = JSON.stringify(data, null, 2);
+            } catch (e) {
+                out.textContent = e.message;
+            }
+        });
+
+        document.getElementById('btn-autofill').addEventListener('click', async () => {
+            const out = document.getElementById('out-autofill');
+            const text = document.getElementById('autofill-input').value;
+            out.textContent = 'Loading...';
+            try {
+                const res = await fetch('/api/restaurant/ai/auto-fill', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeaders() },
+                    body: JSON.stringify({ longText: text })
+                });
+                
+                // Check if response is OK
+                if (!res.ok) {
+                    const text = await res.text();
+                    // Check if response is HTML (error page)
+                    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+                        out.textContent = `Error ${res.status}: Server returned HTML instead of JSON. This usually means:\n` +
+                            `- Authentication required (please login first)\n` +
+                            `- Access denied (check your user role)\n` +
+                            `- Server error\n\n` +
+                            `Response preview: ${text.substring(0, 200)}...`;
+                    } else {
+                        // Try to parse as JSON error
+                        try {
+                            const errorData = JSON.parse(text);
+                            out.textContent = JSON.stringify(errorData, null, 2);
+                        } catch {
+                            out.textContent = `Error ${res.status}: ${text}`;
+                        }
+                    }
+                    return;
+                }
+                
+                // Parse JSON response
+                const contentType = res.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await res.json();
+                    out.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    const text = await res.text();
+                    out.textContent = `Warning: Expected JSON but got ${contentType || 'unknown'}\n\n${text.substring(0, 500)}`;
+                }
+            } catch (e) {
+                out.textContent = `Error: ${e.message}\n\nMake sure you are logged in and have the required permissions.`;
+            }
+        });
+
+        document.getElementById('btn-autofill-and-fill').addEventListener('click', async () => {
+            const text = document.getElementById('autofill-input').value;
+            const out = document.getElementById('out-autofill');
+            out.textContent = 'Loading...';
+            try {
+                const res = await fetch('/api/restaurant/ai/auto-fill', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeaders() },
+                    body: JSON.stringify({ longText: text })
+                });
+                
+                // Check if response is OK
+                if (!res.ok) {
+                    const text = await res.text();
+                    // Check if response is HTML (error page)
+                    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+                        out.textContent = `Error ${res.status}: Server returned HTML instead of JSON. This usually means:\n` +
+                            `- Authentication required (please login first)\n` +
+                            `- Access denied (check your user role)\n` +
+                            `- Server error\n\n` +
+                            `Response preview: ${text.substring(0, 200)}...`;
+                    } else {
+                        // Try to parse as JSON error
+                        try {
+                            const errorData = JSON.parse(text);
+                            out.textContent = JSON.stringify(errorData, null, 2);
+                        } catch {
+                            out.textContent = `Error ${res.status}: ${text}`;
+                        }
+                    }
+                    return;
+                }
+                
+                // Parse JSON response
+                const contentType = res.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await res.json();
+                    out.textContent = JSON.stringify(data, null, 2);
+                    
+                    // Fill form fields if successful
+                    if (data && data.success && data.filledFields) {
+                        const f = data.filledFields;
+                        const set = (id, v) => { const el = document.getElementById('box-' + id); if (el && v !== undefined && v !== null) el.value = String(v); };
+                        set('restaurantName', f.restaurantName);
+                        set('phone', f.phone);
+                        set('cuisineType', f.cuisineType);
+                        set('openingHours', f.openingHours);
+                        set('statusMessage', f.statusMessage);
+                        set('averagePrice', f.averagePrice);
+                        set('priceRangeMin', f.priceRangeMin);
+                        set('priceRangeMax', f.priceRangeMax);
+                        set('address', f.address);
+                        set('description', f.description);
+                        set('signatureDishes', f.signatureDishes);
+                        set('summaryHighlights', f.summaryHighlights);
+                    }
+                } else {
+                    const text = await res.text();
+                    out.textContent = `Warning: Expected JSON but got ${contentType || 'unknown'}\n\n${text.substring(0, 500)}`;
+                }
+            } catch (e) {
+                out.textContent = `Error: ${e.message}\n\nMake sure you are logged in and have the required permissions.`;
+            }
+        });
+    </script>
+</body>
+</html>
+
+

@@ -25,7 +25,9 @@ public class OpenAIConfiguration {
     
     @Bean
     public OpenAiService openAiService() {
-        return new OpenAiService(apiKey, Duration.ofMillis(timeoutMs));
+        // Ensure a reasonable minimum timeout so short defaults don't cause timeouts
+        int effectiveTimeout = Math.max(timeoutMs, 10000); // at least 10s
+        return new OpenAiService(apiKey, Duration.ofMillis(effectiveTimeout));
     }
     
     @Bean
