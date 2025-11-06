@@ -716,9 +716,9 @@ public class WaitlistService {
         // Copy tables từ waitlist
         if (waitlist.getWaitlistTables() != null && !waitlist.getWaitlistTables().isEmpty()) {
             for (WaitlistTable waitlistTable : waitlist.getWaitlistTables()) {
-                BookingTable bookingTable = new BookingTable();
-                bookingTable.setBooking(savedBooking);
-                bookingTable.setTable(waitlistTable.getTable());
+                BookingTable bookingTable = new BookingTable(savedBooking, waitlistTable.getTable());
+                // Set tableFee từ waitlistTable (snapshot tại thời điểm join waitlist)
+                bookingTable.setTableFee(waitlistTable.getTableFee());
                 bookingTableRepository.save(bookingTable);
             }
             System.out.println("✅ Copied " + waitlist.getWaitlistTables().size() + " tables to booking");

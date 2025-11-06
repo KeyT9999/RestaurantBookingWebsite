@@ -205,43 +205,14 @@ public class BookingService {
         booking.setBookingTime(form.getBookingTime());
         booking.setNumberOfGuests(form.getGuestCount());
 
-        // Set deposit amount from tables if tables are selected, otherwise use form
-        // value
+        // Set deposit amount - KHÔNG tính phí bàn vào deposit nữa
+        // Deposit sẽ được tính sau = 10% của (table fees + dishes + services)
         BigDecimal depositAmount = BigDecimal.ZERO;
-        BigDecimal tableCalculatedDeposit = null;
         boolean depositProvidedByForm = false;
-        if (form.getTableIds() != null && !form.getTableIds().trim().isEmpty()) {
-            System.out.println("🔍 Calculating deposit from multiple tables: " + form.getTableIds());
-            String[] tableIdArray = form.getTableIds().split(",");
-            for (String tableIdStr : tableIdArray) {
-                try {
-                    Integer tableId = Integer.parseInt(tableIdStr.trim());
-                    RestaurantTable table = restaurantTableRepository.findById(tableId)
-                            .orElseThrow(() -> new IllegalArgumentException("Table not found: " + tableId));
-                    depositAmount = depositAmount.add(table.getDepositAmount());
-                    System.out.println("   Table " + table.getTableName() + " deposit: " + table.getDepositAmount());
-                } catch (NumberFormatException e) {
-                    System.err.println("❌ Invalid table ID format: " + tableIdStr);
-                    throw new IllegalArgumentException("Invalid table ID format: " + tableIdStr);
-                }
-            }
-            System.out.println("✅ Total deposit amount from multiple tables: " + depositAmount);
-            tableCalculatedDeposit = depositAmount;
-        } else if (form.getTableId() != null) {
-            System.out.println("🔍 Looking for single table ID: " + form.getTableId());
-            RestaurantTable table = restaurantTableRepository.findById(form.getTableId())
-                    .orElseThrow(() -> new IllegalArgumentException("Table not found"));
-            depositAmount = table.getDepositAmount();
-            System.out.println("✅ Table found, deposit amount: " + depositAmount);
-            tableCalculatedDeposit = depositAmount;
-        }
 
         if (form.getDepositAmount() != null) {
             depositAmount = form.getDepositAmount();
-            if (tableCalculatedDeposit == null
-                    || form.getDepositAmount().compareTo(tableCalculatedDeposit) != 0) {
-                depositProvidedByForm = true;
-            }
+            depositProvidedByForm = true;
             System.out.println("✅ Using form deposit amount: " + depositAmount);
         }
         booking.setDepositAmount(depositAmount);
@@ -384,27 +355,21 @@ public class BookingService {
             System.out.println("ℹ️ No services specified, skipping service assignment");
         }
 
-        // Calculate and log total amount
-        BigDecimal totalAmount = calculateTotalAmount(booking);
-        System.out.println("💰 Final total booking amount: " + totalAmount);
+        // Calculate subtotal = table fees + dishes + services (KHÔNG bao gồm deposit)
+        BigDecimal subtotal = calculateSubtotal(booking);
+        System.out.println("💰 Subtotal (table fees + dishes + services): " + subtotal);
 
-        // Apply deposit rule: deposit = 10% of total amount
+        // Apply deposit rule: deposit = 10% of subtotal
         try {
             if (!depositProvidedByForm) {
-                BigDecimal effectiveTotal = totalAmount;
-                if (effectiveTotal == null || effectiveTotal.compareTo(BigDecimal.ZERO) <= 0) {
-                    effectiveTotal = booking.getDepositAmount() != null ? booking.getDepositAmount() : BigDecimal.ZERO;
-                }
-
-                if (effectiveTotal.compareTo(BigDecimal.ZERO) > 0) {
-                    BigDecimal computedDeposit = effectiveTotal.multiply(new BigDecimal("0.10"));
-                    // Round to nearest VND
+                if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal computedDeposit = subtotal.multiply(new BigDecimal("0.10"));
                     computedDeposit = computedDeposit.setScale(0, java.math.RoundingMode.HALF_UP);
                     booking.setDepositAmount(computedDeposit);
-                    System.out.println("✅ Deposit set to 10%: " + computedDeposit);
+                    System.out.println("✅ Deposit set to 10% of subtotal: " + computedDeposit);
                 } else {
                     booking.setDepositAmount(BigDecimal.ZERO);
-                    System.out.println("⚠️ Total amount is zero, deposit set to 0");
+                    System.out.println("⚠️ Subtotal is zero, deposit set to 0");
                 }
             } else {
                 System.out.println("ℹ️ Deposit provided by form, skipping automatic calculation");
@@ -1304,21 +1269,28 @@ public class BookingService {
     }
 
     /**
-     * Calculate total amount for booking
+     * Calculate subtotal = table fees + dishes + services (excluding deposit)
+     * This is a PUBLIC method for use by PaymentService
      */
-    public BigDecimal calculateTotalAmount(Booking booking) {
+    public BigDecimal calculateSubtotal(Booking booking) {
         if (booking == null) {
             throw new IllegalArgumentException("Booking cannot be null");
         }
 
-        BigDecimal total = BigDecimal.ZERO;
+        BigDecimal subtotal = BigDecimal.ZERO;
 
-        // Add deposit amount
-        BigDecimal deposit = booking.getDepositAmount() != null ? booking.getDepositAmount() : BigDecimal.ZERO;
-        total = total.add(deposit);
-        System.out.println("💰 Deposit amount: " + deposit);
+        // 1. Tính tổng phí bàn từ BookingTable (snapshot)
+        List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
+        if (!bookingTables.isEmpty()) {
+            BigDecimal tableFeeTotal = BigDecimal.ZERO;
+            for (BookingTable bookingTable : bookingTables) {
+                tableFeeTotal = tableFeeTotal.add(bookingTable.getTableFee());
+            }
+            subtotal = subtotal.add(tableFeeTotal);
+            System.out.println("💰 Table fees total: " + tableFeeTotal);
+        }
 
-        // Add dishes total
+        // 2. Cộng dishes total
         List<BookingDish> bookingDishes = bookingDishRepository.findByBooking(booking);
         if (!bookingDishes.isEmpty()) {
             BigDecimal dishesTotal = BigDecimal.ZERO;
@@ -1328,11 +1300,11 @@ public class BookingService {
                         " x" + bookingDish.getQuantity() +
                         " = " + bookingDish.getTotalPrice());
             }
-            total = total.add(dishesTotal);
+            subtotal = subtotal.add(dishesTotal);
             System.out.println("💰 Dishes total: " + dishesTotal);
         }
 
-        // Add services total
+        // 3. Cộng services total
         List<com.example.booking.domain.BookingService> bookingServices = bookingServiceRepository
                 .findByBooking(booking);
         if (!bookingServices.isEmpty()) {
@@ -1343,11 +1315,32 @@ public class BookingService {
                         " x" + bookingService.getQuantity() +
                         " = " + bookingService.getTotalPrice());
             }
-            total = total.add(servicesTotal);
+            subtotal = subtotal.add(servicesTotal);
             System.out.println("💰 Services total: " + servicesTotal);
         }
 
-        System.out.println("💰 TOTAL AMOUNT: " + total);
+        System.out.println("💰 SUBTOTAL (table fees + dishes + services): " + subtotal);
+        return subtotal;
+    }
+
+    /**
+     * Calculate total amount for booking
+     * Total = subtotal (table fees + dishes + services) + deposit
+     */
+    public BigDecimal calculateTotalAmount(Booking booking) {
+        if (booking == null) {
+            throw new IllegalArgumentException("Booking cannot be null");
+        }
+
+        // Tính subtotal (table fees + dishes + services)
+        BigDecimal subtotal = calculateSubtotal(booking);
+
+        // Total = subtotal + deposit
+        BigDecimal deposit = booking.getDepositAmount() != null ? booking.getDepositAmount() : BigDecimal.ZERO;
+        BigDecimal total = subtotal.add(deposit);
+
+        System.out.println("💰 Deposit amount: " + deposit);
+        System.out.println("💰 TOTAL AMOUNT (subtotal + deposit): " + total);
         return total;
     }
 

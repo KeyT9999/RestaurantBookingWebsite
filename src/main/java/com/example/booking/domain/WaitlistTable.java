@@ -1,5 +1,6 @@
 package com.example.booking.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -11,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
 
 @Entity
 @Table(name = "waitlist_table")
@@ -32,13 +34,22 @@ public class WaitlistTable {
     @Column(name = "assigned_at", nullable = false)
     private LocalDateTime assignedAt = LocalDateTime.now();
     
+    @Column(name = "table_fee", precision = 18, scale = 2, nullable = false)
+    @DecimalMin(value = "0.0", message = "Phí bàn không được âm")
+    private BigDecimal tableFee = BigDecimal.ZERO;
+    
     // Constructors
-    public WaitlistTable() {}
+    public WaitlistTable() {
+        this.tableFee = BigDecimal.ZERO;
+    }
     
     public WaitlistTable(Waitlist waitlist, RestaurantTable table) {
         this.waitlist = waitlist;
         this.table = table;
         this.assignedAt = LocalDateTime.now();
+        // Snapshot phí bàn tại thời điểm join waitlist
+        this.tableFee = table.getDepositAmount() != null ? 
+            table.getDepositAmount() : BigDecimal.ZERO;
     }
     
     // Getters and Setters
@@ -72,5 +83,13 @@ public class WaitlistTable {
     
     public void setAssignedAt(LocalDateTime assignedAt) {
         this.assignedAt = assignedAt;
+    }
+    
+    public BigDecimal getTableFee() {
+        return tableFee;
+    }
+    
+    public void setTableFee(BigDecimal tableFee) {
+        this.tableFee = tableFee != null ? tableFee : BigDecimal.ZERO;
     }
 }
