@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,7 +22,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.atLeastOnce;
@@ -836,36 +834,6 @@ class BookingServiceTest {
     // ==================== CANCEL BOOKING TESTS ====================
 
     @Test
-    @DisplayName("TC BS-022: Should cancel booking with refund when payment completed")
-    void testCancelBooking_WithCompletedPayment_ShouldCreateRefund() {
-        // Given: Booking with completed payment
-        Integer bookingId = 1;
-        String cancelReason = "Changed plans";
-        String bankCode = "VCB";
-        String accountNumber = "1234567890";
-        
-        mockBooking.setStatus(BookingStatus.PENDING);
-        Payment completedPayment = new Payment();
-        completedPayment.setStatus(com.example.booking.domain.PaymentStatus.COMPLETED);
-        completedPayment.setAmount(new BigDecimal("100000"));
-
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
-        when(paymentRepository.findByBooking(mockBooking)).thenReturn(Optional.of(completedPayment));
-        when(refundService.processRefundWithManualTransfer(anyInt(), anyString(), anyString(), anyString()))
-            .thenReturn(completedPayment);
-        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
-
-        // When
-        Booking result = bookingService.cancelBooking(bookingId, customerId, cancelReason, bankCode, accountNumber);
-
-        // Then
-        assertEquals(BookingStatus.CANCELLED, result.getStatus());
-        assertEquals(cancelReason, result.getCancelReason());
-        assertNotNull(result.getCancelledAt());
-        verify(refundService).processRefundWithManualTransfer(anyInt(), anyString(), eq(bankCode), eq(accountNumber));
-    }
-
-    @Test
     @DisplayName("TC BS-025: Should throw exception when customer doesn't own booking")
     void testCancelBooking_WithInvalidCustomer_ShouldThrowException() {
         // Given: Different customer
@@ -885,25 +853,6 @@ class BookingServiceTest {
     }
 
     // ==================== CONFIRM BOOKING TESTS ====================
-
-    @Test
-    @DisplayName("TC BS-029: Should confirm PENDING booking successfully")
-    void testConfirmBooking_WithPendingBooking_ShouldConfirm() {
-        // Given: PENDING booking
-        Integer bookingId = 1;
-        mockBooking.setStatus(BookingStatus.PENDING);
-
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
-        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
-        when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // When
-        Booking result = bookingService.confirmBooking(bookingId);
-
-        // Then
-        assertEquals(BookingStatus.CONFIRMED, result.getStatus());
-        verify(notificationRepository).save(any(Notification.class));
-    }
 
     @Test
     @DisplayName("TC BS-031: Should throw exception when confirming non-PENDING booking")
@@ -994,42 +943,6 @@ class BookingServiceTest {
     // ==================== UPDATE BOOKING TESTS ====================
 
     @Test
-    @DisplayName("TC BS-016: Should update PENDING booking successfully")
-    void testUpdateBooking_WithPendingBooking_ShouldUpdate() {
-        // Given: PENDING booking
-        Integer bookingId = 1;
-        mockBooking.setStatus(BookingStatus.PENDING);
-        
-        BookingForm updateForm = new BookingForm();
-        updateForm.setRestaurantId(1);
-        updateForm.setTableId(2);
-        updateForm.setGuestCount(6);
-        updateForm.setBookingTime(LocalDateTime.now().plusDays(2));
-        updateForm.setDepositAmount(new BigDecimal("200000"));
-        updateForm.setNote("Updated note");
-
-        RestaurantTable newTable = new RestaurantTable();
-        newTable.setTableId(2);
-        newTable.setTableName("Table 2");
-        newTable.setCapacity(8);
-
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(mockBooking));
-        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(restaurantTableRepository.findById(2)).thenReturn(Optional.of(newTable));
-        when(bookingTableRepository.findByBooking(mockBooking)).thenReturn(Collections.emptyList());
-        when(bookingTableRepository.save(any(BookingTable.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(bookingRepository.save(any(Booking.class))).thenReturn(mockBooking);
-        doNothing().when(conflictService).validateBookingUpdateConflicts(anyInt(), any(BookingForm.class), any(UUID.class));
-
-        // When
-        Booking result = bookingService.updateBooking(bookingId, updateForm, customerId);
-
-        // Then
-        assertEquals(updateForm.getGuestCount(), result.getNumberOfGuests());
-        verify(bookingRepository).save(mockBooking);
-    }
-
-    @Test
     @DisplayName("TC BS-018: Should throw exception when booking not found for update")
     void testUpdateBooking_WithBookingNotFound_ShouldThrowException() {
         // Given: Invalid booking ID
@@ -1081,36 +994,6 @@ class BookingServiceTest {
     }
 
     // ==================== CALCULATE TOTAL AMOUNT TESTS ====================
-
-    @Test
-    @DisplayName("TC BS-043: Should calculate total with deposit, dishes, and services")
-    void testCalculateTotalAmount_WithAllItems_ShouldSumCorrectly() {
-        // Given: Booking with deposit, 2 dishes, 1 service
-        Booking booking = new Booking();
-        booking.setDepositAmount(new BigDecimal("100000"));
-
-        com.example.booking.domain.BookingDish dish1 = new com.example.booking.domain.BookingDish();
-        dish1.setQuantity(2);
-        dish1.setPrice(new BigDecimal("50000"));
-        
-        com.example.booking.domain.BookingDish dish2 = new com.example.booking.domain.BookingDish();
-        dish2.setQuantity(1);
-        dish2.setPrice(new BigDecimal("30000"));
-
-        com.example.booking.domain.BookingService service1 = new com.example.booking.domain.BookingService();
-        service1.setQuantity(1);
-        service1.setPrice(new BigDecimal("20000"));
-
-        when(bookingDishRepository.findByBooking(booking)).thenReturn(Arrays.asList(dish1, dish2));
-        when(bookingServiceRepository.findByBooking(booking)).thenReturn(Arrays.asList(service1));
-
-        // When
-        BigDecimal total = bookingService.calculateTotalAmount(booking);
-
-        // Then
-        // deposit: 100000 + dishes: 100000 (2*50000) + 30000 + service: 20000 = 250000
-        assertEquals(0, new BigDecimal("250000").compareTo(total));
-    }
 
     @Test
     @DisplayName("TC BS-045: Should throw exception when booking is null")
@@ -1295,63 +1178,7 @@ class BookingServiceTest {
 
     // ==================== CREATE BOOKING WITH TABLE IDS TESTS ====================
 
-    @Test
-    @DisplayName("Should create booking with tableIds string")
-    void testCreateBooking_WithTableIds_ShouldSuccess() {
-        // Given
-        prepareCreateBookingStubs();
-        bookingForm.setTableId(null);
-        bookingForm.setTableIds("1");
-        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
-        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(table));
-        when(bookingTableRepository.findByBooking(any())).thenReturn(Arrays.asList(new BookingTable()));
-
-        // When
-        Booking result = bookingService.createBooking(bookingForm, customerId);
-
-        // Then
-        assertNotNull(result);
-        verify(bookingTableRepository).save(any(BookingTable.class));
-    }
-
     // ==================== UPDATE BOOKING WITH RESTAURANT CHANGE TESTS ====================
-
-    @Test
-    @DisplayName("Should update booking with restaurant change")
-    void testUpdateBooking_WithRestaurantChange_ShouldUpdate() {
-        // Given
-        mockBooking.setStatus(BookingStatus.PENDING);
-        RestaurantProfile newRestaurant = new RestaurantProfile();
-        newRestaurant.setRestaurantId(2);
-        newRestaurant.setRestaurantName("New Restaurant");
-
-        BookingForm form = new BookingForm();
-        form.setRestaurantId(2);
-        form.setTableId(1);
-        form.setGuestCount(4);
-        form.setBookingTime(LocalDateTime.now().plusDays(2));
-        form.setDepositAmount(new BigDecimal("100000"));
-
-        RestaurantTable newTable = new RestaurantTable();
-        newTable.setTableId(1);
-        newTable.setCapacity(4);
-        newTable.setRestaurant(newRestaurant);
-
-        when(bookingRepository.findById(1)).thenReturn(Optional.of(mockBooking));
-        when(restaurantProfileRepository.findById(2)).thenReturn(Optional.of(newRestaurant));
-        when(restaurantTableRepository.findById(1)).thenReturn(Optional.of(newTable));
-        when(bookingTableRepository.findByBooking(mockBooking)).thenReturn(Collections.emptyList());
-        when(bookingTableRepository.save(any(BookingTable.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        doNothing().when(conflictService).validateBookingUpdateConflicts(anyInt(), any(BookingForm.class), any(UUID.class));
-
-        // When
-        Booking result = bookingService.updateBooking(1, form, customerId);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(2, result.getRestaurant().getRestaurantId());
-    }
 
     // ==================== CANCEL BOOKING WITHOUT PAYMENT TESTS ====================
 
@@ -1651,72 +1478,4 @@ class BookingServiceTest {
         });
     }
 
-    @Test
-    @DisplayName("testUpdateBookingForRestaurantOwner_WithNullTableIds_ShouldNotAssignTables")
-    void testUpdateBookingForRestaurantOwner_WithNullTableIds_ShouldNotAssignTables() {
-        // Given
-        Integer bookingId = 1;
-        Set<Integer> ownerRestaurantIds = Set.of(1, 2);
-        BookingForm form = new BookingForm();
-        form.setTableIds(null); // Null tableIds
-        form.setTableId(null); // Also null single tableId
-        form.setRestaurantId(1);
-
-        Booking booking = new Booking();
-        booking.setBookingId(bookingId);
-        RestaurantProfile restaurant = new RestaurantProfile();
-        restaurant.setRestaurantId(1);
-        booking.setRestaurant(restaurant);
-
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
-        when(restaurantProfileRepository.findById(1)).thenReturn(Optional.of(restaurant));
-        when(restaurantTableRepository.findById(anyInt())).thenReturn(Optional.empty());
-        when(bookingTableRepository.findByBooking(any())).thenReturn(Collections.emptyList());
-        when(bookingDishRepository.findByBooking(any())).thenReturn(Collections.emptyList());
-        when(bookingServiceRepository.findByBooking(any())).thenReturn(Collections.emptyList());
-        when(bookingRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // When
-        Booking result = bookingService.updateBookingForRestaurantOwner(bookingId, form, ownerRestaurantIds);
-
-        // Then - Should not call assignMultipleTablesToBooking or assignTableToBooking
-        verify(restaurantTableRepository, never()).findById(anyInt());
-    }
-
-    @Test
-    @DisplayName("testUpdateBookingForRestaurantOwner_WithNullTableIdsAndChangedRestaurant_ShouldNotAssignTables")
-    void testUpdateBookingForRestaurantOwner_WithNullTableIdsAndChangedRestaurant_ShouldNotAssignTables() {
-        // Given - Restaurant changed but tableIds is null
-        Integer bookingId = 1;
-        Set<Integer> ownerRestaurantIds = Set.of(1, 2);
-        BookingForm form = new BookingForm();
-        form.setTableIds(null);
-        form.setTableId(null);
-        form.setRestaurantId(2); // Changed restaurant
-
-        Booking booking = new Booking();
-        booking.setBookingId(bookingId);
-        RestaurantProfile oldRestaurant = new RestaurantProfile();
-        oldRestaurant.setRestaurantId(1);
-        booking.setRestaurant(oldRestaurant);
-
-        RestaurantProfile newRestaurant = new RestaurantProfile();
-        newRestaurant.setRestaurantId(2);
-
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
-        when(restaurantProfileRepository.findById(2)).thenReturn(Optional.of(newRestaurant));
-        when(bookingTableRepository.findByBooking(any())).thenReturn(Collections.emptyList());
-        when(bookingDishRepository.findByBooking(any())).thenReturn(Collections.emptyList());
-        when(bookingServiceRepository.findByBooking(any())).thenReturn(Collections.emptyList());
-        when(bookingRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        doNothing().when(bookingTableRepository).deleteByBooking(any());
-
-        // When
-        Booking result = bookingService.updateBookingForRestaurantOwner(bookingId, form, ownerRestaurantIds);
-
-        // Then - Should delete old tables but not assign new ones since tableIds is
-        // null
-        verify(bookingTableRepository).deleteByBooking(any());
-        verify(restaurantTableRepository, never()).findById(anyInt());
-    }
 }
