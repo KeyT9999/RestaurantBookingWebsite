@@ -1,6 +1,6 @@
-    package com.example.booking.service;
+package com.example.booking.service;
 
-    import java.io.IOException;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,22 +17,35 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+
 import com.example.booking.domain.Booking;
+import com.example.booking.domain.ChatRoom;
 import com.example.booking.domain.Dish;
 import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.RestaurantTable;
+import com.example.booking.domain.Booking;
+import com.example.booking.domain.Payment;
+import com.example.booking.domain.ReviewReport;
 import com.example.booking.domain.User;
+import com.example.booking.domain.WithdrawalRequest;
 import com.example.booking.repository.BookingRepository;
+import com.example.booking.repository.ChatRoomRepository;
 import com.example.booking.repository.DiningTableRepository;
 import com.example.booking.repository.DishRepository;
 import com.example.booking.repository.RestaurantMediaRepository;
 import com.example.booking.repository.RestaurantOwnerRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
+import com.example.booking.repository.PaymentRepository;
 import com.example.booking.repository.RestaurantRepository;
 import com.example.booking.repository.RestaurantServiceRepository;
+import com.example.booking.repository.ReviewReportRepository;
+import com.example.booking.repository.WithdrawalRequestRepository;
 import com.example.booking.dto.DishWithImageDto;
 
 /**
@@ -53,9 +66,16 @@ public class RestaurantOwnerService {
     private final DishRepository dishRepository;
     private final RestaurantMediaRepository restaurantMediaRepository;
     private final RestaurantServiceRepository restaurantServiceRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final ReviewReportRepository reviewReportRepository;
+    private final WithdrawalRequestRepository withdrawalRequestRepository;
+    private final PaymentRepository paymentRepository;
     private final SimpleUserService userService;
     private final RestaurantNotificationService restaurantNotificationService;
     private final ImageUploadService imageUploadService;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public RestaurantOwnerService(RestaurantRepository restaurantRepository,
@@ -66,6 +86,10 @@ public class RestaurantOwnerService {
                                 DishRepository dishRepository,
             RestaurantMediaRepository restaurantMediaRepository,
             RestaurantServiceRepository restaurantServiceRepository,
+            ChatRoomRepository chatRoomRepository,
+            ReviewReportRepository reviewReportRepository,
+            WithdrawalRequestRepository withdrawalRequestRepository,
+            PaymentRepository paymentRepository,
             SimpleUserService userService,
             RestaurantNotificationService restaurantNotificationService,
             ImageUploadService imageUploadService) {
@@ -77,6 +101,10 @@ public class RestaurantOwnerService {
         this.dishRepository = dishRepository;
         this.restaurantMediaRepository = restaurantMediaRepository;
         this.restaurantServiceRepository = restaurantServiceRepository;
+        this.chatRoomRepository = chatRoomRepository;
+        this.reviewReportRepository = reviewReportRepository;
+        this.withdrawalRequestRepository = withdrawalRequestRepository;
+        this.paymentRepository = paymentRepository;
         this.userService = userService;
         this.restaurantNotificationService = restaurantNotificationService;
         this.imageUploadService = imageUploadService;
@@ -298,6 +326,65 @@ public class RestaurantOwnerService {
                 logger.info("Successfully deleted all images from Cloudinary folder: {}", folderPath);
             } else {
                 logger.warn("Failed to delete some images from Cloudinary folder: {}", folderPath);
+            }
+
+            // Delete all chat rooms associated with this restaurant
+            // This is necessary to avoid foreign key constraint violations
+            List<ChatRoom> chatRooms = chatRoomRepository.findByRestaurantId(restaurantId);
+            if (!chatRooms.isEmpty()) {
+                chatRoomRepository.deleteAll(chatRooms);
+                logger.info("Deleted {} chat rooms for restaurant ID: {}", chatRooms.size(), restaurantId);
+            }
+
+            // Delete all review reports associated with this restaurant
+            // This is necessary to avoid foreign key constraint violations
+            List<ReviewReport> reviewReports = reviewReportRepository.findByRestaurantRestaurantId(restaurantId);
+            if (!reviewReports.isEmpty()) {
+                reviewReportRepository.deleteAll(reviewReports);
+                logger.info("Deleted {} review reports for restaurant ID: {}", reviewReports.size(), restaurantId);
+            }
+
+            // Delete withdrawal requests and related payout_audit_log records
+            // This is necessary to avoid foreign key constraint violations
+            List<WithdrawalRequest> withdrawalRequests = withdrawalRequestRepository.findByRestaurantRestaurantId(restaurantId, org.springframework.data.domain.Pageable.unpaged()).getContent();
+            if (!withdrawalRequests.isEmpty()) {
+                // First, delete payout_audit_log records for each withdrawal request
+                for (WithdrawalRequest withdrawalRequest : withdrawalRequests) {
+                    Query deleteAuditLogQuery = entityManager.createNativeQuery(
+                        "DELETE FROM payout_audit_log WHERE withdrawal_request_id = :requestId"
+                    );
+                    deleteAuditLogQuery.setParameter("requestId", withdrawalRequest.getRequestId());
+                    int deletedCount = deleteAuditLogQuery.executeUpdate();
+                    if (deletedCount > 0) {
+                        logger.info("Deleted {} payout_audit_log records for withdrawal request ID: {}", 
+                                   deletedCount, withdrawalRequest.getRequestId());
+                    }
+                }
+                
+                // Then delete withdrawal requests
+                withdrawalRequestRepository.deleteAll(withdrawalRequests);
+                logger.info("Deleted {} withdrawal requests for restaurant ID: {}", 
+                           withdrawalRequests.size(), restaurantId);
+            }
+
+            // Delete bookings and related payments
+            // This is necessary to avoid foreign key constraint violations
+            List<Booking> bookings = bookingRepository.findByRestaurantRestaurantIdOrderByBookingTimeDesc(restaurantId);
+            if (!bookings.isEmpty()) {
+                // First, delete payments for each booking
+                for (Booking booking : bookings) {
+                    List<Payment> payments = paymentRepository.findByBookingId(booking.getBookingId());
+                    if (!payments.isEmpty()) {
+                        paymentRepository.deleteAll(payments);
+                        logger.info("Deleted {} payments for booking ID: {}", 
+                                   payments.size(), booking.getBookingId());
+                    }
+                }
+                
+                // Then delete bookings
+                bookingRepository.deleteAll(bookings);
+                logger.info("Deleted {} bookings for restaurant ID: {}", 
+                           bookings.size(), restaurantId);
             }
 
             // Delete restaurant from database (cascade delete will handle related entities)

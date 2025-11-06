@@ -399,54 +399,17 @@
             const menu = document.getElementById('restaurantMenu');
             const dropdown = document.querySelector('.restaurant-dropdown');
             
-            menu.classList.toggle('show');
-            dropdown.classList.toggle('active');
+            if (menu) {
+                menu.classList.toggle('show');
+            }
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
         }
 
-        function selectRestaurant(selectedRestaurantId) {
-            // Convert to number if it's a string
-            selectedRestaurantId = parseInt(selectedRestaurantId);
-            
-            // Find the clicked restaurant item
-            const restaurantItems = document.querySelectorAll('.restaurant-item');
-            let selectedItem = null;
-            
-            restaurantItems.forEach(item => {
-                if (parseInt(item.dataset.restaurantId) === selectedRestaurantId) {
-                    selectedItem = item;
-                }
-            });
-            
-            // Update UI to show selected restaurant immediately
-            const menu = document.getElementById('restaurantMenu');
-            const dropdown = document.querySelector('.restaurant-dropdown');
-            
-            if (selectedItem) {
-                const restaurantName = selectedItem.querySelector('h4').textContent;
-                const restaurantAddress = selectedItem.querySelector('p').textContent;
-                
-                const dropdownInfo = dropdown ? dropdown.querySelector('.restaurant-details') : null;
-                if (dropdownInfo) {
-                    const h4 = dropdownInfo.querySelector('h4');
-                    const p = dropdownInfo.querySelector('p');
-                    if (h4) h4.textContent = restaurantName;
-                    if (p) p.textContent = restaurantAddress;
-                }
-                
-                // Update active state
-                restaurantItems.forEach(item => {
-                    item.classList.remove('active');
-                });
-                selectedItem.classList.add('active');
-            }
-            
-            // Close menu
-            if (menu) menu.classList.remove('show');
-            if (dropdown) dropdown.classList.remove('active');
-            
-            // Reload page with selected restaurant
+        function selectRestaurant(restaurantId) {
             const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('restaurantId', selectedRestaurantId);
+            currentUrl.searchParams.set('restaurantId', restaurantId);
             window.location.href = currentUrl.toString();
         }
 
@@ -567,41 +530,40 @@
             const dishValues = popularDishesData.map(dish => dish.quantitySold);
             
             // Ensure canvas exists
-            if (!dishesCtx) {
-                console.error('Popular dishes chart canvas not found');
-                return;
-            }
-            
-            new Chart(dishesCtx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: dishLabels,
-                    datasets: [{
-                        data: dishValues,
-                        backgroundColor: [
-                            '#374151',
-                            '#6B7280',
-                            '#9CA3AF',
-                            '#D1D5DB',
-                            '#F3F4F6'
-                        ],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true
+            if (dishesCtx) {
+                new Chart(dishesCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: dishLabels,
+                        datasets: [{
+                            data: dishValues,
+                            backgroundColor: [
+                                '#374151',
+                                '#6B7280',
+                                '#9CA3AF',
+                                '#D1D5DB',
+                                '#F3F4F6'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true
+                                }
                             }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                console.error('Popular dishes chart canvas not found');
+            }
         }
     </script>
 </body>

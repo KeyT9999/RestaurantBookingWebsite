@@ -72,4 +72,10 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, String> {
             "(cr.customer.user.id = :userId AND cr.restaurant.restaurantId = :restaurantId) OR " +
             "(cr.admin.id = :userId AND cr.restaurant.restaurantId = :restaurantId)")
     Optional<ChatRoom> findExistingRoom(@Param("userId") UUID userId, @Param("restaurantId") Integer restaurantId);
+    
+    /**
+     * Find all chat rooms for a restaurant
+     */
+    @Query("SELECT cr FROM ChatRoom cr WHERE cr.restaurant.restaurantId = :restaurantId")
+    List<ChatRoom> findByRestaurantId(@Param("restaurantId") Integer restaurantId);
 }

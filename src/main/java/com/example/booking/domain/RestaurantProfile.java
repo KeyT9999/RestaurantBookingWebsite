@@ -223,6 +223,18 @@ public class RestaurantProfile {
     
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<RestaurantService> services;
+    
+    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ChatRoom> chatRooms;
+    
+    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ReviewReport> reviewReports;
+    
+    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<WithdrawalRequest> withdrawalRequests;
+    
+    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Booking> bookings;
 
     // Constructors
     public RestaurantProfile() {
@@ -704,6 +716,38 @@ public class RestaurantProfile {
 
     public void setServices(List<RestaurantService> services) {
         this.services = services;
+    }
+
+    public List<ChatRoom> getChatRooms() {
+        return chatRooms;
+    }
+
+    public void setChatRooms(List<ChatRoom> chatRooms) {
+        this.chatRooms = chatRooms;
+    }
+
+    public List<ReviewReport> getReviewReports() {
+        return reviewReports;
+    }
+
+    public void setReviewReports(List<ReviewReport> reviewReports) {
+        this.reviewReports = reviewReports;
+    }
+
+    public List<WithdrawalRequest> getWithdrawalRequests() {
+        return withdrawalRequests;
+    }
+
+    public void setWithdrawalRequests(List<WithdrawalRequest> withdrawalRequests) {
+        this.withdrawalRequests = withdrawalRequests;
+    }
+
+    public List<Booking> getBookings() {
+        return bookings;
+    }
+
+    public void setBookings(List<Booking> bookings) {
+        this.bookings = bookings;
     }
 
     // Helper methods
