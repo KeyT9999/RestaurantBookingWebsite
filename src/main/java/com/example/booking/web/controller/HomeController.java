@@ -567,6 +567,45 @@ public class HomeController {
             reviewForm.setRestaurantId(id);
             model.addAttribute("reviewForm", reviewForm);
 
+            // Lấy danh sách nhà hàng liên quan
+            try {
+                List<RestaurantProfile> relatedRestaurants = restaurantService.findRelatedRestaurants(restaurant, 6);
+                
+                // Batch fetch cover images for related restaurants
+                if (!relatedRestaurants.isEmpty()) {
+                    List<RestaurantMedia> relatedCoverImages = restaurantMediaRepository
+                            .findByRestaurantsAndType(relatedRestaurants, "cover");
+                    
+                    Map<Integer, String> relatedCoverMap = relatedCoverImages.stream()
+                            .filter(media -> media != null && media.getRestaurant() != null && media.getUrl() != null)
+                            .collect(Collectors.toMap(
+                                    media -> media.getRestaurant().getRestaurantId(),
+                                    RestaurantMedia::getUrl,
+                                    (existing, ignored) -> existing));
+                    
+                    // Set cover URLs và kiểm tra trạng thái mở cửa
+                    Map<Integer, Boolean> isOpenMap = new java.util.HashMap<>();
+                    for (RestaurantProfile related : relatedRestaurants) {
+                        String coverUrl = relatedCoverMap.get(related.getRestaurantId());
+                        if (coverUrl != null) {
+                            related.setMainImageUrl(coverUrl);
+                        }
+                        // Kiểm tra trạng thái mở cửa
+                        boolean isOpen = restaurantService.isRestaurantCurrentlyOpen(related);
+                        isOpenMap.put(related.getRestaurantId(), isOpen);
+                    }
+                    
+                    model.addAttribute("relatedRestaurants", relatedRestaurants);
+                    model.addAttribute("relatedRestaurantsIsOpen", isOpenMap);
+                } else {
+                    model.addAttribute("relatedRestaurants", Collections.emptyList());
+                    model.addAttribute("relatedRestaurantsIsOpen", Collections.emptyMap());
+                }
+            } catch (Exception e) {
+                log.warn("Error loading related restaurants: {}", e.getMessage());
+                model.addAttribute("relatedRestaurants", Collections.emptyList());
+            }
+
             // Add debug info
             model.addAttribute("debug", true);
 

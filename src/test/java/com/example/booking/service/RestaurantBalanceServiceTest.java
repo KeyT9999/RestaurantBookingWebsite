@@ -25,7 +25,7 @@ import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.RestaurantBalanceRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.WithdrawalRequestRepository;
-import com.example.booking.service.RestaurantBalanceService.InsufficientBalanceException;
+import com.example.booking.exception.InsufficientBalanceException;
 
 /**
  * Unit tests for RestaurantBalanceService

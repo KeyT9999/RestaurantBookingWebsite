@@ -15,6 +15,7 @@ import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.domain.RestaurantBalance;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.dto.payout.RestaurantBalanceDto;
+import com.example.booking.exception.InsufficientBalanceException;
 import com.example.booking.exception.ResourceNotFoundException;
 import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.RestaurantBalanceRepository;
@@ -298,14 +299,5 @@ public class RestaurantBalanceService {
      */
     public RestaurantBalance saveBalance(RestaurantBalance balance) {
         return balanceRepository.save(balance);
-    }
-
-    /**
-     * Custom exception
-     */
-    public static class InsufficientBalanceException extends RuntimeException {
-        public InsufficientBalanceException(String message) {
-            super(message);
-        }
     }
 }

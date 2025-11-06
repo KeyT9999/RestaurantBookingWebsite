@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -82,8 +83,9 @@ public class BankAccountService {
             
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestData, headers);
             
-            ResponseEntity<Map> response = restTemplate.exchange(
-                URI.create(url), HttpMethod.POST, entity, Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                URI.create(url), HttpMethod.POST, entity, 
+                new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, Object> responseBody = response.getBody();
@@ -118,8 +120,9 @@ public class BankAccountService {
             
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestData, headers);
             
-            ResponseEntity<Map> response = restTemplate.exchange(
-                URI.create(url), HttpMethod.POST, entity, Map.class);
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                URI.create(url), HttpMethod.POST, entity, 
+                new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {});
             
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map<String, Object> responseBody = response.getBody();

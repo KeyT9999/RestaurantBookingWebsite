@@ -1,10 +1,15 @@
 package com.example.booking.dto.customer;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ToggleFavoriteResponse {
     
     private boolean success;
     private String message;
+    
+    @JsonProperty("isFavorited")
     private boolean isFavorited;
+    
     private Integer favoriteCount;
     private Integer restaurantId;
     

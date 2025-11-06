@@ -25,9 +25,9 @@ def load_env_file():
 load_env_file()
 
 cloudinary.config(
-    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME', 'drcly5nge'),
-    api_key=os.getenv('CLOUDINARY_API_KEY', '574438289271325'),
-    api_secret=os.getenv('CLOUDINARY_API_SECRET', 'dDyQjA3bmFgf_7fdsJFEXs4DTSA'),
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME', 'your_cloudinary_cloud_name'),
+    api_key=os.getenv('CLOUDINARY_API_KEY', 'your_cloudinary_api_key'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET', 'your_cloudinary_api_secret'),
     secure=True
 )
 

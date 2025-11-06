@@ -660,7 +660,7 @@
                                  loading="lazy">
 
                             <div class="heart-toggle" sec:authorize="hasRole('CUSTOMER')">
-                                <i class="fas fa-heart heart-icon"
+                                <i class="far fa-heart heart-icon"
                                    th:data-restaurant-id="${restaurant.restaurantId}"
                                    onclick="event.stopPropagation(); toggleFavorite(this)"
                                    title="Thêm vào yêu thích"></i>
@@ -792,7 +792,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            loadFavoriteStatus();
+            // Wait a bit for Thymeleaf to render all elements
+            setTimeout(loadFavoriteStatus, 100);
 
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
@@ -816,10 +817,14 @@
                     return response.json();
                 })
                 .then(restaurantIds => {
+                    console.log('Loaded favorite restaurant IDs:', restaurantIds);
                     restaurantIds.forEach(restaurantId => {
                         const heartIcon = document.querySelector(`.heart-icon[data-restaurant-id="${restaurantId}"]`);
                         if (heartIcon) {
-                            heartIcon.classList.add('favorited');
+                            // Change from outline to filled icon
+                            heartIcon.classList.remove('far');
+                            heartIcon.classList.add('fas', 'favorited');
+                            console.log('Marked restaurant ' + restaurantId + ' as favorited');
                         }
                     });
                 })
@@ -837,51 +842,104 @@
             heartIcon.style.pointerEvents = 'none';
             heartIcon.style.opacity = '0.6';
 
+            // Optimistic update (temporary UI change)
             if (wasFavorited) {
-                heartIcon.classList.remove('favorited');
+                heartIcon.classList.remove('favorited', 'fas');
+                heartIcon.classList.add('far');
             } else {
-                heartIcon.classList.add('favorited');
+                heartIcon.classList.remove('far');
+                heartIcon.classList.add('fas', 'favorited');
                 heartIcon.style.animation = 'heartbeat 0.6s ease-in-out';
             }
 
             const request = {
-                restaurantId: restaurantId,
-                favorited: !wasFavorited
+                restaurantId: parseInt(restaurantId)
             };
 
             fetch('/customer/favorites/toggle', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify(request)
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (response.status === 401 || response.status === 403) {
+                        // Not authenticated - redirect to login
+                        if (confirm('Bạn cần đăng nhập để thêm vào danh sách yêu thích. Bạn có muốn đăng nhập không?')) {
+                            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                        }
+                        // Rollback UI
+                        if (wasFavorited) {
+                            heartIcon.classList.remove('far');
+                            heartIcon.classList.add('fas', 'favorited');
+                        } else {
+                            heartIcon.classList.remove('favorited', 'fas');
+                            heartIcon.classList.add('far');
+                        }
+                        return null;
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to toggle favorite: ' + response.status);
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
+                    if (!data) return; // Not authenticated, already handled
+                    
+                    console.log('Toggle favorite response:', data);
+                    
                     if (data.success) {
+                        // Update UI based on server response
+                        if (data.isFavorited === true) {
+                            // Now favorited - change to filled icon
+                            heartIcon.classList.remove('far');
+                            heartIcon.classList.add('fas', 'favorited');
+                            if (!wasFavorited) {
+                                heartIcon.style.animation = 'heartbeat 0.6s ease-in-out';
+                            }
+                        } else if (data.isFavorited === false) {
+                            // Now not favorited - change to outline icon
+                            heartIcon.classList.remove('favorited', 'fas');
+                            heartIcon.classList.add('far');
+                        }
+                        
                         showToast(data.message, 'success');
                     } else {
+                        // Rollback UI on error
                         if (wasFavorited) {
-                            heartIcon.classList.add('favorited');
+                            heartIcon.classList.remove('far');
+                            heartIcon.classList.add('fas', 'favorited');
                         } else {
-                            heartIcon.classList.remove('favorited');
+                            heartIcon.classList.remove('favorited', 'fas');
+                            heartIcon.classList.add('far');
                         }
-                        showToast(data.message, 'error');
+                        showToast(data.message || 'Có lỗi xảy ra', 'error');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
+                    // Rollback UI on error
                     if (wasFavorited) {
-                        heartIcon.classList.add('favorited');
+                        heartIcon.classList.remove('far');
+                        heartIcon.classList.add('fas', 'favorited');
                     } else {
-                        heartIcon.classList.remove('favorited');
+                        heartIcon.classList.remove('favorited', 'fas');
+                        heartIcon.classList.add('far');
                     }
                     showToast('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
                 })
                 .finally(() => {
                     heartIcon.style.pointerEvents = 'auto';
                     heartIcon.style.opacity = '1';
-                    heartIcon.style.animation = '';
+                    // Clear animation after it completes
+                    setTimeout(() => {
+                        heartIcon.style.animation = '';
+                    }, 600);
                 });
         }
 
