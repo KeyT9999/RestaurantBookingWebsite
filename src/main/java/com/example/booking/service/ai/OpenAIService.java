@@ -31,8 +31,8 @@ public class OpenAIService {
     @Value("${ai.openai.model:gpt-4o-mini}")
     private String model = "gpt-4o-mini";
     
-    @Value("${ai.openai.timeout-ms:800}")
-    private int timeoutMs = 800;
+    @Value("${ai.openai.timeout-ms:5000}")
+    private int timeoutMs = 5000;
     
     /**
      * Lightweight ping to verify OpenAI API connectivity and key validity
@@ -228,7 +228,7 @@ public class OpenAIService {
                 e.printStackTrace();
                 return defaultIntentFallback();
             }
-        }).orTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+        }).orTimeout(Math.max(timeoutMs, 5000), TimeUnit.MILLISECONDS);
     }
     
     /**

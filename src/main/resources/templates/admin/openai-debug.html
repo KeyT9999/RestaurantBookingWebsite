@@ -64,7 +64,83 @@ Tổng quan: phù hợp tụ tập bạn bè, liên hoan công ty.</textarea>
     </div>
 
     <div class="card">
-        <h3>4) Boxes xem trước kết quả Auto-Fill</h3>
+        <h3>4) 🍽️ AI Food Recommendation (Tư vấn món ăn)</h3>
+        <p class="muted" style="margin-bottom: 12px;">Test AI gợi ý món ăn và tìm nhà hàng phù hợp</p>
+        
+        <div style="margin-bottom: 12px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500;">Câu hỏi của bạn:</label>
+            <textarea id="food-query" style="width: 100%; min-height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #d1d5db;">tôi muốn ăn đồ healthy. hoặc tôi đang tập gym tôi nên ăn đồ gì</textarea>
+        </div>
+        
+        <div style="margin-bottom: 16px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+            <label style="display: block; margin-bottom: 8px; font-size: 13px; color: #6b7280;">📝 Ví dụ nhanh (click để chọn):</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <button type="button" class="example-btn" onclick="document.getElementById('food-query').value='tôi đang tập gym tôi nên ăn đồ gì'" 
+                    style="padding: 6px 12px; background: white; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                    🏋️ Tập gym
+                </button>
+                <button type="button" class="example-btn" onclick="document.getElementById('food-query').value='tôi muốn ăn đồ healthy'" 
+                    style="padding: 6px 12px; background: white; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                    🥗 Healthy
+                </button>
+                <button type="button" class="example-btn" onclick="document.getElementById('food-query').value='tôi đang giảm cân muốn ăn gì đó'" 
+                    style="padding: 6px 12px; background: white; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                    ⚖️ Giảm cân
+                </button>
+                <button type="button" class="example-btn" onclick="document.getElementById('food-query').value='tôi muốn bổ sung protein'" 
+                    style="padding: 6px 12px; background: white; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                    💪 Protein
+                </button>
+                <button type="button" class="example-btn" onclick="document.getElementById('food-query').value='tôi muốn ăn gà nướng'" 
+                    style="padding: 6px 12px; background: white; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                    🍗 Gà nướng
+                </button>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 16px;" class="grid grid-2">
+            <div>
+                <label style="display: block; margin-bottom: 4px;">Số lượng kết quả</label>
+                <input id="food-maxResults" type="number" value="5" min="1" max="10" style="width: 100%; padding: 8px;" />
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 4px;">Vị trí (optional)</label>
+                <input id="food-location" type="text" placeholder="Ví dụ: Quận 1" style="width: 100%; padding: 8px;" />
+            </div>
+        </div>
+        
+        <div class="row">
+            <button id="btn-food-recommend"><i class="fa-solid fa-utensils"></i> Tìm nhà hàng bằng AI</button>
+            <span class="muted">POST /ai/search</span>
+        </div>
+        
+        <div style="margin-top: 16px;">
+            <strong>📊 Kết quả AI Analysis:</strong>
+            <pre id="out-food-analysis" style="margin-top: 8px;">(chưa chạy)</pre>
+        </div>
+        
+        <div style="margin-top: 16px;">
+            <strong>🍽️ Món ăn được đề xuất:</strong>
+            <div id="suggested-foods-list" style="margin-top: 8px; padding: 12px; background: #f9fafb; border-radius: 8px; min-height: 40px;">
+                <span class="muted">Chưa có dữ liệu</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 16px;">
+            <strong>🏪 Nhà hàng phù hợp:</strong>
+            <div id="restaurant-recommendations" style="margin-top: 8px;">
+                <span class="muted">Chưa có dữ liệu</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 16px;">
+            <strong>📝 Full Response (JSON):</strong>
+            <pre id="out-food-full" style="margin-top: 8px;">(chưa chạy)</pre>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>5) Boxes xem trước kết quả Auto-Fill</h3>
         <div class="row">
             <button id="btn-autofill-and-fill"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Fill → Điền vào boxes</button>
             <span class="muted">Sử dụng nội dung ở mục 3, gọi API rồi điền vào các ô bên dưới</span>
@@ -203,6 +279,121 @@ Tổng quan: phù hợp tụ tập bạn bè, liên hoan công ty.</textarea>
                 }
             } catch (e) {
                 out.textContent = `Error: ${e.message}\n\nMake sure you are logged in and have the required permissions.`;
+            }
+        });
+
+        document.getElementById('btn-food-recommend').addEventListener('click', async () => {
+            const query = document.getElementById('food-query').value;
+            const maxResults = parseInt(document.getElementById('food-maxResults').value) || 5;
+            const location = document.getElementById('food-location').value || null;
+            
+            const outAnalysis = document.getElementById('out-food-analysis');
+            const outFull = document.getElementById('out-food-full');
+            const suggestedFoodsList = document.getElementById('suggested-foods-list');
+            const restaurantRecommendations = document.getElementById('restaurant-recommendations');
+            
+            outAnalysis.textContent = 'Loading...';
+            outFull.textContent = 'Loading...';
+            suggestedFoodsList.innerHTML = '<span class="muted">Đang phân tích...</span>';
+            restaurantRecommendations.innerHTML = '<span class="muted">Đang tìm kiếm...</span>';
+            
+            try {
+                const requestBody = {
+                    query: query,
+                    maxResults: maxResults
+                };
+                
+                if (location) {
+                    requestBody.locationQuery = location;
+                }
+                
+                const res = await fetch('/ai/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...getCsrfHeaders() },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                if (!res.ok) {
+                    const text = await res.text();
+                    outAnalysis.textContent = `Error ${res.status}: ${text}`;
+                    outFull.textContent = `Error ${res.status}: ${text}`;
+                    suggestedFoodsList.innerHTML = '<span style="color: #ef4444;">Có lỗi xảy ra</span>';
+                    restaurantRecommendations.innerHTML = '<span style="color: #ef4444;">Có lỗi xảy ra</span>';
+                    return;
+                }
+                
+                const data = await res.json();
+                
+                // Display full JSON
+                outFull.textContent = JSON.stringify(data, null, 2);
+                
+                // Display AI Analysis
+                const analysisInfo = {
+                    'Query gốc': data.originalQuery,
+                    'Intent Type': data.intentType || 'N/A',
+                    'Search Strategy': data.searchStrategy || 'N/A',
+                    'AI Interpretation': data.aiInterpretation || 'N/A',
+                    'Explanation': data.explanation || 'N/A',
+                    'Tổng số tìm thấy': data.totalFound,
+                    'Số kết quả trả về': data.totalReturned
+                };
+                outAnalysis.textContent = JSON.stringify(analysisInfo, null, 2);
+                
+                // Display Suggested Foods
+                if (data.suggestedFoods && data.suggestedFoods.length > 0) {
+                    suggestedFoodsList.innerHTML = data.suggestedFoods
+                        .map(food => `<span style="display: inline-block; background: #3b82f6; color: white; padding: 4px 12px; border-radius: 16px; margin: 4px; font-size: 14px;">${food}</span>`)
+                        .join('');
+                } else {
+                    suggestedFoodsList.innerHTML = '<span class="muted">Không có món ăn được đề xuất</span>';
+                }
+                
+                // Display Restaurant Recommendations
+                if (data.recommendations && data.recommendations.length > 0) {
+                    restaurantRecommendations.innerHTML = data.recommendations
+                        .map((rec, index) => {
+                            const distanceText = rec.distanceKm ? `${rec.distanceKm.toFixed(1)} km` : 'N/A';
+                            const rating = rec.rating || 'N/A';
+                            const priceRange = rec.priceRange || 'N/A';
+                            const cuisine = rec.cuisineType || 'N/A';
+                            const address = rec.address || 'N/A';
+                            const phone = rec.phone || 'N/A';
+                            
+                            return `
+                                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: white;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                                        <div>
+                                            <strong style="font-size: 16px; color: #111827;">${index + 1}. ${rec.restaurantName}</strong>
+                                            <div style="color: #6b7280; font-size: 14px; margin-top: 4px;">
+                                                <i class="fa-solid fa-location-dot"></i> ${address}
+                                            </div>
+                                        </div>
+                                        <span style="background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                                            ⭐ ${rating}
+                                        </span>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; font-size: 13px; color: #6b7280;">
+                                        <div><i class="fa-solid fa-utensils"></i> ${cuisine}</div>
+                                        <div><i class="fa-solid fa-money-bill"></i> ${priceRange}</div>
+                                        <div><i class="fa-solid fa-map-marker-alt"></i> ${distanceText}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; margin-top: 8px; font-size: 13px; color: #6b7280;">
+                                        <div><i class="fa-solid fa-phone"></i> ${phone}</div>
+                                    </div>
+                                    ${rec.explanation ? `<div style="margin-top: 8px; padding: 8px; background: #f0f9ff; border-left: 3px solid #3b82f6; font-size: 13px; color: #1e40af;">${rec.explanation}</div>` : ''}
+                                </div>
+                            `;
+                        })
+                        .join('');
+                } else {
+                    restaurantRecommendations.innerHTML = '<div style="padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #991b1b;">Không tìm thấy nhà hàng phù hợp. Hãy thử câu hỏi khác!</div>';
+                }
+                
+            } catch (e) {
+                outAnalysis.textContent = `Error: ${e.message}`;
+                outFull.textContent = `Error: ${e.message}`;
+                suggestedFoodsList.innerHTML = '<span style="color: #ef4444;">Có lỗi xảy ra</span>';
+                restaurantRecommendations.innerHTML = '<span style="color: #ef4444;">Có lỗi xảy ra</span>';
             }
         });
 
