@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -14,6 +15,10 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Home Resy Style CSS -->
+    <link th:href="@{/css/home-resy.css}" rel="stylesheet">
+    <!-- Login Modal CSS -->
+    <link th:href="@{/css/login-modal.css}" rel="stylesheet">
     <!-- Dashboard CSS -->
     <link th:href="@{/css/dashboard.css}" rel="stylesheet" />
     
@@ -22,6 +27,12 @@
             background: var(--dashboard-light-gray);
             min-height: 100vh;
             padding-bottom: 2rem;
+        }
+
+        /* Ensure content is below header */
+        .restaurant-form-page .form-container {
+            margin-top: 80px; /* Header height */
+            padding-top: 1rem;
         }
 
         .form-section {
@@ -118,38 +129,6 @@
             margin: 0;
         }
 
-        .breadcrumb-nav {
-            background: var(--dashboard-white);
-            border-bottom: 1px solid var(--dashboard-border);
-            padding: 1rem 0;
-            margin-bottom: 2rem;
-        }
-
-        .breadcrumb-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .breadcrumb-nav a {
-            color: var(--dashboard-gray);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .breadcrumb-nav a:hover {
-            color: var(--dashboard-black);
-        }
-
-        .breadcrumb-nav .nav-separator {
-            color: var(--dashboard-border);
-            margin: 0 0.5rem;
-        }
-
-        .breadcrumb-nav .nav-current {
-            color: var(--dashboard-black);
-            font-weight: 500;
-        }
 
         .form-container {
             max-width: 1400px;
@@ -297,18 +276,155 @@
     </style>
 </head>
 <body class="restaurant-form-page">
-    <!-- Breadcrumb Navigation -->
-    <nav class="breadcrumb-nav">
-        <div class="breadcrumb-content">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <a th:href="@{/}">← Trang chủ</a>
-                <span class="nav-separator">|</span>
-                <a th:href="@{/restaurant-owner/profile}">Hồ sơ Nhà hàng</a>
-                <span class="nav-separator">|</span>
-                <span class="nav-current" th:text="${pageTitle}">Tạo nhà hàng mới</span>
+    <!-- Main Header -->
+    <header class="header">
+        <div class="container">
+            <!-- Left Section: Logo only -->
+            <div class="header-left">
+                <a th:href="@{/}" class="logo">Book Eat</a>
+            </div>
+            
+            <!-- Center Section: Navigation -->
+            <div class="header-center">
+                <nav>
+                    <ul class="nav-menu">
+                        <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
+                        <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <!-- Right Section: Search + Actions -->
+            <div class="header-right">
+                <!-- Header Search Dropdown -->
+                <div class="header-search">
+                    <button class="search-toggle" onclick="toggleSearchDropdown()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-dropdown" id="searchDropdown">
+                        <form th:action="@{/restaurants}" method="get" class="search-form">
+                            <div class="search-row">
+                                <div class="search-field">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" 
+                                           name="search" 
+                                           placeholder="Tên nhà hàng, địa chỉ..." 
+                                           class="search-input">
+                                </div>
+                            </div>
+                            <div class="search-row">
+                                <div class="search-field">
+                                    <i class="fas fa-utensils search-icon"></i>
+                                    <select name="cuisineType" class="search-select">
+                                        <option value="">Loại ẩm thực</option>
+                                        <option value="Vietnamese">Việt Nam</option>
+                                        <option value="Korean">Hàn Quốc</option>
+                                        <option value="Japanese">Nhật Bản</option>
+                                        <option value="Chinese">Trung Quốc</option>
+                                        <option value="Western">Phương Tây</option>
+                                        <option value="Thai">Thái Lan</option>
+                                        <option value="Italian">Ý</option>
+                                    </select>
+                                </div>
+                                <div class="search-field">
+                                    <i class="fas fa-dollar-sign search-icon"></i>
+                                    <select name="priceRange" class="search-select">
+                                        <option value="">Khoảng giá</option>
+                                        <option value="under-50k">Dưới 50k</option>
+                                        <option value="50k-100k">50k - 100k</option>
+                                        <option value="100k-200k">100k - 200k</option>
+                                        <option value="over-200k">Trên 200k</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="search-actions">
+                                <button type="submit" class="search-submit">
+                                    <i class="fas fa-search"></i>
+                                    Tìm kiếm
+                                </button>
+                                <button type="button" class="search-clear" onclick="clearSearch()">
+                                    <i class="fas fa-times"></i>
+                                    Xóa
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                <!-- Guest User Actions -->
+                <button type="button" class="btn-resy-outline" data-bs-toggle="modal" data-bs-target="#loginModal" sec:authorize="!isAuthenticated()">Đăng nhập</button>
+                <a th:href="@{/auth/register}" class="btn-resy" sec:authorize="!isAuthenticated()">Đăng ký</a>
+                
+                <!-- Authenticated User Actions -->
+                <div sec:authorize="isAuthenticated()" class="user-actions">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell-wrapper">
+                        <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
+                    </div>
+                    
+                    <!-- Restaurant Owner Dashboard -->
+                    <a th:href="@{/restaurant-owner/dashboard}" class="btn-resy" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                    
+                    <!-- Admin Dashboard -->
+                    <a th:href="@{/admin/dashboard}" class="btn-resy" sec:authorize="hasRole('ADMIN')">
+                        <i class="fas fa-cog"></i>
+                        Admin
+                    </a>
+                    
+                    <!-- User Profile Dropdown -->
+                    <div class="user-dropdown">
+                        <button class="btn-resy-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i>
+                            <span sec:authentication="name">User</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/auth/profile}">
+                                    <i class="fas fa-user me-2"></i>
+                                    Profile
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('CUSTOMER')">
+                                <a class="dropdown-item" th:href="@{/booking/my}">
+                                    <i class="fas fa-calendar-check me-2"></i>
+                                    My Reservations
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('CUSTOMER')">
+                                <a class="dropdown-item" th:href="@{/customer/favorites}">
+                                    <i class="fas fa-star me-2"></i>
+                                    Favorites
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                <a class="dropdown-item" th:href="@{/restaurant-owner/dashboard}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    Restaurant Dashboard
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('ADMIN')">
+                                <a class="dropdown-item" th:href="@{/admin/dashboard}">
+                                    <i class="fas fa-cog me-2"></i>
+                                    Admin Dashboard
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/logout}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    Đăng xuất
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
-    </nav>
+    </header>
 
     <div class="form-container">
         <!-- Flash Messages -->
@@ -1778,5 +1894,43 @@ Tổng quan: phù hợp tụ tập bạn bè, liên hoan công ty."></textarea>
             }
         }
     </script>
+
+    <!-- Header Search JavaScript -->
+    <script>
+        function toggleSearchDropdown() {
+            const dropdown = document.getElementById('searchDropdown');
+            const isOpen = dropdown.classList.contains('show');
+            if (isOpen) {
+                dropdown.classList.remove('show');
+            } else {
+                dropdown.classList.add('show');
+            }
+        }
+
+        function clearSearch() {
+            const form = document.querySelector('.search-form');
+            if (form) {
+                form.reset();
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const searchContainer = document.querySelector('.header-search');
+            const dropdown = document.getElementById('searchDropdown');
+            if (searchContainer && dropdown && !searchContainer.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    </script>
+
+    <!-- Resy Footer -->
+    <div th:replace="~{fragments/resy-footer :: resy-footer}"></div>
+
+    <!-- Resy Scripts -->
+    <div th:replace="~{fragments/resy-scripts :: resy-scripts}"></div>
+
+    <!-- Login Modal Fragment -->
+    <div th:insert="~{fragments/login-modal :: login-modal}"></div>
 </body>
 </html>
