@@ -35,6 +35,33 @@ public class OpenAIService {
     private int timeoutMs = 800;
     
     /**
+     * Lightweight ping to verify OpenAI API connectivity and key validity
+     */
+    public CompletableFuture<String> ping() {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String systemPrompt = "Bạn là dịch vụ health-check. Nếu nhận 'ping' hãy trả về đúng chữ 'pong'.";
+                String userPrompt = "ping";
+                ChatCompletionRequest request = ChatCompletionRequest.builder()
+                    .model(model)
+                    .messages(List.of(
+                        new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt),
+                        new ChatMessage(ChatMessageRole.USER.value(), userPrompt)
+                    ))
+                    .temperature(0.0)
+                    .maxTokens(5)
+                    .build();
+                String response = openAiService.createChatCompletion(request)
+                    .getChoices().get(0).getMessage().getContent();
+                return response != null ? response.trim() : "";
+            } catch (Exception e) {
+                // Surface error message to caller for diagnostics
+                throw new RuntimeException("OpenAI ping failed: " + e.getMessage(), e);
+            }
+        }).orTimeout(Math.max(timeoutMs * 4L, 6000L), TimeUnit.MILLISECONDS);
+    }
+
+    /**
      * Parse user intent - enhanced version with food suggestions
      */
     public CompletableFuture<Map<String, Object>> parseIntent(String query, String userId) {
@@ -331,5 +358,203 @@ public class OpenAIService {
         fallback.put("suggested_foods", List.of());
         fallback.put("interpretation", "");
         return fallback;
+    }
+    
+    /**
+     * Improve text writing quality for restaurant form fields
+     * @param originalText The original text to improve
+     * @param fieldName The name of the field (e.g., "description", "heroHeadline")
+     * @param context Optional context about the field (e.g., "Mô tả ngắn về nhà hàng")
+     * @return Improved text
+     */
+    public CompletableFuture<String> improveText(String originalText, String fieldName, String context) {
+        if (originalText == null || originalText.trim().isEmpty()) {
+            return CompletableFuture.completedFuture("");
+        }
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String fieldDescription = context != null && !context.isEmpty() 
+                    ? context 
+                    : getFieldDescription(fieldName);
+                
+                String systemPrompt = String.format("""
+                    Bạn là chuyên gia viết quảng cáo và mô tả nhà hàng chuyên nghiệp.
+                    Nhiệm vụ của bạn là viết lại đoạn văn sau cho trường "%s" (%s), làm cho nó:
+                    - Hấp dẫn và thu hút hơn
+                    - Chuyên nghiệp và dễ đọc
+                    - Giữ nguyên ý nghĩa và thông tin quan trọng
+                    - Phù hợp với ngữ cảnh quảng cáo nhà hàng
+                    
+                    Chỉ trả về văn bản đã được cải thiện, không có giải thích hay comment thêm.
+                    """, fieldName, fieldDescription);
+                
+                String userPrompt = String.format("Viết lại đoạn văn sau cho đẹp hơn:\n\n%s", originalText);
+                
+                ChatCompletionRequest request = ChatCompletionRequest.builder()
+                    .model(model)
+                    .messages(List.of(
+                        new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt),
+                        new ChatMessage(ChatMessageRole.USER.value(), userPrompt)
+                    ))
+                    .temperature(0.7)
+                    .maxTokens(1000)
+                    .build();
+                
+                String response = openAiService.createChatCompletion(request)
+                    .getChoices().get(0).getMessage().getContent();
+                
+                // Clean response (remove markdown formatting if present)
+                String cleanedResponse = response.trim();
+                if (cleanedResponse.startsWith("```")) {
+                    cleanedResponse = cleanedResponse.substring(cleanedResponse.indexOf("\n") + 1);
+                }
+                if (cleanedResponse.endsWith("```")) {
+                    cleanedResponse = cleanedResponse.substring(0, cleanedResponse.lastIndexOf("```")).trim();
+                }
+                
+                return cleanedResponse;
+                
+            } catch (Exception e) {
+                System.err.println("Error improving text: " + e.getMessage());
+                e.printStackTrace();
+                return originalText; // Return original text on error
+            }
+        }).orTimeout(Math.max(timeoutMs * 6L, 10000L), TimeUnit.MILLISECONDS); // Longer timeout for text improvement
+    }
+    
+    /**
+     * Parse long text about restaurant and extract structured information
+     * @param longText Long text containing restaurant information
+     * @return Map containing extracted restaurant fields
+     */
+    public CompletableFuture<Map<String, Object>> parseRestaurantInfo(String longText) {
+        if (longText == null || longText.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(new HashMap<>());
+        }
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String systemPrompt = """
+                    Bạn là AI chuyên phân tích thông tin nhà hàng.
+                    Phân tích đoạn văn sau về nhà hàng và trả về JSON với các trường sau (chỉ trả về các trường có thông tin):
+                    
+                    CÁC TRƯỜng CƠ BẢN:
+                    - restaurantName: Tên nhà hàng (string)
+                    - description: Mô tả ngắn về nhà hàng (string)
+                    - address: Địa chỉ đầy đủ (string)
+                    - phone: Số điện thoại (string)
+                    - websiteUrl: Website (string)
+                    - cuisineType: Loại ẩm thực, ví dụ: "Vietnamese", "Italian", "Chinese" (string)
+                    - openingHours: Giờ mở cửa, ví dụ: "10:00 - 22:00" (string)
+                    - averagePrice: Giá trung bình (number, VNĐ)
+                    - priceRangeMin: Giá thấp nhất (number, VNĐ)
+                    - priceRangeMax: Giá cao nhất (number, VNĐ)
+                    
+                    THÔNG TIN HIỂN THỊ:
+                    - heroCity: Thành phố hiển thị (string)
+                    - heroHeadline: Tiêu đề hero chính (string)
+                    - heroSubheadline: Thông điệp bổ sung (string)
+                    - heroSearchPlaceholder: Placeholder cho ô tìm kiếm (string)
+                    - contactHotline: Hotline đặt chỗ (string)
+                    - contactSecondaryPhone: Điện thoại liên hệ bổ sung (string)
+                    - statusMessage: Thông báo trạng thái mở cửa (string)
+                    
+                    THÔNG TIN ĐẶT CHỖ & ƯU ĐÃI:
+                    - bookingInformation: Thông tin đặt chỗ chi tiết (string)
+                    - bookingNotes: Ghi chú đặt chỗ/chính sách (string)
+                    - generalPromotions: Ưu đãi chung (string)
+                    - groupPromotions: Ưu đãi dành cho nhóm (string)
+                    - promotionNotes: Ghi chú về ưu đãi (string)
+                    
+                    TỔNG QUAN & ĐIỂM NỔI BẬT:
+                    - summaryHighlights: Tóm tắt nhà hàng (string)
+                    - suitableFor: Phù hợp với (string)
+                    - signatureDishes: Món đặc sắc (string)
+                    - spaceDescriptionDetail: Không gian & thiết kế (string)
+                    - uniqueFeatures: Điểm đặc trưng (string)
+                    
+                    GIÁ, MENU & QUY ĐỊNH:
+                    - pricingDetails: Bảng giá chi tiết (string)
+                    - menuHighlights: Menu nổi bật (string)
+                    - policyRules: Quy định & chính sách (string)
+                    - amenities: Tiện ích & dịch vụ (string)
+                    
+                    DI CHUYỂN & GIỜ HOẠT ĐỘNG:
+                    - parkingDetails: Thông tin chỗ đỗ xe (string)
+                    - galleryNotes: Ghi chú thư viện ảnh (string)
+                    - directionInfo: Chỉ đường (string)
+                    - operatingSchedule: Giờ hoạt động chi tiết (string)
+                    
+                    QUY TẮC:
+                    - Chỉ trả về các trường có thông tin trong đoạn văn, không tạo thông tin giả
+                    - Nếu không tìm thấy thông tin cho một trường, không thêm trường đó vào JSON
+                    - Giữ nguyên giọng văn và thông tin từ đoạn văn gốc
+                    - Trả về JSON hợp lệ, không có comment hay giải thích thêm
+                    """;
+                
+                String userPrompt = String.format("Phân tích thông tin nhà hàng từ đoạn văn sau:\n\n%s", longText);
+                
+                ChatCompletionRequest request = ChatCompletionRequest.builder()
+                    .model(model)
+                    .messages(List.of(
+                        new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt),
+                        new ChatMessage(ChatMessageRole.USER.value(), userPrompt)
+                    ))
+                    .temperature(0.2) // Lower temperature for more consistent extraction
+                    .maxTokens(2000) // More tokens for comprehensive parsing
+                    .build();
+                
+                String response = openAiService.createChatCompletion(request)
+                    .getChoices().get(0).getMessage().getContent();
+                
+                // Clean JSON response (remove markdown code blocks if present)
+                String cleanedResponse = response.trim();
+                if (cleanedResponse.startsWith("```json")) {
+                    cleanedResponse = cleanedResponse.substring(7);
+                }
+                if (cleanedResponse.startsWith("```")) {
+                    cleanedResponse = cleanedResponse.substring(3);
+                }
+                if (cleanedResponse.endsWith("```")) {
+                    cleanedResponse = cleanedResponse.substring(0, cleanedResponse.length() - 3);
+                }
+                cleanedResponse = cleanedResponse.trim();
+                
+                // Parse JSON response
+                @SuppressWarnings("unchecked")
+                Map<String, Object> result = objectMapper.readValue(cleanedResponse, Map.class);
+                
+                System.out.println("✅ Parsed restaurant info: " + result.size() + " fields extracted");
+                
+                return result;
+                
+            } catch (Exception e) {
+                System.err.println("Error parsing restaurant info: " + e.getMessage());
+                e.printStackTrace();
+                return new HashMap<String, Object>(); // Return empty map on error with explicit types
+            }
+        }).orTimeout(Math.max(timeoutMs * 6L, 8000L), TimeUnit.MILLISECONDS); // Longer timeout for parsing long texts
+    }
+    
+    /**
+     * Get human-readable description for a field name
+     */
+    private String getFieldDescription(String fieldName) {
+        Map<String, String> fieldDescriptions = new HashMap<>();
+        fieldDescriptions.put("description", "Mô tả ngắn về nhà hàng");
+        fieldDescriptions.put("heroHeadline", "Tiêu đề chính hiển thị trên trang chủ");
+        fieldDescriptions.put("heroSubheadline", "Thông điệp bổ sung dưới tiêu đề");
+        fieldDescriptions.put("bookingInformation", "Thông tin chi tiết về quy trình đặt chỗ");
+        fieldDescriptions.put("summaryHighlights", "Tóm tắt điểm nổi bật của nhà hàng");
+        fieldDescriptions.put("signatureDishes", "Danh sách món ăn đặc sắc");
+        fieldDescriptions.put("spaceDescriptionDetail", "Mô tả không gian và thiết kế");
+        fieldDescriptions.put("uniqueFeatures", "Điểm đặc trưng riêng biệt");
+        fieldDescriptions.put("pricingDetails", "Bảng giá chi tiết");
+        fieldDescriptions.put("menuHighlights", "Menu các món nổi bật");
+        fieldDescriptions.put("policyRules", "Quy định và chính sách");
+        fieldDescriptions.put("amenities", "Tiện ích và dịch vụ");
+        
+        return fieldDescriptions.getOrDefault(fieldName, "Thông tin nhà hàng");
     }
 }
