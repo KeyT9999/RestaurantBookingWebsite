@@ -7,6 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -183,7 +184,7 @@ public class AIRecommendationDiversity {
     
     public BigDecimal getOverallDiversityScore() {
         return cuisineDiversityScore.add(priceDiversityScore).add(locationDiversityScore)
-                .divide(new BigDecimal("3"), 2, BigDecimal.ROUND_HALF_UP);
+                .divide(new BigDecimal("3"), 2, RoundingMode.HALF_UP);
     }
     
     public boolean isOverRecommended() {
