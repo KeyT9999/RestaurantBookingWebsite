@@ -411,6 +411,16 @@ public class HomeController {
                         restaurant.setMainImageUrl(coverUrl);
                     }
                 }
+                
+                // Check restaurant open/closed status
+                Map<Integer, Boolean> restaurantsIsOpen = new java.util.HashMap<>();
+                for (RestaurantProfile restaurant : restaurants.getContent()) {
+                    boolean isOpen = restaurantService.isRestaurantCurrentlyOpen(restaurant);
+                    restaurantsIsOpen.put(restaurant.getRestaurantId(), isOpen);
+                }
+                model.addAttribute("restaurantsIsOpen", restaurantsIsOpen);
+            } else {
+                model.addAttribute("restaurantsIsOpen", Collections.emptyMap());
             }
 
             // Add to model
