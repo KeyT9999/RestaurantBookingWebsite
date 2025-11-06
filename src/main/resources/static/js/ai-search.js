@@ -15,6 +15,10 @@
     const confidenceValueEl = confidenceEl ? confidenceEl.querySelector('span') : null;
     const recommendationsEl = document.getElementById('aiRecommendations');
     const emptyStateEl = document.getElementById('aiEmptyState');
+    const interpretationBoxEl = document.getElementById('aiInterpretationBox');
+    const interpretationTextEl = document.getElementById('aiInterpretationText');
+    const suggestedFoodsEl = document.getElementById('aiSuggestedFoods');
+    const suggestedFoodsListEl = document.getElementById('aiSuggestedFoodsList');
 
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || null;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
@@ -56,6 +60,18 @@
       }
       if (emptyStateEl) {
         emptyStateEl.hidden = true;
+      }
+      if (interpretationBoxEl) {
+        interpretationBoxEl.style.display = 'none';
+      }
+      if (interpretationTextEl) {
+        interpretationTextEl.textContent = '';
+      }
+      if (suggestedFoodsEl) {
+        suggestedFoodsEl.style.display = 'none';
+      }
+      if (suggestedFoodsListEl) {
+        suggestedFoodsListEl.innerHTML = '';
       }
     };
 
@@ -178,12 +194,61 @@
           throw new Error('Không nhận được phản hồi từ máy chủ.');
         }
 
+        // Debug: Log response data
+        console.log('🔍 AI Search Response:', data);
+        console.log('📊 AI Interpretation:', data.aiInterpretation);
+        console.log('🍽️ Suggested Foods:', data.suggestedFoods);
+
         const totalFound = Number.isFinite(data.totalFound) ? data.totalFound : 0;
         const totalReturned = Number.isFinite(data.totalReturned) ? data.totalReturned : (Array.isArray(data.recommendations) ? data.recommendations.length : 0);
 
         if (summaryEl) {
           const queryText = data.originalQuery || rawQuery;
           summaryEl.textContent = `Gợi ý cho "${queryText}" — ${totalReturned}/${totalFound} nhà hàng được trả về.`;
+        }
+
+        // Display AI Interpretation if available
+        if (interpretationBoxEl && interpretationTextEl) {
+          const aiInterpretation = data.aiInterpretation || '';
+          console.log('🎨 Checking AI Interpretation:', {
+            hasBox: !!interpretationBoxEl,
+            hasText: !!interpretationTextEl,
+            interpretation: aiInterpretation,
+            isEmpty: !aiInterpretation || aiInterpretation.trim() === ''
+          });
+          
+          if (aiInterpretation && aiInterpretation.trim() !== '') {
+            console.log('✅ Displaying AI Interpretation:', aiInterpretation);
+            interpretationTextEl.textContent = aiInterpretation;
+            interpretationBoxEl.style.display = 'block';
+            
+            // Display suggested foods if available
+            if (suggestedFoodsEl && suggestedFoodsListEl && data.suggestedFoods && Array.isArray(data.suggestedFoods) && data.suggestedFoods.length > 0) {
+              console.log('🍽️ Displaying Suggested Foods:', data.suggestedFoods);
+              suggestedFoodsListEl.innerHTML = '';
+              data.suggestedFoods.forEach((food) => {
+                if (food && food.trim() !== '') {
+                  const badge = document.createElement('span');
+                  badge.style.cssText = 'background: rgba(255, 255, 255, 0.25); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;';
+                  badge.innerHTML = `<i class="fas fa-utensils"></i>${food}`;
+                  suggestedFoodsListEl.appendChild(badge);
+                }
+              });
+              if (suggestedFoodsListEl.children.length > 0) {
+                suggestedFoodsEl.style.display = 'block';
+              }
+            } else {
+              console.log('⚠️ No suggested foods to display');
+            }
+          } else {
+            console.log('❌ AI Interpretation is empty, hiding box');
+            interpretationBoxEl.style.display = 'none';
+          }
+        } else {
+          console.error('❌ Missing interpretation elements:', {
+            interpretationBoxEl: !!interpretationBoxEl,
+            interpretationTextEl: !!interpretationTextEl
+          });
         }
 
         if (explanationEl) {

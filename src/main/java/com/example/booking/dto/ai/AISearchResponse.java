@@ -38,6 +38,11 @@ public class AISearchResponse {
     private String contextUsed;
     private String suggestions;
     
+    // AI Interpretation and Food Suggestions
+    private String aiInterpretation; // AI's explanation/recommendation (e.g., "Bạn đang tập gym nên ăn ức gà")
+    private List<String> suggestedFoods; // List of suggested food items
+    private String searchStrategy; // How AI searched: "cuisine", "dish", "mixed"
+    
     // User feedback
     private Boolean feedbackEnabled;
     private String feedbackUrl;
@@ -201,6 +206,30 @@ public class AISearchResponse {
     
     public void setSuggestions(String suggestions) {
         this.suggestions = suggestions;
+    }
+    
+    public String getAiInterpretation() {
+        return aiInterpretation;
+    }
+    
+    public void setAiInterpretation(String aiInterpretation) {
+        this.aiInterpretation = aiInterpretation;
+    }
+    
+    public List<String> getSuggestedFoods() {
+        return suggestedFoods;
+    }
+    
+    public void setSuggestedFoods(List<String> suggestedFoods) {
+        this.suggestedFoods = suggestedFoods;
+    }
+    
+    public String getSearchStrategy() {
+        return searchStrategy;
+    }
+    
+    public void setSearchStrategy(String searchStrategy) {
+        this.searchStrategy = searchStrategy;
     }
     
     public Boolean getFeedbackEnabled() {

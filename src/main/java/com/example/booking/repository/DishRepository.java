@@ -39,4 +39,26 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
      * @return List of Dish entities ordered by name
      */
     List<Dish> findByRestaurantRestaurantIdOrderByNameAsc(Integer restaurantId);
+    
+    /**
+     * Find dishes by name containing (case-insensitive) and status
+     * Used for searching dishes across all restaurants
+     * 
+     * @param name The dish name to search for (partial match)
+     * @param status The dish status
+     * @return List of Dish entities matching the criteria
+     */
+    List<Dish> findByNameContainingIgnoreCaseAndStatus(String name, DishStatus status);
+    
+    /**
+     * Find dishes by restaurant ID, name containing (case-insensitive) and status
+     * Used for searching dishes in a specific restaurant
+     * 
+     * @param restaurantId The restaurant ID
+     * @param name The dish name to search for (partial match)
+     * @param status The dish status
+     * @return List of Dish entities matching the criteria
+     */
+    List<Dish> findByRestaurantRestaurantIdAndNameContainingIgnoreCaseAndStatus(
+            Integer restaurantId, String name, DishStatus status);
 }

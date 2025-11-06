@@ -15,9 +15,12 @@ import java.util.Locale;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.booking.domain.Dish;
+import com.example.booking.domain.DishStatus;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.dto.ai.AISearchRequest;
 import com.example.booking.dto.ai.AISearchResponse;
+import com.example.booking.repository.DishRepository;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.util.CityGeoResolver;
 import com.example.booking.util.GeoUtils;
@@ -33,6 +36,9 @@ public class RecommendationService {
     
     @Autowired
     private RestaurantManagementService restaurantService;
+    
+    @Autowired
+    private DishRepository dishRepository;
 
     private final CityGeoResolver cityGeoResolver = new CityGeoResolver();
 
@@ -72,9 +78,40 @@ public class RecommendationService {
             Map<String, Object> intent = parseIntentWithTimeout(request);
             System.out.println("📊 Parsed intent: " + intent);
             
-            // 2. Find candidates based on intent
-            PricePreference pricePreference = resolvePricePreference(request, intent);
-            List<RestaurantProfile> candidates = findCandidates(intent, request, pricePreference);
+            // Check if this is a food advice query (has suggested_foods)
+            @SuppressWarnings("unchecked")
+            List<String> suggestedFoods = extractStringList(intent.get("suggested_foods"));
+            String intentType = (String) intent.getOrDefault("intent_type", "restaurant_search");
+            String interpretation = (String) intent.getOrDefault("interpretation", "");
+            
+            System.out.println("🔍 Intent Analysis:");
+            System.out.println("  - Intent Type: " + intentType);
+            System.out.println("  - Interpretation: " + interpretation);
+            System.out.println("  - Suggested Foods: " + suggestedFoods);
+            
+            List<RestaurantProfile> candidates;
+            String searchStrategy = "cuisine";
+            
+            // 2. Find candidates based on intent type
+            if ("food_advice".equals(intentType) && suggestedFoods != null && !suggestedFoods.isEmpty()) {
+                // Search by dish names
+                System.out.println("🍽️ Searching by dish names: " + suggestedFoods);
+                candidates = findRestaurantsByDishNames(suggestedFoods);
+                searchStrategy = "dish";
+                
+                // Fallback to cuisine search if no restaurants found
+                if (candidates.isEmpty()) {
+                    System.out.println("⚠️ No restaurants found by dish, falling back to cuisine search");
+                    PricePreference pricePreference = resolvePricePreference(request, intent);
+                    candidates = findCandidates(intent, request, pricePreference);
+                    searchStrategy = "mixed";
+                }
+            } else {
+                // Normal cuisine-based search
+                PricePreference pricePreference = resolvePricePreference(request, intent);
+                candidates = findCandidates(intent, request, pricePreference);
+            }
+            
             System.out.println("🏪 Found " + candidates.size() + " candidate restaurants");
 
             LocationContext locationContext = buildLocationContext(request, intent);
@@ -92,9 +129,12 @@ public class RecommendationService {
                 generateRecommendations(topResults, intent);
             System.out.println("✨ Generated " + recommendations.size() + " recommendations");
             
-            // 5. Build response
-            AISearchResponse response = buildResponse(request, recommendations, intent, rankedMatches.size());
+            // 5. Build response with AI interpretation
+            AISearchResponse response = buildResponse(request, recommendations, intent, rankedMatches.size(), 
+                    interpretation, suggestedFoods, searchStrategy);
             System.out.println("📤 Built response with totalFound: " + rankedMatches.size());
+            System.out.println("📝 Response AI Interpretation: " + response.getAiInterpretation());
+            System.out.println("🍽️ Response Suggested Foods: " + response.getSuggestedFoods());
             
             return response;
             
@@ -118,6 +158,52 @@ public class RecommendationService {
         }
 
         return intentFuture.get(800, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+    
+    /**
+     * Find restaurants by dish names
+     * Searches for restaurants that have any of the suggested dish names
+     */
+    private List<RestaurantProfile> findRestaurantsByDishNames(List<String> dishNames) {
+        System.out.println("🔍 Finding restaurants by dish names: " + dishNames);
+        
+        if (dishNames == null || dishNames.isEmpty()) {
+            return List.of();
+        }
+        
+        List<RestaurantProfile> restaurants = new ArrayList<>();
+        
+        // Search for each dish name
+        for (String dishName : dishNames) {
+            if (dishName == null || dishName.trim().isEmpty()) {
+                continue;
+            }
+            
+            String normalizedDishName = normalize(dishName.trim());
+            System.out.println("🔎 Searching for dish: " + dishName + " (normalized: " + normalizedDishName + ")");
+            
+            // Find dishes by name (case-insensitive, partial match)
+            List<Dish> dishes = dishRepository.findByNameContainingIgnoreCaseAndStatus(
+                normalizedDishName, DishStatus.AVAILABLE);
+            
+            System.out.println("🍽️ Found " + dishes.size() + " dishes matching: " + dishName);
+            
+            // Get unique restaurants from dishes
+            for (Dish dish : dishes) {
+                RestaurantProfile restaurant = dish.getRestaurant();
+                if (restaurant != null && !restaurants.contains(restaurant)) {
+                    // Check if dish name really matches (normalized comparison)
+                    String dishNameNormalized = normalize(dish.getName());
+                    if (dishNameNormalized.contains(normalizedDishName) || 
+                        normalizedDishName.contains(dishNameNormalized)) {
+                        restaurants.add(restaurant);
+                    }
+                }
+            }
+        }
+        
+        System.out.println("✅ Found " + restaurants.size() + " unique restaurants with suggested dishes");
+        return restaurants;
     }
     
     /**
@@ -158,8 +244,14 @@ public class RecommendationService {
                 .map(match -> match.restaurant().getRestaurantName())
                 .collect(Collectors.toList());
             
-            List<String> explanations = openAIService.explainRestaurants(restaurantNames)
-                .get(800, java.util.concurrent.TimeUnit.MILLISECONDS);
+            // Try to get AI explanations (optional, can be ignored if it fails)
+            try {
+                openAIService.explainRestaurants(restaurantNames)
+                    .get(800, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                // Ignore explanation errors, continue with recommendations
+                System.out.println("Could not generate explanations: " + e.getMessage());
+            }
             
             return java.util.stream.IntStream.range(0, matches.size())
                 .mapToObj(index -> {
@@ -207,6 +299,9 @@ public class RecommendationService {
         response.setTotalReturned(recommendations.size());
         response.setExplanation("Tìm thấy nhà hàng phù hợp (chế độ đơn giản)");
         response.setRecommendations(recommendations);
+        response.setAiInterpretation("");
+        response.setSuggestedFoods(List.of());
+        response.setSearchStrategy("cuisine");
         
         return response;
     }
@@ -360,12 +455,51 @@ public class RecommendationService {
     private AISearchResponse buildResponse(AISearchRequest request, 
                                          List<AISearchResponse.RestaurantRecommendation> recommendations,
                                          Map<String, Object> intent,
-                                         int totalFound) {
+                                         int totalFound,
+                                         String interpretation,
+                                         List<String> suggestedFoods,
+                                         String searchStrategy) {
         AISearchResponse response = new AISearchResponse();
         response.setOriginalQuery(request.getQuery());
         response.setTotalFound(totalFound);
         response.setTotalReturned(recommendations.size());
-        response.setExplanation("Tìm thấy " + recommendations.size() + " nhà hàng phù hợp");
+        
+        // Set suggested foods
+        List<String> finalSuggestedFoods = suggestedFoods != null && !suggestedFoods.isEmpty() ? suggestedFoods : List.of();
+        response.setSuggestedFoods(finalSuggestedFoods);
+        response.setSearchStrategy(searchStrategy != null ? searchStrategy : "cuisine");
+        
+        // Build AI interpretation - auto-generate if empty but has suggested foods
+        String finalInterpretation = interpretation;
+        if ((finalInterpretation == null || finalInterpretation.trim().isEmpty()) && 
+            !finalSuggestedFoods.isEmpty()) {
+            // Auto-generate interpretation from suggested foods
+            String foodList = String.join(", ", finalSuggestedFoods);
+            finalInterpretation = "Dựa trên yêu cầu của bạn, tôi đề xuất các món: " + foodList + 
+                ". Đây là những món ăn phù hợp với nhu cầu của bạn.";
+        }
+        response.setAiInterpretation(finalInterpretation != null ? finalInterpretation : "");
+        
+        // Build explanation message based on search strategy
+        String explanation;
+        if ("dish".equals(searchStrategy) && !finalSuggestedFoods.isEmpty()) {
+            if (recommendations.isEmpty()) {
+                explanation = "Hiện tại không tìm thấy nhà hàng nào có món " + 
+                    String.join(", ", finalSuggestedFoods.subList(0, Math.min(2, finalSuggestedFoods.size()))) +
+                    (finalSuggestedFoods.size() > 2 ? "..." : "");
+            } else {
+                explanation = "Đang rà soát và tìm thấy " + recommendations.size() + 
+                    " nhà hàng có món " + 
+                    String.join(", ", finalSuggestedFoods.subList(0, Math.min(2, finalSuggestedFoods.size()))) +
+                    (finalSuggestedFoods.size() > 2 ? "..." : "");
+            }
+        } else {
+            explanation = recommendations.isEmpty() ? 
+                "Không tìm thấy nhà hàng phù hợp" : 
+                "Tìm thấy " + recommendations.size() + " nhà hàng phù hợp";
+        }
+        
+        response.setExplanation(explanation);
         response.setRecommendations(recommendations);
         
         // Set confidence from intent
@@ -646,6 +780,24 @@ public class RecommendationService {
         }
     }
 
+    /**
+     * Helper method to extract string list from object (handles different types)
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> extractStringList(Object obj) {
+        if (obj == null) {
+            return List.of();
+        }
+        if (obj instanceof List) {
+            List<?> list = (List<?>) obj;
+            return list.stream()
+                .map(item -> item != null ? item.toString().trim() : "")
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+        }
+        return List.of();
+    }
+    
     private record RestaurantMatch(RestaurantProfile restaurant, Double distanceKm) {}
 
     private static final class PricePreference {
