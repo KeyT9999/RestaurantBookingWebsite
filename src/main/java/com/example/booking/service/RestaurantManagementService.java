@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -385,5 +387,118 @@ public class RestaurantManagementService {
             System.err.println("Error getting dish image URL: " + e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Lấy danh sách nhà hàng liên quan dựa trên:
+     * 1. Cùng loại ẩm thực
+     * 2. Cùng khu vực (địa chỉ tương tự)
+     * 3. Loại trừ nhà hàng hiện tại
+     * 
+     * @param restaurant Nhà hàng hiện tại
+     * @param limit Số lượng nhà hàng tối đa (mặc định 6)
+     * @return Danh sách nhà hàng liên quan
+     */
+    @Transactional(readOnly = true)
+    public List<RestaurantProfile> findRelatedRestaurants(RestaurantProfile restaurant, int limit) {
+        if (restaurant == null || restaurant.getRestaurantId() == null) {
+            return Collections.emptyList();
+        }
+
+        List<RestaurantProfile> related = new ArrayList<>();
+        
+        // Lấy tất cả nhà hàng đã được duyệt (trừ nhà hàng hiện tại)
+        List<RestaurantProfile> allRestaurants = restaurantProfileRepository.findApprovedExcludingAI();
+        allRestaurants = allRestaurants.stream()
+                .filter(r -> !r.getRestaurantId().equals(restaurant.getRestaurantId()))
+                .collect(java.util.stream.Collectors.toList());
+
+        if (allRestaurants.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Ưu tiên 1: Cùng loại ẩm thực
+        if (restaurant.getCuisineType() != null && !restaurant.getCuisineType().trim().isEmpty()) {
+            List<RestaurantProfile> sameCuisine = allRestaurants.stream()
+                    .filter(r -> restaurant.getCuisineType().equalsIgnoreCase(r.getCuisineType()))
+                    .collect(java.util.stream.Collectors.toList());
+            related.addAll(sameCuisine);
+        }
+
+        // Ưu tiên 2: Cùng khu vực (kiểm tra địa chỉ có chứa từ khóa chung)
+        if (restaurant.getAddress() != null && !restaurant.getAddress().trim().isEmpty()) {
+            String address = restaurant.getAddress().toLowerCase();
+            // Tìm các từ khóa địa điểm phổ biến
+            String[] locationKeywords = {"quận", "huyện", "phường", "đường", "street", "district"};
+            
+            for (String keyword : locationKeywords) {
+                if (address.contains(keyword)) {
+                    List<RestaurantProfile> sameLocation = allRestaurants.stream()
+                            .filter(r -> r.getAddress() != null && 
+                                    r.getAddress().toLowerCase().contains(keyword) &&
+                                    !related.contains(r))
+                            .limit(limit - related.size())
+                            .collect(java.util.stream.Collectors.toList());
+                    related.addAll(sameLocation);
+                    break;
+                }
+            }
+        }
+
+        // Nếu chưa đủ, thêm các nhà hàng khác (sắp xếp theo rating)
+        if (related.size() < limit) {
+            List<RestaurantProfile> others = allRestaurants.stream()
+                    .filter(r -> !related.contains(r))
+                    .sorted((r1, r2) -> {
+                        double rating1 = r1.getAverageRating();
+                        double rating2 = r2.getAverageRating();
+                        return Double.compare(rating2, rating1);
+                    })
+                    .limit(limit - related.size())
+                    .collect(java.util.stream.Collectors.toList());
+            related.addAll(others);
+        }
+
+        // Giới hạn số lượng và loại bỏ trùng lặp
+        return related.stream()
+                .distinct()
+                .limit(limit)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Kiểm tra nhà hàng có đang mở cửa không dựa trên openingHours và giờ hiện tại
+     * 
+     * @param restaurant Nhà hàng cần kiểm tra
+     * @return true nếu đang mở cửa, false nếu đóng cửa hoặc không có thông tin giờ mở cửa
+     */
+    @Transactional(readOnly = true)
+    public boolean isRestaurantCurrentlyOpen(RestaurantProfile restaurant) {
+        if (restaurant == null || restaurant.getOpeningHours() == null || 
+            restaurant.getOpeningHours().trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            LocalTime now = LocalTime.now();
+            String openingHours = restaurant.getOpeningHours().trim();
+            
+            // Parse format like "10:00-22:00" or "10:00 - 22:00"
+            String[] hours = openingHours.replaceAll("\\s+", "").split("-");
+            if (hours.length == 2) {
+                LocalTime openTime = LocalTime.parse(hours[0]);
+                LocalTime closeTime = LocalTime.parse(hours[1]);
+                
+                // Kiểm tra nếu đang trong khoảng thời gian mở cửa
+                return !now.isBefore(openTime) && !now.isAfter(closeTime);
+            }
+        } catch (DateTimeParseException e) {
+            System.err.println("Error parsing opening hours: " + restaurant.getOpeningHours() + 
+                             " for restaurant: " + restaurant.getRestaurantName());
+        } catch (Exception e) {
+            System.err.println("Error checking restaurant hours: " + e.getMessage());
+        }
+        
+        return false;
     }
 }

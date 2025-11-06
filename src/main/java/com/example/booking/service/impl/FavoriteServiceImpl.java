@@ -88,21 +88,49 @@ public class FavoriteServiceImpl implements FavoriteService {
             } else {
                 // Not currently favorited -> Add to favorites
                 System.out.println("ACTION: Adding to favorites");
-                CustomerFavorite favorite = new CustomerFavorite(customer, restaurant);
-                favoriteRepository.save(favorite);
-                finalStatus = true;
+                
+                // Double check để tránh duplicate
+                Optional<CustomerFavorite> existingCheck = favoriteRepository
+                    .findByCustomerCustomerIdAndRestaurantRestaurantId(customerId, restaurantId);
+                
+                if (existingCheck.isPresent()) {
+                    System.out.println("WARNING: Favorite already exists, removing duplicate");
+                    favoriteRepository.delete(existingCheck.get());
+                }
+                
+                try {
+                    CustomerFavorite favorite = new CustomerFavorite(customer, restaurant);
+                    CustomerFavorite saved = favoriteRepository.save(favorite);
+                    System.out.println("SUCCESS: Favorite saved with ID: " + saved.getFavoriteId());
+                    finalStatus = true;
+                } catch (Exception saveException) {
+                    System.err.println("ERROR saving favorite: " + saveException.getMessage());
+                    saveException.printStackTrace();
+                    throw saveException; // Re-throw để catch block bên ngoài xử lý
+                }
+            }
+            
+            // Verify the final status
+            boolean verifyStatus = favoriteRepository.existsByCustomerCustomerIdAndRestaurantRestaurantId(customerId, restaurantId);
+            if (verifyStatus != finalStatus) {
+                System.err.println("WARNING: Status mismatch! Expected: " + finalStatus + ", Actual: " + verifyStatus);
+                finalStatus = verifyStatus; // Use actual status
             }
             
             // Get updated favorite count
             long favoriteCount = favoriteRepository.countByCustomerCustomerId(customerId);
             
             System.out.println("Final status: " + finalStatus);
+            System.out.println("Verified status: " + verifyStatus);
             System.out.println("Favorite count: " + favoriteCount);
             System.out.println("=============================");
             
             return ToggleFavoriteResponse.success(finalStatus, (int) favoriteCount, restaurantId);
             
         } catch (Exception e) {
+            System.err.println("EXCEPTION in toggleFavorite: " + e.getClass().getName());
+            System.err.println("Message: " + e.getMessage());
+            e.printStackTrace();
             return ToggleFavoriteResponse.error("Có lỗi xảy ra: " + e.getMessage());
         }
     }

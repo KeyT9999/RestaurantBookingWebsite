@@ -146,6 +146,91 @@
         .modal-content-image.slide-right {
             animation: slideInRight 0.3s;
         }
+        
+        /* Notification animations */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        /* Favorite Button for Main Restaurant */
+        .restaurant-detail-favorite {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(230, 0, 35, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .restaurant-detail-favorite:hover {
+            background: #FFFFFF;
+            border-color: #E60023;
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(230, 0, 35, 0.3);
+        }
+        
+        .restaurant-detail-favorite i {
+            font-size: 24px;
+            color: #6B7280;
+            transition: all 0.3s ease;
+        }
+        
+        .restaurant-detail-favorite.active i,
+        .restaurant-detail-favorite:hover i {
+            color: #E60023;
+        }
+        
+        .restaurant-detail-favorite.active {
+            background: #FFFFFF;
+            border-color: #E60023;
+        }
+        
+        .restaurant-detail-favorite.active i {
+            color: #E60023;
+        }
+        
+        @keyframes favoritePulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .restaurant-detail-favorite.animating {
+            animation: favoritePulse 0.6s ease-in-out;
+        }
     </style>
 </head>
 <body class="ds-bg-white">
@@ -172,6 +257,16 @@
                 <div class="banner-grid">
                     <!-- Main Banner - Ảnh lớn bên trái -->
                     <div class="main-banner" id="mainBanner">
+                        <!-- Favorite Button -->
+                        <button class="restaurant-detail-favorite" 
+                                id="mainRestaurantFavorite"
+                                type="button"
+                                sec:authorize="hasRole('CUSTOMER')"
+                                th:attr="data-restaurant-id=${restaurant.restaurantId}"
+                                title="Thêm vào yêu thích">
+                            <i class="far fa-heart"></i>
+                        </button>
+                        
                         <button class="banner-nav banner-nav-prev" id="bannerPrevBtn" onclick="bannerPreviousImage(event)" style="display: none;">
                             ‹
                         </button>
@@ -686,6 +781,103 @@
                 </div>
             </div>
         </section>
+
+        <!-- Related Restaurants Section -->
+        <section class="related-restaurants-section" th:if="${!#lists.isEmpty(relatedRestaurants)}">
+            <div class="ds-container">
+                <!-- Section Header -->
+                <div class="related-restaurants-header">
+                    <h2 class="related-restaurants-title">Các nhà hàng liên quan</h2>
+                    <p class="related-restaurants-subtitle">Khám phá những địa điểm ẩm thực tương tự gần bạn</p>
+                    <div class="related-restaurants-divider"></div>
+                </div>
+
+                <!-- Restaurant Cards Horizontal Scroll Container -->
+                <div class="related-restaurants-wrapper">
+                    <!-- Navigation Buttons (chỉ hiện khi có > 4 nhà hàng) -->
+                    <button class="related-nav-btn related-nav-prev" id="relatedPrevBtn" 
+                            th:if="${relatedRestaurants.size() > 4}" 
+                            onclick="scrollRelatedRestaurants('left')" 
+                            aria-label="Previous">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="related-nav-btn related-nav-next" id="relatedNextBtn" 
+                            th:if="${relatedRestaurants.size() > 4}" 
+                            onclick="scrollRelatedRestaurants('right')" 
+                            aria-label="Next">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+
+                    <!-- Restaurant Cards Horizontal Scroll -->
+                    <div class="related-restaurants-grid" id="relatedRestaurantsGrid">
+                        <div class="related-restaurant-card" th:each="relatedRestaurant : ${relatedRestaurants}">
+                            <!-- Image Container -->
+                            <div class="restaurant-card-image-container">
+                                <a th:href="@{/restaurants/{id}(id=${relatedRestaurant.restaurantId})}">
+                                    <img th:src="${relatedRestaurant.mainImageUrl != null ? relatedRestaurant.mainImageUrl : '/images/default-restaurant.jpg'}" 
+                                         th:alt="${relatedRestaurant.restaurantName}" 
+                                         class="restaurant-card-image">
+                                </a>
+                                <div class="restaurant-card-overlay"></div>
+                                <!-- Favorite Icon -->
+                                <button class="restaurant-card-favorite" 
+                                        type="button" 
+                                        th:attr="data-restaurant-id=${relatedRestaurant.restaurantId}">
+                                    <i class="far fa-heart"></i>
+                                </button>
+                            </div>
+
+                            <!-- Card Content -->
+                            <div class="restaurant-card-content">
+                                <!-- Restaurant Name -->
+                                <h3 class="restaurant-card-name">
+                                    <a th:href="@{/restaurants/{id}(id=${relatedRestaurant.restaurantId})}" 
+                                       th:text="${relatedRestaurant.restaurantName}"
+                                       style="color: inherit; text-decoration: none;">Tên nhà hàng</a>
+                                </h3>
+
+                                <!-- Address -->
+                                <div class="restaurant-card-info" th:if="${relatedRestaurant.address != null}">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span th:text="${relatedRestaurant.address}">Địa chỉ</span>
+                                </div>
+
+                                <!-- Cuisine Type -->
+                                <div class="restaurant-card-info" th:if="${relatedRestaurant.cuisineType != null}">
+                                    <i class="fas fa-utensils"></i>
+                                    <span th:text="${relatedRestaurant.cuisineType}">Loại ẩm thực</span>
+                                </div>
+
+                                <!-- Price Range -->
+                                <div class="restaurant-card-info" th:if="${relatedRestaurant.averagePrice != null}">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <span th:text="'₫' + ${#numbers.formatDecimal(relatedRestaurant.averagePrice, 0, 'COMMA', 0, 'POINT')} + '/người'">Khoảng giá</span>
+                                </div>
+
+                                <!-- Status Badge -->
+                                <div class="restaurant-card-status">
+                                    <span class="status-badge status-open" 
+                                          th:if="${relatedRestaurantsIsOpen != null and relatedRestaurantsIsOpen[relatedRestaurant.restaurantId]}">
+                                        Đang mở cửa
+                                    </span>
+                                    <span class="status-badge status-closed" 
+                                          th:if="${relatedRestaurantsIsOpen == null or !relatedRestaurantsIsOpen[relatedRestaurant.restaurantId]}">
+                                        Đã đóng cửa
+                                    </span>
+                                </div>
+
+                                <!-- CTA Button -->
+                                <div class="restaurant-card-actions">
+                                    <a th:href="@{/restaurants/{id}(id=${relatedRestaurant.restaurantId})}" class="btn-restaurant-card">
+                                        Đặt bàn ngay
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
     
     <!-- Image Modal -->
@@ -1051,6 +1243,465 @@
                     }, 300);
                 }
             }
+            
+            // Setup favorite button event listeners
+            function setupFavoriteButtons() {
+                const favoriteButtons = document.querySelectorAll('.restaurant-card-favorite[data-restaurant-id]');
+                console.log('Setting up ' + favoriteButtons.length + ' favorite buttons');
+                
+                favoriteButtons.forEach(button => {
+                    // Remove existing listeners by cloning
+                    const newButton = button.cloneNode(true);
+                    button.parentNode.replaceChild(newButton, button);
+                    
+                    // Add click event listener
+                    newButton.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const restaurantId = parseInt(this.getAttribute('data-restaurant-id'));
+                        console.log('Favorite button clicked for restaurant:', restaurantId);
+                        
+                        if (restaurantId) {
+                            toggleFavorite(this, restaurantId);
+                        } else {
+                            console.error('Restaurant ID not found');
+                        }
+                    });
+                });
+            }
+            
+            // Load favorite status for related restaurants on page load
+            function loadFavoriteStatuses() {
+                const favoriteButtons = document.querySelectorAll('.restaurant-card-favorite[data-restaurant-id]');
+                if (favoriteButtons.length === 0) {
+                    console.log('No favorite buttons found');
+                    return;
+                }
+                
+                console.log('Loading favorite statuses for ' + favoriteButtons.length + ' restaurants');
+                
+                // Call API to get favorited restaurant IDs
+                fetch('/customer/favorites/ids')
+                    .then(response => {
+                        if (!response.ok) {
+                            console.log('User not authenticated or error loading favorites (status: ' + response.status + ')');
+                            return [];
+                        }
+                        return response.json();
+                    })
+                    .then(favoritedIds => {
+                        console.log('Favorited restaurant IDs:', favoritedIds);
+                        
+                        // Update UI for each button
+                        favoriteButtons.forEach(button => {
+                            const restaurantId = parseInt(button.getAttribute('data-restaurant-id'));
+                            const icon = button.querySelector('i');
+                            
+                            if (favoritedIds && favoritedIds.includes(restaurantId)) {
+                                button.classList.add('active');
+                                icon.classList.remove('far');
+                                icon.classList.add('fas');
+                                icon.style.color = '#E60023';
+                                console.log('Restaurant ' + restaurantId + ' is favorited');
+                            } else {
+                                button.classList.remove('active');
+                                icon.classList.remove('fas');
+                                icon.classList.add('far');
+                                icon.style.color = '';
+                                console.log('Restaurant ' + restaurantId + ' is NOT favorited');
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.log('Error loading favorite statuses:', error);
+                    });
+            }
+            
+            // Favorite toggle function
+            window.toggleFavorite = function(button, restaurantId) {
+                const icon = button.querySelector('i');
+                const wasFavorited = button.classList.contains('active');
+                
+                console.log('Toggle favorite for restaurant ' + restaurantId + ', current state: ' + (wasFavorited ? 'favorited' : 'not favorited'));
+                
+                // Disable button during request
+                button.disabled = true;
+                button.style.opacity = '0.6';
+                
+                // Toggle favorite via API (handle authentication in backend)
+                fetch('/customer/favorites/toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ restaurantId: restaurantId })
+                })
+                .then(response => {
+                    console.log('Toggle response status:', response.status);
+                    console.log('Toggle response headers:', response.headers);
+                    
+                    if (response.status === 401 || response.status === 403) {
+                        // Not authenticated - redirect to login
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                        if (confirm('Bạn cần đăng nhập để thêm vào danh sách yêu thích. Bạn có muốn đăng nhập không?')) {
+                            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                        }
+                        return null;
+                    }
+                    
+                    if (!response.ok) {
+                        // Try to get error message
+                        return response.text().then(text => {
+                            console.error('Error response body:', text);
+                            try {
+                                return JSON.parse(text);
+                            } catch {
+                                throw new Error('Failed to toggle favorite: ' + response.status + ' - ' + text);
+                            }
+                        });
+                    }
+                    
+                    return response.json().then(data => {
+                        console.log('Parsed JSON response:', data);
+                        return data;
+                    }).catch(err => {
+                        console.error('Error parsing JSON:', err);
+                        return response.text().then(text => {
+                            console.error('Response text:', text);
+                            throw new Error('Invalid JSON response: ' + text);
+                        });
+                    });
+                })
+                .then(data => {
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                    
+                    if (!data) return; // Not authenticated, already handled
+                    
+                    console.log('Toggle response data:', JSON.stringify(data));
+                    
+                    // Check if response has success property
+                    if (data.success === false || (data.success === undefined && data.message)) {
+                        // Show error message
+                        console.error('Toggle favorite failed:', data.message);
+                        showFavoriteNotification(data.message || 'Có lỗi xảy ra', 'error');
+                        return;
+                    }
+                    
+                    if (data.success === true || data.isFavorited !== undefined) {
+                        // Update UI based on server response
+                        const icon = button.querySelector('i');
+                        
+                        if (data.isFavorited === true) {
+                            // Now favorited
+                            console.log('Setting restaurant as favorited');
+                            button.classList.add('active');
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                            icon.style.color = '#E60023';
+                            
+                            // Only show message if state changed
+                            if (!wasFavorited) {
+                                showFavoriteNotification('Đã thêm vào danh sách yêu thích', 'success');
+                            }
+                        } else if (data.isFavorited === false) {
+                            // Now not favorited
+                            console.log('Setting restaurant as NOT favorited');
+                            button.classList.remove('active');
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                            icon.style.color = '';
+                            
+                            // Only show message if state changed
+                            if (wasFavorited) {
+                                showFavoriteNotification('Đã xóa khỏi danh sách yêu thích', 'info');
+                            }
+                        } else {
+                            console.error('Unexpected isFavorited value:', data.isFavorited);
+                        }
+                    } else {
+                        console.error('Unexpected response format:', data);
+                        showFavoriteNotification('Phản hồi không hợp lệ từ server', 'error');
+                    }
+                })
+                .catch(error => {
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                    console.error('Error toggling favorite:', error);
+                    showFavoriteNotification('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
+                });
+            };
+            
+            // Show notification (optional - you can customize this)
+            function showFavoriteNotification(message, type) {
+                // Simple notification - you can replace with a toast library
+                const notification = document.createElement('div');
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'error' ? '#FEE2E2' : type === 'success' ? '#D1FAE5' : '#DBEAFE'};
+                    color: ${type === 'error' ? '#991B1B' : type === 'success' ? '#065F46' : '#1E40AF'};
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 10000;
+                    font-size: 14px;
+                    animation: slideInRight 0.3s ease;
+                `;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideOutRight 0.3s ease';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+            
+            // Setup main restaurant favorite button
+            function setupMainRestaurantFavorite() {
+                const mainFavoriteBtn = document.getElementById('mainRestaurantFavorite');
+                if (!mainFavoriteBtn) return;
+                
+                // Remove existing listeners by cloning
+                const newButton = mainFavoriteBtn.cloneNode(true);
+                mainFavoriteBtn.parentNode.replaceChild(newButton, mainFavoriteBtn);
+                
+                // Add click event listener
+                newButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const restaurantId = parseInt(this.getAttribute('data-restaurant-id'));
+                    console.log('Main restaurant favorite button clicked for restaurant:', restaurantId);
+                    
+                    if (restaurantId) {
+                        toggleMainRestaurantFavorite(this, restaurantId);
+                    } else {
+                        console.error('Restaurant ID not found');
+                    }
+                });
+            }
+            
+            // Load favorite status for main restaurant
+            function loadMainRestaurantFavorite() {
+                const mainFavoriteBtn = document.getElementById('mainRestaurantFavorite');
+                if (!mainFavoriteBtn) return;
+                
+                const restaurantId = parseInt(mainFavoriteBtn.getAttribute('data-restaurant-id'));
+                if (!restaurantId) return;
+                
+                fetch('/customer/favorites/ids')
+                    .then(response => {
+                        if (!response.ok) {
+                            console.log('User not authenticated or error loading favorites');
+                            return [];
+                        }
+                        return response.json();
+                    })
+                    .then(favoritedIds => {
+                        const icon = mainFavoriteBtn.querySelector('i');
+                        if (favoritedIds && favoritedIds.includes(restaurantId)) {
+                            mainFavoriteBtn.classList.add('active');
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                            console.log('Main restaurant ' + restaurantId + ' is favorited');
+                        } else {
+                            mainFavoriteBtn.classList.remove('active');
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                            console.log('Main restaurant ' + restaurantId + ' is NOT favorited');
+                        }
+                    })
+                    .catch(error => {
+                        console.log('Error loading main restaurant favorite:', error);
+                    });
+            }
+            
+            // Toggle favorite for main restaurant
+            window.toggleMainRestaurantFavorite = function(button, restaurantId) {
+                const icon = button.querySelector('i');
+                const wasFavorited = button.classList.contains('active');
+                
+                console.log('Toggle main restaurant favorite for ' + restaurantId + ', current state: ' + (wasFavorited ? 'favorited' : 'not favorited'));
+                
+                // Disable button during request
+                button.disabled = true;
+                button.style.opacity = '0.6';
+                
+                // Optimistic update
+                if (wasFavorited) {
+                    button.classList.remove('active');
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                } else {
+                    button.classList.add('active');
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    button.classList.add('animating');
+                }
+                
+                fetch('/customer/favorites/toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ restaurantId: restaurantId })
+                })
+                .then(response => {
+                    if (response.status === 401 || response.status === 403) {
+                        button.disabled = false;
+                        button.style.opacity = '1';
+                        if (confirm('Bạn cần đăng nhập để thêm vào danh sách yêu thích. Bạn có muốn đăng nhập không?')) {
+                            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+                        }
+                        // Rollback UI
+                        if (wasFavorited) {
+                            button.classList.add('active');
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                        } else {
+                            button.classList.remove('active');
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                        }
+                        return null;
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to toggle favorite: ' + response.status);
+                    }
+                    
+                    return response.json();
+                })
+                .then(data => {
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                    button.classList.remove('animating');
+                    
+                    if (!data) return;
+                    
+                    console.log('Toggle main restaurant favorite response:', data);
+                    
+                    if (data.success) {
+                        if (data.isFavorited === true) {
+                            button.classList.add('active');
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                            if (!wasFavorited) {
+                                showFavoriteNotification('Đã thêm vào danh sách yêu thích', 'success');
+                            }
+                        } else if (data.isFavorited === false) {
+                            button.classList.remove('active');
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                            if (wasFavorited) {
+                                showFavoriteNotification('Đã xóa khỏi danh sách yêu thích', 'info');
+                            }
+                        }
+                    } else {
+                        // Rollback on error
+                        if (wasFavorited) {
+                            button.classList.add('active');
+                            icon.classList.remove('far');
+                            icon.classList.add('fas');
+                        } else {
+                            button.classList.remove('active');
+                            icon.classList.remove('fas');
+                            icon.classList.add('far');
+                        }
+                        showFavoriteNotification(data.message || 'Có lỗi xảy ra', 'error');
+                    }
+                })
+                .catch(error => {
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                    button.classList.remove('animating');
+                    console.error('Error toggling main restaurant favorite:', error);
+                    // Rollback on error
+                    if (wasFavorited) {
+                        button.classList.add('active');
+                        icon.classList.remove('far');
+                        icon.classList.add('fas');
+                    } else {
+                        button.classList.remove('active');
+                        icon.classList.remove('fas');
+                        icon.classList.add('far');
+                    }
+                    showFavoriteNotification('Có lỗi xảy ra khi cập nhật yêu thích', 'error');
+                });
+            };
+            
+            // Load favorite statuses on page load
+            // Check if DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Wait a bit for Thymeleaf to render all elements
+                    setTimeout(function() {
+                        setupFavoriteButtons();
+                        setupMainRestaurantFavorite();
+                        loadFavoriteStatuses();
+                        loadMainRestaurantFavorite();
+                    }, 200);
+                });
+            } else {
+                // DOM already loaded
+                setTimeout(function() {
+                    setupFavoriteButtons();
+                    setupMainRestaurantFavorite();
+                    loadFavoriteStatuses();
+                    loadMainRestaurantFavorite();
+                }, 200);
+            }
+            
+            // Related Restaurants Horizontal Scroll
+            const relatedGrid = document.getElementById('relatedRestaurantsGrid');
+            const prevBtn = document.getElementById('relatedPrevBtn');
+            const nextBtn = document.getElementById('relatedNextBtn');
+            
+            if (relatedGrid && (prevBtn || nextBtn)) {
+                // Update navigation buttons state
+                function updateRelatedNavButtons() {
+                    if (!prevBtn || !nextBtn) return;
+                    
+                    const scrollLeft = relatedGrid.scrollLeft;
+                    const scrollWidth = relatedGrid.scrollWidth;
+                    const clientWidth = relatedGrid.clientWidth;
+                    
+                    prevBtn.disabled = scrollLeft <= 10;
+                    nextBtn.disabled = scrollLeft >= scrollWidth - clientWidth - 10;
+                }
+                
+                // Initial state
+                updateRelatedNavButtons();
+                
+                // Update on scroll
+                relatedGrid.addEventListener('scroll', updateRelatedNavButtons);
+                
+                // Update on resize
+                window.addEventListener('resize', updateRelatedNavButtons);
+            }
+            
+            // Scroll function
+            window.scrollRelatedRestaurants = function(direction) {
+                const grid = document.getElementById('relatedRestaurantsGrid');
+                if (!grid) return;
+                
+                const cardWidth = 280 + 24; // card width + gap
+                const scrollAmount = cardWidth * 2; // Scroll 2 cards at a time
+                
+                if (direction === 'left') {
+                    grid.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                } else if (direction === 'right') {
+                    grid.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                }
+            };
         });
     </script>
 </body>
