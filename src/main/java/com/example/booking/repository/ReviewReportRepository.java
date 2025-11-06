@@ -37,5 +37,10 @@ public interface ReviewReportRepository extends JpaRepository<ReviewReport, Long
     long countByStatus(ReviewReportStatus status);
 
     List<ReviewReport> findByResolvedByAdminId(UUID adminId);
+    
+    /**
+     * Find all review reports for a restaurant
+     */
+    List<ReviewReport> findByRestaurantRestaurantId(Integer restaurantId);
 }
 
