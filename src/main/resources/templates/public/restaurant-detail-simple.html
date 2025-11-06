@@ -861,8 +861,15 @@
                                         Đang mở cửa
                                     </span>
                                     <span class="status-badge status-closed" 
-                                          th:if="${relatedRestaurantsIsOpen == null or !relatedRestaurantsIsOpen[relatedRestaurant.restaurantId]}">
-                                        Đã đóng cửa
+                                          th:unless="${relatedRestaurantsIsOpen != null and relatedRestaurantsIsOpen[relatedRestaurant.restaurantId]}">
+                                        <span th:if="${relatedRestaurant.openingHours != null and !relatedRestaurant.openingHours.trim().isEmpty()}">
+                                            Giờ mở cửa: 
+                                            <span th:with="hours=${#strings.replace(relatedRestaurant.openingHours.trim(), ' ', '')}" 
+                                                  th:text="${#strings.substringBefore(hours, '-')}">10:00</span>
+                                        </span>
+                                        <span th:unless="${relatedRestaurant.openingHours != null and !relatedRestaurant.openingHours.trim().isEmpty()}">
+                                            Đã đóng cửa
+                                        </span>
                                     </span>
                                 </div>
 
