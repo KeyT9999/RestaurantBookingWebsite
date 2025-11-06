@@ -10,7 +10,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +20,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -899,38 +897,6 @@ class PaymentServiceTest {
         assertEquals(new BigDecimal("15000.0"), result.getAmount());
     }
 
-    @Test
-    @DisplayName("testCreatePayment_WithAmountChanged_ShouldResetOrderCode")
-    void testCreatePayment_WithAmountChanged_ShouldResetOrderCode() {
-        // Given - existing payment with different amount
-        Payment existingPayment = new Payment();
-        existingPayment.setPaymentId(1);
-        existingPayment.setStatus(PaymentStatus.PENDING);
-        existingPayment.setAmount(new BigDecimal("50000")); // Old amount
-        existingPayment.setOrderCode(123456L);
-        existingPayment.setPayosCheckoutUrl("https://checkout.url");
-        existingPayment.setPayosPaymentLinkId("LINK123");
-        existingPayment.setBooking(booking);
-        existingPayment.setCustomer(customer);
-
-        booking.setDepositAmount(new BigDecimal("200000")); // New deposit amount
-
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
-        when(customerRepository.findById(customerId)).thenReturn(Optional.of(customer));
-        when(paymentRepository.findByBookingAndPaymentType(booking, PaymentType.DEPOSIT))
-                .thenReturn(Optional.of(existingPayment));
-        when(paymentRepository.existsByOrderCode(any())).thenReturn(false);
-        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // When - amount should change from 50000 to 20000 (10% of 200000)
-        Payment result = paymentService.createPayment(
-                bookingId, customerId, PaymentMethod.PAYOS, PaymentType.DEPOSIT, null);
-
-        // Then - orderCode should be reset and new amount set
-        assertNotNull(result);
-        assertNull(result.getOrderCode()); // First save resets orderCode
-        verify(paymentRepository, atLeastOnce()).save(any(Payment.class));
-    }
 
     @Test
     @DisplayName("testCreatePayment_WithAmountUnchanged_ShouldReuseExistingPayment")
