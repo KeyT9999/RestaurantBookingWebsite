@@ -545,22 +545,56 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Display AI search results
     function displayAIResults(data) {
+        // Build AI interpretation section if available
+        let aiInterpretationHTML = '';
+        if (data.aiInterpretation && data.aiInterpretation.trim() !== '') {
+            aiInterpretationHTML = `
+                <div class="ai-interpretation-box mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-lightbulb me-3" style="font-size: 1.8rem; color: #ffd700; margin-top: 5px;"></i>
+                        <div style="flex: 1;">
+                            <h5 class="text-white mb-2" style="font-weight: 600;">
+                                <i class="fas fa-robot me-2"></i>
+                                Gợi ý của AI
+                            </h5>
+                            <p class="text-white mb-0" style="font-size: 1.1rem; line-height: 1.6;">
+                                ${data.aiInterpretation}
+                            </p>
+                            ${data.suggestedFoods && data.suggestedFoods.length > 0 ? `
+                                <div class="mt-3">
+                                    <small class="text-white-50 d-block mb-2" style="font-weight: 500;">Món ăn được đề xuất:</small>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        ${data.suggestedFoods.map(food => `
+                                            <span class="badge" style="background: rgba(255, 255, 255, 0.25); color: white; padding: 8px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: 500;">
+                                                <i class="fas fa-utensils me-1"></i>${food}
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
         if (!data.recommendations || data.recommendations.length === 0) {
             aiSearchResults.innerHTML = `
-                <div class="text-center">
+                ${aiInterpretationHTML}
+                <div class="text-center" style="padding: 40px 20px;">
                     <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                    <h4 class="text-muted">Không tìm thấy nhà hàng phù hợp</h4>
-                    <p class="text-muted">Hãy thử tìm kiếm với từ khóa khác hoặc mô tả cụ thể hơn.</p>
+                    <h4 class="text-muted">${data.explanation || 'Không tìm thấy nhà hàng phù hợp'}</h4>
+                    <p class="text-muted mt-3">Hãy thử tìm kiếm với từ khóa khác hoặc mô tả cụ thể hơn.</p>
                 </div>
             `;
         } else {
             let resultsHTML = `
-                <div class="ai-results-header">
-                    <h3 class="ai-results-title">
-                        <i class="fas fa-robot me-2"></i>
-                        AI đã tìm thấy ${data.totalFound} nhà hàng phù hợp
+                ${aiInterpretationHTML}
+                <div class="ai-results-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin-bottom: 25px;">
+                    <h3 class="ai-results-title" style="color: white; margin-bottom: 10px;">
+                        <i class="fas fa-check-circle me-2"></i>
+                        ${data.explanation || `AI đã tìm thấy ${data.totalFound} nhà hàng phù hợp`}
                     </h3>
-                    <p class="ai-results-subtitle">${data.explanation}</p>
                 </div>
                 <div class="row">
             `;

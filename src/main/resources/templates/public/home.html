@@ -635,6 +635,23 @@
 
                 <div class="ai-result-card" id="aiResultsPanel" hidden>
                     <div class="ai-summary" id="aiResultsSummary"></div>
+                    <!-- AI Interpretation Box -->
+                    <div class="ai-interpretation-box" id="aiInterpretationBox" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 20px; margin: 20px 0; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                        <div style="display: flex; align-items: start; gap: 15px;">
+                            <i class="fas fa-lightbulb" style="font-size: 1.8rem; color: #ffd700; margin-top: 5px;"></i>
+                            <div style="flex: 1;">
+                                <h5 style="color: white; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-robot"></i>
+                                    Gợi ý của AI
+                                </h5>
+                                <p id="aiInterpretationText" style="color: white; font-size: 1.1rem; line-height: 1.6; margin-bottom: 0;"></p>
+                                <div id="aiSuggestedFoods" style="margin-top: 15px; display: none;">
+                                    <small style="color: rgba(255,255,255,0.8); font-weight: 500; display: block; margin-bottom: 8px;">Món ăn được đề xuất:</small>
+                                    <div id="aiSuggestedFoodsList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="ai-explanation" id="aiResultsExplanation"></div>
                     <div class="ai-confidence" id="aiResultsConfidence" hidden>
                         <i class="fas fa-signal"></i>
