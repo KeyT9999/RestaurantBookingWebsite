@@ -1,0 +1,95 @@
+@startuml Restaurant Booking System - Context Diagram
+
+title Restaurant Booking System - Context Diagram (DFD Level 0)
+
+skinparam componentStyle rectangle
+skinparam defaultFontSize 11
+skinparam linetype ortho
+skinparam roundcorner 15
+skinparam shadowing false
+skinparam maxMessageSize 50
+
+skinparam rectangle {
+    BackgroundColor #E8F4F8
+    BorderColor #2C5F7C
+    RoundCorner 15
+}
+
+' Hệ thống trung tâm
+component [Restaurant Booking System] as System #FFE6E6
+
+' Các thực thể bên ngoài - sắp xếp theo chiều dọc bên trái
+rectangle Customer #LightBlue
+rectangle "Restaurant Owner" as Owner #LightBlue
+rectangle Admin #LightBlue
+rectangle "Payment Gateway" as Payment #LightBlue
+
+' Layout: Tất cả entities bên trái, system bên phải
+Customer -[hidden]left- System
+Owner -[hidden]left- System
+Admin -[hidden]left- System
+Payment -[hidden]left- System
+
+' Sắp xếp entities theo chiều dọc
+Customer -[hidden]up- Owner
+Owner -[hidden]down- Admin
+Admin -[hidden]down- Payment
+
+' ===== CUSTOMER FLOWS =====
+' Incoming flows (Customer -> System)
+Customer -[#2E7D32]-> System : Booking Request
+Customer -[#2E7D32]-> System : Payment Request
+Customer -[#2E7D32]-> System : Review & Favorite
+
+' Outgoing flows (System -> Customer)
+System -[#388E3C]-> Customer : Booking Confirmation
+System -[#388E3C]-> Customer : Restaurant Info
+System -[#388E3C]-> Customer : AI Recommendations
+
+' ===== RESTAURANT OWNER FLOWS =====
+' Incoming flows (Owner -> System)
+Owner -[#F57C00]-> System : Restaurant Info
+Owner -[#F57C00]-> System : Table & Booking Mgmt
+Owner -[#F57C00]-> System : Withdrawal Request
+
+' Outgoing flows (System -> Owner)
+System -[#FB8C00]-> Owner : Booking Notification
+System -[#FB8C00]-> Owner : Payment Status
+System -[#FB8C00]-> Owner : Restaurant Statistics
+
+' ===== ADMIN FLOWS =====
+' Incoming flows (Admin -> System)
+Admin -[#7B1FA2]-> System : Restaurant Approval
+Admin -[#7B1FA2]-> System : User Management
+Admin -[#7B1FA2]-> System : Refund Approval
+
+' Outgoing flows (System -> Admin)
+System -[#9C27B0]-> Admin : Restaurant Status
+System -[#9C27B0]-> Admin : User Information
+System -[#9C27B0]-> Admin : System Statistics
+
+' ===== PAYMENT GATEWAY FLOWS =====
+' Incoming flows (Payment -> System)
+Payment -[#C62828]-> System : Payment Confirmation
+
+' Outgoing flows (System -> Payment)
+System -[#D32F2F]-> Payment : Payment Request
+
+legend right
+  |<#LightBlue> **External Entities** |
+  | Customer |
+  | Restaurant Owner |
+  | Admin |
+  | Payment Gateway |
+  |
+  |<#FFE6E6> **System** |
+  | Restaurant Booking System |
+  |
+  | **Flow Colors** |
+  |<#2E7D32> Customer Flows |
+  |<#F57C00> Owner Flows |
+  |<#7B1FA2> Admin Flows |
+  |<#C62828> Payment Flows |
+endlegend
+
+@enduml

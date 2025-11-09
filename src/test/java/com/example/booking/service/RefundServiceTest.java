@@ -744,7 +744,8 @@ public class RefundServiceTest {
             .thenReturn(Optional.of(testRefundRequest));
 
         // When & Then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+        // Note: IllegalStateException is wrapped in RuntimeException by the service
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
             refundService.generateVietQRForRefund(refundRequestId)
         );
         assertTrue(exception.getMessage().contains("Customer bank information is missing"));
@@ -822,8 +823,10 @@ public class RefundServiceTest {
         // Then: Should succeed even with negative balance
         assertNotNull(result);
         verify(restaurantBalanceService).saveBalance(any(RestaurantBalance.class));
-        // Balance becomes -400000 (100000 - 500000)
-        assertEquals(1, testBalance.getAvailableBalance().compareTo(new BigDecimal("0")) < 0 ? -1 : 0);
+        // Balance becomes -400000 (100000 - 500000), so it should be negative
+        assertTrue(testBalance.getAvailableBalance().compareTo(BigDecimal.ZERO) < 0, 
+            "Balance should be negative after refund exceeds available balance");
+        assertEquals(new BigDecimal("-400000"), testBalance.getAvailableBalance());
     }
 
     @Test
