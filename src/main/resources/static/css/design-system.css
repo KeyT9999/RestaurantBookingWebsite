@@ -1213,18 +1213,51 @@ body {
     box-shadow: var(--ds-shadow-lg);
 }
 
+/* Make "Thông báo" text larger */
+.notification-bell__menu .dropdown-header .notification-bell__all-link {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+}
+
+.notification-bell__menu .dropdown-header .notification-bell__all-link i {
+    font-size: 1.25rem !important;
+}
+
 .notification-bell__list li {
     list-style: none;
+    margin: var(--ds-space-2) var(--ds-space-3);
+    padding: 0;
 }
 
 .notification-bell__link {
     gap: var(--ds-space-2);
-    padding: var(--ds-space-2) var(--ds-space-4);
-    border-radius: var(--ds-radius-md);
+    padding: var(--ds-space-3) var(--ds-space-4);
+    border-radius: 12px;
+    border: 1px solid var(--ds-neutral-200, #E8E5D8);
+    background-color: var(--ds-neutral-50, #FFFEF7);
+    display: block;
+    transition: all 0.2s ease;
+    margin: 0;
 }
 
 .notification-bell__link:hover {
     background: var(--ds-neutral-100);
+    border-color: var(--ds-primary-black, #4A90E2);
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
+    transform: translateY(-1px);
+}
+
+/* Change "Xem tất cả thông báo" text color to black */
+.notification-bell__menu .notification-bell__view-all {
+    color: #000 !important;
+}
+
+.notification-bell__menu .notification-bell__view-all:hover {
+    color: #000 !important;
+}
+
+.notification-bell__menu .notification-bell__view-all i {
+    color: #000 !important;
 }
 
 .ds-user-dropdown {

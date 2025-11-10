@@ -1187,9 +1187,16 @@ public class BookingService {
             notification.setRecipientUserId(recipientUserId);
             notification.setType(NotificationType.BOOKING_CONFIRMED);
             notification.setTitle("Đặt bàn thành công");
+            
+            // Get restaurant name
+            String restaurantName = "Nhà hàng";
+            if (booking.getRestaurant() != null && booking.getRestaurant().getRestaurantName() != null) {
+                restaurantName = booking.getRestaurant().getRestaurantName();
+            }
+            
             notification.setContent(String.format(
-                    "Bạn đã đặt bàn thành công! Booking ID: %d, Thời gian: %s, Số khách: %d",
-                    booking.getBookingId(),
+                    "Bạn đã đặt bàn thành công! Nhà hàng: %s, Thời gian: %s, Số khách: %d",
+                    restaurantName,
                     booking.getBookingTime().toString(),
                     booking.getNumberOfGuests()));
             notification.setLinkUrl("/booking/my");

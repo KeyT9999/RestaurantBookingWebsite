@@ -467,16 +467,26 @@ a:hover {
 
 .notification-bell__list li {
     list-style: none;
+    margin: 0.5rem 0.75rem;
+    padding: 0;
 }
 
 .notification-bell__link {
     gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-light, #E8E5D8);
+    background-color: var(--background-white, #FFFEF7);
+    display: block;
+    transition: all 0.2s ease;
+    margin: 0;
 }
 
 .notification-bell__link:hover {
     background-color: rgba(74, 144, 226, 0.08);
+    border-color: var(--primary-blue, #4A90E2);
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
+    transform: translateY(-1px);
 }
 
 /* Prevent layout shift */
@@ -2037,6 +2047,16 @@ section {
     opacity: 1 !important;
 }
 
+/* Make "Thông báo" text larger */
+.notification-bell__menu .dropdown-header .notification-bell__all-link {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+}
+
+.notification-bell__menu .dropdown-header .notification-bell__all-link i {
+    font-size: 1.25rem !important;
+}
+
 /* Ensure notification items are readable */
 .notification-bell__menu .dropdown-item {
     background-color: #ffffff !important;
@@ -2046,6 +2066,41 @@ section {
 .notification-bell__menu .dropdown-item:hover {
     background-color: #f8f9fa !important;
     color: #333333 !important;
+}
+
+/* Enhanced notification item styling with clear separation */
+.notification-bell__menu .notification-bell__list li {
+    margin: 0.5rem 0.75rem !important;
+    padding: 0 !important;
+}
+
+.notification-bell__menu .notification-bell__link {
+    border: 1px solid var(--border-light, #E8E5D8) !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1rem !important;
+    margin: 0 !important;
+    background-color: var(--background-white, #FFFEF7) !important;
+    transition: all 0.2s ease !important;
+}
+
+.notification-bell__menu .notification-bell__link:hover {
+    border-color: var(--primary-blue, #4A90E2) !important;
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15) !important;
+    transform: translateY(-1px) !important;
+    background-color: rgba(74, 144, 226, 0.08) !important;
+}
+
+/* Change "Xem tất cả thông báo" text color to black */
+.notification-bell__menu .notification-bell__view-all {
+    color: #000 !important;
+}
+
+.notification-bell__menu .notification-bell__view-all:hover {
+    color: #000 !important;
+}
+
+.notification-bell__menu .notification-bell__view-all i {
+    color: #000 !important;
 }
 
 /* Ensure notification header is readable */
