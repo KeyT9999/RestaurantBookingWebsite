@@ -1619,10 +1619,8 @@ public class RestaurantOwnerController {
             bookingTableRepository.deleteByBooking(bookingEntity);
             
             // Create new booking table assignment
-            BookingTable newBookingTable = new BookingTable();
-            newBookingTable.setBooking(bookingEntity);
-            newBookingTable.setTable(newTable);
-            newBookingTable.setAssignedAt(LocalDateTime.now());
+            BookingTable newBookingTable = new BookingTable(bookingEntity, newTable);
+            // Constructor sẽ tự động snapshot phí bàn và set assignedAt
             
             // Save the new booking table assignment
             bookingTableRepository.save(newBookingTable);

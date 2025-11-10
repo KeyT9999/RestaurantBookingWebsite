@@ -1999,10 +1999,13 @@
             
             // Calculate final total with voucher discount
             const finalTotal = Math.max(0, subtotal - voucherDiscount);
-            document.getElementById('totalDepositAmount').textContent = formatCurrency(finalTotal);
+            
+            // Calculate deposit = 10% of final total (after voucher discount)
+            const depositAmount = Math.round(finalTotal * 0.1);
+            document.getElementById('totalDepositAmount').textContent = formatCurrency(depositAmount);
             
             // Update hidden input
-            document.getElementById('depositAmount').value = finalTotal;
+            document.getElementById('depositAmount').value = depositAmount;
         }
 
         function formatCurrency(amount) {

@@ -253,8 +253,8 @@
                         <div class="ds-grid ds-grid-auto ds-gap-6">
                             <div class="ds-flex ds-flex-col ds-gap-3">
                                 <div class="ds-flex ds-justify-between ds-items-center ds-p-3 ds-bg-gray-50 ds-rounded">
-                                    <span class="ds-text-base">Tiền đặt cọc</span>
-                                    <span class="ds-text-base ds-font-medium" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">500.000đ</span>
+                                    <span class="ds-text-base">Phí bàn</span>
+                                    <span class="ds-text-base ds-font-medium" th:text="${#numbers.formatDecimal((booking.bookingTables != null and !booking.bookingTables.empty) ? #aggregates.sum(booking.bookingTables.![tableFee]) : 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</span>
                                 </div>
                                 <div class="ds-flex ds-justify-between ds-items-center ds-p-3 ds-bg-gray-50 ds-rounded">
                                     <span class="ds-text-base">Tổng tiền món ăn</span>
@@ -264,12 +264,16 @@
                                     <span class="ds-text-base">Tổng tiền dịch vụ</span>
                                     <span class="ds-text-base ds-font-medium" th:text="${#numbers.formatDecimal((booking.bookingServices != null and !booking.bookingServices.empty) ? #aggregates.sum(booking.bookingServices.![totalPrice]) : 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">100.000đ</span>
                                 </div>
+                                <div class="ds-flex ds-justify-between ds-items-center ds-p-3 ds-bg-yellow-50 ds-rounded">
+                                    <span class="ds-text-base">Tiền đặt cọc (10%)</span>
+                                    <span class="ds-text-base ds-font-medium" th:text="${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')} + 'đ'">500.000đ</span>
+                                </div>
                             </div>
                             <div class="ds-flex ds-flex-col ds-gap-3">
                                 <div class="ds-flex ds-justify-between ds-items-center ds-p-4 ds-bg-primary ds-text-white ds-rounded">
                                     <span class="ds-text-lg ds-font-semibold">Tổng cộng</span>
                                     <span class="ds-text-xl ds-font-bold" 
-                                          th:text="${#numbers.formatDecimal(booking.depositAmount + ((booking.bookingDishes != null and !booking.bookingDishes.empty) ? #aggregates.sum(booking.bookingDishes.![totalPrice]) : 0) + ((booking.bookingServices != null and !booking.bookingServices.empty) ? #aggregates.sum(booking.bookingServices.![totalPrice]) : 0), 0, 'COMMA', 0, 'POINT')} + 'đ'">800.000đ</span>
+                                          th:text="${#numbers.formatDecimal(((booking.bookingTables != null and !booking.bookingTables.empty) ? #aggregates.sum(booking.bookingTables.![tableFee]) : 0) + ((booking.bookingDishes != null and !booking.bookingDishes.empty) ? #aggregates.sum(booking.bookingDishes.![totalPrice]) : 0) + ((booking.bookingServices != null and !booking.bookingServices.empty) ? #aggregates.sum(booking.bookingServices.![totalPrice]) : 0), 0, 'COMMA', 0, 'POINT')} + 'đ'">800.000đ</span>
                                 </div>
                             </div>
                         </div>

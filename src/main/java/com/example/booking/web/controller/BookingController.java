@@ -225,16 +225,8 @@ public class BookingController {
             System.out.println("✅ Booking created successfully! ID: " + booking.getBookingId());
 
             // Booking created successfully, redirect to payment
-            java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
-            if (totalAmount == null || totalAmount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
-                totalAmount = booking.getDepositAmount() != null ? booking.getDepositAmount() : java.math.BigDecimal.ZERO;
-            }
-            java.math.BigDecimal depositAmount;
-            if (totalAmount.compareTo(java.math.BigDecimal.ZERO) > 0) {
-                depositAmount = totalAmount.multiply(new java.math.BigDecimal("0.1"));
-            } else {
-                depositAmount = booking.getDepositAmount() != null ? booking.getDepositAmount() : java.math.BigDecimal.ZERO;
-            }
+            // Deposit has already been calculated in createBooking() as 10% of subtotal
+            java.math.BigDecimal depositAmount = booking.getDepositAmount() != null ? booking.getDepositAmount() : java.math.BigDecimal.ZERO;
             String formattedDeposit = String.format("%,.0f", depositAmount);
 
             redirectAttributes.addFlashAttribute("successMessage",

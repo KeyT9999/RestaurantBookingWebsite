@@ -348,7 +348,8 @@ public class BookingApiController {
             detailsDto.setBookingId(booking.getBookingId());
             detailsDto.setRestaurantName(booking.getRestaurant().getRestaurantName());
 
-            // Get all table names
+            // Get all table names and calculate table fees total
+            BigDecimal tableFeesTotal = BigDecimal.ZERO;
             if (booking.getBookingTables() != null && !booking.getBookingTables().isEmpty()) {
                 List<String> tableNames = booking.getBookingTables().stream()
                         .map(bt -> bt.getTable().getTableName())
@@ -357,7 +358,13 @@ public class BookingApiController {
 
                 // Set first table name for backward compatibility
                 detailsDto.setTableName(tableNames.get(0));
+                
+                // Calculate total table fees
+                tableFeesTotal = booking.getBookingTables().stream()
+                        .map(bt -> bt.getTableFee() != null ? bt.getTableFee() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
             }
+            detailsDto.setTableFeesTotal(tableFeesTotal);
 
             // Get dishes
             if (booking.getBookingDishes() != null && !booking.getBookingDishes().isEmpty()) {

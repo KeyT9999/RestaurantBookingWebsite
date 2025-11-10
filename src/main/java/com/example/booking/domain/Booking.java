@@ -60,6 +60,10 @@ public class Booking {
     @DecimalMin(value = "0.0", message = "Số tiền đặt cọc không được âm")
     private BigDecimal depositAmount = BigDecimal.ZERO;
     
+    @Column(name = "total_amount", precision = 18, scale = 2, nullable = false)
+    @DecimalMin(value = "0.0", message = "Tổng tiền không được âm")
+    private BigDecimal totalAmount = BigDecimal.ZERO;
+    
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
@@ -165,6 +169,14 @@ public class Booking {
     
     public void setDepositAmount(BigDecimal depositAmount) {
         this.depositAmount = depositAmount;
+    }
+    
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+    
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount != null ? totalAmount : BigDecimal.ZERO;
     }
     
     public String getNote() {

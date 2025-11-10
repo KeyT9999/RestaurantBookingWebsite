@@ -44,6 +44,9 @@ public class PaymentService {
     @Autowired
     private CustomerRepository customerRepository;
     
+    @Autowired
+    private BookingService bookingService;
+    
     // Voucher repository is not required for current PayOS flow
 
     // PayOsService is used indirectly through webhook processing
@@ -500,16 +503,14 @@ public class PaymentService {
     }
     
     /**
-     * Calculate full payment amount including all items
+     * Calculate full payment amount including all items (excluding deposit)
      * @param booking The booking
-     * @return Full payment amount
+     * @return Full payment amount (subtotal = table fees + dishes + services)
      */
     private BigDecimal calculateFullPaymentAmount(Booking booking) {
-        // Use BookingService's calculateTotalAmount which includes:
-        // - Deposit amount (table fees)
-        // - Dish prices from bookingDishes
-        // - Service prices from bookingServices
-        return calculateTotalAmount(booking);
+        // Sử dụng BookingService.calculateSubtotal() để lấy subtotal
+        // Subtotal = table fees + dishes + services (KHÔNG bao gồm deposit)
+        return bookingService.calculateSubtotal(booking);
     }
     
     /**
@@ -632,27 +633,12 @@ public class PaymentService {
     }
 
     /**
-     * Calculate total amount for booking
+     * Calculate total amount for booking (internal method)
+     * Note: This method is kept for backward compatibility but uses BookingService.calculateSubtotal()
      */
     private BigDecimal calculateTotalAmount(Booking booking) {
-        BigDecimal totalAmount = booking.getDepositAmount();
-
-        // Add dish prices if any
-        if (booking.getBookingDishes() != null) {
-            for (com.example.booking.domain.BookingDish bookingDish : booking.getBookingDishes()) {
-                totalAmount = totalAmount
-                        .add(bookingDish.getDish().getPrice().multiply(new BigDecimal(bookingDish.getQuantity())));
-            }
-        }
-
-        // Add service prices if any
-        if (booking.getBookingServices() != null) {
-            for (com.example.booking.domain.BookingService bookingService : booking.getBookingServices()) {
-                totalAmount = totalAmount.add(
-                        bookingService.getService().getPrice().multiply(new BigDecimal(bookingService.getQuantity())));
-            }
-        }
-
-        return totalAmount;
+        // Sử dụng BookingService.calculateSubtotal() thay vì tự tính
+        // Để đảm bảo consistency với logic tính toán
+        return bookingService.calculateSubtotal(booking);
     }
 }
