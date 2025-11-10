@@ -30,7 +30,7 @@ class CustomerChatManager {
     this.setupEventListeners();
     this.setupRoomClickHandlers();
     this.setupInfiniteScroll();
-    this.loadAvailableRestaurants(); // Load restaurant list on page load
+    this.loadAllRoomLogos();
   }
 
   // Load user information from server
@@ -174,10 +174,22 @@ class CustomerChatManager {
   // Setup room click handlers
   setupRoomClickHandlers() {
     document.addEventListener("click", (e) => {
-      const roomItem = e.target.closest(".restaurant-item");
+      // Handle AI Assistant item
+      const aiAssistantItem = e.target.closest(".ai-assistant-room-item");
+      if (aiAssistantItem) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.startChatWithAI();
+        return;
+      }
+      
+      // Handle chat room items
+      const roomItem = e.target.closest(".chat-room-item");
       if (roomItem) {
-        const roomId = roomItem.dataset.restaurantId;
+        const roomId = roomItem.dataset.roomId;
         if (roomId) {
+          e.preventDefault();
+          e.stopPropagation();
           this.joinRoom(roomId);
         }
       }
@@ -208,7 +220,7 @@ class CustomerChatManager {
 
     if (restaurants.length === 0) {
       restaurantList.innerHTML =
-        '<div class="text-center text-muted"><small>Không có nhà hàng nào</small></div>';
+        '<div class="loading-state"><small>Không có nhà hàng nào</small></div>';
       return;
     }
 
@@ -216,10 +228,18 @@ class CustomerChatManager {
     const aiRestaurant = restaurants.find((r) => r.restaurantId === 37);
     const otherRestaurants = restaurants.filter((r) => r.restaurantId !== 37);
 
-    // Add AI restaurant first with special container
-    if (aiRestaurant) {
-      const aiContainer = this.createAIContainer(aiRestaurant);
-      restaurantList.appendChild(aiContainer);
+    // AI Assistant is already in HTML, just update the button handler
+    const aiChatBtn = document.getElementById("start-ai-chat-btn");
+    if (aiChatBtn && aiRestaurant) {
+      // Remove existing listeners by cloning
+      const newBtn = aiChatBtn.cloneNode(true);
+      aiChatBtn.parentNode.replaceChild(newBtn, aiChatBtn);
+      
+      // Add new listener
+      newBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.startChatWithAI();
+      });
     }
 
     // Add other restaurants
@@ -229,49 +249,10 @@ class CustomerChatManager {
     });
   }
 
-  // Create special AI container
+  // AI Assistant is now in HTML template, this method is kept for compatibility
   createAIContainer(restaurant) {
-    const container = document.createElement("div");
-    container.className = "ai-restaurant-container";
-
-    container.innerHTML = `
-      <div class="ai-restaurant-header">
-        <h6 class="ai-section-title">
-          <i class="fas fa-robot text-gold"></i>
-          Trợ lý AI
-        </h6>
-      </div>
-      <div class="ai-restaurant-item" data-restaurant-id="37">
-        <div class="ai-restaurant-avatar">
-          <i class="fas fa-robot"></i>
-        </div>
-        <div class="ai-restaurant-info">
-          <div class="ai-restaurant-name">AI Assistant</div>
-          <div class="ai-restaurant-description">Trợ lý thông minh của bạn</div>
-          <div class="ai-restaurant-status">
-            <span class="status-dot ai-status"></span>
-            <span>Luôn sẵn sàng</span>
-          </div>
-        </div>
-        <div class="ai-restaurant-actions">
-          <button class="btn btn-gold btn-sm start-ai-chat-btn">
-            <i class="fas fa-comments"></i>
-            Chat
-          </button>
-        </div>
-      </div>
-    `;
-
-    // Add click handler for AI restaurant
-    const aiChatBtn = container.querySelector(".start-ai-chat-btn");
-    if (aiChatBtn) {
-      aiChatBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.startChatWithAI();
-      });
-    }
-
-    return container;
+    // AI Assistant entry is already in HTML, just return null
+    return null;
   }
 
   // Create restaurant item element
@@ -279,32 +260,30 @@ class CustomerChatManager {
     const template = document.getElementById("restaurant-item-template");
     const item = template.content.cloneNode(true);
 
-    const restaurantItem = item.querySelector(".restaurant-item");
+    const restaurantEntry = item.querySelector(".restaurant-entry");
     const nameElement = item.querySelector(".restaurant-name");
     const addressElement = item.querySelector(".restaurant-address");
     const startChatBtn = item.querySelector(".start-chat-btn");
-    const unreadElement = item.querySelector(".restaurant-unread");
 
-    restaurantItem.dataset.restaurantId = restaurant.restaurantId;
+    restaurantEntry.dataset.restaurantId = restaurant.restaurantId;
     // Add room ID if available
     if (restaurant.roomId) {
-      restaurantItem.dataset.roomId = restaurant.roomId;
+      restaurantEntry.dataset.roomId = restaurant.roomId;
     }
 
     nameElement.textContent = restaurant.restaurantName || "Nhà hàng";
     addressElement.textContent = restaurant.address || "Địa chỉ không xác định";
 
-    // Show unread count if available
-    if (restaurant.unreadCount && restaurant.unreadCount > 0) {
-      unreadElement.textContent = restaurant.unreadCount;
-      unreadElement.style.display = "flex";
-    } else {
-      unreadElement.style.display = "none";
-    }
-
     startChatBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       this.startChatWithRestaurant(restaurant);
+    });
+
+    // Also make the whole entry clickable
+    restaurantEntry.addEventListener("click", (e) => {
+      if (e.target !== startChatBtn) {
+        this.startChatWithRestaurant(restaurant);
+      }
     });
 
     return item;
@@ -313,6 +292,22 @@ class CustomerChatManager {
   // Start chat with AI
   async startChatWithAI() {
     try {
+      // Update header immediately for AI
+      const participantNameElement = document.getElementById("participant-name");
+      const addressElement = document.getElementById("participant-address");
+      const participantIcon = document.getElementById("participant-icon");
+      
+      if (participantNameElement) {
+        participantNameElement.textContent = "Trợ lý AI";
+      }
+      if (addressElement) {
+        addressElement.textContent = "Trợ lý thông minh của bạn";
+        addressElement.style.display = "block";
+      }
+      if (participantIcon) {
+        participantIcon.className = "fas fa-robot";
+      }
+      
       const response = await fetch("/api/chat/rooms", {
         method: "POST",
         headers: {
@@ -367,6 +362,9 @@ class CustomerChatManager {
       // Show loading state
       this.showLoadingState();
 
+      // Load room info to get restaurant name
+      await this.loadRoomInfo(roomId);
+
       // Join room via WebSocket
       if (this.isConnected) {
         console.log("🔗 Joining room via WebSocket:", roomId);
@@ -396,6 +394,149 @@ class CustomerChatManager {
     } catch (error) {
       console.error("Error joining room:", error);
       this.showError("Lỗi khi tham gia cuộc trò chuyện");
+    }
+  }
+
+  // Load room info to display restaurant name and address
+  async loadRoomInfo(roomId) {
+    try {
+      // First try to get info from room item in sidebar
+      const roomItem = document.querySelector(`[data-room-id="${roomId}"]`);
+      if (roomItem) {
+        const roomNameElement = roomItem.querySelector(".room-name");
+        const restaurantId = roomItem.dataset.restaurantId;
+        
+        if (roomNameElement) {
+          const participantNameElement = document.getElementById("participant-name");
+          if (participantNameElement) {
+            participantNameElement.textContent = roomNameElement.textContent;
+          }
+          
+          // Try to load restaurant address and logo from API
+          if (restaurantId) {
+            try {
+              const restaurantResponse = await fetch(`/api/booking/restaurants/${restaurantId}`);
+              if (restaurantResponse.ok) {
+                const restaurant = await restaurantResponse.json();
+                const addressElement = document.getElementById("participant-address");
+                if (addressElement && restaurant.address) {
+                  addressElement.textContent = restaurant.address;
+                  addressElement.style.display = "block";
+                }
+                
+                // Load restaurant logo
+                await this.loadRestaurantLogo(restaurantId, roomItem);
+              }
+            } catch (error) {
+              console.error("Error loading restaurant info:", error);
+            }
+          }
+        }
+      }
+      
+      // Also try to get from API if available
+      try {
+        const response = await fetch(`/api/chat/rooms/${roomId}`);
+        if (response.ok) {
+          const roomData = await response.json();
+          // Update restaurant name in header
+          const participantNameElement = document.getElementById("participant-name");
+          if (participantNameElement && roomData.restaurantName) {
+            participantNameElement.textContent = roomData.restaurantName;
+          }
+          
+          // Try to get restaurant address and logo
+          if (roomData.restaurantId) {
+            try {
+              const restaurantResponse = await fetch(`/api/booking/restaurants/${roomData.restaurantId}`);
+              if (restaurantResponse.ok) {
+                const restaurant = await restaurantResponse.json();
+                const addressElement = document.getElementById("participant-address");
+                if (addressElement && restaurant.address) {
+                  addressElement.textContent = restaurant.address;
+                  addressElement.style.display = "block";
+                }
+                
+                // Load restaurant logo
+                const roomItem = document.querySelector(`[data-room-id="${roomId}"]`);
+                if (roomItem) {
+                  await this.loadRestaurantLogo(roomData.restaurantId, roomItem);
+                }
+              }
+            } catch (error) {
+              console.error("Error loading restaurant info:", error);
+            }
+          }
+          
+          // Update icon if needed
+          const participantIcon = document.getElementById("participant-icon");
+          if (participantIcon) {
+            if (roomData.restaurantId === 37) {
+              participantIcon.className = "fas fa-robot";
+            } else if (roomData.participantRole === 'ADMIN') {
+              participantIcon.className = "fas fa-user-shield";
+            } else {
+              participantIcon.className = "fas fa-store";
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading room info from API:", error);
+      }
+    } catch (error) {
+      console.error("Error loading room info:", error);
+    }
+  }
+
+  // Load logos for all room items
+  async loadAllRoomLogos() {
+    const roomItems = document.querySelectorAll('.chat-room-item[data-restaurant-id]');
+    for (const roomItem of roomItems) {
+      const restaurantId = roomItem.dataset.restaurantId;
+      if (restaurantId) {
+        await this.loadRestaurantLogo(restaurantId, roomItem);
+      }
+    }
+  }
+
+  // Load restaurant logo for room item
+  async loadRestaurantLogo(restaurantId, roomItem) {
+    try {
+      // Try to get logo from logo API
+      const logoResponse = await fetch(`/api/booking/restaurants/${restaurantId}/logo`);
+      if (logoResponse.ok) {
+        const logoData = await logoResponse.json();
+        if (logoData.logoUrl) {
+          const avatarElement = roomItem.querySelector('.room-avatar');
+          if (avatarElement) {
+            const existingImg = avatarElement.querySelector('.avatar-image');
+            const fallback = avatarElement.querySelector('.avatar-fallback');
+            if (existingImg) {
+              existingImg.src = logoData.logoUrl;
+              existingImg.style.display = 'block';
+              if (fallback) fallback.style.display = 'none';
+            } else {
+              // Create new img element
+              const img = document.createElement('img');
+              img.src = logoData.logoUrl;
+              img.className = 'avatar-image';
+              img.alt = 'Restaurant Logo';
+              img.onerror = function() {
+                this.style.display = 'none';
+                if (fallback) fallback.style.display = 'flex';
+              };
+              if (fallback) {
+                fallback.style.display = 'none';
+                avatarElement.insertBefore(img, fallback);
+              } else {
+                avatarElement.appendChild(img);
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error loading restaurant logo:", error);
     }
   }
 
@@ -779,15 +920,31 @@ class CustomerChatManager {
 
   // Update room selection
   updateRoomSelection(roomId) {
-    // Remove active class from all rooms
-    document.querySelectorAll(".restaurant-item").forEach((item) => {
+    // Remove active class from all rooms and AI assistant
+    document.querySelectorAll(".chat-room-item, .ai-assistant-room-item").forEach((item) => {
       item.classList.remove("active");
     });
 
     // Add active class to current room
-    const currentRoom = document.querySelector(`[data-restaurant-id="${roomId}"]`);
+    const currentRoom = document.querySelector(`[data-room-id="${roomId}"]`);
     if (currentRoom) {
       currentRoom.classList.add("active");
+    } else {
+      // If room not found, check if it's AI restaurant by checking restaurantId in room data
+      // Try to get room info to check restaurantId
+      fetch(`/api/chat/rooms/${roomId}`)
+        .then(response => response.ok ? response.json() : null)
+        .then(roomData => {
+          if (roomData && roomData.restaurantId === 37) {
+            const aiItem = document.getElementById("ai-assistant-room-item");
+            if (aiItem) {
+              aiItem.classList.add("active");
+            }
+          }
+        })
+        .catch(error => {
+          console.error("Error checking room for AI:", error);
+        });
     }
   }
 
@@ -939,7 +1096,8 @@ function showNotification(roomId, unreadCount) {
   }, 3000);
 }
 
-// Initialize chat manager when DOM is loaded
+// Initialize chat manager when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   window.chatManager = new CustomerChatManager();
+  window.customerChatManager = window.chatManager; // Also expose as customerChatManager for HTML scripts
 });
