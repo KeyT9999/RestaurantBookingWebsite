@@ -10,115 +10,698 @@
 	<link th:href="@{/css/design-system.css}" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
 	<style>
-		/* Page baseline light/blue */
-		.page-bg { background-color: var(--background-light); min-height:100vh; }
-		.section-title { color: var(--text-dark); font-family: var(--font-heading); font-weight: 700; }
+		/* Page baseline - Black & White */
+		.page-bg { 
+			background-color: #F5F5F5; 
+			min-height: 100vh; 
+		}
 		
-		.notification-card { background: var(--background-white); border:1px solid var(--border-light); color: var(--text-dark); border-radius:12px; transition: var(--transition); margin-bottom:1rem; box-shadow: var(--shadow-card); }
-		.notification-card:hover { transform:translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--primary-blue); }
-		.notification-card.unread { border-left:4px solid var(--primary-blue); }
-		.badge-role, .badge-status { font-size:.8rem; }
-		.table-muted { color: var(--text-light); }
+		.notifications-container {
+			max-width: 1200px;
+			margin: 0 auto;
+			padding: 2rem 1rem;
+		}
 		
-		.pagination .page-link { background: var(--background-white); color: var(--primary-blue); border-color: var(--border-light); }
-		.pagination .page-item.active .page-link { background: var(--primary-blue); color:#fff; border-color: var(--primary-blue); }
-		.pagination .page-link:hover { background: var(--background-light); color: var(--primary-blue-dark); }
+		.section-title { 
+			color: #000000; 
+			font-family: var(--font-heading, 'Inter', sans-serif); 
+			font-weight: 700; 
+			font-size: 2rem;
+			margin-bottom: 0;
+		}
 		
-		.btn-gold { background: var(--primary-blue); border-color: var(--primary-blue); color:#fff; box-shadow: var(--shadow-button); }
-		.btn-gold:hover { background: var(--primary-blue-dark); border-color: var(--primary-blue-dark); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+		/* Header Section */
+		.notifications-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 2rem;
+			flex-wrap: wrap;
+			gap: 1rem;
+		}
 		
-		.notification-icon { width:48px; height:48px; border-radius:50%; background: var(--background-light); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; }
-		.empty-state { text-align:center; padding:4rem 2rem; }
-		.empty-icon { width:80px; height:80px; border-radius:50%; background:rgba(74,144,226,.1); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 1.5rem; }
+		.header-actions {
+			display: flex;
+			gap: 0.75rem;
+			align-items: center;
+			flex-wrap: wrap;
+		}
+		
+		/* Filter Buttons */
+		.filter-btn-group {
+			display: flex;
+			gap: 0.5rem;
+			background: #FFFFFF;
+			padding: 0.25rem;
+			border-radius: 12px;
+			border: 1px solid #CCCCCC;
+		}
+		
+		.filter-btn {
+			padding: 0.5rem 1.25rem;
+			border: none;
+			border-radius: 8px;
+			font-weight: 600;
+			font-size: 0.9rem;
+			transition: all 0.2s ease;
+			text-decoration: none;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+		
+		.filter-btn.active {
+			background: #000000;
+			color: #FFFFFF;
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		}
+		
+		.filter-btn:not(.active) {
+			background: transparent;
+			color: #000000;
+		}
+		
+		.filter-btn:not(.active):hover {
+			background: #F5F5F5;
+		}
+		
+		/* Action Button */
+		.btn-mark-all {
+			background: #FFFFFF;
+			border: 1px solid #CCCCCC;
+			color: #000000;
+			padding: 0.5rem 1rem;
+			border-radius: 8px;
+			font-weight: 600;
+			font-size: 0.9rem;
+			transition: all 0.2s ease;
+			text-decoration: none;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+		
+		.btn-mark-all:hover {
+			background: #000000;
+			color: #FFFFFF;
+			border-color: #000000;
+			transform: translateY(-1px);
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		}
+		
+		/* Notification Cards */
+		.notifications-list {
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+		}
+		
+		.notification-card { 
+			background: #FFFFFF; 
+			border: 1px solid #CCCCCC; 
+			color: #000000; 
+			border-radius: 16px; 
+			transition: all 0.3s ease; 
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+			overflow: hidden;
+		}
+		
+		.notification-card:hover { 
+			transform: translateY(-2px); 
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); 
+			border-color: #000000; 
+		}
+		
+		.notification-card.unread { 
+			border-left: 4px solid #000000;
+			background: linear-gradient(to right, rgba(0, 0, 0, 0.05) 0%, #FFFFFF 4%);
+		}
+		
+		.notification-card-content {
+			padding: 1.5rem;
+		}
+		
+		.notification-header-row {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			margin-bottom: 1rem;
+			gap: 1rem;
+		}
+		
+		.notification-main {
+			flex: 1;
+			min-width: 0;
+		}
+		
+		.notification-title-row {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			margin-bottom: 0.75rem;
+			flex-wrap: wrap;
+		}
+		
+		.notification-title {
+			font-size: 1.1rem;
+			font-weight: 700;
+			color: #000000;
+			margin: 0;
+		}
+		
+		.notification-badge {
+			font-size: 0.75rem;
+			padding: 0.25rem 0.75rem;
+			border-radius: 12px;
+			font-weight: 600;
+		}
+		
+		.notification-badge.new {
+			background: #E5E5E5;
+			color: #000000;
+		}
+		
+		.notification-badge.type-system {
+			background: #E5E5E5;
+			color: #000000;
+		}
+		
+		.notification-badge.type-booking {
+			background: #E5E5E5;
+			color: #000000;
+		}
+		
+		.notification-badge.type-payment {
+			background: #E5E5E5;
+			color: #000000;
+		}
+		
+		.notification-badge.type-cancelled {
+			background: #CCCCCC;
+			color: #000000;
+		}
+		
+		.notification-badge.priority {
+			background: #CCCCCC;
+			color: #000000;
+		}
+		
+		.notification-content {
+			color: #333333;
+			line-height: 1.6;
+			margin-bottom: 1rem;
+			font-size: 0.95rem;
+		}
+		
+		.notification-footer {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 1rem;
+			padding-top: 1rem;
+			border-top: 1px solid #CCCCCC;
+		}
+		
+		.notification-time {
+			color: #666666;
+			font-size: 0.875rem;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+		
+		.notification-actions {
+			display: flex;
+			gap: 0.5rem;
+			flex-wrap: wrap;
+		}
+		
+		.btn-action {
+			padding: 0.5rem 1rem;
+			border-radius: 8px;
+			font-weight: 600;
+			font-size: 0.875rem;
+			transition: all 0.2s ease;
+			text-decoration: none;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			border: 1px solid;
+		}
+		
+		.btn-view {
+			background: #000000;
+			color: #FFFFFF;
+			border-color: #000000;
+		}
+		
+		.btn-view:hover {
+			background: #333333;
+			border-color: #333333;
+			color: #FFFFFF;
+			transform: translateY(-1px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		}
+		
+		.btn-mark-read {
+			background: #FFFFFF;
+			color: #000000;
+			border-color: #CCCCCC;
+		}
+		
+		.btn-mark-read:hover {
+			background: #F5F5F5;
+			border-color: #000000;
+			color: #000000;
+		}
+		
+		.btn-link-action {
+			background: transparent;
+			color: #000000;
+			border-color: #000000;
+		}
+		
+		.btn-link-action:hover {
+			background: #000000;
+			color: #FFFFFF;
+		}
+		
+		/* Empty State */
+		.empty-state { 
+			text-align: center; 
+			padding: 4rem 2rem; 
+			background: #FFFFFF;
+			border-radius: 16px;
+			border: 1px solid #CCCCCC;
+		}
+		
+		.empty-icon { 
+			width: 80px; 
+			height: 80px; 
+			border-radius: 50%; 
+			background: #E5E5E5; 
+			color: #000000; 
+			display: flex; 
+			align-items: center; 
+			justify-content: center; 
+			font-size: 2rem; 
+			margin: 0 auto 1.5rem; 
+		}
+		
+		.empty-state h4 {
+			color: #000000;
+			font-weight: 700;
+			margin-bottom: 0.75rem;
+		}
+		
+		.empty-state p {
+			color: #666666;
+			margin-bottom: 1.5rem;
+		}
+		
+		.btn-home {
+			background: #000000;
+			color: #FFFFFF;
+			border: none;
+			padding: 0.75rem 1.5rem;
+			border-radius: 8px;
+			font-weight: 600;
+			text-decoration: none;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			transition: all 0.2s ease;
+		}
+		
+		.btn-home:hover {
+			background: #333333;
+			transform: translateY(-1px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+			color: #FFFFFF;
+		}
+		
+		/* Pagination */
+		.pagination-wrapper {
+			margin-top: 2rem;
+			display: flex;
+			justify-content: center;
+		}
+		
+		.pagination .page-link { 
+			background: #FFFFFF; 
+			color: #000000; 
+			border-color: #CCCCCC; 
+			padding: 0.5rem 1rem;
+			border-radius: 8px;
+			margin: 0 0.25rem;
+		}
+		
+		.pagination .page-item.active .page-link { 
+			background: #000000; 
+			color: #FFFFFF; 
+			border-color: #000000; 
+		}
+		
+		.pagination .page-link:hover { 
+			background: #F5F5F5; 
+			color: #000000; 
+			border-color: #000000;
+		}
+		
+		.pagination .page-item.disabled .page-link {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+		
+		/* Modal Styles */
+		.notification-modal .modal-content {
+			border-radius: 16px;
+			border: 1px solid #CCCCCC;
+		}
+		
+		.notification-modal .modal-header {
+			background: #FFFFFF;
+			border-bottom: 1px solid #CCCCCC;
+			padding: 1.5rem;
+		}
+		
+		.notification-modal .modal-title {
+			color: #000000;
+			font-weight: 700;
+			font-size: 1.5rem;
+		}
+		
+		.notification-modal .btn-close {
+			opacity: 0.5;
+		}
+		
+		.notification-modal .btn-close:hover {
+			opacity: 1;
+		}
+		
+		.notification-modal .modal-body {
+			padding: 2rem;
+			background: #FFFFFF;
+		}
+		
+		.notification-modal .modal-footer {
+			background: #FFFFFF;
+			border-top: 1px solid #CCCCCC;
+			padding: 1.5rem;
+		}
+		
+		.notification-modal .notification-icon-wrapper {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 64px;
+			height: 64px;
+			border-radius: 50%;
+			background: #E5E5E5;
+			color: #000000;
+			font-weight: 700;
+			font-size: 1.5rem;
+			margin-bottom: 1.5rem;
+		}
+		
+		.notification-modal .notification-title {
+			font-size: 1.5rem;
+			font-weight: 700;
+			color: #000000;
+			margin-bottom: 1rem;
+		}
+		
+		.notification-modal .notification-status-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			background: #E5E5E5;
+			color: #000000;
+			padding: 0.4rem 0.8rem;
+			border-radius: 12px;
+			font-size: 0.85rem;
+			font-weight: 600;
+			margin-bottom: 1rem;
+		}
+		
+		.notification-modal .notification-meta {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 1rem 1.5rem;
+			color: #666666;
+			font-size: 0.9rem;
+			margin-bottom: 2rem;
+		}
+		
+		.notification-modal .meta-item {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+		
+		.notification-modal .meta-item i {
+			color: #666666;
+		}
+		
+		.notification-modal .meta-item strong {
+			color: #000000;
+			font-weight: 600;
+		}
+		
+		.notification-modal .content-label {
+			font-size: 0.9rem;
+			font-weight: 600;
+			color: #666666;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			margin-bottom: 0.75rem;
+		}
+		
+		.notification-modal .content-text {
+			color: #000000;
+			line-height: 1.8;
+			font-size: 1rem;
+			white-space: pre-wrap;
+			word-wrap: break-word;
+			margin-bottom: 1.5rem;
+		}
+		
+		.notification-modal .detail-info-list {
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+			margin-top: 1rem;
+		}
+		
+		.notification-modal .detail-info-item {
+			display: flex;
+			align-items: flex-start;
+			gap: 1rem;
+			padding: 1rem;
+			background: #F5F5F5;
+			border-radius: 8px;
+			border: 1px solid #CCCCCC;
+		}
+		
+		.notification-modal .detail-info-label {
+			font-weight: 600;
+			color: #000000;
+			min-width: 140px;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+		
+		.notification-modal .detail-info-label i {
+			color: #000000;
+			width: 20px;
+			text-align: center;
+		}
+		
+		.notification-modal .detail-info-value {
+			flex: 1;
+			color: #000000;
+			font-size: 1rem;
+		}
+		
+		.notification-modal .link-section {
+			margin-top: 2rem;
+			padding: 1.5rem;
+			background: #F5F5F5;
+			border-radius: 12px;
+			border: 1px solid #CCCCCC;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+		
+		.notification-modal .link-label {
+			font-size: 0.875rem;
+			font-weight: 600;
+			color: #666666;
+			margin: 0;
+		}
+		
+		.notification-modal .btn-link-action {
+			background: #000000;
+			color: #FFFFFF;
+			border: none;
+			padding: 0.75rem 1.5rem;
+			border-radius: 8px;
+			font-weight: 600;
+			text-decoration: none;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			transition: all 0.2s ease;
+		}
+		
+		.notification-modal .btn-link-action:hover {
+			background: #333333;
+			color: #FFFFFF;
+			transform: translateY(-1px);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+		}
+		
+		.notification-modal .btn-secondary {
+			background: #FFFFFF;
+			border: 1px solid #CCCCCC;
+			color: #000000;
+		}
+		
+		.notification-modal .btn-secondary:hover {
+			background: #F5F5F5;
+			border-color: #000000;
+			color: #000000;
+		}
+		
+		/* Responsive */
+		@media (max-width: 768px) {
+			.notifications-header {
+				flex-direction: column;
+				align-items: stretch;
+			}
+			
+			.header-actions {
+				width: 100%;
+			}
+			
+			.filter-btn-group {
+				width: 100%;
+				justify-content: stretch;
+			}
+			
+			.filter-btn {
+				flex: 1;
+				justify-content: center;
+			}
+			
+			.notification-header-row {
+				flex-direction: column;
+			}
+			
+			.notification-actions {
+				width: 100%;
+			}
+			
+			.btn-action {
+				flex: 1;
+				justify-content: center;
+			}
+		}
 	</style>
 </head>
 <body class="page-bg">
 	<div th:insert="fragments/flash :: flash"></div>
 	<div th:with="activeNav='notifications'" th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
-	<div class="admin-content py-4">
-		<div class="container">
-			<div class="d-flex align-items-center justify-content-between mb-4">
-				<h1 class="section-title mb-0">
-					<i class="fas fa-bell text-primary me-2"></i> Thông báo của tôi
-				</h1>
-				<div class="btn-group" role="group">
+	<div class="notifications-container">
+		<!-- Header Section -->
+		<div class="notifications-header">
+			<h1 class="section-title">
+				<i class="fas fa-bell" style="color: #000000;"></i> Thông báo của tôi
+			</h1>
+			<div class="header-actions">
+				<!-- Filter Buttons -->
+				<div class="filter-btn-group">
 					<a th:href="@{/notifications(unreadOnly=false)}" 
-					   th:class="'btn' + (${!unreadOnly} ? ' btn-gold' : ' btn-outline-secondary')">
-						<i class="fas fa-list me-1"></i> Tất cả
+					   th:class="'filter-btn' + (${!unreadOnly} ? ' active' : '')">
+						<i class="fas fa-list"></i> Tất cả
 					</a>
 					<a th:href="@{/notifications(unreadOnly=true)}" 
-					   th:class="'btn' + (${unreadOnly} ? ' btn-gold' : ' btn-outline-secondary')">
-						<i class="fas fa-eye-slash me-1"></i> Chưa đọc (<span th:text="${unreadCount}">0</span>)
+					   th:class="'filter-btn' + (${unreadOnly} ? ' active' : '')">
+						<i class="fas fa-eye-slash"></i> Chưa đọc 
+						<span th:if="${unreadCount > 0}" class="badge ms-1" style="background: #000000; color: #FFFFFF;" th:text="${unreadCount}">0</span>
 					</a>
 				</div>
+				<!-- Mark All Read Button -->
+				<button type="button" 
+						class="btn-mark-all" 
+						th:if="${unreadCount > 0}"
+						onclick="markAllAsRead()">
+					<i class="fas fa-check-double"></i> Đánh dấu tất cả đã đọc
+				</button>
 			</div>
+		</div>
 
-		<!-- Empty state -->
+		<!-- Empty State -->
 		<div th:if="${notifications.empty}" class="empty-state">
 			<div class="empty-icon">
 				<i class="fas fa-bell-slash"></i>
 			</div>
-			<h4 class="text-muted mb-3">Không có thông báo nào</h4>
-			<p class="text-muted mb-4">Bạn sẽ nhận được thông báo khi có hoạt động mới.</p>
-			<a th:href="@{/}" class="btn btn-gold">
-				<i class="fas fa-home me-1"></i> Về trang chủ
+			<h4>Không có thông báo nào</h4>
+			<p>Bạn sẽ nhận được thông báo khi có hoạt động mới.</p>
+			<a th:href="@{/}" class="btn-home">
+				<i class="fas fa-home"></i> Về trang chủ
 			</a>
 		</div>
 
 		<!-- Notifications List -->
-		<div th:if="${!notifications.empty}">
+		<div th:if="${!notifications.empty}" class="notifications-list">
 			<div th:each="notification : ${notifications.content}" 
-				 th:class="'notification-card p-4' + (${notification.unread} ? ' unread' : '')">
-				<div class="d-flex align-items-start">
-					<div class="notification-icon me-3" th:text="${notification.type.toString().substring(0,1)}">S</div>
-					<div class="flex-grow-1">
-						<div class="d-flex justify-content-between align-items-start mb-2">
-							<div>
-								<h5 class="mb-1 text-white">
-									<span th:if="${notification.unread}" class="badge bg-warning text-dark me-2">
-										<i class="fas fa-circle me-1"></i>Mới
-									</span>
-									<span th:text="${notification.title}">Tiêu đề thông báo</span>
-								</h5>
-								<div class="mb-2">
-									<span class="badge badge-role" 
-										  th:classappend="${notification.type.name()=='SYSTEM_ANNOUNCEMENT'} ? ' bg-primary' : 
-										  (${notification.type.name()=='BOOKING_CONFIRMED'} ? ' bg-success' : 
-										  (${notification.type.name()=='BOOKING_CANCELLED'} ? ' bg-danger' : 
-										  (${notification.type.name()=='PAYMENT_SUCCESS'} ? ' bg-info' : ' bg-warning')))"
-										  th:text="${notification.type}">SYSTEM</span>
-									<span th:if="${notification.priority > 0}" class="badge bg-danger badge-status ms-1">
-										<i class="fas fa-exclamation-triangle me-1"></i>Ưu tiên cao
-									</span>
-								</div>
-							</div>
-							<div class="text-end">
-								<a th:href="@{/notifications/{id}(id=${notification.id})}" 
-								   class="btn btn-outline-primary btn-sm">
-									<i class="fas fa-eye me-1"></i> Xem
-								</a>
-							</div>
-						</div>
-						
-						<p class="mb-2" style="color: var(--text-dark);" th:text="${#strings.abbreviate(notification.content, 120)}">
-							Nội dung thông báo...
-						</p>
-						
-						<div class="d-flex justify-content-between align-items-center">
-							<small class="table-muted">
-								<i class="fas fa-clock me-1"></i>
-								<span th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy HH:mm')}">
-									01/01/2024 10:00
+				 th:class="'notification-card' + (${notification.unread} ? ' unread' : '')"
+				 th:attr="data-notification-id=${notification.id}">
+				<div class="notification-card-content">
+					<div class="notification-header-row">
+						<div class="notification-main">
+							<div class="notification-title-row">
+								<h5 class="notification-title" th:text="${notification.title}">Tiêu đề thông báo</h5>
+								<span th:if="${notification.unread}" class="notification-badge new">
+									<i class="fas fa-circle" style="font-size: 6px;"></i> Mới
 								</span>
-							</small>
-							<div th:if="${notification.linkUrl != null and !notification.linkUrl.isEmpty()}">
-								<a th:href="${notification.linkUrl}" 
-								   class="btn btn-outline-light btn-sm" 
-								   target="_blank">
-									<i class="fas fa-external-link-alt me-1"></i> Xem thêm
-								</a>
 							</div>
+							<p class="notification-content" th:text="${#strings.abbreviate(notification.content, 150)}">
+								Nội dung thông báo...
+							</p>
+						</div>
+					</div>
+					
+					<div class="notification-footer">
+						<div class="notification-time">
+							<i class="fas fa-clock"></i>
+							<span th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy HH:mm')}">
+								01/01/2024 10:00
+							</span>
+						</div>
+						<div class="notification-actions">
+							<button type="button" 
+									class="btn-action btn-view"
+									th:onclick="'showNotificationModal(' + ${notification.id} + ')'">
+								<i class="fas fa-eye"></i> Xem chi tiết
+							</button>
+							<button type="button" 
+									class="btn-action btn-mark-read" 
+									th:if="${notification.unread}"
+									th:onclick="'markAsRead(' + ${notification.id} + ')'">
+								<i class="fas fa-check"></i> Đánh dấu đã đọc
+							</button>
+							<a th:if="${notification.linkUrl != null and !notification.linkUrl.isEmpty()}" 
+							   th:href="${notification.linkUrl}" 
+							   class="btn-action btn-link-action"
+							   target="_blank">
+								<i class="fas fa-external-link-alt"></i> Xem thêm
+							</a>
 						</div>
 					</div>
 				</div>
@@ -126,27 +709,312 @@
 		</div>
 
 		<!-- Pagination -->
-		<nav th:if="${totalPages > 1}" class="mt-4" aria-label="Notifications pagination">
-			<ul class="pagination justify-content-center">
-				<li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-					<a class="page-link" th:href="@{|/notifications?page=${currentPage-1}&unreadOnly=${unreadOnly}|}" aria-label="Previous">
-						<span aria-hidden="true">&laquo;</span>
-					</a>
-				</li>
-				<li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages-1)}" th:classappend="${i == currentPage} ? 'active'">
-					<a class="page-link" th:text="${i+1}" th:href="@{|/notifications?page=${i}&unreadOnly=${unreadOnly}|}">1</a>
-				</li>
-				<li class="page-item" th:classappend="${currentPage == totalPages-1} ? 'disabled'">
-					<a class="page-link" th:href="@{|/notifications?page=${currentPage+1}&unreadOnly=${unreadOnly}|}" aria-label="Next">
-						<span aria-hidden="true">&raquo;</span>
-					</a>
-				</li>
-			</ul>
-		</nav>
+		<div th:if="${totalPages > 1}" class="pagination-wrapper">
+			<nav aria-label="Notifications pagination">
+				<ul class="pagination">
+					<li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+						<a class="page-link" 
+						   th:href="@{|/notifications?page=${currentPage-1}&unreadOnly=${unreadOnly}|}" 
+						   aria-label="Previous">
+							<i class="fas fa-chevron-left"></i>
+						</a>
+					</li>
+					<li class="page-item" 
+						th:each="i : ${#numbers.sequence(0, totalPages-1)}" 
+						th:classappend="${i == currentPage} ? 'active'">
+						<a class="page-link" 
+						   th:text="${i+1}" 
+						   th:href="@{|/notifications?page=${i}&unreadOnly=${unreadOnly}|}">1</a>
+					</li>
+					<li class="page-item" th:classappend="${currentPage == totalPages-1} ? 'disabled'">
+						<a class="page-link" 
+						   th:href="@{|/notifications?page=${currentPage+1}&unreadOnly=${unreadOnly}|}" 
+						   aria-label="Next">
+							<i class="fas fa-chevron-right"></i>
+						</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+
+	<!-- Notification Detail Modal -->
+	<div class="modal fade notification-modal" id="notificationDetailModal" tabindex="-1" aria-labelledby="notificationDetailModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="notificationDetailModalLabel">
+						<i class="fas fa-bell" style="color: #000000;"></i> Chi tiết thông báo
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body" id="notificationModalBody">
+					<div class="text-center">
+						<div class="spinner-border" role="status">
+							<span class="visually-hidden">Đang tải...</span>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+				</div>
+			</div>
+		</div>
 	</div>
 
 	<div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
 	<div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 	<script th:src="@{/js/main.js}" defer></script>
+	<script>
+		function markAsRead(notificationId) {
+			fetch('/notifications/' + notificationId + '/mark-read', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Requested-With': 'XMLHttpRequest'
+				}
+			})
+			.then(response => {
+				if (response.ok) {
+					// Reload page to update UI
+					location.reload();
+				} else {
+					alert('Có lỗi xảy ra khi đánh dấu đã đọc');
+				}
+			})
+			.catch(error => {
+				console.error('Error:', error);
+				alert('Có lỗi xảy ra khi đánh dấu đã đọc');
+			});
+		}
+		
+		function markAllAsRead() {
+			if (!confirm('Bạn có chắc chắn muốn đánh dấu tất cả thông báo là đã đọc?')) {
+				return;
+			}
+			
+			fetch('/notifications/mark-all-read', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Requested-With': 'XMLHttpRequest'
+				}
+			})
+			.then(response => {
+				if (response.ok) {
+					// Reload page to update UI
+					location.reload();
+				} else {
+					alert('Có lỗi xảy ra khi đánh dấu tất cả đã đọc');
+				}
+			})
+			.catch(error => {
+				console.error('Error:', error);
+				alert('Có lỗi xảy ra khi đánh dấu tất cả đã đọc');
+			});
+		}
+		
+		function showNotificationModal(notificationId) {
+			const modalElement = document.getElementById('notificationDetailModal');
+			const modal = new bootstrap.Modal(modalElement);
+			const modalBody = document.getElementById('notificationModalBody');
+			let wasUnread = false;
+			
+			// Check if notification was unread before opening
+			const notificationCard = document.querySelector('[data-notification-id="' + notificationId + '"]');
+			if (notificationCard && notificationCard.classList.contains('unread')) {
+				wasUnread = true;
+			}
+			
+			// Show loading state
+			modalBody.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Đang tải...</span></div></div>';
+			modal.show();
+			
+			// Reload page when modal is closed if notification was unread
+			modalElement.addEventListener('hidden.bs.modal', function() {
+				if (wasUnread) {
+					location.reload();
+				}
+			}, { once: true });
+			
+			// Fetch notification details
+			fetch('/notifications/api/' + notificationId)
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('Không thể tải chi tiết thông báo');
+					}
+					return response.json();
+				})
+				.then(data => {
+					const notification = data.notification;
+					let html = '';
+					
+					// Header section
+					html += '<div class="notification-icon-wrapper">';
+					html += '<span>' + (notification.type ? notification.type.substring(0, 1) : 'N') + '</span>';
+					html += '</div>';
+					html += '<h2 class="notification-title">' + escapeHtml(notification.title || '') + '</h2>';
+					
+					if (notification.unread) {
+						html += '<div class="notification-status-badge">';
+						html += '<i class="fas fa-circle" style="font-size: 6px;"></i> Chưa đọc';
+						html += '</div>';
+					}
+					
+					// Meta information
+					html += '<div class="notification-meta">';
+					if (notification.publishAt) {
+						const publishDate = new Date(notification.publishAt);
+						const dateStr = formatDate(publishDate);
+						const timeStr = formatTime(publishDate);
+						html += '<div class="meta-item">';
+						html += '<i class="fas fa-calendar"></i>';
+						html += '<span>Ngày: <strong>' + dateStr + '</strong></span>';
+						html += '</div>';
+						html += '<div class="meta-item">';
+						html += '<i class="fas fa-clock"></i>';
+						html += '<span>Giờ: <strong>' + timeStr + '</strong></span>';
+						html += '</div>';
+					}
+					if (notification.type) {
+						html += '<div class="meta-item">';
+						html += '<i class="fas fa-tag"></i>';
+						html += '<span>Loại: <strong>' + escapeHtml(notification.type) + '</strong></span>';
+						html += '</div>';
+					}
+					html += '</div>';
+					
+					// Content section
+					html += '<div class="content-section">';
+					html += '<div class="content-label">Nội dung thông báo</div>';
+					
+					// Booking Confirmed - Display as detailed list
+					if (notification.type === 'BOOKING_CONFIRMED') {
+						html += '<p class="content-text" style="margin-bottom: 1.5rem; font-weight: 600; color: #000000;">';
+						html += 'Bạn đã đặt bàn thành công!';
+						html += '</p>';
+						
+						html += '<div class="detail-info-list">';
+						
+						// Restaurant Name
+						html += '<div class="detail-info-item">';
+						html += '<div class="detail-info-label"><i class="fas fa-utensils"></i> Nhà hàng:</div>';
+						html += '<div class="detail-info-value">';
+						if (data.restaurantName) {
+							html += '<span style="font-weight: 600; color: #000000;">' + escapeHtml(data.restaurantName) + '</span>';
+						} else if (notification.content && notification.content.includes('Nhà hàng:')) {
+							const restaurantMatch = notification.content.match(/Nhà hàng:\s*([^,]+)/);
+							if (restaurantMatch) {
+								html += '<span style="font-weight: 600; color: #000000;">' + escapeHtml(restaurantMatch[1].trim()) + '</span>';
+							} else {
+								html += '<span style="color: #666666; font-style: italic;">Xem chi tiết trong danh sách đặt bàn</span>';
+							}
+						} else {
+							html += '<span style="color: #666666; font-style: italic;">Xem chi tiết trong danh sách đặt bàn</span>';
+						}
+						html += '</div></div>';
+						
+						// Booking Time
+						html += '<div class="detail-info-item">';
+						html += '<div class="detail-info-label"><i class="fas fa-calendar-alt"></i> Thời gian:</div>';
+						html += '<div class="detail-info-value">';
+						if (data.bookingTime) {
+							const bookingDate = new Date(data.bookingTime);
+							html += '<span style="font-weight: 600; color: #000000;">' + formatDateTime(bookingDate) + '</span>';
+						} else if (notification.content && notification.content.includes('Thời gian:')) {
+							const timeMatch = notification.content.match(/Thời gian:\s*([^,]+)/);
+							if (timeMatch) {
+								try {
+									const timeStr = timeMatch[1].trim();
+									const parsedDate = new Date(timeStr);
+									html += '<span style="font-weight: 600; color: #000000;">' + formatDateTime(parsedDate) + '</span>';
+								} catch (e) {
+									html += '<span style="color: #666666;">Không có thông tin</span>';
+								}
+							} else {
+								html += '<span style="color: #666666;">Không có thông tin</span>';
+							}
+						} else {
+							html += '<span style="color: #666666;">Không có thông tin</span>';
+						}
+						html += '</div></div>';
+						
+						// Table Names
+						html += '<div class="detail-info-item">';
+						html += '<div class="detail-info-label"><i class="fas fa-chair"></i> Bàn:</div>';
+						html += '<div class="detail-info-value">';
+						if (data.tableNames && data.tableNames.trim()) {
+							html += '<span style="font-weight: 600; color: #000000;">' + escapeHtml(data.tableNames) + '</span>';
+						} else {
+							html += '<span style="color: #666666; font-style: italic;">Chưa được phân bàn</span>';
+						}
+						html += '</div></div>';
+						
+						// Number of Guests
+						html += '<div class="detail-info-item">';
+						html += '<div class="detail-info-label"><i class="fas fa-users"></i> Số khách:</div>';
+						html += '<div class="detail-info-value">';
+						if (notification.content && notification.content.includes('Số khách:')) {
+							const guestsMatch = notification.content.match(/Số khách:\s*(\d+)/);
+							if (guestsMatch) {
+								html += '<span style="font-weight: 600; color: #000000;">' + guestsMatch[1] + ' người</span>';
+							} else {
+								html += '<span style="color: #666666;">Không có thông tin</span>';
+							}
+						} else {
+							html += '<span style="color: #666666;">Không có thông tin</span>';
+						}
+						html += '</div></div>';
+						
+						html += '</div>';
+					} else {
+						// Other notification types - Display raw content
+						html += '<div class="content-text">' + escapeHtml(notification.content || '') + '</div>';
+					}
+					
+					html += '</div>';
+					
+					// Link section
+					if (notification.linkUrl) {
+						html += '<div class="link-section">';
+						html += '<div class="link-label">Liên kết liên quan</div>';
+						html += '<a href="' + escapeHtml(notification.linkUrl) + '" class="btn-link-action" target="_blank">';
+						html += '<i class="fas fa-calendar-check"></i> My Reservations';
+						html += '</a>';
+						html += '</div>';
+					}
+					
+					modalBody.innerHTML = html;
+				})
+				.catch(error => {
+					console.error('Error:', error);
+					modalBody.innerHTML = '<div class="alert alert-danger">Không thể tải chi tiết thông báo. Vui lòng thử lại.</div>';
+				});
+		}
+		
+		function escapeHtml(text) {
+			const div = document.createElement('div');
+			div.textContent = text;
+			return div.innerHTML;
+		}
+		
+		function formatDate(date) {
+			const day = String(date.getDate()).padStart(2, '0');
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const year = date.getFullYear();
+			return day + '/' + month + '/' + year;
+		}
+		
+		function formatTime(date) {
+			const hours = String(date.getHours()).padStart(2, '0');
+			const minutes = String(date.getMinutes()).padStart(2, '0');
+			return hours + ':' + minutes;
+		}
+		
+		function formatDateTime(date) {
+			return formatDate(date) + ' ' + formatTime(date);
+		}
+	</script>
 </body>
-</html> 
+</html>
