@@ -35,14 +35,17 @@ import com.example.booking.service.WaitlistService;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.SimpleUserService;
+import com.example.booking.service.PaymentService;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Waitlist;
+import com.example.booking.domain.WaitlistStatus;
 import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.User;
 import com.example.booking.domain.BookingTable;
+import com.example.booking.domain.Payment;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.common.enums.BookingStatus;
 import com.example.booking.dto.BookingDetailModalDto;
@@ -97,6 +100,7 @@ public class RestaurantOwnerController {
     private final RestaurantTableRepository restaurantTableRepository;
     private final BookingRepository bookingRepository;
     private final BookingTableRepository bookingTableRepository;
+    private final PaymentService paymentService;
 
     @Autowired
     public RestaurantOwnerController(RestaurantOwnerService restaurantOwnerService,
@@ -111,7 +115,8 @@ public class RestaurantOwnerController {
             CommunicationHistoryRepository communicationHistoryRepository,
             RestaurantTableRepository restaurantTableRepository,
             BookingRepository bookingRepository,
-            BookingTableRepository bookingTableRepository) {
+            BookingTableRepository bookingTableRepository,
+            PaymentService paymentService) {
         this.restaurantOwnerService = restaurantOwnerService;
         this.fohManagementService = fohManagementService;
         this.waitlistService = waitlistService;
@@ -125,6 +130,7 @@ public class RestaurantOwnerController {
         this.restaurantTableRepository = restaurantTableRepository;
         this.bookingRepository = bookingRepository;
         this.bookingTableRepository = bookingTableRepository;
+        this.paymentService = paymentService;
     }
 
     /**
@@ -1137,12 +1143,48 @@ public class RestaurantOwnerController {
             long confirmedBookings = allBookings.stream().filter(b -> b.getStatus() == BookingStatus.CONFIRMED).count();
             long cancelledBookings = allBookings.stream().filter(b -> b.getStatus() == BookingStatus.CANCELLED).count();
 
+            // Get waitlist data
+            List<Waitlist> allWaitlists = new ArrayList<>();
+            Map<Integer, String> restaurantNames = new HashMap<>();
+
+            if (selectedRestaurant != null) {
+                // Get waitlist for specific restaurant
+                List<Waitlist> restaurantWaitlists = waitlistService
+                        .getWaitlistByRestaurant(selectedRestaurant.getRestaurantId());
+                allWaitlists.addAll(restaurantWaitlists);
+                restaurantNames.put(selectedRestaurant.getRestaurantId(), selectedRestaurant.getRestaurantName());
+            } else {
+                // Get waitlist for all restaurants
+                for (RestaurantProfile restaurant : restaurants) {
+                    List<Waitlist> restaurantWaitlists = waitlistService
+                            .getWaitlistByRestaurant(restaurant.getRestaurantId());
+                    allWaitlists.addAll(restaurantWaitlists);
+                    restaurantNames.put(restaurant.getRestaurantId(), restaurant.getRestaurantName());
+                }
+            }
+
+            // Sort waitlist by join time asc
+            allWaitlists.sort((w1, w2) -> w1.getJoinTime().compareTo(w2.getJoinTime()));
+
+            // Calculate queue positions for each waitlist
+            Map<Integer, Integer> waitlistQueuePositions = new HashMap<>();
+            for (Waitlist waitlist : allWaitlists) {
+                if (waitlist.getStatus() == WaitlistStatus.WAITING) {
+                    Integer queuePosition = waitlistService.getQueuePosition(waitlist.getWaitlistId());
+                    waitlistQueuePositions.put(waitlist.getWaitlistId(), queuePosition);
+                }
+            }
+
             model.addAttribute("bookings", allBookings);
+            model.addAttribute("waitlists", allWaitlists);
+            model.addAttribute("waitlistQueuePositions", waitlistQueuePositions);
             model.addAttribute("restaurants", restaurants);
+            model.addAttribute("restaurantNames", restaurantNames);
             model.addAttribute("totalBookings", totalBookings);
             model.addAttribute("pendingBookings", pendingBookings);
             model.addAttribute("confirmedBookings", confirmedBookings);
             model.addAttribute("cancelledBookings", cancelledBookings);
+            model.addAttribute("waitingCount", allWaitlists.size());
             model.addAttribute("selectedStatus", status);
             model.addAttribute("selectedDate", date);
             model.addAttribute("isAllRestaurants", isAllRestaurants);
@@ -1410,6 +1452,7 @@ public class RestaurantOwnerController {
                     tableInfo.setBookingTableId(bt.getBookingTableId());
                     tableInfo.setTableName(bt.getTable().getTableName());
                     tableInfo.setAssignedAt(bt.getAssignedAt());
+                        tableInfo.setTableFee(bt.getTableFee()); // Include tableFee from BookingTable
                     return tableInfo;
                 })
                 .collect(Collectors.toList());
@@ -1808,6 +1851,93 @@ public class RestaurantOwnerController {
         }
     }
 
+    /**
+     * API endpoint để lấy payment status của booking (Restaurant Owner)
+     */
+    @GetMapping("/api/bookings/{bookingId}/payment-status")
+    @ResponseBody
+    public ResponseEntity<?> getBookingPaymentStatus(@PathVariable Integer bookingId,
+            Authentication authentication) {
+        try {
+            // Validate bookingId
+            if (bookingId == null) {
+                Map<String, Object> errorBody = new HashMap<>();
+                errorBody.put("success", false);
+                errorBody.put("message", "Booking ID is required");
+                return ResponseEntity.badRequest().body(errorBody);
+            }
+
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                Map<String, Object> errorBody = new HashMap<>();
+                errorBody.put("success", false);
+                errorBody.put("message", "Authentication required");
+                return ResponseEntity.status(401).body(errorBody);
+            }
+
+            UUID restaurantOwnerId = user.getId();
+
+            Optional<Booking> bookingOpt = bookingService.findBookingById(bookingId);
+            if (bookingOpt.isEmpty()) {
+                Map<String, Object> errorBody = new HashMap<>();
+                errorBody.put("success", false);
+                errorBody.put("message", "Booking not found");
+                return ResponseEntity.ok().body(errorBody);
+            }
+
+            Booking booking = bookingOpt.get();
+
+            // Check if restaurant owner owns this booking's restaurant
+            if (booking.getRestaurant() == null ||
+                    booking.getRestaurant().getOwner() == null ||
+                    booking.getRestaurant().getOwner().getUser() == null ||
+                    !booking.getRestaurant().getOwner().getUser().getId().equals(restaurantOwnerId)) {
+                Map<String, Object> errorBody = new HashMap<>();
+                errorBody.put("success", false);
+                errorBody.put("message", "Unauthorized");
+                return ResponseEntity.status(403).body(errorBody);
+            }
+
+            // Get payment status (chỉ kiểm tra payment status, không kiểm tra booking
+            // status)
+            Optional<Payment> paymentOpt = paymentService.findByBooking(booking);
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("success", true);
+
+            if (paymentOpt.isEmpty()) {
+                responseBody.put("hasPayment", false);
+                responseBody.put("paymentStatus", null);
+                return ResponseEntity.ok().body(responseBody);
+            }
+
+            Payment payment = paymentOpt.get();
+            if (payment == null) {
+                responseBody.put("hasPayment", false);
+                responseBody.put("paymentStatus", null);
+                return ResponseEntity.ok().body(responseBody);
+            }
+
+            // Get payment status
+            if (payment.getStatus() == null) {
+                responseBody.put("hasPayment", true);
+                responseBody.put("paymentStatus", null);
+                responseBody.put("paymentId", payment.getPaymentId() != null ? payment.getPaymentId() : null);
+            } else {
+                responseBody.put("hasPayment", true);
+                responseBody.put("paymentStatus", payment.getStatus().name());
+                responseBody.put("paymentId", payment.getPaymentId() != null ? payment.getPaymentId() : null);
+            }
+
+            return ResponseEntity.ok().body(responseBody);
+
+        } catch (Exception e) {
+            logger.error("Error getting booking payment status", e);
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("success", false);
+            errorBody.put("message", e.getMessage() != null ? e.getMessage() : "Unknown error occurred");
+            return ResponseEntity.status(500).body(errorBody);
+        }
+    }
 
     /**
      * Show edit booking form for restaurant owner
@@ -2275,7 +2405,43 @@ public class RestaurantOwnerController {
 
             // Lấy thời gian booking từ request
             String bookingTimeStr = confirmData.get("bookingTime").toString();
-            LocalDateTime confirmedBookingTime = LocalDateTime.parse(bookingTimeStr);
+            System.out.println("📅 Received booking time string: " + bookingTimeStr);
+
+            // Parse datetime-local format (yyyy-MM-ddTHH:mm) or ISO-8601 format
+            // datetime-local returns local time format: yyyy-MM-ddTHH:mm
+            // We need to parse it as local time (not UTC)
+            LocalDateTime confirmedBookingTime;
+            try {
+                // Try ISO-8601 format first (yyyy-MM-ddTHH:mm:ss or yyyy-MM-ddTHH:mm:ss.SSS)
+                if (bookingTimeStr
+                        .matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|\\+\\d{2}:\\d{2})?")) {
+                    // Full ISO-8601 format with timezone
+                    String cleaned = bookingTimeStr.replaceAll("Z|\\+\\d{2}:\\d{2}$", "");
+                    confirmedBookingTime = LocalDateTime.parse(cleaned);
+                    System.out.println("✅ Parsed as ISO-8601 with timezone: " + confirmedBookingTime);
+                } else if (bookingTimeStr.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}")) {
+                    // ISO-8601 without timezone (assume local time)
+                    confirmedBookingTime = LocalDateTime.parse(bookingTimeStr);
+                    System.out.println("✅ Parsed as ISO-8601 without timezone: " + confirmedBookingTime);
+                } else if (bookingTimeStr.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}")) {
+                    // datetime-local format: yyyy-MM-ddTHH:mm (local time)
+                    confirmedBookingTime = LocalDateTime.parse(bookingTimeStr + ":00");
+                    System.out.println("✅ Parsed as datetime-local format: " + confirmedBookingTime);
+                } else {
+                    System.err.println("❌ Invalid booking time format: " + bookingTimeStr);
+                    throw new IllegalArgumentException("Invalid booking time format: " + bookingTimeStr);
+                }
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to parse booking time: " + bookingTimeStr);
+                System.err.println("⚠️ Error: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+                e.printStackTrace();
+                throw new IllegalArgumentException(
+                        "Invalid booking time format: " + bookingTimeStr + ". Error: " + e.getMessage());
+            }
+
+            System.out.println("✅ Parsed booking time: " + confirmedBookingTime);
+            System.out.println("✅ Current time: " + LocalDateTime.now());
+            System.out.println("✅ Is before now? " + confirmedBookingTime.isBefore(LocalDateTime.now()));
 
             // Lấy waitlist để kiểm tra restaurant ownership
             com.example.booking.domain.Waitlist waitlist = waitlistService.findById(waitlistId);

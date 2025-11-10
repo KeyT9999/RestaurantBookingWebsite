@@ -41,6 +41,7 @@ import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.User;
 import com.example.booking.domain.Waitlist;
 import com.example.booking.domain.RestaurantOwner;
+import com.example.booking.domain.Payment;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.service.BookingService;
 import com.example.booking.service.CustomerService;
@@ -48,6 +49,7 @@ import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.WaitlistService;
 import com.example.booking.service.SimpleUserService;
 import com.example.booking.service.RestaurantOwnerService;
+import com.example.booking.service.PaymentService;
 import com.example.booking.annotation.RateLimited;
 
 import com.example.booking.exception.BookingConflictException;
@@ -87,6 +89,9 @@ public class BookingController {
 
     @Autowired
     private RestaurantOwnerService restaurantOwnerService;
+
+    @Autowired
+    private PaymentService paymentService;
 
     /**
      * Show booking form - Only for customers and guests
@@ -785,6 +790,89 @@ public class BookingController {
 
         logger.info("🔄 Redirecting to /booking/my");
         return "redirect:/booking/my";
+    }
+
+    /**
+     * API endpoint để lấy payment status của booking (Customer)
+     */
+    @GetMapping("/api/booking/{bookingId}/payment-status")
+    @ResponseBody
+    public ResponseEntity<?> getBookingPaymentStatus(@PathVariable Integer bookingId,
+            Authentication authentication) {
+        try {
+            // Validate bookingId
+            if (bookingId == null) {
+                Map<String, Object> errorBody = new HashMap<>();
+                errorBody.put("success", false);
+                errorBody.put("message", "Booking ID is required");
+                return ResponseEntity.badRequest().body(errorBody);
+            }
+            
+            UUID customerId = getCurrentCustomerId(authentication);
+            
+            Optional<Booking> bookingOpt = bookingService.findBookingById(bookingId);
+            if (bookingOpt.isEmpty()) {
+                Map<String, Object> errorBody = new HashMap<>();
+                errorBody.put("success", false);
+                errorBody.put("message", "Booking not found");
+                return ResponseEntity.ok().body(errorBody);
+            }
+            
+            Booking booking = bookingOpt.get();
+            
+            // Check if customer owns this booking
+            if (booking.getCustomer() == null || 
+                !booking.getCustomer().getCustomerId().equals(customerId)) {
+                Map<String, Object> errorBody = new HashMap<>();
+                errorBody.put("success", false);
+                errorBody.put("message", "Unauthorized");
+                return ResponseEntity.status(403).body(errorBody);
+            }
+            
+            // Get payment status (chỉ kiểm tra payment status, không kiểm tra booking status)
+            Optional<Payment> paymentOpt = paymentService.findByBooking(booking);
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("success", true);
+            
+            if (paymentOpt.isEmpty()) {
+                responseBody.put("hasPayment", false);
+                responseBody.put("paymentStatus", null);
+                return ResponseEntity.ok().body(responseBody);
+            }
+            
+            Payment payment = paymentOpt.get();
+            if (payment == null) {
+                responseBody.put("hasPayment", false);
+                responseBody.put("paymentStatus", null);
+                return ResponseEntity.ok().body(responseBody);
+            }
+            
+            // Get payment status
+            if (payment.getStatus() == null) {
+                responseBody.put("hasPayment", true);
+                responseBody.put("paymentStatus", null);
+                responseBody.put("paymentId", payment.getPaymentId() != null ? payment.getPaymentId() : null);
+            } else {
+                responseBody.put("hasPayment", true);
+                responseBody.put("paymentStatus", payment.getStatus().name());
+                responseBody.put("paymentId", payment.getPaymentId() != null ? payment.getPaymentId() : null);
+            }
+            
+            return ResponseEntity.ok().body(responseBody);
+            
+        } catch (IllegalStateException e) {
+            logger.error("Authentication error getting booking payment status", e);
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("success", false);
+            errorBody.put("message", "Authentication required");
+            return ResponseEntity.status(401).body(errorBody);
+        } catch (Exception e) {
+            logger.error("Error getting booking payment status", e);
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("success", false);
+            errorBody.put("message", e.getMessage() != null ? e.getMessage() : "Unknown error occurred");
+            return ResponseEntity.status(500).body(errorBody);
+        }
     }
 
     /**

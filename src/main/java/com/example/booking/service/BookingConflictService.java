@@ -48,6 +48,8 @@ public class BookingConflictService {
     private static final int MIN_BOOKING_ADVANCE_MINUTES = 30; // Tối thiểu 30 phút trước
     private static final int MAX_BOOKING_ADVANCE_DAYS = 30; // Tối đa 30 ngày trước
     private static final int BOOKING_DURATION_HOURS = 2; // Thời gian booking mặc định
+    private static final int BUFFER_BEFORE_MINUTES = 90; // Buffer trước booking time: 1.5h = 90 phút
+    private static final int BUFFER_AFTER_MINUTES = 120; // Buffer sau booking time: 2h = 120 phút
     
     /**
      * Kiểm tra tất cả conflicts cho một booking
@@ -299,50 +301,101 @@ public class BookingConflictService {
     
     /**
      * Validate table conflicts - chỉ check overlap trong lịch booking
+     * Displays buffer range of CONFIRMED booking from database (NOT request time)
      */
-    private void validateTableConflicts(Integer tableId, LocalDateTime bookingTime, Integer guestCount, List<String> conflicts) {
+    private void validateTableConflicts(Integer tableId, LocalDateTime requestBookingTime, Integer guestCount, List<String> conflicts) {
         RestaurantTable table = restaurantTableRepository.findById(tableId)
                 .orElseThrow(() -> new IllegalArgumentException("Table not found"));
         
-        // Tính toán thời gian booking (bắt đầu và kết thúc)
-        LocalDateTime bookingStart = bookingTime;
-        LocalDateTime bookingEnd = bookingTime.plusHours(BOOKING_DURATION_HOURS);
+        // Request booking buffer range
+        LocalDateTime requestBufferStart = requestBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
+        LocalDateTime requestBufferEnd = requestBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
         
-        // Check overlap với các booking khác
-        // Sử dụng range rộng hơn để catch các booking có thể overlap
-        LocalDateTime checkStart = bookingStart.minusMinutes(30); // 30 phút buffer
-        LocalDateTime checkEnd = bookingEnd.plusMinutes(30); // 30 phút buffer
+        // Calculate search range to find CONFIRMED bookings from database
+        // whose buffer ranges could overlap with request buffer
+        LocalDateTime searchStart = requestBufferStart.minusMinutes(BUFFER_AFTER_MINUTES);
+        LocalDateTime searchEnd = requestBufferEnd.plusMinutes(BUFFER_BEFORE_MINUTES);
         
-        boolean hasOverlap = bookingTableRepository.existsByTableAndBookingTimeRange(table, checkStart, checkEnd);
+        // Find CONFIRMED bookings from database whose buffer ranges overlap with request buffer
+        List<Booking> conflictingBookings = bookingRepository.findTableConflictsInTimeRange(tableId, searchStart, searchEnd);
         
-        if (hasOverlap) {
+        // Filter to only bookings whose buffer ranges actually overlap
+        List<Booking> actualConflicts = conflictingBookings.stream()
+            .filter(booking -> {
+                // CONFIRMED booking buffer range from database
+                LocalDateTime dbBookingTime = booking.getBookingTime(); // FROM DATABASE
+                LocalDateTime existingBufferStart = dbBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
+                LocalDateTime existingBufferEnd = dbBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
+                
+                // Check if buffer ranges overlap
+                return !existingBufferStart.isAfter(requestBufferEnd) && !existingBufferEnd.isBefore(requestBufferStart);
+            })
+            .collect(java.util.stream.Collectors.toList());
+        
+        if (!actualConflicts.isEmpty()) {
+            // Use the first conflicting booking to display buffer range
+            Booking conflictingBooking = actualConflicts.get(0);
+            LocalDateTime dbBookingTime = conflictingBooking.getBookingTime(); // FROM DATABASE
+            LocalDateTime bufferStart = dbBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
+            LocalDateTime bufferEnd = dbBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
+            
+            // Format time as HH:mm
+            String bufferStartStr = String.format("%02d:%02d", bufferStart.getHour(), bufferStart.getMinute());
+            String bufferEndStr = String.format("%02d:%02d", bufferEnd.getHour(), bufferEnd.getMinute());
+            
             conflicts.add("Bàn " + table.getTableName() + " đã được đặt trong khung giờ này (" + 
-                         bookingStart.toLocalTime() + " - " + bookingEnd.toLocalTime() + ")");
+                         bufferStartStr + " - " + bufferEndStr + ")");
         }
     }
     
     /**
      * Validate table conflicts excluding current booking - chỉ check overlap trong lịch booking
+     * Displays buffer range of CONFIRMED booking from database (NOT request time)
      */
-    private void validateTableConflictsExcludingBooking(Integer tableId, LocalDateTime bookingTime, 
+    private void validateTableConflictsExcludingBooking(Integer tableId, LocalDateTime requestBookingTime, 
                                                       Integer guestCount, Integer excludeBookingId, List<String> conflicts) {
         RestaurantTable table = restaurantTableRepository.findById(tableId)
                 .orElseThrow(() -> new IllegalArgumentException("Table not found"));
         
-        // Tính toán thời gian booking (bắt đầu và kết thúc)
-        LocalDateTime bookingStart = bookingTime;
-        LocalDateTime bookingEnd = bookingTime.plusHours(BOOKING_DURATION_HOURS);
+        // Request booking buffer range
+        LocalDateTime requestBufferStart = requestBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
+        LocalDateTime requestBufferEnd = requestBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
         
-        // Check overlap với các booking khác (loại trừ booking hiện tại)
-        LocalDateTime checkStart = bookingStart.minusMinutes(30); // 30 phút buffer
-        LocalDateTime checkEnd = bookingEnd.plusMinutes(30); // 30 phút buffer
+        // Calculate search range to find CONFIRMED bookings from database
+        // whose buffer ranges could overlap with request buffer
+        LocalDateTime searchStart = requestBufferStart.minusMinutes(BUFFER_AFTER_MINUTES);
+        LocalDateTime searchEnd = requestBufferEnd.plusMinutes(BUFFER_BEFORE_MINUTES);
         
-        boolean hasOverlap = bookingTableRepository.existsByTableAndBookingTimeRangeExcludingBooking(
-            table, checkStart, checkEnd, excludeBookingId);
+        // Find CONFIRMED bookings from database whose buffer ranges overlap with request buffer
+        List<Booking> conflictingBookings = bookingRepository.findTableConflictsInTimeRange(tableId, searchStart, searchEnd);
         
-        if (hasOverlap) {
+        // Filter to only bookings whose buffer ranges actually overlap, excluding the specified booking
+        List<Booking> actualConflicts = conflictingBookings.stream()
+            .filter(booking -> booking.getBookingId() != excludeBookingId) // Exclude current booking
+            .filter(booking -> {
+                // CONFIRMED booking buffer range from database
+                LocalDateTime dbBookingTime = booking.getBookingTime(); // FROM DATABASE
+                LocalDateTime existingBufferStart = dbBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
+                LocalDateTime existingBufferEnd = dbBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
+                
+                // Check if buffer ranges overlap
+                return !existingBufferStart.isAfter(requestBufferEnd) && !existingBufferEnd.isBefore(requestBufferStart);
+            })
+            .collect(java.util.stream.Collectors.toList());
+        
+        if (!actualConflicts.isEmpty()) {
+            // Use the first conflicting booking to display buffer range
+            Booking conflictingBooking = actualConflicts.get(0);
+            LocalDateTime dbBookingTime = conflictingBooking.getBookingTime(); // FROM DATABASE
+            LocalDateTime bufferStart = dbBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
+            LocalDateTime bufferEnd = dbBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
+            
+            // Format time as HH:mm
+            String bufferStartStr = String.format("%02d:%02d", bufferStart.getHour(), bufferStart.getMinute());
+            String bufferEndStr = String.format("%02d:%02d", bufferEnd.getHour(), bufferEnd.getMinute());
+            
             conflicts.add("Bàn " + table.getTableName() + " đã được đặt trong khung giờ này (" + 
-                         bookingStart.toLocalTime() + " - " + bookingEnd.toLocalTime() + ")");
+                         bufferStartStr + " - " + bufferEndStr + ")");
         }
     }
 

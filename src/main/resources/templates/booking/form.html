@@ -790,7 +790,7 @@
                     <!-- Waitlist Information -->
                     <div class="waitlist-info bg-light p-3 rounded mt-3">
                         <h6><i class="fas fa-clock text-warning"></i> Thông tin danh sách chờ:</h6>
-                        <p><strong>Thời gian chờ ước tính:</strong> <span id="waitTime"></span></p>
+                        <p><strong>Thời gian có thể đặt bàn:</strong> <span id="waitTime"></span></p>
                         <p><strong>Nguyên nhân:</strong> <span id="waitReason"></span></p>
                     </div>
                 </div>
@@ -2082,6 +2082,9 @@
         
         // Set minimum datetime to now + 30 minutes
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if there's a conflict error message and show waitlist popup instead
+            checkAndShowWaitlistPopupFromError();
+            
             const now = new Date();
             now.setMinutes(now.getMinutes() + 30);
             const minDateTime = now.toISOString().slice(0, 16);
@@ -2649,9 +2652,89 @@
         let selectedAlternativeTable = null;
         
         /**
+         * Check if there's a conflict error message and show waitlist popup instead
+         */
+        function checkAndShowWaitlistPopupFromError() {
+            // Check if there's an error message about booking conflict
+            const errorMessageElement = document.querySelector('.alert-danger span');
+            if (!errorMessageElement) return;
+            
+            const errorMessage = errorMessageElement.textContent || '';
+            console.log('🔍 Checking error message:', errorMessage);
+            
+            // Check if error message contains conflict keywords
+            const conflictKeywords = ['conflict', 'trùng', 'đã được đặt', 'đang được sử dụng', 'không còn bàn', 'bàn đã được'];
+            const hasConflict = conflictKeywords.some(keyword => 
+                errorMessage.toLowerCase().includes(keyword.toLowerCase())
+            );
+            
+            if (hasConflict) {
+                console.log('✅ Conflict detected in error message - Showing waitlist popup...');
+                
+                // Hide the error message
+                const errorAlert = errorMessageElement.closest('.alert-danger');
+                if (errorAlert) {
+                    errorAlert.style.display = 'none';
+                }
+                
+                // Get form data to call availability check API
+                const restaurantId = document.getElementById('restaurantId')?.value;
+                const guestCount = document.getElementById('guestCount')?.value;
+                const bookingTime = document.getElementById('bookingTime')?.value;
+                const selectedTableIds = document.getElementById('selectedTableIds')?.value || '';
+                
+                if (restaurantId && guestCount && bookingTime) {
+                    // Call availability check API to get waitlist info
+                    console.log('📞 Calling availability check API with form data...');
+                    checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds);
+                } else {
+                    // If form data is not available, show generic waitlist popup
+                    console.log('⚠️ Form data not available, showing generic waitlist popup');
+                    const genericWaitlistData = {
+                        hasConflict: true,
+                        conflictType: 'NO_AVAILABLE_TABLES',
+                        waitlistInfo: {
+                            canJoinWaitlist: true,
+                            estimatedWaitTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+                            reason: errorMessage || 'Bàn đang được sử dụng hoặc không còn trống',
+                            waitTimeMinutes: 30
+                        },
+                        conflictDetails: {
+                            selectedTables: []
+                        }
+                    };
+                    showSmartWaitlistPopup(genericWaitlistData);
+                }
+            }
+        }
+        
+        /**
          * Check availability before form submission
          */
         function checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds) {
+            
+            // Check for test mode (force show popup)
+            const urlParams = new URLSearchParams(window.location.search);
+            const testMode = urlParams.get('testWaitlist') === 'true';
+            
+            if (testMode) {
+                console.log('🧪 TEST MODE: Forcing waitlist popup to show');
+                const testData = {
+                    hasConflict: true,
+                    conflictType: 'NO_AVAILABLE_TABLES',
+                    waitlistInfo: {
+                        canJoinWaitlist: true,
+                        estimatedWaitTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+                        reason: 'Test mode - All tables are booked',
+                        waitTimeMinutes: 30
+                    },
+                    conflictDetails: {
+                        selectedTables: []
+                    }
+                };
+                showSmartWaitlistPopup(testData);
+                return;
+            }
             
             const params = new URLSearchParams({
                 restaurantId: restaurantId,
@@ -2663,19 +2746,46 @@
                 params.append('selectedTableIds', selectedTableIds);
             }
             
+            console.log('🔍 Checking availability with params:', params.toString());
+            
             fetch(`/api/booking/availability-check?${params}`)
-                .then(response => response.json())
+                .then(response => {
+                    console.log('📡 API Response Status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('📦 API Response Data:', data);
+                    console.log('🔍 hasConflict:', data.hasConflict);
+                    console.log('🔍 conflictType:', data.conflictType);
+                    console.log('🔍 waitlistInfo:', data.waitlistInfo);
+                    
                     currentAvailabilityData = data;
                     
-                    if (data.hasConflict) {
+                    // Check if hasConflict is explicitly false or undefined
+                    if (data.hasConflict === true) {
+                        console.log('✅ Has conflict - Showing waitlist popup...');
                         showSmartWaitlistPopup(data);
                     } else {
-                        submitBookingForm();
+                        console.log('ℹ️ No conflict - Submitting form directly...');
+                        // Double check: if waitlistInfo exists, maybe we should show popup anyway?
+                        if (data.waitlistInfo && data.waitlistInfo.canJoinWaitlist) {
+                            console.log('⚠️ Waitlist info exists but hasConflict is false - showing popup anyway');
+                            // Force show popup if waitlist info is available
+                            const modifiedData = { ...data, hasConflict: true };
+                            showSmartWaitlistPopup(modifiedData);
+                        } else {
+                            submitBookingForm();
+                        }
                     }
                 })
                 .catch(error => {
+                    console.error('❌ Error in availability check:', error);
+                    console.error('❌ Error details:', error.message);
                     // Fallback to normal booking if API fails
+                    console.log('⚠️ Falling back to normal booking submission...');
                     submitBookingForm();
                 });
         }
@@ -2684,13 +2794,30 @@
          * Show Smart Waitlist popup with conflict information
          */
         function showSmartWaitlistPopup(data) {
+            console.log('🎯 showSmartWaitlistPopup called with data:', data);
+            
+            // Check if modal element exists
+            const modalElement = document.getElementById('smartWaitlistModal');
+            if (!modalElement) {
+                console.error('❌ Modal element not found!');
+                alert('Lỗi: Không tìm thấy popup waitlist. Vui lòng tải lại trang.');
+                return;
+            }
+            console.log('✅ Modal element found');
             
             // Update popup title based on conflict type
             const popupTitle = document.getElementById('popupTitle');
-            if (data.conflictType === 'SPECIFIC_TABLE') {
-                popupTitle.textContent = 'Bàn bạn chọn đang trùng lịch';
-            } else if (data.conflictType === 'NO_AVAILABLE_TABLES') {
-                popupTitle.textContent = 'Không còn bàn phù hợp với số khách';
+            if (!popupTitle) {
+                console.error('❌ popupTitle element not found!');
+            } else {
+                if (data.conflictType === 'SPECIFIC_TABLE') {
+                    popupTitle.textContent = 'Bàn bạn chọn đang trùng lịch';
+                } else if (data.conflictType === 'NO_AVAILABLE_TABLES') {
+                    popupTitle.textContent = 'Không còn bàn phù hợp với số khách';
+                } else {
+                    popupTitle.textContent = 'Không thể giữ bàn ngay';
+                }
+                console.log('✅ Popup title updated');
             }
             
             // Populate conflict content
@@ -2700,8 +2827,21 @@
             populateWaitlistInfo(data.waitlistInfo);
             
             // Show the modal
-            const modal = new bootstrap.Modal(document.getElementById('smartWaitlistModal'));
-            modal.show();
+            try {
+                // Check if Bootstrap is available
+                if (typeof bootstrap === 'undefined') {
+                    console.error('❌ Bootstrap is not loaded!');
+                    alert('Lỗi: Bootstrap không được tải. Vui lòng tải lại trang.');
+                    return;
+                }
+                
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+                console.log('✅ Modal shown successfully');
+            } catch (error) {
+                console.error('❌ Error showing modal:', error);
+                alert('Lỗi khi hiển thị popup waitlist: ' + error.message);
+            }
         }
         
         /**
@@ -2709,54 +2849,119 @@
          */
         function populateConflictContent(data) {
             const conflictContent = document.getElementById('conflictContent');
+            if (!conflictContent) {
+                console.error('❌ conflictContent element not found!');
+                return;
+            }
             
             if (data.conflictType === 'SPECIFIC_TABLE') {
                 let html = '<div class="alert alert-warning"><h6><i class="fas fa-exclamation-triangle"></i> Bàn đang được giữ bởi người khác:</h6>';
                 
-                data.conflictDetails.selectedTables.forEach(table => {
-                    html += `<div class="mb-2">
-                        <strong>${table.tableName}</strong> (Sức chứa: ${table.capacity} khách)
-                        <ul class="mb-0 mt-1">`;
-                    
-                    table.conflicts.forEach(conflict => {
-                        const bookingTime = new Date(conflict.bookingTime).toLocaleString('vi-VN');
-                        const endTime = new Date(conflict.endTime).toLocaleString('vi-VN');
-                        html += `<li>Đặt bàn #${conflict.bookingId}: ${bookingTime} - ${endTime} (${conflict.guestCount} khách, ${conflict.status})</li>`;
+                if (data.conflictDetails && data.conflictDetails.selectedTables) {
+                    data.conflictDetails.selectedTables.forEach(table => {
+                        html += `<div class="mb-2">
+                            <strong>${table.tableName}</strong> (Sức chứa: ${table.capacity} khách)
+                            <ul class="mb-0 mt-1">`;
+                        
+                        if (table.conflicts && table.conflicts.length > 0) {
+                            table.conflicts.forEach(conflict => {
+                                try {
+                                    // Format time from booking conflict
+                                    const bookingTime = new Date(conflict.bookingTime);
+                                    const endTime = new Date(conflict.endTime);
+                                    
+                                    // Format as HH:mm
+                                    const bookingTimeStr = bookingTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                                    const endTimeStr = endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                                    
+                                    html += `<li>Đặt bàn #${conflict.bookingId}: ${bookingTimeStr} - ${endTimeStr} (${conflict.guestCount} khách)</li>`;
+                                } catch (error) {
+                                    console.error('❌ Error formatting conflict time:', error);
+                                    html += `<li>Đặt bàn #${conflict.bookingId} (${conflict.guestCount} khách)</li>`;
+                                }
+                            });
+                        }
+                        
+                        html += '</ul></div>';
                     });
-                    
-                    html += '</ul></div>';
-                });
+                } else {
+                    html += '<p>Bàn bạn chọn đang được sử dụng.</p>';
+                }
                 
                 html += '</div>';
                 conflictContent.innerHTML = html;
                 
             } else if (data.conflictType === 'NO_AVAILABLE_TABLES') {
-                conflictContent.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h6><i class="fas fa-ban"></i> No Available Tables</h6>
-                        <p class="mb-0">All tables suitable for your party size are currently booked.</p>
-                    </div>
-                `;
+                // Don't show "Không còn bàn trống" message - just show reason from waitlistInfo
+                conflictContent.innerHTML = '';
+            } else {
+                console.warn('⚠️ Unknown conflict type:', data.conflictType);
+                conflictContent.innerHTML = '<div class="alert alert-warning">Có xung đột với đặt bàn của bạn.</div>';
             }
+            
+            console.log('✅ Conflict content populated');
         }
         
         /**
          * Populate waitlist information
          */
         function populateWaitlistInfo(waitlistInfo) {
-            if (!waitlistInfo) return;
+            console.log('📋 populateWaitlistInfo called with:', waitlistInfo);
+            
+            if (!waitlistInfo) {
+                console.warn('⚠️ waitlistInfo is null or undefined');
+                return;
+            }
             
             const waitTimeElement = document.getElementById('waitTime');
             const waitReasonElement = document.getElementById('waitReason');
             
-            if (waitlistInfo.estimatedWaitTime) {
-                const waitTime = new Date(waitlistInfo.estimatedWaitTime).toLocaleString('vi-VN');
-                waitTimeElement.textContent = waitTime;
+            if (waitTimeElement) {
+                if (waitlistInfo.estimatedWaitTime) {
+                    try {
+                        // estimatedWaitTime is when booking can be made (after conflict ends + buffer)
+                        const estimatedTime = new Date(waitlistInfo.estimatedWaitTime);
+                        
+                        // Format as: "HH:mm dd/MM/yyyy" (when booking can be made)
+                        const dateStr = estimatedTime.toLocaleDateString('vi-VN', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: 'numeric' 
+                        });
+                        const timeStr = estimatedTime.toLocaleTimeString('vi-VN', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        });
+                        
+                        waitTimeElement.textContent = `${timeStr} ${dateStr}`;
+                        console.log('✅ Wait time set:', waitTimeElement.textContent);
+                    } catch (error) {
+                        console.error('❌ Error parsing wait time:', error);
+                        waitTimeElement.textContent = 'Đang tính toán...';
+                    }
+                } else if (waitlistInfo.waitTimeMinutes) {
+                    // Fallback: show minutes if estimatedWaitTime is not available
+                    waitTimeElement.textContent = `Khoảng ${waitlistInfo.waitTimeMinutes} phút`;
+                    console.log('✅ Wait time minutes set:', waitlistInfo.waitTimeMinutes);
+                } else {
+                    waitTimeElement.textContent = 'Đang tính toán...';
+                }
+            } else {
+                console.error('❌ waitTime element not found!');
             }
             
-            if (waitlistInfo.reason) {
-                waitReasonElement.textContent = waitlistInfo.reason;
+            if (waitReasonElement) {
+                if (waitlistInfo.reason) {
+                    waitReasonElement.textContent = waitlistInfo.reason;
+                    console.log('✅ Wait reason set:', waitlistInfo.reason);
+                } else {
+                    waitReasonElement.textContent = 'Bàn đang được sử dụng';
+                }
+            } else {
+                console.error('❌ waitReason element not found!');
             }
+            
+            console.log('✅ Waitlist info populated');
         }
         
         /**

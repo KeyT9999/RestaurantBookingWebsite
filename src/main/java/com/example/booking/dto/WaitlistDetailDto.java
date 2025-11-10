@@ -237,6 +237,7 @@ public class WaitlistDetailDto {
         private String tableName;
         private Integer capacity;
         private String status;
+        private BigDecimal tableFee;
 
         // Constructors
         public WaitlistTableDto() {
@@ -246,6 +247,14 @@ public class WaitlistDetailDto {
             this.tableName = tableName;
             this.capacity = capacity;
             this.status = status;
+            this.tableFee = BigDecimal.ZERO;
+        }
+
+        public WaitlistTableDto(String tableName, Integer capacity, String status, BigDecimal tableFee) {
+            this.tableName = tableName;
+            this.capacity = capacity;
+            this.status = status;
+            this.tableFee = tableFee != null ? tableFee : BigDecimal.ZERO;
         }
         
         // Getters and Setters
@@ -271,6 +280,14 @@ public class WaitlistDetailDto {
 
         public void setStatus(String status) {
             this.status = status;
+        }
+
+        public BigDecimal getTableFee() {
+            return tableFee;
+        }
+
+        public void setTableFee(BigDecimal tableFee) {
+            this.tableFee = tableFee != null ? tableFee : BigDecimal.ZERO;
         }
     }
 }
