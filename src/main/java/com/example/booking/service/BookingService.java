@@ -359,6 +359,10 @@ public class BookingService {
         BigDecimal subtotal = calculateSubtotal(booking);
         System.out.println("💰 Subtotal (table fees + dishes + services): " + subtotal);
 
+        // Save totalAmount to database for quick access (denormalized for performance)
+        booking.setTotalAmount(subtotal);
+        System.out.println("✅ Total amount saved to database: " + subtotal);
+
         // Apply deposit rule: deposit = 10% of subtotal
         try {
             if (!depositProvidedByForm) {
@@ -478,6 +482,20 @@ public class BookingService {
 
             // Assign new table
             assignTableToBooking(booking, form.getTableId());
+        }
+
+        // Recalculate and update totalAmount after items changed
+        BigDecimal subtotal = calculateSubtotal(booking);
+        booking.setTotalAmount(subtotal);
+
+        // Recalculate deposit = 10% of subtotal
+        if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal computedDeposit = subtotal.multiply(new BigDecimal("0.10"));
+            computedDeposit = computedDeposit.setScale(0, java.math.RoundingMode.HALF_UP);
+            booking.setDepositAmount(computedDeposit);
+            System.out.println("✅ Deposit recalculated as 10% of subtotal: " + computedDeposit);
+        } else {
+            booking.setDepositAmount(BigDecimal.ZERO);
         }
 
         return bookingRepository.save(booking);
@@ -1325,23 +1343,38 @@ public class BookingService {
 
     /**
      * Calculate total amount for booking
-     * Total = subtotal (table fees + dishes + services) + deposit
+     * Total = subtotal (table fees + dishes + services)
+     * Note: Deposit is calculated separately as 10% of subtotal, not added to total
+     * 
+     * This method returns the cached totalAmount from database if available,
+     * otherwise calculates it from items (for backward compatibility with old
+     * bookings)
      */
     public BigDecimal calculateTotalAmount(Booking booking) {
         if (booking == null) {
             throw new IllegalArgumentException("Booking cannot be null");
         }
 
-        // Tính subtotal (table fees + dishes + services)
+        // If totalAmount is already stored in database and > 0, use it (performance
+        // optimization)
+        if (booking.getTotalAmount() != null && booking.getTotalAmount().compareTo(BigDecimal.ZERO) > 0) {
+            System.out.println("💰 Using cached total amount from database: " + booking.getTotalAmount());
+            return booking.getTotalAmount();
+        }
+
+        // Otherwise, calculate from items (for old bookings that don't have totalAmount
+        // stored)
         BigDecimal subtotal = calculateSubtotal(booking);
+        System.out.println("💰 Calculated total amount from items: " + subtotal);
 
-        // Total = subtotal + deposit
-        BigDecimal deposit = booking.getDepositAmount() != null ? booking.getDepositAmount() : BigDecimal.ZERO;
-        BigDecimal total = subtotal.add(deposit);
+        // Update database with calculated value for future queries
+        if (booking.getBookingId() != null) {
+            booking.setTotalAmount(subtotal);
+            bookingRepository.save(booking);
+            System.out.println("✅ Updated total amount in database for future queries");
+        }
 
-        System.out.println("💰 Deposit amount: " + deposit);
-        System.out.println("💰 TOTAL AMOUNT (subtotal + deposit): " + total);
-        return total;
+        return subtotal;
     }
 
     /**
@@ -1396,6 +1429,21 @@ public class BookingService {
         bookingServiceRepository.deleteByBooking(booking);
         if (form.getServiceIds() != null && !form.getServiceIds().trim().isEmpty()) {
             assignServicesToBooking(booking, form.getServiceIds());
+        }
+
+        // Recalculate and update totalAmount after items changed
+        BigDecimal subtotal = calculateSubtotal(booking);
+        booking.setTotalAmount(subtotal);
+        System.out.println("✅ Total amount updated in database: " + subtotal);
+
+        // Recalculate deposit = 10% of subtotal
+        if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal computedDeposit = subtotal.multiply(new BigDecimal("0.10"));
+            computedDeposit = computedDeposit.setScale(0, java.math.RoundingMode.HALF_UP);
+            booking.setDepositAmount(computedDeposit);
+            System.out.println("✅ Deposit recalculated as 10% of subtotal: " + computedDeposit);
+        } else {
+            booking.setDepositAmount(BigDecimal.ZERO);
         }
 
         Booking saved = bookingRepository.save(booking);

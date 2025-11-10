@@ -19,6 +19,7 @@ public class BookingDetailsDto {
     private Integer guestCount;
     private BigDecimal depositAmount;
     private BigDecimal totalAmount;
+    private BigDecimal tableFeesTotal; // Total table fees
     private BookingStatus status;
     private List<BookingDishDto> dishes;
     private List<BookingServiceDto> services;
@@ -104,6 +105,14 @@ public class BookingDetailsDto {
     
     public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
+    }
+    
+    public BigDecimal getTableFeesTotal() {
+        return tableFeesTotal;
+    }
+    
+    public void setTableFeesTotal(BigDecimal tableFeesTotal) {
+        this.tableFeesTotal = tableFeesTotal;
     }
     
     public BookingStatus getStatus() {

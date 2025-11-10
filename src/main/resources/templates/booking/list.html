@@ -487,6 +487,7 @@
                     // Format amounts
                     const depositAmount = new Intl.NumberFormat('vi-VN').format(data.depositAmount || 0);
                     const totalAmount = new Intl.NumberFormat('vi-VN').format(data.totalAmount || 0);
+                    const tableFeesTotal = data.tableFeesTotal || 0;
                     
                     // Get status badge
                     let statusBadge = '';
@@ -565,6 +566,33 @@
                         </div>
                         
                         <hr style="border-color: var(--luxury-gold);">
+                        
+                        ${data.tableFeesTotal && data.tableFeesTotal > 0 ? `
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <h6 style="color: var(--luxury-gold); font-weight: 600;">
+                                        <i class="fas fa-table"></i> Table Fees
+                                    </h6>
+                                    <div class="d-flex justify-content-between align-items-center" style="padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: 4px;">
+                                        <div>
+                                            <span style="color: var(--luxury-white);">
+                                                ${data.tableNames && data.tableNames.length > 0 ? 
+                                                    data.tableNames.map(name => `<span class="badge bg-warning text-dark me-1">${name}</span>`).join('') : 
+                                                    'No tables assigned'
+                                                }
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <strong style="color: var(--luxury-white); font-size: 1.1rem;">
+                                                ${new Intl.NumberFormat('vi-VN').format(data.tableFeesTotal)} VNĐ
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
                         
                         ${data.dishes && data.dishes.length > 0 ? `
                         <div class="row">

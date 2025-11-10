@@ -59,7 +59,7 @@ ai:
   openai:
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-4o-mini}
-    timeout-ms: ${OPENAI_TIMEOUT_MS:800}
+    timeout-ms: ${OPENAI_TIMEOUT_MS:5000}
   
   features:
     enabled: ${AI_ENABLED:true}

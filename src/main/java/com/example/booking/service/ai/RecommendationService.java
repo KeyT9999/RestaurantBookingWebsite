@@ -99,9 +99,19 @@ public class RecommendationService {
                 candidates = findRestaurantsByDishNames(suggestedFoods);
                 searchStrategy = "dish";
                 
-                // Fallback to cuisine search if no restaurants found
+                // Fallback 1: Search by keywords in cuisine type and restaurant name
                 if (candidates.isEmpty()) {
-                    System.out.println("⚠️ No restaurants found by dish, falling back to cuisine search");
+                    System.out.println("⚠️ No restaurants found by dish, trying keyword search");
+                    candidates = findRestaurantsByKeywords(suggestedFoods, query);
+                    if (!candidates.isEmpty()) {
+                        searchStrategy = "keyword";
+                        System.out.println("✅ Found " + candidates.size() + " restaurants by keywords");
+                    }
+                }
+                
+                // Fallback 2: Search by cuisine from intent
+                if (candidates.isEmpty()) {
+                    System.out.println("⚠️ No restaurants found by keywords, falling back to cuisine search");
                     PricePreference pricePreference = resolvePricePreference(request, intent);
                     candidates = findCandidates(intent, request, pricePreference);
                     searchStrategy = "mixed";
@@ -157,7 +167,8 @@ public class RecommendationService {
             throw new IllegalStateException("Intent parsing service unavailable");
         }
 
-        return intentFuture.get(800, java.util.concurrent.TimeUnit.MILLISECONDS);
+        // Increased timeout to 5 seconds to allow OpenAI enough time to process complex queries
+        return intentFuture.get(5000, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -204,6 +215,117 @@ public class RecommendationService {
         
         System.out.println("✅ Found " + restaurants.size() + " unique restaurants with suggested dishes");
         return restaurants;
+    }
+    
+    /**
+     * Find restaurants by keywords in cuisine type, restaurant name, or description
+     * This is a fallback when no dishes are found by exact name
+     */
+    private List<RestaurantProfile> findRestaurantsByKeywords(List<String> suggestedFoods, String originalQuery) {
+        System.out.println("🔍 Finding restaurants by keywords from: " + suggestedFoods);
+        
+        if (suggestedFoods == null || suggestedFoods.isEmpty()) {
+            return List.of();
+        }
+        
+        // Extract keywords from suggested foods and original query
+        Set<String> keywords = new java.util.HashSet<>();
+        
+        // Add suggested foods as keywords
+        for (String food : suggestedFoods) {
+            if (food != null && !food.trim().isEmpty()) {
+                String normalized = normalize(food.trim());
+                keywords.add(normalized);
+                
+                // Also add individual words (e.g., "thịt nướng" → ["thit", "nuong"])
+                String[] words = normalized.split("\\s+");
+                for (String word : words) {
+                    if (word.length() > 2) { // Skip very short words
+                        keywords.add(word);
+                    }
+                }
+            }
+        }
+        
+        // Add keywords from original query
+        if (originalQuery != null && !originalQuery.trim().isEmpty()) {
+            String normalizedQuery = normalize(originalQuery);
+            // Extract important keywords (BBQ, nướng, hấp, chiên, etc.)
+            String[] queryWords = normalizedQuery.split("\\s+");
+            for (String word : queryWords) {
+                // Keep words related to food/cooking (length >= 3)
+                if (word.length() >= 3 && !isStopWord(word)) {
+                    keywords.add(word);
+                }
+            }
+        }
+        
+        System.out.println("🔎 Extracted keywords: " + keywords);
+        
+        // Search restaurants by keywords
+        List<RestaurantProfile> allRestaurants = restaurantService.findAllRestaurants();
+        if (allRestaurants == null) {
+            allRestaurants = List.of();
+        }
+        
+        List<RestaurantProfile> matchedRestaurants = new ArrayList<>();
+        
+        for (RestaurantProfile restaurant : allRestaurants) {
+            boolean matched = false;
+            
+            // Check cuisine type
+            if (restaurant.getCuisineType() != null) {
+                String normalizedCuisine = normalize(restaurant.getCuisineType());
+                for (String keyword : keywords) {
+                    if (normalizedCuisine.contains(keyword) || keyword.contains(normalizedCuisine)) {
+                        System.out.println("✅ Matched by cuisine: " + restaurant.getRestaurantName() + 
+                            " (cuisine: " + restaurant.getCuisineType() + ", keyword: " + keyword + ")");
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check restaurant name
+            if (!matched && restaurant.getRestaurantName() != null) {
+                String normalizedName = normalize(restaurant.getRestaurantName());
+                for (String keyword : keywords) {
+                    if (normalizedName.contains(keyword)) {
+                        System.out.println("✅ Matched by name: " + restaurant.getRestaurantName() + 
+                            " (keyword: " + keyword + ")");
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+            
+            // Check description
+            if (!matched && restaurant.getDescription() != null) {
+                String normalizedDesc = normalize(restaurant.getDescription());
+                for (String keyword : keywords) {
+                    if (normalizedDesc.contains(keyword)) {
+                        System.out.println("✅ Matched by description: " + restaurant.getRestaurantName() + 
+                            " (keyword: " + keyword + ")");
+                        matched = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (matched) {
+                matchedRestaurants.add(restaurant);
+            }
+        }
+        
+        System.out.println("✅ Found " + matchedRestaurants.size() + " restaurants by keyword matching");
+        return matchedRestaurants;
+    }
+    
+    /**
+     * Check if a word is a stop word (should be ignored in keyword search)
+     */
+    private boolean isStopWord(String word) {
+        return DEFAULT_STOP_WORDS.contains(word);
     }
     
     /**

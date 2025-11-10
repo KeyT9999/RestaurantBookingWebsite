@@ -724,9 +724,19 @@ public class WaitlistService {
             System.out.println("✅ Copied " + waitlist.getWaitlistTables().size() + " tables to booking");
         }
 
-        // Tính tổng tiền
-        BigDecimal totalAmount = calculateTotalAmount(savedBooking);
-        savedBooking.setDepositAmount(totalAmount);
+        // Tính subtotal (table fees + dishes + services)
+        BigDecimal subtotal = calculateTotalAmount(savedBooking);
+
+        // Lưu totalAmount vào database để tối ưu performance
+        savedBooking.setTotalAmount(subtotal);
+
+        // Tính deposit = 10% của subtotal
+        BigDecimal depositAmount = BigDecimal.ZERO;
+        if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
+            depositAmount = subtotal.multiply(new BigDecimal("0.10"));
+            depositAmount = depositAmount.setScale(0, java.math.RoundingMode.HALF_UP);
+        }
+        savedBooking.setDepositAmount(depositAmount);
         bookingRepository.save(savedBooking);
 
         // Cập nhật waitlist status
@@ -737,7 +747,8 @@ public class WaitlistService {
         System.out.println("   Waitlist ID: " + waitlistId);
         System.out.println("   Booking ID: " + savedBooking.getBookingId());
         System.out.println("   Booking Time: " + confirmedBookingTime);
-        System.out.println("   Total Amount: " + totalAmount);
+        System.out.println("   Total Amount: " + subtotal);
+        System.out.println("   Deposit Amount: " + depositAmount);
 
         return savedBooking;
     }
@@ -763,23 +774,43 @@ public class WaitlistService {
     }
 
     /**
-     * Tính tổng tiền cho booking
+     * Tính subtotal cho booking (table fees + dishes + services)
+     * Note: This should match BookingService.calculateSubtotal() logic
      */
     private BigDecimal calculateTotalAmount(Booking booking) {
-        BigDecimal total = BigDecimal.ZERO;
+        BigDecimal subtotal = BigDecimal.ZERO;
 
-        // Tính tiền dishes
+        // 1. Tính tổng phí bàn từ BookingTable
+        List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
+        if (bookingTables != null && !bookingTables.isEmpty()) {
+            BigDecimal tableFeeTotal = BigDecimal.ZERO;
+            for (BookingTable bookingTable : bookingTables) {
+                tableFeeTotal = tableFeeTotal
+                        .add(bookingTable.getTableFee() != null ? bookingTable.getTableFee() : BigDecimal.ZERO);
+            }
+            subtotal = subtotal.add(tableFeeTotal);
+        }
+
+        // 2. Tính tiền dishes
         List<BookingDish> bookingDishes = bookingDishRepository.findByBooking(booking);
-        for (BookingDish bookingDish : bookingDishes) {
-            total = total.add(bookingDish.getPrice().multiply(BigDecimal.valueOf(bookingDish.getQuantity())));
+        if (bookingDishes != null) {
+            for (BookingDish bookingDish : bookingDishes) {
+                BigDecimal dishTotal = bookingDish.getTotalPrice() != null ? bookingDish.getTotalPrice()
+                        : bookingDish.getPrice().multiply(BigDecimal.valueOf(bookingDish.getQuantity()));
+                subtotal = subtotal.add(dishTotal);
+            }
         }
 
-        // Tính tiền services
+        // 3. Tính tiền services
         List<BookingService> bookingServices = bookingServiceRepository.findByBooking(booking);
-        for (BookingService bookingService : bookingServices) {
-            total = total.add(bookingService.getPrice().multiply(BigDecimal.valueOf(bookingService.getQuantity())));
+        if (bookingServices != null) {
+            for (BookingService bookingService : bookingServices) {
+                BigDecimal serviceTotal = bookingService.getTotalPrice() != null ? bookingService.getTotalPrice()
+                        : bookingService.getPrice().multiply(BigDecimal.valueOf(bookingService.getQuantity()));
+                subtotal = subtotal.add(serviceTotal);
+            }
         }
 
-        return total;
+        return subtotal;
     }
 }

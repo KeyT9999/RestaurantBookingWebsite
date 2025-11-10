@@ -490,13 +490,26 @@ public class RestaurantManagementService {
                 LocalTime closeTime = LocalTime.parse(hours[1]);
                 
                 // Kiểm tra nếu đang trong khoảng thời gian mở cửa
-                return !now.isBefore(openTime) && !now.isAfter(closeTime);
+                // Trường hợp bình thường: mở cửa nếu hiện tại >= openTime và <= closeTime
+                boolean isOpen = (now.isAfter(openTime) || now.equals(openTime)) && 
+                                (now.isBefore(closeTime) || now.equals(closeTime));
+                
+                // Debug logging
+                System.out.println("Restaurant: " + restaurant.getRestaurantName() + 
+                                 " | Hours: " + openingHours + 
+                                 " | Now: " + now + 
+                                 " | Open: " + openTime + 
+                                 " | Close: " + closeTime + 
+                                 " | IsOpen: " + isOpen);
+                
+                return isOpen;
             }
         } catch (DateTimeParseException e) {
             System.err.println("Error parsing opening hours: " + restaurant.getOpeningHours() + 
                              " for restaurant: " + restaurant.getRestaurantName());
         } catch (Exception e) {
             System.err.println("Error checking restaurant hours: " + e.getMessage());
+            e.printStackTrace();
         }
         
         return false;

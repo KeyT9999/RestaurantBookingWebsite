@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title th:text="${pageTitle}">Tạo nhà hàng mới</title>
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}" />
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -12,6 +15,10 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Home Resy Style CSS -->
+    <link th:href="@{/css/home-resy.css}" rel="stylesheet">
+    <!-- Login Modal CSS -->
+    <link th:href="@{/css/login-modal.css}" rel="stylesheet">
     <!-- Dashboard CSS -->
     <link th:href="@{/css/dashboard.css}" rel="stylesheet" />
     
@@ -20,6 +27,12 @@
             background: var(--dashboard-light-gray);
             min-height: 100vh;
             padding-bottom: 2rem;
+        }
+
+        /* Ensure content is below header */
+        .restaurant-form-page .form-container {
+            margin-top: 80px; /* Header height */
+            padding-top: 1rem;
         }
 
         .form-section {
@@ -116,38 +129,6 @@
             margin: 0;
         }
 
-        .breadcrumb-nav {
-            background: var(--dashboard-white);
-            border-bottom: 1px solid var(--dashboard-border);
-            padding: 1rem 0;
-            margin-bottom: 2rem;
-        }
-
-        .breadcrumb-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        .breadcrumb-nav a {
-            color: var(--dashboard-gray);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .breadcrumb-nav a:hover {
-            color: var(--dashboard-black);
-        }
-
-        .breadcrumb-nav .nav-separator {
-            color: var(--dashboard-border);
-            margin: 0 0.5rem;
-        }
-
-        .breadcrumb-nav .nav-current {
-            color: var(--dashboard-black);
-            font-weight: 500;
-        }
 
         .form-container {
             max-width: 1400px;
@@ -295,18 +276,155 @@
     </style>
 </head>
 <body class="restaurant-form-page">
-    <!-- Breadcrumb Navigation -->
-    <nav class="breadcrumb-nav">
-        <div class="breadcrumb-content">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <a th:href="@{/}">← Trang chủ</a>
-                <span class="nav-separator">|</span>
-                <a th:href="@{/restaurant-owner/profile}">Hồ sơ Nhà hàng</a>
-                <span class="nav-separator">|</span>
-                <span class="nav-current" th:text="${pageTitle}">Tạo nhà hàng mới</span>
+    <!-- Main Header -->
+    <header class="header">
+        <div class="container">
+            <!-- Left Section: Logo only -->
+            <div class="header-left">
+                <a th:href="@{/}" class="logo">Book Eat</a>
+            </div>
+            
+            <!-- Center Section: Navigation -->
+            <div class="header-center">
+                <nav>
+                    <ul class="nav-menu">
+                        <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
+                        <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <!-- Right Section: Search + Actions -->
+            <div class="header-right">
+                <!-- Header Search Dropdown -->
+                <div class="header-search">
+                    <button class="search-toggle" onclick="toggleSearchDropdown()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-dropdown" id="searchDropdown">
+                        <form th:action="@{/restaurants}" method="get" class="search-form">
+                            <div class="search-row">
+                                <div class="search-field">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" 
+                                           name="search" 
+                                           placeholder="Tên nhà hàng, địa chỉ..." 
+                                           class="search-input">
+                                </div>
+                            </div>
+                            <div class="search-row">
+                                <div class="search-field">
+                                    <i class="fas fa-utensils search-icon"></i>
+                                    <select name="cuisineType" class="search-select">
+                                        <option value="">Loại ẩm thực</option>
+                                        <option value="Vietnamese">Việt Nam</option>
+                                        <option value="Korean">Hàn Quốc</option>
+                                        <option value="Japanese">Nhật Bản</option>
+                                        <option value="Chinese">Trung Quốc</option>
+                                        <option value="Western">Phương Tây</option>
+                                        <option value="Thai">Thái Lan</option>
+                                        <option value="Italian">Ý</option>
+                                    </select>
+                                </div>
+                                <div class="search-field">
+                                    <i class="fas fa-dollar-sign search-icon"></i>
+                                    <select name="priceRange" class="search-select">
+                                        <option value="">Khoảng giá</option>
+                                        <option value="under-50k">Dưới 50k</option>
+                                        <option value="50k-100k">50k - 100k</option>
+                                        <option value="100k-200k">100k - 200k</option>
+                                        <option value="over-200k">Trên 200k</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="search-actions">
+                                <button type="submit" class="search-submit">
+                                    <i class="fas fa-search"></i>
+                                    Tìm kiếm
+                                </button>
+                                <button type="button" class="search-clear" onclick="clearSearch()">
+                                    <i class="fas fa-times"></i>
+                                    Xóa
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                <!-- Guest User Actions -->
+                <button type="button" class="btn-resy-outline" data-bs-toggle="modal" data-bs-target="#loginModal" sec:authorize="!isAuthenticated()">Đăng nhập</button>
+                <a th:href="@{/auth/register}" class="btn-resy" sec:authorize="!isAuthenticated()">Đăng ký</a>
+                
+                <!-- Authenticated User Actions -->
+                <div sec:authorize="isAuthenticated()" class="user-actions">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell-wrapper">
+                        <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
+                    </div>
+                    
+                    <!-- Restaurant Owner Dashboard -->
+                    <a th:href="@{/restaurant-owner/dashboard}" class="btn-resy" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                    
+                    <!-- Admin Dashboard -->
+                    <a th:href="@{/admin/dashboard}" class="btn-resy" sec:authorize="hasRole('ADMIN')">
+                        <i class="fas fa-cog"></i>
+                        Admin
+                    </a>
+                    
+                    <!-- User Profile Dropdown -->
+                    <div class="user-dropdown">
+                        <button class="btn-resy-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i>
+                            <span sec:authentication="name">User</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/auth/profile}">
+                                    <i class="fas fa-user me-2"></i>
+                                    Profile
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('CUSTOMER')">
+                                <a class="dropdown-item" th:href="@{/booking/my}">
+                                    <i class="fas fa-calendar-check me-2"></i>
+                                    My Reservations
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('CUSTOMER')">
+                                <a class="dropdown-item" th:href="@{/customer/favorites}">
+                                    <i class="fas fa-star me-2"></i>
+                                    Favorites
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                <a class="dropdown-item" th:href="@{/restaurant-owner/dashboard}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    Restaurant Dashboard
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('ADMIN')">
+                                <a class="dropdown-item" th:href="@{/admin/dashboard}">
+                                    <i class="fas fa-cog me-2"></i>
+                                    Admin Dashboard
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/logout}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    Đăng xuất
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
-    </nav>
+    </header>
 
     <div class="form-container">
         <!-- Flash Messages -->
@@ -320,7 +438,43 @@
                 <p>Điền thông tin chi tiết về nhà hàng của bạn</p>
             </div>
 
-            <form th:action="${restaurant.restaurantId != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/edit' : '/restaurant-owner/restaurants/create'}" 
+            <!-- AI Auto-Fill Section -->
+            <div class="form-section ai-auto-fill-section">
+                <div class="form-section-header">
+                    <h2>🤖 Điền tự động bằng AI</h2>
+                    <p>Nhập đầy đủ thông tin về nhà hàng của bạn, AI sẽ tự động phân tích và điền vào các trường tương ứng.</p>
+                </div>
+                <div class="ai-auto-fill-container">
+                    <div class="form-item full">
+                        <textarea id="ai-auto-fill-textarea" rows="6" placeholder="Nhập thông tin về nhà hàng của bạn, AI sẽ tự động phân tích và điền vào các trường tương ứng.
+
+Ví dụ:
+Nhà hàng: Country BBQ & Beer – Trần Bạch Đằng
+Địa chỉ: 45 Trần Bạch Đằng, Sơn Trà, Đà Nẵng
+Điện thoại: 0901 234 567
+Loại ẩm thực: Vietnamese BBQ, Grill, Beer Garden
+Giờ mở cửa: 10:30 - 22:30
+Giá trung bình: 180000 VNĐ
+Khoảng giá: 80000 - 290000 VNĐ
+Mô tả: BBQ ngoài trời thoáng mát, món nướng than hồng, bia lạnh.
+Món đặc sắc: sườn nướng mật ong, bạch tuộc sa tế, hàu nướng mỡ hành.
+Tổng quan: phù hợp tụ tập bạn bè, liên hoan công ty."></textarea>
+                    </div>
+                    <div class="ai-action-buttons">
+                        <button type="button" id="ai-auto-fill-btn" class="btn btn-ai-primary">
+                            <i class="fas fa-magic"></i>
+                            <span id="ai-auto-fill-btn-text">🚀 Điền tự động bằng AI</span>
+                        </button>
+                        <div id="ai-auto-fill-loading" class="ai-loading" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Đang xử lý...</span>
+                        </div>
+                    </div>
+                    <div id="ai-auto-fill-message" class="ai-message" style="display: none;"></div>
+                </div>
+            </div>
+
+            <form id="restaurant-form" th:action="${restaurant.restaurantId != null ? '/restaurant-owner/restaurants/' + restaurant.restaurantId + '/edit' : '/restaurant-owner/restaurants/create'}" 
                   th:object="${restaurant}" 
                   method="post" 
                   enctype="multipart/form-data">
@@ -329,57 +483,66 @@
                     <!-- Basic Information -->
                     <div class="form-item">
                         <span class="form-label">Tên nhà hàng *</span>
-                        <input type="text" th:field="*{restaurantName}" placeholder="Nhập tên nhà hàng" required />
+                        <input id="restaurantName" type="text" th:field="*{restaurantName}" placeholder="Nhập tên nhà hàng" required />
                     </div>
                     
                     <div class="form-item">
                         <span class="form-label">Số điện thoại</span>
-                        <input type="tel" th:field="*{phone}" placeholder="0123 456 789" />
+                        <input id="phone" type="tel" th:field="*{phone}" placeholder="0123 456 789" />
                     </div>
                     
                     <div class="form-item">
                         <span class="form-label">Website</span>
-                        <input type="url" th:field="*{websiteUrl}" placeholder="https://example.com" />
+                        <input id="websiteUrl" type="url" th:field="*{websiteUrl}" placeholder="https://example.com" />
                     </div>
                     
                     <div class="form-item full">
                         <span class="form-label">Địa chỉ</span>
-                        <input type="text" th:field="*{address}" placeholder="123 Đường ABC, Quận 1, TP.HCM" />
+                        <input id="address" type="text" th:field="*{address}" placeholder="123 Đường ABC, Quận 1, TP.HCM" />
                     </div>
                     
                     <div class="form-item">
                         <span class="form-label">Loại ẩm thực</span>
-                        <input type="text" th:field="*{cuisineType}" placeholder="Vietnamese, Italian, Chinese..." />
+                        <input id="cuisineType" type="text" th:field="*{cuisineType}" placeholder="Vietnamese, Italian, Chinese..." />
                     </div>
                     
                     <div class="form-item">
                         <span class="form-label">Giờ mở cửa</span>
-                        <input type="text" th:field="*{openingHours}" placeholder="10:00 - 22:00" />
+                        <input id="openingHours" type="text" th:field="*{openingHours}" placeholder="10:00 - 22:00" />
                     </div>
                     
                     <div class="form-item">
                         <span class="form-label">Giá trung bình (VNĐ)</span>
-                        <input type="number" th:field="*{averagePrice}" placeholder="100000" min="0" step="1000" />
+                        <input id="averagePrice" type="number" th:field="*{averagePrice}" placeholder="100000" min="0" step="1000" />
                     </div>
                     
                     <div class="form-item full">
-                        <span class="form-label">Mô tả ngắn</span>
-                        <textarea th:field="*{description}" rows="3" placeholder="Mô tả ngắn gọn về nhà hàng..."></textarea>
+                        <div class="form-label-with-ai">
+                            <span class="form-label">Mô tả ngắn</span>
+                            <button type="button" class="btn-ai-improve" onclick="improveText('description', 'description', 'Mô tả ngắn về nhà hàng')">
+                                <i class="fas fa-magic"></i>
+                                <span>Viết lại đẹp hơn</span>
+                            </button>
+                        </div>
+                        <textarea id="description" th:field="*{description}" rows="3" placeholder="Mô tả ngắn gọn về nhà hàng..."></textarea>
+                        <div id="description-loading" class="ai-loading-inline" style="display: none;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
                     </div>
                     
                     <div class="form-item">
                         <span class="form-label">Giá thấp nhất (VNĐ)</span>
-                        <input type="number" th:field="*{priceRangeMin}" placeholder="80000" min="0" step="1000" />
+                        <input id="priceRangeMin" type="number" th:field="*{priceRangeMin}" placeholder="80000" min="0" step="1000" />
                     </div>
                     
                     <div class="form-item">
                         <span class="form-label">Giá cao nhất (VNĐ)</span>
-                        <input type="number" th:field="*{priceRangeMax}" placeholder="290000" min="0" step="1000" />
+                        <input id="priceRangeMax" type="number" th:field="*{priceRangeMax}" placeholder="290000" min="0" step="1000" />
                     </div>
                     
                     <div class="form-item">
                         <span class="form-label">Thông báo trạng thái mở cửa</span>
-                        <input type="text" th:field="*{statusMessage}" placeholder="Đang mở cửa: 10:30 - 22:00" />
+                        <input id="statusMessage" type="text" th:field="*{statusMessage}" placeholder="Đang mở cửa: 10:30 - 22:00" />
                     </div>
                 </div>
 
@@ -391,32 +554,50 @@
                     <div class="grid grid-3">
                         <div class="form-item">
                             <span class="form-label">Thành phố hiển thị</span>
-                            <input type="text" th:field="*{heroCity}" placeholder="Đà Nẵng" />
+                            <input id="heroCity" type="text" th:field="*{heroCity}" placeholder="Đà Nẵng" />
                         </div>
                         
                         <div class="form-item">
-                            <span class="form-label">Tiêu đề hero</span>
-                            <input type="text" th:field="*{heroHeadline}" placeholder="Bạn muốn đặt chỗ đến đâu" />
+                            <div class="form-label-with-ai">
+                                <span class="form-label">Tiêu đề hero</span>
+                                <button type="button" class="btn-ai-improve" onclick="improveText('heroHeadline', 'heroHeadline', 'Tiêu đề chính hiển thị trên trang chủ')">
+                                    <i class="fas fa-magic"></i>
+                                    <span>Viết lại</span>
+                                </button>
+                            </div>
+                            <input id="heroHeadline" type="text" th:field="*{heroHeadline}" placeholder="Bạn muốn đặt chỗ đến đâu" />
+                            <div id="heroHeadline-loading" class="ai-loading-inline" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
                         </div>
                         
                         <div class="form-item">
-                            <span class="form-label">Thông điệp bổ sung</span>
-                            <input type="text" th:field="*{heroSubheadline}" placeholder="Khám phá những trải nghiệm ẩm thực tốt nhất" />
+                            <div class="form-label-with-ai">
+                                <span class="form-label">Thông điệp bổ sung</span>
+                                <button type="button" class="btn-ai-improve" onclick="improveText('heroSubheadline', 'heroSubheadline', 'Thông điệp bổ sung dưới tiêu đề')">
+                                    <i class="fas fa-magic"></i>
+                                    <span>Viết lại</span>
+                                </button>
+                            </div>
+                            <input id="heroSubheadline" type="text" th:field="*{heroSubheadline}" placeholder="Khám phá những trải nghiệm ẩm thực tốt nhất" />
+                            <div id="heroSubheadline-loading" class="ai-loading-inline" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
                         </div>
                         
                         <div class="form-item">
                             <span class="form-label">Placeholder ô tìm kiếm</span>
-                            <input type="text" th:field="*{heroSearchPlaceholder}" placeholder="Tìm kiếm nhà hàng, món ăn, ưu đãi..." />
+                            <input id="heroSearchPlaceholder" type="text" th:field="*{heroSearchPlaceholder}" placeholder="Tìm kiếm nhà hàng, món ăn, ưu đãi..." />
                         </div>
                         
                         <div class="form-item">
                             <span class="form-label">Hotline đặt chỗ</span>
-                            <input type="text" th:field="*{contactHotline}" placeholder="1900 6005" />
+                            <input id="contactHotline" type="text" th:field="*{contactHotline}" placeholder="1900 6005" />
                         </div>
                         
                         <div class="form-item">
                             <span class="form-label">Điện thoại liên hệ bổ sung</span>
-                            <input type="text" th:field="*{contactSecondaryPhone}" placeholder="085 805 2718" />
+                            <input id="contactSecondaryPhone" type="text" th:field="*{contactSecondaryPhone}" placeholder="085 805 2718" />
                         </div>
                     </div>
                 </div>
@@ -428,28 +609,37 @@
                     </div>
                     <div class="grid grid-2">
                         <div class="form-item full">
-                            <span class="form-label">Thông tin đặt chỗ chi tiết</span>
-                            <textarea th:field="*{bookingInformation}" class="long-text" placeholder="I. Đặt chỗ PasGo: Tư vấn - Giữ chỗ&#10;- Quý khách vui lòng đặt chỗ trước ít nhất 01 tiếng..."></textarea>
+                            <div class="form-label-with-ai">
+                                <span class="form-label">Thông tin đặt chỗ chi tiết</span>
+                                <button type="button" class="btn-ai-improve" onclick="improveText('bookingInformation', 'bookingInformation', 'Thông tin chi tiết về quy trình đặt chỗ')">
+                                    <i class="fas fa-magic"></i>
+                                    <span>Viết lại đẹp hơn</span>
+                                </button>
+                            </div>
+                            <textarea id="bookingInformation" th:field="*{bookingInformation}" class="long-text" placeholder="I. Đặt chỗ PasGo: Tư vấn - Giữ chỗ&#10;- Quý khách vui lòng đặt chỗ trước ít nhất 01 tiếng..."></textarea>
+                            <div id="bookingInformation-loading" class="ai-loading-inline" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Ghi chú đặt chỗ / chính sách</span>
-                            <textarea th:field="*{bookingNotes}" class="long-text" placeholder="Nhà hàng xin giữ bàn trong vòng 15 phút..."></textarea>
+                            <textarea id="bookingNotes" th:field="*{bookingNotes}" class="long-text" placeholder="Nhà hàng xin giữ bàn trong vòng 15 phút..."></textarea>
                         </div>
                         
                         <div class="form-item">
                             <span class="form-label">Ưu đãi chung</span>
-                            <textarea th:field="*{generalPromotions}" class="long-text" placeholder="Ưu đãi 1: Giảm 15% từ thứ 2..."></textarea>
+                            <textarea id="generalPromotions" th:field="*{generalPromotions}" class="long-text" placeholder="Ưu đãi 1: Giảm 15% từ thứ 2..."></textarea>
                         </div>
                         
                         <div class="form-item">
                             <span class="form-label">Ưu đãi dành cho nhóm</span>
-                            <textarea th:field="*{groupPromotions}" class="long-text" placeholder="Ưu đãi 2: Giảm 10% cho nhóm từ 10 người..."></textarea>
+                            <textarea id="groupPromotions" th:field="*{groupPromotions}" class="long-text" placeholder="Ưu đãi 2: Giảm 10% cho nhóm từ 10 người..."></textarea>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Ghi chú về ưu đãi</span>
-                            <textarea th:field="*{promotionNotes}" class="long-text" placeholder="*Ưu đãi được phép cộng dồn..."></textarea>
+                            <textarea id="promotionNotes" th:field="*{promotionNotes}" class="long-text" placeholder="*Ưu đãi được phép cộng dồn..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -461,28 +651,46 @@
                     </div>
                     <div class="grid grid-2">
                         <div class="form-item full">
-                            <span class="form-label">Tóm tắt nhà hàng</span>
-                            <textarea th:field="*{summaryHighlights}" class="long-text" placeholder="Tóm tắt Thai Market - Yên Bái..."></textarea>
+                            <div class="form-label-with-ai">
+                                <span class="form-label">Tóm tắt nhà hàng</span>
+                                <button type="button" class="btn-ai-improve" onclick="improveText('summaryHighlights', 'summaryHighlights', 'Tóm tắt điểm nổi bật của nhà hàng')">
+                                    <i class="fas fa-magic"></i>
+                                    <span>Viết lại đẹp hơn</span>
+                                </button>
+                            </div>
+                            <textarea id="summaryHighlights" th:field="*{summaryHighlights}" class="long-text" placeholder="Tóm tắt Thai Market - Yên Bái..."></textarea>
+                            <div id="summaryHighlights-loading" class="ai-loading-inline" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Phù hợp với</span>
-                            <textarea th:field="*{suitableFor}" class="long-text" placeholder="- Tất cả các loại tiệc, ăn gia đình..."></textarea>
+                            <textarea id="suitableFor" th:field="*{suitableFor}" class="long-text" placeholder="- Tất cả các loại tiệc, ăn gia đình..."></textarea>
                         </div>
                         
                         <div class="form-item full">
-                            <span class="form-label">Món đặc sắc</span>
-                            <textarea th:field="*{signatureDishes}" class="long-text" placeholder="- Pad Thai, Canh Tomyum, Gỏi đu đủ Somtam..."></textarea>
+                            <div class="form-label-with-ai">
+                                <span class="form-label">Món đặc sắc</span>
+                                <button type="button" class="btn-ai-improve" onclick="improveText('signatureDishes', 'signatureDishes', 'Danh sách món ăn đặc sắc')">
+                                    <i class="fas fa-magic"></i>
+                                    <span>Viết lại đẹp hơn</span>
+                                </button>
+                            </div>
+                            <textarea id="signatureDishes" th:field="*{signatureDishes}" class="long-text" placeholder="- Pad Thai, Canh Tomyum, Gỏi đu đủ Somtam..."></textarea>
+                            <div id="signatureDishes-loading" class="ai-loading-inline" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Không gian &amp; thiết kế</span>
-                            <textarea th:field="*{spaceDescriptionDetail}" class="long-text" placeholder="- Truyền thống kết hợp hiện đại, sức chứa 127 khách..."></textarea>
+                            <textarea id="spaceDescriptionDetail" th:field="*{spaceDescriptionDetail}" class="long-text" placeholder="- Truyền thống kết hợp hiện đại, sức chứa 127 khách..."></textarea>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Điểm đặc trưng</span>
-                            <textarea th:field="*{uniqueFeatures}" class="long-text" placeholder="- Khám phá ẩm thực đậm vị Thái..."></textarea>
+                            <textarea id="uniqueFeatures" th:field="*{uniqueFeatures}" class="long-text" placeholder="- Khám phá ẩm thực đậm vị Thái..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -495,22 +703,22 @@
                     <div class="grid grid-2">
                         <div class="form-item full">
                             <span class="form-label">Bảng giá chi tiết</span>
-                            <textarea th:field="*{pricingDetails}" class="long-text" placeholder="Bảng giá Thai Market Restaurant - Yên Bái..."></textarea>
+                            <textarea id="pricingDetails" th:field="*{pricingDetails}" class="long-text" placeholder="Bảng giá Thai Market Restaurant - Yên Bái..."></textarea>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Menu nổi bật</span>
-                            <textarea th:field="*{menuHighlights}" class="long-text" placeholder="Menu Thai Market - Danh sách món..."></textarea>
+                            <textarea id="menuHighlights" th:field="*{menuHighlights}" class="long-text" placeholder="Menu Thai Market - Danh sách món..."></textarea>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Quy định &amp; chính sách</span>
-                            <textarea th:field="*{policyRules}" class="long-text" placeholder="1. Quy định về đặt cọc..."></textarea>
+                            <textarea id="policyRules" th:field="*{policyRules}" class="long-text" placeholder="1. Quy định về đặt cọc..."></textarea>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Tiện ích &amp; dịch vụ</span>
-                            <textarea th:field="*{amenities}" class="long-text" placeholder="Tiện ích: Wifi, Hóa đơn VAT, Ghế trẻ em..."></textarea>
+                            <textarea id="amenities" th:field="*{amenities}" class="long-text" placeholder="Tiện ích: Wifi, Hóa đơn VAT, Ghế trẻ em..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -523,22 +731,22 @@
                     <div class="grid grid-2">
                         <div class="form-item full">
                             <span class="form-label">Thông tin chỗ đỗ xe</span>
-                            <textarea th:field="*{parkingDetails}" class="long-text" placeholder="Xe máy: để trước cửa... Xe ô tô: đỗ dọc đường Yên Bái..."></textarea>
+                            <textarea id="parkingDetails" th:field="*{parkingDetails}" class="long-text" placeholder="Xe máy: để trước cửa... Xe ô tô: đỗ dọc đường Yên Bái..."></textarea>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Ghi chú thư viện ảnh</span>
-                            <textarea th:field="*{galleryNotes}" class="long-text" placeholder="Hình ảnh Thai Market Restaurant - bộ sưu tập..."></textarea>
+                            <textarea id="galleryNotes" th:field="*{galleryNotes}" class="long-text" placeholder="Hình ảnh Thai Market Restaurant - bộ sưu tập..."></textarea>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Chỉ đường</span>
-                            <textarea th:field="*{directionInfo}" class="long-text" placeholder="Số 124 Đường Yên Bái, Phước Ninh, Hải Châu..."></textarea>
+                            <textarea id="directionInfo" th:field="*{directionInfo}" class="long-text" placeholder="Số 124 Đường Yên Bái, Phước Ninh, Hải Châu..."></textarea>
                         </div>
                         
                         <div class="form-item full">
                             <span class="form-label">Giờ hoạt động chi tiết</span>
-                            <textarea th:field="*{operatingSchedule}" class="long-text" placeholder="Thứ hai: 10:30 - 22:00&#10;Thứ ba: 10:30 - 22:00..."></textarea>
+                            <textarea id="operatingSchedule" th:field="*{operatingSchedule}" class="long-text" placeholder="Thứ hai: 10:30 - 22:00&#10;Thứ ba: 10:30 - 22:00..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -658,6 +866,10 @@
                 
                 <!-- Form Actions -->
                 <div class="actions">
+                    <label style="margin-right:auto; display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="ai-polish-before-save" />
+                        <span>Tự động viết lại đẹp hơn bằng AI trước khi lưu</span>
+                    </label>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i>
                         Lưu nhà hàng
@@ -866,6 +1078,186 @@
             font-size: 0.85rem;
             margin-top: 0.5rem;
             display: block;
+        }
+
+        /* AI Feature Styles */
+        .ai-auto-fill-section {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-auto-fill-section .form-section-header {
+            margin-bottom: 1rem;
+        }
+
+        .ai-auto-fill-section .form-section-header h2 {
+            color: white;
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .ai-auto-fill-section .form-section-header p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .ai-auto-fill-container {
+            margin-top: 1rem;
+        }
+
+        .ai-auto-fill-container textarea {
+            background: white;
+            color: var(--dashboard-black);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+            resize: vertical;
+            min-height: 120px;
+            max-height: 200px;
+        }
+
+        .ai-auto-fill-container textarea:focus {
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+            outline: none;
+        }
+
+        .ai-action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .btn-ai-primary {
+            background: #000;
+            color: white;
+            padding: 0.625rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-ai-primary:hover {
+            background: #333;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-ai-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-ai-primary:disabled {
+            background: #555;
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .ai-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.85rem;
+        }
+
+        .ai-loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        .ai-loading-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            color: var(--dashboard-accent);
+            font-size: 0.85rem;
+        }
+
+        .ai-loading-inline i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .ai-message {
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .ai-message.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .ai-message.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .form-label-with-ai {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-ai-improve {
+            background: var(--dashboard-accent);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn-ai-improve:hover {
+            background: var(--dashboard-black);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-ai-improve:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-ai-improve i {
+            font-size: 0.75rem;
         }
     </style>
 
@@ -1157,7 +1549,388 @@
                     }
                 });
             });
+            
+            // Setup AI Auto-Fill button
+            const autoFillBtn = document.getElementById('ai-auto-fill-btn');
+            if (autoFillBtn) {
+                autoFillBtn.addEventListener('click', function() {
+                    const textarea = document.getElementById('ai-auto-fill-textarea');
+                    if (textarea && textarea.value.trim()) {
+                        autoFillFromText(textarea.value);
+                    } else {
+                        showAutoFillMessage('Vui lòng nhập thông tin về nhà hàng trước khi sử dụng tính năng tự động điền.', 'error');
+                    }
+                });
+            }
+
+            // Intercept form submit for AI polish
+            const form = document.getElementById('restaurant-form');
+            const aiPolish = document.getElementById('ai-polish-before-save');
+            if (form && aiPolish) {
+                form.addEventListener('submit', async function(e) {
+                    if (!aiPolish.checked) return; // normal submit
+                    e.preventDefault();
+                    try {
+                        await polishFieldsBeforeSave();
+                    } catch (err) {
+                        console.warn('AI polish error:', err);
+                    } finally {
+                        form.submit();
+                    }
+                });
+            }
+        });
+
+        // AI Functions
+        async function improveText(fieldId, fieldName, context) {
+            const field = document.getElementById(fieldId);
+            if (!field) {
+                console.error('Field not found: ' + fieldId);
+                return;
+            }
+
+            const originalText = field.value.trim();
+            if (!originalText) {
+                alert('Vui lòng nhập nội dung trước khi sử dụng tính năng cải thiện văn bản.');
+                return;
+            }
+
+            const loadingElement = document.getElementById(fieldId + '-loading');
+            // Find the button that triggered this action
+            const buttons = document.querySelectorAll('.btn-ai-improve');
+            let button = null;
+            buttons.forEach(btn => {
+                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(fieldId)) {
+                    button = btn;
+                }
+            });
+
+            try {
+                // Show loading
+                showLoading(fieldId + '-loading');
+                if (button) button.disabled = true;
+
+                // CSRF headers (if present)
+                const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+
+                // Call API
+                const response = await fetch('/api/restaurant/ai/improve-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(csrfToken ? { [csrfHeader]: csrfToken } : {})
+                    },
+                    body: JSON.stringify({
+                        originalText: originalText,
+                        fieldName: fieldName,
+                        context: context
+                    })
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`HTTP ${response.status} - ${errText.substring(0, 200)}`);
+                }
+                const data = await response.json();
+
+                if (data.success && data.improvedText) {
+                    // Update field with improved text
+                    field.value = data.improvedText;
+                    showAutoFillMessage('Văn bản đã được cải thiện thành công!', 'success');
+                } else {
+                    throw new Error(data.errorMessage || 'Không thể cải thiện văn bản');
+                }
+
+            } catch (error) {
+                console.error('Error improving text:', error);
+                alert('Lỗi khi cải thiện văn bản: ' + error.message);
+            } finally {
+                // Hide loading
+                hideLoading(fieldId + '-loading');
+                if (button) button.disabled = false;
+            }
+        }
+
+        async function autoFillFromText(longText) {
+            const autoFillBtn = document.getElementById('ai-auto-fill-btn');
+            const loadingElement = document.getElementById('ai-auto-fill-loading');
+            const messageElement = document.getElementById('ai-auto-fill-message');
+
+            try {
+                // Show loading
+                showAutoFillLoading(true);
+                if (autoFillBtn) autoFillBtn.disabled = true;
+
+                // CSRF headers (if present)
+                const csrfToken2 = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                const csrfHeader2 = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+
+                // Call API
+                const response = await fetch('/api/restaurant/ai/auto-fill', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(csrfToken2 ? { [csrfHeader2]: csrfToken2 } : {})
+                    },
+                    body: JSON.stringify({
+                        longText: longText
+                    })
+                });
+
+                // Check if response is OK
+                if (!response.ok) {
+                    const errText = await response.text();
+                    // Check if response is HTML (error page)
+                    if (errText.trim().startsWith('<!DOCTYPE') || errText.trim().startsWith('<html')) {
+                        showAutoFillMessage('Lỗi: Server trả về HTML thay vì JSON. Vui lòng đăng nhập lại hoặc kiểm tra quyền truy cập.', 'error');
+                        return;
+                    }
+                    // Try to parse as JSON error
+                    try {
+                        const errorData = JSON.parse(errText);
+                        const errorMsg = errorData.message || errorData.error || 'Không thể tự động điền thông tin';
+                        showAutoFillMessage('Lỗi: ' + errorMsg, 'error');
+                    } catch {
+                        showAutoFillMessage('Lỗi HTTP ' + response.status + ': ' + errText.substring(0, 200), 'error');
+                    }
+                    return;
+                }
+
+                // Parse JSON response
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await response.json();
+
+                    if (data.success && data.filledFields) {
+                        // Fill form fields
+                        const filledCount = fillFormFields(data.filledFields);
+                        if (filledCount > 0) {
+                            showAutoFillMessage(`✅ Đã tự động điền ${filledCount} trường thành công! Vui lòng kiểm tra và chỉnh sửa nếu cần.`, 'success');
+                        } else {
+                            showAutoFillMessage('⚠️ Không có trường nào được điền. Vui lòng kiểm tra lại thông tin đầu vào.', 'error');
+                        }
+                    } else {
+                        const errorMsg = data.errorMessage || data.error || data.message || 'Không thể tự động điền thông tin';
+                        showAutoFillMessage('Lỗi: ' + errorMsg, 'error');
+                    }
+                } else {
+                    const text = await response.text();
+                    showAutoFillMessage('Cảnh báo: Server trả về định dạng không đúng. Vui lòng thử lại.', 'error');
+                    console.warn('Unexpected content type:', contentType, 'Response:', text.substring(0, 200));
+                }
+
+            } catch (error) {
+                console.error('Error auto-filling:', error);
+                let errorMessage = 'Lỗi khi tự động điền: ';
+                if (error.message) {
+                    errorMessage += error.message;
+                } else if (error instanceof TypeError && error.message.includes('fetch')) {
+                    errorMessage += 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
+                } else {
+                    errorMessage += 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
+                }
+                showAutoFillMessage(errorMessage, 'error');
+            } finally {
+                // Hide loading
+                showAutoFillLoading(false);
+                if (autoFillBtn) autoFillBtn.disabled = false;
+            }
+        }
+
+        function fillFormFields(filledFields) {
+            // Map of API field names to form field IDs
+            const fieldMapping = {
+                'restaurantName': 'restaurantName',
+                'description': 'description',
+                'address': 'address',
+                'phone': 'phone',
+                'websiteUrl': 'websiteUrl',
+                'cuisineType': 'cuisineType',
+                'openingHours': 'openingHours',
+                'averagePrice': 'averagePrice',
+                'priceRangeMin': 'priceRangeMin',
+                'priceRangeMax': 'priceRangeMax',
+                'heroCity': 'heroCity',
+                'heroHeadline': 'heroHeadline',
+                'heroSubheadline': 'heroSubheadline',
+                'heroSearchPlaceholder': 'heroSearchPlaceholder',
+                'contactHotline': 'contactHotline',
+                'contactSecondaryPhone': 'contactSecondaryPhone',
+                'statusMessage': 'statusMessage',
+                'bookingInformation': 'bookingInformation',
+                'bookingNotes': 'bookingNotes',
+                'generalPromotions': 'generalPromotions',
+                'groupPromotions': 'groupPromotions',
+                'promotionNotes': 'promotionNotes',
+                'summaryHighlights': 'summaryHighlights',
+                'suitableFor': 'suitableFor',
+                'signatureDishes': 'signatureDishes',
+                'spaceDescriptionDetail': 'spaceDescriptionDetail',
+                'uniqueFeatures': 'uniqueFeatures',
+                'pricingDetails': 'pricingDetails',
+                'menuHighlights': 'menuHighlights',
+                'policyRules': 'policyRules',
+                'amenities': 'amenities',
+                'parkingDetails': 'parkingDetails',
+                'galleryNotes': 'galleryNotes',
+                'directionInfo': 'directionInfo',
+                'operatingSchedule': 'operatingSchedule'
+            };
+
+            let filledCount = 0;
+            let firstFilledField = null;
+
+            // Fill each field
+            Object.keys(filledFields).forEach(key => {
+                const fieldId = fieldMapping[key];
+                if (fieldId) {
+                    const field = document.getElementById(fieldId);
+                    if (field) {
+                        const value = filledFields[key];
+                        if (value !== null && value !== undefined && String(value).trim() !== '') {
+                            field.value = String(value);
+                            filledCount++;
+                            
+                            // Track first filled field for scrolling
+                            if (!firstFilledField) {
+                                firstFilledField = field;
+                            }
+                            
+                            // Highlight the field briefly
+                            field.style.transition = 'background-color 0.3s ease';
+                            field.style.backgroundColor = '#e8f5e9';
+                            setTimeout(() => {
+                                field.style.backgroundColor = '';
+                            }, 1000);
+                            
+                            // Trigger input event to notify any listeners
+                            field.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    }
+                }
+            });
+
+            // Scroll to first filled field if found
+            if (firstFilledField) {
+                firstFilledField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            return filledCount;
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.display = 'inline-flex';
+            }
+        }
+
+        function hideLoading(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.display = 'none';
+            }
+        }
+
+        function showAutoFillLoading(show) {
+            const loadingElement = document.getElementById('ai-auto-fill-loading');
+            const btnText = document.getElementById('ai-auto-fill-btn-text');
+            
+            if (loadingElement) {
+                loadingElement.style.display = show ? 'flex' : 'none';
+            }
+            
+            if (btnText) {
+                btnText.textContent = show ? 'Đang xử lý...' : '🚀 Điền tự động bằng AI';
+            }
+        }
+
+        function showAutoFillMessage(message, type) {
+            const messageElement = document.getElementById('ai-auto-fill-message');
+            if (messageElement) {
+                messageElement.textContent = message;
+                messageElement.className = 'ai-message ' + (type || 'success');
+                messageElement.style.display = 'block';
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    messageElement.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        async function polishFieldsBeforeSave() {
+            const targets = [
+                { id: 'description', ctx: 'Mô tả ngắn về nhà hàng' },
+                { id: 'heroHeadline', ctx: 'Tiêu đề chính hiển thị' },
+                { id: 'heroSubheadline', ctx: 'Thông điệp bổ sung' },
+                { id: 'bookingInformation', ctx: 'Thông tin đặt chỗ chi tiết' },
+                { id: 'summaryHighlights', ctx: 'Tóm tắt điểm nổi bật' },
+                { id: 'signatureDishes', ctx: 'Món đặc sắc' }
+            ];
+
+            for (const t of targets) {
+                const el = document.getElementById(t.id);
+                if (!el) continue;
+                const text = (el.value || '').trim();
+                if (text.length < 10) continue; // skip very short
+                try {
+                    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+                    const res = await fetch('/api/restaurant/ai/improve-text', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { [csrfHeader]: csrfToken } : {}) },
+                        body: JSON.stringify({ originalText: text, fieldName: t.id, context: t.ctx })
+                    });
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    if (data && data.success && data.improvedText) {
+                        el.value = data.improvedText;
+                    }
+                } catch (e) {
+                    console.warn('Polish field failed', t.id, e);
+                }
+            }
+        }
+    </script>
+
+    <!-- Header Search JavaScript -->
+    <script>
+        function toggleSearchDropdown() {
+            const dropdown = document.getElementById('searchDropdown');
+            const isOpen = dropdown.classList.contains('show');
+            if (isOpen) {
+                dropdown.classList.remove('show');
+            } else {
+                dropdown.classList.add('show');
+            }
+        }
+
+        function clearSearch() {
+            const form = document.querySelector('.search-form');
+            if (form) {
+                form.reset();
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const searchContainer = document.querySelector('.header-search');
+            const dropdown = document.getElementById('searchDropdown');
+            if (searchContainer && dropdown && !searchContainer.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
         });
     </script>
+
+    <!-- Resy Footer -->
+    <div th:replace="~{fragments/resy-footer :: resy-footer}"></div>
+
+    <!-- Resy Scripts -->
+    <div th:replace="~{fragments/resy-scripts :: resy-scripts}"></div>
+
+    <!-- Login Modal Fragment -->
+    <div th:insert="~{fragments/login-modal :: login-modal}"></div>
 </body>
 </html>
