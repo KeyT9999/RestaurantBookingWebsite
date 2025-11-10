@@ -274,6 +274,8 @@ public class AISearchResponse {
         private Double distanceKm;
         private String bookingUrl;
         private String viewDetailsUrl;
+            // Dishes in this restaurant that match the AI-suggested foods
+            private List<String> matchedDishes;
         
         // Constructors
         public RestaurantRecommendation() {}
@@ -349,6 +351,14 @@ public class AISearchResponse {
         
         public void setViewDetailsUrl(String viewDetailsUrl) {
             this.viewDetailsUrl = viewDetailsUrl;
+        }
+        
+        public List<String> getMatchedDishes() {
+            return matchedDishes;
+        }
+        
+        public void setMatchedDishes(List<String> matchedDishes) {
+            this.matchedDishes = matchedDishes;
         }
     }
 }
