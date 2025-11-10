@@ -3,171 +3,664 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chỉnh sửa profile - Aurelius Fine Dining</title>
+    <title>Chỉnh sửa thông tin - Book Eat</title>
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;500&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Home Resy Style CSS -->
+    <link th:href="@{/css/home-resy.css}" rel="stylesheet">
+    
+    <style>
+        /* Profile Edit Page Specific Styles */
+        .profile-edit-section {
+            padding: 1.5rem 0 1rem 0;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
+        }
+        
+        .profile-edit-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .profile-header {
+            text-align: left;
+            margin-bottom: 1rem;
+        }
+        
+        .profile-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--resy-black);
+            margin-bottom: 0;
+            letter-spacing: -0.02em;
+        }
+        
+        .profile-card {
+            background: var(--resy-white);
+            border-radius: 12px;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .profile-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+        
+        .profile-content-wrapper {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+        
+        .profile-avatar-section {
+            text-align: center;
+        }
+        
+        .profile-avatar-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        
+        .profile-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #E5E7EB;
+            transition: all 0.3s ease;
+        }
+        
+        .profile-avatar-wrapper:hover .profile-avatar {
+            border-color: var(--resy-black);
+        }
+        
+        .profile-avatar-label {
+            color: var(--resy-gray);
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+        
+        .avatar-upload-form {
+            margin-top: 1rem;
+        }
+        
+        .avatar-upload-form input[type="file"] {
+            display: none;
+        }
+        
+        .btn-change-avatar {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: var(--resy-black);
+            color: var(--resy-white);
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .btn-change-avatar:hover {
+            background: #333;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-change-avatar-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: var(--resy-light-gray);
+            color: var(--resy-black);
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .btn-change-avatar-label:hover {
+            background: #E5E7EB;
+            border-color: var(--resy-black);
+        }
+        
+        .profile-form-section {
+            flex: 1;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--resy-black);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-label i {
+            color: var(--resy-gray);
+            font-size: 0.9rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.65rem 0.875rem;
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--resy-black);
+            background: var(--resy-white);
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--resy-black);
+            box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+        }
+        
+        .form-control.is-invalid {
+            border-color: var(--resy-red);
+        }
+        
+        .form-control.is-invalid:focus {
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+        
+        .invalid-feedback {
+            display: block;
+            color: var(--resy-red);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, rgba(27, 77, 216, 0.08) 0%, rgba(27, 77, 216, 0.04) 100%);
+            border: 1px solid rgba(27, 77, 216, 0.2);
+            border-radius: 8px;
+            padding: 0.875rem;
+            margin: 1rem 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .info-box i {
+            color: #1b4dd8;
+            font-size: 1rem;
+            margin-top: 0.125rem;
+            flex-shrink: 0;
+        }
+        
+        .info-box-content {
+            flex: 1;
+        }
+        
+        .info-box-content strong {
+            color: var(--resy-black);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        .info-box-content p {
+            color: var(--resy-gray);
+            font-size: 0.85rem;
+            margin: 0;
+            line-height: 1.5;
+        }
+        
+        .info-box-content a {
+            color: var(--resy-black);
+            font-weight: 600;
+            text-decoration: none;
+            border-bottom: 2px solid var(--resy-black);
+            transition: all 0.2s ease;
+        }
+        
+        .info-box-content a:hover {
+            color: var(--resy-red);
+            border-bottom-color: var(--resy-red);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #F3F4F6;
+        }
+        
+        .btn-profile {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .btn-profile-primary {
+            background: var(--resy-black);
+            color: var(--resy-white);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-profile-primary:hover {
+            background: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            color: var(--resy-white);
+        }
+        
+        .btn-profile-secondary {
+            background: transparent;
+            color: var(--resy-black);
+            border: 2px solid #E5E7EB;
+        }
+        
+        .btn-profile-secondary:hover {
+            background: var(--resy-light-gray);
+            border-color: var(--resy-black);
+            color: var(--resy-black);
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .quick-action-card {
+            background: var(--resy-white);
+            border-radius: 12px;
+            border: 1px solid #E5E7EB;
+            padding: 1.25rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .quick-action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border-color: var(--resy-black);
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .quick-action-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.1) 0%, rgba(26, 26, 26, 0.05) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            color: var(--resy-black);
+            font-size: 1.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-action-card:hover .quick-action-icon {
+            background: var(--resy-black);
+            color: var(--resy-white);
+            transform: scale(1.1);
+        }
+        
+        .quick-action-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--resy-black);
+            margin-bottom: 0.375rem;
+        }
+        
+        .quick-action-description {
+            color: var(--resy-gray);
+            font-size: 0.85rem;
+            margin-bottom: 0.875rem;
+        }
+        
+        .quick-action-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.25rem;
+            background: var(--resy-black);
+            color: var(--resy-white);
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-action-card:hover .quick-action-button {
+            background: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .alert {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+            color: #059669;
+            border-left: 3px solid #059669;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            color: var(--resy-red);
+            border-left: 3px solid var(--resy-red);
+        }
+        
+        .alert i {
+            font-size: 1rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .profile-edit-section {
+                padding: 1.5rem 0;
+            }
+            
+            .profile-header {
+                margin-bottom: 1rem;
+            }
+            
+            .profile-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .profile-card {
+                padding: 1.25rem;
+            }
+            
+            .profile-content-wrapper {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .profile-avatar-section {
+                text-align: center;
+            }
+            
+            .profile-avatar {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .btn-profile {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Header Fragment -->
-    <div th:replace="~{fragments/header :: site-header}"></div>
-    
-    <main class="main-content">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card luxury-card">
-                    <div class="card-header text-center">
-                        <i class="fas fa-user-edit luxury-icon fa-2x mb-2"></i>
-                        <h3 class="luxury-title">Chỉnh sửa thông tin cá nhân</h3>
-                    </div>
+    <!-- Main Header (same as home page) -->
+    <header class="header">
+        <div class="container">
+            <!-- Left Section: Logo only -->
+            <div class="header-left">
+                <a th:href="@{/}" class="logo">Book Eat</a>
+            </div>
+            
+            <!-- Center Section: Navigation -->
+            <div class="header-center">
+                <nav>
+                    <ul class="nav-menu">
+                        <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
+                        <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <!-- Right Section: Actions -->
+            <div class="header-right">
+                <div class="header-actions">
+                    <!-- Guest User Actions -->
+                    <button type="button" class="btn-resy-outline" data-bs-toggle="modal" data-bs-target="#loginModal" sec:authorize="!isAuthenticated()">Đăng nhập</button>
+                    <a th:href="@{/auth/register}" class="btn-resy" sec:authorize="!isAuthenticated()">Đăng ký</a>
                     
-                    <div class="card-body">
-                        <!-- Flash Messages -->
-                        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
-                            <i class="fas fa-check-circle"></i>
-                            <span th:text="${successMessage}"></span>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <!-- Authenticated User Actions -->
+                    <div sec:authorize="isAuthenticated()" class="user-actions">
+                        <!-- Notification Bell -->
+                        <div class="notification-bell-wrapper">
+                            <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
                         </div>
                         
-                        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span th:text="${errorMessage}"></span>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                        
-                        <div class="row">
-                            <!-- Current Avatar -->
-                            <div class="col-md-4 text-center mb-4">
-                                <div class="mb-3">
-                                    <img th:src="${user.profileImageUrl != null ? user.profileImageUrl : 'https://via.placeholder.com/150x150?text=Avatar'}" 
-                                         class="rounded-circle img-fluid" 
-                                         style="width: 150px; height: 150px; object-fit: cover; border: 3px solid var(--luxury-gold);"
-                                         alt="Profile Image">
-                                </div>
-                                <p class="text-muted">Ảnh đại diện hiện tại</p>
-                            </div>
-                            
-                            <!-- Edit Form -->
-                            <div class="col-md-8">
-                                <form th:action="@{/auth/profile/edit}" method="post" th:object="${profileEditForm}">
-                                    <!-- Full Name -->
-                                    <div class="mb-3">
-                                        <label for="fullName" class="form-label luxury-label">
-                                            <i class="fas fa-user luxury-icon"></i> Họ và tên
-                                        </label>
-                                        <input type="text" 
-                                               class="form-control luxury-input" 
-                                               id="fullName" 
-                                               name="fullName"
-                                               th:field="*{fullName}"
-                                               th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
-                                               placeholder="Nhập họ và tên"
-                                               required>
-                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" 
-                                             th:errors="*{fullName}"></div>
-                                    </div>
-                                    
-                                    <!-- Phone Number -->
-                                    <div class="mb-3">
-                                        <label for="phoneNumber" class="form-label luxury-label">
-                                            <i class="fas fa-phone luxury-icon"></i> Số điện thoại
-                                        </label>
-                                        <input type="text" 
-                                               class="form-control luxury-input" 
-                                               id="phoneNumber" 
-                                               name="phoneNumber"
-                                               th:field="*{phoneNumber}"
-                                               th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid' : ''"
-                                               placeholder="Nhập số điện thoại (tùy chọn)">
-                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('phoneNumber')}" 
-                                             th:errors="*{phoneNumber}"></div>
-                                    </div>
-                                    
-                                    <!-- Address -->
-                                    <div class="mb-4">
-                                        <label for="address" class="form-label luxury-label">
-                                            <i class="fas fa-map-marker-alt luxury-icon"></i> Địa chỉ
-                                        </label>
-                                        <textarea class="form-control luxury-input" 
-                                                  id="address" 
-                                                  name="address"
-                                                  th:field="*{address}"
-                                                  th:classappend="${#fields.hasErrors('address')} ? 'is-invalid' : ''"
-                                                  rows="3"
-                                                  placeholder="Nhập địa chỉ (tùy chọn)"></textarea>
-                                        <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" 
-                                             th:errors="*{address}"></div>
-                                    </div>
-                                    
-                                    <!-- Readonly Fields Info -->
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle"></i>
-                                        <strong>Lưu ý:</strong> Email và username không thể thay đổi. 
-                                        Để đổi mật khẩu, vui lòng sử dụng chức năng 
-                                        <a href="/auth/change-password" class="alert-link">Đổi mật khẩu</a>.
-                                    </div>
-                                    
-                                    <!-- Buttons -->
-                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                        <a href="/auth/profile" class="btn btn--outline">
-                                            <i class="fas fa-arrow-left"></i> Quay lại
-                                        </a>
-                                        <button type="submit" class="btn btn--gold">
-                                            <i class="fas fa-save"></i> Lưu thay đổi
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Quick Actions -->
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="card luxury-card">
-                            <div class="card-body text-center">
-                                <i class="fas fa-key fa-2x luxury-icon mb-2"></i>
-                                <h5>Đổi mật khẩu</h5>
-                                <p class="text-muted">Thay đổi mật khẩu đăng nhập</p>
-                                <a href="/auth/change-password" class="btn btn-outline-luxury">
-                                    <i class="fas fa-key"></i> Đổi mật khẩu
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="card luxury-card">
-                            <div class="card-body text-center">
-                                <i class="fas fa-calendar-check fa-2x luxury-icon mb-2"></i>
-                                <h5>Booking của tôi</h5>
-                                <p class="text-muted">Xem danh sách đặt bàn</p>
-                                <a href="/booking/my" class="btn btn-outline-luxury">
-                                    <i class="fas fa-calendar-check"></i> Xem booking
-                                </a>
-                            </div>
+                        <!-- User Profile Dropdown -->
+                        <div class="user-dropdown">
+                            <button class="btn-resy-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle"></i>
+                                <span sec:authentication="name">User</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/auth/profile}">
+                                        <i class="fas fa-user me-2"></i>
+                                        Profile
+                                    </a>
+                                </li>
+                                <li sec:authorize="hasRole('CUSTOMER')">
+                                    <a class="dropdown-item" th:href="@{/booking/my}">
+                                        <i class="fas fa-calendar-check me-2"></i>
+                                        My Reservations
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/logout}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>
+                                        Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
     
-    </main>
+    <!-- Profile Edit Section -->
+    <section class="profile-edit-section">
+        <div class="container">
+            <div class="profile-edit-container">
+                <!-- Page Header -->
+                <div class="profile-header">
+                    <h1>Chỉnh sửa thông tin cá nhân</h1>
+                </div>
+                
+                <!-- Main Profile Card -->
+                <div class="profile-card">
+                    <!-- Flash Messages -->
+                    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                        <i class="fas fa-check-circle"></i>
+                        <span th:text="${successMessage}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    
+                    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span th:text="${errorMessage}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    
+                    <!-- Profile Content Wrapper -->
+                    <div class="profile-content-wrapper">
+                        <!-- Avatar Section (Left) -->
+                        <div class="profile-avatar-section">
+                            <div class="profile-avatar-wrapper">
+                                <img th:src="${user.profileImageUrl != null ? user.profileImageUrl : 'https://via.placeholder.com/150x150?text=Avatar'}" 
+                                     class="profile-avatar" 
+                                     alt="Profile Image">
+                            </div>
+                            <p class="profile-avatar-label">Ảnh đại diện hiện tại</p>
+                            
+                            <!-- Avatar Upload Form -->
+                            <form th:action="@{/auth/profile/avatar}" method="post" enctype="multipart/form-data" class="avatar-upload-form">
+                                <input type="file" 
+                                       id="avatarFileInput" 
+                                       name="profileImage" 
+                                       accept="image/*" 
+                                       required
+                                       onchange="document.getElementById('avatarFileName').textContent = this.files[0] ? this.files[0].name : 'Chọn file'">
+                                <label for="avatarFileInput" class="btn-change-avatar-label">
+                                    <i class="fas fa-camera"></i>
+                                    <span id="avatarFileName">Chọn ảnh</span>
+                                </label>
+                                <button type="submit" class="btn-change-avatar mt-2">
+                                    <i class="fas fa-upload"></i>
+                                    Tải lên
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Form Section (Right) -->
+                        <div class="profile-form-section">
+                            <!-- Edit Form -->
+                            <form th:action="@{/auth/profile/edit}" method="post" th:object="${profileEditForm}">
+                        <!-- Full Name -->
+                        <div class="form-group">
+                            <label for="fullName" class="form-label">
+                                <i class="fas fa-user"></i>
+                                Họ và tên
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="fullName" 
+                                   name="fullName"
+                                   th:field="*{fullName}"
+                                   th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
+                                   placeholder="Nhập họ và tên"
+                                   required>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" 
+                                 th:errors="*{fullName}"></div>
+                        </div>
+                        
+                        <!-- Phone Number -->
+                        <div class="form-group">
+                            <label for="phoneNumber" class="form-label">
+                                <i class="fas fa-phone"></i>
+                                Số điện thoại
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="phoneNumber" 
+                                   name="phoneNumber"
+                                   th:field="*{phoneNumber}"
+                                   th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid' : ''"
+                                   placeholder="Nhập số điện thoại (tùy chọn)">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('phoneNumber')}" 
+                                 th:errors="*{phoneNumber}"></div>
+                        </div>
+                        
+                        <!-- Address -->
+                        <div class="form-group">
+                            <label for="address" class="form-label">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Địa chỉ
+                            </label>
+                            <textarea class="form-control" 
+                                      id="address" 
+                                      name="address"
+                                      th:field="*{address}"
+                                      th:classappend="${#fields.hasErrors('address')} ? 'is-invalid' : ''"
+                                      rows="3"
+                                      placeholder="Nhập địa chỉ (tùy chọn)"></textarea>
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('address')}" 
+                                 th:errors="*{address}"></div>
+                        </div>
+                        
+                        <!-- Change Password Button -->
+                        <div class="form-group">
+                            <a th:href="@{/auth/change-password}" class="btn-profile btn-profile-secondary" style="width: 100%; justify-content: center;">
+                                <i class="fas fa-key"></i>
+                                Đổi mật khẩu
+                            </a>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="form-actions">
+                            <a th:href="@{/auth/profile}" class="btn-profile btn-profile-secondary">
+                                <i class="fas fa-arrow-left"></i>
+                                Quay lại
+                            </a>
+                            <button type="submit" class="btn-profile btn-profile-primary">
+                                <i class="fas fa-save"></i>
+                                Lưu thay đổi
+                            </button>
+                        </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
     <!-- Footer -->
-    <div th:replace="~{fragments/footer :: site-footer}"></div>
+    <div th:replace="~{fragments/resy-footer :: resy-footer}"></div>
     
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html> 
+</html>

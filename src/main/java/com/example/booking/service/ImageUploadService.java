@@ -80,7 +80,7 @@ public class ImageUploadService {
     /**
      * Upload user avatar to Cloudinary only
      */
-    public String uploadAvatar(MultipartFile file, Integer userId) throws IOException {
+    public String uploadAvatar(MultipartFile file, String userId) throws IOException {
         logger.info("Uploading avatar to Cloudinary for user ID: {}", userId);
         return cloudinaryService.uploadAvatar(file, userId);
     }
@@ -139,7 +139,7 @@ public class ImageUploadService {
     /**
      * Update user avatar
      */
-    public String updateAvatar(MultipartFile newFile, String oldImageUrl, Integer userId) throws IOException {
+    public String updateAvatar(MultipartFile newFile, String oldImageUrl, String userId) throws IOException {
         logger.info("Updating avatar for user ID: {}", userId);
         return cloudinaryService.updateAvatar(newFile, oldImageUrl, userId);
     }

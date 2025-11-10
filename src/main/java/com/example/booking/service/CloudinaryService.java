@@ -134,7 +134,7 @@ public class CloudinaryService {
     /**
      * Upload user avatar to Cloudinary
      */
-    public String uploadAvatar(MultipartFile file, Integer userId) throws IOException {
+    public String uploadAvatar(MultipartFile file, String userId) throws IOException {
         String folder = "avatars/" + userId;
         String publicId = "avatar_" + System.currentTimeMillis();
         return uploadImage(file, folder, publicId);
@@ -225,7 +225,7 @@ public class CloudinaryService {
     /**
      * Update user avatar
      */
-    public String updateAvatar(MultipartFile newFile, String oldImageUrl, Integer userId) throws IOException {
+    public String updateAvatar(MultipartFile newFile, String oldImageUrl, String userId) throws IOException {
         String folder = "avatars/" + userId;
         String publicId = "avatar_" + System.currentTimeMillis();
         return updateImage(newFile, oldImageUrl, folder, publicId);

@@ -470,7 +470,8 @@ public class AuthController {
     
     private String saveUploadedFile(MultipartFile file, String userId) throws IOException {
         // Use ImageUploadService for avatar uploads
-        return imageUploadService.uploadAvatar(file, Integer.parseInt(userId));
+        // userId is already a String (UUID), no need to parse
+        return imageUploadService.uploadAvatar(file, userId);
     }
 
     /**

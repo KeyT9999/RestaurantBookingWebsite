@@ -133,7 +133,7 @@ class CloudinaryTestControllerTest {
     void testAvatarUpload_ShouldUploadSuccessfully() throws Exception {
         String imageUrl = "https://cloudinary.com/avatar.jpg";
         
-        when(imageUploadService.uploadAvatar(any(), anyInt()))
+        when(imageUploadService.uploadAvatar(any(), anyString()))
             .thenReturn(imageUrl);
         when(imageUploadService.getThumbnailUrl(imageUrl))
             .thenReturn("https://cloudinary.com/avatar_thumb.jpg");
@@ -249,7 +249,7 @@ class CloudinaryTestControllerTest {
     @Test
     @DisplayName("POST /test/cloudinary/upload/avatar - Should handle error")
     void testAvatarUpload_ShouldHandleError() throws Exception {
-        when(imageUploadService.uploadAvatar(any(), anyInt()))
+        when(imageUploadService.uploadAvatar(any(), anyString()))
             .thenThrow(new RuntimeException("Upload failed"));
 
         mockMvc.perform(multipart("/test/cloudinary/upload/avatar")
@@ -400,7 +400,7 @@ class CloudinaryTestControllerTest {
     void testAvatarUpload_WithDefaultValues() throws Exception {
         String imageUrl = "https://cloudinary.com/avatar.jpg";
         
-        when(imageUploadService.uploadAvatar(any(), eq(1)))
+        when(imageUploadService.uploadAvatar(any(), anyString()))
             .thenReturn(imageUrl);
         when(imageUploadService.getThumbnailUrl(imageUrl))
             .thenReturn("https://cloudinary.com/avatar_thumb.jpg");
