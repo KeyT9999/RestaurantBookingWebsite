@@ -239,6 +239,7 @@ public class BookingDetailModalDto {
         private Integer bookingTableId;
         private String tableName;
         private LocalDateTime assignedAt;
+        private BigDecimal tableFee;
         
         public BookingTableInfo() {}
         
@@ -264,6 +265,14 @@ public class BookingDetailModalDto {
         
         public void setAssignedAt(LocalDateTime assignedAt) {
             this.assignedAt = assignedAt;
+        }
+        
+        public BigDecimal getTableFee() {
+            return tableFee;
+        }
+        
+        public void setTableFee(BigDecimal tableFee) {
+            this.tableFee = tableFee != null ? tableFee : BigDecimal.ZERO;
         }
     }
 }

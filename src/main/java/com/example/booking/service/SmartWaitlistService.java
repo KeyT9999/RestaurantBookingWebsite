@@ -31,8 +31,9 @@ public class SmartWaitlistService {
     @Autowired
     private RestaurantTableRepository restaurantTableRepository;
     
-    private static final int BUFFER_HOURS = 2;
-    private static final int WAIT_TIME_MINUTES = 30;
+    private static final int BUFFER_BEFORE_MINUTES = 90; // Buffer trước booking time: 1.5h = 90 phút
+    private static final int BUFFER_AFTER_MINUTES = 120; // Buffer sau booking time: 2h = 120 phút
+    private static final int BOOKING_DURATION_HOURS = 2; // Thời gian booking mặc định: 2 giờ
     
     /**
      * Check availability for specific tables
@@ -90,25 +91,88 @@ public class SmartWaitlistService {
     
     /**
      * Find conflicts for a specific table in buffer time
+     * Only checks CONFIRMED bookings
+     * 
+     * Logic: Check if buffer ranges overlap
+     * - Request booking buffer: [requestTime - 1.5h, requestTime + 2h]
+     * - Existing booking buffer: [existingTime - 1.5h, existingTime + 2h]
+     * - Conflict if these ranges overlap
+     * 
+     * Example: Booking at 5h has buffer range [3:30, 7:00]
+     * 
+     * IMPORTANT: We search in a wider range to catch all potential conflicts,
+     * then filter by actual buffer overlap in the service layer.
      */
     private List<BookingConflict> findTableConflicts(Integer tableId, LocalDateTime bookingTime) {
-        LocalDateTime bufferStart = bookingTime.minusHours(BUFFER_HOURS);
-        LocalDateTime bufferEnd = bookingTime.plusHours(BUFFER_HOURS);
+        // Request booking buffer range
+        LocalDateTime requestBufferStart = bookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
+        LocalDateTime requestBufferEnd = bookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
         
-        List<Booking> conflicts = bookingRepository.findTableConflictsInTimeRange(tableId, bufferStart, bufferEnd);
+        // Calculate search range for bookingTime based on buffer overlap logic
+        // For a booking to have buffer overlap with request buffer:
+        // - Existing buffer start <= request buffer end
+        // => (bookingTime - BUFFER_BEFORE_MINUTES) <= requestBufferEnd
+        // => bookingTime <= (requestBufferEnd + BUFFER_BEFORE_MINUTES)
+        // - Existing buffer end >= request buffer start
+        // => (bookingTime + BUFFER_AFTER_MINUTES) >= requestBufferStart
+        // => bookingTime >= (requestBufferStart - BUFFER_AFTER_MINUTES)
+        LocalDateTime searchStart = requestBufferStart.minusMinutes(BUFFER_AFTER_MINUTES);
+        LocalDateTime searchEnd = requestBufferEnd.plusMinutes(BUFFER_BEFORE_MINUTES);
         
-        return conflicts.stream()
+        System.out.println("🔍 Checking conflicts for table " + tableId + " at booking time: " + bookingTime);
+        System.out.println("   Request buffer range: [" + requestBufferStart + ", " + requestBufferEnd + "]");
+        System.out.println("   Search range for bookingTime: [" + searchStart + ", " + searchEnd + "]");
+
+        // Query finds bookings whose bookingTime is in range [searchStart, searchEnd]
+        // This ensures we catch all bookings whose buffer ranges could overlap
+        List<Booking> potentialConflicts = bookingRepository.findTableConflictsInTimeRange(tableId, searchStart,
+                searchEnd);
+
+        System.out.println("   Found " + potentialConflicts.size() + " potential conflicts in search range");
+
+        // Filter to only bookings whose buffer ranges actually overlap with request
+        // buffer range
+        List<BookingConflict> actualConflicts = potentialConflicts.stream()
+                .filter(booking -> {
+                    // Existing booking buffer range
+                    LocalDateTime existingBufferStart = booking.getBookingTime().minusMinutes(BUFFER_BEFORE_MINUTES);
+                    LocalDateTime existingBufferEnd = booking.getBookingTime().plusMinutes(BUFFER_AFTER_MINUTES);
+
+                    // Check if ranges overlap:
+                    // Overlap if: existingBufferStart <= requestBufferEnd && existingBufferEnd >=
+                    // requestBufferStart
+                    boolean overlaps = !existingBufferStart.isAfter(requestBufferEnd)
+                            && !existingBufferEnd.isBefore(requestBufferStart);
+
+                    if (overlaps) {
+                        System.out.println("   ✅ CONFLICT: Booking #" + booking.getBookingId() +
+                                " at " + booking.getBookingTime() +
+                                " (buffer: [" + existingBufferStart + ", " + existingBufferEnd + "])");
+                    } else {
+                        System.out.println("   ⚪ No overlap: Booking #" + booking.getBookingId() +
+                                " at " + booking.getBookingTime() +
+                                " (buffer: [" + existingBufferStart + ", " + existingBufferEnd + "])");
+                    }
+
+                    return overlaps;
+                })
             .map(booking -> {
-                LocalDateTime endTime = booking.getBookingTime().plusHours(BUFFER_HOURS);
+                    // Calculate booking end time: booking time + booking duration (not buffer time)
+                    // This is the actual booking end time, not buffer end time
+                    LocalDateTime bookingEndTime = booking.getBookingTime().plusHours(BOOKING_DURATION_HOURS);
                 return new BookingConflict(
                     booking.getBookingId(),
                     booking.getBookingTime(),
-                    endTime,
+                            bookingEndTime, // Booking end time (bookingTime + duration), not buffer end time
                     booking.getNumberOfGuests(),
                     booking.getStatus().toString()
                 );
             })
             .collect(Collectors.toList());
+
+        System.out.println("   Final conflicts: " + actualConflicts.size());
+
+        return actualConflicts;
     }
     
     /**
@@ -129,19 +193,27 @@ public class SmartWaitlistService {
         conflictDetails.setSelectedTables(conflicts);
         response.setConflictDetails(conflictDetails);
         
-        // Calculate wait time (latest conflict end time + 30 minutes)
+        // Calculate wait time: latest conflict end time + 2h buffer after (when table
+        // will be available)
         LocalDateTime latestEndTime = conflicts.stream()
             .flatMap(conflict -> conflict.getConflicts().stream())
             .map(BookingConflict::getEndTime)
             .max(LocalDateTime::compareTo)
             .orElse(bookingTime);
             
-        LocalDateTime estimatedWaitTime = latestEndTime.plusMinutes(WAIT_TIME_MINUTES);
+        // Estimated wait time = latest conflict end time + 2h buffer after (when
+        // booking can be made)
+        LocalDateTime estimatedWaitTime = latestEndTime.plusMinutes(BUFFER_AFTER_MINUTES);
+
+        // Build reason from conflict details
+        String reason = buildConflictReason(conflicts);
+        System.out.println("📝 Final conflict reason for waitlistInfo: " + reason);
         
         // Set waitlist info
-        WaitlistInfo waitlistInfo = new WaitlistInfo(true, estimatedWaitTime, "Table occupied by confirmed booking");
+        WaitlistInfo waitlistInfo = new WaitlistInfo(true, estimatedWaitTime, reason);
         waitlistInfo.setWaitTimeMinutes((int) java.time.Duration.between(LocalDateTime.now(), estimatedWaitTime).toMinutes());
         response.setWaitlistInfo(waitlistInfo);
+        System.out.println("📝 WaitlistInfo.reason set to: " + waitlistInfo.getReason());
         
         // Find alternative tables
         List<AlternativeTable> alternatives = findAlternativeTables(conflicts, bookingTime);
@@ -151,23 +223,108 @@ public class SmartWaitlistService {
     }
     
     /**
+     * Build conflict reason from conflict details
+     * Displays buffer range of CONFIRMED booking from database (NOT request time)
+     */
+    private String buildConflictReason(List<TableConflictInfo> conflicts) {
+        if (conflicts.isEmpty()) {
+            return "Bàn đang được sử dụng";
+        }
+
+        StringBuilder reason = new StringBuilder();
+        for (TableConflictInfo conflict : conflicts) {
+            if (conflict.getConflicts() != null && !conflict.getConflicts().isEmpty()) {
+                for (BookingConflict bookingConflict : conflict.getConflicts()) {
+                    if (reason.length() > 0) {
+                        reason.append("; ");
+                    }
+
+                    // CRITICAL: bookingConflict.getBookingTime() is from DATABASE (CONFIRMED
+                    // booking)
+                    // NOT the new request time
+                    // Calculate buffer range for the CONFIRMED booking from database
+                    LocalDateTime dbBookingTime = bookingConflict.getBookingTime(); // FROM DATABASE
+                    LocalDateTime bufferStart = dbBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
+                    LocalDateTime bufferEnd = dbBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
+
+                    System.out.println("📝 Building conflict reason:");
+                    System.out.println("   - DB Booking Time (CONFIRMED): " + dbBookingTime);
+                    System.out.println("   - Buffer Start: " + bufferStart);
+                    System.out.println("   - Buffer End: " + bufferEnd);
+                    System.out.println("   - Formatted: " + formatTime(bufferStart) + " - " + formatTime(bufferEnd));
+
+                    reason.append(conflict.getTableName())
+                            .append(" đã được đặt trong khung giờ ")
+                            .append(formatTime(bufferStart))
+                            .append(" - ")
+                            .append(formatTime(bufferEnd));
+                }
+            }
+        }
+
+        return reason.length() > 0 ? reason.toString() : "Bàn đang được sử dụng";
+    }
+
+    /**
+     * Format LocalDateTime to Vietnamese time format
+     */
+    private String formatTime(LocalDateTime time) {
+        return String.format("%02d:%02d", time.getHour(), time.getMinute());
+    }
+
+    /**
      * Build response when no tables are available
      */
     private AvailabilityCheckResponse buildNoAvailableTablesResponse(List<RestaurantTable> suitableTables, List<RestaurantTable> smallerTables, LocalDateTime bookingTime, Integer guestCount) {
         AvailabilityCheckResponse response = new AvailabilityCheckResponse(true, "NO_AVAILABLE_TABLES");
         
         // Find the latest booking end time among suitable tables
-        LocalDateTime latestEndTime = suitableTables.stream()
+        // Note: getEndTime() returns booking end time (bookingTime + duration), not
+        // buffer end time
+        LocalDateTime latestBookingEndTime = suitableTables.stream()
             .map(table -> findTableConflicts(table.getTableId(), bookingTime))
             .flatMap(List::stream)
-            .map(BookingConflict::getEndTime)
+                .map(BookingConflict::getEndTime) // This is booking end time (bookingTime + duration)
             .max(LocalDateTime::compareTo)
             .orElse(bookingTime);
             
-        LocalDateTime estimatedWaitTime = latestEndTime.plusMinutes(WAIT_TIME_MINUTES);
+        // Estimated wait time = latest conflict booking end time + 2h buffer after
+        // (when booking can be made)
+        LocalDateTime estimatedWaitTime = latestBookingEndTime.plusMinutes(BUFFER_AFTER_MINUTES);
+
+        // Build reason from conflicts
+        String reason = "Tất cả các bàn phù hợp đã được đặt";
+        if (!suitableTables.isEmpty()) {
+            List<BookingConflict> allConflicts = suitableTables.stream()
+                    .map(table -> findTableConflicts(table.getTableId(), bookingTime))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+
+            if (!allConflicts.isEmpty()) {
+                StringBuilder reasonBuilder = new StringBuilder();
+                for (BookingConflict conflict : allConflicts) {
+                    if (reasonBuilder.length() > 0) {
+                        reasonBuilder.append("; ");
+                    }
+
+                    // CRITICAL: conflict.getBookingTime() is from DATABASE (CONFIRMED booking)
+                    // NOT the new request time
+                    // Calculate buffer range for the CONFIRMED booking from database
+                    LocalDateTime dbBookingTime = conflict.getBookingTime(); // FROM DATABASE
+                    LocalDateTime bufferStart = dbBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
+                    LocalDateTime bufferEnd = dbBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
+
+                    reasonBuilder.append("Đã được đặt trong khung giờ ")
+                            .append(formatTime(bufferStart))
+                            .append(" - ")
+                            .append(formatTime(bufferEnd));
+                }
+                reason = reasonBuilder.toString();
+            }
+        }
         
         // Set waitlist info
-        WaitlistInfo waitlistInfo = new WaitlistInfo(true, estimatedWaitTime, "No tables available for party size");
+        WaitlistInfo waitlistInfo = new WaitlistInfo(true, estimatedWaitTime, reason);
         waitlistInfo.setWaitTimeMinutes((int) java.time.Duration.between(LocalDateTime.now(), estimatedWaitTime).toMinutes());
         response.setWaitlistInfo(waitlistInfo);
         

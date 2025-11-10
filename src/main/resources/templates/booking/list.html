@@ -343,6 +343,44 @@
                 </div>
             </div>
 
+            <!-- Cancel Reason Modal -->
+            <div class="modal fade" id="cancelReasonModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content ds-card">
+                        <div class="modal-header ds-card-header">
+                            <h5 class="modal-title ds-heading-4">
+                                <i class="fas fa-exclamation-triangle ds-text-warning"></i>
+                                Hủy Booking
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body ds-card-body">
+                            <p class="ds-text-primary">Vui lòng nhập lý do hủy booking:</p>
+                            <form id="cancelReasonForm">
+                                <div class="mb-3">
+                                    <label for="cancelReasonInput" class="form-label">Lý do hủy <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="cancelReasonInput" name="cancelReason" rows="3" 
+                                              placeholder="Nhập lý do hủy booking..." required></textarea>
+                                </div>
+                                <input type="hidden" id="cancelReasonBookingId" name="bookingId" value="">
+                            </form>
+                            <div class="ds-alert ds-alert-warning">
+                                <i class="fas fa-info-circle ds-icon"></i>
+                                Hành động này không thể hoàn tác.
+                            </div>
+                        </div>
+                        <div class="modal-footer ds-card-footer">
+                            <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times"></i> Hủy
+                            </button>
+                            <button type="button" class="ds-btn ds-btn-error" id="confirmCancelReasonBtn">
+                                <i class="fas fa-check"></i> Xác nhận hủy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Waitlist Detail Modal -->
             <div class="modal fade" id="waitlistDetailModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
@@ -404,9 +442,128 @@
                 currentBookingIdForCancel: window.currentBookingIdForCancel
             });
             
-            // Show bank account modal instead of cancel modal
-            showBankAccountModal(bookingId);
+            // Check payment status first
+            checkPaymentStatusAndCancel(bookingId);
         }
+        
+        // New function to check payment status before showing modal
+        function checkPaymentStatusAndCancel(bookingId) {
+            console.log('🔍 Checking payment status for booking:', bookingId);
+            
+            fetch(`/booking/api/booking/${bookingId}/payment-status`, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('📡 Payment status response:', data);
+                
+                if (!data.success) {
+                    alert('Lỗi: ' + (data.message || 'Không thể kiểm tra trạng thái thanh toán'));
+                    return;
+                }
+                
+                const paymentStatus = data.paymentStatus;
+                const hasPayment = data.hasPayment;
+                
+                // If payment is COMPLETED, show bank account modal
+                if (hasPayment && paymentStatus === 'COMPLETED') {
+                    console.log('✅ Payment is COMPLETED - showing bank account modal');
+                    showBankAccountModal(bookingId);
+                } else {
+                    // If payment is PENDING or no payment, cancel booking directly
+                    console.log('ℹ️ Payment is PENDING or no payment - canceling booking directly');
+                    cancelBookingDirectly(bookingId);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error checking payment status:', error);
+                alert('Lỗi khi kiểm tra trạng thái thanh toán. Vui lòng thử lại.');
+            });
+        }
+        
+        // New function to cancel booking directly (without bank account modal)
+        function cancelBookingDirectly(bookingId) {
+            // Store booking ID
+            window.currentCancelBookingId = bookingId;
+            
+            // Set booking ID in modal
+            document.getElementById('cancelReasonBookingId').value = bookingId;
+            
+            // Reset form
+            document.getElementById('cancelReasonForm').reset();
+            document.getElementById('cancelReasonBookingId').value = bookingId;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('cancelReasonModal'));
+            modal.show();
+        }
+        
+        // Handle cancel reason form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmCancelReasonBtn = document.getElementById('confirmCancelReasonBtn');
+            if (confirmCancelReasonBtn) {
+                confirmCancelReasonBtn.addEventListener('click', function() {
+                    const bookingId = document.getElementById('cancelReasonBookingId').value || window.currentCancelBookingId;
+                    const cancelReason = document.getElementById('cancelReasonInput').value;
+                    
+                    if (!cancelReason || cancelReason.trim() === '') {
+                        alert('Vui lòng nhập lý do hủy booking');
+                        return;
+                    }
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('cancelReasonModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Create form to submit cancel request
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/booking/api/cancel/${bookingId}`;
+                    form.style.display = 'none';
+                    
+                    // Add cancel reason
+                    const cancelReasonInput = document.createElement('input');
+                    cancelReasonInput.type = 'hidden';
+                    cancelReasonInput.name = 'cancelReason';
+                    cancelReasonInput.value = cancelReason;
+                    form.appendChild(cancelReasonInput);
+                    
+                    // Add empty bank code and account number (not needed for PENDING payment)
+                    const bankCodeInput = document.createElement('input');
+                    bankCodeInput.type = 'hidden';
+                    bankCodeInput.name = 'bankCode';
+                    bankCodeInput.value = '';
+                    form.appendChild(bankCodeInput);
+                    
+                    const accountNumberInput = document.createElement('input');
+                    accountNumberInput.type = 'hidden';
+                    accountNumberInput.name = 'accountNumber';
+                    accountNumberInput.value = '';
+                    form.appendChild(accountNumberInput);
+                    
+                    // Add CSRF token if available
+                    const csrfMeta = document.querySelector('meta[name="_csrf"]');
+                    if (csrfMeta) {
+                        const csrfToken = csrfMeta.getAttribute('content');
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_csrf';
+                        csrfInput.value = csrfToken;
+                        form.appendChild(csrfInput);
+                    }
+                    
+                    // Submit form
+                    document.body.appendChild(form);
+                    form.submit();
+                });
+            }
+        });
         
         // Show bank account modal for cancel booking
         function showBankAccountModal(bookingId) {
@@ -1011,8 +1168,8 @@
             const partySize = document.getElementById(`editPartySize-${waitlistId}`).value;
             const specialRequests = document.getElementById(`editSpecialRequests-${waitlistId}`).value;
             
-            if (!partySize || partySize < 1 || partySize > 6) {
-                alert('Party size must be between 1 and 6');
+            if (!partySize || partySize < 1 || partySize > 20) {
+                alert('Party size must be between 1 and 20');
                 return;
             }
             

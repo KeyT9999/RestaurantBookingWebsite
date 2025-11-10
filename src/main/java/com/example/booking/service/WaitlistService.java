@@ -103,11 +103,6 @@ public class WaitlistService {
             throw new IllegalArgumentException("Party size must be between 1 and 20");
         }
         
-        // Check party size limits for waitlist
-        if (partySize > 6) {
-            throw new IllegalArgumentException("Groups larger than 6 people cannot join waitlist. Please call the restaurant directly.");
-        }
-        
         // Validate customer
         Customer customer = customerService.findById(customerId)
             .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
@@ -357,6 +352,7 @@ public class WaitlistService {
 
     /**
      * Convert Waitlist to WaitlistDetailDto
+     * Includes dishes, services, and tables from database
      */
     private WaitlistDetailDto convertToWaitlistDetailDto(Waitlist waitlist) {
         WaitlistDetailDto dto = new WaitlistDetailDto();
@@ -368,13 +364,46 @@ public class WaitlistService {
         dto.setStatus(waitlist.getStatus().toString());
         dto.setEstimatedWaitTime(waitlist.getEstimatedWaitTime());
         dto.setQueuePosition(getQueuePosition(waitlist.getWaitlistId()));
-        dto.setSpecialRequests(
-                waitlist.getPreferredBookingTime() != null ? waitlist.getPreferredBookingTime().toString() : null);
+        // Note: Waitlist entity may not have specialRequests field, set to null if not available
+        dto.setSpecialRequests(null);
 
         // Map preferredBookingTime từ LocalDateTime sang String
         if (waitlist.getPreferredBookingTime() != null) {
             dto.setPreferredBookingTime(waitlist.getPreferredBookingTime().toString());
         }
+
+        // Load dishes from database
+        List<WaitlistDish> waitlistDishes = waitlistDishRepository.findByWaitlistWaitlistId(waitlist.getWaitlistId());
+        List<WaitlistDetailDto.WaitlistDishDto> dishDtos = waitlistDishes.stream()
+                .map(wd -> new WaitlistDetailDto.WaitlistDishDto(
+                        wd.getDish().getName(),
+                        wd.getDish().getDescription(),
+                        wd.getQuantity(),
+                        wd.getDish().getPrice(),
+                        wd.getPrice()))
+                .collect(java.util.stream.Collectors.toList());
+        dto.setDishes(dishDtos);
+
+        // Load services from database
+        List<WaitlistServiceItem> waitlistServices = waitlistServiceRepository.findByWaitlistWaitlistId(waitlist.getWaitlistId());
+        List<WaitlistDetailDto.WaitlistServiceDto> serviceDtos = waitlistServices.stream()
+                .map(ws -> new WaitlistDetailDto.WaitlistServiceDto(
+                        ws.getService().getName(),
+                        ws.getService().getDescription(),
+                        ws.getPrice()))
+                .collect(java.util.stream.Collectors.toList());
+        dto.setServices(serviceDtos);
+
+        // Load tables from database
+        List<WaitlistTable> waitlistTables = waitlistTableRepository.findByWaitlistWaitlistId(waitlist.getWaitlistId());
+        List<WaitlistDetailDto.WaitlistTableDto> tableDtos = waitlistTables.stream()
+                .map(wt -> new WaitlistDetailDto.WaitlistTableDto(
+                        wt.getTable().getTableName(),
+                        wt.getTable().getCapacity(),
+                        wt.getTable().getStatus().toString(),
+                        wt.getTableFee()))  // Include tableFee from WaitlistTable
+                .collect(java.util.stream.Collectors.toList());
+        dto.setTables(tableDtos);
 
         return dto;
     }
@@ -394,12 +423,6 @@ public class WaitlistService {
 
             if (partySize < 1 || partySize > 20) {
                 throw new IllegalArgumentException("Party size must be between 1 and 20");
-            }
-
-            // Check party size limits for waitlist
-            if (partySize > 6) {
-                throw new IllegalArgumentException(
-                        "Groups larger than 6 people cannot join waitlist. Please call the restaurant directly.");
             }
 
             // Validate customer
@@ -605,7 +628,8 @@ public class WaitlistService {
                 .map(wt -> new WaitlistDetailDto.WaitlistTableDto(
                         wt.getTable().getTableName(),
                         wt.getTable().getCapacity(),
-                        wt.getTable().getStatus().toString()))
+                        wt.getTable().getStatus().toString(),
+                        wt.getTableFee()))  // Include tableFee from WaitlistTable
                 .collect(java.util.stream.Collectors.toList());
         dto.setTables(tableDtos);
 

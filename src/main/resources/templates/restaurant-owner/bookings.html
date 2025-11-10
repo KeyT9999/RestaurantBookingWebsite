@@ -440,7 +440,300 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Waitlist Section -->
+            <div class="chart-card" th:if="${error == null and waitlists != null and !waitlists.empty}">
+                <div class="chart-header">
+                    <h3 class="chart-title">
+                        <i class="fas fa-clock"></i> Danh sách chờ (Waitlist)
+                        <span class="badge bg-warning text-dark ms-2" th:text="${waitingCount}">0</span>
+                    </h3>
+                </div>
+                <div class="chart-content">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Khách hàng</th>
+                                    <th>Nhà hàng</th>
+                                    <th>Thời gian tham gia</th>
+                                    <th>Thời gian mong muốn</th>
+                                    <th>Số khách</th>
+                                    <th>Vị trí</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="waitlist : ${waitlists}">
+                                    <td><strong th:text="'#WL' + ${waitlist.waitlistId}">#WL001</strong></td>
+                                    <td>
+                                        <div>
+                                            <strong th:text="${waitlist.customer != null and waitlist.customer.user != null and waitlist.customer.user.fullName != null ? waitlist.customer.user.fullName : 'N/A'}">Nguyễn Văn A</strong><br>
+                                            <small th:text="${waitlist.customer != null and waitlist.customer.user != null and waitlist.customer.user.phoneNumber != null ? waitlist.customer.user.phoneNumber : 'N/A'}">0123 456 789</small>
+                                        </div>
+                                    </td>
+                                    <td th:text="${restaurantNames != null and restaurantNames[waitlist.restaurant.restaurantId] != null ? restaurantNames[waitlist.restaurant.restaurantId] : waitlist.restaurant.restaurantName}">Nhà hàng ABC</td>
+                                    <td>
+                                        <div>
+                                            <strong th:text="${#temporals.format(waitlist.joinTime, 'dd/MM/yyyy')}">10/11/2025</strong><br>
+                                            <small th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">16:30</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div th:if="${waitlist.preferredBookingTime != null}">
+                                            <strong th:text="${#temporals.format(waitlist.preferredBookingTime, 'dd/MM/yyyy')}">10/11/2025</strong><br>
+                                            <small th:text="${#temporals.format(waitlist.preferredBookingTime, 'HH:mm')}">19:00</small>
+                                        </div>
+                                        <span th:if="${waitlist.preferredBookingTime == null}" class="text-muted">Chưa có</span>
+                                    </td>
+                                    <td th:text="${waitlist.partySize} + ' người'">4 người</td>
+                                    <td>
+                                        <span class="badge bg-info" th:if="${waitlistQueuePositions != null and waitlistQueuePositions[waitlist.waitlistId] != null}" 
+                                              th:text="'Vị trí #' + ${waitlistQueuePositions[waitlist.waitlistId]}">Vị trí #1</span>
+                                        <span class="badge bg-secondary" th:if="${waitlistQueuePositions == null or waitlistQueuePositions[waitlist.waitlistId] == null}">N/A</span>
+                                    </td>
+                                    <td>
+                                        <span th:class="${'chip ' + 
+                                            (waitlist.status.name() == 'WAITING' ? 'chip-pending' :
+                                            (waitlist.status.name() == 'CALLED' ? 'chip-info' :
+                                            (waitlist.status.name() == 'SEATED' ? 'chip-success' :
+                                            (waitlist.status.name() == 'CANCELLED' ? 'chip-cancelled' : 'chip-default'))))}"
+                                            th:text="${waitlist.status.name()}">
+                                        </span>
+                                    </td>
+                                    <td class="actions">
+                                        <button th:onclick="'openWaitlistDetail(' + ${waitlist.waitlistId} + ')'" 
+                                                class="btn btn-info small">
+                                            <i class="fas fa-eye"></i>
+                                            Chi tiết
+                                        </button>
+                                        
+                                        <button th:if="${waitlist.status != null and waitlist.status.name() == 'WAITING'}" 
+                                                class="btn btn-success small confirm-waitlist-btn" 
+                                                th:attr="data-waitlist-id=${waitlist.waitlistId},data-preferred-time=${waitlist.preferredBookingTime != null ? #temporals.format(waitlist.preferredBookingTime, 'yyyy-MM-dd''T''HH:mm') : ''}"
+                                                title="Xác nhận thành booking">
+                                            <i class="fas fa-check"></i>
+                                            Xác nhận Booking
+                                        </button>
+                                        
+                                        <form th:if="${waitlist.status != null and waitlist.status.name() == 'WAITING'}" 
+                                              th:action="@{/restaurant-owner/waitlist/cancel/{id}(id=${waitlist.waitlistId})}" 
+                                              method="post" 
+                                              style="display: inline;">
+                                            <button type="submit" class="btn btn-danger small" 
+                                                    onclick="return confirm('Bạn có chắc muốn hủy waitlist này?')">
+                                                <i class="fas fa-times"></i>
+                                                Hủy
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
+    </div>
+
+    <!-- Waitlist Detail Modal -->
+    <div class="modal fade" id="waitlistDetailModal" tabindex="-1" aria-labelledby="waitlistDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="waitlistDetailModalLabel">
+                        <i class="fas fa-clock me-2"></i>
+                        Chi tiết Waitlist
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Loading State -->
+                    <div id="waitlistDetailLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Đang tải thông tin waitlist...</p>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="waitlistDetailError" class="text-center py-5" style="display: none;">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="waitlistDetailErrorMessage">Không thể tải thông tin waitlist</span>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="loadWaitlistDetail()">
+                            <i class="fas fa-refresh me-2"></i>
+                            Thử lại
+                        </button>
+                    </div>
+
+                    <!-- Waitlist Detail Content -->
+                    <div id="waitlistDetailContent" style="display: none;">
+                        <div class="row">
+                            <!-- Cột trái -->
+                            <div class="col-md-6">
+                                <!-- Waitlist Summary -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-clock me-2"></i>
+                                        <h6 class="mb-0">Waitlist Summary</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="waitlistSummary">
+                                            <!-- Waitlist summary will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Khách hàng -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-user me-2"></i>
+                                        <h6 class="mb-0">Khách hàng</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="waitlistCustomerInfo">
+                                            <!-- Customer info will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Thông tin Waitlist -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <h6 class="mb-0">Thông tin Waitlist</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="waitlistInfo">
+                                            <!-- Waitlist info will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cột phải -->
+                            <div class="col-md-6">
+                                <!-- Bàn mong muốn -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-table me-2"></i>
+                                        <h6 class="mb-0">Bàn mong muốn</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="waitlistTables">
+                                            <!-- Tables will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Món ăn -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-utensils me-2"></i>
+                                        <h6 class="mb-0">Món ăn</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="waitlistDishes">
+                                            <!-- Dishes will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Dịch vụ -->
+                                <div class="card mb-3">
+                                    <div class="card-header d-flex align-items-center">
+                                        <i class="fas fa-concierge-bell me-2"></i>
+                                        <h6 class="mb-0">Dịch vụ</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="waitlistServices">
+                                            <!-- Services will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Waitlist Actions -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6 class="card-title">Quản lý Waitlist</h6>
+                                        <p class="card-text text-muted">Thực hiện các thao tác quản lý waitlist</p>
+                                        <div id="waitlistActions" class="d-flex gap-2 justify-content-center flex-wrap">
+                                            <!-- Actions will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        Đóng
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="location.reload()">
+                        <i class="fas fa-refresh me-2"></i>
+                        Làm mới danh sách
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Waitlist to Booking Modal -->
+    <div id="confirmWaitlistModal" class="modal fade" tabindex="-1" aria-labelledby="confirmWaitlistModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmWaitlistModalLabel">Xác nhận Waitlist thành Booking</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <strong>Thông tin:</strong> Waitlist sẽ được chuyển thành booking và khách hàng sẽ nhận được thông báo xác nhận.
+                    </div>
+                    
+                    <form id="confirmWaitlistForm">
+                        <input type="hidden" id="waitlistId" name="waitlistId">
+                        
+                        <div class="mb-3">
+                            <label for="bookingTime" class="form-label">Thời gian đặt bàn <span class="text-danger">*</span></label>
+                            <input type="datetime-local" 
+                                   id="bookingTime" 
+                                   name="bookingTime" 
+                                   class="form-control" 
+                                   required>
+                            <small class="form-text text-muted">
+                                Chọn thời gian chính xác mà khách hàng muốn đặt bàn
+                            </small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Ghi chú</label>
+                            <textarea id="notes" 
+                                      name="notes" 
+                                      class="form-control" 
+                                      rows="3" 
+                                      placeholder="Thêm ghi chú cho booking..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" form="confirmWaitlistForm" class="btn btn-success">
+                        <i class="fas fa-check"></i> Xác nhận Booking
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Bootstrap 5 JS -->
@@ -500,8 +793,192 @@
             }
         });
 
+        // Confirm Waitlist to Booking functions
+        function showConfirmWaitlistDialog(waitlistId, preferredBookingTime) {
+            console.log('🔍 showConfirmWaitlistDialog called with:', waitlistId, preferredBookingTime);
+            
+            const modalElement = document.getElementById('confirmWaitlistModal');
+            if (!modalElement) {
+                console.error('❌ Modal element not found');
+                alert('Lỗi: Không tìm thấy modal xác nhận');
+                return;
+            }
+            
+            const modal = new bootstrap.Modal(modalElement);
+            const waitlistIdInput = document.getElementById('waitlistId');
+            if (!waitlistIdInput) {
+                console.error('❌ waitlistId input not found');
+                return;
+            }
+            waitlistIdInput.value = waitlistId;
+            
+            // Use preferred booking time if available, otherwise set default to current time + 30 minutes
+            const bookingTimeInput = document.getElementById('bookingTime');
+            if (!bookingTimeInput) {
+                console.error('❌ bookingTime input not found');
+                return;
+            }
+            
+            if (preferredBookingTime && preferredBookingTime.trim() !== '') {
+                try {
+                    // Parse the datetime string (format: yyyy-MM-ddTHH:mm:ss or yyyy-MM-ddTHH:mm:ss.SSS)
+                    let date = new Date(preferredBookingTime);
+                    if (isNaN(date.getTime())) {
+                        throw new Error('Invalid date');
+                    }
+                    
+                    // Convert to local time for datetime-local input (not UTC)
+                    // datetime-local needs format: yyyy-MM-ddTHH:mm (local time, not UTC)
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    const timeString = `${year}-${month}-${day}T${hours}:${minutes}`;
+                    
+                    bookingTimeInput.value = timeString;
+                    console.log('✅ Using preferred booking time (local):', timeString);
+                } catch (e) {
+                    console.error('❌ Failed to parse preferred booking time:', e);
+                    // Fallback to default
+                    const now = new Date();
+                    now.setMinutes(now.getMinutes() + 30);
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    bookingTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                    console.log('⚠️ Using fallback time:', bookingTimeInput.value);
+                }
+            } else {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() + 30);
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                bookingTimeInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                console.log('⚠️ No preferred time, using default:', bookingTimeInput.value);
+            }
+            
+            modal.show();
+            console.log('✅ Modal shown');
+        }
+
+        // Handle confirm waitlist form submission
+        const confirmWaitlistForm = document.getElementById('confirmWaitlistForm');
+        if (confirmWaitlistForm) {
+            confirmWaitlistForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const waitlistId = document.getElementById('waitlistId').value;
+                const bookingTime = document.getElementById('bookingTime').value;
+                const notes = document.getElementById('notes').value;
+                
+                if (!waitlistId || !bookingTime) {
+                    alert('Vui lòng điền đầy đủ thông tin');
+                    return;
+                }
+                
+                // 🔧 SỬA: Chọn nút submit theo id (dễ debug hơn)
+                const submitBtn = document.getElementById('confirmWaitlistSubmitBtn');
+                const originalText = submitBtn ? submitBtn.innerHTML : '';
+                
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+                    submitBtn.disabled = true;
+                }
+                
+                // 🔧 SỬA: Convert datetime-local format to ISO-8601 format
+                // datetime-local returns format: "yyyy-MM-ddTHH:mm" (local time)
+                // Need to convert to ISO-8601: "yyyy-MM-ddTHH:mm:ss" (local time, not UTC)
+                let bookingTimeISO = bookingTime;
+                if (bookingTime && bookingTime.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)) {
+                    // Format: yyyy-MM-ddTHH:mm -> convert to yyyy-MM-ddTHH:mm:00 (keep local time)
+                    bookingTimeISO = bookingTime + ':00';
+                } else if (bookingTime && !bookingTime.includes(':')) {
+                    // If format is wrong, try to fix it
+                    bookingTimeISO = bookingTime + ':00';
+                }
+                
+                console.log('📅 Booking time (local):', bookingTime, '-> ISO (local):', bookingTimeISO);
+                
+                // Call API
+                fetch(`/restaurant-owner/waitlist/${waitlistId}/confirm-to-booking`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        bookingTime: bookingTimeISO,
+                        notes: notes || ''
+                    })
+                })
+                .then(async response => {
+                    const responseText = await response.text();
+                    console.log('📡 Response text:', responseText);
+                    
+                    if (!response.ok) {
+                        let errorMessage = `HTTP error! status: ${response.status}`;
+                        try {
+                            const errorData = JSON.parse(responseText);
+                            errorMessage = errorData.error || errorData.message || errorMessage;
+                            console.error('❌ Error data:', errorData);
+                        } catch (e) {
+                            console.error('❌ Failed to parse error response:', e);
+                        }
+                        throw new Error(errorMessage);
+                    }
+                    
+                    return JSON.parse(responseText);
+                })
+                .then(data => {
+                    console.log('✅ Response data:', data);
+                    if (data.success) {
+                        const bookingTime = new Date(data.bookingTime).toLocaleString('vi-VN');
+                        showToast(`✅ Xác nhận thành công! Booking ID: ${data.bookingId} | Thời gian: ${bookingTime} | Số người: ${data.partySize}`, 'success');
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmWaitlistModal'));
+                        if (modal) {
+                            modal.hide();
+                        }
+                        // Reload after a short delay to show toast
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showToast('❌ Lỗi: ' + (data.error || 'Không thể xác nhận waitlist'), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('❌ Lỗi kết nối: ' + error.message, 'error');
+                })
+                .finally(() => {
+                    // Restore button state
+                    if (submitBtn) {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }
+                });
+            });
+        } else {
+            console.warn('⚠️ confirmWaitlistForm not found');
+        }
+
         // Demo functionality
         document.addEventListener('DOMContentLoaded', function() {
+            // Attach event listeners for confirm waitlist buttons
+            document.querySelectorAll('.confirm-waitlist-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const waitlistId = this.getAttribute('data-waitlist-id');
+                    const preferredBookingTime = this.getAttribute('data-preferred-time') || '';
+                    console.log('🔍 Button clicked:', waitlistId, preferredBookingTime);
+                    showConfirmWaitlistDialog(waitlistId, preferredBookingTime);
+                });
+            });
+            
             // Status filter
             const statusFilter = document.querySelector('select');
             if (statusFilter) {
@@ -577,39 +1054,43 @@
         }
         
         // Handle cancel booking form submission
-        document.getElementById('cancelForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const bookingId = document.getElementById('cancelBookingId').value;
-            const cancelReason = document.getElementById('cancelReason').value;
-            
-            if (!cancelReason.trim()) {
-                alert('Vui lòng nhập lý do hủy booking');
-                return;
-            }
-            
-            // Submit cancel request
-            fetch(`/restaurant-owner/api/bookings/${bookingId}/cancel`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `cancelReason=${encodeURIComponent(cancelReason)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Đã hủy booking và tạo refund request!');
-                    location.reload();
-                } else {
-                    alert('Lỗi: ' + data.error);
+        const cancelForm = document.getElementById('cancelForm');
+        if (cancelForm) {
+            cancelForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const bookingId = document.getElementById('cancelBookingId').value;
+                const cancelReason = document.getElementById('cancelReason').value;
+                
+                if (!cancelReason.trim()) {
+                    alert('Vui lòng nhập lý do hủy booking');
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Có lỗi xảy ra khi hủy booking');
+                
+                // Submit cancel request
+                fetch(`/restaurant-owner/api/bookings/${bookingId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `cancelReason=${encodeURIComponent(cancelReason)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Đã hủy booking và tạo refund request!');
+                        location.reload();
+                    } else {
+                        alert('Lỗi: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi hủy booking');
+                });
             });
-        });
+        }
+        // Note: cancelForm may not exist on this page, which is fine
     </script>
 
     <!-- Booking Detail Modal -->
@@ -870,6 +1351,7 @@
     <!-- Booking Detail Modal JavaScript -->
     <script>
         let currentBookingId = null;
+        let currentWaitlistId = null;
 
         function openBookingDetail(bookingId) {
             currentBookingId = bookingId;
@@ -1344,6 +1826,300 @@ function populatePaymentInfo(booking) {
             window.location.reload();
         }
 
+        // Toast Notification Function
+        function showToast(message, type = 'success') {
+            const toastContainer = document.querySelector('.toast-container');
+            if (!toastContainer) {
+                // Fallback to alert if toast container doesn't exist
+                alert(message);
+                return;
+            }
+            
+            const toastId = 'toast-' + Date.now();
+            const toastElement = document.createElement('div');
+            toastElement.id = toastId;
+            toastElement.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
+            toastElement.setAttribute('role', 'alert');
+            toastElement.setAttribute('aria-live', 'assertive');
+            toastElement.setAttribute('aria-atomic', 'true');
+            
+            const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle';
+            toastElement.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${icon} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toastElement);
+            
+            const toast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
+            });
+            
+            toast.show();
+            
+            // Remove toast element after it's hidden
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                if (toastElement && toastElement.parentNode) {
+                    toastElement.remove();
+                }
+            });
+        }
+
+        // Waitlist Detail Modal JavaScript
+        function openWaitlistDetail(waitlistId) {
+            currentWaitlistId = waitlistId;
+            const modal = new bootstrap.Modal(document.getElementById('waitlistDetailModal'));
+            modal.show();
+            loadWaitlistDetail();
+        }
+
+        function loadWaitlistDetail() {
+            if (!currentWaitlistId) return;
+
+            console.log("🚀 Loading waitlist detail for ID:", currentWaitlistId);
+
+            // Show loading state
+            document.getElementById('waitlistDetailLoading').style.display = 'block';
+            document.getElementById('waitlistDetailError').style.display = 'none';
+            document.getElementById('waitlistDetailContent').style.display = 'none';
+
+            // Fetch waitlist detail
+            const url = `/restaurant-owner/waitlist/${currentWaitlistId}/detail`;
+            console.log("📡 Fetching from URL:", url);
+            
+            fetch(url, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log("📡 Response status:", response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("📡 Parsed JSON:", data);
+                if (data.success) {
+                    populateWaitlistDetail(data.waitlist);
+                    document.getElementById('waitlistDetailLoading').style.display = 'none';
+                    document.getElementById('waitlistDetailContent').style.display = 'block';
+                } else {
+                    throw new Error(data.error || 'Không thể tải thông tin waitlist');
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error loading waitlist detail:', error);
+                document.getElementById('waitlistDetailLoading').style.display = 'none';
+                document.getElementById('waitlistDetailError').style.display = 'block';
+                document.getElementById('waitlistDetailErrorMessage').textContent = error.message || 'Không thể tải thông tin waitlist';
+            });
+        }
+
+        function populateWaitlistDetail(waitlist) {
+            populateWaitlistSummary(waitlist);
+            populateWaitlistCustomerInfo(waitlist);
+            populateWaitlistInfo(waitlist);
+            populateWaitlistTables(waitlist);
+            populateWaitlistDishes(waitlist);
+            populateWaitlistServices(waitlist);
+            populateWaitlistActions(waitlist);
+        }
+
+        function populateWaitlistSummary(waitlist) {
+            const summary = document.getElementById('waitlistSummary');
+            summary.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Waitlist ID:</span>
+                    <span class="fw-bold">#WL${waitlist.waitlistId}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Trạng thái:</span>
+                    <span class="badge ${getWaitlistStatusClass(waitlist.status)}">${waitlist.status}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Số người:</span>
+                    <span class="fw-medium">${waitlist.partySize} người</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Thời gian tham gia:</span>
+                    <span class="fw-medium">${formatDateTime(waitlist.joinTime)}</span>
+                </div>
+                ${waitlist.preferredBookingTime ? `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Thời gian mong muốn:</span>
+                    <span class="fw-medium">${formatDateTime(waitlist.preferredBookingTime)}</span>
+                </div>
+                ` : ''}
+                ${waitlist.queuePosition ? `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Vị trí:</span>
+                    <span class="fw-medium">#${waitlist.queuePosition}</span>
+                </div>
+                ` : ''}
+                ${waitlist.estimatedWaitTime ? `
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted">Thời gian chờ ước tính:</span>
+                    <span class="fw-medium">${waitlist.estimatedWaitTime} phút</span>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        function populateWaitlistCustomerInfo(waitlist) {
+            const customerInfo = document.getElementById('waitlistCustomerInfo');
+            customerInfo.innerHTML = `
+                <div class="mb-2">
+                    <span class="text-muted">Tên:</span>
+                    <span class="fw-medium ms-2">${waitlist.customerName || 'N/A'}</span>
+                </div>
+                ${waitlist.customerPhone ? `
+                <div class="mb-2">
+                    <span class="text-muted">Số điện thoại:</span>
+                    <span class="fw-medium ms-2">${waitlist.customerPhone}</span>
+                </div>
+                ` : ''}
+                ${waitlist.customerEmail ? `
+                <div class="mb-2">
+                    <span class="text-muted">Email:</span>
+                    <span class="fw-medium ms-2">${waitlist.customerEmail}</span>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        function populateWaitlistInfo(waitlist) {
+            const info = document.getElementById('waitlistInfo');
+            info.innerHTML = `
+                <div class="mb-2">
+                    <span class="text-muted">Nhà hàng:</span>
+                    <span class="fw-medium ms-2">${waitlist.restaurantName || 'N/A'}</span>
+                </div>
+                ${waitlist.specialRequests ? `
+                <div class="mb-2">
+                    <span class="text-muted">Yêu cầu đặc biệt:</span>
+                    <span class="ms-2">${waitlist.specialRequests}</span>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        function populateWaitlistTables(waitlist) {
+            const tables = document.getElementById('waitlistTables');
+            if (waitlist.tables && waitlist.tables.length > 0) {
+                tables.innerHTML = waitlist.tables.map(table => {
+                    const tableFee = table.tableFee ? new Intl.NumberFormat('vi-VN').format(table.tableFee) + '₫' : '0₫';
+                    return `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${table.tableName}</span>
+                        <div>
+                            <span class="badge bg-info me-2">${table.capacity} người</span>
+                            <span class="badge bg-success">${tableFee}</span>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            } else {
+                tables.innerHTML = '<p class="text-muted mb-0">Không có bàn mong muốn</p>';
+            }
+        }
+
+        function populateWaitlistDishes(waitlist) {
+            const dishes = document.getElementById('waitlistDishes');
+            if (waitlist.dishes && waitlist.dishes.length > 0) {
+                dishes.innerHTML = waitlist.dishes.map(dish => `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${dish.dishName}</span>
+                        <span class="badge bg-warning text-dark">x${dish.quantity}</span>
+                    </div>
+                `).join('');
+            } else {
+                dishes.innerHTML = '<p class="text-muted mb-0">Không có món ăn</p>';
+            }
+        }
+
+        function populateWaitlistServices(waitlist) {
+            const services = document.getElementById('waitlistServices');
+            if (waitlist.services && waitlist.services.length > 0) {
+                services.innerHTML = waitlist.services.map(service => {
+                    const price = service.price ? new Intl.NumberFormat('vi-VN').format(service.price) + '₫' : '';
+                    return `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${service.serviceName}</span>
+                        <span class="badge bg-info">${price}</span>
+                    </div>
+                `;
+                }).join('');
+            } else {
+                services.innerHTML = '<p class="text-muted mb-0">Không có dịch vụ</p>';
+            }
+        }
+
+        function populateWaitlistActions(waitlist) {
+            const actions = document.getElementById('waitlistActions');
+            let actionsHtml = '';
+            
+            if (waitlist.status === 'WAITING') {
+                actionsHtml += `
+                    <button class="btn btn-success btn-sm" onclick="showConfirmWaitlistDialog(${waitlist.waitlistId}, '${waitlist.preferredBookingTime || ''}')">
+                        <i class="fas fa-check me-1"></i>Xác nhận Booking
+                    </button>
+                `;
+            }
+            
+            if (waitlist.status === 'WAITING' || waitlist.status === 'CALLED') {
+                actionsHtml += `
+                    <button class="btn btn-danger btn-sm" onclick="cancelWaitlist(${waitlist.waitlistId})">
+                        <i class="fas fa-times me-1"></i>Hủy Waitlist
+                    </button>
+                `;
+            }
+            
+            actions.innerHTML = actionsHtml || '<p class="text-muted mb-0">Không có thao tác khả dụng</p>';
+        }
+
+        function getWaitlistStatusClass(status) {
+            switch(status) {
+                case 'WAITING': return 'bg-warning text-dark';
+                case 'CALLED': return 'bg-info';
+                case 'SEATED': return 'bg-success';
+                case 'CANCELLED': return 'bg-danger';
+                default: return 'bg-secondary';
+            }
+        }
+
+        function cancelWaitlist(waitlistId) {
+            if (!confirm('Bạn có chắc muốn hủy waitlist này?')) return;
+            
+            fetch(`/restaurant-owner/waitlist/cancel/${waitlistId}`, {
+                method: 'POST',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Đã hủy waitlist thành công!');
+                    location.reload();
+                } else {
+                    alert('❌ Lỗi: ' + (data.error || 'Không thể hủy waitlist'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Lỗi kết nối: ' + error.message);
+            });
+        }
+
         // Modal functions
         function openTableSelectionModal() {
             // Show loading state
@@ -1670,9 +2446,123 @@ function populatePaymentInfo(booking) {
 
         // Cancel booking function with bank account info
         function cancelBooking(bookingId) {
-            // Show modal for bank account info
-            showCancelBookingModal(bookingId);
+            // Check payment status first
+            checkPaymentStatusAndCancel(bookingId);
         }
+        
+        // New function to check payment status before showing modal
+        function checkPaymentStatusAndCancel(bookingId) {
+            console.log('🔍 Checking payment status for booking:', bookingId);
+            
+            fetch(`/restaurant-owner/api/bookings/${bookingId}/payment-status`, {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('📡 Payment status response:', data);
+                
+                if (!data.success) {
+                    showToast('Lỗi: ' + (data.message || 'Không thể kiểm tra trạng thái thanh toán'), 'error');
+                    return;
+                }
+                
+                const paymentStatus = data.paymentStatus;
+                const hasPayment = data.hasPayment;
+                
+                // If payment is COMPLETED, show bank account modal
+                if (hasPayment && paymentStatus === 'COMPLETED') {
+                    console.log('✅ Payment is COMPLETED - showing bank account modal');
+                    showCancelBookingModal(bookingId);
+                } else {
+                    // If payment is PENDING or no payment, cancel booking directly
+                    console.log('ℹ️ Payment is PENDING or no payment - canceling booking directly');
+                    cancelBookingDirectly(bookingId);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error checking payment status:', error);
+                showToast('Lỗi khi kiểm tra trạng thái thanh toán. Vui lòng thử lại.', 'error');
+            });
+        }
+        
+        // New function to cancel booking directly (without bank account modal)
+        function cancelBookingDirectly(bookingId) {
+            // Store booking ID
+            window.currentCancelBookingId = bookingId;
+            
+            // Set booking ID in modal
+            document.getElementById('cancelReasonBookingId').value = bookingId;
+            
+            // Reset form
+            document.getElementById('cancelReasonForm').reset();
+            document.getElementById('cancelReasonBookingId').value = bookingId;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('cancelReasonModal'));
+            modal.show();
+        }
+        
+        // Handle cancel reason form submission for restaurant owner
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmCancelReasonBtn = document.getElementById('confirmCancelReasonBtn');
+            if (confirmCancelReasonBtn) {
+                confirmCancelReasonBtn.addEventListener('click', function() {
+                    const bookingId = document.getElementById('cancelReasonBookingId').value || window.currentCancelBookingId;
+                    const cancelReason = document.getElementById('cancelReasonInput').value;
+                    
+                    if (!cancelReason || cancelReason.trim() === '') {
+                        showToast('Vui lòng nhập lý do hủy booking', 'error');
+                        return;
+                    }
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('cancelReasonModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Disable button
+                    const submitBtn = this;
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang xử lý...';
+                    
+                    // Submit cancel request without bank account info
+                    fetch(`/restaurant-owner/api/bookings/${bookingId}/cancel`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Accept': 'application/json'
+                        },
+                        body: `cancelReason=${encodeURIComponent(cancelReason)}&bankCode=&accountNumber=`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('✅ Đã hủy booking thành công!', 'success');
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showToast('❌ Lỗi: ' + (data.error || 'Không thể hủy booking'), 'error');
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast('❌ Lỗi kết nối: ' + error.message, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    });
+                });
+            }
+        });
 
         function showCancelBookingModal(bookingId) {
             // Create modal HTML
@@ -2113,5 +3003,49 @@ function populatePaymentInfo(booking) {
         }
     }
 </style>
+
+<!-- Cancel Reason Modal -->
+<div class="modal fade" id="cancelReasonModal" tabindex="-1" aria-labelledby="cancelReasonModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelReasonModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Hủy Booking
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-primary">Vui lòng nhập lý do hủy booking:</p>
+                <form id="cancelReasonForm">
+                    <div class="mb-3">
+                        <label for="cancelReasonInput" class="form-label">Lý do hủy <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="cancelReasonInput" name="cancelReason" rows="3" 
+                                  placeholder="Nhập lý do hủy booking..." required></textarea>
+                    </div>
+                    <input type="hidden" id="cancelReasonBookingId" name="bookingId" value="">
+                </form>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Hành động này không thể hoàn tác.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Hủy
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmCancelReasonBtn">
+                    <i class="fas fa-check me-1"></i> Xác nhận hủy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+    <!-- Toasts will be dynamically added here -->
+</div>
+
 </body>
 </html>
