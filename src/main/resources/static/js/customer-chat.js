@@ -174,9 +174,9 @@ class CustomerChatManager {
   // Setup room click handlers
   setupRoomClickHandlers() {
     document.addEventListener("click", (e) => {
-      const roomItem = e.target.closest(".chat-room-item");
+      const roomItem = e.target.closest(".restaurant-item");
       if (roomItem) {
-        const roomId = roomItem.dataset.roomId;
+        const roomId = roomItem.dataset.restaurantId;
         if (roomId) {
           this.joinRoom(roomId);
         }
@@ -780,12 +780,12 @@ class CustomerChatManager {
   // Update room selection
   updateRoomSelection(roomId) {
     // Remove active class from all rooms
-    document.querySelectorAll(".chat-room-item").forEach((item) => {
+    document.querySelectorAll(".restaurant-item").forEach((item) => {
       item.classList.remove("active");
     });
 
     // Add active class to current room
-    const currentRoom = document.querySelector(`[data-room-id="${roomId}"]`);
+    const currentRoom = document.querySelector(`[data-restaurant-id="${roomId}"]`);
     if (currentRoom) {
       currentRoom.classList.add("active");
     }

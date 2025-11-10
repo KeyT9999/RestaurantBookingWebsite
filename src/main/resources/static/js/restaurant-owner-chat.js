@@ -421,18 +421,28 @@ class RestaurantOwnerChatManager {
 
     // Safe handling of senderName
     const senderName = message.senderName || "Người dùng";
-    messageItem.querySelector(".message-sender").textContent = senderName;
+    const senderElement = messageItem.querySelector(".message-sender");
+    if (senderElement) {
+      senderElement.textContent = senderName;
+    }
 
     // Safe handling of sentAt
     const timeText = this.formatTime(message.sentAt);
-    messageItem.querySelector(".message-time").textContent = timeText;
+    const timeElement = messageItem.querySelector(".message-time");
+    if (timeElement) {
+      timeElement.textContent = timeText;
+    }
 
-    // Safe handling of content - use innerHTML since content is sanitized on server
+    // Safe handling of content - use textContent for security
     const content = message.content || "";
-    messageItem.querySelector(".message-text").innerHTML = content;
+    const textElement = messageItem.querySelector(".message-text");
+    if (textElement) {
+      textElement.textContent = content;
+    }
 
     // Check if message is from current user
-    if (message.senderId === this.currentUserId) {
+    if (message.senderId === this.currentUserId || 
+        message.senderId === this.currentUserId?.toString()) {
       messageItem.classList.add("own-message");
     }
 
@@ -865,31 +875,22 @@ class RestaurantOwnerChatManager {
   formatTime(dateTimeString) {
     // Handle invalid or null dateTimeString
     if (!dateTimeString) {
-      return "Thời gian không xác định";
+      return "";
     }
 
     const date = new Date(dateTimeString);
 
     // Check if date is valid
     if (isNaN(date.getTime())) {
-      return "Thời gian không hợp lệ";
+      return "";
     }
 
-    const now = new Date();
-    const diff = now - date;
-
-    if (diff < 60000) {
-      // Less than 1 minute
-      return "Vừa xong";
-    } else if (diff < 3600000) {
-      // Less than 1 hour
-      return Math.floor(diff / 60000) + " phút trước";
-    } else if (diff < 86400000) {
-      // Less than 1 day
-      return Math.floor(diff / 3600000) + " giờ trước";
-    } else {
-      return date.toLocaleDateString("vi-VN");
-    }
+    // Format as DD/MM/YYYY for messages (like in the image: "6/11/2025")
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
   }
 
   // Show error message
