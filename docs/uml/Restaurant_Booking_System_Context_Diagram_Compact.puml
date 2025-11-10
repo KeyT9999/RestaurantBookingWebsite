@@ -1,0 +1,69 @@
+@startuml Restaurant Booking System - Context Diagram (Compact)
+
+title Restaurant Booking System - Context Diagram (DFD Level 0)\nCompact Layout
+
+skinparam componentStyle rectangle
+skinparam defaultFontSize 10
+skinparam linetype ortho
+skinparam roundcorner 20
+skinparam shadowing false
+skinparam maxMessageSize 60
+
+skinparam rectangle {
+    BackgroundColor #E8F4F8
+    BorderColor #2C5F7C
+    RoundCorner 20
+}
+
+skinparam arrow {
+    Thickness 1.5
+    Color #2C5F7C
+}
+
+' Hệ thống trung tâm
+component [Restaurant\nBooking System] as System #FFE6E6
+
+' Các thực thể bên ngoài - sắp xếp theo 4 góc
+rectangle Customer #LightBlue
+rectangle "Restaurant\nOwner" as Owner #LightBlue
+rectangle Admin #LightBlue
+rectangle "Payment\nGateway" as Payment #LightBlue
+
+' Layout: Customer trái trên, Owner phải trên, Admin phải dưới, Payment trái dưới
+Customer -[hidden]up- System
+Owner -[hidden]right- System
+Admin -[hidden]down- System
+Payment -[hidden]left- System
+
+' Customer flows (trái)
+Customer --> System : Booking\nRequest
+Customer --> System : Payment\nRequest
+Customer --> System : Review &\nFavorite
+System --> Customer : Booking\nConfirmation
+System --> Customer : Restaurant\nInfo
+System --> Customer : AI\nRecommendations
+
+' Owner flows (phải trên)
+Owner --> System : Restaurant\nInfo
+Owner --> System : Table &\nBooking Mgmt
+Owner --> System : Withdrawal\nRequest
+System --> Owner : Booking\nNotification
+System --> Owner : Payment\nStatus
+System --> Owner : Statistics
+
+' Admin flows (phải dưới)
+Admin --> System : Restaurant\nApproval
+Admin --> System : User\nManagement
+Admin --> System : Refund\nApproval
+System --> Admin : Restaurant\nStatus
+System --> Admin : User\nInformation
+System --> Admin : System\nStatistics
+
+' Payment flows (trái dưới)
+Payment --> System : Payment\nConfirmation
+System --> Payment : Payment\nRequest
+
+@enduml
+
+
+
