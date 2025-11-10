@@ -1,0 +1,51 @@
+# SCRIPTS FOLDER - QUICK GUIDE
+
+## MỤC ĐÍCH
+Thư mục chứa scripts SQL và Python để quản lý nhà hàng trong database: thêm/sửa/xóa nhà hàng, upload ảnh, kiểm tra dữ liệu.
+
+## LOẠI FILE
+
+### SQL Scripts
+- `add_*_restaurant.sql` - Thêm nhà hàng mới
+- `add_*_complete.sql` - Thêm nhà hàng đầy đủ (restaurant + tables + dishes + services)
+- `delete_restaurant_*.sql` - Xóa nhà hàng và dữ liệu liên quan
+- `create_restaurant_*.sql` - Tạo nhà hàng với ID cụ thể
+- `change_restaurant_id_*.sql` - Đổi restaurant_id
+- `check_*.sql` - Kiểm tra dữ liệu
+- `insert_*_images.sql` - Thêm URLs ảnh vào database
+- `update_*.sql` - Cập nhật dữ liệu
+
+### Python Scripts
+- `upload_*.py` - Upload ảnh lên Cloudinary, tự động tạo file `insert_*_images.sql`
+- `upload_images_to_cloudinary.py` - Script upload ảnh chung
+
+### Batch Scripts
+- `upload.bat` - Chạy Python upload script
+- `delete_restaurant_*.bat` - Chạy SQL delete script
+- `kill_port_8080.bat` - Kill process trên port 8080
+
+### Guide Files
+- `README.md` - Hướng dẫn thêm nhà hàng và upload ảnh
+- `*_GUIDE.md` - Hướng dẫn chi tiết cho từng nhà hàng
+- `restaurant_table_layouts.md` - Layout bàn cho nhà hàng
+
+## QUY TRÌNH SỬ DỤNG
+
+### Thêm nhà hàng mới
+1. **Chạy SQL** (pgAdmin): `add_*_restaurant.sql` → Ghi lại `restaurant_id`
+2. **Upload ảnh** (PowerShell): `python scripts/upload_*.py <restaurant_id>` → Tạo file `insert_*_images.sql`
+3. **Chèn ảnh** (pgAdmin): Chạy file `insert_*_images.sql`
+4. **Thêm tables/dishes/services** (pgAdmin): `add_*_tables_dishes_services.sql` hoặc `add_*_complete.sql`
+
+### Xóa nhà hàng
+1. **Chạy SQL** (pgAdmin): `delete_restaurant_*.sql`
+2. Hoặc **chạy batch**: `delete_restaurant_*.bat`
+
+### Kiểm tra dữ liệu
+- Chạy file `check_*.sql` trong pgAdmin để xem thông tin nhà hàng/bookings/dependencies
+
+## LƯU Ý
+- Cloudinary credentials đã hardcode trong Python scripts
+- File `insert_*_images.sql` được tạo tự động sau khi upload
+- Tất cả giá mặc định: 50,000 VNĐ
+- Nhà hàng tự động APPROVED sau khi chạy script đầy đủ
