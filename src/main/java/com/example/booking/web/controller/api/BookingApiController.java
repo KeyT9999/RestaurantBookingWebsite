@@ -148,6 +148,30 @@ public class BookingApiController {
     }
     
     /**
+     * API endpoint để lấy logo của nhà hàng
+     */
+    @GetMapping("/restaurants/{restaurantId}/logo")
+    public ResponseEntity<Map<String, String>> getRestaurantLogo(
+            @PathVariable("restaurantId") Integer restaurantId) {
+        try {
+            List<RestaurantMedia> logos = restaurantService.findMediaByRestaurantAndType(restaurantId, "logo");
+            
+            Map<String, String> response = new HashMap<>();
+            if (!logos.isEmpty()) {
+                response.put("logoUrl", logos.get(0).getUrl());
+            } else {
+                response.put("logoUrl", null);
+            }
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("❌ API Error getting logo: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
      * API endpoint để lấy thông tin nhà hàng
      */
     @GetMapping("/restaurants/{restaurantId}")

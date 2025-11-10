@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -375,12 +375,38 @@ public class RecommendationService {
                 System.out.println("Could not generate explanations: " + e.getMessage());
             }
             
-            return java.util.stream.IntStream.range(0, matches.size())
-                .mapToObj(index -> {
-                    RestaurantMatch match = matches.get(index);
-                    return createRecommendation(match.restaurant(), match.distanceKm());
-                })
-                .collect(Collectors.toList());
+            // If we have suggested foods, validate and annotate matched dishes per restaurant
+            @SuppressWarnings("unchecked")
+            List<String> suggestedFoods = extractStringList(intent.get("suggested_foods"));
+            final java.util.Map<Integer, List<String>> restaurantIdToMatchedDishes = new java.util.HashMap<>();
+            if (suggestedFoods != null && !suggestedFoods.isEmpty()) {
+                for (RestaurantMatch match : matches) {
+                    RestaurantProfile r = match.restaurant();
+                    List<String> matched = findMatchedDishesForRestaurant(r, suggestedFoods);
+                    if (matched != null && !matched.isEmpty()) {
+                        restaurantIdToMatchedDishes.put(r.getRestaurantId(), matched);
+                    }
+                }
+                // Filter out restaurants that do not truly have any of the suggested dishes
+                List<RestaurantMatch> filteredMatches = matches.stream()
+                    .filter(m -> restaurantIdToMatchedDishes.containsKey(m.restaurant().getRestaurantId()))
+                    .collect(Collectors.toList());
+                // Use filtered list for rendering
+                matches = filteredMatches;
+            }
+            final List<RestaurantMatch> finalMatches = matches;
+            return java.util.stream.IntStream.range(0, finalMatches.size())
+                    .mapToObj(index -> {
+                        RestaurantMatch match = finalMatches.get(index);
+                        AISearchResponse.RestaurantRecommendation rec =
+                            createRecommendation(match.restaurant(), match.distanceKm());
+                        List<String> matched = restaurantIdToMatchedDishes.get(match.restaurant().getRestaurantId());
+                        if (matched != null && !matched.isEmpty()) {
+                            rec.setMatchedDishes(matched.stream().limit(6).collect(Collectors.toList()));
+                        }
+                        return rec;
+                    })
+                    .collect(Collectors.toList());
             
         } catch (Exception e) {
             // Fallback to simple recommendations
@@ -388,6 +414,34 @@ public class RecommendationService {
                 .map(match -> createSimpleRecommendation(match.restaurant(), match.distanceKm()))
                 .collect(Collectors.toList());
         }
+    }
+    
+    /**
+     * Returns the list of dish names in the given restaurant that match any of the suggested foods.
+     */
+    private List<String> findMatchedDishesForRestaurant(RestaurantProfile restaurant, List<String> suggestedFoods) {
+        if (restaurant == null || restaurant.getRestaurantId() == null || suggestedFoods == null || suggestedFoods.isEmpty()) {
+            return List.of();
+        }
+        List<String> results = new ArrayList<>();
+        for (String food : suggestedFoods) {
+            if (food == null || food.trim().isEmpty()) continue;
+            String keyword = food.trim();
+            try {
+                List<Dish> dishes = dishRepository.findByRestaurantRestaurantIdAndNameContainingIgnoreCaseAndStatus(
+                    restaurant.getRestaurantId(), keyword, DishStatus.AVAILABLE);
+                for (Dish d : dishes) {
+                    if (d != null && d.getName() != null) {
+                        String name = d.getName().trim();
+                        if (!name.isEmpty() && !results.contains(name)) {
+                            results.add(name);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return results.stream().limit(10).collect(Collectors.toList());
     }
     
     /**
@@ -591,16 +645,38 @@ public class RecommendationService {
         response.setSuggestedFoods(finalSuggestedFoods);
         response.setSearchStrategy(searchStrategy != null ? searchStrategy : "cuisine");
         
-        // Build AI interpretation - auto-generate if empty but has suggested foods
-        String finalInterpretation = interpretation;
-        if ((finalInterpretation == null || finalInterpretation.trim().isEmpty()) && 
-            !finalSuggestedFoods.isEmpty()) {
-            // Auto-generate interpretation from suggested foods
-            String foodList = String.join(", ", finalSuggestedFoods);
-            finalInterpretation = "Dựa trên yêu cầu của bạn, tôi đề xuất các món: " + foodList + 
-                ". Đây là những món ăn phù hợp với nhu cầu của bạn.";
+        // Build AI interpretation - prefer a concrete phrasing with restaurants + dishes
+        String finalInterpretation = interpretation != null ? interpretation.trim() : "";
+        List<String> topRestaurantNames = recommendations.stream()
+            .map(AISearchResponse.RestaurantRecommendation::getRestaurantName)
+            .filter(name -> name != null && !name.isBlank())
+            .limit(3)
+            .collect(Collectors.toList());
+        
+        // Compose enhanced, user-friendly sentence
+        String enhanced;
+        if (!topRestaurantNames.isEmpty() && !finalSuggestedFoods.isEmpty()) {
+            String restaurantsText = String.join(", ", topRestaurantNames);
+            String foodsText = String.join(", ", finalSuggestedFoods.stream().limit(4).collect(Collectors.toList()));
+            enhanced = "Ở nhà hàng " + restaurantsText + " có các món " + foodsText + " phù hợp với bạn.";
+        } else if (!topRestaurantNames.isEmpty()) {
+            String restaurantsText = String.join(", ", topRestaurantNames);
+            enhanced = "Ở nhà hàng " + restaurantsText + " có nhiều lựa chọn phù hợp với bạn.";
+        } else if (!finalSuggestedFoods.isEmpty()) {
+            String foodsText = String.join(", ", finalSuggestedFoods.stream().limit(4).collect(Collectors.toList()));
+            enhanced = "Các món " + foodsText + " phù hợp với bạn, tôi đã chọn những nhà hàng tương ứng.";
+        } else {
+            enhanced = "";
         }
-        response.setAiInterpretation(finalInterpretation != null ? finalInterpretation : "");
+        
+        // If OpenAI interpretation is missing or too generic, use the enhanced sentence
+        if (finalInterpretation.isEmpty()) {
+            finalInterpretation = enhanced;
+        } else if (!enhanced.isBlank() && finalInterpretation.length() < 40) {
+            // Short interpretations tend to be vague; replace with enhanced message
+            finalInterpretation = enhanced;
+        }
+        response.setAiInterpretation(finalInterpretation);
         
         // Build explanation message based on search strategy
         String explanation;

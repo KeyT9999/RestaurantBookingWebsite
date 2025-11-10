@@ -74,8 +74,8 @@ html {
 
 /* Sidebar - Messenger Style */
 .chat-sidebar {
-    background: var(--messenger-sidebar);
-    border-right: 1px solid var(--messenger-border);
+    background: #FFFFFF;
+    border-right: 2px solid #000000;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -88,8 +88,8 @@ html {
 
 .chat-sidebar-header {
     padding: 16px 20px;
-    border-bottom: 1px solid var(--messenger-border);
-    background: var(--messenger-header);
+    border-bottom: 2px solid #000000;
+    background: #FFFFFF;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -111,8 +111,8 @@ html {
 }
 
 .unread-badge {
-    background: #F02849;
-    color: white;
+    background: #000000;
+    color: #FFFFFF;
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -152,7 +152,7 @@ html {
 
 .search-box .input-group {
     background: #FFFFFF;
-    border: 1px solid #000000;
+    border: 2px solid #000000;
     border-radius: 20px;
     overflow: hidden;
 }
@@ -170,7 +170,7 @@ html {
     border: none;
     padding: 8px 12px 8px 0;
     font-size: 15px;
-    color: var(--messenger-text-primary);
+    color: #000000;
 }
 
 .search-box .form-control:focus {
@@ -179,8 +179,8 @@ html {
 }
 
 .search-box .form-control::placeholder {
-    color: #000000;
-    opacity: 0.5;
+    color: #6B7280;
+    opacity: 0.7;
 }
 
 .chat-rooms-list {
@@ -216,12 +216,13 @@ html {
 .chat-room-item {
     display: flex;
     align-items: center;
-    padding: 8px 16px;
+    padding: 12px 16px;
     cursor: pointer;
     transition: background-color 0.15s ease;
     border-radius: 0;
     background: transparent;
     border: none;
+    border-bottom: 1px solid #E5E7EB;
     margin: 0;
     gap: 12px;
 }
@@ -232,12 +233,12 @@ html {
 
 .chat-room-item.active {
     background: rgba(0, 0, 0, 0.1);
-    border-left: 3px solid var(--messenger-sent-bubble);
+    border-left: 3px solid #000000;
 }
 
 .room-avatar {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     background: #FFFFFF;
     border-radius: 50%;
     display: flex;
@@ -335,8 +336,8 @@ html {
 .room-unread {
     background: #000000;
     color: #FFFFFF;
-    border-radius: 10px;
-    padding: 2px 6px;
+    border-radius: 12px;
+    padding: 2px 8px;
     font-size: 11px;
     font-weight: 600;
     min-width: 18px;
@@ -443,11 +444,12 @@ html {
 /* Chat Header - Messenger Style */
 .chat-header {
     padding: 12px 16px;
-    border-bottom: 1px solid var(--messenger-border);
+    border-top: 1px solid #000000;
+    border-bottom: 2px solid #000000;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--messenger-header);
+    background: #FFFFFF;
     min-height: 60px;
 }
 
@@ -461,19 +463,18 @@ html {
 .chat-participant {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .chat-participant i {
-    color: #000000;
-    opacity: 0.7;
-    font-size: 24px;
+    color: #6B7280;
+    font-size: 18px;
 }
 
 .chat-participant span {
     font-weight: 600;
     font-size: 15px;
-    color: var(--messenger-text-primary);
+    color: #000000;
 }
 
 .chat-restaurant {
@@ -510,11 +511,11 @@ html {
 }
 
 .btn-outline-secondary {
-    background: transparent;
-    border: 1px solid #000000;
-    color: #000000;
+    background: #000000;
+    border: 2px solid #000000;
+    color: #FFFFFF;
     padding: 8px;
-    border-radius: 50%;
+    border-radius: 4px;
     transition: all 0.15s ease;
     width: 36px;
     height: 36px;
@@ -524,8 +525,8 @@ html {
 }
 
 .btn-outline-secondary:hover {
-    background: #000000;
-    color: #FFFFFF;
+    background: #FFFFFF;
+    color: #000000;
 }
 
 /* Messages Container - Messenger Style */
@@ -535,16 +536,8 @@ html {
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    background: var(--messenger-chat-bg);
-    background-image: 
-        repeating-linear-gradient(
-            45deg,
-            transparent,
-            transparent 10px,
-            rgba(0, 0, 0, 0.01) 10px,
-            rgba(0, 0, 0, 0.01) 20px
-        );
+    gap: 12px;
+    background: #FFFFFF;
 }
 
 /* Custom Scrollbar for Messages */
@@ -569,10 +562,10 @@ html {
 /* Message Item - Messenger Style */
 .message-item {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 8px;
-    max-width: 65%;
-    margin-bottom: 2px;
+    max-width: 75%;
+    margin-bottom: 12px;
     animation: fadeInUp 0.2s ease;
 }
 
@@ -593,82 +586,89 @@ html {
 }
 
 .message-avatar {
-    width: 28px;
-    height: 28px;
-    background: #FFFFFF;
-    border: 1px solid #000000;
+    width: 24px;
+    height: 24px;
+    background: #9CA3AF;
+    border: none;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-bottom: 2px;
 }
 
 .message-avatar i {
-    color: #000000;
-    font-size: 14px;
+    color: #FFFFFF;
+    font-size: 12px;
 }
 
 .message-item.own-message .message-avatar {
-    display: none; /* Hide avatar for own messages like Messenger */
+    display: none; /* Hide avatar for own messages */
 }
 
 .message-content {
-    background: #FFFFFF;
-    border: 1px solid #000000;
-    border-radius: 18px;
-    padding: 8px 12px;
-    position: relative;
-    word-wrap: break-word;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     max-width: 100%;
-}
-
-.message-item.own-message .message-content {
-    background: #000000;
-    border: 1px solid #000000;
-    color: #FFFFFF;
-    border-bottom-right-radius: 4px;
 }
 
 .message-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 4px;
+    gap: 8px;
+    margin-bottom: 0;
 }
 
 .message-sender {
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--messenger-sent-bubble);
+    font-weight: 500;
+    font-size: 13px;
+    color: #000000;
+}
+
+.message-time {
+    font-size: 11px;
+    color: #6B7280;
+}
+
+.message-item.own-message .message-header {
+    justify-content: flex-end;
 }
 
 .message-item.own-message .message-sender {
     display: none; /* Hide sender name for own messages */
 }
 
-.message-time {
-    font-size: 11px;
-    color: #000000;
-    opacity: 0.5;
-    margin-left: 8px;
+.message-item.own-message .message-time {
+    color: #6B7280;
 }
 
-.message-item.own-message .message-time {
+.message-bubble {
+    background: #FFFFFF;
+    border: 2px solid #000000;
+    border-radius: 18px;
+    padding: 8px 12px;
+    word-wrap: break-word;
+    max-width: 100%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.message-item.own-message .message-bubble {
+    background: #000000;
+    border: 2px solid #000000;
     color: #FFFFFF;
-    opacity: 0.7;
 }
 
 .message-text {
-    color: var(--messenger-text-primary);
-    font-size: 15px;
-    line-height: 1.33;
+    color: #000000;
+    font-size: 14px;
+    line-height: 1.4;
     word-wrap: break-word;
+    margin: 0;
 }
 
 .message-item.own-message .message-text {
-    color: white;
+    color: #FFFFFF;
 }
 
 /* Typing Indicator - Messenger Style */
@@ -722,8 +722,8 @@ html {
 /* Message Input - Messenger Style */
 .message-input {
     padding: 12px 16px;
-    border-top: 1px solid var(--messenger-border);
-    background: var(--messenger-header);
+    border-top: 2px solid #000000;
+    background: #FFFFFF;
 }
 
 .input-group {
@@ -735,7 +735,7 @@ html {
 .form-control {
     flex: 1;
     background: #FFFFFF;
-    border: 1px solid #000000;
+    border: 2px solid #000000;
     border-radius: 20px;
     padding: 10px 16px;
     font-size: 15px;
@@ -746,19 +746,19 @@ html {
 }
 
 .form-control:focus {
-    border: 1px solid #000000;
+    border: 2px solid #000000;
     box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
     outline: none;
 }
 
 .form-control::placeholder {
-    color: #000000;
-    opacity: 0.5;
+    color: #6B7280;
+    opacity: 0.7;
 }
 
 .btn-gold {
     background: #000000;
-    border: 1px solid #000000;
+    border: 2px solid #000000;
     color: #FFFFFF;
     font-weight: 600;
     border-radius: 50%;

@@ -1152,5 +1152,1262 @@
         });
         
     </script>
+    
+    <!-- Messenger Style Chat Widget -->
+    <div id="messenger-chat-widget" class="messenger-chat-widget" sec:authorize="isAuthenticated() and (hasRole('CUSTOMER') or hasRole('customer'))">
+        <!-- Chat Toggle Button -->
+        <button class="messenger-chat-toggle" id="messengerChatToggle" title="Chat với nhà hàng">
+            <i class="fas fa-comments"></i>
+            <span class="messenger-chat-pulse"></span>
+            <span class="messenger-unread-badge" id="messengerUnreadBadge" style="display: none;">0</span>
+        </button>
+        
+        <!-- Chat Window (Messenger Style) -->
+        <div id="messengerChatWindow" class="messenger-chat-window" style="display: none;">
+            <!-- Chat Header -->
+            <div class="messenger-chat-header">
+                <div class="messenger-chat-title">
+                    <i class="fas fa-comments"></i>
+                    <span>Tin nhắn</span>
+                </div>
+                <div class="messenger-chat-controls">
+                    <button class="messenger-btn-minimize" id="messengerMinimizeBtn" title="Thu nhỏ">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="messenger-btn-close" id="messengerCloseBtn" title="Đóng">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Content -->
+            <div class="messenger-chat-content">
+                <!-- Rooms List View -->
+                <div id="messengerRoomsView" class="messenger-rooms-view">
+                    <div class="messenger-rooms-header">
+                        <h6>Xem tất cả</h6>
+                        <button class="messenger-btn-new-chat" id="messengerNewChatBtn" title="Chat mới">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="messengerRoomsLoading" class="messenger-loading">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span>Đang tải...</span>
+                    </div>
+                    
+                    <div id="messengerRoomsList" class="messenger-rooms-list" style="display: none;">
+                        <!-- Rooms will be loaded here -->
+                    </div>
+                    
+                    <div id="messengerRoomsEmpty" class="messenger-empty" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <p>Chưa có cuộc trò chuyện nào</p>
+                        <a th:href="@{/customer/chat}" class="messenger-btn-link">Bắt đầu chat mới</a>
+                    </div>
+                </div>
+                
+                <!-- Chat Interface View -->
+                <div id="messengerChatView" class="messenger-chat-view" style="display: none;">
+                    <div class="messenger-chat-view-header">
+                        <button class="messenger-btn-back" id="messengerBackBtn">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <div class="messenger-chat-info">
+                            <h6 id="messengerChatRoomName">Nhà hàng</h6>
+                            <small id="messengerChatStatus">Đang online</small>
+                        </div>
+                    </div>
+                    
+                    <div id="messengerMessagesContainer" class="messenger-messages-container">
+                        <!-- Messages will be loaded here -->
+                    </div>
+                    
+                    <div id="messengerTypingIndicator" class="messenger-typing-indicator" style="display: none;">
+                        <div class="messenger-typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <span>Đang gõ...</span>
+                    </div>
+                    
+                    <div class="messenger-message-input">
+                        <input type="text" id="messengerMessageInput" class="messenger-input" 
+                               placeholder="Nhập tin nhắn..." maxlength="1000">
+                        <button id="messengerSendBtn" class="messenger-btn-send" title="Gửi">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messenger Chat Widget CSS -->
+    <style>
+        /* Messenger Style Chat Widget */
+        .messenger-chat-widget {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .messenger-chat-toggle {
+            width: 60px;
+            height: 60px;
+            background: #FFFFFF;
+            border: 2px solid #000000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 0;
+        }
+
+        .messenger-chat-toggle:hover {
+            transform: scale(1.1);
+            background: #000000;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .messenger-chat-toggle:hover i {
+            color: #FFFFFF;
+        }
+
+        .messenger-chat-toggle i {
+            font-size: 24px;
+            color: #000000;
+            z-index: 2;
+            transition: color 0.3s;
+        }
+
+        .messenger-chat-pulse {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.3);
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .messenger-unread-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #000000;
+            color: #FFFFFF;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            border: 2px solid #FFFFFF;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* Messenger Chat Window */
+        .messenger-chat-window {
+            position: absolute;
+            bottom: 0;
+            right: 70px;
+            width: 380px;
+            height: 600px;
+            background: #FFFFFF;
+            border: 2px solid #000000;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messenger-chat-header {
+            background: #FFFFFF;
+            border-bottom: 2px solid #000000;
+            color: #000000;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .messenger-chat-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .messenger-chat-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .messenger-btn-minimize,
+        .messenger-btn-close {
+            background: #FFFFFF;
+            border: 2px solid #000000;
+            color: #000000;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .messenger-btn-minimize:hover,
+        .messenger-btn-close:hover {
+            background: #000000;
+            color: #FFFFFF;
+        }
+
+        .messenger-chat-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Rooms View */
+        .messenger-rooms-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messenger-rooms-header {
+            padding: 16px 20px;
+            border-bottom: 2px solid #000000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .messenger-rooms-header h6 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 16px;
+            color: #111827;
+        }
+
+        .messenger-btn-new-chat {
+            background: #000000;
+            border: 2px solid #000000;
+            color: #FFFFFF;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .messenger-btn-new-chat:hover {
+            background: #FFFFFF;
+            color: #000000;
+        }
+
+        .messenger-loading,
+        .messenger-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .messenger-loading {
+            gap: 12px;
+        }
+
+        .messenger-empty i {
+            font-size: 48px;
+            color: #9CA3AF;
+            margin-bottom: 16px;
+        }
+
+        .messenger-empty p {
+            color: #6B7280;
+            margin-bottom: 16px;
+        }
+
+        .messenger-btn-link {
+            color: #000000;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid #000000;
+        }
+
+        .messenger-btn-link:hover {
+            border-bottom: 2px solid #000000;
+        }
+
+        .messenger-rooms-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .messenger-room-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .messenger-room-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .messenger-room-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 2px solid #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .messenger-room-avatar i {
+            color: #000000;
+            font-size: 20px;
+        }
+
+        .messenger-room-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .messenger-room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .messenger-room-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #111827;
+            margin: 0;
+        }
+
+        .messenger-room-time {
+            font-size: 12px;
+            color: #6B7280;
+            white-space: nowrap;
+        }
+
+        .messenger-room-message {
+            font-size: 14px;
+            color: #6B7280;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .messenger-room-unread {
+            background: #000000;
+            color: #FFFFFF;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 18px;
+            text-align: center;
+            margin-left: 8px;
+        }
+
+        /* Chat View */
+        .messenger-chat-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messenger-chat-view-header {
+            padding: 12px 16px;
+            border-bottom: 2px solid #000000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .messenger-btn-back {
+            background: #FFFFFF;
+            border: 2px solid #000000;
+            color: #000000;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .messenger-btn-back:hover {
+            background: #000000;
+            color: #FFFFFF;
+        }
+
+        .messenger-chat-info h6 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 15px;
+            color: #111827;
+        }
+
+        .messenger-chat-info small {
+            color: #6B7280;
+            font-size: 12px;
+        }
+
+        .messenger-messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #FFFFFF;
+        }
+
+        .messenger-message-item {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            max-width: 75%;
+        }
+
+        .messenger-message-item.own-message {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .messenger-message-content {
+            background: #FFFFFF;
+            border: 2px solid #000000;
+            border-radius: 18px;
+            padding: 8px 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .messenger-message-item.own-message .messenger-message-content {
+            background: #000000;
+            border: 2px solid #000000;
+            color: #FFFFFF;
+        }
+
+        .messenger-message-text {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #111827;
+            margin: 0;
+        }
+
+        .messenger-message-item.own-message .messenger-message-text {
+            color: white;
+        }
+
+        .messenger-message-time {
+            font-size: 11px;
+            color: #9CA3AF;
+            margin-top: 4px;
+        }
+
+        .messenger-message-item.own-message .messenger-message-time {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .messenger-typing-indicator {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .messenger-typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .messenger-typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: #9CA3AF;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .messenger-typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .messenger-typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .messenger-message-input {
+            padding: 12px 16px;
+            border-top: 2px solid #000000;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: #FFFFFF;
+        }
+
+        .messenger-input {
+            flex: 1;
+            border: 2px solid #000000;
+            border-radius: 20px;
+            padding: 10px 16px;
+            font-size: 14px;
+            outline: none;
+            background: #FFFFFF;
+            color: #000000;
+        }
+
+        .messenger-input:focus {
+            border-color: #000000;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .messenger-btn-send {
+            background: #000000;
+            border: 2px solid #000000;
+            color: #FFFFFF;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .messenger-btn-send:hover {
+            background: #FFFFFF;
+            color: #000000;
+        }
+
+        .messenger-btn-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 768px) {
+            .messenger-chat-widget {
+                bottom: 16px;
+                right: 16px;
+            }
+
+            .messenger-chat-toggle {
+                width: 56px;
+                height: 56px;
+            }
+
+            .messenger-chat-toggle i {
+                font-size: 22px;
+            }
+
+            .messenger-chat-window {
+                width: calc(100vw - 32px);
+                height: calc(100vh - 100px);
+                bottom: 0;
+                right: 70px;
+                left: auto;
+                max-width: 100%;
+            }
+
+            .messenger-room-item {
+                padding: 12px 16px;
+            }
+
+            .messenger-room-avatar {
+                width: 40px;
+                height: 40px;
+                margin-right: 10px;
+            }
+
+            .messenger-message-item {
+                max-width: 85%;
+            }
+        }
+    </style>
+    
+    <!-- WebSocket Libraries for Chat -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    
+    <!-- Messenger Chat Widget JavaScript -->
+    <script>
+        // Messenger Chat Widget
+        class MessengerChatWidget {
+            constructor() {
+                this.socket = null;
+                this.stompClient = null;
+                this.currentRoomId = null;
+                this.currentUserId = null;
+                this.isConnected = false;
+                this.isMinimized = false;
+                this.typingTimer = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.loadUnreadCount();
+                this.initWebSocket();
+            }
+            
+            setupEventListeners() {
+                const toggleBtn = document.getElementById('messengerChatToggle');
+                const minimizeBtn = document.getElementById('messengerMinimizeBtn');
+                const closeBtn = document.getElementById('messengerCloseBtn');
+                const backBtn = document.getElementById('messengerBackBtn');
+                const sendBtn = document.getElementById('messengerSendBtn');
+                const messageInput = document.getElementById('messengerMessageInput');
+                const newChatBtn = document.getElementById('messengerNewChatBtn');
+                
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', () => this.toggleChat());
+                }
+                
+                if (minimizeBtn) {
+                    minimizeBtn.addEventListener('click', () => this.minimizeChat());
+                }
+                
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => this.closeChat());
+                }
+                
+                if (backBtn) {
+                    backBtn.addEventListener('click', () => this.backToRooms());
+                }
+                
+                if (sendBtn) {
+                    sendBtn.addEventListener('click', () => this.sendMessage());
+                }
+                
+                if (messageInput) {
+                    messageInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            this.sendMessage();
+                        }
+                    });
+                    
+                    messageInput.addEventListener('input', () => {
+                        this.handleTyping();
+                    });
+                }
+                
+                if (newChatBtn) {
+                    newChatBtn.addEventListener('click', () => {
+                        window.location.href = '/customer/chat';
+                    });
+                }
+            }
+            
+            toggleChat() {
+                const window = document.getElementById('messengerChatWindow');
+                if (window.style.display === 'none') {
+                    this.openChat();
+                } else {
+                    this.closeChat();
+                }
+            }
+            
+            openChat() {
+                const window = document.getElementById('messengerChatWindow');
+                window.style.display = 'flex';
+                this.isMinimized = false;
+                this.loadChatRooms();
+            }
+            
+            minimizeChat() {
+                const window = document.getElementById('messengerChatWindow');
+                window.style.display = 'none';
+                this.isMinimized = true;
+            }
+            
+            closeChat() {
+                const window = document.getElementById('messengerChatWindow');
+                window.style.display = 'none';
+                this.currentRoomId = null;
+                this.showRoomsView();
+            }
+            
+            async loadChatRooms() {
+                const loadingEl = document.getElementById('messengerRoomsLoading');
+                const listEl = document.getElementById('messengerRoomsList');
+                const emptyEl = document.getElementById('messengerRoomsEmpty');
+                
+                loadingEl.style.display = 'flex';
+                listEl.style.display = 'none';
+                emptyEl.style.display = 'none';
+                
+                try {
+                    const response = await fetch('/api/chat/rooms');
+                    if (!response.ok) throw new Error('Failed to load rooms');
+                    
+                    const rooms = await response.json();
+                    loadingEl.style.display = 'none';
+                    
+                    if (rooms && rooms.length > 0) {
+                        this.displayRooms(rooms);
+                        listEl.style.display = 'block';
+                    } else {
+                        // Vẫn hiển thị AI Chat Assistant ngay cả khi không có room nào
+                        this.displayRooms([]);
+                        listEl.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Error loading rooms:', error);
+                    loadingEl.style.display = 'none';
+                    // Vẫn hiển thị AI Chat Assistant khi có lỗi
+                    this.displayRooms([]);
+                    listEl.style.display = 'block';
+                }
+            }
+            
+            displayRooms(rooms) {
+                const listEl = document.getElementById('messengerRoomsList');
+                listEl.innerHTML = '';
+                
+                // Thêm AI Chat Assistant ở đầu danh sách (luôn luôn đầu tiên)
+                const aiChatRoom = this.createAIChatRoom();
+                listEl.appendChild(aiChatRoom);
+                
+                // Sắp xếp các room restaurant theo thời gian tin nhắn cuối cùng (mới nhất trước)
+                const sortedRooms = [...rooms].sort((a, b) => {
+                    const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+                    const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+                    return bTime - aTime; // Mới nhất trước
+                });
+                
+                sortedRooms.forEach(room => {
+                    const roomItem = this.createRoomItem(room);
+                    listEl.appendChild(roomItem);
+                });
+            }
+            
+            createAIChatRoom() {
+                const item = document.createElement('div');
+                item.className = 'messenger-room-item';
+                item.setAttribute('data-ai-chat', 'true');
+                item.addEventListener('click', () => this.openAIChat());
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'messenger-room-avatar';
+                avatar.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                avatar.innerHTML = '<i class="fas fa-robot"></i>';
+                
+                const info = document.createElement('div');
+                info.className = 'messenger-room-info';
+                
+                const header = document.createElement('div');
+                header.className = 'messenger-room-header';
+                
+                const name = document.createElement('h6');
+                name.className = 'messenger-room-name';
+                name.textContent = 'Trợ Lý AI';
+                
+                const status = document.createElement('span');
+                status.className = 'messenger-room-time';
+                status.textContent = 'Luôn sẵn sàng';
+                status.style.color = '#4CAF50';
+                
+                header.appendChild(name);
+                header.appendChild(status);
+                
+                const message = document.createElement('p');
+                message.className = 'messenger-room-message';
+                message.textContent = 'Chào bạn! Tôi có thể giúp gì cho bạn?';
+                
+                info.appendChild(header);
+                info.appendChild(message);
+                
+                item.appendChild(avatar);
+                item.appendChild(info);
+                
+                return item;
+            }
+            
+            async openAIChat() {
+                this.currentRoomId = 'AI_CHAT';
+                this.showChatView('Trợ Lý AI');
+                
+                // Load AI chat messages từ localStorage hoặc tạo mới
+                const aiMessages = this.getAIChatMessages();
+                this.displayAIMessages(aiMessages);
+                
+                // Focus vào input
+                const messageInput = document.getElementById('messengerMessageInput');
+                if (messageInput) {
+                    messageInput.focus();
+                }
+            }
+            
+            getAIChatMessages() {
+                const stored = localStorage.getItem('ai_chat_messages');
+                if (stored) {
+                    try {
+                        return JSON.parse(stored);
+                    } catch (e) {
+                        return [];
+                    }
+                }
+                return [];
+            }
+            
+            saveAIChatMessages(messages) {
+                localStorage.setItem('ai_chat_messages', JSON.stringify(messages));
+            }
+            
+            displayAIMessages(messages) {
+                const container = document.getElementById('messengerMessagesContainer');
+                container.innerHTML = '';
+                
+                if (messages.length === 0) {
+                    // Tin nhắn chào mừng mặc định
+                    const welcomeMsg = {
+                        content: 'Xin chào! Tôi là Trợ Lý AI của Book Eat. Tôi có thể giúp bạn tìm nhà hàng, đặt bàn và trả lời các câu hỏi về dịch vụ. Bạn cần hỗ trợ gì?',
+                        senderId: 'AI',
+                        senderName: 'Trợ Lý AI',
+                        sentAt: new Date().toISOString()
+                    };
+                    messages = [welcomeMsg];
+                }
+                
+                messages.forEach(message => {
+                    const messageEl = this.createMessageElement(message);
+                    container.appendChild(messageEl);
+                });
+                
+                this.scrollToBottom();
+            }
+            
+            createRoomItem(room) {
+                const item = document.createElement('div');
+                item.className = 'messenger-room-item';
+                item.addEventListener('click', () => this.openChatRoom(room.roomId, room.restaurantName));
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'messenger-room-avatar';
+                avatar.innerHTML = '<i class="fas fa-store"></i>';
+                
+                const info = document.createElement('div');
+                info.className = 'messenger-room-info';
+                
+                const header = document.createElement('div');
+                header.className = 'messenger-room-header';
+                
+                const name = document.createElement('h6');
+                name.className = 'messenger-room-name';
+                name.textContent = room.restaurantName || 'Nhà hàng';
+                
+                const time = document.createElement('span');
+                time.className = 'messenger-room-time';
+                if (room.lastMessageAt) {
+                    time.textContent = this.formatTime(room.lastMessageAt);
+                }
+                
+                header.appendChild(name);
+                if (room.lastMessageAt) header.appendChild(time);
+                
+                if (room.unreadCount && room.unreadCount > 0) {
+                    const badge = document.createElement('span');
+                    badge.className = 'messenger-room-unread';
+                    badge.textContent = room.unreadCount > 99 ? '99+' : room.unreadCount;
+                    header.appendChild(badge);
+                }
+                
+                const message = document.createElement('p');
+                message.className = 'messenger-room-message';
+                message.textContent = room.lastMessage || 'Chưa có tin nhắn';
+                
+                info.appendChild(header);
+                info.appendChild(message);
+                
+                item.appendChild(avatar);
+                item.appendChild(info);
+                
+                return item;
+            }
+            
+            async openChatRoom(roomId, roomName) {
+                this.currentRoomId = roomId;
+                this.showChatView(roomName);
+                await this.loadMessages(roomId);
+                await this.markMessagesAsRead(roomId);
+                this.joinRoom(roomId);
+            }
+            
+            showChatView(roomName) {
+                document.getElementById('messengerRoomsView').style.display = 'none';
+                document.getElementById('messengerChatView').style.display = 'flex';
+                document.getElementById('messengerChatRoomName').textContent = roomName || 'Nhà hàng';
+            }
+            
+            showRoomsView() {
+                document.getElementById('messengerRoomsView').style.display = 'flex';
+                document.getElementById('messengerChatView').style.display = 'none';
+                this.currentRoomId = null;
+            }
+            
+            backToRooms() {
+                this.showRoomsView();
+                this.loadChatRooms();
+            }
+            
+            async loadMessages(roomId) {
+                try {
+                    const response = await fetch(`/api/chat/rooms/${roomId}/messages?page=0&size=50`);
+                    if (response.ok) {
+                        const messages = await response.json();
+                        this.displayMessages(messages);
+                    }
+                } catch (error) {
+                    console.error('Error loading messages:', error);
+                }
+            }
+            
+            displayMessages(messages) {
+                const container = document.getElementById('messengerMessagesContainer');
+                container.innerHTML = '';
+                
+                messages.forEach(message => {
+                    const messageEl = this.createMessageElement(message);
+                    container.appendChild(messageEl);
+                });
+                
+                this.scrollToBottom();
+            }
+            
+            createMessageElement(message) {
+                const item = document.createElement('div');
+                item.className = 'messenger-message-item';
+                
+                // Kiểm tra nếu là tin nhắn của user hoặc AI
+                if (message.senderId === this.currentUserId || message.senderId === this.currentUserId?.toString()) {
+                    item.classList.add('own-message');
+                } else if (message.senderId === 'AI' || message.senderName === 'Trợ Lý AI') {
+                    // Tin nhắn từ AI - không thêm own-message class
+                    item.setAttribute('data-ai-message', 'true');
+                }
+                
+                const content = document.createElement('div');
+                content.className = 'messenger-message-content';
+                
+                const text = document.createElement('p');
+                text.className = 'messenger-message-text';
+                text.textContent = message.content || '';
+                
+                const time = document.createElement('div');
+                time.className = 'messenger-message-time';
+                time.textContent = this.formatTime(message.sentAt);
+                
+                content.appendChild(text);
+                content.appendChild(time);
+                item.appendChild(content);
+                
+                return item;
+            }
+            
+            async sendMessage() {
+                const input = document.getElementById('messengerMessageInput');
+                const content = input.value.trim();
+                
+                if (!content) return;
+                
+                // Xử lý riêng cho AI Chat
+                if (this.currentRoomId === 'AI_CHAT') {
+                    await this.sendAIMessage(content);
+                    input.value = '';
+                    return;
+                }
+                
+                // Xử lý chat với restaurant (WebSocket)
+                if (!this.currentRoomId || !this.isConnected) return;
+                
+                try {
+                    this.stompClient.send('/app/chat.sendMessage', {}, JSON.stringify({
+                        roomId: this.currentRoomId,
+                        content: content
+                    }));
+                    
+                    input.value = '';
+                    this.stopTyping();
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                }
+            }
+            
+            async sendAIMessage(content) {
+                const container = document.getElementById('messengerMessagesContainer');
+                
+                // Thêm tin nhắn của user
+                const userMessage = {
+                    content: content,
+                    senderId: this.currentUserId,
+                    senderName: 'Bạn',
+                    sentAt: new Date().toISOString()
+                };
+                const userMsgEl = this.createMessageElement(userMessage);
+                container.appendChild(userMsgEl);
+                this.scrollToBottom();
+                
+                // Lưu tin nhắn vào localStorage
+                const messages = this.getAIChatMessages();
+                messages.push(userMessage);
+                this.saveAIChatMessages(messages);
+                
+                // Hiển thị typing indicator
+                const typingEl = document.createElement('div');
+                typingEl.className = 'messenger-message-item';
+                typingEl.id = 'ai-typing-indicator';
+                typingEl.innerHTML = '<div class="messenger-message-content"><p class="messenger-message-text">Đang suy nghĩ...</p></div>';
+                container.appendChild(typingEl);
+                this.scrollToBottom();
+                
+                try {
+                    // Gọi API AI
+                    const response = await fetch('/ai/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            message: content,
+                            context: 'messenger_chat'
+                        })
+                    });
+                    
+                    // Xóa typing indicator
+                    const typingIndicator = document.getElementById('ai-typing-indicator');
+                    if (typingIndicator) {
+                        typingIndicator.remove();
+                    }
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const aiResponse = data.response || 'Xin lỗi, tôi không thể trả lời câu hỏi này. Vui lòng thử lại.';
+                        
+                        // Thêm tin nhắn của AI
+                        const aiMessage = {
+                            content: aiResponse,
+                            senderId: 'AI',
+                            senderName: 'Trợ Lý AI',
+                            sentAt: new Date().toISOString()
+                        };
+                        const aiMsgEl = this.createMessageElement(aiMessage);
+                        container.appendChild(aiMsgEl);
+                        this.scrollToBottom();
+                        
+                        // Lưu tin nhắn vào localStorage
+                        messages.push(aiMessage);
+                        this.saveAIChatMessages(messages);
+                    } else {
+                        throw new Error('AI API error');
+                    }
+                } catch (error) {
+                    console.error('Error sending AI message:', error);
+                    
+                    // Xóa typing indicator
+                    const typingIndicator = document.getElementById('ai-typing-indicator');
+                    if (typingIndicator) {
+                        typingIndicator.remove();
+                    }
+                    
+                    // Hiển thị lỗi
+                    const errorMessage = {
+                        content: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.',
+                        senderId: 'AI',
+                        senderName: 'Trợ Lý AI',
+                        sentAt: new Date().toISOString()
+                    };
+                    const errorMsgEl = this.createMessageElement(errorMessage);
+                    container.appendChild(errorMsgEl);
+                    this.scrollToBottom();
+                }
+            }
+            
+            handleIncomingMessage(data) {
+                if (!data || !data.messageId || !data.content) return;
+                
+                if (data.roomId === this.currentRoomId) {
+                    const messageEl = this.createMessageElement(data);
+                    document.getElementById('messengerMessagesContainer').appendChild(messageEl);
+                    this.scrollToBottom();
+                }
+                
+                this.loadChatRooms();
+                this.loadUnreadCount();
+            }
+            
+            handleTyping() {
+                if (!this.currentRoomId || !this.isConnected) return;
+                
+                this.stompClient.send('/app/chat.typing', {}, JSON.stringify({
+                    roomId: this.currentRoomId,
+                    typing: true
+                }));
+                
+                if (this.typingTimer) clearTimeout(this.typingTimer);
+                this.typingTimer = setTimeout(() => this.stopTyping(), 1000);
+            }
+            
+            stopTyping() {
+                if (!this.currentRoomId || !this.isConnected) return;
+                
+                this.stompClient.send('/app/chat.typing', {}, JSON.stringify({
+                    roomId: this.currentRoomId,
+                    typing: false
+                }));
+                
+                if (this.typingTimer) {
+                    clearTimeout(this.typingTimer);
+                    this.typingTimer = null;
+                }
+            }
+            
+            initWebSocket() {
+                try {
+                    this.socket = new SockJS('/ws');
+                    this.stompClient = Stomp.over(this.socket);
+                    
+                    this.stompClient.connect({}, (frame) => {
+                        this.isConnected = true;
+                        this.subscribeToMessages();
+                    }, (error) => {
+                        console.error('WebSocket error:', error);
+                        this.isConnected = false;
+                    });
+                } catch (error) {
+                    console.error('Failed to init WebSocket:', error);
+                }
+            }
+            
+            subscribeToMessages() {
+                if (!this.isConnected) return;
+                
+                this.stompClient.subscribe('/topic/room/*', (message) => {
+                    const data = JSON.parse(message.body);
+                    this.handleIncomingMessage(data);
+                });
+            }
+            
+            joinRoom(roomId) {
+                if (!this.isConnected) return;
+                this.stompClient.send('/app/chat.joinRoom', {}, JSON.stringify({ roomId }));
+            }
+            
+            async markMessagesAsRead(roomId) {
+                try {
+                    await fetch(`/api/chat/rooms/${roomId}/read`, { method: 'POST' });
+                } catch (error) {
+                    console.error('Error marking as read:', error);
+                }
+            }
+            
+            async loadUnreadCount() {
+                try {
+                    const response = await fetch('/api/chat/unread-count');
+                    if (response.ok) {
+                        const data = await response.json();
+                        const badge = document.getElementById('messengerUnreadBadge');
+                        if (badge) {
+                            if (data.unreadCount > 0) {
+                                badge.textContent = data.unreadCount > 99 ? '99+' : data.unreadCount;
+                                badge.style.display = 'flex';
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading unread count:', error);
+                }
+            }
+            
+            scrollToBottom() {
+                const container = document.getElementById('messengerMessagesContainer');
+                container.scrollTop = container.scrollHeight;
+            }
+            
+            formatTime(dateTimeString) {
+                if (!dateTimeString) return '';
+                const date = new Date(dateTimeString);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+                
+                if (diffMins < 1) return 'Vừa xong';
+                if (diffMins < 60) return `${diffMins} phút trước`;
+                if (diffHours < 24) return `${diffHours} giờ trước`;
+                if (diffDays < 7) return `${diffDays} ngày trước`;
+                return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+            }
+        }
+        
+        // Initialize Messenger Chat Widget
+        let messengerChatWidget;
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load user info for chat
+            fetch('/api/user/current')
+                .then(response => response.json())
+                .then(user => {
+                    messengerChatWidget = new MessengerChatWidget();
+                    messengerChatWidget.currentUserId = user.id;
+                })
+                .catch(error => {
+                    console.error('Error loading user info:', error);
+                    messengerChatWidget = new MessengerChatWidget();
+                });
+        });
+    </script>
 </body>
 </html>
