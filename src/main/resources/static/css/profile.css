@@ -47,48 +47,84 @@
     object-fit: cover;
 }
 
-/* Upload Area */
-.upload-area {
-    border: 2px dashed var(--resy-gray);
-    border-radius: 12px;
-    padding: 24px;
-    text-align: center;
-    background: var(--resy-white);
-    transition: all 0.3s ease;
+/* Profile Avatar Upload Section */
+.profile-avatar-upload {
+    margin-top: 1.5rem;
 }
 
-.upload-area:hover {
-    background: rgba(26, 26, 26, 0.02);
-    border-color: var(--resy-black);
-}
-
-.upload-area h6 {
-    color: var(--resy-black);
-    font-weight: 600;
+.profile-avatar-label {
+    color: var(--resy-gray);
+    font-size: 0.875rem;
     margin-bottom: 1rem;
+    text-align: center;
+    font-weight: 500;
 }
 
-.upload-area input[type="file"] {
-    margin: 10px 0;
-    background: var(--resy-white);
-    border: 1px solid #E5E7EB;
+.profile-avatar-upload form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Choose Avatar Button */
+.btn-choose-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: var(--resy-light-gray);
+    color: var(--resy-black);
+    border: 2px solid #E5E7EB;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-choose-avatar:hover {
+    background: #E5E7EB;
+    border-color: var(--resy-black);
     color: var(--resy-black);
 }
 
-.upload-area input[type="file"]::file-selector-button {
+.btn-choose-avatar i {
+    font-size: 1rem;
+    color: var(--resy-black);
+}
+
+/* Upload Avatar Button */
+.btn-upload-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
     background: var(--resy-black);
     color: var(--resy-white);
     border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-weight: 600;
-    margin-right: 10px;
+    font-size: 0.875rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
 }
 
-.upload-area input[type="file"]::file-selector-button:hover {
+.btn-upload-avatar:hover {
     background: #333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    color: var(--resy-white);
+}
+
+.btn-upload-avatar i {
+    font-size: 1rem;
+    color: var(--resy-white);
 }
 
 /* Booking Card */

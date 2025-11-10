@@ -135,7 +135,7 @@ public class CloudinaryTestController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> testAvatarUpload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "userId", defaultValue = "1") Integer userId) {
+            @RequestParam(value = "userId", defaultValue = "test-user") String userId) {
         
         Map<String, Object> response = new HashMap<>();
         

@@ -288,7 +288,7 @@ public class CloudinaryServiceTest {
         when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
 
         // When
-        String result = cloudinaryService.uploadAvatar(validImageFile, 1);
+        String result = cloudinaryService.uploadAvatar(validImageFile, "test-user-id");
 
         // Then
         assertNotNull(result);
@@ -603,7 +603,7 @@ public class CloudinaryServiceTest {
         when(uploader.upload(any(byte[].class), any(Map.class))).thenReturn(uploadResult);
 
         // When
-        String result = cloudinaryService.updateAvatar(validImageFile, null, 1);
+        String result = cloudinaryService.updateAvatar(validImageFile, null, "test-user-id");
 
         // Then
         assertNotNull(result);

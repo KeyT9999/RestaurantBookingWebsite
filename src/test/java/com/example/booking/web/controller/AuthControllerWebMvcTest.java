@@ -1,7 +1,6 @@
 package com.example.booking.web.controller;
 
 import com.example.booking.domain.User;
-import com.example.booking.domain.UserRole;
 import com.example.booking.service.AuthRateLimitingService;
 import com.example.booking.service.ImageUploadService;
 import com.example.booking.service.RestaurantOwnerService;
@@ -20,7 +19,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -278,7 +276,7 @@ class AuthControllerWebMvcTest {
         MockMultipartFile file = new MockMultipartFile("profileImage", "avatar.jpg", 
             "image/jpeg", "test image content".getBytes());
         when(userService.findById(any())).thenReturn(user);
-        when(imageUploadService.uploadAvatar(any(), anyInt())).thenReturn("https://cloudinary.com/avatar.jpg");
+        when(imageUploadService.uploadAvatar(any(), anyString())).thenReturn("https://cloudinary.com/avatar.jpg");
 
         // When & Then
         mockMvc.perform(multipart("/auth/profile/avatar")

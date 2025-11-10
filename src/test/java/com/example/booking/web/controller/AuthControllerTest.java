@@ -871,7 +871,7 @@ public class AuthControllerTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(user);
         when(userService.findById(any(UUID.class))).thenReturn(user);
-        when(imageUploadService.uploadAvatar(any(MultipartFile.class), anyInt()))
+        when(imageUploadService.uploadAvatar(any(MultipartFile.class), anyString()))
             .thenReturn("http://example.com/avatar.jpg");
         doNothing().when(userService).updateProfileImage(any(User.class), anyString());
 
@@ -880,7 +880,7 @@ public class AuthControllerTest {
 
         // Then
         assertEquals("redirect:/auth/profile", view);
-        verify(imageUploadService, times(1)).uploadAvatar(any(MultipartFile.class), anyInt());
+        verify(imageUploadService, times(1)).uploadAvatar(any(MultipartFile.class), anyString());
         verify(userService, times(1)).updateProfileImage(any(User.class), anyString());
     }
 
@@ -912,7 +912,7 @@ public class AuthControllerTest {
 
         // Then
         assertEquals("redirect:/login", view);
-        verify(imageUploadService, never()).uploadAvatar(any(MultipartFile.class), anyInt());
+        verify(imageUploadService, never()).uploadAvatar(any(MultipartFile.class), anyString());
     }
 
     @Test
@@ -926,7 +926,7 @@ public class AuthControllerTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(user);
         when(userService.findById(any(UUID.class))).thenReturn(user);
-        when(imageUploadService.uploadAvatar(any(MultipartFile.class), anyInt()))
+        when(imageUploadService.uploadAvatar(any(MultipartFile.class), anyString()))
             .thenReturn("http://example.com/new-avatar.jpg");
         doNothing().when(imageUploadService).deleteImage(anyString());
         doNothing().when(userService).updateProfileImage(any(User.class), anyString());
@@ -937,7 +937,7 @@ public class AuthControllerTest {
         // Then
         assertEquals("redirect:/auth/profile", view);
         verify(imageUploadService, times(1)).deleteImage("http://example.com/old-avatar.jpg");
-        verify(imageUploadService, times(1)).uploadAvatar(any(MultipartFile.class), anyInt());
+        verify(imageUploadService, times(1)).uploadAvatar(any(MultipartFile.class), anyString());
         verify(userService, times(1)).updateProfileImage(any(User.class), anyString());
     }
 
@@ -957,7 +957,7 @@ public class AuthControllerTest {
 
         // Then
         assertEquals("redirect:/auth/profile", view);
-        verify(imageUploadService, never()).uploadAvatar(any(MultipartFile.class), anyInt());
+        verify(imageUploadService, never()).uploadAvatar(any(MultipartFile.class), anyString());
     }
 
     @Test
@@ -970,7 +970,7 @@ public class AuthControllerTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(user);
         when(userService.findById(any(UUID.class))).thenReturn(user);
-        when(imageUploadService.uploadAvatar(any(MultipartFile.class), anyInt()))
+        when(imageUploadService.uploadAvatar(any(MultipartFile.class), anyString()))
             .thenThrow(new IOException("Upload failed"));
 
         // When

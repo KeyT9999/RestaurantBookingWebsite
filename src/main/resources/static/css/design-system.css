@@ -758,6 +758,14 @@ body {
     z-index: var(--ds-z-sticky);
 }
 
+.ds-navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-4);
+    position: relative;
+    z-index: inherit;
+}
+
 .ds-navbar-content {
     display: flex;
     justify-content: space-between;
@@ -1221,6 +1229,7 @@ body {
 
 .ds-user-dropdown {
     position: relative;
+    z-index: var(--ds-z-dropdown);
 }
 
 .ds-user-dropdown .dropdown-toggle {
@@ -1236,6 +1245,8 @@ body {
     font-size: var(--ds-font-size-sm);
     transition: all var(--ds-transition-base);
     cursor: pointer;
+    position: relative;
+    z-index: inherit;
 }
 
 .ds-user-dropdown .dropdown-toggle:hover {
@@ -1249,6 +1260,9 @@ body {
     box-shadow: var(--ds-shadow-lg);
     padding: var(--ds-space-2) 0;
     min-width: 200px;
+    z-index: calc(var(--ds-z-sticky) + 10) !important;
+    position: absolute !important;
+    pointer-events: auto !important;
 }
 
 .ds-user-dropdown .dropdown-item {

@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf?.token}">
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}">
     <title>Hồ sơ cá nhân - Book Eat</title>
 
     <!-- Bootstrap 5 CSS -->
@@ -15,15 +17,235 @@
     
     <!-- Resy Style CSS -->
     <link th:href="@{/css/home-resy.css}" rel="stylesheet">
+    <!-- Login Modal CSS -->
+    <link th:href="@{/css/login-modal.css}" rel="stylesheet">
     <!-- Custom Luxury CSS -->
     <link th:href="@{/css/luxury.css}" rel="stylesheet">
     <!-- Profile CSS -->
     <link th:href="@{/css/profile.css}" rel="stylesheet">
+    
+    <style>
+      /* Notification Bell Styles for Profile Page */
+      .notification-bell-wrapper {
+        display: inline-block;
+        margin-right: 12px;
+      }
+      
+      .notification-bell-container {
+        position: relative;
+      }
+      
+      .notification-bell__trigger {
+        background: none;
+        border: none;
+        color: #333;
+        font-size: 18px;
+        padding: 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+      }
+      
+      .notification-bell__trigger:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: #007bff;
+      }
+      
+      .notification-bell__badge {
+        font-size: 10px;
+        min-width: 16px;
+        height: 16px;
+        line-height: 16px;
+        padding: 0 4px;
+      }
+      
+      .notification-bell__menu {
+        min-width: 320px;
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        background-color: #ffffff !important;
+        backdrop-filter: none !important;
+      }
+      
+      .notification-bell__menu .dropdown-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .notification-bell__menu .dropdown-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+      }
+      
+      .notification-bell__menu .dropdown-item:hover {
+        background-color: #f8f9fa;
+      }
+      
+      .notification-bell__menu .dropdown-item:last-child {
+        border-bottom: none;
+      }
+    </style>
 </head>
 
 <body>
-    <!-- Resy Style Header -->
-    <div th:replace="~{fragments/resy-header :: resy-header}"></div>
+    <!-- Main Header -->
+    <header class="header">
+        <div class="container">
+            <!-- Left Section: Logo only -->
+            <div class="header-left">
+                <a th:href="@{/}" class="logo">Book Eat</a>
+            </div>
+            
+            <!-- Center Section: Navigation -->
+            <div class="header-center">
+                <nav>
+                    <ul class="nav-menu">
+                        <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
+                        <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
+                    </ul>
+                </nav>
+            </div>
+            
+            <!-- Right Section: Search + Actions -->
+            <div class="header-right">
+                <!-- Header Search Dropdown -->
+                <div class="header-search">
+                    <button class="search-toggle" onclick="toggleSearchDropdown()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-dropdown" id="searchDropdown">
+                        <form th:action="@{/restaurants}" method="get" class="search-form">
+                            <div class="search-row">
+                                <div class="search-field">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" 
+                                           name="search" 
+                                           placeholder="Tên nhà hàng, địa chỉ..." 
+                                           class="search-input"
+                                           th:value="${search}">
+                                </div>
+                            </div>
+                            <div class="search-row">
+                                <div class="search-field">
+                                    <i class="fas fa-utensils search-icon"></i>
+                                    <select name="cuisineType" class="search-select">
+                                        <option value="">Loại ẩm thực</option>
+                                        <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
+                                        <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
+                                        <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
+                                        <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
+                                        <option value="Western" th:selected="${cuisineType == 'Western'}">Phương Tây</option>
+                                        <option value="Thai" th:selected="${cuisineType == 'Thai'}">Thái Lan</option>
+                                        <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
+                                    </select>
+                                </div>
+                                <div class="search-field">
+                                    <i class="fas fa-dollar-sign search-icon"></i>
+                                    <select name="priceRange" class="search-select">
+                                        <option value="">Khoảng giá</option>
+                                        <option value="under-50k" th:selected="${priceRange == 'under-50k'}">Dưới 50k</option>
+                                        <option value="50k-100k" th:selected="${priceRange == '50k-100k'}">50k - 100k</option>
+                                        <option value="100k-200k" th:selected="${priceRange == '100k-200k'}">100k - 200k</option>
+                                        <option value="over-200k" th:selected="${priceRange == 'over-200k'}">Trên 200k</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="search-actions">
+                                <button type="submit" class="search-submit">
+                                    <i class="fas fa-search"></i>
+                                    Tìm kiếm
+                                </button>
+                                <button type="button" class="search-clear" onclick="clearSearch()">
+                                    <i class="fas fa-times"></i>
+                                    Xóa
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                <!-- Guest User Actions -->
+                <button type="button" class="btn-resy-outline" data-bs-toggle="modal" data-bs-target="#loginModal" sec:authorize="!isAuthenticated()">Đăng nhập</button>
+                <a th:href="@{/auth/register}" class="btn-resy" sec:authorize="!isAuthenticated()">Đăng ký</a>
+                
+                <!-- Authenticated User Actions -->
+                <div sec:authorize="isAuthenticated()" class="user-actions">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell-wrapper">
+                        <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
+                    </div>
+                    
+                    <!-- Restaurant Owner Dashboard -->
+                    <a th:href="@{/restaurant-owner/dashboard}" class="btn-resy" sec:authorize="hasRole('RESTAURANT_OWNER')">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                    
+                    <!-- Admin Dashboard -->
+                    <a th:href="@{/admin/dashboard}" class="btn-resy" sec:authorize="hasRole('ADMIN')">
+                        <i class="fas fa-cog"></i>
+                        Admin
+                    </a>
+                    
+                    <!-- User Profile Dropdown -->
+                    <div class="user-dropdown">
+                        <button class="btn-resy-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i>
+                            <span sec:authentication="name">User</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/auth/profile}">
+                                    <i class="fas fa-user me-2"></i>
+                                    Profile
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('CUSTOMER')">
+                                <a class="dropdown-item" th:href="@{/booking/my}">
+                                    <i class="fas fa-calendar-check me-2"></i>
+                                    My Reservations
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('CUSTOMER')">
+                                <a class="dropdown-item" th:href="@{/customer/favorites}">
+                                    <i class="fas fa-star me-2"></i>
+                                    Favorites
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('RESTAURANT_OWNER')">
+                                <a class="dropdown-item" th:href="@{/restaurant-owner/dashboard}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    Restaurant Dashboard
+                                </a>
+                            </li>
+                            <li sec:authorize="hasRole('ADMIN')">
+                                <a class="dropdown-item" th:href="@{/admin/dashboard}">
+                                    <i class="fas fa-cog me-2"></i>
+                                    Admin Dashboard
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/logout}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    Đăng xuất
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Login Modal Fragment -->
+    <div th:insert="~{fragments/login-modal :: login-modal}"></div>
 
     <!-- Main Content -->
     <main class="profile-content">
@@ -65,13 +287,23 @@
                         </div>
 
                         <!-- Upload Avatar Form -->
-                        <div class="upload-area">
-                            <i class="fas fa-camera fa-2x mb-2 luxury-icon"></i>
-                            <h6>Đổi ảnh đại diện</h6>
-                            <form th:action="@{/auth/profile/avatar}" method="post" enctype="multipart/form-data">
-                                <input type="file" class="form-control" name="profileImage" accept="image/*" required>
-                                <button type="submit" class="btn-resy mt-2">
-                                    <i class="fas fa-upload"></i> Tải lên
+                        <div class="profile-avatar-upload">
+                            <p class="profile-avatar-label">Ảnh đại diện hiện tại</p>
+                            <form th:action="@{/auth/profile/avatar}" method="post" enctype="multipart/form-data" id="avatarUploadForm">
+                                <input type="file" 
+                                       id="avatarFileInput" 
+                                       name="profileImage" 
+                                       accept="image/*" 
+                                       required
+                                       style="display: none;"
+                                       onchange="document.getElementById('avatarFileName').textContent = this.files[0] ? this.files[0].name : 'Chọn ảnh'">
+                                <label for="avatarFileInput" class="btn-choose-avatar">
+                                    <i class="fas fa-camera"></i>
+                                    <span id="avatarFileName">Chọn ảnh</span>
+                                </label>
+                                <button type="submit" class="btn-upload-avatar">
+                                    <i class="fas fa-upload"></i>
+                                    Tải lên
                                 </button>
                             </form>
                         </div>
@@ -160,7 +392,84 @@
     <div th:replace="~{fragments/resy-footer :: resy-footer}"></div>
 
     <!-- Resy Scripts -->
-    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+    <div th:replace="~{fragments/resy-scripts :: resy-scripts}"></div>
+    
+    <!-- Header Search JavaScript -->
+    <script>
+        function toggleSearchDropdown() {
+            const dropdown = document.getElementById('searchDropdown');
+            const isOpen = dropdown.classList.contains('show');
+            
+            // Close all other dropdowns first
+            document.querySelectorAll('.search-dropdown').forEach(dd => {
+                dd.classList.remove('show');
+            });
+            
+            // Toggle current dropdown
+            if (!isOpen) {
+                dropdown.classList.add('show');
+                // Focus on search input when opened
+                setTimeout(() => {
+                    const searchInput = dropdown.querySelector('.search-input');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }, 100);
+            }
+        }
+        
+        function clearSearch() {
+            const form = document.querySelector('.search-form');
+            if (form) {
+                form.reset();
+            }
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const searchContainer = document.querySelector('.header-search');
+            const dropdown = document.getElementById('searchDropdown');
+            
+            if (!searchContainer.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+        
+        // Close dropdown on escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const dropdown = document.getElementById('searchDropdown');
+                dropdown.classList.remove('show');
+            }
+        });
+        
+        // Login Modal Functions
+        function closeLoginModal() {
+            const modal = document.getElementById('loginModal');
+            if (modal) {
+                const bsModal = bootstrap.Modal.getInstance(modal);
+                if (bsModal) {
+                    bsModal.hide();
+                }
+            }
+        }
+        
+        function openRegisterModal() {
+            // This function can be implemented when register modal is created
+            console.log('Opening register modal...');
+        }
+        
+        // Auto-focus on username input when modal opens
+        document.addEventListener('shown.bs.modal', function(event) {
+            if (event.target.id === 'loginModal') {
+                const usernameInput = event.target.querySelector('#username');
+                if (usernameInput) {
+                    usernameInput.focus();
+                }
+            }
+        });
+        
+    </script>
     
     <!-- Profile-specific JavaScript -->
     <script th:src="@{/js/profile.js}"></script>

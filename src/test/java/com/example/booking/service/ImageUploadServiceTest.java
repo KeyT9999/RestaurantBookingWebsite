@@ -171,15 +171,16 @@ public class ImageUploadServiceTest {
     void shouldUploadAvatar_successfully() throws Exception {
         // Given
         String expectedUrl = "https://res.cloudinary.com/test/image/upload/avatar.jpg";
-        when(cloudinaryService.uploadAvatar(eq(validImageFile), eq(1)))
+        String userId = "test-user-id";
+        when(cloudinaryService.uploadAvatar(eq(validImageFile), eq(userId)))
             .thenReturn(expectedUrl);
 
         // When
-        String result = imageUploadService.uploadAvatar(validImageFile, 1);
+        String result = imageUploadService.uploadAvatar(validImageFile, userId);
 
         // Then
         assertEquals(expectedUrl, result);
-        verify(cloudinaryService, times(1)).uploadAvatar(validImageFile, 1);
+        verify(cloudinaryService, times(1)).uploadAvatar(validImageFile, userId);
     }
 
     // ========== uploadReviewEvidence() Tests ==========
@@ -283,15 +284,16 @@ public class ImageUploadServiceTest {
         // Given
         String oldImageUrl = "https://res.cloudinary.com/test/image/upload/old.jpg";
         String expectedUrl = "https://res.cloudinary.com/test/image/upload/new.jpg";
-        when(cloudinaryService.updateAvatar(eq(validImageFile), eq(oldImageUrl), eq(1)))
+        String userId = "test-user-id";
+        when(cloudinaryService.updateAvatar(eq(validImageFile), eq(oldImageUrl), eq(userId)))
             .thenReturn(expectedUrl);
 
         // When
-        String result = imageUploadService.updateAvatar(validImageFile, oldImageUrl, 1);
+        String result = imageUploadService.updateAvatar(validImageFile, oldImageUrl, userId);
 
         // Then
         assertEquals(expectedUrl, result);
-        verify(cloudinaryService, times(1)).updateAvatar(validImageFile, oldImageUrl, 1);
+        verify(cloudinaryService, times(1)).updateAvatar(validImageFile, oldImageUrl, userId);
     }
 
     // ========== updateReviewEvidence() Tests ==========
