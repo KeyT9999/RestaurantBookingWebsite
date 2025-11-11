@@ -100,10 +100,10 @@
             <div class="sidebar-content">
                 <div class="sidebar-brand">
                     <div class="sidebar-brand-icon">
-                        <i class="fas fa-tachometer-alt"></i>
+                        <i class="fas fa-chair"></i>
                     </div>
                     <div class="sidebar-brand-text">
-                        <h3>Dashboard</h3>
+                        <h3>Quản lý bàn</h3>
                         <p>V 1.0</p>
                     </div>
                 </div>
@@ -155,6 +155,12 @@
                         <a href="/restaurant-owner/payments">
                             <i class="fas fa-credit-card"></i>
                             Thanh toán
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/restaurant-owner/vouchers" th:href="${restaurantId != null ? '/restaurant-owner/vouchers?restaurantId=' + restaurantId : '/restaurant-owner/vouchers'}">
+                            <i class="fas fa-ticket-alt"></i>
+                            Voucher
                         </a>
                     </li>
                     <li>

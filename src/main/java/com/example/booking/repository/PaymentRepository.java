@@ -205,4 +205,14 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
         @Param("startTime") LocalDateTime startTime,
         @Param("endTime") LocalDateTime endTime);
     
+    /**
+     * Find distinct booking IDs from payments that used a specific voucher
+     * @param voucherId The voucher ID
+     * @return List of distinct booking IDs
+     */
+    @Query(value = "SELECT DISTINCT p.booking_id FROM payment p " +
+           "WHERE p.voucher_id = :voucherId AND p.booking_id IS NOT NULL " +
+           "ORDER BY p.booking_id", nativeQuery = true)
+    List<Integer> findBookingIdsByVoucherId(@Param("voucherId") Integer voucherId);
+    
 }

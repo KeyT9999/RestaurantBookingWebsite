@@ -6,7 +6,8 @@ public enum BookingStatus {
     COMPLETED("completed", "Hoàn thành"),
     PENDING_CANCEL("pending_cancel", "Chờ hủy (đang xử lý hoàn tiền)"),
     CANCELLED("cancelled", "Đã hủy"),
-    NO_SHOW("no_show", "Không đến");
+    NO_SHOW("no_show", "Không đến"),
+    DELETED("deleted", "Đã xóa");
 
     private final String value;
     private final String displayName;
