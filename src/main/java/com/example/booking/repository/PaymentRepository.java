@@ -163,4 +163,46 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     @Query("SELECT p FROM Payment p WHERE p.paymentMethod = 'PAYOS' AND p.paidAt BETWEEN :fromDate AND :toDate")
     List<Payment> findPaymentsForReconciliation(@Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate);
     
+    /**
+     * Find completed payments by restaurant and date range
+     * Used for revenue calculation in dashboard
+     * @param restaurantId The restaurant ID
+     * @param startTime Start time
+     * @param endTime End time
+     * @return List of completed payments
+     * @deprecated Use getRevenueByDateRange instead to avoid N+1 problem
+     */
+    @Query("SELECT p FROM Payment p " +
+           "WHERE p.booking.restaurant.restaurantId = :restaurantId " +
+           "AND p.status = 'COMPLETED' " +
+           "AND p.paidAt BETWEEN :startTime AND :endTime " +
+           "ORDER BY p.paidAt ASC")
+    List<Payment> findCompletedPaymentsByRestaurantAndDateRange(
+        @Param("restaurantId") Integer restaurantId,
+        @Param("startTime") LocalDateTime startTime,
+        @Param("endTime") LocalDateTime endTime);
+    
+    /**
+     * Get revenue aggregated by date for a restaurant
+     * This query uses aggregation in database to avoid N+1 problem
+     * Returns: [date (LocalDate), revenue (BigDecimal)]
+     * @param restaurantId The restaurant ID
+     * @param startTime Start time
+     * @param endTime End time
+     * @return List of Object[] where [0] = Date, [1] = BigDecimal (revenue)
+     */
+    @Query(value = "SELECT DATE(p.paid_at) as payment_date, COALESCE(SUM(p.amount), 0) as total_revenue " +
+           "FROM payment p " +
+           "INNER JOIN booking b ON p.booking_id = b.booking_id " +
+           "WHERE b.restaurant_id = :restaurantId " +
+           "AND p.status = 'COMPLETED' " +
+           "AND p.paid_at >= :startTime AND p.paid_at <= :endTime " +
+           "GROUP BY DATE(p.paid_at) " +
+           "ORDER BY payment_date ASC", 
+           nativeQuery = true)
+    List<Object[]> getRevenueByDateRange(
+        @Param("restaurantId") Integer restaurantId,
+        @Param("startTime") LocalDateTime startTime,
+        @Param("endTime") LocalDateTime endTime);
+    
 }

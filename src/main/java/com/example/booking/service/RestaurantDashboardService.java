@@ -18,6 +18,7 @@ import com.example.booking.repository.WaitlistRepository;
 import com.example.booking.repository.DishRepository;
 import com.example.booking.repository.BookingDishRepository;
 import com.example.booking.repository.RestaurantBalanceRepository;
+import com.example.booking.repository.PaymentRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -38,6 +39,7 @@ public class RestaurantDashboardService {
     private final DishRepository dishRepository;
     private final BookingDishRepository bookingDishRepository;
     private final RestaurantBalanceRepository balanceRepository;
+    private final PaymentRepository paymentRepository;
     
     @Autowired
     public RestaurantDashboardService(
@@ -46,13 +48,15 @@ public class RestaurantDashboardService {
             WaitlistRepository waitlistRepository,
             DishRepository dishRepository,
             BookingDishRepository bookingDishRepository,
-            RestaurantBalanceRepository balanceRepository) {
+            RestaurantBalanceRepository balanceRepository,
+            PaymentRepository paymentRepository) {
         this.bookingRepository = bookingRepository;
         this.tableRepository = tableRepository;
         this.waitlistRepository = waitlistRepository;
         this.dishRepository = dishRepository;
         this.bookingDishRepository = bookingDishRepository;
         this.balanceRepository = balanceRepository;
+        this.paymentRepository = paymentRepository;
     }
     
     /**
@@ -92,12 +96,24 @@ public class RestaurantDashboardService {
             restaurantId, com.example.booking.domain.WaitlistStatus.WAITING);
         stats.setWaitingCustomers(waitingCustomers.size());
         
-        // 4. Tính doanh thu hôm nay
-        BigDecimal todayRevenue = todayBookings.stream()
-            .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-            .map(Booking::getDepositAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        stats.setTodayRevenue(todayRevenue);
+        // 4. Tính doanh thu hôm nay từ Payment với status = COMPLETED
+        // Sử dụng aggregation query để tránh N+1 problem
+        try {
+            List<Object[]> todayRevenueResults = paymentRepository.getRevenueByDateRange(
+                    restaurantId, startOfDay, endOfDay);
+            System.out.println("[Dashboard] Today revenue query returned " + todayRevenueResults.size() + " results");
+            BigDecimal todayRevenue = todayRevenueResults.stream()
+                    .map(result -> {
+                        System.out.println("[Dashboard] Revenue result: date=" + result[0] + ", amount=" + result[1]);
+                        return (BigDecimal) result[1];
+                    })
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            stats.setTodayRevenue(todayRevenue);
+        } catch (Exception e) {
+            System.err.println("[Dashboard] Error calculating today revenue: " + e.getMessage());
+            e.printStackTrace();
+            stats.setTodayRevenue(BigDecimal.ZERO);
+        }
         
         // 5. Lấy số dư từ restaurant_balance
         Optional<RestaurantBalance> balance = balanceRepository.findByRestaurantRestaurantId(restaurantId);
@@ -131,10 +147,12 @@ public class RestaurantDashboardService {
             restaurantId, yesterdayStart, yesterdayEnd);
         int yesterdayBookingCount = yesterdayBookings.size();
         
-        // Tính doanh thu hôm qua
-        BigDecimal yesterdayRevenue = yesterdayBookings.stream()
-            .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-            .map(Booking::getDepositAmount)
+        // Tính doanh thu hôm qua từ Payment với status = COMPLETED
+        // Sử dụng aggregation query để tránh N+1 problem
+        List<Object[]> yesterdayRevenueResults = paymentRepository.getRevenueByDateRange(
+                restaurantId, yesterdayStart, yesterdayEnd);
+        BigDecimal yesterdayRevenue = yesterdayRevenueResults.stream()
+                .map(result -> (BigDecimal) result[1])
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         // Tính bàn hôm qua
@@ -178,6 +196,8 @@ public class RestaurantDashboardService {
         List<DailyRevenueData> revenueData = new ArrayList<>();
         LocalDate today = LocalDate.now();
         
+        System.out.println("[Dashboard] Getting revenue data for restaurant " + restaurantId + ", period: " + period);
+
         switch (period.toLowerCase()) {
             case "week":
                 // 7 ngày gần nhất
@@ -204,6 +224,44 @@ public class RestaurantDashboardService {
                 }
                 break;
                 
+            case "all":
+                // Lấy toàn bộ dữ liệu từ khi bắt đầu (10 năm trước) đến hiện tại
+                // Sử dụng aggregation query để tránh N+1 problem
+                LocalDateTime startOfAll = LocalDateTime.now().minusYears(10);
+                LocalDateTime endOfAll = LocalDateTime.now();
+                System.out.println("[Dashboard] Querying all revenue from " + startOfAll + " to " + endOfAll);
+                List<Object[]> revenueResults = paymentRepository.getRevenueByDateRange(
+                        restaurantId, startOfAll, endOfAll);
+                System.out.println("[Dashboard] All revenue query returned " + revenueResults.size() + " results");
+
+                // Convert aggregation results to DailyRevenueData
+                revenueData = revenueResults.stream()
+                        .map(result -> {
+                            // result[0] = Date (from CAST(p.paid_at AS DATE)) - could be java.sql.Date or
+                            // LocalDate
+                            // result[1] = BigDecimal (from SUM(p.amount))
+                            LocalDate date;
+                            if (result[0] instanceof java.sql.Date) {
+                                date = ((java.sql.Date) result[0]).toLocalDate();
+                            } else if (result[0] instanceof LocalDate) {
+                                date = (LocalDate) result[0];
+                            } else {
+                                // Fallback: try to parse as string or use today
+                                date = LocalDate.now();
+                            }
+                            BigDecimal revenue = result[1] != null ? (BigDecimal) result[1] : BigDecimal.ZERO;
+
+                            // Get booking count for this date
+                            LocalDateTime startOfDay = date.atStartOfDay();
+                            LocalDateTime endOfDay = date.atTime(23, 59, 59);
+                            List<Booking> dayBookings = bookingRepository
+                                    .findByRestaurantRestaurantIdAndBookingTimeBetween(
+                                            restaurantId, startOfDay, endOfDay);
+                            return new DailyRevenueData(date, revenue, dayBookings.size());
+                        })
+                        .collect(Collectors.toList());
+                break;
+
             default:
                 // Mặc định là tuần
                 for (int i = 6; i >= 0; i--) {
@@ -217,56 +275,91 @@ public class RestaurantDashboardService {
     
     /**
      * Lấy doanh thu cho một ngày cụ thể
+     * Tính từ Payment với status = COMPLETED (không tính booking bị cancel)
+     * Sử dụng aggregation query để tránh N+1 problem
      */
     private DailyRevenueData getRevenueForDate(Integer restaurantId, LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(23, 59, 59);
         
-        List<Booking> dayBookings = bookingRepository.findByRestaurantRestaurantIdAndBookingTimeBetween(
-            restaurantId, startOfDay, endOfDay);
-        
-        BigDecimal dayRevenue = dayBookings.stream()
-            .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-            .map(Booking::getDepositAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        return new DailyRevenueData(date, dayRevenue, dayBookings.size());
+        try {
+            // Sử dụng aggregation query để tính tổng doanh thu trực tiếp trong database
+            List<Object[]> revenueResults = paymentRepository.getRevenueByDateRange(
+                    restaurantId, startOfDay, endOfDay);
+
+            System.out.println(
+                    "[Dashboard] Revenue query for " + date + " returned " + revenueResults.size() + " results");
+
+            // Lấy revenue từ kết quả aggregation (nếu có)
+            BigDecimal dayRevenue = revenueResults.stream()
+                    .map(result -> {
+                        System.out.println("[Dashboard] Result for " + date + ": " + result[0] + " = " + result[1]);
+                        return result[1] != null ? (BigDecimal) result[1] : BigDecimal.ZERO;
+                    })
+                    .findFirst()
+                    .orElse(BigDecimal.ZERO);
+
+            // Lấy số lượng bookings trong ngày (để hiển thị)
+            List<Booking> dayBookings = bookingRepository.findByRestaurantRestaurantIdAndBookingTimeBetween(
+                    restaurantId, startOfDay, endOfDay);
+
+            // Debug log for first few days
+            if (date.isAfter(LocalDate.now().minusDays(7))) {
+                System.out.println("[Dashboard] Revenue for " + date + ": " + dayRevenue + " (from "
+                        + revenueResults.size() + " aggregated results)");
+            }
+
+            return new DailyRevenueData(date, dayRevenue, dayBookings.size());
+        } catch (Exception e) {
+            System.err.println("[Dashboard] Error getting revenue for date " + date + ": " + e.getMessage());
+            e.printStackTrace();
+            return new DailyRevenueData(date, BigDecimal.ZERO, 0);
+        }
     }
     
     /**
      * Lấy doanh thu cho một tháng cụ thể
+     * Tính từ Payment với status = COMPLETED (không tính booking bị cancel)
+     * Sử dụng aggregation query để tránh N+1 problem
      */
     private DailyRevenueData getRevenueForMonth(Integer restaurantId, LocalDate monthStart, LocalDate monthEnd) {
         LocalDateTime startOfMonth = monthStart.atStartOfDay();
         LocalDateTime endOfMonth = monthEnd.atTime(23, 59, 59);
         
-        List<Booking> monthBookings = bookingRepository.findByRestaurantRestaurantIdAndBookingTimeBetween(
+        // Sử dụng aggregation query để tính tổng doanh thu trực tiếp trong database
+        List<Object[]> revenueResults = paymentRepository.getRevenueByDateRange(
             restaurantId, startOfMonth, endOfMonth);
         
-        BigDecimal monthRevenue = monthBookings.stream()
-            .filter(b -> b.getStatus() == BookingStatus.COMPLETED)
-            .map(Booking::getDepositAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Tính tổng revenue từ tất cả các ngày trong tháng
+        BigDecimal monthRevenue = revenueResults.stream()
+                .map(result -> (BigDecimal) result[1])
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         
+        // Lấy số lượng bookings trong tháng (để hiển thị)
+        List<Booking> monthBookings = bookingRepository.findByRestaurantRestaurantIdAndBookingTimeBetween(
+                restaurantId, startOfMonth, endOfMonth);
+
         return new DailyRevenueData(monthStart, monthRevenue, monthBookings.size());
     }
     
     /**
      * Lấy dữ liệu món ăn bán chạy
+     * Lấy từ toàn bộ bookings của nhà hàng (không filter theo status)
      */
     public List<PopularDishData> getPopularDishesData(Integer restaurantId) {
         // Lấy tất cả dishes của restaurant
         List<Dish> dishes = dishRepository.findByRestaurantRestaurantId(restaurantId);
-        
-        // Tính số lượng đã bán cho mỗi món trong 30 ngày gần nhất
-        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-        
+
         List<PopularDishData> popularDishes = new ArrayList<>();
         
         for (Dish dish : dishes) {
-            List<BookingDish> bookingDishes = bookingDishRepository.findByDishDishIdAndBookingBookingTimeAfter(
-                dish.getDishId(), thirtyDaysAgo);
+            // Query booking dishes từ tất cả bookings của restaurant (không filter status)
+            List<BookingDish> bookingDishes = bookingDishRepository
+                    .findByRestaurantIdAndDishId(
+                            restaurantId,
+                            dish.getDishId());
             
+            // Tính tổng số lượng đã bán từ tất cả bookings
             int totalQuantity = bookingDishes.stream()
                 .mapToInt(BookingDish::getQuantity)
                 .sum();
@@ -277,10 +370,21 @@ public class RestaurantDashboardService {
         }
         
         // Sắp xếp theo số lượng bán giảm dần và lấy top 5
-        return popularDishes.stream()
+        List<PopularDishData> result = popularDishes.stream()
             .sorted((a, b) -> Integer.compare(b.getQuantitySold(), a.getQuantitySold()))
             .limit(5)
             .collect(Collectors.toList());
+
+        // Debug log
+        System.out.println(
+                "[Dashboard] Popular dishes for restaurant " + restaurantId + ": " + result.size()
+                        + " dishes (from all bookings)");
+        for (PopularDishData dish : result) {
+            System.out.println(
+                    "  - " + dish.getDishName() + ": " + dish.getQuantitySold() + " phần, Giá: " + dish.getPrice());
+        }
+
+        return result;
     }
     
     /**

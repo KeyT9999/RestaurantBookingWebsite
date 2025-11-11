@@ -145,6 +145,12 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         
+        <!-- Jackson JavaTime Module for LocalDate serialization -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+        
         <!-- WebSocket for Real-time Chat -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

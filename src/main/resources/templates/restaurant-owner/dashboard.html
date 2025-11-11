@@ -258,8 +258,15 @@
                 <!-- Revenue Chart -->
                 <div class="chart-card">
                     <div class="chart-header">
-                        <h3 class="chart-title">Doanh thu theo thời gian</h3>
-                        <div class="chart-filters">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h3 class="chart-title">Doanh thu theo thời gian</h3>
+                                <div style="margin-top: 8px; font-size: 24px; font-weight: 600; color: #374151;">
+                                    <span th:text="${totalRevenueForPeriod != null ? #numbers.formatDecimal(totalRevenueForPeriod, 0, 'COMMA', 0, 'POINT') : '0'}">0</span>
+                                    <span style="font-size: 16px; color: #6B7280; margin-left: 4px;">₫</span>
+                                </div>
+                            </div>
+                            <div class="chart-filters">
                             <button class="filter-btn" 
                                     th:classappend="${currentPeriod == 'week'} ? 'active' : ''"
                                     data-period="week" onclick="filterRevenueChart('week')">Tuần này</button>
@@ -270,8 +277,9 @@
                                     th:classappend="${currentPeriod == 'year'} ? 'active' : ''"
                                     data-period="year" onclick="filterRevenueChart('year')">Năm này</button>
                             <button class="filter-btn" 
-                                    th:classappend="${currentPeriod == 'custom'} ? 'active' : ''"
-                                    data-period="custom" onclick="filterRevenueChart('custom')">Tùy chọn</button>
+                                    th:classappend="${currentPeriod == 'all'} ? 'active' : ''"
+                                    data-period="all" onclick="filterRevenueChart('all')">All</button>
+                            </div>
                         </div>
                     </div>
                     <div class="chart-content">
@@ -393,6 +401,17 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Inject JSON data using hidden script tag to avoid Thymeleaf escaping issues -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.dashboardData = {
+            dailyRevenueData: /*[[${dailyRevenueDataJson}]]*/ '[]',
+            popularDishesData: /*[[${popularDishesDataJson}]]*/ '[]',
+            currentPeriod: /*[[${currentPeriod}]]*/ 'week'
+        };
+        /*]]>*/
+    </script>
+    
     <script>
         // Restaurant Selector
         function toggleRestaurantMenu() {
@@ -427,52 +446,115 @@
         // Charts with real data
         // Revenue Chart
         const revenueCtx = document.getElementById('revenueChart');
-        const dailyRevenueData = /*[[${dailyRevenueData}]]*/ [];
-        const currentPeriod = /*[[${currentPeriod}]]*/ 'week';
+        // Parse JSON data from server
+        let dailyRevenueData = [];
+        try {
+            // Get JSON string from window.dashboardData
+            const dailyRevenueDataJson = window.dashboardData.dailyRevenueData;
+            console.log('[Dashboard] Raw dailyRevenueDataJson:', dailyRevenueDataJson);
+            console.log('[Dashboard] Type:', typeof dailyRevenueDataJson);
+            
+            // Check if it's already an array (from th:inline) or a string
+            if (Array.isArray(dailyRevenueDataJson)) {
+                dailyRevenueData = dailyRevenueDataJson;
+            } else if (typeof dailyRevenueDataJson === 'string') {
+                dailyRevenueData = JSON.parse(dailyRevenueDataJson);
+            } else {
+                dailyRevenueData = [];
+            }
+            console.log('[Dashboard] Parsed dailyRevenueData:', dailyRevenueData);
+            console.log('[Dashboard] dailyRevenueData length:', dailyRevenueData.length);
+        } catch (e) {
+            console.error('[Dashboard] Error parsing dailyRevenueData:', e);
+            console.error('[Dashboard] Raw value:', window.dashboardData.dailyRevenueData);
+            dailyRevenueData = [];
+        }
+        const currentPeriod = window.dashboardData.currentPeriod || 'week';
         
         let revenueChart;
         
         function updateRevenueChart() {
+            const chartContent = document.querySelector('#revenueChart').closest('.chart-content');
+            const emptyStateId = 'revenue-empty-state';
+            
             // Check if data is empty
             if (!dailyRevenueData || dailyRevenueData.length === 0) {
-                // Show empty state message
-                const chartContent = document.querySelector('#revenueChart').closest('.chart-content');
-                if (chartContent) {
-                    chartContent.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 300px; color: #6B7280; flex-direction: column;"><i class="fas fa-chart-bar" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Chưa có dữ liệu doanh thu</p></div>';
+                // Hide canvas and show empty state
+                if (revenueCtx) {
+                    revenueCtx.style.display = 'none';
+                }
+                if (revenueChart) {
+                    revenueChart.destroy();
+                    revenueChart = null;
+                }
+                
+                // Show empty state if not already shown
+                if (chartContent && !document.getElementById(emptyStateId)) {
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.id = emptyStateId;
+                    emptyDiv.style.cssText = 'display: flex; align-items: center; justify-content: center; height: 100%; min-height: 300px; color: #6B7280; flex-direction: column;';
+                    emptyDiv.innerHTML = '<i class="fas fa-chart-bar" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Chưa có dữ liệu doanh thu</p><p style="font-size: 14px; margin-top: 8px; color: #9CA3AF;">Doanh thu sẽ hiển thị khi có booking đã hoàn thành</p>';
+                    chartContent.appendChild(emptyDiv);
                 }
                 return;
             }
             
+            // Remove empty state if exists
+            const emptyState = document.getElementById(emptyStateId);
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
+            // Show canvas - get fresh reference in case it was hidden
+            const canvas = document.getElementById('revenueChart');
+            if (!canvas) {
+                console.error('Revenue chart canvas not found');
+                return;
+            }
+            canvas.style.display = 'block';
+            
+            // Process data - date is now a string from JSON (ISO format: "YYYY-MM-DD")
             const revenueLabels = dailyRevenueData.map(data => {
-                const date = new Date(data.date);
-                if (currentPeriod === 'year') {
-                    return date.toLocaleDateString('vi-VN', { month: 'short' });
+                let date;
+                if (typeof data.date === 'string') {
+                    // Parse ISO date string (e.g., "2024-01-15")
+                    date = new Date(data.date + 'T00:00:00');
                 } else {
-                    return date.toLocaleDateString('vi-VN', { weekday: 'short' });
+                    return 'N/A';
+                }
+                
+                if (currentPeriod === 'year') {
+                    return date.toLocaleDateString('vi-VN', { month: 'short', year: 'numeric' });
+                } else if (currentPeriod === 'month') {
+                    return date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'short' });
+                } else if (currentPeriod === 'all') {
+                    // For "all", show date in format: DD/MM/YYYY
+                    return date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric', year: 'numeric' });
+                } else {
+                    return date.toLocaleDateString('vi-VN', { weekday: 'short', day: 'numeric', month: 'short' });
                 }
             });
-            const revenueValues = dailyRevenueData.map(data => data.revenue);
+            
+            // Revenue is now a number from JSON
+            const revenueValues = dailyRevenueData.map(data => {
+                return parseFloat(data.revenue) || 0;
+            });
             
             if (revenueChart) {
                 revenueChart.destroy();
             }
             
-            // Ensure canvas exists
-            if (!revenueCtx) {
-                console.error('Revenue chart canvas not found');
-                return;
-            }
-            
-            revenueChart = new Chart(revenueCtx.getContext('2d'), {
+            revenueChart = new Chart(canvas.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: revenueLabels,
                     datasets: [{
                         label: 'Doanh thu (₫)',
                         data: revenueValues,
-                        backgroundColor: '#374151',
+                        backgroundColor: 'rgba(55, 65, 81, 0.8)',
                         borderColor: '#374151',
-                        borderWidth: 1
+                        borderWidth: 2,
+                        borderRadius: 4
                     }]
                 },
                 options: {
@@ -481,6 +563,17 @@
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN', {
+                                        style: 'currency',
+                                        currency: 'VND'
+                                    }).format(value);
+                                }
+                            }
                         }
                     },
                     scales: {
@@ -488,8 +581,21 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    return (value / 1000000).toFixed(0) + 'M';
+                                    if (value >= 1000000) {
+                                        return (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return (value / 1000).toFixed(0) + 'K';
+                                    }
+                                    return value;
                                 }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
                             }
                         }
                     }
@@ -497,54 +603,91 @@
             });
         }
         
-        // Filter function
-        function filterRevenueChart(period) {
-            // Update active button
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`[data-period="${period}"]`).classList.add('active');
-            
-            // Reload page with new period
-            const currentUrl = new URL(window.location);
-            currentUrl.searchParams.set('period', period);
-            window.location.href = currentUrl.toString();
-        }
-        
         // Initialize chart
         updateRevenueChart();
 
         // Popular Dishes Chart
         const dishesCtx = document.getElementById('popularDishesChart');
-        const popularDishesData = /*[[${popularDishesData}]]*/ [];
+        // Parse JSON data from server
+        let popularDishesData = [];
+        try {
+            // Get JSON string from window.dashboardData
+            const popularDishesDataJson = window.dashboardData.popularDishesData;
+            console.log('[Dashboard] Raw popularDishesDataJson:', popularDishesDataJson);
+            console.log('[Dashboard] Type:', typeof popularDishesDataJson);
+            
+            // Check if it's already an array (from th:inline) or a string
+            if (Array.isArray(popularDishesDataJson)) {
+                popularDishesData = popularDishesDataJson;
+            } else if (typeof popularDishesDataJson === 'string') {
+                popularDishesData = JSON.parse(popularDishesDataJson);
+            } else {
+                popularDishesData = [];
+            }
+            console.log('[Dashboard] Parsed popularDishesData:', popularDishesData);
+            console.log('[Dashboard] popularDishesData length:', popularDishesData.length);
+        } catch (e) {
+            console.error('[Dashboard] Error parsing popularDishesData:', e);
+            console.error('[Dashboard] Raw value:', window.dashboardData.popularDishesData);
+            popularDishesData = [];
+        }
         
         // Check if data is empty
+        const dishesChartContent = document.querySelector('#popularDishesChart').closest('.chart-content');
+        const dishesEmptyStateId = 'dishes-empty-state';
+        
         if (!popularDishesData || popularDishesData.length === 0) {
-            // Show empty state message
-            const chartContent = document.querySelector('#popularDishesChart').closest('.chart-content');
-            if (chartContent) {
-                chartContent.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 300px; color: #6B7280; flex-direction: column;"><i class="fas fa-chart-pie" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Chưa có dữ liệu món ăn bán chạy</p></div>';
+            // Hide canvas and show empty state
+            if (dishesCtx) {
+                dishesCtx.style.display = 'none';
+            }
+            
+            // Show empty state if not already shown
+            if (dishesChartContent && !document.getElementById(dishesEmptyStateId)) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.id = dishesEmptyStateId;
+                emptyDiv.style.cssText = 'display: flex; align-items: center; justify-content: center; height: 100%; min-height: 300px; color: #6B7280; flex-direction: column;';
+                emptyDiv.innerHTML = '<i class="fas fa-chart-pie" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i><p style="font-size: 16px; margin: 0;">Chưa có dữ liệu món ăn bán chạy</p><p style="font-size: 14px; margin-top: 8px; color: #9CA3AF;">Dữ liệu sẽ hiển thị khi có món ăn được bán trong 30 ngày qua</p>';
+                dishesChartContent.appendChild(emptyDiv);
             }
         } else {
-            const dishLabels = popularDishesData.map(dish => dish.dishName);
-            const dishValues = popularDishesData.map(dish => dish.quantitySold);
+            // Remove empty state if exists
+            const emptyState = document.getElementById(dishesEmptyStateId);
+            if (emptyState) {
+                emptyState.remove();
+            }
             
-            // Ensure canvas exists
-            if (dishesCtx) {
-                new Chart(dishesCtx.getContext('2d'), {
+            // Show canvas - get fresh reference in case it was hidden
+            const dishesCanvas = document.getElementById('popularDishesChart');
+            if (!dishesCanvas) {
+                console.error('Popular dishes chart canvas not found');
+            } else {
+                dishesCanvas.style.display = 'block';
+            
+                const dishLabels = popularDishesData.map(dish => dish.dishName || 'Món không tên');
+                const dishValues = popularDishesData.map(dish => {
+                    return parseInt(dish.quantitySold) || 0;
+                });
+                
+                // Color palette for chart
+                const colors = [
+                    '#374151', // Dark gray
+                    '#6B7280', // Gray
+                    '#9CA3AF', // Light gray
+                    '#D1D5DB', // Lighter gray
+                    '#F3F4F6'  // Lightest gray
+                ];
+                
+                // Create chart
+                new Chart(dishesCanvas.getContext('2d'), {
                     type: 'doughnut',
                     data: {
                         labels: dishLabels,
                         datasets: [{
                             data: dishValues,
-                            backgroundColor: [
-                                '#374151',
-                                '#6B7280',
-                                '#9CA3AF',
-                                '#D1D5DB',
-                                '#F3F4F6'
-                            ],
-                            borderWidth: 0
+                            backgroundColor: colors.slice(0, dishLabels.length),
+                            borderWidth: 2,
+                            borderColor: '#ffffff'
                         }]
                     },
                     options: {
@@ -554,16 +697,83 @@
                             legend: {
                                 position: 'bottom',
                                 labels: {
-                                    padding: 20,
-                                    usePointStyle: true
+                                    padding: 15,
+                                    usePointStyle: true,
+                                    font: {
+                                        size: 12
+                                    },
+                                    generateLabels: function(chart) {
+                                        const data = chart.data;
+                                        if (data.labels.length && data.datasets.length) {
+                                            return data.labels.map((label, i) => {
+                                                const value = data.datasets[0].data[i];
+                                                const price = popularDishesData[i]?.price;
+                                                let priceText = '';
+                                                if (price) {
+                                                    const priceNum = parseFloat(price) || 0;
+                                                    if (priceNum > 0) {
+                                                        priceText = ' - ' + new Intl.NumberFormat('vi-VN', {
+                                                            style: 'currency',
+                                                            currency: 'VND'
+                                                        }).format(priceNum);
+                                                    }
+                                                }
+                                                return {
+                                                    text: label + ' (' + value + ' phần)' + priceText,
+                                                    fillStyle: data.datasets[0].backgroundColor[i],
+                                                    strokeStyle: data.datasets[0].borderColor,
+                                                    lineWidth: data.datasets[0].borderWidth,
+                                                    hidden: false,
+                                                    index: i
+                                                };
+                                            });
+                                        }
+                                        return [];
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const index = context.dataIndex;
+                                        const price = popularDishesData[index]?.price;
+                                        let priceText = '';
+                                        if (price) {
+                                            const priceNum = parseFloat(price) || 0;
+                                            if (priceNum > 0) {
+                                                priceText = ' - Giá: ' + new Intl.NumberFormat('vi-VN', {
+                                                    style: 'currency',
+                                                    currency: 'VND'
+                                                }).format(priceNum);
+                                            }
+                                        }
+                                        return label + ': ' + value + ' phần đã bán' + priceText;
+                                    }
                                 }
                             }
                         }
                     }
                 });
-            } else {
-                console.error('Popular dishes chart canvas not found');
             }
+        }
+        
+        // Filter function - must be in global scope
+        function filterRevenueChart(period) {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.querySelector(`[data-period="${period}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+            
+            // Reload page with new period
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('period', period);
+            window.location.href = currentUrl.toString();
         }
     </script>
 </body>
