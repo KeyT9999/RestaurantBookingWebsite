@@ -11,6 +11,36 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link th:href="@{/css/design-system.css}" rel="stylesheet">
     <link th:href="@{/css/auth-common.css}" rel="stylesheet">
+    <style>
+        .password-field-group .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-field-group .password-input-wrapper input.ds-form-input {
+            padding-right: 2.75rem;
+        }
+        .password-field-group .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            z-index: 2;
+            background: transparent;
+            border: none;
+            color: var(--ds-neutral-500, #6b7280);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            width: 2rem;
+            height: 2rem;
+            font-size: 1rem;
+        }
+        .password-field-group .password-toggle:focus {
+            outline: none;
+            color: var(--ds-primary-600, #2563eb);
+        }
+    </style>
 </head>
 <body class="ds-bg-white">
     <!-- Unified Header -->
@@ -159,39 +189,49 @@
                                 </div>
                                 
                                 <!-- Password -->
-                                <div class="ds-form-group ds-mb-4">
+                                <div class="ds-form-group ds-mb-4 password-field-group">
                                     <label for="password" class="ds-form-label">
                                         <i class="fas fa-lock form-icon"></i> 
                                         Mật khẩu <span class="required">*</span>
                                     </label>
-                                    <input type="password" 
-                                           class="ds-form-input" 
-                                           id="password" 
-                                           name="password"
-                                           th:field="*{password}"
-                                           th:classappend="${#fields.hasErrors('password')} ? 'ds-form-input-error' : ''"
-                                           placeholder="Nhập mật khẩu"
-                                           minlength="8"
-                                           pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-                                           title="Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt">
+                                    <div class="password-input-wrapper">
+                                        <input type="password" 
+                                               class="ds-form-input" 
+                                               id="password" 
+                                               name="password"
+                                               th:field="*{password}"
+                                               th:classappend="${#fields.hasErrors('password')} ? 'ds-form-input-error' : ''"
+                                               placeholder="Nhập mật khẩu"
+                                               minlength="8"
+                                               pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                                               title="Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt">
+                                        <button type="button" class="password-toggle" data-target="password" aria-label="Hiển thị mật khẩu">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" 
                                          th:errors="*{password}"></div>
                                     <small class="form-text">Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)</small>
                                 </div>
                                 
                                 <!-- Confirm Password -->
-                                <div class="ds-form-group ds-mb-6">
+                                <div class="ds-form-group ds-mb-6 password-field-group">
                                     <label for="confirmPassword" class="ds-form-label">
                                         <i class="fas fa-lock form-icon"></i> 
                                         Xác nhận mật khẩu <span class="required">*</span>
                                     </label>
-                                    <input type="password" 
-                                           class="ds-form-input" 
-                                           id="confirmPassword" 
-                                           name="confirmPassword"
-                                           th:field="*{confirmPassword}"
-                                           th:classappend="${#fields.hasErrors('confirmPassword')} ? 'ds-form-input-error' : ''"
-                                           placeholder="Nhập lại mật khẩu">
+                                    <div class="password-input-wrapper">
+                                        <input type="password" 
+                                               class="ds-form-input" 
+                                               id="confirmPassword" 
+                                               name="confirmPassword"
+                                               th:field="*{confirmPassword}"
+                                               th:classappend="${#fields.hasErrors('confirmPassword')} ? 'ds-form-input-error' : ''"
+                                               placeholder="Nhập lại mật khẩu">
+                                        <button type="button" class="password-toggle" data-target="confirmPassword" aria-label="Hiển thị lại mật khẩu">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}" 
                                          th:errors="*{confirmPassword}"></div>
                                 </div>
@@ -277,17 +317,25 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const password = document.getElementById('password');
-            const confirmPassword = document.getElementById('confirmPassword');
             const registerForm = document.getElementById('registerForm');
+            const password = registerForm ? registerForm.querySelector('#password') : null;
+            const confirmPassword = registerForm ? registerForm.querySelector('#confirmPassword') : null;
             const accountTypeOverlay = document.getElementById('accountTypeOverlay');
             const accountTypeInput = document.getElementById('accountType');
-            const accountTypeCards = document.querySelectorAll('.account-type-card');
-            const formTitle = document.querySelector('.ds-heading-4');
-            const formSubtitle = document.querySelector('.ds-text-sm');
+        const accountTypeCards = document.querySelectorAll('.account-type-card');
+        const formTitle = document.querySelector('.ds-heading-4');
+        const formSubtitle = document.querySelector('.ds-text-sm');
+        const passwordToggleButtons = document.querySelectorAll('.password-toggle');
 
             function validatePasswordMatch() {
-                if (password.value !== confirmPassword.value) {
+                const normalize = (s) => (s || '')
+                    .normalize('NFC')
+                    .replace(/[\u200B-\u200D\u2060]/g, '')
+                    .replace(/\r?\n/g, '')
+                    .trim();
+                const p1 = normalize(password.value);
+                const p2 = normalize(confirmPassword.value);
+                if (p1 !== p2) {
                     confirmPassword.setCustomValidity('Mật khẩu xác nhận không khớp');
                 } else {
                     confirmPassword.setCustomValidity('');
@@ -305,7 +353,7 @@
             }
 
             function validateEmail() {
-                const email = document.getElementById('email');
+                const email = registerForm ? registerForm.querySelector('#email') : document.getElementById('email');
                 const emailRegex = /.*@(gmail\.com|outlook\.com\.vn|yahoo\.com|hotmail\.com|student\.ctu\.edu\.vn|ctu\.edu\.vn)$/;
                 if (email.value && !emailRegex.test(email.value)) {
                     email.setCustomValidity('Email phải thuộc một trong các domain: @gmail.com, @outlook.com.vn, @yahoo.com, @hotmail.com, @student.ctu.edu.vn, @ctu.edu.vn');
@@ -315,7 +363,7 @@
             }
 
             function validatePhone() {
-                const phone = document.getElementById('phoneNumber');
+                const phone = registerForm ? registerForm.querySelector('#phoneNumber') : document.getElementById('phoneNumber');
                 const phoneRegex = /^(0[3|5|7|8|9])[0-9]{8}$|^$/;
                 if (phone.value && !phoneRegex.test(phone.value)) {
                     phone.setCustomValidity('Số điện thoại phải là 10 số và bắt đầu bằng 03, 05, 07, 08, 09 hoặc để trống');
@@ -329,15 +377,34 @@
                 confirmPassword.addEventListener('input', validatePasswordMatch);
             }
 
-            const emailField = document.getElementById('email');
+            const emailField = registerForm ? registerForm.querySelector('#email') : document.getElementById('email');
             if (emailField) {
                 emailField.addEventListener('input', validateEmail);
             }
 
-            const phoneField = document.getElementById('phoneNumber');
-            if (phoneField) {
-                phoneField.addEventListener('input', validatePhone);
+        const phoneField = registerForm ? registerForm.querySelector('#phoneNumber') : document.getElementById('phoneNumber');
+        if (phoneField) {
+            phoneField.addEventListener('input', validatePhone);
+        }
+
+        passwordToggleButtons.forEach(button => {
+            // Prefer input next to the toggle to avoid ID conflicts (e.g., login modal)
+            const wrapperInput = button.closest('.password-input-wrapper') ? button.closest('.password-input-wrapper').querySelector('input') : null;
+            const targetId = button.getAttribute('data-target');
+            const targetInput = wrapperInput || document.getElementById(targetId);
+            const icon = button.querySelector('i');
+            if (!targetInput || !icon) {
+                return;
             }
+
+            button.addEventListener('click', () => {
+                const isPassword = targetInput.getAttribute('type') === 'password';
+                targetInput.setAttribute('type', isPassword ? 'text' : 'password');
+                icon.classList.toggle('fa-eye', !isPassword);
+                icon.classList.toggle('fa-eye-slash', isPassword);
+                button.setAttribute('aria-label', isPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu');
+            });
+        });
 
             function showOverlay() {
                 if (accountTypeOverlay) {
@@ -404,6 +471,14 @@
                         event.preventDefault();
                         showOverlay();
                         return;
+                    }
+
+                    // Re-validate equality on submit to avoid stale state
+                    validatePasswordMatch();
+                    if (!registerForm.checkValidity()) {
+                        event.preventDefault();
+                        const firstInvalid = registerForm.querySelector(':invalid');
+                        if (firstInvalid) firstInvalid.focus();
                     }
                 });
             }

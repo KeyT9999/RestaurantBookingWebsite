@@ -56,7 +56,13 @@ public class RegisterForm {
     
     // Validation method
     public boolean isPasswordMatching() {
-        return password != null && password.equals(confirmPassword);
+        // Be tolerant to accidental leading/trailing whitespace or invisible characters
+        if (password == null || confirmPassword == null) {
+            return false;
+        }
+        String normalizedPassword = password.trim();
+        String normalizedConfirm = confirmPassword.trim();
+        return normalizedPassword.equals(normalizedConfirm);
     }
     
     // Getters and Setters
