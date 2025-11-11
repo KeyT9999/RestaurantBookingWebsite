@@ -76,6 +76,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 /**
  * Controller for Restaurant Owner management features
  * Handles FOH floor management, restaurant profile, tables, and bookings
@@ -98,6 +102,7 @@ public class RestaurantOwnerController {
     private final InternalNoteRepository internalNoteRepository;
     private final CommunicationHistoryRepository communicationHistoryRepository;
     private final RestaurantTableRepository restaurantTableRepository;
+    private final ObjectMapper objectMapper;
     private final BookingRepository bookingRepository;
     private final BookingTableRepository bookingTableRepository;
     private final PaymentService paymentService;
@@ -131,6 +136,11 @@ public class RestaurantOwnerController {
         this.bookingRepository = bookingRepository;
         this.bookingTableRepository = bookingTableRepository;
         this.paymentService = paymentService;
+
+        // Initialize ObjectMapper for JSON serialization
+        this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     /**
@@ -182,6 +192,12 @@ public class RestaurantOwnerController {
                // Get additional data for charts and lists
                List<RestaurantDashboardService.DailyRevenueData> dailyRevenueData = dashboardService.getRevenueDataByPeriod(finalSelectedRestaurantId, period);
                List<RestaurantDashboardService.PopularDishData> popularDishesData = dashboardService.getPopularDishesData(finalSelectedRestaurantId);
+
+               // Tính tổng doanh thu theo mốc đã chọn
+               BigDecimal totalRevenueForPeriod = dailyRevenueData.stream()
+                       .map(data -> data.getRevenue() != null ? data.getRevenue() : BigDecimal.ZERO)
+                       .reduce(BigDecimal.ZERO, BigDecimal::add);
+
                // Recent bookings: show latest from selected restaurant only
                List<Booking> recentBookings = bookingService.getBookingsByRestaurant(finalSelectedRestaurantId)
                    .stream()
@@ -191,6 +207,8 @@ public class RestaurantOwnerController {
                List<Waitlist> waitingCustomers = dashboardService.getWaitingCustomers(finalSelectedRestaurantId);
 
                System.out.println("[Dashboard] recentBookings size = " + recentBookings.size());
+               System.out.println("[Dashboard] dailyRevenueData size = " + dailyRevenueData.size());
+               System.out.println("[Dashboard] popularDishesData size = " + popularDishesData.size());
                for (int i = 0; i < recentBookings.size(); i++) {
                    Booking b = recentBookings.get(i);
                    System.out.println("[Dashboard] Booking " + i + ": ID=" + b.getBookingId() + 
@@ -212,11 +230,26 @@ public class RestaurantOwnerController {
             
                // Dashboard statistics
                model.addAttribute("dashboardStats", dashboardStats);
-               model.addAttribute("dailyRevenueData", dailyRevenueData);
-               model.addAttribute("popularDishesData", popularDishesData);
                model.addAttribute("recentBookings", recentBookings);
                model.addAttribute("waitingCustomers", waitingCustomers);
 
+               // Serialize chart data to JSON for JavaScript
+               try {
+                   String dailyRevenueDataJson = objectMapper.writeValueAsString(dailyRevenueData);
+                   String popularDishesDataJson = objectMapper.writeValueAsString(popularDishesData);
+                   model.addAttribute("dailyRevenueDataJson", dailyRevenueDataJson);
+                   model.addAttribute("popularDishesDataJson", popularDishesDataJson);
+                   model.addAttribute("totalRevenueForPeriod", totalRevenueForPeriod);
+                   System.out.println("[Dashboard] Serialized dailyRevenueData: "
+                           + dailyRevenueDataJson.substring(0, Math.min(200, dailyRevenueDataJson.length())));
+                   System.out.println("[Dashboard] Serialized popularDishesData: "
+                           + popularDishesDataJson.substring(0, Math.min(200, popularDishesDataJson.length())));
+                   System.out.println("[Dashboard] Total revenue for period: " + totalRevenueForPeriod);
+               } catch (Exception e) {
+                   logger.error("Error serializing dashboard data to JSON", e);
+                   model.addAttribute("dailyRevenueDataJson", "[]");
+                   model.addAttribute("popularDishesDataJson", "[]");
+               }
 
         } catch (Exception e) {
             model.addAttribute("error", "Lỗi khi tải dữ liệu: " + e.getMessage());
