@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.booking.domain.User;
 import com.example.booking.domain.Voucher;
@@ -27,6 +29,9 @@ import com.example.booking.dto.admin.VoucherEditForm;
 import com.example.booking.service.VoucherService;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.SimpleUserService;
+import com.example.booking.repository.VoucherRedemptionRepository;
+import com.example.booking.domain.VoucherRedemption;
+import com.example.booking.repository.PaymentRepository;
 
 import jakarta.validation.Valid;
 
@@ -42,6 +47,12 @@ public class RestaurantVoucherController {
     
     @Autowired
     private SimpleUserService userService;
+    
+    @Autowired
+    private VoucherRedemptionRepository voucherRedemptionRepository;
+    
+    @Autowired
+    private PaymentRepository paymentRepository;
     
     /**
      * Helper method to get restaurants owned by current user
@@ -117,6 +128,12 @@ public class RestaurantVoucherController {
             // Get vouchers for the selected restaurant
             List<Voucher> vouchers = voucherService.getVouchersByRestaurant(finalRestaurantId);
             
+            // Find and set current restaurant
+            RestaurantProfile currentRestaurant = restaurants.stream()
+                .filter(r -> r.getRestaurantId().equals(finalRestaurantId))
+                .findFirst()
+                .orElse(null);
+            
             // Debug: Log voucher count and details
             System.out.println("DEBUG: Selected Restaurant ID: " + finalRestaurantId);
             System.out.println("DEBUG: Vouchers count: " + vouchers.size());
@@ -127,6 +144,8 @@ public class RestaurantVoucherController {
             model.addAttribute("vouchers", vouchers);
             model.addAttribute("restaurants", restaurants);
             model.addAttribute("selectedRestaurantId", finalRestaurantId);
+            model.addAttribute("restaurantId", finalRestaurantId);
+            model.addAttribute("currentRestaurant", currentRestaurant);
             model.addAttribute("currentPage", page);
             model.addAttribute("totalPages", 0);
             model.addAttribute("search", search);
@@ -537,6 +556,131 @@ public class RestaurantVoucherController {
             System.err.println("❌ Error in testSimple: " + e.getMessage());
             e.printStackTrace();
             return "error/500";
+        }
+    }
+    
+    /**
+     * API endpoint to get list of booking IDs that used a specific voucher
+     */
+    @GetMapping("/{id}/bookings")
+    @PreAuthorize("hasRole('RESTAURANT_OWNER')")
+    @ResponseBody
+    @Transactional(readOnly = true)
+    public List<Integer> getVoucherBookings(@PathVariable Integer id, Authentication authentication) {
+        try {
+            System.out.println("🔍 Getting bookings for voucher ID: " + id);
+            
+            // Get all restaurants owned by current user
+            List<RestaurantProfile> restaurants = getRestaurantsFromAuth(authentication);
+            if (restaurants.isEmpty()) {
+                System.out.println("❌ No restaurants found for user");
+                return List.of();
+            }
+            
+            // Get voucher
+            Voucher voucher = voucherService.getVoucherById(id);
+            if (voucher == null) {
+                System.out.println("❌ Voucher not found: " + id);
+                return List.of();
+            }
+            
+            // Check ownership if voucher is restaurant-specific
+            if (voucher.getRestaurant() != null) {
+                boolean restaurantOwned = restaurants.stream()
+                    .anyMatch(r -> r.getRestaurantId().equals(voucher.getRestaurant().getRestaurantId()));
+                if (!restaurantOwned) {
+                    System.out.println("❌ User doesn't own this voucher's restaurant");
+                    return List.of();
+                }
+            }
+            
+            // First, check total redemptions
+            List<VoucherRedemption> allRedemptions = voucherRedemptionRepository.findByVoucher_VoucherId(id);
+            System.out.println("📊 Total redemptions for voucher " + id + ": " + allRedemptions.size());
+            
+            // PRIORITY 1: Try query from Payment table directly (most reliable - payment.voucher_id is set when voucher is applied)
+            System.out.println("🔍 Priority 1: Querying from payment table where payment.voucher_id = " + id);
+            List<Integer> bookingIds = paymentRepository.findBookingIdsByVoucherId(id);
+            System.out.println("✅ Payment table query found " + bookingIds.size() + " booking IDs");
+            
+            // PRIORITY 2: If empty, try from voucher_redemption.booking_id
+            if (bookingIds.isEmpty()) {
+                System.out.println("⚠️ No booking IDs from payment table, trying voucher_redemption.booking_id...");
+                bookingIds = voucherRedemptionRepository.findBookingIdsByVoucherIdNative(id);
+                System.out.println("📋 Native query (from booking_id column) found " + bookingIds.size() + " booking IDs");
+            }
+            
+            // PRIORITY 3: Try from payment via JOIN with voucher_redemption
+            if (bookingIds.isEmpty()) {
+                System.out.println("⚠️ No booking IDs from voucher_redemption.booking_id, trying payment.booking_id via JOIN...");
+                List<Integer> bookingIdsFromPayment = voucherRedemptionRepository.findBookingIdsByVoucherIdFromPayment(id);
+                System.out.println("📋 Query from payment table (via JOIN) found " + bookingIdsFromPayment.size() + " booking IDs");
+                
+                if (!bookingIdsFromPayment.isEmpty()) {
+                    bookingIds = bookingIdsFromPayment;
+                }
+            }
+            
+            // PRIORITY 4: Try direct query from payment table (alternative method)
+            if (bookingIds.isEmpty()) {
+                System.out.println("⚠️ No booking IDs from payment JOIN, trying direct payment.voucher_id query (alternative)...");
+                List<Integer> bookingIdsFromPayment = voucherRedemptionRepository.findBookingIdsByVoucherIdFromPaymentDirect(id);
+                System.out.println("📋 Query from payment table (direct alternative) found " + bookingIdsFromPayment.size() + " booking IDs");
+                
+                if (!bookingIdsFromPayment.isEmpty()) {
+                    bookingIds = bookingIdsFromPayment;
+                }
+            }
+            
+            if (allRedemptions.isEmpty() && bookingIds.isEmpty()) {
+                System.out.println("⚠️ No redemptions found for this voucher");
+                return List.of();
+            }
+            
+            // Debug: Check each redemption
+            int redemptionsWithBooking = 0;
+            int redemptionsWithoutBooking = 0;
+            for (VoucherRedemption r : allRedemptions) {
+                try {
+                    // Try to access booking - this might trigger lazy loading
+                    if (r.getBooking() != null) {
+                        Integer bid = r.getBooking().getBookingId();
+                        System.out.println("   ✅ Redemption ID: " + r.getRedemptionId() + ", Booking ID: " + bid);
+                        redemptionsWithBooking++;
+                    } else {
+                        System.out.println("   ❌ Redemption ID: " + r.getRedemptionId() + ", Booking: NULL");
+                        redemptionsWithoutBooking++;
+                    }
+                } catch (Exception e) {
+                    System.out.println("   ⚠️ Redemption ID: " + r.getRedemptionId() + ", Error accessing booking: " + e.getMessage());
+                    redemptionsWithoutBooking++;
+                }
+            }
+            System.out.println("📈 Summary: " + redemptionsWithBooking + " with booking, " + redemptionsWithoutBooking + " without booking");
+            
+            // If native query returns empty, try JPQL query
+            if (bookingIds.isEmpty() && redemptionsWithBooking > 0) {
+                System.out.println("⚠️ Native query returned empty but found redemptions with booking, trying JPQL query...");
+                try {
+                    bookingIds = voucherRedemptionRepository.findBookingIdsByVoucherId(id);
+                    System.out.println("📋 JPQL query found " + bookingIds.size() + " booking IDs");
+                } catch (Exception e) {
+                    System.out.println("❌ JPQL query failed: " + e.getMessage());
+                }
+            }
+            
+            if (!bookingIds.isEmpty()) {
+                System.out.println("✅ Returning booking IDs: " + bookingIds);
+            } else {
+                System.out.println("⚠️ No booking IDs found. This voucher may have been used but booking_id was not set in voucher_redemption table.");
+            }
+            
+            return bookingIds;
+                
+        } catch (Exception e) {
+            System.err.println("❌ Error getting voucher bookings: " + e.getMessage());
+            e.printStackTrace();
+            return List.of();
         }
     }
 }

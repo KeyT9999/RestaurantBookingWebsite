@@ -200,10 +200,8 @@
       return;
     }
 
-    // DISABLED: Location permission feature is temporarily disabled
-    // Uncomment the code below to re-enable location features
+    // Location permission feature enabled
     
-    /*
     // 1) Check if user has already handled location permission
     if (APP_CTX.authenticated && hasPermissionBeenHandled()) {
       // User already granted or denied permission, don't show modal again
@@ -254,7 +252,6 @@
     // Otherwise, if server still indicates prompting is desired (fallback)
     const shouldPrompt = !!APP_CTX.showLocationPrompt && !sessionStorage.getItem(promptKey) && !hasPermissionBeenHandled();
     if (APP_CTX.authenticated && shouldPrompt) showModal();
-    */
   }
 
   if (document.readyState === 'loading') {
