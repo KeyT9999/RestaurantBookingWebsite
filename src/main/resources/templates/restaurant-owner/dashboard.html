@@ -161,6 +161,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="/restaurant-owner/vouchers" th:href="${restaurantId != null ? '/restaurant-owner/vouchers?restaurantId=' + restaurantId : '/restaurant-owner/vouchers'}">
+                            <i class="fas fa-ticket-alt"></i>
+                            Voucher
+                        </a>
+                    </li>
+                    <li>
                         <a href="/restaurant-owner/chat" th:href="${restaurantId != null ? '/restaurant-owner/chat?restaurantId=' + restaurantId : '/restaurant-owner/chat'}">
                             <i class="fas fa-comments"></i>
                             Tin nhắn

@@ -27,7 +27,7 @@
         --primary-blue: #4A90E2;
       }
       
-      .nearby-section { display:none; }
+      .nearby-section { display:block; }
       .nearby-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap:16px; }
       .nearby-card { border:1px solid #eee; border-radius:12px; padding:12px; background:#fff; }
       .nearby-card h4 { font-size:1.05rem; margin:0 0 6px; }
@@ -874,9 +874,7 @@
             </div>
         </section>
 
-    <!-- DISABLED: Recommended Near You (dynamic) - Location feature temporarily disabled -->
-    <!-- Uncomment the section below to re-enable location-based recommendations -->
-    <!--
+    <!-- Recommended Near You (dynamic) - Location feature enabled -->
     <section class="nearby-section" id="nearby">
         <div class="container">
             <div class="section-header">
@@ -890,7 +888,6 @@
             <div id="nearbyGrid" class="nearby-grid"></div>
         </div>
     </section>
-    -->
 
     <!-- Popular Restaurants - New Design -->
     <section class="featured-restaurants-section" id="restaurants">
