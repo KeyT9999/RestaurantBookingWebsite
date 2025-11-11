@@ -375,8 +375,10 @@ public class BookingApiController {
             // Get all table names and calculate table fees total
             BigDecimal tableFeesTotal = BigDecimal.ZERO;
             if (booking.getBookingTables() != null && !booking.getBookingTables().isEmpty()) {
+                // Remove duplicates by using distinct() and preserve order
                 List<String> tableNames = booking.getBookingTables().stream()
                         .map(bt -> bt.getTable().getTableName())
+                        .distinct()
                         .collect(Collectors.toList());
                 detailsDto.setTableNames(tableNames);
 
