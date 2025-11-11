@@ -16,9 +16,11 @@
     <link th:href="@{/css/home-resy.css}" rel="stylesheet">
     <!-- Design System CSS -->
     <link th:href="@{/css/design-system.css}" rel="stylesheet">
+    <!-- Booking List CSS -->
+    <link th:href="@{/css/booking-list.css}" rel="stylesheet">
 </head>
 
-<body class="minimal-theme">
+<body class="minimal-theme booking-list-page">
     <!-- Design System Header -->
     <div th:with="activeNav='reservations'" 
          th:replace="~{fragments/design-system-components :: unified-header}"></div>
@@ -33,15 +35,6 @@
                     <p class="page-subtitle">Manage your dining experiences</p>
                 </div>
                 <div class="segment-control" role="tablist">
-                    <button type="button"
-                            class="segment-control__item"
-                            th:classappend="${currentFilter == 'all'} ? ' is-active'"
-                            onclick="filterBookings('all')"
-                            th:attr="aria-pressed=${currentFilter == 'all'}">
-                        <span>All</span>
-                        <span class="segment-control__count"
-                              th:text="${totalBookings + totalWaitlist}">0</span>
-                    </button>
                     <button type="button"
                             class="segment-control__item"
                             th:classappend="${currentFilter == 'bookings'} ? ' is-active'"
@@ -74,19 +67,29 @@
                     <span class="flash__label">Error</span>
                     <span th:text="${errorMessage}"></span>
                 </div>
-                
-                <!-- Payment Info Alert -->
-                <div th:if="${totalBookings > 0}" class="flash flash--info" role="status">
-                    <span class="flash__label">Payment</span>
-                    <span>Complete payment for pending reservations to confirm your booking. Look for the pay action on pending bookings.</span>
+            </div>
+            
+            <!-- Payment Info Toast -->
+            <div th:if="${totalBookings > 0}" class="payment-toast" id="paymentToast" role="status">
+                <div class="payment-toast__content">
+                    <div class="payment-toast__icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="payment-toast__message">
+                        <span class="payment-toast__label">Payment</span>
+                        <span class="payment-toast__text">Complete payment for pending reservations to confirm your booking. Look for the pay action on pending bookings.</span>
+                    </div>
+                    <button type="button" class="payment-toast__close" onclick="closePaymentToast(event)" aria-label="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             </div>
             
             <!-- Reservations Content -->
-            <section class="surface-block">
+            <section class="surface-block" style="padding: var(--ds-space-4);">
                 <!-- Regular Bookings Section -->
-                <div th:if="${currentFilter == 'all' or currentFilter == 'bookings'}" class="stack gap-24">
-                    <div class="section-header">
+                <div th:if="${currentFilter == 'bookings'}" class="stack" style="gap: var(--ds-space-4);">
+                    <div class="section-header" style="margin-bottom: var(--ds-space-3);">
                         <h2 class="section-title">Confirmed bookings</h2>
                         <span class="section-meta" th:text="${totalBookings + ' reservations'}"></span>
                     </div>
@@ -98,112 +101,135 @@
                         <a href="/booking/new" class="button button--primary">Make a reservation</a>
                     </div>
                 
-                <div th:unless="${#lists.isEmpty(bookings)}" class="table-wrapper">
-                    <div class="table-scroll">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Booking</th>
-                                    <th scope="col">Restaurant</th>
-                                    <th scope="col">Table</th>
-                                    <th scope="col">Date &amp; time</th>
-                                    <th scope="col">Guests</th>
-                                    <th scope="col">Deposit</th>
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Created</th>
-                                    <th scope="col">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="booking : ${bookings}">
-                                    <td>
-                                        <span class="mono" th:text="|${#strings.substring(booking.bookingId.toString(), 0, #strings.length(booking.bookingId.toString()) > 8 ? 8 : #strings.length(booking.bookingId.toString()))}|"></span>
-                                    </td>
-                                    <td>
-                                        <div class="stack gap-4">
-                                            <span class="text-strong" th:text="${booking.restaurant != null ? booking.restaurant.restaurantName : 'N/A'}"></span>
-                                            <span class="text-muted" th:text="${booking.restaurant != null ? booking.restaurant.address : ''}"></span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span th:if="${booking.table}" class="badge" th:text="${booking.table.tableName}"></span>
-                                        <span th:unless="${booking.table}" class="text-muted">No preference</span>
-                                    </td>
-                                    <td>
-                                        <span th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}"></span>
-                                    </td>
-                                    <td>
-                                        <span th:text="${booking.numberOfGuests}"></span>
-                                    </td>
-                                    <td>
-                                        <span th:if="${booking.hasDeposit()}" class="text-strong" th:text="|${#numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT')} VNĐ|"></span>
-                                        <span th:unless="${booking.hasDeposit()}" class="text-muted">No deposit</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge badge--pending"
-                                              th:if="${booking.status != null and booking.status.name() == 'PENDING'}">Pending</span>
-                                        <span class="badge badge--pending"
-                                              th:if="${booking.status != null and booking.status.name() == 'PENDING_CANCEL'}">Pending cancel</span>
-                                        <span class="badge badge--success"
-                                              th:if="${booking.status != null and booking.status.name() == 'CONFIRMED'}">Confirmed</span>
-                                        <span class="badge badge--error"
-                                              th:if="${booking.status != null and booking.status.name() == 'CANCELLED'}">Cancelled</span>
-                                        <span class="badge"
-                                              th:if="${booking.status != null and booking.status.name() == 'NO_SHOW'}">No show</span>
-                                        <span class="badge"
-                                              th:if="${booking.status == null}">Unknown</span>
-                                    </td>
-                                    <td>
-                                        <span class="text-muted" th:text="${#temporals.format(booking.createdAt, 'dd/MM/yyyy HH:mm')}"></span>
-                                    </td>
-                                    <td>
-                                        <div class="action-bar">
-                                            <button type="button"
-                                                    class="icon-button"
-                                                    title="View details"
-                                                    onclick="showBookingDetails(this)"
-                                                    th:data-booking-id="${booking.bookingId}">
-                                                <span class="sr-only">View details</span>
-                                                <i class="fas fa-eye" aria-hidden="true"></i>
-                                            </button>
-                                            <a th:if="${booking.canBeEdited()}"
-                                               th:href="@{/booking/{id}/edit(id=${booking.bookingId})}"
-                                               class="icon-button"
-                                               title="Edit reservation">
-                                                <span class="sr-only">Edit reservation</span>
-                                                <i class="fas fa-edit" aria-hidden="true"></i>
-                                            </a>
-                                            <a th:if="${booking.status != null and booking.status.name() == 'PENDING' and booking.hasDeposit()}"
-                                               th:href="@{|/payment/${booking.bookingId}|}"
-                                               class="icon-button"
-                                               title="Complete payment">
-                                                <span class="sr-only">Complete payment</span>
-                                                <i class="fas fa-credit-card" aria-hidden="true"></i>
-                                            </a>
-                                            <button th:if="${booking.canBeCancelled()}"
-                                                    type="button"
-                                                    class="icon-button icon-button--danger"
-                                                    title="Cancel reservation"
-                                                    onclick="confirmCancel(this)"
-                                                    th:data-booking-id="${booking.bookingId}"
-                                                    th:data-restaurant-name="${booking.restaurant != null ? booking.restaurant.restaurantName : ''}">
-                                                <span class="sr-only">Cancel reservation</span>
-                                                <i class="fas fa-times" aria-hidden="true"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div th:unless="${#lists.isEmpty(bookings)}" class="booking-cards">
+                    <div class="booking-card" th:each="booking : ${bookings}">
+                        <div class="booking-card__content">
+                            <div class="booking-card__main">
+                                <div class="booking-card__restaurant">
+                                    <h3 class="booking-card__restaurant-name" th:text="${booking.restaurant != null ? booking.restaurant.restaurantName : 'N/A'}"></h3>
+                                </div>
+                                <div class="booking-card__essential-info">
+                                    <div class="booking-card__info-row">
+                                        <i class="fas fa-calendar-alt booking-card__info-icon"></i>
+                                        <span class="booking-card__info-text" th:text="${#temporals.format(booking.bookingTime, 'dd/MM/yyyy HH:mm')}"></span>
+                                    </div>
+                                    <div class="booking-card__info-row" th:if="${booking.table}">
+                                        <i class="fas fa-table booking-card__info-icon"></i>
+                                        <span class="booking-card__info-text" th:text="${booking.table.tableName}"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="booking-card__side">
+                                <div class="booking-card__status">
+                                    <span class="badge badge--pending"
+                                          th:if="${booking.status != null and booking.status.name() == 'PENDING'}">Pending</span>
+                                    <span class="badge badge--pending"
+                                          th:if="${booking.status != null and booking.status.name() == 'PENDING_CANCEL'}">Pending cancel</span>
+                                    <span class="badge badge--success"
+                                          th:if="${booking.status != null and booking.status.name() == 'CONFIRMED'}">Confirmed</span>
+                                    <span class="badge badge--error"
+                                          th:if="${booking.status != null and booking.status.name() == 'CANCELLED'}">Cancelled</span>
+                                    <span class="badge"
+                                          th:if="${booking.status != null and booking.status.name() == 'NO_SHOW'}">No show</span>
+                                    <span class="badge"
+                                          th:if="${booking.status == null}">Unknown</span>
+                                </div>
+                                <div class="booking-card__actions">
+                                    <button type="button"
+                                            class="icon-button"
+                                            title="View details"
+                                            onclick="showBookingDetails(this)"
+                                            th:data-booking-id="${booking.bookingId}">
+                                        <span class="sr-only">View details</span>
+                                        <i class="fas fa-eye" aria-hidden="true"></i>
+                                    </button>
+                                    <a th:if="${booking.canBeEdited()}"
+                                       th:href="@{/booking/{id}/edit(id=${booking.bookingId})}"
+                                       class="icon-button"
+                                       title="Edit reservation">
+                                        <span class="sr-only">Edit reservation</span>
+                                        <i class="fas fa-edit" aria-hidden="true"></i>
+                                    </a>
+                                    <a th:if="${booking.status != null and booking.status.name() == 'PENDING' and booking.hasDeposit()}"
+                                       th:href="@{|/payment/${booking.bookingId}|}"
+                                       class="icon-button"
+                                       title="Complete payment">
+                                        <span class="sr-only">Complete payment</span>
+                                        <i class="fas fa-credit-card" aria-hidden="true"></i>
+                                    </a>
+                                    <button th:if="${booking.canBeCancelled()}"
+                                            type="button"
+                                            class="icon-button icon-button--danger"
+                                            title="Cancel reservation"
+                                            onclick="confirmCancel(this)"
+                                            th:data-booking-id="${booking.bookingId}"
+                                            th:data-restaurant-name="${booking.restaurant != null ? booking.restaurant.restaurantName : ''}">
+                                        <span class="sr-only">Cancel reservation</span>
+                                        <i class="fas fa-times" aria-hidden="true"></i>
+                                    </button>
+                                    <button th:if="${booking.status != null and booking.status.name() == 'CANCELLED'}"
+                                            type="button"
+                                            class="icon-button icon-button--danger"
+                                            title="Delete booking"
+                                            onclick="deleteBooking(this)"
+                                            th:data-booking-id="${booking.bookingId}">
+                                        <span class="sr-only">Delete booking</span>
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                    
+                    <!-- Pagination -->
+                    <div th:if="${totalPages > 1}" class="pagination-wrapper" style="margin-top: var(--ds-space-4); display: flex; justify-content: center; align-items: center; gap: var(--ds-space-2);">
+                        <!-- Previous Button -->
+                        <a th:if="${currentPage > 0}"
+                           th:href="@{/booking/my(filter=${currentFilter}, page=${currentPage - 1})}"
+                           class="ds-btn ds-btn-secondary"
+                           style="min-width: 40px;">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        <span th:unless="${currentPage > 0}"
+                              class="ds-btn ds-btn-secondary"
+                              style="min-width: 40px; opacity: 0.5; cursor: not-allowed; pointer-events: none;">
+                            <i class="fas fa-chevron-left"></i>
+                        </span>
+                        
+                        <!-- Page Numbers -->
+                        <div class="pagination-pages" style="display: flex; gap: var(--ds-space-1);">
+                            <a th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}"
+                               th:href="@{/booking/my(filter=${currentFilter}, page=${pageNum})}"
+                               th:classappend="${pageNum == currentPage} ? 'ds-btn ds-btn-primary' : 'ds-btn ds-btn-secondary'"
+                               th:text="${pageNum + 1}"
+                               style="min-width: 40px; text-align: center;">
+                            </a>
+                        </div>
+                        
+                        <!-- Next Button -->
+                        <a th:if="${currentPage < totalPages - 1}"
+                           th:href="@{/booking/my(filter=${currentFilter}, page=${currentPage + 1})}"
+                           class="ds-btn ds-btn-secondary"
+                           style="min-width: 40px;">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                        <span th:unless="${currentPage < totalPages - 1}"
+                              class="ds-btn ds-btn-secondary"
+                              style="min-width: 40px; opacity: 0.5; cursor: not-allowed; pointer-events: none;">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                    </div>
+                    
+                    <!-- Pagination Info -->
+                    <div th:if="${totalPages > 1}" class="pagination-info" style="margin-top: var(--ds-space-2); text-align: center; color: var(--ds-neutral-600); font-size: var(--ds-font-size-sm);">
+                        <span th:text="|Trang ${currentPage + 1} / ${totalPages} (${totalBookings} booking)|"></span>
                     </div>
                 </div>
             </div>
 
             <!-- Waitlist Section -->
-            <div th:if="${currentFilter == 'all' or currentFilter == 'waitlist'}">
-                <!-- Separator -->
-            <div th:if="${currentFilter == 'all' or currentFilter == 'waitlist'}" class="stack gap-24">
-                <div class="divider" th:if="${currentFilter == 'all' and !#lists.isEmpty(bookings) and !#lists.isEmpty(waitlistEntries)}"></div>
+            <div th:if="${currentFilter == 'waitlist'}" class="stack gap-24">
                 <div class="section-header">
                     <h2 class="section-title">Waitlist entries</h2>
                     <span class="section-meta" th:text="${totalWaitlist + ' entries'}"></span>
@@ -337,6 +363,40 @@
                             </button>
                             <button type="button" class="ds-btn ds-btn-error" id="confirmCancelBtn">
                                 <i class="fas fa-trash-alt"></i> Yes, Cancel Reservation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Booking Modal -->
+            <div class="modal fade" id="deleteBookingModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content ds-card">
+                        <div class="modal-header ds-card-header">
+                            <h5 class="modal-title ds-heading-4">
+                                <i class="fas fa-trash-alt ds-text-error"></i>
+                                Xóa Booking
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body ds-card-body">
+                            <p class="ds-text-primary">Bạn có chắc chắn muốn xóa booking này?</p>
+                            <div class="ds-alert ds-alert-info">
+                                <strong>Restaurant:</strong> <span id="deleteModalRestaurantName"></span><br>
+                                <strong>Booking ID:</strong> <span id="deleteModalBookingId"></span>
+                            </div>
+                            <p class="ds-text-secondary">
+                                <i class="fas fa-info-circle ds-icon"></i>
+                                Booking sẽ không hiển thị nữa nhưng vẫn được lưu trong hệ thống với trạng thái "Đã xóa".
+                            </p>
+                        </div>
+                        <div class="modal-footer ds-card-footer">
+                            <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times"></i> Hủy
+                            </button>
+                            <button type="button" class="ds-btn ds-btn-error" id="confirmDeleteBtn">
+                                <i class="fas fa-trash-alt"></i> Xác nhận xóa
                             </button>
                         </div>
                     </div>
@@ -685,7 +745,7 @@
                                     </h6>
                                     <div style="color: var(--luxury-white); margin: 0;">
                                         ${data.tableNames && data.tableNames.length > 0 ? 
-                                            data.tableNames.map(name => `<span class="badge bg-warning text-dark me-1 mb-1">${name}</span>`).join('') : 
+                                            [...new Set(data.tableNames)].map(name => `<span class="badge bg-warning text-dark me-1 mb-1">${name}</span>`).join('') : 
                                             'No preference'}
                                     </div>
                                 </div>
@@ -735,7 +795,7 @@
                                         <div>
                                             <span style="color: var(--luxury-white);">
                                                 ${data.tableNames && data.tableNames.length > 0 ? 
-                                                    data.tableNames.map(name => `<span class="badge bg-warning text-dark me-1">${name}</span>`).join('') : 
+                                                    [...new Set(data.tableNames)].map(name => `<span class="badge bg-warning text-dark me-1">${name}</span>`).join('') : 
                                                     'No tables assigned'
                                                 }
                                             </span>
@@ -874,11 +934,13 @@
         
         function filterBookings(filter) {
             const url = new URL(window.location);
-            if (filter === 'all') {
-                url.searchParams.delete('filter');
-            } else {
-                url.searchParams.set('filter', filter);
+            // Default to 'bookings' if filter is not provided
+            if (!filter || filter === 'all') {
+                filter = 'bookings';
             }
+            url.searchParams.set('filter', filter);
+            // Reset to page 0 when changing filter
+            url.searchParams.set('page', '0');
             window.location.href = url.toString();
         }
         
@@ -1274,6 +1336,200 @@
                 
                 // Show bank account modal
                 showBankAccountModal(bookingId);
+            }
+        });
+        
+        // Store auto-hide timeout ID
+        let paymentToastTimeout = null;
+        
+        // Close payment toast function
+        function closePaymentToast(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            // Clear auto-hide timeout if exists
+            if (paymentToastTimeout) {
+                clearTimeout(paymentToastTimeout);
+                paymentToastTimeout = null;
+            }
+            
+            const toast = document.getElementById('paymentToast');
+            if (toast) {
+                toast.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300);
+            }
+        }
+        
+        // Auto-hide payment toast after 10 seconds
+        function setupPaymentToastAutoHide() {
+            const toast = document.getElementById('paymentToast');
+            if (toast && !toast.classList.contains('hidden')) {
+                // Clear any existing timeout
+                if (paymentToastTimeout) {
+                    clearTimeout(paymentToastTimeout);
+                }
+                
+                // Set new timeout for 10 seconds (10000ms)
+                paymentToastTimeout = setTimeout(() => {
+                    closePaymentToast(null);
+                }, 10000);
+            }
+        }
+        
+        // Ensure toast close button is clickable on page load and setup auto-hide
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeBtn = document.querySelector('.payment-toast__close');
+            if (closeBtn) {
+                // Remove any event listeners that might interfere
+                closeBtn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closePaymentToast(e);
+                    return false;
+                };
+            }
+            
+            // Setup auto-hide after page loads
+            setupPaymentToastAutoHide();
+        });
+        
+        // Delete booking function - show modal
+        function deleteBooking(button) {
+            const bookingId = button.getAttribute('data-booking-id');
+            const row = button.closest('tr');
+            
+            if (!bookingId) {
+                console.error('Booking ID not found');
+                return;
+            }
+            
+            // Get restaurant name from row
+            const restaurantName = row.querySelector('td:nth-child(2) .text-strong')?.textContent || 'N/A';
+            
+            // Set modal data
+            document.getElementById('deleteModalBookingId').textContent = bookingId;
+            document.getElementById('deleteModalRestaurantName').textContent = restaurantName;
+            
+            // Store booking ID in modal data attribute for later use
+            const modal = document.getElementById('deleteBookingModal');
+            modal.setAttribute('data-booking-id', bookingId);
+            
+            // Reset confirm button state
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            if (confirmBtn) {
+                confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Xác nhận xóa';
+                confirmBtn.disabled = false;
+            }
+            
+            // Show modal
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+        }
+        
+        // Confirm delete booking
+        function confirmDeleteBooking() {
+            const modal = document.getElementById('deleteBookingModal');
+            const bookingId = modal.getAttribute('data-booking-id');
+            
+            if (!bookingId) {
+                console.error('Booking ID not found in modal');
+                return;
+            }
+            
+            // Find the button by booking ID (in case the reference was lost)
+            const deleteButton = document.querySelector(`button[data-booking-id="${bookingId}"][onclick*="deleteBooking"]`);
+            if (!deleteButton) {
+                console.error('Delete button not found for booking ID:', bookingId);
+                // Still proceed with deletion, just won't be able to remove row
+            }
+            
+            // Show loading state on confirm button
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            const originalHTML = confirmBtn.innerHTML;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xóa...';
+            confirmBtn.disabled = true;
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+            
+            // Send delete request
+            fetch(`/booking/api/delete/${bookingId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader || 'X-CSRF-TOKEN']: csrfToken || ''
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) {
+                        bsModal.hide();
+                    }
+                    
+                    // Reset modal state
+                    modal.removeAttribute('data-booking-id');
+                    
+                    // Remove the row with animation
+                    if (deleteButton) {
+                        const row = deleteButton.closest('tr');
+                        if (row) {
+                            row.style.transition = 'opacity 0.3s, transform 0.3s';
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(-20px)';
+                            setTimeout(() => {
+                                row.remove();
+                                // Update counters if needed
+                                updateCounters();
+                            }, 300);
+                        }
+                    } else {
+                        // If button not found, reload page to reflect changes
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 500);
+                    }
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể xóa booking'));
+                    confirmBtn.innerHTML = originalHTML;
+                    confirmBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting booking:', error);
+                alert('Lỗi khi xóa booking. Vui lòng thử lại.');
+                confirmBtn.innerHTML = originalHTML;
+                confirmBtn.disabled = false;
+            });
+        }
+        
+        // Setup delete confirmation button and modal reset
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', confirmDeleteBooking);
+            }
+            
+            // Reset modal state when it's hidden
+            const deleteModal = document.getElementById('deleteBookingModal');
+            if (deleteModal) {
+                deleteModal.addEventListener('hidden.bs.modal', function() {
+                    // Reset modal state when closed
+                    this.removeAttribute('data-booking-id');
+                    const confirmBtn = document.getElementById('confirmDeleteBtn');
+                    if (confirmBtn) {
+                        confirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Xác nhận xóa';
+                        confirmBtn.disabled = false;
+                    }
+                });
             }
         });
     </script>

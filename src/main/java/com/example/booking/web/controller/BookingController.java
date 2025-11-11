@@ -471,7 +471,9 @@ public class BookingController {
      */
     @GetMapping("/my")
     public String showMyBookings(Model model, Authentication authentication,
-            @RequestParam(required = false) String filter, CsrfToken csrfToken) {
+            @RequestParam(required = false) String filter,
+            @RequestParam(defaultValue = "0") int page,
+            CsrfToken csrfToken) {
         try {
             UUID customerId = getCurrentCustomerId(authentication);
             System.out.println("🔍 Getting bookings for customer ID: " + customerId);
@@ -495,6 +497,16 @@ public class BookingController {
             int totalWaitlistCount = allWaitlistEntries.size();
 
             // Apply filter to display lists
+            // Default to "bookings" if filter is null or "all"
+            if (filter == null || filter.isEmpty() || "all".equals(filter)) {
+                filter = "bookings";
+            }
+            
+            // Validate filter value
+            if (!"bookings".equals(filter) && !"waitlist".equals(filter)) {
+                filter = "bookings"; // Default to bookings if invalid filter
+            }
+            
             List<Booking> bookings = allBookings;
             List<Waitlist> waitlistEntries = allWaitlistEntries;
 
@@ -503,13 +515,28 @@ public class BookingController {
             } else if ("waitlist".equals(filter)) {
                 bookings = new ArrayList<>(); // Hide bookings
             }
-            // If filter is null or "all", show both
 
-            model.addAttribute("bookings", bookings);
+            // Pagination for bookings (5 per page)
+            int pageSize = 5;
+            int totalPages = (int) Math.ceil((double) bookings.size() / pageSize);
+            if (page < 0) {
+                page = 0;
+            } else if (page >= totalPages && totalPages > 0) {
+                page = totalPages - 1;
+            }
+            
+            int startIndex = page * pageSize;
+            int endIndex = Math.min(startIndex + pageSize, bookings.size());
+            List<Booking> paginatedBookings = bookings.subList(startIndex, endIndex);
+
+            model.addAttribute("bookings", paginatedBookings);
             model.addAttribute("waitlistEntries", waitlistEntries);
-            model.addAttribute("currentFilter", filter != null ? filter : "all");
+            model.addAttribute("currentFilter", filter);
             model.addAttribute("totalBookings", totalBookingsCount); // Use original count
             model.addAttribute("totalWaitlist", totalWaitlistCount); // Use original count
+            model.addAttribute("currentPage", page);
+            model.addAttribute("totalPages", totalPages);
+            model.addAttribute("pageSize", pageSize);
 
             // Add CSRF token to model
             if (csrfToken != null) {
@@ -792,6 +819,44 @@ public class BookingController {
         return "redirect:/booking/my";
     }
 
+    /**
+     * API endpoint để xóa booking (đổi status thành DELETED)
+     * Chỉ có thể xóa các booking đã CANCELLED
+     */
+    @PostMapping("/api/delete/{bookingId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteBooking(@PathVariable Integer bookingId,
+            Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            UUID customerId = getCurrentCustomerId(authentication);
+            
+            // Delete booking (change status to DELETED)
+            bookingService.deleteBooking(bookingId, customerId);
+            
+            response.put("success", true);
+            response.put("message", "Booking đã được xóa thành công");
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalStateException e) {
+            response.put("success", false);
+            response.put("message", "Vui lòng đăng nhập để xóa booking");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            
+        } catch (IllegalArgumentException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            
+        } catch (Exception e) {
+            logger.error("❌ Error deleting booking", e);
+            response.put("success", false);
+            response.put("message", "Lỗi khi xóa booking: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+    
     /**
      * API endpoint để lấy payment status của booking (Customer)
      */
