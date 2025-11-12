@@ -93,7 +93,7 @@ public class RateLimitingAspectTest {
         assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
         verify(joinPoint, never()).proceed();
     }
-
+    
     @Test
     @DisplayName("shouldHandleBookingRateLimit")
     void shouldHandleBookingRateLimit() throws Throwable {

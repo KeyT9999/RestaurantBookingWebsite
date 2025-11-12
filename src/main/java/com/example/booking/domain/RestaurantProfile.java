@@ -49,6 +49,12 @@ public class RestaurantProfile {
     @Size(max = 500, message = "Địa chỉ không được quá 500 ký tự")
     private String address;
     
+    @Column(name = "latitude", precision = 10, scale = 7)
+    private BigDecimal latitude;
+    
+    @Column(name = "longitude", precision = 10, scale = 7)
+    private BigDecimal longitude;
+    
     @Column(name = "phone")
     @Size(max = 20, message = "Số điện thoại không được quá 20 ký tự")
     private String phone;
@@ -157,6 +163,10 @@ public class RestaurantProfile {
     // Transient field for main image URL (not persisted to database)
     @Transient
     private String mainImageUrl;
+    
+    // Transient field for distance calculation (not persisted to database)
+    @Transient
+    private Double distance;
 
     // === APPROVAL FIELDS ===
     @Enumerated(EnumType.STRING)
@@ -299,6 +309,22 @@ public class RestaurantProfile {
     
     public void setAddress(String address) {
         this.address = address;
+    }
+    
+    public BigDecimal getLatitude() {
+        return latitude;
+    }
+    
+    public void setLatitude(BigDecimal latitude) {
+        this.latitude = latitude;
+    }
+    
+    public BigDecimal getLongitude() {
+        return longitude;
+    }
+    
+    public void setLongitude(BigDecimal longitude) {
+        this.longitude = longitude;
     }
     
     public String getPhone() {
@@ -568,9 +594,17 @@ public class RestaurantProfile {
     public String getMainImageUrl() {
         return mainImageUrl;
     }
-
+    
     public void setMainImageUrl(String mainImageUrl) {
         this.mainImageUrl = mainImageUrl;
+    }
+    
+    public Double getDistance() {
+        return distance;
+    }
+    
+    public void setDistance(Double distance) {
+        this.distance = distance;
     }
 
     // === APPROVAL FIELDS GETTERS/SETTERS ===

@@ -32,6 +32,7 @@ import com.example.booking.service.CustomerService;
 import com.example.booking.service.ReviewService;
 import com.example.booking.service.NotificationService;
 import com.example.booking.repository.RestaurantMediaRepository;
+import com.example.booking.util.CityGeoResolver;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -77,6 +78,8 @@ public class HomeController {
     
     @Autowired
     private NotificationService notificationService;
+    
+    private final CityGeoResolver cityGeoResolver = new CityGeoResolver();
 
     /**
      * Home page - main landing page
@@ -372,19 +375,217 @@ public class HomeController {
             @RequestParam(required = false) String cuisineType,
             @RequestParam(required = false) String priceRange,
             @RequestParam(required = false) String ratingFilter,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude,
+            @RequestParam(required = false) Boolean nearby,
+            @RequestParam(required = false) Double maxDistance,
             Model model) {
         
         try {
             model.addAttribute("pageTitle", "Nhà hàng - Book Eat");
             model.addAttribute("activeNav", "restaurants");
             
-            // Create pageable
+            Page<RestaurantProfile> restaurants;
+            
+            // If nearby search is requested and coordinates are provided
+            if (Boolean.TRUE.equals(nearby) && latitude != null && longitude != null) {
+                log.info("📍 Nearby search requested - User location: lat={}, lon={}", latitude, longitude);
+                
+                // Validate coordinates
+                if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+                    log.error("❌ Invalid coordinates received: lat={}, lon={}", latitude, longitude);
+                    model.addAttribute("error", "Tọa độ không hợp lệ");
+                    // Fallback to normal filtering
+                    Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+                    Pageable pageable = PageRequest.of(page, size, sort);
+                    restaurants = restaurantService.getRestaurantsWithFilters(
+                        pageable, search, cuisineType, priceRange, ratingFilter);
+                } else {
+                    // Get all restaurants first (we'll filter and sort by distance)
+                    Pageable allPageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by("restaurantName"));
+                    Page<RestaurantProfile> allRestaurants = restaurantService.getRestaurantsWithFilters(
+                        allPageable, search, cuisineType, priceRange, ratingFilter);
+                    
+                    log.info("📊 Total restaurants found: {}", allRestaurants.getTotalElements());
+                    
+                    // Count restaurants with and without coordinates
+                    long restaurantsWithCoords = allRestaurants.getContent().stream()
+                        .filter(r -> r.getLatitude() != null && r.getLongitude() != null)
+                        .count();
+                    long restaurantsWithoutCoords = allRestaurants.getTotalElements() - restaurantsWithCoords;
+                    log.info("📍 Restaurants with coordinates: {} | Without coordinates: {}", 
+                        restaurantsWithCoords, restaurantsWithoutCoords);
+                    
+                    // Log first few restaurants without coordinates for debugging
+                    if (restaurantsWithoutCoords > 0) {
+                        log.warn("⚠️ Some restaurants don't have coordinates:");
+                        allRestaurants.getContent().stream()
+                            .filter(r -> r.getLatitude() == null || r.getLongitude() == null)
+                            .limit(5)
+                            .forEach(r -> log.warn("   - {} (ID: {}) - Address: {}", 
+                                r.getRestaurantName(), r.getRestaurantId(), r.getAddress()));
+                    }
+                    
+                    // Calculate distances - use database coordinates if available, otherwise fallback to CityGeoResolver
+                    List<RestaurantProfile> restaurantsWithDistance = allRestaurants.getContent().stream()
+                        .map(r -> {
+                            Double restaurantLat = null;
+                            Double restaurantLon = null;
+                            boolean fromDatabase = false;
+                            
+                            // Try to get coordinates from database first
+                            if (r.getLatitude() != null && r.getLongitude() != null) {
+                                restaurantLat = r.getLatitude().doubleValue();
+                                restaurantLon = r.getLongitude().doubleValue();
+                                fromDatabase = true;
+                                log.debug("✅ Restaurant {} has DB coordinates: ({}, {})", 
+                                    r.getRestaurantName(), restaurantLat, restaurantLon);
+                            } else {
+                                // Fallback: try to resolve coordinates from address using CityGeoResolver
+                                CityGeoResolver.LatLng approx = cityGeoResolver.resolveFromAddress(r.getAddress());
+                                if (approx != null) {
+                                    restaurantLat = approx.lat;
+                                    restaurantLon = approx.lng;
+                                    fromDatabase = false;
+                                    log.debug("📍 Restaurant {} coordinates resolved from address: ({}, {}) - Address: {}", 
+                                        r.getRestaurantName(), restaurantLat, restaurantLon, r.getAddress());
+                                } else {
+                                    log.debug("⚠️ Restaurant {} has no coordinates (DB: null, Address: '{}' - cannot resolve)", 
+                                        r.getRestaurantName(), r.getAddress());
+                                }
+                            }
+                            
+                            // If we have coordinates (from DB or address), calculate distance
+                            if (restaurantLat != null && restaurantLon != null) {
+                                // If coordinates were resolved from address, store them in restaurant for later use
+                                if (!fromDatabase) {
+                                    r.setLatitude(java.math.BigDecimal.valueOf(restaurantLat));
+                                    r.setLongitude(java.math.BigDecimal.valueOf(restaurantLon));
+                                    log.debug("📍 Stored resolved coordinates in restaurant object: ({}, {})", 
+                                        restaurantLat, restaurantLon);
+                                }
+                                
+                                double distance = calculateDistance(latitude, longitude, restaurantLat, restaurantLon);
+                                r.setDistance(distance);
+                                log.debug("📏 Restaurant {} - Distance: {} km (from {} coordinates: {}, {})", 
+                                    r.getRestaurantName(), 
+                                    String.format("%.2f", distance), 
+                                    fromDatabase ? "DB" : "address", 
+                                    restaurantLat, restaurantLon);
+                                return r;
+                            }
+                            
+                            // No coordinates available - return null to filter out
+                            log.debug("❌ Restaurant {} has no coordinates - filtering out", r.getRestaurantName());
+                            return null;
+                        })
+                        .filter(java.util.Objects::nonNull)
+                        .filter(r -> {
+                            // Filter by maxDistance if provided
+                            if (maxDistance != null && maxDistance > 0 && r.getDistance() != null) {
+                                boolean withinDistance = r.getDistance() <= maxDistance;
+                                if (!withinDistance) {
+                                    log.debug("📍 Restaurant {} filtered out (distance: {} km > maxDistance: {} km)", 
+                                        r.getRestaurantName(), 
+                                        r.getDistance() != null ? String.format("%.2f", r.getDistance()) : "0.00", 
+                                        String.format("%.2f", maxDistance));
+                                }
+                                return withinDistance;
+                            }
+                            return true; // No distance filter, include all
+                        })
+                        .sorted((r1, r2) -> Double.compare(
+                            r1.getDistance() != null ? r1.getDistance() : Double.MAX_VALUE,
+                            r2.getDistance() != null ? r2.getDistance() : Double.MAX_VALUE))
+                        .collect(java.util.stream.Collectors.toList());
+                    
+                    // Log distance filter info
+                    // Note: restaurantsWithDistance is already filtered by maxDistance above
+                    if (maxDistance != null && maxDistance > 0) {
+                        log.info("📍 Distance filter applied: maxDistance={} km", maxDistance);
+                        log.info("✅ Restaurants within {} km: {} (filtered from {} total restaurants)", 
+                            maxDistance, restaurantsWithDistance.size(), allRestaurants.getTotalElements());
+                    } else {
+                        log.info("✅ Restaurants with coordinates: {} (no distance filter, showing all within range)", 
+                            restaurantsWithDistance.size());
+                    }
+                    
+                    if (restaurantsWithDistance.isEmpty()) {
+                        log.warn("⚠️ No restaurants found with coordinates near user location");
+                        log.warn("   User location: ({}, {})", latitude, longitude);
+                        if (maxDistance != null && maxDistance > 0) {
+                            log.warn("   Max distance filter: {} km", maxDistance);
+                        }
+                        log.warn("   This might mean:");
+                        log.warn("   1. No restaurants have coordinates in database");
+                        if (maxDistance != null && maxDistance > 0) {
+                            log.warn("   2. All restaurants are farther than {} km from user location", maxDistance);
+                        } else {
+                            log.warn("   2. All restaurants are too far from user location");
+                        }
+                    } else {
+                        // Log top 10 closest restaurants for debugging
+                        log.info("🎯 Top 10 closest restaurants (from user location: {}, {}):", latitude, longitude);
+                        int count = Math.min(10, restaurantsWithDistance.size());
+                        for (int i = 0; i < count; i++) {
+                            RestaurantProfile r = restaurantsWithDistance.get(i);
+                            String coordsStr = "N/A";
+                            if (r.getLatitude() != null && r.getLongitude() != null) {
+                                coordsStr = String.format("%.6f, %.6f", 
+                                    r.getLatitude().doubleValue(), r.getLongitude().doubleValue());
+                            }
+                            log.info("   {}. {} - Distance: {} km - Coords: ({}) - Address: {}", 
+                                i + 1, r.getRestaurantName(), 
+                                r.getDistance() != null ? String.format("%.2f", r.getDistance()) : "N/A", 
+                                coordsStr, r.getAddress());
+                        }
+                        
+                        // Log closest restaurant with detailed info
+                        RestaurantProfile closest = restaurantsWithDistance.get(0);
+                        String closestCoordsStr = "N/A";
+                        if (closest.getLatitude() != null && closest.getLongitude() != null) {
+                            closestCoordsStr = String.format("%.6f, %.6f", 
+                                closest.getLatitude().doubleValue(), closest.getLongitude().doubleValue());
+                        }
+                        log.info("🎯 Closest restaurant: {} - Distance: {} km - Coords: ({}) - Address: {}", 
+                            closest.getRestaurantName(), 
+                            closest.getDistance() != null ? String.format("%.2f", closest.getDistance()) : "N/A", 
+                            closestCoordsStr, closest.getAddress());
+                        
+                        // Verify Đà Nẵng location
+                        double daNangLat = 16.047079;
+                        double daNangLon = 108.206230;
+                        double distanceToDaNang = calculateDistance(latitude, longitude, daNangLat, daNangLon);
+                        log.info("📍 User location verification: Distance to Đà Nẵng center: {} km", 
+                            String.format("%.2f", distanceToDaNang));
+                        if (distanceToDaNang > 10) {
+                            log.warn("⚠️ User location seems far from Đà Nẵng center ({} km). Expected < 10 km.", distanceToDaNang);
+                        }
+                    }
+                    
+                    // Apply pagination manually
+                    int start = page * size;
+                    int end = Math.min(start + size, restaurantsWithDistance.size());
+                    List<RestaurantProfile> pagedContent = start < restaurantsWithDistance.size() 
+                        ? restaurantsWithDistance.subList(start, end)
+                        : Collections.emptyList();
+                    
+                    restaurants = new org.springframework.data.domain.PageImpl<>(
+                        pagedContent, PageRequest.of(page, size), restaurantsWithDistance.size());
+                    
+                    model.addAttribute("userLatitude", latitude);
+                    model.addAttribute("userLongitude", longitude);
+                    model.addAttribute("nearbySearch", true);
+                    model.addAttribute("maxDistance", maxDistance);
+                }
+            } else {
+                // Normal filtering without location
             Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
             Pageable pageable = PageRequest.of(page, size, sort);
             
-            // Get restaurants with filters using RestaurantManagementService
-            Page<RestaurantProfile> restaurants = restaurantService.getRestaurantsWithFilters(
+                restaurants = restaurantService.getRestaurantsWithFilters(
                 pageable, search, cuisineType, priceRange, ratingFilter);
+            }
             
             // ===== PERFORMANCE OPTIMIZATION: Fix N+1 with batch query =====
             // BEFORE: Loop through each restaurant and query media separately (1 + N queries)
@@ -434,6 +635,10 @@ public class HomeController {
             model.addAttribute("ratingFilter", ratingFilter);
             model.addAttribute("sortBy", sortBy);
             model.addAttribute("sortDir", sortDir);
+            if (latitude != null) model.addAttribute("latitude", latitude);
+            if (longitude != null) model.addAttribute("longitude", longitude);
+            if (nearby != null) model.addAttribute("nearby", nearby);
+            if (maxDistance != null) model.addAttribute("maxDistance", maxDistance);
             
             return "public/restaurants";
             
@@ -633,5 +838,30 @@ public class HomeController {
             }
             return "redirect:/restaurants?error=" + errorMessage;
         }
+    }
+    
+    /**
+     * Calculate distance between two coordinates using Haversine formula
+     * @param lat1 Latitude of first point
+     * @param lon1 Longitude of first point
+     * @param lat2 Latitude of second point
+     * @param lon2 Longitude of second point
+     * @return Distance in kilometers
+     */
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int EARTH_RADIUS_KM = 6371;
+        
+        double lat1Rad = Math.toRadians(lat1);
+        double lat2Rad = Math.toRadians(lat2);
+        double deltaLatRad = Math.toRadians(lat2 - lat1);
+        double deltaLonRad = Math.toRadians(lon2 - lon1);
+        
+        double a = Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
+                   Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+                   Math.sin(deltaLonRad / 2) * Math.sin(deltaLonRad / 2);
+        
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        
+        return EARTH_RADIUS_KM * c;
     }
 }
