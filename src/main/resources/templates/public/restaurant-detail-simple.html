@@ -1770,31 +1770,66 @@
                 return;
             }
             
+            // Disable button to prevent multiple clicks
+            if (button) {
+                button.disabled = true;
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang mở...';
+            }
+            
             try {
+                // Wait for messengerChatWidget to be initialized if not ready
+                let attempts = 0;
+                while ((typeof messengerChatWidget === 'undefined' || !messengerChatWidget) && attempts < 10) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
                 // Create or get chat room
                 const response = await fetch(`/api/chat/rooms?restaurantId=${restaurantId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    credentials: 'include' // Important: include cookies for session
                 });
                 
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
+                        // Session expired or not authenticated
                         window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
                         return;
                     }
-                    throw new Error('Failed to create chat room');
+                    
+                    // Try to get error message from response
+                    let errorMessage = 'Không thể tạo phòng chat';
+                    try {
+                        const errorData = await response.text();
+                        if (errorData) {
+                            errorMessage = errorData;
+                        }
+                    } catch (e) {
+                        // Ignore parsing error
+                    }
+                    
+                    throw new Error(`HTTP ${response.status}: ${errorMessage}`);
                 }
                 
                 const data = await response.json();
                 const roomId = data.roomId;
                 
-                // Get restaurant name from the page
-                const restaurantName = document.querySelector('.section-title')?.textContent || 'Nhà hàng';
+                if (!roomId) {
+                    throw new Error('Không nhận được ID phòng chat từ server');
+                }
                 
-                // Check if messenger chat widget exists
-                if (typeof messengerChatWidget !== 'undefined' && messengerChatWidget) {
+                // Get restaurant name from the page
+                const restaurantName = document.querySelector('.section-title')?.textContent || 
+                                      document.querySelector('h1')?.textContent || 
+                                      'Nhà hàng';
+                
+                // Check if messenger chat widget exists and is initialized
+                if (typeof messengerChatWidget !== 'undefined' && messengerChatWidget && 
+                    typeof messengerChatWidget.openChat === 'function') {
                     // Open chat widget
                     messengerChatWidget.openChat();
                     // Open the specific room
@@ -1805,7 +1840,27 @@
                 }
             } catch (error) {
                 console.error('Error opening chat:', error);
-                alert('Không thể mở chat. Vui lòng thử lại sau.');
+                
+                // Show user-friendly error message
+                let errorMessage = 'Không thể mở chat. Vui lòng thử lại sau.';
+                if (error.message) {
+                    if (error.message.includes('401') || error.message.includes('403')) {
+                        errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                        setTimeout(() => {
+                            window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+                        }, 2000);
+                    } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                        errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.';
+                    }
+                }
+                
+                alert(errorMessage);
+            } finally {
+                // Re-enable button
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-paper-plane"></i> Nhắn tin cho chúng tôi';
+                }
             }
         }
         
@@ -2457,6 +2512,19 @@
                 this.setupEventListeners();
                 this.loadUnreadCount();
                 this.initWebSocket();
+                // Restore chat state from localStorage
+                this.restoreChatState();
+            }
+            
+            restoreChatState() {
+                // Check if chat was open in previous session
+                const wasOpen = localStorage.getItem('messengerChatOpen') === 'true';
+                if (wasOpen) {
+                    // Small delay to ensure DOM is ready
+                    setTimeout(() => {
+                        this.openChat();
+                    }, 500);
+                }
             }
             
             setupEventListeners() {
@@ -2522,6 +2590,8 @@
                 window.style.display = 'flex';
                 this.isMinimized = false;
                 this.loadChatRooms();
+                // Save state to localStorage
+                localStorage.setItem('messengerChatOpen', 'true');
             }
             
             minimizeChat() {
@@ -2535,6 +2605,8 @@
                 window.style.display = 'none';
                 this.currentRoomId = null;
                 this.showRoomsView();
+                // Save closed state to localStorage
+                localStorage.setItem('messengerChatOpen', 'false');
             }
             
             async loadChatRooms() {
@@ -3057,15 +3129,33 @@
         let messengerChatWidget;
         document.addEventListener('DOMContentLoaded', function() {
             // Load user info for chat
-            fetch('/api/user/current')
-                .then(response => response.json())
+            fetch('/api/user/current', {
+                credentials: 'include' // Important: include cookies for session
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401 || response.status === 403) {
+                            // User not authenticated, widget will not be initialized
+                            console.log('User not authenticated, chat widget disabled');
+                            return null;
+                        }
+                        throw new Error('Failed to load user info');
+                    }
+                    return response.json();
+                })
                 .then(user => {
-                    messengerChatWidget = new MessengerChatWidget();
-                    messengerChatWidget.currentUserId = user.id;
+                    if (user && user.id) {
+                        messengerChatWidget = new MessengerChatWidget();
+                        messengerChatWidget.currentUserId = user.id;
+                        console.log('Messenger chat widget initialized for user:', user.id);
+                    } else {
+                        console.log('No user data, chat widget not initialized');
+                    }
                 })
                 .catch(error => {
                     console.error('Error loading user info:', error);
-                    messengerChatWidget = new MessengerChatWidget();
+                    // Don't initialize widget if we can't get user info
+                    // This prevents errors when trying to use the widget
                 });
         });
     </script>
