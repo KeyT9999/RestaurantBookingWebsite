@@ -329,7 +329,7 @@ public class HomeControllerTest {
             .thenReturn(Collections.emptyList());
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -350,7 +350,7 @@ public class HomeControllerTest {
             .thenReturn(Collections.emptyList());
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "asc", searchTerm, null, null, null, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", searchTerm, null, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -372,7 +372,7 @@ public class HomeControllerTest {
 
         // When
         String view = controller.restaurants(0, 12, "restaurantName", "asc", "pizza", 
-            "Italian", "100000-300000", null, model);
+            "Italian", "100000-300000", null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -392,7 +392,7 @@ public class HomeControllerTest {
             .thenReturn(Collections.emptyList());
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, cuisineType, null, null, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, cuisineType, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -412,7 +412,7 @@ public class HomeControllerTest {
             .thenReturn(Collections.emptyList());
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, priceRange, null, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, priceRange, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -432,7 +432,7 @@ public class HomeControllerTest {
             .thenReturn(Collections.emptyList());
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, ratingFilter, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, ratingFilter, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -451,7 +451,7 @@ public class HomeControllerTest {
             .thenReturn(Collections.emptyList());
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "desc", null, null, null, null, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "desc", null, null, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -471,7 +471,7 @@ public class HomeControllerTest {
             .thenReturn(Collections.emptyList());
 
         // When
-        String view = controller.restaurants(1, 12, "restaurantName", "asc", null, null, null, null, model);
+        String view = controller.restaurants(1, 12, "restaurantName", "asc", null, null, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -490,7 +490,7 @@ public class HomeControllerTest {
             isNull(), isNull(), isNull())).thenReturn(restaurantPage);
 
         // When
-        String view = controller.restaurants(2, 10, "restaurantName", "asc", null, null, null, null, model);
+        String view = controller.restaurants(2, 10, "restaurantName", "asc", null, null, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -515,7 +515,7 @@ public class HomeControllerTest {
             .thenReturn(List.of(coverImage));
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -530,7 +530,7 @@ public class HomeControllerTest {
                 .thenThrow(new RuntimeException("Database error"));
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -548,7 +548,7 @@ public class HomeControllerTest {
             isNull(), isNull(), isNull())).thenReturn(restaurantPage);
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);
@@ -563,7 +563,7 @@ public class HomeControllerTest {
             isNull(), isNull(), isNull())).thenThrow(new RuntimeException("Database error"));
 
         // When
-        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, model);
+        String view = controller.restaurants(0, 12, "restaurantName", "asc", null, null, null, null, null, null, null, null, model);
 
         // Then
         assertEquals("public/restaurants", view);

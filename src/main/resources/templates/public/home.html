@@ -1179,8 +1179,14 @@
       window.APP_CTX = window.APP_CTX || {};
       APP_CTX.authenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
       APP_CTX.isRestaurantOwner = /*[[${#authorization.expression('hasRole(''RESTAURANT_OWNER'')')}]]*/ false;
-      APP_CTX.showLocationPrompt = /*[[${session.SHOW_LOCATION_PROMPT}]]*/ false;
+      APP_CTX.showLocationPrompt = /*[[${session.SHOW_LOCATION_PROMPT != null ? session.SHOW_LOCATION_PROMPT : false}]]*/ false;
       APP_CTX.baseUrl = /*[[@{/}]]*/ '/';
+      console.log('🚀 APP_CTX initialized:', {
+        authenticated: APP_CTX.authenticated,
+        isRestaurantOwner: APP_CTX.isRestaurantOwner,
+        showLocationPrompt: APP_CTX.showLocationPrompt,
+        sessionValue: /*[[${session.SHOW_LOCATION_PROMPT}]]*/ null
+      });
     </script>
     <script th:src="@{/js/ai-search.js}"></script>
     <script th:src="@{/js/location.js}"></script>

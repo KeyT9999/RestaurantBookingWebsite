@@ -980,9 +980,32 @@
                                     <option value="averageRating-desc" th:selected="${sortBy == 'averageRating' and sortDir == 'desc'}">Đánh giá cao nhất</option>
                                     <option value="averagePrice-asc" th:selected="${sortBy == 'averagePrice' and sortDir == 'asc'}">Giá thấp nhất</option>
                                     <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' and sortDir == 'desc'}">Giá cao nhất</option>
+                                    <option value="distance-asc" th:selected="${sortBy == 'distance' and sortDir == 'asc'}" th:if="${nearbySearch != null and nearbySearch == true}">Gần nhất</option>
+                                </select>
+                            </div>
+                            <!-- Distance Filter - Only show when location is available -->
+                            <div class="ds-form-group filter-item" th:if="${nearbySearch != null and nearbySearch == true}">
+                                <label class="ds-form-label" for="distanceFilter">
+                                    <i class="fas fa-route"></i> Khoảng cách (km)
+                                </label>
+                                <select id="distanceFilter" class="ds-form-select">
+                                    <option value="">Tất cả khoảng cách</option>
+                                    <option value="1" th:selected="${maxDistance != null and maxDistance == 1.0}">Trong 1 km</option>
+                                    <option value="3" th:selected="${maxDistance != null and maxDistance == 3.0}">Trong 3 km</option>
+                                    <option value="5" th:selected="${maxDistance != null and maxDistance == 5.0}">Trong 5 km</option>
+                                    <option value="10" th:selected="${maxDistance != null and maxDistance == 10.0}">Trong 10 km</option>
+                                    <option value="20" th:selected="${maxDistance != null and maxDistance == 20.0}">Trong 20 km</option>
+                                    <option value="50" th:selected="${maxDistance != null and maxDistance == 50.0}">Trong 50 km</option>
                                 </select>
                             </div>
                                 <div class="filter-actions">
+                                    <button type="button" id="nearbyRestaurantsBtn"
+                                            class="ds-btn ds-btn-primary"
+                                            onclick="findNearbyRestaurants()"
+                                            style="background: linear-gradient(135deg, #E60023 0%, #C0001D 100%); border: none;">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        Nhà hàng gần bạn
+                                    </button>
                                     <button type="button" id="filterActions"
                                             class="ds-btn ds-btn-primary"
                                             onclick="applyFilters()">
@@ -1045,6 +1068,12 @@
                                     <span th:text="${restaurant.address}">Địa chỉ</span>
                                 </div>
                                 
+                                <!-- Distance (when available) -->
+                                <div class="restaurant-detail-item" th:if="${restaurant.distance != null}">
+                                    <i class="fas fa-route icon"></i>
+                                    <span th:text="${#numbers.formatDecimal(restaurant.distance, 1, 'COMMA', 1, 'POINT')} + ' km'">Khoảng cách</span>
+                                </div>
+                                
                                 <!-- Cuisine Type -->
                                 <div class="restaurant-detail-item cuisine" th:if="${restaurant.cuisineType != null}">
                                     <i class="fas fa-utensils icon"></i>
@@ -1102,19 +1131,19 @@
                 <nav th:if="${totalPages > 1}" class="pagination-new" aria-label="Pagination">
                     <a class="pagination-btn-new"
                        th:classappend="${currentPage == 0} ? 'disabled' : ''"
-                       th:href="${currentPage == 0} ? '#' : @{/restaurants(page=${currentPage - 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                       th:href="${currentPage == 0} ? '#' : @{/restaurants(page=${currentPage - 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter}, latitude=${latitude}, longitude=${longitude}, nearby=${nearby}, maxDistance=${maxDistance})}">
                         <i class="fas fa-chevron-left"></i>
                     </a>
                     
                     <a th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}"
                        class="pagination-btn-new"
                        th:classappend="${pageNum == currentPage} ? 'active' : ''"
-                       th:href="@{/restaurants(page=${pageNum}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}"
+                       th:href="@{/restaurants(page=${pageNum}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter}, latitude=${latitude}, longitude=${longitude}, nearby=${nearby}, maxDistance=${maxDistance})}"
                        th:text="${pageNum + 1}">1</a>
                     
                     <a class="pagination-btn-new"
                        th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''"
-                       th:href="${currentPage == totalPages - 1} ? '#' : @{/restaurants(page=${currentPage + 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter})}">
+                       th:href="${currentPage == totalPages - 1} ? '#' : @{/restaurants(page=${currentPage + 1}, size=${restaurants.size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search}, cuisineType=${cuisineType}, priceRange=${priceRange}, ratingFilter=${ratingFilter}, latitude=${latitude}, longitude=${longitude}, nearby=${nearby}, maxDistance=${maxDistance})}">
                         <i class="fas fa-chevron-right"></i>
                     </a>
                 </nav>
@@ -1852,6 +1881,20 @@
         </div>
     </div>
 
+    <!-- APP_CTX Bootstrapper (must be before location.js) -->
+    <script th:inline="javascript">
+      window.APP_CTX = window.APP_CTX || {};
+      APP_CTX.authenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
+      APP_CTX.isRestaurantOwner = /*[[${#authorization.expression('hasRole(''RESTAURANT_OWNER'')')}]]*/ false;
+      APP_CTX.showLocationPrompt = /*[[${session.SHOW_LOCATION_PROMPT != null ? session.SHOW_LOCATION_PROMPT : false}]]*/ false;
+      APP_CTX.baseUrl = /*[[@{/}]]*/ '/';
+      console.log('🚀 APP_CTX initialized on restaurants page:', {
+        authenticated: APP_CTX.authenticated,
+        isRestaurantOwner: APP_CTX.isRestaurantOwner,
+        showLocationPrompt: APP_CTX.showLocationPrompt
+      });
+    </script>
+
     <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
 
     <!-- WebSocket Libraries for Chat -->
@@ -1871,6 +1914,9 @@
                     }
                 });
             }
+            
+            // Note: We don't auto-add location to URL anymore
+            // Location will only be added when user clicks "Nhà hàng gần bạn" button
         });
 
         function loadFavoriteStatus() {
@@ -2036,6 +2082,7 @@
             const cuisineFilter = document.getElementById('cuisineFilter');
             const priceFilter = document.getElementById('priceFilter');
             const sortSelect = document.getElementById('sortSelect');
+            const distanceFilter = document.getElementById('distanceFilter');
             
             if (!searchInput || !cuisineFilter || !priceFilter || !sortSelect) {
                 console.error('Filter elements not found');
@@ -2047,6 +2094,7 @@
             const priceRange = priceFilter.value;
             const sortValue = sortSelect.value;
             const [sortBy, sortDir] = sortValue.split('-');
+            const maxDistance = distanceFilter ? distanceFilter.value : null;
 
             const url = new URL(window.location);
             
@@ -2069,11 +2117,47 @@
                 url.searchParams.delete('priceRange');
             }
             
-            url.searchParams.set('sortBy', sortBy);
-            url.searchParams.set('sortDir', sortDir);
+            // Preserve location parameters if they exist
+            const urlParams = new URLSearchParams(window.location.search);
+            const latitude = urlParams.get('latitude');
+            const longitude = urlParams.get('longitude');
+            const nearby = urlParams.get('nearby');
+            
+            // Set distance filter if provided and location is available (for nearby search)
+            if (maxDistance && maxDistance !== '' && latitude && longitude && nearby === 'true') {
+                url.searchParams.set('maxDistance', maxDistance);
+                // When applying distance filter with location, sort by distance
+                url.searchParams.set('sortBy', 'distance');
+                url.searchParams.set('sortDir', 'asc');
+            } else if (maxDistance && maxDistance !== '') {
+                // Distance filter selected but no location - remove it
+                url.searchParams.delete('maxDistance');
+            } else {
+                url.searchParams.delete('maxDistance');
+            }
+            
+            if (latitude && longitude && nearby === 'true') {
+                url.searchParams.set('latitude', latitude);
+                url.searchParams.set('longitude', longitude);
+                url.searchParams.set('nearby', 'true');
+                // If distance filter is applied, ensure sort by distance
+                if (maxDistance && maxDistance !== '') {
+                    url.searchParams.set('sortBy', 'distance');
+                    url.searchParams.set('sortDir', 'asc');
+                } else {
+                    // Use selected sort, but prefer distance if available
+                    url.searchParams.set('sortBy', sortBy);
+                    url.searchParams.set('sortDir', sortDir);
+                }
+            } else {
+                // No location - use selected sort
+                url.searchParams.set('sortBy', sortBy);
+                url.searchParams.set('sortDir', sortDir);
+            }
+            
             url.searchParams.set('page', '0');
 
-            console.log('Applying filters:', { search, cuisineType, priceRange, sortBy, sortDir });
+            console.log('Applying filters:', { search, cuisineType, priceRange, maxDistance, sortBy, sortDir });
             window.location.href = url.toString();
         }
 
@@ -2082,27 +2166,254 @@
             const cuisineFilter = document.getElementById('cuisineFilter');
             const priceFilter = document.getElementById('priceFilter');
             const sortSelect = document.getElementById('sortSelect');
+            const distanceFilter = document.getElementById('distanceFilter');
             
             if (searchInput) searchInput.value = '';
             if (cuisineFilter) cuisineFilter.value = '';
             if (priceFilter) priceFilter.value = '';
             if (sortSelect) sortSelect.value = 'restaurantName-asc';
+            if (distanceFilter) distanceFilter.value = '';
 
             const url = new URL(window.location);
             url.searchParams.delete('search');
             url.searchParams.delete('cuisineType');
             url.searchParams.delete('priceRange');
             url.searchParams.delete('ratingFilter');
-            url.searchParams.set('sortBy', 'restaurantName');
-            url.searchParams.set('sortDir', 'asc');
+            url.searchParams.delete('maxDistance');
+            
+            // Preserve location parameters if they exist (keep nearby search active)
+            const urlParams = new URLSearchParams(window.location.search);
+            const latitude = urlParams.get('latitude');
+            const longitude = urlParams.get('longitude');
+            const nearby = urlParams.get('nearby');
+            
+            if (latitude && longitude && nearby === 'true') {
+                url.searchParams.set('latitude', latitude);
+                url.searchParams.set('longitude', longitude);
+                url.searchParams.set('nearby', 'true');
+                url.searchParams.set('sortBy', 'distance');
+                url.searchParams.set('sortDir', 'asc');
+            } else {
+                url.searchParams.set('sortBy', 'restaurantName');
+                url.searchParams.set('sortDir', 'asc');
+            }
+            
             url.searchParams.set('page', '0');
 
             window.location.href = url.toString();
         }
         
+        function findNearbyRestaurants() {
+            const btn = document.getElementById('nearbyRestaurantsBtn');
+            if (!btn) return;
+            
+            // Disable button and show loading state
+            btn.disabled = true;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tìm...';
+            
+            // Wait for LocationUtils to be available
+            function tryGetLocation() {
+                if (window.LocationUtils && window.LocationUtils.getUserLocation) {
+                    console.log('✅ LocationUtils is available, getting location...');
+                    window.LocationUtils.getUserLocation(
+                        function(position) {
+                            const latitude = position.latitude;
+                            const longitude = position.longitude;
+                            
+                            console.log('✅ User location retrieved (from cache or new):', latitude, longitude);
+                            console.log('📍 Location details:', {
+                                latitude: latitude,
+                                longitude: longitude,
+                                accuracy: position.accuracy || 'N/A',
+                                timestamp: new Date().toISOString()
+                            });
+                            
+                            // Validate coordinates
+                            if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+                                console.error('❌ Invalid coordinates:', latitude, longitude);
+                                btn.disabled = false;
+                                btn.innerHTML = originalHTML;
+                                showToast('Tọa độ không hợp lệ. Vui lòng thử lại.', 'error');
+                                return;
+                            }
+                            
+                            // Check if coordinates seem reasonable for Vietnam
+                            // Vietnam bounds: ~8.5°N to 23.5°N, ~102°E to 110°E
+                            if (latitude < 8 || latitude > 24 || longitude < 102 || longitude > 111) {
+                                console.warn('⚠️ Coordinates outside Vietnam bounds:', latitude, longitude);
+                                console.warn('   Expected range: lat 8-24, lon 102-111');
+                                console.warn('   Đà Nẵng should be around: lat 16.047079, lon 108.206230');
+                                // Still proceed, but log warning
+                            }
+                            
+                            // Get maxDistance from distance filter if available
+                            const distanceFilter = document.getElementById('distanceFilter');
+                            const maxDistance = distanceFilter ? distanceFilter.value : '';
+                            
+                            // Redirect to restaurants page with location parameters
+                            const url = new URL(window.location);
+                            url.searchParams.set('latitude', latitude);
+                            url.searchParams.set('longitude', longitude);
+                            url.searchParams.set('nearby', 'true');
+                            url.searchParams.set('page', '0');
+                            
+                            // Clear other filters when using nearby search
+                            url.searchParams.delete('search');
+                            url.searchParams.delete('cuisineType');
+                            url.searchParams.delete('priceRange');
+                            url.searchParams.delete('ratingFilter');
+                            
+                            // Apply maxDistance filter if selected
+                            if (maxDistance) {
+                                url.searchParams.set('maxDistance', maxDistance);
+                                console.log('📍 Applying distance filter: ' + maxDistance + ' km');
+                            } else {
+                                url.searchParams.delete('maxDistance');
+                            }
+                            
+                            url.searchParams.set('sortBy', 'distance');
+                            url.searchParams.set('sortDir', 'asc');
+                            
+                            console.log('🔄 Redirecting to:', url.toString());
+                            window.location.href = url.toString();
+                        },
+                        function(errorMessage) {
+                            console.error('❌ Error getting location:', errorMessage);
+                            btn.disabled = false;
+                            btn.innerHTML = originalHTML;
+                            showToast(errorMessage, 'error');
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 30 * 60 * 1000  // Allow using cached location up to 30 minutes old
+                        }
+                    );
+                } else {
+                    console.log('⏳ Waiting for LocationUtils...');
+                    // Retry after a short delay
+                    setTimeout(tryGetLocation, 100);
+                }
+            }
+            
+            // Start trying to get location
+            tryGetLocation();
+            
+            // Fallback to direct geolocation if LocationUtils not available after 2 seconds
+            let fallbackTimeout = setTimeout(function() {
+                if (!window.LocationUtils || !window.LocationUtils.getUserLocation) {
+                    console.log('⚠️ LocationUtils not available after 2 seconds, using fallback geolocation');
+                    
+                    if (!navigator.geolocation) {
+                        showToast('Trình duyệt của bạn không hỗ trợ định vị. Vui lòng sử dụng trình duyệt khác.', 'error');
+                        btn.disabled = false;
+                        btn.innerHTML = originalHTML;
+                        return;
+                    }
+                    
+                    navigator.geolocation.getCurrentPosition(
+                        function(position) {
+                            const latitude = position.coords.latitude;
+                            const longitude = position.coords.longitude;
+                            
+                            // Save to LocationUtils if available
+                            if (window.LocationUtils && window.LocationUtils.setLocation) {
+                                window.LocationUtils.setLocation(latitude, longitude);
+                            }
+                            
+                            console.log('✅ User location (fallback):', latitude, longitude);
+                            
+                            // Redirect to restaurants page with location parameters
+                            const url = new URL(window.location);
+                            url.searchParams.set('latitude', latitude);
+                            url.searchParams.set('longitude', longitude);
+                            url.searchParams.set('nearby', 'true');
+                            url.searchParams.set('page', '0');
+                            
+                            // Clear other filters when using nearby search
+                            url.searchParams.delete('search');
+                            url.searchParams.delete('cuisineType');
+                            url.searchParams.delete('priceRange');
+                            url.searchParams.delete('ratingFilter');
+                            url.searchParams.set('sortBy', 'distance');
+                            url.searchParams.set('sortDir', 'asc');
+                            
+                            window.location.href = url.toString();
+                        },
+                        function(error) {
+                            btn.disabled = false;
+                            btn.innerHTML = originalHTML;
+                            
+                            let errorMessage = 'Không thể lấy vị trí của bạn. ';
+                            switch(error.code) {
+                                case error.PERMISSION_DENIED:
+                                    errorMessage += 'Bạn đã từ chối quyền truy cập vị trí. Vui lòng cho phép truy cập vị trí trong cài đặt trình duyệt.';
+                                    break;
+                                case error.POSITION_UNAVAILABLE:
+                                    errorMessage += 'Vị trí không khả dụng.';
+                                    break;
+                                case error.TIMEOUT:
+                                    errorMessage += 'Yêu cầu lấy vị trí đã hết thời gian chờ.';
+                                    break;
+                                default:
+                                    errorMessage += 'Đã xảy ra lỗi không xác định.';
+                                    break;
+                            }
+                            showToast(errorMessage, 'error');
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 30 * 60 * 1000  // Allow using cached location up to 30 minutes old
+                        }
+                    );
+                }
+            }, 2000);
+            
+            // Clear fallback timeout if LocationUtils becomes available
+            const checkInterval = setInterval(function() {
+                if (window.LocationUtils && window.LocationUtils.getUserLocation) {
+                    clearTimeout(fallbackTimeout);
+                    clearInterval(checkInterval);
+                }
+            }, 100);
+        }
+        
         // Make functions globally available
         window.applyFilters = applyFilters;
         window.clearFilters = clearFilters;
+        window.findNearbyRestaurants = findNearbyRestaurants;
+        
+        // Auto-apply distance filter when changed (if location is available)
+        document.addEventListener('DOMContentLoaded', function() {
+            const distanceFilter = document.getElementById('distanceFilter');
+            if (distanceFilter) {
+                // Check if location is available in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const latitude = urlParams.get('latitude');
+                const longitude = urlParams.get('longitude');
+                const nearby = urlParams.get('nearby');
+                
+                // Only auto-apply if location is available (nearby search is active)
+                if (latitude && longitude && nearby === 'true') {
+                    distanceFilter.addEventListener('change', function() {
+                        const maxDistance = this.value;
+                        console.log('📍 Distance filter changed:', maxDistance);
+                        
+                        // Apply filter immediately if location is available
+                        if (maxDistance) {
+                            console.log('✅ Auto-applying distance filter:', maxDistance + ' km');
+                            applyFilters();
+                        } else {
+                            // Clear distance filter
+                            console.log('🗑️ Clearing distance filter');
+                            applyFilters();
+                        }
+                    });
+                }
+            }
+        });
 
         // Messenger Chat Widget
         class MessengerChatWidget {
