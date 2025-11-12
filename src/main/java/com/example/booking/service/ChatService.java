@@ -60,11 +60,28 @@ public class ChatService {
     
     /**
      * Create chat room between customer and restaurant
+     * Automatically creates Customer entity if it doesn't exist
      */
     public ChatRoom createCustomerRestaurantRoom(UUID userId, Integer restaurantId) {
-        // Find customer by user ID
-        Customer customer = customerRepository.findByUserId(userId)
-            .orElseThrow(() -> new RuntimeException("Customer not found for user ID: " + userId));
+        // Find customer by user ID, create if not exists
+        Customer customer = customerRepository.findByUserId(userId).orElse(null);
+        
+        if (customer == null) {
+            // Customer entity doesn't exist, create it automatically
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+            
+            // Verify user has CUSTOMER role
+            if (user.getRole() != UserRole.CUSTOMER && user.getRole() != UserRole.customer) {
+                throw new RuntimeException("User is not a customer: " + userId);
+            }
+            
+            // Create new Customer entity
+            customer = new Customer();
+            customer.setUser(user);
+            customer.setFullName(user.getFullName() != null ? user.getFullName() : user.getUsername());
+            customer = customerRepository.save(customer);
+        }
         
         // Check if room already exists
         Optional<ChatRoom> existingRoom = chatRoomRepository.findByCustomerAndRestaurant(customer.getUser().getId(), restaurantId);

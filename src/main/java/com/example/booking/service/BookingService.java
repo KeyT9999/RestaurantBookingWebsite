@@ -612,6 +612,12 @@ public class BookingService {
         List<Booking> bookings = bookingRepository.findByCustomerOrderByBookingTimeDesc(customer);
         System.out.println("📋 Repository returned " + bookings.size() + " bookings");
 
+        // Filter out DELETED bookings
+        bookings = bookings.stream()
+                .filter(booking -> booking.getStatus() != BookingStatus.DELETED)
+                .toList();
+        System.out.println("📋 After filtering DELETED: " + bookings.size() + " bookings");
+
         // Log each booking details
         for (int i = 0; i < bookings.size(); i++) {
             Booking booking = bookings.get(i);
@@ -843,12 +849,43 @@ public class BookingService {
             case COMPLETED:
                 return false; // Cannot change from completed
             case CANCELLED:
-                return false; // Cannot change from cancelled
+                return to == BookingStatus.DELETED; // Can delete cancelled bookings
             case NO_SHOW:
                 return false; // Cannot change from no show
+            case DELETED:
+                return false; // Cannot change from deleted
             default:
                 return false;
         }
+    }
+    
+    /**
+     * Xóa booking (đổi status thành DELETED)
+     * Chỉ có thể xóa các booking đã CANCELLED
+     */
+    @Transactional
+    public Booking deleteBooking(Integer bookingId, UUID customerId) {
+        System.out.println("🔍 BookingService.deleteBooking() called for booking ID: " + bookingId);
+        
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found"));
+        
+        // Validate customer ownership
+        if (!booking.getCustomer().getCustomerId().equals(customerId)) {
+            throw new IllegalArgumentException("You can only delete your own bookings");
+        }
+        
+        // Only allow deleting CANCELLED bookings
+        if (booking.getStatus() != BookingStatus.CANCELLED) {
+            throw new IllegalArgumentException("Only cancelled bookings can be deleted");
+        }
+        
+        booking.setStatus(BookingStatus.DELETED);
+        Booking deletedBooking = bookingRepository.save(booking);
+        
+        System.out.println("✅ Booking deleted successfully: " + deletedBooking.getBookingId());
+        
+        return deletedBooking;
     }
 
     /**

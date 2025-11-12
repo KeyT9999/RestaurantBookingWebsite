@@ -1,0 +1,267 @@
+/* ================================================
+   BOOKING LIST PAGE - Payment Toast Styles
+   ================================================ */
+
+/* Payment Toast Styles */
+.payment-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 420px;
+    min-width: 320px;
+    background: var(--ds-primary-white);
+    border: 1px solid var(--ds-neutral-300);
+    border-left: 4px solid var(--ds-info);
+    border-radius: var(--ds-radius-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    animation: slideInRight 0.3s ease-out;
+    display: block;
+    pointer-events: auto;
+}
+
+.payment-toast__content {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--ds-space-3);
+    padding: var(--ds-space-4);
+    position: relative;
+}
+
+.payment-toast__icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ds-info);
+    font-size: 18px;
+}
+
+.payment-toast__message {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+}
+
+.payment-toast__label {
+    font-weight: var(--ds-font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: var(--ds-font-size-xs);
+    color: var(--ds-neutral-500);
+}
+
+.payment-toast__text {
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-neutral-700);
+    line-height: 1.5;
+}
+
+.payment-toast__close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--ds-neutral-500);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--ds-radius-sm);
+    transition: all 0.2s ease;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10000;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.payment-toast__close:hover {
+    background: var(--ds-neutral-100);
+    color: var(--ds-neutral-700);
+}
+
+.payment-toast__close:active {
+    transform: scale(0.95);
+}
+
+.payment-toast__close i {
+    pointer-events: none;
+}
+
+.payment-toast.hidden {
+    display: none;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .payment-toast {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        min-width: auto;
+    }
+}
+
+/* ================================================
+   BOOKING CARDS LAYOUT - Compact & Clean
+   ================================================ */
+
+.booking-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+}
+
+.booking-card {
+    background: var(--ds-primary-white);
+    border: 1px solid var(--ds-neutral-200);
+    border-radius: var(--ds-radius-lg);
+    padding: var(--ds-space-3) var(--ds-space-4);
+    transition: all 0.2s ease;
+}
+
+.booking-card:hover {
+    border-color: var(--ds-neutral-300);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.booking-card__content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--ds-space-4);
+}
+
+.booking-card__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-2);
+    min-width: 0;
+}
+
+.booking-card__restaurant {
+    display: flex;
+    flex-direction: column;
+}
+
+.booking-card__restaurant-name {
+    font-size: var(--ds-font-size-base);
+    font-weight: var(--ds-font-weight-semibold);
+    color: var(--ds-neutral-900);
+    margin: 0;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.booking-card__essential-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ds-space-1);
+}
+
+.booking-card__info-row {
+    display: flex;
+    align-items: center;
+    gap: var(--ds-space-2);
+    font-size: var(--ds-font-size-sm);
+    color: var(--ds-neutral-600);
+}
+
+.booking-card__info-icon {
+    width: 16px;
+    text-align: center;
+    color: var(--ds-neutral-400);
+    font-size: var(--ds-font-size-sm);
+    flex-shrink: 0;
+}
+
+.booking-card__info-text {
+    color: var(--ds-neutral-700);
+    font-weight: var(--ds-font-weight-medium);
+}
+
+.booking-card__side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--ds-space-2);
+    flex-shrink: 0;
+}
+
+.booking-card__status {
+    align-self: flex-end;
+}
+
+.booking-card__actions {
+    display: flex;
+    gap: var(--ds-space-1);
+    flex-shrink: 0;
+}
+
+/* Responsive: Stack layout on small screens */
+@media (max-width: 768px) {
+    .booking-card__content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--ds-space-3);
+    }
+    
+    .booking-card__side {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+    
+    .booking-card__actions {
+        flex-wrap: wrap;
+    }
+    
+    .booking-card {
+        padding: var(--ds-space-3);
+    }
+}
+
+/* Compact spacing adjustments */
+.booking-list-page .surface-block {
+    padding: var(--ds-space-4) !important;
+}
+
+.booking-list-page .section-header {
+    margin-bottom: var(--ds-space-3) !important;
+}
+
+.booking-list-page .gap-24 {
+    gap: var(--ds-space-4) !important;
+}
+

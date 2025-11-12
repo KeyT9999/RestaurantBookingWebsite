@@ -675,10 +675,12 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item" th:href="@{/logout}">
-                                    <i class="fas fa-sign-out-alt me-2"></i>
-                                    Đăng xuất
-                                </a>
+                                <form th:action="@{/logout}" method="post" class="d-inline">
+                                    <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
+                                        <i class="fas fa-sign-out-alt me-2"></i>
+                                        Đăng xuất
+                                    </button>
+                                </form>
                             </li>
                         </ul>
                     </div>
@@ -1912,6 +1914,19 @@
                 this.setupEventListeners();
                 this.loadUnreadCount();
                 this.initWebSocket();
+                // Restore chat state from localStorage
+                this.restoreChatState();
+            }
+            
+            restoreChatState() {
+                // Check if chat was open in previous session
+                const wasOpen = localStorage.getItem('messengerChatOpen') === 'true';
+                if (wasOpen) {
+                    // Small delay to ensure DOM is ready
+                    setTimeout(() => {
+                        this.openChat();
+                    }, 500);
+                }
             }
             
             setupEventListeners() {
@@ -1977,6 +1992,8 @@
                 window.style.display = 'flex';
                 this.isMinimized = false;
                 this.loadChatRooms();
+                // Save state to localStorage
+                localStorage.setItem('messengerChatOpen', 'true');
             }
             
             minimizeChat() {
@@ -1990,6 +2007,8 @@
                 window.style.display = 'none';
                 this.currentRoomId = null;
                 this.showRoomsView();
+                // Save closed state to localStorage
+                localStorage.setItem('messengerChatOpen', 'false');
             }
             
             async loadChatRooms() {
@@ -2512,15 +2531,33 @@
         let messengerChatWidget;
         document.addEventListener('DOMContentLoaded', function() {
             // Load user info for chat
-            fetch('/api/user/current')
-                .then(response => response.json())
+            fetch('/api/user/current', {
+                credentials: 'include' // Important: include cookies for session
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401 || response.status === 403) {
+                            // User not authenticated, widget will not be initialized
+                            console.log('User not authenticated, chat widget disabled');
+                            return null;
+                        }
+                        throw new Error('Failed to load user info');
+                    }
+                    return response.json();
+                })
                 .then(user => {
-                    messengerChatWidget = new MessengerChatWidget();
-                    messengerChatWidget.currentUserId = user.id;
+                    if (user && user.id) {
+                        messengerChatWidget = new MessengerChatWidget();
+                        messengerChatWidget.currentUserId = user.id;
+                        console.log('Messenger chat widget initialized for user:', user.id);
+                    } else {
+                        console.log('No user data, chat widget not initialized');
+                    }
                 })
                 .catch(error => {
                     console.error('Error loading user info:', error);
-                    messengerChatWidget = new MessengerChatWidget();
+                    // Don't initialize widget if we can't get user info
+                    // This prevents errors when trying to use the widget
                 });
         });
     </script>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
@@ -85,10 +85,12 @@
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item" th:href="@{/logout}">
-                                <i class="fas fa-sign-out-alt me-2"></i>
-                                Đăng xuất
-                            </a>
+                            <form th:action="@{/logout}" method="post" class="d-inline">
+                                <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    Đăng xuất
+                                </button>
+                            </form>
                         </li>
                     </ul>
                 </div>
@@ -155,9 +157,9 @@
                         </a>
                     </li>
                     <li>
-                        <a href="/restaurant-owner/payments">
+                        <a href="/restaurant-owner/withdrawal">
                             <i class="fas fa-credit-card"></i>
-                            Thanh toán
+                            Rút tiền
                         </a>
                     </li>
                     <li>
@@ -784,3 +786,4 @@
     </script>
 </body>
 </html>
+
