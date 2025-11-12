@@ -28,6 +28,7 @@ import com.example.booking.dto.notification.NotificationView;
 import com.example.booking.service.NotificationService;
 import com.example.booking.service.BookingService;
 import com.example.booking.repository.CustomerRepository;
+import com.example.booking.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -44,6 +45,9 @@ public class NotificationController {
     
     @Autowired
     private CustomerRepository customerRepository;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public String listNotifications(
@@ -53,10 +57,22 @@ public class NotificationController {
             Model model,
             Authentication authentication) {
         
+        System.out.println("🔍 NotificationController.listNotifications() - Authentication check");
+        System.out.println("   Authentication: " + (authentication != null ? authentication.getClass().getName() : "null"));
+        System.out.println("   Principal: " + (authentication != null && authentication.getPrincipal() != null ? 
+            authentication.getPrincipal().getClass().getName() : "null"));
+        
         UUID userId = getCurrentUserId(authentication);
+        System.out.println("   User ID: " + userId);
+        
         if (userId == null) {
+            System.err.println("❌ User ID is null, redirecting to login");
             return "redirect:/login";
         }
+        
+        System.out.println("🔍 NotificationController.listNotifications() called");
+        System.out.println("   Current User ID: " + userId);
+        System.out.println("   Page: " + page + ", Size: " + size + ", UnreadOnly: " + unreadOnly);
         
         Sort sort = Sort.by("publishAt").descending();
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -68,7 +84,13 @@ public class NotificationController {
             notifications = notificationService.findByUserId(userId, pageable);
         }
         
+        System.out.println("   Found " + notifications.getTotalElements() + " notifications");
+        System.out.println("   Notifications: " + notifications.getContent().stream()
+            .map(n -> "ID=" + n.getId() + ", Title=" + n.getTitle())
+            .collect(java.util.stream.Collectors.joining(", ")));
+        
         long unreadCount = notificationService.countUnreadByUserId(userId);
+        System.out.println("   Unread count: " + unreadCount);
         
         model.addAttribute("notifications", notifications);
         model.addAttribute("unreadCount", unreadCount);
@@ -235,24 +257,40 @@ public class NotificationController {
     @GetMapping("/api/unread-count")
     @ResponseBody
     public ResponseEntity<Long> getUnreadCount(Authentication authentication) {
+        System.out.println("🔍 NotificationController.getUnreadCount() - API called");
+        System.out.println("   Authentication: " + (authentication != null ? authentication.getClass().getName() : "null"));
+        
         UUID userId = getCurrentUserId(authentication);
+        System.out.println("   User ID: " + userId);
+        
         if (userId == null) {
+            System.err.println("❌ User ID is null in API, returning 0");
             return ResponseEntity.status(401).body(0L);
         }
         
         long count = notificationService.countUnreadByUserId(userId);
+        System.out.println("   Unread count: " + count);
         return ResponseEntity.ok(count);
     }
 
     @GetMapping("/api/latest")
     @ResponseBody
     public ResponseEntity<List<NotificationView>> getLatestNotifications(Authentication authentication) {
+        System.out.println("🔍 NotificationController.getLatestNotifications() - API called");
+        System.out.println("   Authentication: " + (authentication != null ? authentication.getClass().getName() : "null"));
+        System.out.println("   Principal: " + (authentication != null && authentication.getPrincipal() != null ? 
+            authentication.getPrincipal().getClass().getName() : "null"));
+        
         UUID userId = getCurrentUserId(authentication);
+        System.out.println("   User ID: " + userId);
+        
         if (userId == null) {
+            System.err.println("❌ User ID is null in API, returning 401");
             return ResponseEntity.status(401).body(List.of());
         }
         
         List<NotificationView> notifications = notificationService.getLatestNotifications(userId);
+        System.out.println("   Returning " + notifications.size() + " notifications");
         return ResponseEntity.ok(notifications);
     }
 
@@ -382,12 +420,44 @@ public class NotificationController {
     }
 
     private UUID getCurrentUserId(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof OAuth2User) {
-            // TODO: Find user by email
+        if (authentication == null || authentication.getPrincipal() == null) {
+            System.err.println("❌ Authentication or principal is null");
             return null;
-        } else {
+        }
+        
+        if (authentication.getPrincipal() instanceof OAuth2User) {
+            // Handle OAuth2User (Google login)
+            OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+            String email = oauth2User.getAttribute("email");
+            
+            System.out.println("🔍 OAuth2User detected, email: " + email);
+            
+            if (email != null) {
+                try {
+                    User user = userRepository.findByEmail(email)
+                        .orElse(null);
+                    if (user != null) {
+                        System.out.println("✅ Found User by email: " + user.getId());
+                        return user.getId();
+                    } else {
+                        System.err.println("❌ User not found for email: " + email);
+                    }
+                } catch (Exception e) {
+                    System.err.println("❌ Error finding user by email: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.err.println("❌ Email not found in OAuth2User attributes");
+            }
+            return null;
+        } else if (authentication.getPrincipal() instanceof User) {
+            // Handle regular User authentication
             User user = (User) authentication.getPrincipal();
+            System.out.println("✅ Regular User authentication, ID: " + user.getId());
             return user.getId();
+        } else {
+            System.err.println("❌ Unknown principal type: " + authentication.getPrincipal().getClass().getName());
+            return null;
         }
     }
 } 

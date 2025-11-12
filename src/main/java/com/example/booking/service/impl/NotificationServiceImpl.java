@@ -117,8 +117,20 @@ public class NotificationServiceImpl implements NotificationService {
     
     @Override
     public Page<NotificationView> findByUserId(UUID userId, Pageable pageable) {
+        System.out.println("🔍 NotificationService.findByUserId() called");
+        System.out.println("   User ID: " + userId);
+        System.out.println("   Status: SENT");
+        
         Page<Notification> notifications = notificationRepository.findByRecipientUserIdAndStatusOrderByPublishAtDesc(
             userId, NotificationStatus.SENT, pageable);
+        
+        System.out.println("   Query returned " + notifications.getTotalElements() + " notifications");
+        notifications.getContent().forEach(n -> {
+            System.out.println("     - Notification ID: " + n.getNotificationId() + 
+                ", Recipient: " + n.getRecipientUserId() + 
+                ", Status: " + n.getStatus() + 
+                ", Title: " + n.getTitle());
+        });
         
         return notifications.map(this::toNotificationView);
     }

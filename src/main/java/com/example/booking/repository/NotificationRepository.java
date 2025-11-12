@@ -19,25 +19,36 @@ import com.example.booking.domain.NotificationStatus;
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
     
     // User queries
-    @Query("SELECT n FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status ORDER BY n.publishAt DESC")
+    @Query("SELECT n FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status " +
+           "AND (n.expireAt IS NULL OR n.expireAt > CURRENT_TIMESTAMP) " +
+           "AND n.publishAt <= CURRENT_TIMESTAMP " +
+           "ORDER BY n.publishAt DESC")
     Page<Notification> findByRecipientUserIdAndStatusOrderByPublishAtDesc(
         @Param("userId") UUID userId, 
         @Param("status") NotificationStatus status, 
         Pageable pageable);
     
-    @Query("SELECT n FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status AND n.readAt IS NULL ORDER BY n.publishAt DESC")
+    @Query("SELECT n FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status AND n.readAt IS NULL " +
+           "AND (n.expireAt IS NULL OR n.expireAt > CURRENT_TIMESTAMP) " +
+           "AND n.publishAt <= CURRENT_TIMESTAMP " +
+           "ORDER BY n.publishAt DESC")
     Page<Notification> findByRecipientUserIdAndStatusAndReadAtIsNullOrderByPublishAtDesc(
         @Param("userId") UUID userId, 
         @Param("status") NotificationStatus status, 
         Pageable pageable);
     
-    @Query("SELECT n FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status AND n.readAt IS NOT NULL ORDER BY n.publishAt DESC")
+    @Query("SELECT n FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status AND n.readAt IS NOT NULL " +
+           "AND (n.expireAt IS NULL OR n.expireAt > CURRENT_TIMESTAMP) " +
+           "AND n.publishAt <= CURRENT_TIMESTAMP " +
+           "ORDER BY n.publishAt DESC")
     Page<Notification> findByRecipientUserIdAndStatusAndReadAtIsNotNullOrderByPublishAtDesc(
         @Param("userId") UUID userId, 
         @Param("status") NotificationStatus status, 
         Pageable pageable);
     
-    @Query("SELECT COUNT(n) FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status AND n.readAt IS NULL")
+    @Query("SELECT COUNT(n) FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status AND n.readAt IS NULL " +
+           "AND (n.expireAt IS NULL OR n.expireAt > CURRENT_TIMESTAMP) " +
+           "AND n.publishAt <= CURRENT_TIMESTAMP")
     long countByRecipientUserIdAndStatusAndReadAtIsNull(
         @Param("userId") UUID userId, 
         @Param("status") NotificationStatus status);
@@ -71,7 +82,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
     int expireNotification(@Param("notificationId") Integer notificationId, @Param("expireAt") LocalDateTime expireAt);
     
     // Latest notifications for dropdown
-    @Query("SELECT n FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status ORDER BY n.publishAt DESC")
+    @Query("SELECT n FROM Notification n WHERE n.recipientUserId = :userId AND n.status = :status " +
+           "AND (n.expireAt IS NULL OR n.expireAt > CURRENT_TIMESTAMP) " +
+           "AND n.publishAt <= CURRENT_TIMESTAMP " +
+           "ORDER BY n.publishAt DESC")
     List<Notification> findTop5ByRecipientUserIdAndStatusOrderByPublishAtDesc(
         @Param("userId") UUID userId, 
         @Param("status") NotificationStatus status, 

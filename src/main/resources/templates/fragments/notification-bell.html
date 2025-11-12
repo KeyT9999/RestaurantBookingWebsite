@@ -21,7 +21,7 @@
             style="min-width: 320px; max-height: 400px; overflow-y: auto; background: #ffffff !important; border:1px solid var(--border-light); box-shadow: var(--shadow-hover);">
             <li>
                 <h6 class="dropdown-header d-flex justify-content-between align-items-center" style="color: var(--text-dark);">
-                    <a href="/notifications" class="text-decoration-none notification-bell__all-link" style="color: var(--text-dark);">
+                    <a th:href="@{/notifications}" class="text-decoration-none notification-bell__all-link" style="color: var(--text-dark);">
                         <i class="fas fa-bell me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Thông báo
                     </a>
                     <span class="badge bg-primary notification-bell__badge-summary"
@@ -33,8 +33,14 @@
 
             <!-- Latest notifications -->
             <div th:id="${dropdownId + '-list'}" class="notification-bell__list">
-                <li th:each="notification, iterStat : ${latestNotifications}"
-                    th:if="${iterStat.count <= 5}">
+                <!-- Initial empty state - will be replaced by JavaScript -->
+                <li class="dropdown-item-text text-center" style="color: var(--text-light);">
+                    <i class="fas fa-spinner fa-spin me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Đang tải...
+                </li>
+                <!-- Server-side rendering (if available) -->
+                <li th:each="notification, iterStat : ${latestNotifications != null ? latestNotifications : {}}"
+                    th:if="${iterStat.count <= 5}"
+                    style="display: none;">
                     <a th:href="@{/notifications/{id}(id=${notification.id})}"
                        class="dropdown-item d-flex align-items-start notification-bell__link">
                         <div class="flex-grow-1">
@@ -46,14 +52,11 @@
                         </div>
                     </a>
                 </li>
-                <li th:if="${#lists.isEmpty(latestNotifications)}" class="dropdown-item-text text-center" style="color: var(--text-light);">
-                    <i class="fas fa-bell-slash me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Không có thông báo mới
-                </li>
             </div>
 
             <li><hr class="dropdown-divider" style="border-color: rgba(212,175,55,.3);"></li>
             <li>
-                <a class="dropdown-item text-center text-white notification-bell__view-all" href="/notifications">
+                <a class="dropdown-item text-center text-white notification-bell__view-all" th:href="@{/notifications}">
                     <i class="fas fa-list me-2"></i>Xem tất cả thông báo
                 </a>
             </li>
@@ -64,17 +67,23 @@
 <script th:inline="javascript">
 /*<![CDATA[*/
 (function() {
+    console.log('🔔 Notification bell script starting...');
     const dropdownId = /*[[${dropdownId}]]*/ 'notificationDropdown';
     const badgeId = /*[[${badgeId}]]*/ 'notificationBadge';
+    console.log('   Dropdown ID:', dropdownId, 'Badge ID:', badgeId);
+    
     const trigger = document.getElementById(dropdownId);
     if (!trigger) {
+        console.error('❌ Notification bell trigger not found with ID:', dropdownId);
         return;
     }
+    console.log('✅ Notification bell trigger found');
     const badgeEl = document.getElementById(badgeId);
     const container = trigger.closest('[data-notification-bell]');
     const summaryBadge = container ? container.querySelector('.notification-bell__badge-summary') : null;
     const menu = container ? container.querySelector('.notification-bell__menu') : null;
     const listContainer = document.getElementById(dropdownId + '-list');
+    console.log('   List container:', listContainer ? 'Found' : 'NOT FOUND', dropdownId + '-list');
     const hoverDelay = 200;
     let hideTimeout = null;
     let lastLatestFetch = 0;
@@ -119,11 +128,15 @@
 
     function renderLatestNotifications(notifications) {
         if (!listContainer) {
+            console.error('List container not found');
             return;
         }
+        
+        console.log('Rendering notifications:', notifications);
         listContainer.innerHTML = '';
 
         if (!Array.isArray(notifications) || notifications.length === 0) {
+            console.log('No notifications to display');
             const emptyItem = document.createElement('li');
             emptyItem.className = 'dropdown-item-text text-center';
             emptyItem.style.color = 'var(--text-light)';
@@ -131,8 +144,11 @@
             listContainer.appendChild(emptyItem);
             return;
         }
+        
+        console.log('Rendering ' + notifications.length + ' notifications');
 
-        notifications.slice(0, 5).forEach(function(notification) {
+        notifications.slice(0, 5).forEach(function(notification, index) {
+            console.log('   Rendering notification ' + (index + 1) + ':', notification);
             const li = document.createElement('li');
 
             const link = document.createElement('a');
@@ -166,7 +182,9 @@
 
             li.appendChild(link);
             listContainer.appendChild(li);
+            console.log('   ✅ Notification ' + (index + 1) + ' rendered and appended');
         });
+        console.log('✅ All notifications rendered. Total items in list:', listContainer.children.length);
     }
 
     function refreshLatestNotifications(force) {
@@ -178,31 +196,66 @@
             return;
         }
         lastLatestFetch = now;
-        fetch('/notifications/api/latest')
+        fetch('/notifications/api/latest', {
+            credentials: 'include',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
             .then(function(response) {
+                console.log('🔔 API Response status:', response.status, response.statusText);
                 if (!response.ok) {
-                    throw new Error('Failed to fetch latest notifications');
+                    console.error('❌ Failed to fetch latest notifications:', response.status, response.statusText);
+                    if (response.status === 401) {
+                        console.error('❌ Authentication failed - user not logged in');
+                    }
+                    throw new Error('Failed to fetch latest notifications: ' + response.status);
                 }
                 return response.json();
             })
             .then(function(data) {
+                console.log('✅ Received notifications data:', data);
+                console.log('   Type:', typeof data);
+                console.log('   Is array:', Array.isArray(data));
+                console.log('   Length:', Array.isArray(data) ? data.length : 'N/A');
+                if (Array.isArray(data) && data.length > 0) {
+                    console.log('   First notification:', data[0]);
+                }
                 renderLatestNotifications(data);
             })
             .catch(function(error) {
-                console.log('Error fetching latest notifications:', error);
+                console.error('Error fetching latest notifications:', error);
             });
     }
 
     function refreshUnreadCount() {
-        fetch('/notifications/api/unread-count')
-            .then(function(response) { return response.json(); })
+        fetch('/notifications/api/unread-count', {
+            credentials: 'include',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(function(response) {
+                if (!response.ok) {
+                    console.error('Failed to fetch unread count:', response.status, response.statusText);
+                    if (response.status === 401) {
+                        console.error('Authentication failed - user not logged in');
+                    }
+                    return 0;
+                }
+                return response.json();
+            })
             .then(function(count) {
+                console.log('Unread count:', count);
                 updateBadge(count);
                 if (count > 0) {
                     refreshLatestNotifications(false);
                 }
             })
-            .catch(function(error) { console.log('Error fetching notification count:', error); });
+            .catch(function(error) { 
+                console.error('Error fetching notification count:', error);
+                updateBadge(0);
+            });
     }
 
     if (typeof bootstrap !== 'undefined' && container) {
@@ -257,9 +310,11 @@
         });
     }
 
+    console.log('🔔 Initializing notification bell...');
     refreshUnreadCount();
     refreshLatestNotifications(true);
     setInterval(refreshUnreadCount, 30000);
+    console.log('✅ Notification bell initialized');
 })();
 /*]]>*/
 </script>
