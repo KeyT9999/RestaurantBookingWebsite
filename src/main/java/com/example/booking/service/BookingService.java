@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.booking.common.enums.BookingStatus;
-import com.example.booking.domain.PaymentStatus;
 import com.example.booking.domain.Booking;
 import com.example.booking.domain.BookingDish;
 import com.example.booking.domain.BookingTable;
@@ -27,9 +26,11 @@ import com.example.booking.domain.Notification;
 import com.example.booking.domain.NotificationStatus;
 import com.example.booking.domain.NotificationType;
 import com.example.booking.domain.Payment;
+import com.example.booking.domain.PaymentStatus;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.RestaurantTable;
+import com.example.booking.domain.User;
 import com.example.booking.dto.BookingForm;
 import com.example.booking.exception.BookingConflictException;
 import com.example.booking.repository.BookingDishRepository;
@@ -43,6 +44,7 @@ import com.example.booking.repository.PaymentRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.RestaurantServiceRepository;
 import com.example.booking.repository.RestaurantTableRepository;
+import com.example.booking.repository.UserRepository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -95,6 +97,9 @@ public class BookingService {
 
     @Autowired
     private RefundService refundService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -1209,12 +1214,57 @@ public class BookingService {
         try {
             Notification notification = new Notification();
             UUID recipientUserId = null;
+            
             if (booking.getCustomer() != null) {
-                if (booking.getCustomer().getUser() != null) {
-                    recipientUserId = booking.getCustomer().getUser().getId();
-                } else {
-                    recipientUserId = booking.getCustomer().getCustomerId();
+                Customer customer = booking.getCustomer();
+                
+                // Try to get User from Customer (may be lazy loaded)
+                User user = customer.getUser();
+                
+                // If user is null (lazy loading not triggered), try to load it
+                if (user == null) {
+                    System.out.println("⚠️ Customer.getUser() is null, trying to load User from database...");
+                    
+                    // Option 1: Reload customer with user relationship (force fetch)
+                    Customer loadedCustomer = customerRepository.findById(customer.getCustomerId())
+                        .orElse(null);
+                    if (loadedCustomer != null) {
+                        user = loadedCustomer.getUser();
+                        System.out.println("   Reloaded customer, user: " + (user != null ? user.getId() : "null"));
+                    }
+                    
+                    // Option 2: If still null, query User directly using EntityManager
+                    // Customer table has user_id foreign key, so we can query User by joining
+                    if (user == null) {
+                        System.out.println("   Trying to query User directly from database...");
+                        try {
+                            // Query: SELECT u FROM User u WHERE u.id IN 
+                            // (SELECT c.user.id FROM Customer c WHERE c.customerId = :customerId)
+                            String jpql = "SELECT c.user FROM Customer c WHERE c.customerId = :customerId";
+                            user = entityManager.createQuery(jpql, User.class)
+                                .setParameter("customerId", customer.getCustomerId())
+                                .getSingleResult();
+                            System.out.println("   Found User via JPQL: " + (user != null ? user.getId() : "null"));
+                        } catch (Exception e) {
+                            System.err.println("   ❌ Error querying User: " + e.getMessage());
+                        }
+                    }
                 }
+                
+                // If we still have user, use its ID
+                if (user != null) {
+                    recipientUserId = user.getId();
+                    System.out.println("✅ Found User ID from Customer: " + recipientUserId);
+                } else {
+                    // Last resort: query User by customer's user_id foreign key
+                    // We need to get user_id from customer table
+                    // Since Customer has @OneToOne with User, we can query User where customer exists
+                    // But this is complex, so let's just throw an error
+                    System.err.println("❌ CRITICAL: Cannot find User for Customer: " + customer.getCustomerId());
+                    throw new IllegalArgumentException("Customer does not have an associated User. Customer ID: " + customer.getCustomerId());
+                }
+            } else {
+                throw new IllegalArgumentException("Booking does not have a Customer");
             }
 
             if (recipientUserId == null) {
