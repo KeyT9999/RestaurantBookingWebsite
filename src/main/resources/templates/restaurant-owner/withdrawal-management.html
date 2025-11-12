@@ -90,9 +90,11 @@
                 <span class="navbar-text text-white me-3">
                     <i class="bi bi-person-circle"></i> <span th:text="${restaurantName}">Nhà hàng ABC</span>
                 </span>
-                <a class="btn btn-outline-light btn-sm" href="/logout">
-                    <i class="bi bi-box-arrow-right"></i> Đăng xuất
-                </a>
+                <form action="/logout" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                    </button>
+                </form>
             </div>
         </div>
     </nav>
