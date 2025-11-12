@@ -32,6 +32,7 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+import org.springframework.security.config.http.SessionCreationPolicy;
 
 import com.example.booking.domain.User;
 import com.example.booking.service.SimpleUserService;
@@ -154,6 +155,12 @@ public class SecurityConfig {
 		}
 		
 		http
+			.sessionManagement(session -> session
+				.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+				.sessionFixation().migrateSession()
+				.maximumSessions(1)
+				.maxSessionsPreventsLogin(false)
+			)
 			.rememberMe(rm -> rm
 				.rememberMeServices(rememberMeServices())
 				.rememberMeParameter("remember-me")

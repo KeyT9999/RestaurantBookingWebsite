@@ -56,6 +56,15 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             }
         } catch (Exception ignore) {}
 
+        // Ensure session is committed before redirect
+        try {
+            request.getSession().setAttribute("AUTHENTICATED_USER", username);
+            logger.info("✅ SESSION CREATED - Session ID: {}, Username: {}", 
+                    request.getSession().getId(), username);
+        } catch (Exception e) {
+            logger.error("❌ SESSION CREATION FAILED - Error: {}", e.getMessage());
+        }
+
         // Redirect to home page
         response.sendRedirect("/");
     }
