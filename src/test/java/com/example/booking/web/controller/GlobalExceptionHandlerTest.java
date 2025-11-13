@@ -1,10 +1,9 @@
 package com.example.booking.web.controller;
 
-import static org.mockito.Mockito.mock;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -24,7 +23,7 @@ class GlobalExceptionHandlerTest {
     void setUp() {
         handler = new GlobalExceptionHandler();
         redirectAttributes = new RedirectAttributesModelMap();
-        model = mock(Model.class);
+        model = new ExtendedModelMap();
         request = new MockHttpServletRequest();
         
         // Setup request context for redirect

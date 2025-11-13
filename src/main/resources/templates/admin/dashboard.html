@@ -9,46 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link th:href="@{/css/design-system.css}" rel="stylesheet">
-
-    <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--ds-neutral-50);
-        }
-
-
-        .admin-stat-card {
-            border-radius: var(--ds-radius-xl);
-            background: var(--ds-primary-white);
-            box-shadow: var(--ds-shadow-lg);
-            padding: var(--ds-space-6);
-        }
-
-        .admin-stat-card .label {
-            color: var(--ds-neutral-500);
-            font-size: var(--ds-font-size-sm);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .admin-stat-card .value {
-            font-size: var(--ds-font-size-4xl);
-            font-weight: var(--ds-font-weight-bold);
-            color: var(--ds-neutral-900);
-        }
-
-
-        .table thead {
-            background: var(--ds-neutral-100);
-        }
-
-        .badge-pill {
-            border-radius: var(--ds-radius-full);
-            padding: var(--ds-space-1) var(--ds-space-3);
-            font-size: var(--ds-font-size-xs);
-        }
-
-    </style>
+    <link th:href="@{/css/admin-dashboard.css}" rel="stylesheet">
 </head>
 <body>
     <div th:with="activeNav='admin-dashboard'"
@@ -56,7 +17,7 @@
 
     <main>
         <section style="padding: var(--ds-space-12) 0;">
-            <div class="ds-container ds-flex ds-flex-col ds-gap-8">
+            <div class="ds-container dashboard-shell">
 
                 <!-- Alerts -->
                 <div th:if="${error}" class="alert alert-danger" role="alert">
@@ -64,75 +25,229 @@
                     <span th:text="${error}"></span>
                 </div>
 
-                <!-- Commission Overview - Main Focus -->
-                <section class="ds-grid ds-grid-auto ds-gap-6">
-                    <article class="ds-card ds-card-body">
-                        <h2 class="ds-heading-3 ds-mb-4"><i class="fas fa-percentage me-2"></i>Hoa hồng hôm nay</h2>
-                        <div class="ds-grid ds-grid-cols-4 ds-gap-4 ds-grid-auto">
-                            <div class="admin-stat-card">
-                                <div class="label">Hoa hồng hôm nay</div>
-                                <div class="value ds-text-primary" style="font-size: 2.5rem;" th:text="${totalCommission != null ? totalCommission + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
+                <div class="dashboard-header">
+                    <div>
+                        <h1>Bảng điều khiển quản trị</h1>
+                        <p>Theo dõi doanh thu hoa hồng và hoạt động đặt chỗ</p>
+                    </div>
+                    <div class="status-pill">
+                        <i class="fas fa-signal"></i>
+                        Theo dõi theo thời gian thực
+                    </div>
+                </div>
+
+                <!-- Summary metrics -->
+                <section class="dashboard-grid dashboard-grid--summary">
+                    <article class="metric-card metric-card--accent">
+                        <div class="metric-card__label">
+                            <i class="fas fa-percentage"></i>
+                            Hoa hồng hôm nay
+                        </div>
+                        <div class="metric-card__value ds-text-primary"
+                             th:text="${commissionToday != null ? commissionToday + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
+                        <div class="metric-card__footer">So sánh với ngày hôm qua</div>
+                    </article>
+
+                    <article class="metric-card metric-card--primary">
+                        <div class="metric-card__label">
+                            <i class="fas fa-chart-pie"></i>
+                            Tỷ lệ hoa hồng
+                        </div>
+                        <div class="metric-card__value ds-text-success"
+                             th:text="${commissionRate != null ? commissionRate + '%' : '7.5%'}">7.5%</div>
+                        <div class="metric-card__footer">Áp dụng cho mọi giao dịch hoàn tất</div>
+                    </article>
+
+                    <article class="metric-card metric-card--primary">
+                        <div class="metric-card__label">
+                            <i class="fas fa-calendar-day"></i>
+                            Booking hôm nay
+                        </div>
+                        <div class="metric-card__value ds-text-info"
+                             th:text="${todayBookings != null ? todayBookings : 0}">0</div>
+                        <div class="metric-card__footer">Số lượng đặt bàn đã hoàn tất</div>
+                    </article>
+
+                    <article class="metric-card metric-card--primary">
+                        <div class="metric-card__label">
+                            <i class="fas fa-coins"></i>
+                            Hoa hồng/booking
+                        </div>
+                        <div class="metric-card__value ds-text-warning"
+                             th:text="${avgCommissionPerBooking != null ? avgCommissionPerBooking + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
+                        <div class="metric-card__footer">Giá trị trung bình theo đơn</div>
+                    </article>
+                </section>
+
+                <!-- Charts -->
+                <section class="dashboard-grid dashboard-grid--two-columns">
+                    <article class="chart-card">
+                        <div class="chart-card__title">
+                            <div>
+                                <h3><i class="fas fa-chart-line me-2"></i>Biểu đồ hoa hồng</h3>
+                                <span class="chart-card__subtitle">Tổng quan theo mốc thời gian</span>
                             </div>
-                            <div class="admin-stat-card">
-                                <div class="label">Tỷ lệ hoa hồng</div>
-                                <div class="value ds-text-success" style="font-size: 2.5rem;">7.5%</div>
-                            </div>
-                            <div class="admin-stat-card">
-                                <div class="label">Booking hôm nay</div>
-                                <div class="value ds-text-info" style="font-size: 2.5rem;" th:text="${todayBookings != null ? todayBookings : 0}">0</div>
-                            </div>
-                            <div class="admin-stat-card">
-                                <div class="label">Hoa hồng/booking</div>
-                                <div class="value ds-text-warning" style="font-size: 2.5rem;" th:text="${avgCommissionPerBooking != null ? avgCommissionPerBooking + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
-                            </div>
+                            <select id="commissionRangeSelect" class="chart-card__filter">
+                                <option value="daily">7 ngày gần nhất</option>
+                                <option value="monthly">6 tháng gần nhất</option>
+                                <option value="yearly">5 năm gần nhất</option>
+                            </select>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="commissionChart"></canvas>
                         </div>
                     </article>
 
-                    <article class="ds-card ds-card-body">
-                        <h2 class="ds-heading-4 ds-mb-4"><i class="fas fa-chart-line me-2"></i>Xu hướng hoa hồng</h2>
-                        <div class="ds-grid ds-grid-cols-3 ds-gap-4 ds-grid-auto">
-                            <div class="admin-stat-card">
-                                <div class="label">Tuần này</div>
-                                <div class="value ds-text-success" th:text="${weeklyCommission != null ? weeklyCommission + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
-                            </div>
-                            <div class="admin-stat-card">
-                                <div class="label">Tháng này</div>
-                                <div class="value ds-text-primary" th:text="${monthlyCommission != null ? monthlyCommission + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
-                            </div>
-                            <div class="admin-stat-card">
-                                <div class="label">Tổng hoa hồng</div>
-                                <div class="value ds-text-primary" th:text="${totalCommission != null ? totalCommission + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
-                            </div>
+                    <article class="chart-card">
+                        <div class="chart-card__title">
+                            <h3><i class="fas fa-clipboard-check me-2"></i>Hoạt động booking</h3>
+                            <span class="ds-text-sm ds-text-secondary">Tỷ trọng hoàn thành & chờ xử lý</span>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="bookingChart"></canvas>
                         </div>
                     </article>
                 </section>
-                
-                <!-- Refund Management Section -->
-                <section class="ds-card ds-mb-4">
-                    <div class="ds-card-header">
-                        <h3 class="ds-heading-3">
-                            <i class="fas fa-money-bill-wave ds-icon"></i>
-                            Quản lý Refund
-                        </h3>
-                    </div>
-                    <div class="ds-card-body">
-                        <div class="ds-grid ds-grid-cols-2 ds-gap-4">
-                            <div class="ds-flex ds-items-center ds-gap-3">
-                                <div class="ds-flex ds-items-center ds-justify-center ds-w-12 ds-h-12 ds-bg-warning ds-rounded-full">
-                                    <i class="fas fa-clock ds-text-white"></i>
-                                </div>
-                                <div>
-                                    <div class="ds-text-sm ds-text-secondary">Refund Requests</div>
-                                    <div class="ds-text-lg ds-font-semibold ds-text-primary">
-                                        <a th:href="@{/admin/refund-requests}" class="ds-text-decoration-none">
-                                            Quản lý Refund
-                                        </a>
-                                    </div>
-                                </div>
+
+                <!-- Actions & management -->
+                <section class="section-card">
+                    <header class="chart-card__title">
+                        <h3><i class="fas fa-tasks me-2"></i>Tác vụ quản trị nhanh</h3>
+                        <span class="ds-text-sm ds-text-secondary">Quản lý đối tác, đơn đặt bàn và hoàn tiền</span>
+                    </header>
+
+                    <div class="quick-actions">
+                        <a th:href="@{/admin/refund-requests}" class="quick-actions__item text-decoration-none">
+                            <div class="quick-actions__icon">
+                                <i class="fas fa-money-bill-wave"></i>
                             </div>
-                        </div>
+                            <div class="quick-actions__label">
+                                <strong>Quản lý Refund</strong>
+                                <span>Xử lý yêu cầu hoàn tiền đang chờ</span>
+                            </div>
+                        </a>
+                        <a th:href="@{/admin/restaurant-requests}" class="quick-actions__item text-decoration-none">
+                            <div class="quick-actions__icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="quick-actions__label">
+                                <strong>Duyệt nhà hàng</strong>
+                                <span>Theo dõi nhà hàng chờ phê duyệt</span>
+                            </div>
+                        </a>
+                        <a th:href="@{/admin/reports}" class="quick-actions__item text-decoration-none">
+                            <div class="quick-actions__icon">
+                                <i class="fas fa-file-chart-column"></i>
+                            </div>
+                            <div class="quick-actions__label">
+                                <strong>Báo cáo tổng hợp</strong>
+                                <span>Xem báo cáo doanh thu theo khoảng thời gian</span>
+                            </div>
+                        </a>
                     </div>
                 </section>
+
+                <!-- Withdrawal management overview -->
+                <section class="section-card">
+                    <header class="chart-card__title">
+                        <h3><i class="fas fa-hand-holding-dollar me-2"></i>Quản lý Rút tiền</h3>
+                        <span class="ds-text-sm ds-text-secondary">Tổng quan yêu cầu rút tiền toàn hệ thống</span>
+                    </header>
+                    <div class="dashboard-grid dashboard-grid--summary">
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-clock"></i>
+                                Pending requests
+                            </div>
+                            <div class="metric-card__value ds-text-warning"
+                                 th:text="${withdrawalPendingCount != null ? withdrawalPendingCount : 0}">0</div>
+                            <div class="metric-card__footer">
+                                Số yêu cầu chờ duyệt
+                            </div>
+                        </article>
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-vietnamese-dong-sign"></i>
+                                Pending amount
+                            </div>
+                            <div class="metric-card__value ds-text-warning"
+                                 th:text="${#numbers.formatDecimal(withdrawalPendingAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</div>
+                            <div class="metric-card__footer">
+                                Tổng tiền đang chờ xử lý
+                            </div>
+                        </article>
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-circle-check"></i>
+                                Succeeded amount
+                            </div>
+                            <div class="metric-card__value ds-text-success"
+                                 th:text="${#numbers.formatDecimal(withdrawalSucceededAmount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</div>
+                            <div class="metric-card__footer">
+                                Tổng tiền đã chi trả thành công
+                            </div>
+                        </article>
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-hourglass-half"></i>
+                                Avg processing time
+                            </div>
+                            <div class="metric-card__value ds-text-info"
+                                 th:text="${withdrawalAvgHours != null ? #numbers.formatDecimal(withdrawalAvgHours, 1, 'COMMA', 1, 'POINT') + ' h' : '0 h'}">0 h</div>
+                            <div class="metric-card__footer">
+                                Trung bình giờ duyệt (đã thanh toán/đã từ chối)
+                            </div>
+                        </article>
+                    </div>
+                    <div class="ds-flex ds-justify-end">
+                        <a href="/admin/withdrawal" class="ds-btn ds-btn-primary ds-btn-sm">
+                            <i class="fas fa-arrow-right me-2"></i>Tới trang quản lý rút tiền
+                        </a>
+                    </div>
+                </section>
+
+                <!-- System status -->
+                <section class="section-card">
+                    <header class="chart-card__title">
+                        <h3><i class="fas fa-gauge me-2"></i>Trạng thái hệ thống</h3>
+                        <span class="ds-text-sm ds-text-secondary">Các chỉ số vận hành quan trọng</span>
+                    </header>
+
+                    <ul class="supporting-list">
+                        <li>
+                            <div class="ds-flex ds-items-center ds-gap-2">
+                                <i class="fas fa-user-check ds-text-success"></i>
+                                Tài khoản đối tác đang hoạt động
+                            </div>
+                            <span th:text="${pendingRestaurants != null ? pendingRestaurants : 0} + ' chờ duyệt'">0 chờ duyệt</span>
+                        </li>
+                        <li>
+                            <div class="ds-flex ds-items-center ds-gap-2">
+                                <i class="fas fa-bell ds-text-warning"></i>
+                                Yêu cầu hoàn tiền đang chờ
+                            </div>
+                            <span th:text="${pendingRefunds != null ? pendingRefunds : 0} + ' yêu cầu'">0 yêu cầu</span>
+                        </li>
+                        <li>
+                            <div class="ds-flex ds-items-center ds-gap-2">
+                                <i class="fas fa-wallet ds-text-info"></i>
+                                Tổng hoa hồng đã ghi nhận
+                            </div>
+                            <span th:text="${totalCommission != null ? totalCommission + ' VNĐ' : '0 VNĐ'}">0 VNĐ</span>
+                        </li>
+                    </ul>
+                </section>
+
+                <div id="dashboardData"
+                     th:attr="data-commission-today=${commissionToday != null ? commissionToday : 0},
+                              data-weekly-commission=${weeklyCommission != null ? weeklyCommission : 0},
+                              data-monthly-commission=${monthlyCommission != null ? monthlyCommission : 0},
+                              data-total-commission=${totalCommission != null ? totalCommission : 0},
+                              data-today-bookings=${todayBookings != null ? todayBookings : 0},
+                              data-pending-refunds=${pendingRefunds != null ? pendingRefunds : 0},
+                              data-pending-restaurants=${pendingRestaurants != null ? pendingRestaurants : 0}">
+                </div>
+                <script id="commissionSeriesData" type="application/json" th:utext="${commissionSeriesJson != null ? commissionSeriesJson : '{}'}">{}</script>
 
             </div>
         </section>
@@ -140,5 +255,151 @@
 
     <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
     <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function () {
+            const dataElement = document.getElementById('dashboardData');
+            if (!dataElement) {
+                return;
+            }
+
+            const dataset = dataElement.dataset;
+            const commissionToday = parseFloat(dataset.commissionToday || 0);
+            const weeklyCommission = parseFloat(dataset.weeklyCommission || 0);
+            const monthlyCommission = parseFloat(dataset.monthlyCommission || 0);
+            const totalCommission = parseFloat(dataset.totalCommission || 0);
+            const todayBookings = parseFloat(dataset.todayBookings || 0);
+            const pendingRefunds = parseFloat(dataset.pendingRefunds || 0);
+            const pendingRestaurants = parseFloat(dataset.pendingRestaurants || 0);
+            const commissionSeriesScript = document.getElementById('commissionSeriesData');
+            let commissionSeries = {};
+            try {
+                commissionSeries = commissionSeriesScript ? JSON.parse(commissionSeriesScript.textContent || '{}') : {};
+            } catch (error) {
+                console.error('Failed to parse commission series', error);
+            }
+
+            const commissionCtx = document.getElementById('commissionChart');
+            const commissionRangeSelect = document.getElementById('commissionRangeSelect');
+
+            const getCommissionSeriesData = (range) => {
+                const series = Array.isArray(commissionSeries[range]) ? commissionSeries[range] : [];
+                const labels = series.map((point) => point.label);
+                const values = series.map((point) => Number(point.amount || 0));
+
+                if (labels.length === 0) {
+                    return {
+                        labels: ['Hôm nay', 'Tuần này', 'Tháng này', 'Tổng'],
+                        values: [commissionToday, weeklyCommission, monthlyCommission, totalCommission]
+                    };
+                }
+
+                return { labels, values };
+            };
+
+            if (commissionCtx) {
+                const defaultRange = commissionRangeSelect ? commissionRangeSelect.value : 'daily';
+                const initialSeries = getCommissionSeriesData(defaultRange);
+
+                const commissionChart = new Chart(commissionCtx, {
+                    type: 'line',
+                    data: {
+                        labels: initialSeries.labels,
+                        datasets: [{
+                            label: 'Hoa hồng (VNĐ)',
+                            data: initialSeries.values,
+                            borderColor: '#2563EB',
+                            backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                            tension: 0.35,
+                            fill: true,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#2563EB'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                ticks: {
+                                    callback: (value) => new Intl.NumberFormat('vi-VN').format(value)
+                                },
+                                grid: {
+                                    color: 'rgba(148, 163, 184, 0.2)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        const formatted = new Intl.NumberFormat('vi-VN').format(context.parsed.y || 0);
+                                        return ` ${formatted} VNĐ`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                if (commissionRangeSelect) {
+                    commissionRangeSelect.addEventListener('change', (event) => {
+                        const selectedRange = event.target.value;
+                        const seriesData = getCommissionSeriesData(selectedRange);
+                        commissionChart.data.labels = seriesData.labels;
+                        commissionChart.data.datasets[0].data = seriesData.values;
+                        commissionChart.update();
+                    });
+                }
+            }
+
+            const bookingCtx = document.getElementById('bookingChart');
+            if (bookingCtx) {
+                new Chart(bookingCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Đặt bàn hoàn tất', 'Hoàn tiền chờ duyệt', 'Nhà hàng chờ duyệt'],
+                        datasets: [{
+                            data: [todayBookings, pendingRefunds, pendingRestaurants],
+                            backgroundColor: [
+                                'rgba(34, 197, 94, 0.8)',
+                                'rgba(234, 179, 8, 0.8)',
+                                'rgba(59, 130, 246, 0.8)'
+                            ],
+                            borderWidth: 1,
+                            borderColor: '#FFFFFF'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        const formatted = new Intl.NumberFormat('vi-VN').format(context.parsed || 0);
+                                        return ` ${context.label}: ${formatted}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

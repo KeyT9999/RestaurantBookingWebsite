@@ -4,161 +4,222 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Content Moderation - BookEat Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
-</head>
-<body>
-    <!-- Header Fragment -->
-    <div th:replace="~{fragments/header :: site-header}"></div>
 
-    <!-- Main Content -->
-    <div class="container-fluid py-4">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/dashboard}">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
-                            </a>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-moderation.css}" rel="stylesheet">
+</head>
+<body class="mod-list-dashboard">
+    <div th:with="activeNav='admin-moderation'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+
+    <main>
+        <section class="mod-list-hero">
+            <div class="ds-container mod-list-hero-content">
+                <div>
+                    <h1>Content Moderation</h1>
+                    <p>
+                        Trung tâm giám sát nội dung giúp đội ngũ admin xử lý nhanh các báo cáo review vi phạm.
+                        Bộ lọc theo trạng thái giúp bạn ưu tiên vụ việc quan trọng nhất.
+                    </p>
+                    <div class="mod-list-meta">
+                        <span class="mod-list-pill">
+                            <i class="fas fa-database"></i>
+                            <span th:text="|Tổng báo cáo: ${reportPage != null ? reportPage.totalElements : 0}|">Tổng báo cáo: 0</span>
+                        </span>
+                        <span class="mod-list-pill">
+                            <i class="fas fa-layer-group"></i>
+                            <span th:text="|Trang hiện tại: ${reportPage != null ? currentPage + 1 : 1}|">Trang hiện tại: 1</span>
+                        </span>
+                        <span class="mod-list-pill">
+                            <i class="fas fa-filter"></i>
+                            <span th:text="|Bộ lọc: ${selectedStatus != null ? selectedStatus.displayName : 'Tất cả'}|">Bộ lọc: Tất cả</span>
+                        </span>
+                    </div>
+                </div>
+                <form id="statusFilterForm" th:action="@{/admin/moderation}" method="get" class="mod-list-filters">
+                    <input type="hidden" name="status" id="statusInput" th:value="${selectedStatus != null ? selectedStatus.name() : ''}">
+                    <input type="hidden" name="page" id="pageInput" value="0">
+                    <div class="mod-list-chip-group">
+                        <button type="button"
+                                class="mod-chip"
+                                data-status=""
+                                th:classappend="${selectedStatus == null} ? ' is-active' : ''">
+                            Tất cả
+                        </button>
+                        <button type="button"
+                                class="mod-chip"
+                                th:each="s : ${statuses}"
+                                th:data-status="${s.name()}"
+                                th:text="${s.displayName}"
+                                th:classappend="${selectedStatus == s} ? ' is-active' : ''">
+                            Pending
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="mod-list-section">
+            <div class="ds-container">
+                <th:block th:with="reports=${reportPage != null ? reportPage.content : null},
+                                   pendingCount=${reports != null ? #lists.size(reports.?[status.name() == 'PENDING']) : 0},
+                                   resolvedCount=${reports != null ? #lists.size(reports.?[status.name() == 'RESOLVED']) : 0},
+                                   rejectedCount=${reports != null ? #lists.size(reports.?[status.name() == 'REJECTED']) : 0}">
+                    <div class="mod-list-stats">
+                        <article class="mod-list-stat-card">
+                            <small>Tổng báo cáo (theo bộ lọc)</small>
+                            <strong th:text="${reportPage != null ? reportPage.totalElements : 0}">0</strong>
+                            <span class="mod-list-stat-trend">
+                                <i class="fas fa-clipboard-list"></i>
+                                Tổng số bản ghi trong bộ lọc hiện hành
+                            </span>
+                        </article>
+                        <article class="mod-list-stat-card">
+                            <small>Đang chờ xử lý</small>
+                            <strong th:text="${pendingCount}">0</strong>
+                            <span class="mod-list-stat-trend text-warning">
+                                <i class="fas fa-hourglass-half"></i>
+                                Ưu tiên kiểm tra
+                            </span>
+                        </article>
+                        <article class="mod-list-stat-card">
+                            <small>Đã phê duyệt</small>
+                            <strong th:text="${resolvedCount}">0</strong>
+                            <span class="mod-list-stat-trend text-success">
+                                <i class="fas fa-circle-check"></i>
+                                Review đã được xử lý
+                            </span>
+                        </article>
+                        <article class="mod-list-stat-card">
+                            <small>Đã từ chối</small>
+                            <strong th:text="${rejectedCount}">0</strong>
+                            <span class="mod-list-stat-trend text-danger">
+                                <i class="fas fa-ban"></i>
+                                Báo cáo không hợp lệ
+                            </span>
+                        </article>
+                    </div>
+                </th:block>
+
+                <div th:if="${success}" class="mod-list-alert mod-list-alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span th:text="${success}"></span>
+                </div>
+
+                <div th:if="${error}" class="mod-list-alert mod-list-alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span th:text="${error}"></span>
+                </div>
+
+                <article class="mod-list-card">
+                    <div class="mod-list-card-header">
+                        <h2 class="mod-list-card-title">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            Danh sách báo cáo review
+                        </h2>
+                        <div class="mod-tertiary">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Bảng sẽ tự động cập nhật khi thay đổi bộ lọc.
+                        </div>
+                    </div>
+                    <div class="mod-list-table-wrapper" th:if="${reportPage != null and !reportPage.isEmpty()}">
+                        <table class="mod-list-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nhà hàng</th>
+                                    <th>Khách hàng</th>
+                                    <th>Đánh giá</th>
+                                    <th>Lý do</th>
+                                    <th>Trạng thái</th>
+                                    <th>Ngày báo cáo</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="report : ${reportPage.content}">
+                                    <td>
+                                        <span class="fw-semibold" th:text="${report.reportId}">1</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold" th:text="${report.restaurantName}">Nhà hàng ABC</div>
+                                        <div class="mod-tertiary" th:text="|Chủ: ${report.ownerName}|">Chủ: Owner</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-medium" th:text="${report.customerName}">Nguyễn Văn A</div>
+                                    </td>
+                                    <td>
+                                        <div class="mod-rating">
+                                            <i class="fas fa-star text-warning"></i>
+                                            <span th:text="${report.reviewRating}">5</span>
+                                        </div>
+                                        <div class="mod-tertiary" th:text="${#temporals.format(report.reviewCreatedAt, 'dd/MM/yyyy HH:mm')}">
+                                            30/01/2025 10:00
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 260px;" th:text="${report.reasonText}">Lý do báo cáo</div>
+                                    </td>
+                                    <td>
+                                        <span class="mod-status-badge"
+                                              th:classappend="${report.status.name() == 'PENDING'} ? ' mod-status-pending' :
+                                                              (${report.status.name() == 'RESOLVED'} ? ' mod-status-resolved' : ' mod-status-rejected')"
+                                              th:text="${report.status.displayName}">
+                                            Pending
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span th:text="${#temporals.format(report.reportedAt, 'dd/MM/yyyy HH:mm')}">31/01/2025 09:00</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a th:href="@{/admin/moderation/{id}(id=${report.reportId})}" class="mod-action-btn">
+                                            <i class="fas fa-eye"></i>
+                                            Xem chi tiết
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mod-empty-state" th:if="${reportPage == null or reportPage.empty}">
+                        <i class="fas fa-inbox"></i>
+                        <p class="mb-0">Không có báo cáo nào phù hợp với bộ lọc hiện tại.</p>
+                    </div>
+                </article>
+
+                <nav class="mod-pagination" th:if="${reportPage != null and reportPage.totalPages > 1}" aria-label="Report pagination">
+                    <ul class="pagination">
+                        <li class="page-item" th:classappend="${reportPage.first} ? 'disabled' : ''">
+                            <a class="page-link" th:if="${!reportPage.first}"
+                               th:href="@{/admin/moderation(page=${currentPage - 1}, status=${selectedStatus != null ? selectedStatus.name() : null})}">Trước</a>
+                            <span class="page-link" th:unless="${!reportPage.first}">Trước</span>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/users}">
-                                <i class="fas fa-users"></i> User Management
-                            </a>
+                        <li class="page-item"
+                            th:each="pageNum : ${#numbers.sequence(0, reportPage.totalPages - 1)}"
+                            th:classappend="${pageNum == currentPage} ? 'active' : ''">
+                            <a class="page-link"
+                               th:href="@{/admin/moderation(page=${pageNum}, status=${selectedStatus != null ? selectedStatus.name() : null})}"
+                               th:text="${pageNum + 1}">1</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/partners}">
-                                <i class="fas fa-store"></i> Partner Management
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/reports}">
-                                <i class="fas fa-chart-bar"></i> Reports
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" th:href="@{/admin/moderation}">
-                                <i class="fas fa-shield-alt"></i> Moderation
-                            </a>
+                        <li class="page-item" th:classappend="${reportPage.last} ? 'disabled' : ''">
+                            <a class="page-link" th:if="${!reportPage.last}"
+                               th:href="@{/admin/moderation(page=${currentPage + 1}, status=${selectedStatus != null ? selectedStatus.name() : null})}">Sau</a>
+                            <span class="page-link" th:unless="${!reportPage.last}">Sau</span>
                         </li>
                     </ul>
-                </div>
+                </nav>
             </div>
+        </section>
+    </main>
 
-            <!-- Main Content Area -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Content Moderation</h1>
-                    <div>
-                        <form th:action="@{/admin/moderation}" method="get" class="d-flex align-items-center gap-2">
-                            <select name="status" class="form-select form-select-sm" style="width: 200px;">
-                                <option value="" th:selected="${selectedStatus == null}">Tất cả trạng thái</option>
-                                <option th:each="s : ${statuses}"
-                                        th:value="${s}"
-                                        th:text="${s.displayName}"
-                                        th:selected="${selectedStatus == s}"></option>
-                            </select>
-                            <button class="btn btn-sm btn-primary" type="submit">
-                                <i class="fas fa-filter me-1"></i>Lọc
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>
-                    <span th:text="${success}"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-
-                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    <span th:text="${error}"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive" th:if="${reportPage != null and !reportPage.isEmpty()}">
-                            <table class="table table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Nhà hàng</th>
-                                        <th>Khách hàng</th>
-                                        <th>Đánh giá</th>
-                                        <th>Lý do</th>
-                                        <th>Trạng thái</th>
-                                        <th>Ngày báo cáo</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="report : ${reportPage.content}">
-                                        <td th:text="${report.reportId}">1</td>
-                                        <td>
-                                            <div class="fw-semibold" th:text="${report.restaurantName}">Nhà hàng ABC</div>
-                                            <div class="text-muted small" th:text="|Chủ: ${report.ownerName}|"></div>
-                                        </td>
-                                        <td th:text="${report.customerName}">Nguyễn Văn A</td>
-                                        <td>
-                                            <div>
-                                                <span class="badge bg-warning text-dark">⭐</span>
-                                                <span th:text="${report.reviewRating}">5</span>
-                                            </div>
-                                            <div class="text-muted small" th:text="${#temporals.format(report.reviewCreatedAt, 'dd/MM/yyyy HH:mm')}">30/01/2025 10:00</div>
-                                        </td>
-                                        <td>
-                                            <div class="text-truncate" style="max-width: 220px;" th:text="${report.reasonText}">Lý do báo cáo</div>
-                                        </td>
-                                        <td>
-                                            <span class="badge"
-                                                  th:text="${report.status.displayName}"
-                                                  th:classappend="${report.status.name() == 'PENDING'} ? ' bg-warning text-dark' :
-                                                                (${report.status.name() == 'RESOLVED'} ? ' bg-success' : ' bg-secondary')"></span>
-                                        </td>
-                                        <td th:text="${#temporals.format(report.reportedAt, 'dd/MM/yyyy HH:mm')}">31/01/2025 09:00</td>
-                                        <td class="text-end">
-                                            <a th:href="@{/admin/moderation/{id}(id=${report.reportId})}" class="btn btn-sm btn-outline-primary">
-                                                <i class="fas fa-eye"></i>
-                                                Xem chi tiết
-                                            </a>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div th:if="${reportPage == null or reportPage.empty}" class="text-center py-5 text-muted">
-                            <i class="fas fa-inbox fa-2x mb-3"></i>
-                            <p class="mb-0">Không có báo cáo nào.</p>
-                        </div>
-
-                        <nav th:if="${reportPage != null and reportPage.totalPages > 1}" aria-label="Report pagination">
-                            <ul class="pagination justify-content-center">
-                                <li class="page-item" th:classappend="${reportPage.first} ? 'disabled' : ''">
-                                    <a class="page-link" th:href="@{/admin/moderation(page=${currentPage - 1}, status=${selectedStatus})}" th:if="${!reportPage.first}">Trước</a>
-                                    <span class="page-link" th:unless="${!reportPage.first}">Trước</span>
-                                </li>
-                                <li class="page-item" th:each="pageNum : ${#numbers.sequence(0, reportPage.totalPages - 1)}"
-                                    th:classappend="${pageNum == currentPage} ? 'active' : ''">
-                                    <a class="page-link" th:href="@{/admin/moderation(page=${pageNum}, status=${selectedStatus})}" th:text="${pageNum + 1}">1</a>
-                                </li>
-                                <li class="page-item" th:classappend="${reportPage.last} ? 'disabled' : ''">
-                                    <a class="page-link" th:href="@{/admin/moderation(page=${currentPage + 1}, status=${selectedStatus})}" th:if="${!reportPage.last}">Sau</a>
-                                    <span class="page-link" th:unless="${!reportPage.last}">Sau</span>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin-moderation.js}"></script>
 </body>
 </html>

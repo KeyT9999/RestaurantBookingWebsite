@@ -16,6 +16,8 @@ import com.example.booking.service.VoucherService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.util.CityGeoResolver;
 
+import jakarta.annotation.PostConstruct;
+
 @RestController
 @RequestMapping("/debug")
 public class DebugController {
@@ -26,7 +28,15 @@ public class DebugController {
     @Autowired
     private RestaurantManagementService restaurantService;
     
-    private final CityGeoResolver cityGeoResolver = new CityGeoResolver();
+    @Autowired
+    private org.springframework.web.client.RestTemplate restTemplate;
+    
+    private CityGeoResolver cityGeoResolver;
+    
+    @PostConstruct
+    private void initCityGeoResolver() {
+        this.cityGeoResolver = new CityGeoResolver(restTemplate);
+    }
 
     @GetMapping("/vouchers")
     public String debugVouchers() {

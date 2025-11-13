@@ -69,6 +69,14 @@ public class AdminChatController {
                     .orElseThrow(() -> new RuntimeException("User not found for username: " + username));
             }
         }
+
+        // Support OAuth2/OIDC authentication (e.g., Google login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            // For OAuth2/OIDC, Spring Security's authentication.getName() is commonly the email/subject
+            String usernameOrEmail = authentication.getName();
+            return userRepository.findByEmail(usernameOrEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found for OAuth2 username/email: " + usernameOrEmail));
+        }
         
         throw new RuntimeException("Unsupported authentication type: " + principal.getClass().getName());
     }

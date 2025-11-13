@@ -4,6 +4,16 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.sql.Date;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -17,6 +27,7 @@ import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.dto.payout.RestaurantBalanceDto;
 import com.example.booking.exception.InsufficientBalanceException;
 import com.example.booking.exception.ResourceNotFoundException;
+import com.example.booking.dto.analytics.CommissionSeriesPoint;
 import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.RestaurantBalanceRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
@@ -36,6 +47,8 @@ public class RestaurantBalanceService {
     private final BookingRepository bookingRepository;
 
     private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("0.30");
+    private static final DateTimeFormatter DAY_LABEL_FORMATTER = DateTimeFormatter.ofPattern("dd/MM");
+    private static final DateTimeFormatter MONTH_LABEL_FORMATTER = DateTimeFormatter.ofPattern("MM/yyyy");
     
     public RestaurantBalanceService(
         RestaurantBalanceRepository balanceRepository,
@@ -242,6 +255,130 @@ public class RestaurantBalanceService {
     @Transactional(readOnly = true)
     public BigDecimal getCommissionRate() {
         return DEFAULT_COMMISSION_RATE.multiply(new BigDecimal("100"));
+    }
+
+    public enum CommissionSeriesGranularity {
+        DAILY,
+        MONTHLY,
+        YEARLY
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommissionSeriesPoint> getCommissionSeries(CommissionSeriesGranularity granularity, int points) {
+        switch (granularity) {
+            case DAILY:
+                return buildDailySeries(points);
+            case MONTHLY:
+                return buildMonthlySeries(points);
+            case YEARLY:
+                return buildYearlySeries(points);
+            default:
+                return List.of();
+        }
+    }
+
+    private List<CommissionSeriesPoint> buildDailySeries(int days) {
+        if (days <= 0) {
+            return List.of();
+        }
+
+        LocalDate end = LocalDate.now();
+        LocalDate start = end.minusDays(days - 1L);
+
+        LocalDateTime startDateTime = start.atStartOfDay();
+        LocalDateTime endDateTime = end.plusDays(1).atStartOfDay();
+
+        List<Object[]> rawData = bookingRepository.sumDepositByStatusGroupedByDay(
+            BookingStatus.COMPLETED, startDateTime, endDateTime);
+
+        Map<LocalDate, BigDecimal> grossByDate = new HashMap<>();
+        for (Object[] row : rawData) {
+            Date sqlDate = (Date) row[0];
+            BigDecimal gross = (BigDecimal) row[1];
+            grossByDate.put(sqlDate.toLocalDate(), calculateCommission(gross));
+        }
+
+        List<CommissionSeriesPoint> series = new ArrayList<>();
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            BigDecimal amount = grossByDate.getOrDefault(date, BigDecimal.ZERO);
+            series.add(new CommissionSeriesPoint(date.format(DAY_LABEL_FORMATTER), amount));
+        }
+        return series;
+    }
+
+    private List<CommissionSeriesPoint> buildMonthlySeries(int months) {
+        if (months <= 0) {
+            return List.of();
+        }
+
+        YearMonth end = YearMonth.from(LocalDate.now());
+        YearMonth start = end.minusMonths(months - 1L);
+
+        LocalDateTime startDateTime = start.atDay(1).atStartOfDay();
+        LocalDateTime endDateTime = end.plusMonths(1).atDay(1).atStartOfDay();
+
+        List<Object[]> rawData = bookingRepository.sumDepositByStatusGroupedByMonth(
+            BookingStatus.COMPLETED.name(), startDateTime, endDateTime);
+
+        Map<YearMonth, BigDecimal> grossByMonth = new HashMap<>();
+        for (Object[] row : rawData) {
+            Object period = row[0];
+            BigDecimal gross = (BigDecimal) row[1];
+            YearMonth key;
+            if (period instanceof Timestamp ts) {
+                key = YearMonth.from(ts.toLocalDateTime());
+            } else if (period instanceof Instant inst) {
+                key = YearMonth.from(LocalDateTime.ofInstant(inst, ZoneId.systemDefault()));
+            } else {
+                // Fallback: parse via string (e.g. "2025-01-01 00:00:00")
+                key = YearMonth.from(LocalDateTime.parse(period.toString().replace(' ', 'T')));
+            }
+            grossByMonth.put(key, calculateCommission(gross));
+        }
+
+        List<CommissionSeriesPoint> series = new ArrayList<>();
+        for (YearMonth month = start; !month.isAfter(end); month = month.plusMonths(1)) {
+            BigDecimal amount = grossByMonth.getOrDefault(month, BigDecimal.ZERO);
+            series.add(new CommissionSeriesPoint(month.format(MONTH_LABEL_FORMATTER), amount));
+        }
+        return series;
+    }
+
+    private List<CommissionSeriesPoint> buildYearlySeries(int years) {
+        if (years <= 0) {
+            return List.of();
+        }
+
+        int endYear = LocalDate.now().getYear();
+        int startYear = endYear - (years - 1);
+
+        LocalDateTime startDateTime = LocalDate.of(startYear, 1, 1).atStartOfDay();
+        LocalDateTime endDateTime = LocalDate.of(endYear + 1, 1, 1).atStartOfDay();
+
+        List<Object[]> rawData = bookingRepository.sumDepositByStatusGroupedByYear(
+            BookingStatus.COMPLETED.name(), startDateTime, endDateTime);
+
+        Map<Integer, BigDecimal> grossByYear = new HashMap<>();
+        for (Object[] row : rawData) {
+            Object period = row[0];
+            BigDecimal gross = (BigDecimal) row[1];
+            int year;
+            if (period instanceof Timestamp ts) {
+                year = ts.toLocalDateTime().getYear();
+            } else if (period instanceof Instant inst) {
+                year = LocalDateTime.ofInstant(inst, ZoneId.systemDefault()).getYear();
+            } else {
+                year = LocalDateTime.parse(period.toString().replace(' ', 'T')).getYear();
+            }
+            grossByYear.put(year, calculateCommission(gross));
+        }
+
+        List<CommissionSeriesPoint> series = new ArrayList<>();
+        for (int year = startYear; year <= endYear; year++) {
+            BigDecimal amount = grossByYear.getOrDefault(year, BigDecimal.ZERO);
+            series.add(new CommissionSeriesPoint(String.valueOf(year), amount));
+        }
+        return series;
     }
 
     private BigDecimal getCommissionBetween(LocalDateTime start, LocalDateTime end) {

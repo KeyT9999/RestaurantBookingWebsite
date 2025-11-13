@@ -18,11 +18,16 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.example.booking.dto.analytics.CommissionSeriesPoint;
 import com.example.booking.service.RestaurantApprovalService;
 import com.example.booking.service.RestaurantBalanceService;
 import com.example.booking.service.RefundService;
 import com.example.booking.domain.RefundRequest;
 import com.example.booking.common.enums.RefundStatus;
+import com.example.booking.common.enums.WithdrawalStatus;
+import com.example.booking.repository.WithdrawalRequestRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Controller for Admin Dashboard
@@ -43,6 +48,11 @@ public class AdminDashboardController {
     @Autowired
     private RefundService refundService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private WithdrawalRequestRepository withdrawalRepository;
     /**
      * Add common model attributes for admin pages
      */
@@ -78,6 +88,22 @@ public class AdminDashboardController {
             BigDecimal totalCommission = balanceService.getTotalCommission();
             BigDecimal avgCommissionPerBooking = balanceService.getAverageCommissionPerBooking();
             long todayBookings = balanceService.getCompletedBookingsToday();
+            long pendingRefunds = refundService.getPendingRefunds().size();
+            List<CommissionSeriesPoint> dailySeries = balanceService.getCommissionSeries(
+                RestaurantBalanceService.CommissionSeriesGranularity.DAILY, 7);
+            List<CommissionSeriesPoint> monthlySeries = balanceService.getCommissionSeries(
+                RestaurantBalanceService.CommissionSeriesGranularity.MONTHLY, 6);
+            List<CommissionSeriesPoint> yearlySeries = balanceService.getCommissionSeries(
+                RestaurantBalanceService.CommissionSeriesGranularity.YEARLY, 5);
+
+            // Withdrawal stats for dashboard
+            long withdrawalPendingCount = withdrawalRepository.countByStatus(WithdrawalStatus.PENDING);
+            long withdrawalSucceededCount = withdrawalRepository.countByStatus(WithdrawalStatus.SUCCEEDED);
+            long withdrawalRejectedCount = withdrawalRepository.countByStatus(WithdrawalStatus.REJECTED);
+            BigDecimal withdrawalPendingAmount = withdrawalRepository.sumAmountByStatus(WithdrawalStatus.PENDING);
+            BigDecimal withdrawalSucceededAmount = withdrawalRepository.sumAmountByStatus(WithdrawalStatus.SUCCEEDED);
+            BigDecimal withdrawalCommissionTotal = withdrawalRepository.sumCommissionByStatus(WithdrawalStatus.SUCCEEDED);
+            Double withdrawalAvgHours = withdrawalRepository.calculateAverageProcessingTimeHours();
 
             model.addAttribute("commissionToday", commissionToday);
             model.addAttribute("commissionRate", balanceService.getCommissionRate());
@@ -86,6 +112,27 @@ public class AdminDashboardController {
             model.addAttribute("weeklyCommission", weeklyCommission);
             model.addAttribute("monthlyCommission", monthlyCommission);
             model.addAttribute("totalCommission", totalCommission);
+            model.addAttribute("pendingRefunds", pendingRefunds);
+            model.addAttribute("withdrawalPendingCount", withdrawalPendingCount);
+            model.addAttribute("withdrawalSucceededCount", withdrawalSucceededCount);
+            model.addAttribute("withdrawalRejectedCount", withdrawalRejectedCount);
+            model.addAttribute("withdrawalPendingAmount", withdrawalPendingAmount);
+            model.addAttribute("withdrawalSucceededAmount", withdrawalSucceededAmount);
+            model.addAttribute("withdrawalCommissionTotal", withdrawalCommissionTotal);
+            model.addAttribute("withdrawalAvgHours", withdrawalAvgHours != null ? withdrawalAvgHours : 0.0);
+            
+            Map<String, List<CommissionSeriesPoint>> commissionSeries = new HashMap<>();
+            commissionSeries.put("daily", dailySeries);
+            commissionSeries.put("monthly", monthlySeries);
+            commissionSeries.put("yearly", yearlySeries);
+
+            try {
+                String commissionSeriesJson = objectMapper.writeValueAsString(commissionSeries);
+                model.addAttribute("commissionSeriesJson", commissionSeriesJson);
+            } catch (JsonProcessingException e) {
+                logger.error("Failed to serialize commission series data", e);
+                model.addAttribute("commissionSeriesJson", "{}");
+            }
             
             logger.info("Admin dashboard loaded successfully");
             

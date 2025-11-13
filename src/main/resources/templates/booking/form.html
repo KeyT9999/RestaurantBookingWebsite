@@ -333,7 +333,9 @@
                                     <option value="">Chọn nhà hàng</option>
                                     <option th:each="restaurant : ${restaurants}"
                                             th:value="${restaurant.restaurantId}"
-                                            th:text="${restaurant.restaurantName}"></option>
+                                            th:text="${restaurant.restaurantName}"
+                                            th:attr="data-latitude=${restaurant.latitude != null ? restaurant.latitude : ''}, 
+                                                    data-longitude=${restaurant.longitude != null ? restaurant.longitude : ''}"></option>
                                 </select>
                                 <div class="invalid-feedback" th:if="${#fields.hasErrors('restaurantId')}"
                                      th:errors="*{restaurantId}"></div>
@@ -806,11 +808,147 @@
         </div>
     </div>
     
+    <!-- Distance Warning Modal -->
+    <style>
+        /* Black & White minimal styles in sync with Home */
+        #distanceWarningModal .modal-content { 
+            border: 1px solid #e5e7eb; 
+            border-radius: 14px; 
+        }
+        #distanceWarningModal .modal-header { 
+            border: none; 
+        }
+        #distanceWarningModal .modal-title { 
+            font-weight: 700; 
+            color: #111; 
+        }
+        #distanceWarningModal .modal-body { 
+            color: #111; 
+        }
+        .distance-warning-actions { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+            margin-top: 16px; 
+            justify-content: center;
+        }
+        .btn-bw { 
+            background: #111; 
+            color: #fff; 
+            border: 1px solid #111; 
+            border-radius: 10px; 
+            padding: 10px 16px; 
+            font-weight: 600; 
+        }
+        .btn-bw:hover { 
+            background: #000; 
+            color: #fff; 
+        }
+        .btn-bw-outline { 
+            background: #fff; 
+            color: #111; 
+            border: 1px solid #111; 
+            border-radius: 10px; 
+            padding: 10px 16px; 
+            font-weight: 600; 
+        }
+        .btn-bw-outline:hover { 
+            background: #f5f5f5; 
+            color: #111; 
+        }
+        #distanceWarningModal .modal-title i {
+            color: #dc3545;
+        }
+        .distance-info {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .distance-info strong {
+            color: #111;
+            font-weight: 700;
+        }
+    </style>
+    
+    <div class="modal fade" id="distanceWarningModal" tabindex="-1" aria-labelledby="distanceWarningModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="distanceWarningModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Cảnh báo khoảng cách
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">
+                        <strong>Nhà hàng hiện tại đang xa so với vị trí hiện tại của bạn</strong>
+                    </p>
+                    <div class="distance-info">
+                        <p class="mb-2">
+                            <strong>Khoảng cách: <span id="distanceWarningKm">0</span> km</strong>
+                        </p>
+                        <p class="mb-0" style="font-size: 0.9rem; color: #555;">
+                            Bạn có chắc chắn muốn xác nhận đặt bàn tại nhà hàng này không?
+                        </p>
+                    </div>
+                    <div class="distance-warning-actions">
+                        <button type="button" class="btn btn-bw-outline" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Hủy
+                        </button>
+                        <button type="button" class="btn btn-bw" id="confirmDistanceBookingBtn">
+                            <i class="fas fa-check me-2"></i>Đồng ý xác nhận
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div th:replace="~{fragments/resy-footer :: resy-footer}"></div>
     <div th:replace="~{fragments/resy-scripts :: resy-scripts}"></div>
     <script th:src="@{/js/main.js}" defer></script>
     
     <script>
+        // Ensure form always goes through validation - attach event listener immediately
+        (function() {
+            const bookingForm = document.getElementById('bookingForm');
+            if (bookingForm) {
+                // Remove inline onsubmit and add event listener instead
+                bookingForm.removeAttribute('onsubmit');
+                bookingForm.addEventListener('submit', function(event) {
+                    console.log('🔍 Form submit event triggered');
+                    const result = validateForm(event);
+                    console.log('🔍 validateForm() returned:', result);
+                    if (result === false) {
+                        console.log('✅ Form submission prevented by validateForm()');
+                    }
+                    return result;
+                });
+                console.log('✅ Form submit event listener attached');
+            } else {
+                // If form not found yet, wait for DOMContentLoaded
+                document.addEventListener('DOMContentLoaded', function() {
+                    const form = document.getElementById('bookingForm');
+                    if (form) {
+                        form.removeAttribute('onsubmit');
+                        form.addEventListener('submit', function(event) {
+                            console.log('🔍 Form submit event triggered (from DOMContentLoaded)');
+                            const result = validateForm(event);
+                            console.log('🔍 validateForm() returned:', result);
+                            if (result === false) {
+                                console.log('✅ Form submission prevented by validateForm()');
+                            }
+                            return result;
+                        });
+                        console.log('✅ Form submit event listener attached (from DOMContentLoaded)');
+                    }
+                });
+            }
+        })();
+        
         // Global variables to store selections
         let selectedTables = [];
         let selectedDishes = [];
@@ -2017,7 +2155,14 @@
         }
         
         // Form validation before submit
-        function validateForm() {
+        function validateForm(event) {
+            console.log('🔍 validateForm() called', event ? 'with event' : 'without event');
+            
+            // ALWAYS prevent default form submission
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             
             // Log current selections before validation
             logAllSelections();
@@ -2047,14 +2192,38 @@
             const bookingTime = bookingTimeInput.value;
             const selectedTableIds = selectedTableIdsInput.value;
             
+            console.log('🔍 Form data:', {
+                restaurantId: restaurantId,
+                guestCount: guestCount,
+                bookingTime: bookingTime,
+                selectedTableIds: selectedTableIds
+            });
+            
             // Basic validation (redundant but keeping for safety)
             if (!restaurantId || !guestCount || !bookingTime) {
                 alert('Vui lòng điền đầy đủ các trường bắt buộc.');
                 return false;
             }
             
-            // Check availability with Smart Waitlist
-            checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds);
+            // Check distance before checking availability
+            console.log('🔍 Calling checkDistanceBeforeSubmit()...');
+            const distanceCheckResult = checkDistanceBeforeSubmit();
+            console.log('🔍 Distance check result:', distanceCheckResult);
+            
+            if (distanceCheckResult === false) {
+                console.log('⚠️ Distance check returned false, modal should be shown - STOPPING form submission');
+                return false; // Distance check will show modal and handle submission
+            }
+            
+            if (distanceCheckResult === true) {
+                console.log('✅ Distance check passed, proceeding with availability check');
+                // Check availability with Smart Waitlist
+                checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds);
+            } else {
+                // distanceCheckResult might be a Promise if we're fetching coordinates
+                console.log('⏳ Distance check is async, waiting...');
+                return false; // Wait for async operation
+            }
             
             // Prevent default form submission - we'll handle it in the callback
             return false;
@@ -2778,7 +2947,7 @@
                             const modifiedData = { ...data, hasConflict: true };
                             showSmartWaitlistPopup(modifiedData);
                         } else {
-                            submitBookingForm();
+                            submitFormDirectly();
                         }
                     }
                 })
@@ -2787,7 +2956,7 @@
                     console.error('❌ Error details:', error.message);
                     // Fallback to normal booking if API fails
                     console.log('⚠️ Falling back to normal booking submission...');
-                    submitBookingForm();
+                    submitFormDirectly();
                 });
         }
         
@@ -3031,12 +3200,38 @@
          */
         function validateFormBeforeSubmit() {
             
+            // Get form elements with null checks
+            const restaurantSelect = document.getElementById('restaurantId');
+            const guestCountInput = document.getElementById('guestCount');
+            const bookingTimeInput = document.getElementById('bookingTime');
+            const tableIdInput = document.getElementById('tableId');
+            const tableIdsInput = document.getElementById('selectedTableIds');
+            
+            // Check if elements exist
+            if (!restaurantSelect) {
+                console.error('❌ restaurantId element not found');
+                showNotification('Lỗi: Không tìm thấy trường chọn nhà hàng', 'error');
+                return false;
+            }
+            
+            if (!guestCountInput) {
+                console.error('❌ guestCount element not found');
+                showNotification('Lỗi: Không tìm thấy trường số lượng khách', 'error');
+                return false;
+            }
+            
+            if (!bookingTimeInput) {
+                console.error('❌ bookingTime element not found');
+                showNotification('Lỗi: Không tìm thấy trường thời gian đặt bàn', 'error');
+                return false;
+            }
+            
             // Get form data
-            const restaurantId = document.getElementById('restaurantId').value;
-            const guestCount = parseInt(document.getElementById('guestCount').value);
-            const bookingTime = document.getElementById('bookingTime').value;
-            const tableId = document.getElementById('tableId').value;
-            const tableIds = document.getElementById('selectedTableIds').value;
+            const restaurantId = restaurantSelect.value;
+            const guestCount = parseInt(guestCountInput.value) || 0;
+            const bookingTime = bookingTimeInput.value;
+            const tableId = tableIdInput ? tableIdInput.value : null;
+            const tableIds = tableIdsInput ? tableIdsInput.value : null;
             
             
             // 1. Validate required fields
@@ -3112,6 +3307,334 @@
         }
         
         /**
+         * Calculate distance between two coordinates using Haversine formula
+         */
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        /**
+         * Get user location from localStorage or sessionStorage
+         */
+        function getUserLocation() {
+            try {
+                // Try sessionStorage first
+                const sessionLoc = sessionStorage.getItem('userLocation');
+                if (sessionLoc) {
+                    const loc = JSON.parse(sessionLoc);
+                    if (loc.lat && loc.lng) {
+                        console.log('📍 User location from sessionStorage:', loc);
+                        return { latitude: loc.lat, longitude: loc.lng };
+                    }
+                }
+                
+                // Try localStorage
+                const localLoc = localStorage.getItem('userLocation');
+                if (localLoc) {
+                    const loc = JSON.parse(localLoc);
+                    if (loc.lat && loc.lng) {
+                        console.log('📍 User location from localStorage:', loc);
+                        return { latitude: loc.lat, longitude: loc.lng };
+                    }
+                }
+            } catch (e) {
+                console.warn('Error getting user location:', e);
+            }
+            console.log('⚠️ No user location found in storage');
+            return null;
+        }
+        
+        /**
+         * Check distance before submitting booking
+         * Simple logic: Calculate distance from user location to restaurant, show modal if > 200km
+         */
+        function checkDistanceBeforeSubmit() {
+            console.log('🔍 checkDistanceBeforeSubmit() called');
+            
+            // Get selected restaurant
+            const restaurantSelect = document.getElementById('restaurantId');
+            if (!restaurantSelect || !restaurantSelect.value) {
+                console.log('⚠️ No restaurant selected, skipping distance check');
+                return true; // No restaurant selected, skip check
+            }
+            
+            console.log('✅ Restaurant selected:', restaurantSelect.value);
+            
+            // Get user location first
+            const userLocation = getUserLocation();
+            if (!userLocation || !userLocation.latitude || !userLocation.longitude) {
+                console.log('⚠️ User location not available, skipping distance check');
+                return true; // No user location, skip check
+            }
+            
+            console.log('📍 User location:', {
+                lat: userLocation.latitude,
+                lon: userLocation.longitude
+            });
+            
+            // Get restaurant coordinates from option
+            const selectedOption = restaurantSelect.options[restaurantSelect.selectedIndex];
+            let restaurantLat = null;
+            let restaurantLon = null;
+            
+            const latAttr = selectedOption.getAttribute('data-latitude');
+            const lonAttr = selectedOption.getAttribute('data-longitude');
+            
+            if (latAttr && latAttr !== '' && lonAttr && lonAttr !== '') {
+                restaurantLat = parseFloat(latAttr);
+                restaurantLon = parseFloat(lonAttr);
+                console.log('📍 Restaurant coordinates from option:', {
+                    lat: restaurantLat,
+                    lon: restaurantLon,
+                    restaurantName: selectedOption.text
+                });
+            }
+            
+            // If no coordinates in option, try to fetch from API
+            if (!restaurantLat || !restaurantLon || isNaN(restaurantLat) || isNaN(restaurantLon)) {
+                console.log('⚠️ Restaurant coordinates not in option, fetching from API...');
+                // Fetch coordinates from API
+                return fetchRestaurantCoordinatesAndCheckDistance(restaurantId, userLocation);
+            }
+            
+            // Calculate distance from user location to restaurant
+            const distance = calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                restaurantLat,
+                restaurantLon
+            );
+            
+            console.log('📍 Distance calculation:', {
+                userLocation: `${userLocation.latitude}, ${userLocation.longitude}`,
+                restaurantLocation: `${restaurantLat}, ${restaurantLon}`,
+                distance: `${distance.toFixed(2)} km`,
+                threshold: '200 km',
+                shouldShowModal: distance > 200
+            });
+            
+            // If distance > 200km, show warning modal
+            if (distance > 200) {
+                console.log('⚠️ Distance > 200km (' + distance.toFixed(2) + ' km), showing warning modal');
+                return showDistanceWarningModal(distance);
+            }
+            
+            console.log('✅ Distance is acceptable (' + distance.toFixed(2) + ' km <= 200 km), proceeding with submission');
+            return true; // Distance is acceptable, proceed
+        }
+        
+        /**
+         * Fetch restaurant coordinates from API and check distance
+         */
+        function fetchRestaurantCoordinatesAndCheckDistance(restaurantId, userLocation) {
+            console.log('🔍 Fetching restaurant coordinates from API for restaurant ID:', restaurantId);
+            
+            fetch(`/api/booking/restaurants/${restaurantId}/coordinates`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch coordinates');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📍 Restaurant coordinates from API:', data);
+                    if (data.latitude && data.longitude) {
+                        const restaurantLat = parseFloat(data.latitude);
+                        const restaurantLon = parseFloat(data.longitude);
+                        
+                        // Calculate distance
+                        const distance = calculateDistance(
+                            userLocation.latitude,
+                            userLocation.longitude,
+                            restaurantLat,
+                            restaurantLon
+                        );
+                        
+                        console.log('📍 Distance calculation (from API):', {
+                            userLocation: `${userLocation.latitude}, ${userLocation.longitude}`,
+                            restaurantLocation: `${restaurantLat}, ${restaurantLon}`,
+                            distance: `${distance.toFixed(2)} km`,
+                            threshold: '200 km',
+                            shouldShowModal: distance > 200
+                        });
+                        
+                        // If distance > 200km, show warning modal
+                        if (distance > 200) {
+                            console.log('⚠️ Distance > 200km (' + distance.toFixed(2) + ' km), showing warning modal');
+                            showDistanceWarningModal(distance);
+                            // Modal will handle form submission via proceedWithFormSubmission()
+                        } else {
+                            // Distance is acceptable, proceed with submission
+                            console.log('✅ Distance is acceptable, proceeding with submission');
+                            proceedWithFormSubmission();
+                        }
+                    } else {
+                        console.log('⚠️ Restaurant coordinates not available in API response, proceeding without distance check');
+                        proceedWithFormSubmission();
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error fetching restaurant coordinates:', error);
+                    console.log('⚠️ Proceeding without distance check due to API error');
+                    proceedWithFormSubmission();
+                });
+            
+            // Return false to prevent immediate form submission
+            // The async operation will call proceedWithFormSubmission() when done
+            return false;
+        }
+        
+        /**
+         * Show distance warning modal
+         */
+        function showDistanceWarningModal(distance) {
+            console.log('🔍 showDistanceWarningModal() called with distance:', distance);
+            
+            // Check if modal element exists
+            const modalElement = document.getElementById('distanceWarningModal');
+            if (!modalElement) {
+                console.error('❌ Distance warning modal element not found in DOM!');
+                // Fallback to confirm dialog
+                const confirmed = confirm(
+                    'Nhà hàng hiện tại đang xa so với vị trí hiện tại của bạn.\n\n' +
+                    'Khoảng cách: ' + distance.toFixed(0) + ' km\n\n' +
+                    'Bạn có chắc chắn muốn xác nhận đặt bàn không?'
+                );
+                return confirmed; // Return true if user confirms, false if cancels
+            }
+            
+            console.log('✅ Modal element found in DOM');
+            
+            // Update distance text
+            const distanceText = document.getElementById('distanceWarningKm');
+            if (distanceText) {
+                distanceText.textContent = distance.toFixed(0);
+                console.log('✅ Distance text updated to:', distance.toFixed(0) + ' km');
+            } else {
+                console.error('❌ Distance text element (distanceWarningKm) not found!');
+            }
+            
+            // Show modal using Bootstrap
+            try {
+                // Check if Bootstrap is available
+                if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+                    console.error('❌ Bootstrap is not loaded! Using fallback confirm dialog');
+                    const confirmed = confirm(
+                        'Nhà hàng hiện tại đang xa so với vị trí hiện tại của bạn.\n\n' +
+                        'Khoảng cách: ' + distance.toFixed(0) + ' km\n\n' +
+                        'Bạn có chắc chắn muốn xác nhận đặt bàn không?'
+                    );
+                    return confirmed;
+                }
+                
+                console.log('✅ Bootstrap is available');
+                
+                // Get or create modal instance
+                let distanceModal = bootstrap.Modal.getInstance(modalElement);
+                if (!distanceModal) {
+                    distanceModal = new bootstrap.Modal(modalElement, {
+                        backdrop: 'static', // Prevent closing by clicking outside
+                        keyboard: false // Prevent closing with ESC key
+                    });
+                    console.log('✅ Bootstrap Modal instance created');
+                } else {
+                    console.log('✅ Using existing Bootstrap Modal instance');
+                }
+                
+                // Set up confirm button handler BEFORE showing modal
+                const confirmBtn = document.getElementById('confirmDistanceBookingBtn');
+                if (confirmBtn) {
+                    console.log('✅ Confirm button found');
+                    // Remove old event listeners by replacing the button
+                    const newConfirmBtn = confirmBtn.cloneNode(true);
+                    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+                    
+                    // Add click handler to proceed with submission
+                    newConfirmBtn.addEventListener('click', function() {
+                        console.log('✅ User confirmed distance warning, proceeding with submission');
+                        distanceModal.hide();
+                        // Proceed with availability check and submission
+                        proceedWithFormSubmission();
+                    });
+                    console.log('✅ Confirm button handler set up');
+                } else {
+                    console.error('❌ Confirm button (confirmDistanceBookingBtn) not found!');
+                }
+                
+                // Show modal
+                distanceModal.show();
+                console.log('✅ Modal.show() called - modal should be visible now');
+                
+                // Double check modal visibility after a short delay
+                setTimeout(() => {
+                    const isShown = modalElement.classList.contains('show');
+                    const display = window.getComputedStyle(modalElement).display;
+                    console.log('🔍 Modal visibility check after 100ms:', {
+                        hasShowClass: isShown,
+                        display: display,
+                        modalElementExists: !!modalElement
+                    });
+                    if (!isShown && display !== 'block') {
+                        console.error('❌ Modal is not visible! Trying to show again...');
+                        distanceModal.show();
+                    }
+                }, 100);
+                
+                return false; // Prevent form submission - wait for user confirmation
+            } catch (e) {
+                console.error('❌ Error showing modal:', e);
+                console.error('   Error stack:', e.stack);
+                // Fallback to confirm dialog
+                const confirmed = confirm(
+                    'Nhà hàng hiện tại đang xa so với vị trí hiện tại của bạn.\n\n' +
+                    'Khoảng cách: ' + distance.toFixed(0) + ' km\n\n' +
+                    'Bạn có chắc chắn muốn xác nhận đặt bàn không?'
+                );
+                return confirmed;
+            }
+        }
+        
+        /**
+         * Submit form directly (without additional checks)
+         * This is called after all validations (distance, availability) have passed
+         */
+        function submitFormDirectly() {
+            // Save form state before submission
+            saveFormState();
+            
+            // Find and submit the form
+            const form = document.getElementById('bookingForm');
+            if (!form) {
+                showNotification('Không tìm thấy biểu mẫu, vui lòng tải lại trang và thử lại.', 'error');
+                return;
+            }
+            
+            form.submit();
+        }
+        
+        /**
+         * Proceed with form submission (after distance check)
+         * This will check availability before submitting
+         */
+        function proceedWithFormSubmission() {
+            // Get form data for availability check
+            const restaurantId = document.getElementById('restaurantId').value;
+            const bookingTime = document.getElementById('bookingTime').value;
+            const guestCount = document.getElementById('guestCount').value;
+            const selectedTableIds = document.getElementById('selectedTableIds').value;
+            
+            // Check availability before submitting (this will call submitFormDirectly internally)
+            checkAvailabilityAndShowPopup(restaurantId, bookingTime, guestCount, selectedTableIds);
+        }
+        
+        /**
          * Submit booking form (original function)
          */
         function submitBookingForm() {
@@ -3126,17 +3649,13 @@
                 return;
             }
             
-            // Save form state before submission
-            saveFormState();
-            
-            // Find and submit the form
-            const form = document.getElementById('bookingForm');
-            if (!form) {
-                showNotification('Không tìm thấy biểu mẫu, vui lòng tải lại trang và thử lại.', 'error');
-                return;
+            // Check distance before submission
+            if (!checkDistanceBeforeSubmit()) {
+                return; // Distance check will show modal and handle submission
             }
             
-            form.submit();
+            // If distance check passed, proceed with availability check and submission
+            proceedWithFormSubmission();
         }
         
         /**

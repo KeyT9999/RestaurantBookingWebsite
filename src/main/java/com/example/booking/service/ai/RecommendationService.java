@@ -25,6 +25,8 @@ import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.util.CityGeoResolver;
 import com.example.booking.util.GeoUtils;
 
+import jakarta.annotation.PostConstruct;
+
 /**
  * Simplified Recommendation Service for MVP
  */
@@ -39,8 +41,16 @@ public class RecommendationService {
     
     @Autowired
     private DishRepository dishRepository;
+    
+    @Autowired
+    private org.springframework.web.client.RestTemplate restTemplate;
 
-    private final CityGeoResolver cityGeoResolver = new CityGeoResolver();
+    private CityGeoResolver cityGeoResolver;
+    
+    @PostConstruct
+    private void initCityGeoResolver() {
+        this.cityGeoResolver = new CityGeoResolver(restTemplate);
+    }
 
     private static final Set<String> DEFAULT_STOP_WORDS = Set.of(
         "toi", "minh", "ban", "chungtoi",

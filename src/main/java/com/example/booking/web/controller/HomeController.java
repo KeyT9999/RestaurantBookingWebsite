@@ -38,13 +38,13 @@ import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewForm;
 import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.repository.RestaurantMediaRepository;
+
 import com.example.booking.service.CustomerService;
 import com.example.booking.service.NotificationService;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.ReviewService;
 import com.example.booking.service.SimpleUserService;
-import com.example.booking.util.CityGeoResolver;
 
 /**
  * Controller for handling home page and static pages
@@ -83,8 +83,6 @@ public class HomeController {
     
     @Autowired
     private SimpleUserService userService;
-    
-    private final CityGeoResolver cityGeoResolver = new CityGeoResolver();
 
     /**
      * Home page - main landing page
@@ -394,13 +392,13 @@ public class HomeController {
             model.addAttribute("pageTitle", "Nhà hàng - Book Eat");
             model.addAttribute("activeNav", "restaurants");
             
-            Page<RestaurantProfile> restaurants;
+            Page<RestaurantProfile> restaurants = null;
             
             // If nearby search is requested and coordinates are provided
             if (Boolean.TRUE.equals(nearby) && latitude != null && longitude != null) {
                 log.info("📍 Nearby search requested - User location: lat={}, lon={}", latitude, longitude);
                 
-                // Validate coordinates
+                // Validate coordinates range
                 if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
                     log.error("❌ Invalid coordinates received: lat={}, lon={}", latitude, longitude);
                     model.addAttribute("error", "Tọa độ không hợp lệ");
@@ -410,6 +408,73 @@ public class HomeController {
                     restaurants = restaurantService.getRestaurantsWithFilters(
                         pageable, search, cuisineType, priceRange, ratingFilter);
                 } else {
+                    // Validate coordinates are within Vietnam bounds
+                    // Vietnam: ~8.5°N to 23.5°N, ~102°E to 110°E
+                    boolean withinVietnam = (latitude >= 8 && latitude <= 24 && longitude >= 102 && longitude <= 111);
+                    
+                    // Check distance to major cities to detect wrong location
+                    double daNangLat = 16.047079;
+                    double daNangLon = 108.206230;
+                    double hcmLat = 10.776889;
+                    double hcmLon = 106.700806;
+                    
+                    double distanceToDaNang = calculateDistance(latitude, longitude, daNangLat, daNangLon);
+                    double distanceToHCM = calculateDistance(latitude, longitude, hcmLat, hcmLon);
+                    
+                    log.info("📍 User location validation:");
+                    log.info("   Coordinates: ({}, {})", latitude, longitude);
+                    log.info("   Distance to Đà Nẵng: {} km", String.format("%.2f", distanceToDaNang));
+                    log.info("   Distance to Hồ Chí Minh: {} km", String.format("%.2f", distanceToHCM));
+                    
+                    // Enhanced validation: Reject location if it's clearly wrong
+                    // Case 1: User is closer to HCM than Đà Nẵng, and distance to Đà Nẵng > 50km
+                    // This indicates user is likely in Đà Nẵng but browser returned HCM location (IP-based geolocation)
+                    if (distanceToHCM < distanceToDaNang && distanceToDaNang > 50) {
+                        log.error("❌ User location seems to be in HCM area ({} km from HCM, {} km from Đà Nẵng). " +
+                            "This is likely IP-based geolocation returning wrong location. " +
+                            "User is probably in Đà Nẵng but browser detected HCM.", 
+                            String.format("%.2f", distanceToHCM), String.format("%.2f", distanceToDaNang));
+                        model.addAttribute("error", 
+                            String.format("Vị trí tự động không chính xác (cách Đà Nẵng %.0f km, cách HCM %.0f km). " +
+                                "Hệ thống đã phát hiện vị trí có vẻ không đúng. " +
+                                "Vui lòng chọn thành phố thủ công trong cài đặt vị trí để có kết quả chính xác.", 
+                                distanceToDaNang, distanceToHCM));
+                        // Fallback to normal filtering - don't use wrong location
+                        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+                        Pageable pageable = PageRequest.of(page, size, sort);
+                        restaurants = restaurantService.getRestaurantsWithFilters(
+                            pageable, search, cuisineType, priceRange, ratingFilter);
+                    } 
+                    // Case 2: Location is outside Vietnam bounds
+                    else if (!withinVietnam) {
+                        log.warn("⚠️ Coordinates outside Vietnam bounds: lat={}, lon={}", latitude, longitude);
+                        log.warn("   Expected range: lat 8-24, lon 102-111");
+                        
+                        if (distanceToDaNang > 1000) {
+                            log.error("❌ Coordinates are very far from Vietnam (>1000km). " +
+                                "Distance to Đà Nẵng: {} km. This might be a cached/wrong location.", 
+                                String.format("%.2f", distanceToDaNang));
+                            model.addAttribute("error", 
+                                String.format("Vị trí không hợp lệ (cách Đà Nẵng %.0f km). Vui lòng cập nhật vị trí.", 
+                                    distanceToDaNang));
+                            // Fallback to normal filtering
+                            Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+                            Pageable pageable = PageRequest.of(page, size, sort);
+                            restaurants = restaurantService.getRestaurantsWithFilters(
+                                pageable, search, cuisineType, priceRange, ratingFilter);
+                        } else {
+                            // Within reasonable distance, proceed but log warning
+                            log.info("📍 Proceeding with nearby search despite coordinates outside Vietnam bounds");
+                        }
+                    } else if (distanceToDaNang > 100) {
+                        // User claims to be in Đà Nẵng, but location is > 100km away
+                        log.warn("⚠️ User location is {} km from Đà Nẵng center. " +
+                            "If user is actually in Đà Nẵng, this might be a cached/wrong location.", 
+                            String.format("%.2f", distanceToDaNang));
+                        // Still proceed, but log warning
+                    }
+                    
+                    if (restaurants == null) { // Only proceed if we haven't set restaurants in error case above
                     // Get all restaurants first (we'll filter and sort by distance)
                     Pageable allPageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by("restaurantName"));
                     Page<RestaurantProfile> allRestaurants = restaurantService.getRestaurantsWithFilters(
@@ -435,58 +500,31 @@ public class HomeController {
                                 r.getRestaurantName(), r.getRestaurantId(), r.getAddress()));
                     }
                     
-                    // Calculate distances - use database coordinates if available, otherwise fallback to CityGeoResolver
+                    // Calculate distances - ONLY use coordinates stored in database
+                    // Logic: Distance = user's current location vs restaurant's stored coordinates
                     List<RestaurantProfile> restaurantsWithDistance = allRestaurants.getContent().stream()
                         .map(r -> {
-                            Double restaurantLat = null;
-                            Double restaurantLon = null;
-                            boolean fromDatabase = false;
-                            
-                            // Try to get coordinates from database first
+                            // Only use coordinates from database - no real-time geocoding
                             if (r.getLatitude() != null && r.getLongitude() != null) {
-                                restaurantLat = r.getLatitude().doubleValue();
-                                restaurantLon = r.getLongitude().doubleValue();
-                                fromDatabase = true;
-                                log.debug("✅ Restaurant {} has DB coordinates: ({}, {})", 
-                                    r.getRestaurantName(), restaurantLat, restaurantLon);
-                            } else {
-                                // Fallback: try to resolve coordinates from address using CityGeoResolver
-                                CityGeoResolver.LatLng approx = cityGeoResolver.resolveFromAddress(r.getAddress());
-                                if (approx != null) {
-                                    restaurantLat = approx.lat;
-                                    restaurantLon = approx.lng;
-                                    fromDatabase = false;
-                                    log.debug("📍 Restaurant {} coordinates resolved from address: ({}, {}) - Address: {}", 
-                                        r.getRestaurantName(), restaurantLat, restaurantLon, r.getAddress());
-                                } else {
-                                    log.debug("⚠️ Restaurant {} has no coordinates (DB: null, Address: '{}' - cannot resolve)", 
-                                        r.getRestaurantName(), r.getAddress());
-                                }
-                            }
-                            
-                            // If we have coordinates (from DB or address), calculate distance
-                            if (restaurantLat != null && restaurantLon != null) {
-                                // If coordinates were resolved from address, store them in restaurant for later use
-                                if (!fromDatabase) {
-                                    r.setLatitude(java.math.BigDecimal.valueOf(restaurantLat));
-                                    r.setLongitude(java.math.BigDecimal.valueOf(restaurantLon));
-                                    log.debug("📍 Stored resolved coordinates in restaurant object: ({}, {})", 
-                                        restaurantLat, restaurantLon);
-                                }
+                                Double restaurantLat = r.getLatitude().doubleValue();
+                                Double restaurantLon = r.getLongitude().doubleValue();
                                 
+                                // Calculate distance from user's current location to restaurant's stored coordinates
                                 double distance = calculateDistance(latitude, longitude, restaurantLat, restaurantLon);
                                 r.setDistance(distance);
-                                log.debug("📏 Restaurant {} - Distance: {} km (from {} coordinates: {}, {})", 
+                                
+                                log.debug("📏 Restaurant {} - Distance: {} km (DB coordinates: {}, {})", 
                                     r.getRestaurantName(), 
                                     String.format("%.2f", distance), 
-                                    fromDatabase ? "DB" : "address", 
                                     restaurantLat, restaurantLon);
                                 return r;
+                            } else {
+                                // Restaurant doesn't have coordinates in database - skip it
+                                log.warn("⚠️ Restaurant {} (ID: {}) has no coordinates in database - Address: '{}'. " +
+                                    "Please update restaurant profile to geocode and save coordinates.", 
+                                    r.getRestaurantName(), r.getRestaurantId(), r.getAddress());
+                                return null;
                             }
-                            
-                            // No coordinates available - return null to filter out
-                            log.debug("❌ Restaurant {} has no coordinates - filtering out", r.getRestaurantName());
-                            return null;
                         })
                         .filter(java.util.Objects::nonNull)
                         .filter(r -> {
@@ -561,14 +599,12 @@ public class HomeController {
                             closest.getDistance() != null ? String.format("%.2f", closest.getDistance()) : "N/A", 
                             closestCoordsStr, closest.getAddress());
                         
-                        // Verify Đà Nẵng location
-                        double daNangLat = 16.047079;
-                        double daNangLon = 108.206230;
-                        double distanceToDaNang = calculateDistance(latitude, longitude, daNangLat, daNangLon);
+                        // Verify Đà Nẵng location (using variables already declared above)
                         log.info("📍 User location verification: Distance to Đà Nẵng center: {} km", 
                             String.format("%.2f", distanceToDaNang));
                         if (distanceToDaNang > 10) {
-                            log.warn("⚠️ User location seems far from Đà Nẵng center ({} km). Expected < 10 km.", distanceToDaNang);
+                            log.warn("⚠️ User location seems far from Đà Nẵng center ({} km). Expected < 10 km.", 
+                                String.format("%.2f", distanceToDaNang));
                         }
                     }
                     
@@ -586,7 +622,8 @@ public class HomeController {
                     model.addAttribute("userLongitude", longitude);
                     model.addAttribute("nearbySearch", true);
                     model.addAttribute("maxDistance", maxDistance);
-                }
+                    } // Close if (restaurants == null)
+                } // Close else (valid coordinates)
             } else {
                 // Normal filtering without location
             Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
