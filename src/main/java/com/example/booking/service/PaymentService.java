@@ -56,6 +56,9 @@ public class PaymentService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private PaymentNotificationService paymentNotificationService;
+
     /**
      * Create payment for booking
      * @param bookingId The booking ID
@@ -276,13 +279,32 @@ public class PaymentService {
                     // Don't fail the webhook processing if email fails
                 }
                 
+                // Send in-app notifications
+                try {
+                    paymentNotificationService.notifyPaymentSuccessToCustomer(payment);
+                    paymentNotificationService.notifyPaymentSuccessToRestaurant(payment);
+                } catch (Exception e) {
+                    logger.error("❌ Failed to send payment success notifications for payment {}",
+                            payment.getPaymentId(), e);
+                }
+
             } else {
                 // Payment failed
                 payment.setStatus(PaymentStatus.FAILED);
                 payment.setPayosCode(data.getCode());
-                payment.setPayosDesc("PayOS payment failed. Code: " + data.getCode() + ", Desc: " + data.getDesc());
+                String failureReason = "PayOS payment failed. Code: " + data.getCode() + ", Desc: " + data.getDesc();
+                payment.setPayosDesc(failureReason);
                 
                 logger.info("Payment {} updated to FAILED", payment.getPaymentId());
+
+                // Send in-app notifications
+                try {
+                    paymentNotificationService.notifyPaymentFailedToCustomer(payment, failureReason);
+                    paymentNotificationService.notifyPaymentFailedToRestaurant(payment, failureReason);
+                } catch (Exception e) {
+                    logger.error("❌ Failed to send payment failed notifications for payment {}", payment.getPaymentId(),
+                            e);
+                }
             }
             
             // Store webhook data
@@ -332,6 +354,15 @@ public class PaymentService {
                     payment.getBooking().getBookingId(), e);
         }
         
+        // Send in-app notifications
+        try {
+            paymentNotificationService.notifyPaymentSuccessToCustomer(updatedPayment);
+            paymentNotificationService.notifyPaymentSuccessToRestaurant(updatedPayment);
+            logger.info("✅ Sent payment success notifications for cash payment: {}", paymentId);
+        } catch (Exception e) {
+            logger.error("❌ Failed to send payment success notifications for cash payment: {}", paymentId, e);
+        }
+
         return updatedPayment;
     }
     
@@ -368,6 +399,15 @@ public class PaymentService {
                     payment.getBooking().getBookingId(), e);
         }
         
+        // Send in-app notifications
+        try {
+            paymentNotificationService.notifyPaymentSuccessToCustomer(updatedPayment);
+            paymentNotificationService.notifyPaymentSuccessToRestaurant(updatedPayment);
+            logger.info("✅ Sent payment success notifications for card payment: {}", paymentId);
+        } catch (Exception e) {
+            logger.error("❌ Failed to send payment success notifications for card payment: {}", paymentId, e);
+        }
+
         return updatedPayment;
     }
     

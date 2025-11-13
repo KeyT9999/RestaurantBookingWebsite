@@ -17,6 +17,7 @@ import com.example.booking.domain.RestaurantBalance;
 import com.example.booking.repository.PaymentRepository;
 import com.example.booking.repository.RefundRequestRepository;
 import com.example.booking.repository.RestaurantBalanceRepository;
+import com.example.booking.service.RefundNotificationService;
 /**
  * Service xử lý hoàn tiền với logic mới:
  * - Admin nhận 30% hoa hồng từ tiền đặt cọc
@@ -38,6 +39,9 @@ public class EnhancedRefundService {
     
     @Autowired
     private RefundRequestRepository refundRequestRepository;
+    
+    @Autowired
+    private RefundNotificationService refundNotificationService;
     
     /**
      * Hoàn tiền với logic mới:
@@ -189,6 +193,13 @@ public class EnhancedRefundService {
             payment.setRefundReason(reason);
             payment.setRefundRequestId(refundRequest.getRefundRequestId());
             paymentRepository.save(payment);
+            
+            // Send notifications
+            try {
+                refundNotificationService.notifyRefundStatusChanged(refundRequest, null);
+            } catch (Exception e) {
+                logger.error("Failed to send refund request notifications", e);
+            }
             
             logger.info("✅ Manual refund request created: {}", refundRequest.getRefundRequestId());
             return true;

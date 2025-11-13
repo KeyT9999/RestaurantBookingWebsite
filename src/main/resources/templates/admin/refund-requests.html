@@ -315,23 +315,39 @@
                                 </div>
 
                                 <div class="stack-gap-3">
-                                    <div class="refund-entry__qr" th:if="${refund.vietqrUrl != null}">
-                                        <img th:src="${refund.vietqrUrl}" alt="Mã VietQR cho refund request" loading="lazy">
-                                        <div class="refund-entry__actions">
-                                            <button type="button"
-                                                    class="ds-btn ds-btn-outline ds-btn-sm"
-                                                    th:attr="data-url=${refund.vietqrUrl}"
-                                                    onclick="copyToClipboard(this.dataset.url)">
-                                                <i class="fas fa-copy"></i>
-                                                Sao chép URL
-                                            </button>
-                                            <a class="ds-btn ds-btn-ghost ds-btn-sm"
-                                               th:href="${refund.vietqrUrl}"
-                                               target="_blank"
-                                               rel="noopener">
-                                                <i class="fas fa-up-right-from-square"></i>
-                                                Mở VietQR
-                                            </a>
+                                    <div class="refund-entry__qr" th:if="${refund.vietqrUrl != null and refund.vietqrUrl != ''}">
+                                        <div th:if="${refund.vietqrUrl.startsWith('https://') or refund.vietqrUrl.startsWith('http://')}">
+                                            <img th:src="${refund.vietqrUrl}" 
+                                                 alt="Mã VietQR cho refund request" 
+                                                 loading="lazy"
+                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                            <div style="display: none; padding: 1rem; background: var(--ds-neutral-100); border-radius: var(--ds-radius-md);">
+                                                <p class="text-muted mb-2">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    Không thể tải hình ảnh QR code. Vui lòng sử dụng nút "Mở VietQR" bên dưới.
+                                                </p>
+                                            </div>
+                                            <div class="refund-entry__actions">
+                                                <button type="button"
+                                                        class="ds-btn ds-btn-outline ds-btn-sm"
+                                                        th:attr="data-url=${refund.vietqrUrl}"
+                                                        onclick="copyToClipboard(this.dataset.url)">
+                                                    <i class="fas fa-copy"></i>
+                                                    Sao chép URL
+                                                </button>
+                                                <a class="ds-btn ds-btn-ghost ds-btn-sm"
+                                                   th:href="${refund.vietqrUrl}"
+                                                   target="_blank"
+                                                   rel="noopener">
+                                                    <i class="fas fa-up-right-from-square"></i>
+                                                    Mở VietQR
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <div th:if="${!refund.vietqrUrl.startsWith('https://') and !refund.vietqrUrl.startsWith('http://')}" 
+                                             class="flash flash--warning">
+                                            <span class="flash__label">Lưu ý</span>
+                                            <span>VietQR data đã được lưu nhưng chưa có URL. Vui lòng tạo lại VietQR để có URL hợp lệ.</span>
                                         </div>
                                     </div>
                                     <p class="text-muted mb-0" th:if="${refund.vietqrUrl == null}">
@@ -353,14 +369,13 @@
                                                 class="ds-btn ds-btn-success ds-btn-sm"
                                                 th:if="${refund.vietqrUrl != null}"
                                                 th:attr="data-refund-id=${refund.refundRequestId}"
-                                                onclick="completeRefund(this.dataset.refundId, this)">
+                                                onclick="openCompleteModal(this.dataset.refundId)">
                                             <i class="fas fa-circle-check"></i>
                                             Đã chuyển tiền
                                         </button>
 
                                         <button type="button"
                                                 class="ds-btn ds-btn-danger ds-btn-sm"
-                                                th:if="${refund.vietqrUrl == null}"
                                                 th:attr="data-refund-id=${refund.refundRequestId}"
                                                 onclick="rejectRefund(this.dataset.refundId)">
                                             <i class="fas fa-ban"></i>
@@ -489,8 +504,46 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">Huá»·</button>
+                        <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">Hủy</button>
                         <button type="submit" class="ds-btn ds-btn-danger">Xác nhận từ chối</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="completeForm" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="completeModalLabel">
+                            <i class="fas fa-circle-check text-success me-2"></i>
+                            Xác nhận đã chuyển tiền
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body stack-gap-3">
+                        <input type="hidden" name="refundRequestId" id="completeRefundRequestId" value="">
+                        <div class="flash flash--info">
+                            <span class="flash__label">Thông tin</span>
+                            <span>Xác nhận bạn đã chuyển khoản thành công cho khách hàng. Ghi chú sẽ được lưu lại để theo dõi.</span>
+                        </div>
+                        <div>
+                            <label for="transferReference" class="form-label">Mã tham chiếu chuyển khoản</label>
+                            <input type="text" class="form-control" id="transferReference" name="transferReference"
+                                   placeholder="Nhập mã tham chiếu (nếu có)">
+                            <small class="form-text text-muted">Mã tham chiếu từ ngân hàng hoặc hệ thống chuyển khoản</small>
+                        </div>
+                        <div>
+                            <label for="adminNote" class="form-label">Ghi chú <span class="text-muted">(tùy chọn)</span></label>
+                            <textarea class="form-control" id="adminNote" name="adminNote" rows="3"
+                                      placeholder="Nhập ghi chú về việc chuyển khoản..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="ds-btn ds-btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="ds-btn ds-btn-success">Xác nhận đã chuyển tiền</button>
                     </div>
                 </form>
             </div>
@@ -538,13 +591,34 @@
                             alert('Refund request đã bị từ chối!');
                             location.reload();
                         } else {
-                            alert('Lá»—i: ' + data.error);
+                            alert('Lỗi: ' + data.error);
                         }
                     })
                     .catch(function (error) {
                         console.error('Error:', error);
                         alert('Lỗi khi từ chối refund request');
                     });
+                });
+            }
+
+            const completeForm = document.getElementById('completeForm');
+            if (completeForm) {
+                completeForm.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(completeForm);
+                    const refundRequestId = formData.get('refundRequestId');
+                    const transferReference = formData.get('transferReference');
+                    const adminNote = formData.get('adminNote');
+
+                    // Close modal first
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('completeModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    // Call completeRefund function
+                    completeRefund(refundRequestId, transferReference, adminNote);
                 });
             }
         });
@@ -598,53 +672,67 @@
             });
         }
 
-        function completeRefund(refundRequestId, buttonEl) {
-            const adminNote = prompt('Nhập ghi chú (tùy chọn):') || 'Admin đã hoàn tiền thủ công';
-            const button = buttonEl || event.target;
-            const originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang cập nhật...';
-            button.disabled = true;
+        function openCompleteModal(refundRequestId) {
+            document.getElementById('completeRefundRequestId').value = refundRequestId;
+            // Reset form
+            document.getElementById('transferReference').value = '';
+            document.getElementById('adminNote').value = '';
+            const modal = new bootstrap.Modal(document.getElementById('completeModal'));
+            modal.show();
+        }
 
-            fetch(`/admin/refunds/${refundRequestId}/complete`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    transferReference: 'MANUAL_TRANSFER_' + Date.now(),
-                    adminNote: adminNote
+        function completeRefund(refundRequestId, transferReference, adminNote) {
+            const button = document.querySelector(`[data-refund-id="${refundRequestId}"]`);
+            if (button) {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang cập nhật...';
+                button.disabled = true;
+
+                fetch(`/admin/refunds/${refundRequestId}/complete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        transferReference: transferReference || 'MANUAL_TRANSFER_' + Date.now(),
+                        adminNote: adminNote || 'Admin đã hoàn tiền thủ công'
+                    })
                 })
-            })
-            .then(function (response) {
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status + ': ' + response.statusText);
-                }
-                return response.text().then(function (text) {
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        throw new Error('Server trả về HTML thay vì JSON. Kiểm tra lại phiên đăng nhập.');
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+                    }
+                    return response.text().then(function (text) {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            throw new Error('Server trả về HTML thay vì JSON. Kiểm tra lại phiên đăng nhập.');
+                        }
+                    });
+                })
+                .then(function (data) {
+                    if (data.success) {
+                        alert('Hoàn tiền đã được đánh dấu thành công!');
+                        location.reload();
+                    } else {
+                        alert('Lỗi: ' + data.message);
+                        if (button) {
+                            button.innerHTML = originalText;
+                            button.disabled = false;
+                        }
+                    }
+                })
+                .catch(function (error) {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi hoàn tất hoàn tiền: ' + error.message);
+                    if (button) {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
                     }
                 });
-            })
-            .then(function (data) {
-                if (data.success) {
-                    alert('Hoàn tiền đã được đánh dấu thành công!');
-                    location.reload();
-                } else {
-                    alert('Lá»—i: ' + data.message);
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                }
-            })
-            .catch(function (error) {
-                console.error('Error:', error);
-                alert('Có lỗi xảy ra khi hoàn tất hoàn tiền: ' + error.message);
-                button.innerHTML = originalText;
-                button.disabled = false;
-            });
+            }
         }
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text)

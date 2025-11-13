@@ -1375,32 +1375,38 @@ public class RestaurantOwnerController {
      * Update booking status (confirm, cancel, complete)
      */
     @PostMapping("/bookings/{id}/status")
-    @ResponseBody
-    public ResponseEntity<?> updateBookingStatus(@PathVariable Integer id,
-                                                @RequestParam String status) {
+    public String updateBookingStatus(@PathVariable Integer id,
+            @RequestParam String status,
+            RedirectAttributes redirectAttributes) {
         try {
             // Convert string to BookingStatus enum
             BookingStatus newStatus = BookingStatus.valueOf(status.toUpperCase());
 
-            // Update booking status
+            // Update booking status (this will send notifications)
             bookingService.updateBookingStatus(id, newStatus);
             
-            return ResponseEntity.ok().body(Map.of(
-                "success", true,
-                "message", "Cập nhật trạng thái thành công!"
-            ));
+            // Set success message based on status
+            String message;
+            if (newStatus == BookingStatus.CONFIRMED) {
+                message = "Đã xác nhận booking thành công!";
+            } else if (newStatus == BookingStatus.CANCELLED) {
+                message = "Đã hủy booking thành công!";
+            } else if (newStatus == BookingStatus.COMPLETED) {
+                message = "Đã hoàn tất booking thành công!";
+            } else {
+                message = "Cập nhật trạng thái thành công!";
+            }
+
+            redirectAttributes.addFlashAttribute("success", message);
             
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.ok().body(Map.of(
-                "success", false,
-                "message", "Trạng thái không hợp lệ: " + status
-            ));
+            redirectAttributes.addFlashAttribute("error", "Trạng thái không hợp lệ: " + status);
         } catch (Exception e) {
-            return ResponseEntity.ok().body(Map.of(
-                "success", false,
-                "message", "Lỗi khi cập nhật: " + e.getMessage()
-            ));
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi cập nhật: " + e.getMessage());
         }
+
+        // Redirect back to booking detail page
+        return "redirect:/restaurant-owner/bookings/" + id;
     }
 
     /**
@@ -2229,7 +2235,6 @@ public class RestaurantOwnerController {
 
             // Get waitlist data for all restaurants
             List<Waitlist> allWaitingCustomers = new ArrayList<>();
-            List<Waitlist> allCalledCustomers = new ArrayList<>();
             Map<Integer, String> restaurantNames = new HashMap<>();
 
             for (RestaurantProfile restaurant : restaurants) {
@@ -2238,22 +2243,18 @@ public class RestaurantOwnerController {
 
                 // Get waitlist for this restaurant
                 List<Waitlist> waitingCustomers = waitlistService.getWaitlistByRestaurant(restaurantId);
-                List<Waitlist> calledCustomers = waitlistService.getCalledCustomers(restaurantId);
 
                 // Add to combined lists
                 allWaitingCustomers.addAll(waitingCustomers);
-                allCalledCustomers.addAll(calledCustomers);
 
                 // Store restaurant names for display
                 restaurantNames.put(restaurantId, restaurantName);
             }
 
             model.addAttribute("waitingCustomers", allWaitingCustomers);
-            model.addAttribute("calledCustomers", allCalledCustomers);
             model.addAttribute("restaurants", restaurants);
             model.addAttribute("restaurantNames", restaurantNames);
             model.addAttribute("waitingCount", allWaitingCustomers.size());
-            model.addAttribute("calledCount", allCalledCustomers.size());
 
             return "restaurant-owner/waitlist";
 
@@ -2265,24 +2266,16 @@ public class RestaurantOwnerController {
 
     /**
      * Call next customer from waitlist
+     * 
+     * @deprecated This functionality has been removed. Use seatCustomer() directly
+     *             instead.
      */
+    @Deprecated
     @PostMapping("/waitlist/call-next")
     public String callNextFromWaitlist(@RequestParam Integer restaurantId, RedirectAttributes redirectAttributes) {
-        try {
-            Waitlist calledCustomer = waitlistService.callNextFromWaitlist(restaurantId);
-
-            if (calledCustomer != null) {
-                redirectAttributes.addFlashAttribute("success",
-                        "Đã gọi khách hàng: " + calledCustomer.getCustomer().getUser().getFullName());
-            } else {
-                redirectAttributes.addFlashAttribute("info", "Không có khách hàng nào trong danh sách chờ");
-            }
-
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi khi gọi khách hàng: " + e.getMessage());
-        }
-
-        return "redirect:/restaurant-owner/dashboard";
+        redirectAttributes.addFlashAttribute("error",
+                "Chức năng gọi khách hàng đã bị gỡ bỏ. Vui lòng sử dụng chức năng sắp chỗ ngồi trực tiếp.");
+        return "redirect:/restaurant-owner/waitlist";
     }
 
     /**
@@ -2328,10 +2321,8 @@ public class RestaurantOwnerController {
     @GetMapping("/waitlist/data")
     public String getWaitlistData(@RequestParam Integer restaurantId, Model model) {
         List<Waitlist> waitingCustomers = waitlistService.getWaitlistByRestaurant(restaurantId);
-        List<Waitlist> calledCustomers = waitlistService.getCalledCustomers(restaurantId);
 
         model.addAttribute("waitingCustomers", waitingCustomers);
-        model.addAttribute("calledCustomers", calledCustomers);
 
         return "restaurant-owner/fragments/waitlist-data :: waitlist-data";
     }

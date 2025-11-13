@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -16,22 +15,19 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.booking.domain.NotificationType;
 import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.Review;
 import com.example.booking.domain.ReviewReport;
 import com.example.booking.domain.ReviewReportEvidence;
 import com.example.booking.domain.ReviewReportStatus;
-import com.example.booking.domain.UserRole;
 import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewReportForm;
 import com.example.booking.dto.ReviewReportView;
-import com.example.booking.dto.notification.NotificationForm;
 import com.example.booking.repository.ReviewReportRepository;
 import com.example.booking.repository.ReviewRepository;
 import com.example.booking.service.CloudinaryService;
-import com.example.booking.service.NotificationService;
+import com.example.booking.service.ReviewReportNotificationService;
 import com.example.booking.service.ReviewReportService;
 import com.example.booking.service.ReviewService;
 
@@ -43,19 +39,19 @@ public class ReviewReportServiceImpl implements ReviewReportService {
     private final ReviewRepository reviewRepository;
     private final ReviewService reviewService;
     private final CloudinaryService cloudinaryService;
-    private final NotificationService notificationService;
+
+    @Autowired
+    private ReviewReportNotificationService reviewReportNotificationService;
 
     @Autowired
     public ReviewReportServiceImpl(ReviewReportRepository reviewReportRepository,
             ReviewRepository reviewRepository,
             ReviewService reviewService,
-            CloudinaryService cloudinaryService,
-            NotificationService notificationService) {
+            CloudinaryService cloudinaryService) {
         this.reviewReportRepository = reviewReportRepository;
         this.reviewRepository = reviewRepository;
         this.reviewService = reviewService;
         this.cloudinaryService = cloudinaryService;
-        this.notificationService = notificationService;
     }
 
     @Override
@@ -106,7 +102,12 @@ public class ReviewReportServiceImpl implements ReviewReportService {
         }
 
         ReviewReport saved = reviewReportRepository.save(report);
-        sendReportSubmittedNotification(saved, restaurant, review);
+        // Send notifications to customer and admin
+        try {
+            reviewReportNotificationService.notifyReviewReportSubmitted(saved);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send review report submitted notifications: " + e.getMessage());
+        }
         return saved;
     }
 
@@ -193,7 +194,12 @@ public class ReviewReportServiceImpl implements ReviewReportService {
             }
         }
 
-        sendResolutionNotification(report, true);
+        // Send notifications to customer and restaurant owner
+        try {
+            reviewReportNotificationService.notifyReviewReportResolved(report);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send review report resolved notifications: " + e.getMessage());
+        }
     }
 
     @Override
@@ -205,8 +211,14 @@ public class ReviewReportServiceImpl implements ReviewReportService {
         report.setResolutionMessage(resolutionMessage);
         report.setResolvedAt(LocalDateTime.now());
         report.setResolvedByAdminId(adminId);
+        reviewReportRepository.save(report);
 
-        sendResolutionNotification(report, false);
+        // Send notifications to customer and restaurant owner
+        try {
+            reviewReportNotificationService.notifyReviewReportRejected(report);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send review report rejected notifications: " + e.getMessage());
+        }
     }
 
     @Override
@@ -277,58 +289,5 @@ public class ReviewReportServiceImpl implements ReviewReportService {
         return view;
     }
 
-    private void sendReportSubmittedNotification(ReviewReport report, RestaurantProfile restaurant, Review review) {
-        try {
-            NotificationForm notifyAdmins = new NotificationForm();
-            notifyAdmins.setType(NotificationType.REVIEW_REPORT_SUBMITTED);
-            notifyAdmins.setTitle("Báo cáo review mới");
-            notifyAdmins.setContent("Nhà hàng " + restaurant.getRestaurantName() + " đã báo cáo một review từ khách hàng "
-                    + (review.getCustomerName() != null ? review.getCustomerName() : "") + ".");
-            notifyAdmins.setAudience(NotificationForm.AudienceType.ROLE);
-            notifyAdmins.setTargetRoles(Set.of(UserRole.ADMIN));
-            notifyAdmins.setLinkUrl("/admin/moderation/" + report.getReportId());
-            notificationService.sendNotifications(notifyAdmins, null);
-        } catch (Exception e) {
-            System.err.println("❌ Failed to send admin notification for review report: " + e.getMessage());
-        }
-    }
-
-    private void sendResolutionNotification(ReviewReport report, boolean resolved) {
-        try {
-            RestaurantOwner owner = report.getOwner();
-            if (owner == null || owner.getUser() == null) {
-                return;
-            }
-
-            NotificationForm ownerNotification = new NotificationForm();
-            ownerNotification.setAudience(NotificationForm.AudienceType.USER);
-            ownerNotification.setTargetUserIds(Set.of(owner.getUser().getId()));
-            ownerNotification.setLinkUrl("/restaurant-owner/reviews");
-
-            String reviewIdentifier = report.getReviewIdSnapshot() != null ? String.valueOf(report.getReviewIdSnapshot()) : "";
-            if (report.getCustomerIdSnapshot() != null) {
-                reviewIdentifier = report.getCustomerNameSnapshot() + " (" + report.getCustomerIdSnapshot() + ")";
-            }
-
-            if (resolved) {
-                ownerNotification.setType(NotificationType.REVIEW_REPORT_RESOLVED);
-                ownerNotification.setTitle("Báo cáo review đã được chấp thuận");
-                ownerNotification.setContent("Báo cáo của bạn cho review " + reviewIdentifier
-                        + " đã được chấp thuận và review đã bị ẩn khỏi khách hàng.");
-            } else {
-                ownerNotification.setType(NotificationType.REVIEW_REPORT_REJECTED);
-                ownerNotification.setTitle("Báo cáo review bị từ chối");
-                String reason = report.getResolutionMessage() != null && !report.getResolutionMessage().isBlank()
-                        ? report.getResolutionMessage()
-                        : "Review vẫn phù hợp nên không thể gỡ.";
-                ownerNotification.setContent("Báo cáo cho review " + reviewIdentifier
-                        + " đã bị từ chối. " + reason);
-            }
-
-            notificationService.sendNotifications(ownerNotification, resolved ? report.getResolvedByAdminId() : report.getResolvedByAdminId());
-        } catch (Exception e) {
-            System.err.println("❌ Failed to send resolution notification: " + e.getMessage());
-        }
-    }
 }
 

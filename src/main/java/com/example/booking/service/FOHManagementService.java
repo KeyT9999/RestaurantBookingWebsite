@@ -110,9 +110,11 @@ public class FOHManagementService {
 
     /**
      * Call next customer from waitlist
+     * @deprecated This functionality has been removed. Use seatCustomer() directly instead.
      */
+    @Deprecated
     public Waitlist callNextFromWaitlist(Integer restaurantId) {
-        return waitlistService.callNextFromWaitlist(restaurantId);
+        throw new UnsupportedOperationException("Call functionality has been removed. Use seatCustomer() directly instead.");
     }
 
     /**

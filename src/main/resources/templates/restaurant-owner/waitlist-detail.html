@@ -23,7 +23,6 @@
         }
         
         .status-waiting { background: #fff3cd; color: #856404; }
-        .status-called { background: #d1ecf1; color: #0c5460; }
         .status-seated { background: #d4edda; color: #155724; }
         .status-cancelled { background: #f8d7da; color: #721c24; }
         
@@ -285,18 +284,12 @@
                 <h4>Thao tác theo trạng thái</h4>
                 <div class="action-buttons">
                     <button th:if="${waitlistDetail.status.name() == 'WAITING'}" 
-                            class="btn btn-info" 
-                            onclick="callCustomer()">
-                        <i class="fas fa-phone"></i> Gọi khách hàng
-                    </button>
-                    
-                    <button th:if="${waitlistDetail.status.name() == 'CALLED'}" 
                             class="btn btn-success" 
                             onclick="seatCustomer()">
                         <i class="fas fa-chair"></i> Xếp chỗ cho khách
                     </button>
                     
-                    <button th:if="${waitlistDetail.status.name() == 'WAITING' or waitlistDetail.status.name() == 'CALLED'}" 
+                    <button th:if="${waitlistDetail.status.name() == 'WAITING'}" 
                             class="btn btn-danger" 
                             onclick="cancelWaitlist()">
                         <i class="fas fa-times"></i> Hủy Waitlist
@@ -462,44 +455,6 @@
                 // Reset button state
                 saveBtn.innerHTML = originalText;
                 saveBtn.disabled = false;
-            });
-        }
-        
-        function callCustomer() {
-            if (!confirm('Bạn có chắc muốn gọi khách hàng này?')) {
-                return;
-            }
-            
-            const callBtn = event.target;
-            const originalText = callBtn.innerHTML;
-            callBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gọi...';
-            callBtn.disabled = true;
-            
-            fetch(`/restaurant-owner/waitlist/call-next`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `restaurantId=${restaurantId}`
-            })
-            .then(response => {
-                if (response.ok) {
-                    showAlert('Đã gọi khách hàng thành công!', 'success');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    throw new Error('Failed to call customer');
-                }
-            })
-            .catch(error => {
-                console.error('Error calling customer:', error);
-                showAlert('Lỗi khi gọi khách hàng. Vui lòng thử lại.', 'danger');
-            })
-            .finally(() => {
-                // Reset button state
-                callBtn.innerHTML = originalText;
-                callBtn.disabled = false;
             });
         }
         

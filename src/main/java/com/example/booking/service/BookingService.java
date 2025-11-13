@@ -99,6 +99,9 @@ public class BookingService {
     private RefundService refundService;
 
     @Autowired
+    private BookingNotificationService bookingNotificationService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @PersistenceContext
@@ -406,10 +409,11 @@ public class BookingService {
             throw e; // Re-throw to see the actual error
         }
 
-        // Create notification for customer
+        // Create notification for customer and restaurant owner
         System.out.println("🔍 Creating notification...");
         try {
             createBookingNotification(booking);
+            bookingNotificationService.notifyNewBookingToRestaurant(booking);
             System.out.println("✅ Notification created successfully");
         } catch (Exception e) {
             System.err.println("❌ Error creating notification: " + e.getMessage());
@@ -549,7 +553,17 @@ public class BookingService {
         booking.setCancelledAt(LocalDateTime.now());
         booking.setCancelledBy(customerId);
 
-        return bookingRepository.save(booking);
+        Booking cancelledBooking = bookingRepository.save(booking);
+
+        // Send notifications
+        try {
+            bookingNotificationService.notifyBookingCancelledToCustomer(cancelledBooking, cancelReason);
+            bookingNotificationService.notifyBookingCancelledToRestaurant(cancelledBooking, cancelReason);
+        } catch (Exception e) {
+            logger.error("Failed to send booking cancellation notifications", e);
+        }
+
+        return cancelledBooking;
     }
 
     /**
@@ -575,7 +589,17 @@ public class BookingService {
         booking.setCancelledAt(LocalDateTime.now());
         booking.setCancelledBy(restaurantOwnerId);
 
-        return bookingRepository.save(booking);
+        Booking cancelledBooking = bookingRepository.save(booking);
+
+        // Send notifications
+        try {
+            bookingNotificationService.notifyBookingCancelledToCustomer(cancelledBooking, cancelReason);
+            bookingNotificationService.notifyBookingCancelledToRestaurant(cancelledBooking, cancelReason);
+        } catch (Exception e) {
+            logger.error("Failed to send booking cancellation notifications", e);
+        }
+
+        return cancelledBooking;
     }
 
     /**
@@ -772,7 +796,11 @@ public class BookingService {
         System.out.println("✅ Booking confirmed successfully: " + confirmedBooking.getBookingId());
         
         // Create notification for customer
-        createBookingConfirmationNotification(confirmedBooking);
+        try {
+            bookingNotificationService.notifyBookingConfirmedToCustomer(confirmedBooking);
+        } catch (Exception e) {
+            logger.error("Failed to send booking confirmation notification", e);
+        }
         
         return confirmedBooking;
     }
@@ -797,6 +825,14 @@ public class BookingService {
         Booking completedBooking = bookingRepository.save(booking);
 
         System.out.println("✅ Booking completed successfully: " + completedBooking.getBookingId());
+
+        // Send notifications
+        try {
+            bookingNotificationService.notifyBookingCompletedToCustomer(completedBooking);
+            bookingNotificationService.notifyBookingCompletedToRestaurant(completedBooking);
+        } catch (Exception e) {
+            logger.error("Failed to send booking completion notifications", e);
+        }
 
         return completedBooking;
     }
@@ -856,6 +892,30 @@ public class BookingService {
         Booking updatedBooking = bookingRepository.save(booking);
 
         System.out.println("✅ Booking status updated successfully");
+
+        // Send notifications based on status change
+        try {
+            if (newStatus == BookingStatus.CONFIRMED && oldStatus != BookingStatus.CONFIRMED) {
+                // Owner confirmed the booking
+                bookingNotificationService.notifyBookingConfirmedToCustomer(updatedBooking);
+                logger.info("✅ Sent booking confirmation notification to customer for booking: {}", bookingId);
+            } else if (newStatus == BookingStatus.CANCELLED && oldStatus != BookingStatus.CANCELLED) {
+                // Booking was cancelled
+                String cancelReason = "Được hủy bởi nhà hàng";
+                bookingNotificationService.notifyBookingCancelledToCustomer(updatedBooking, cancelReason);
+                bookingNotificationService.notifyBookingCancelledToRestaurant(updatedBooking, cancelReason);
+                logger.info("✅ Sent booking cancellation notifications for booking: {}", bookingId);
+            } else if (newStatus == BookingStatus.COMPLETED && oldStatus != BookingStatus.COMPLETED) {
+                // Booking was completed
+                bookingNotificationService.notifyBookingCompletedToCustomer(updatedBooking);
+                bookingNotificationService.notifyBookingCompletedToRestaurant(updatedBooking);
+                logger.info("✅ Sent booking completion notifications for booking: {}", bookingId);
+            }
+        } catch (Exception e) {
+            logger.error("❌ Failed to send booking status change notifications for booking: {}", bookingId, e);
+            // Don't throw exception to avoid breaking status update
+        }
+
         return updatedBooking;
     }
 

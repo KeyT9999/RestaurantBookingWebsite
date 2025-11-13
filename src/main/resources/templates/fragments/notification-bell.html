@@ -62,259 +62,401 @@
             </li>
         </ul>
     </div>
-</div>
-
-<script th:inline="javascript">
-/*<![CDATA[*/
-(function() {
-    console.log('🔔 Notification bell script starting...');
-    const dropdownId = /*[[${dropdownId}]]*/ 'notificationDropdown';
-    const badgeId = /*[[${badgeId}]]*/ 'notificationBadge';
-    console.log('   Dropdown ID:', dropdownId, 'Badge ID:', badgeId);
     
-    const trigger = document.getElementById(dropdownId);
-    if (!trigger) {
-        console.error('❌ Notification bell trigger not found with ID:', dropdownId);
-        return;
-    }
-    console.log('✅ Notification bell trigger found');
-    const badgeEl = document.getElementById(badgeId);
-    const container = trigger.closest('[data-notification-bell]');
-    const summaryBadge = container ? container.querySelector('.notification-bell__badge-summary') : null;
-    const menu = container ? container.querySelector('.notification-bell__menu') : null;
-    const listContainer = document.getElementById(dropdownId + '-list');
-    console.log('   List container:', listContainer ? 'Found' : 'NOT FOUND', dropdownId + '-list');
-    const hoverDelay = 200;
-    let hideTimeout = null;
-    let lastLatestFetch = 0;
-    const latestRefreshInterval = 15000;
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    console.log('🔔 Notification bell script file loaded');
+    (function() {
+        console.log('🔔 Notification bell IIFE starting...');
+        try {
+            console.log('🔔 Notification bell script starting...');
+            const dropdownId = /*[[${dropdownId}]]*/ 'notificationDropdown';
+            const badgeId = /*[[${badgeId}]]*/ 'notificationBadge';
+        console.log('   Dropdown ID:', dropdownId, 'Badge ID:', badgeId);
+        console.log('   Document readyState:', document.readyState);
+        
+        // Wait for DOM to be ready
+        function initNotificationBell() {
+            console.log('🔔 initNotificationBell() called');
+            try {
+                console.log('🔔 Initializing notification bell...');
+                console.log('   Looking for dropdownId:', dropdownId);
+                console.log('   Looking for badgeId:', badgeId);
+                const trigger = document.getElementById(dropdownId);
+                if (!trigger) {
+                    console.error('❌ Notification bell trigger not found with ID:', dropdownId);
+                    console.error('   Available IDs:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+                    return;
+                }
+                console.log('✅ Notification bell trigger found');
+                const badgeEl = document.getElementById(badgeId);
+                const container = trigger.closest('[data-notification-bell]');
+                const summaryBadge = container ? container.querySelector('.notification-bell__badge-summary') : null;
+                const menu = container ? container.querySelector('.notification-bell__menu') : null;
+                const listContainer = document.getElementById(dropdownId + '-list');
+                console.log('   List container:', listContainer ? 'Found' : 'NOT FOUND', dropdownId + '-list');
+                
+                if (!listContainer) {
+                    console.error('❌ List container not found, cannot initialize notification bell');
+                    return;
+                }
+                
+                const hoverDelay = 200;
+                let hideTimeout = null;
+                let lastLatestFetch = 0;
+                const latestRefreshInterval = 15000;
 
-    function updateBadge(count) {
-        if (badgeEl) {
-            if (count > 0) {
-                badgeEl.textContent = count;
-                badgeEl.classList.remove('d-none');
-            } else {
-                badgeEl.classList.add('d-none');
+                function updateBadge(count) {
+                    if (badgeEl) {
+                        if (count > 0) {
+                            badgeEl.textContent = count;
+                            badgeEl.classList.remove('d-none');
+                        } else {
+                            badgeEl.classList.add('d-none');
+                        }
+                    }
+                    if (summaryBadge) {
+                        if (count > 0) {
+                            summaryBadge.textContent = count;
+                            summaryBadge.classList.remove('d-none');
+                        } else {
+                            summaryBadge.classList.add('d-none');
+                        }
+                    }
+                }
+
+                function formatTimestamp(isoString) {
+                    if (!isoString) {
+                        return '';
+                    }
+                    const date = new Date(isoString);
+                    if (Number.isNaN(date.getTime())) {
+                        return isoString;
+                    }
+                    return date.toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    });
+                }
+
+                function renderLatestNotifications(notifications) {
+                    try {
+                        if (!listContainer) {
+                            console.error('❌ List container not found');
+                            return;
+                        }
+                        
+                        console.log('🎨 Rendering notifications:', notifications);
+                        console.log('   Type:', typeof notifications);
+                        console.log('   Is array:', Array.isArray(notifications));
+                        console.log('   Length:', Array.isArray(notifications) ? notifications.length : 'N/A');
+                        
+                        // Clear container first
+                        listContainer.innerHTML = '';
+
+                        if (!Array.isArray(notifications)) {
+                            console.error('❌ Notifications is not an array:', notifications);
+                            const errorItem = document.createElement('li');
+                            errorItem.className = 'dropdown-item-text text-center';
+                            errorItem.style.color = 'var(--text-light)';
+                            errorItem.innerHTML = '<i class="fas fa-exclamation-triangle me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Lỗi tải thông báo';
+                            listContainer.appendChild(errorItem);
+                            return;
+                        }
+
+                        if (notifications.length === 0) {
+                            console.log('ℹ️ No notifications to display');
+                            const emptyItem = document.createElement('li');
+                            emptyItem.className = 'dropdown-item-text text-center';
+                            emptyItem.style.color = 'var(--text-light)';
+                            emptyItem.innerHTML = '<i class="fas fa-bell-slash me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Không có thông báo mới';
+                            listContainer.appendChild(emptyItem);
+                            return;
+                        }
+                        
+                        console.log('✅ Rendering ' + notifications.length + ' notifications');
+
+                        notifications.slice(0, 5).forEach(function(notification, index) {
+                            try {
+                                console.log('   📝 Rendering notification ' + (index + 1) + ':', notification);
+                                console.log('      ID:', notification.id);
+                                console.log('      Title:', notification.title);
+                                console.log('      PublishAt:', notification.publishAt);
+                                console.log('      Unread:', notification.unread);
+                                
+                                if (!notification || typeof notification !== 'object') {
+                                    console.error('   ❌ Invalid notification object:', notification);
+                                    return;
+                                }
+                                
+                                const li = document.createElement('li');
+
+                                const link = document.createElement('a');
+                                link.className = 'dropdown-item d-flex align-items-start notification-bell__link';
+                                link.href = '/notifications/' + (notification.id || '');
+
+                                const contentWrapper = document.createElement('div');
+                                contentWrapper.className = 'flex-grow-1';
+
+                                const titleEl = document.createElement('div');
+                                titleEl.className = 'fw-bold';
+                                titleEl.style.color = 'var(--text-dark)';
+                                titleEl.textContent = notification.title || 'Thông báo';
+
+                                const timeEl = document.createElement('div');
+                                timeEl.className = 'small';
+                                timeEl.style.color = 'var(--text-light)';
+                                timeEl.textContent = formatTimestamp(notification.publishAt);
+
+                                contentWrapper.appendChild(titleEl);
+                                contentWrapper.appendChild(timeEl);
+                                link.appendChild(contentWrapper);
+
+                                if (notification.unread) {
+                                    const statusEl = document.createElement('div');
+                                    statusEl.className = 'ms-2 notification-bell__status';
+                                    statusEl.style.color = 'var(--primary-blue, var(--ds-primary-black))';
+                                    statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 8px;"></i>';
+                                    link.appendChild(statusEl);
+                                }
+
+                                li.appendChild(link);
+                                listContainer.appendChild(li);
+                                console.log('   ✅ Notification ' + (index + 1) + ' rendered and appended');
+                            } catch (renderError) {
+                                console.error('   ❌ Error rendering notification ' + (index + 1) + ':', renderError);
+                            }
+                        });
+                        console.log('✅ All notifications rendered. Total items in list:', listContainer.children.length);
+                    } catch (error) {
+                        console.error('❌ Error in renderLatestNotifications:', error);
+                        if (listContainer) {
+                            listContainer.innerHTML = '<li class="dropdown-item-text text-center" style="color: var(--text-light);"><i class="fas fa-exclamation-triangle me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Lỗi hiển thị thông báo</li>';
+                        }
+                    }
+                }
+
+                function refreshLatestNotifications(force) {
+                    if (!listContainer) {
+                        console.warn('List container not found, skipping refresh');
+                        return;
+                    }
+                    const now = Date.now();
+                    if (!force && now - lastLatestFetch < latestRefreshInterval) {
+                        console.log('Skipping refresh - too soon since last fetch');
+                        return;
+                    }
+                    lastLatestFetch = now;
+                    
+                    // Show loading state only if container is empty or showing loading/empty state
+                    // Don't show loading if we already have notifications displayed
+                    const currentContent = listContainer.innerHTML.trim();
+                    const hasNotifications = listContainer.querySelector('.notification-bell__link') !== null;
+                    const showingLoading = currentContent.includes('fa-spinner');
+                    const showingEmpty = currentContent.includes('fa-bell-slash');
+                    
+                    // Only show loading if we don't have notifications and are showing loading/empty
+                    if (!hasNotifications && (!currentContent || showingLoading || showingEmpty)) {
+                        listContainer.innerHTML = '<li class="dropdown-item-text text-center" style="color: var(--text-light);"><i class="fas fa-spinner fa-spin me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Đang tải...</li>';
+                    }
+                    
+                    // Add timeout to prevent infinite loading
+                    const timeoutId = setTimeout(function() {
+                        console.warn('⚠️ Notification fetch timeout after 10 seconds');
+                        if (listContainer && listContainer.innerHTML.includes('fa-spinner')) {
+                            listContainer.innerHTML = '<li class="dropdown-item-text text-center" style="color: var(--text-light);"><i class="fas fa-bell-slash me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Không có thông báo mới</li>';
+                        }
+                    }, 10000); // 10 second timeout
+                    
+                    console.log('🔔 Fetching latest notifications from /notifications/api/latest');
+                    fetch('/notifications/api/latest', {
+                        credentials: 'include',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                        .then(function(response) {
+                            clearTimeout(timeoutId);
+                            console.log('🔔 API Response status:', response.status, response.statusText);
+                            console.log('   Response headers:', Object.fromEntries(response.headers.entries()));
+                            
+                            if (!response.ok) {
+                                console.error('❌ Failed to fetch latest notifications:', response.status, response.statusText);
+                                // Return empty array instead of rejecting to ensure renderLatestNotifications is called
+                                return Promise.resolve([]);
+                            }
+                            
+                            // Check content type
+                            const contentType = response.headers.get('content-type');
+                            console.log('   Content-Type:', contentType);
+                            
+                            if (!contentType || !contentType.includes('application/json')) {
+                                console.warn('⚠️ Response is not JSON, content-type:', contentType);
+                                // Try to read as text first to see what we got
+                                return response.text().then(function(text) {
+                                    console.warn('   Response text (first 200 chars):', text.substring(0, 200));
+                                    return [];
+                                });
+                            }
+                            
+                            return response.json().catch(function(parseError) {
+                                console.error('❌ Failed to parse JSON response:', parseError);
+                                console.error('   Parse error details:', parseError.message);
+                                return [];
+                            });
+                        })
+                        .then(function(data) {
+                            console.log('✅ Received notifications data:', data);
+                            console.log('   Type:', typeof data);
+                            console.log('   Is array:', Array.isArray(data));
+                            console.log('   Length:', Array.isArray(data) ? data.length : 'N/A');
+                            if (Array.isArray(data) && data.length > 0) {
+                                console.log('   First notification:', data[0]);
+                                console.log('   First notification keys:', Object.keys(data[0]));
+                            }
+                            // Always render, even if empty array - this will hide loading and show empty state
+                            const notificationsArray = Array.isArray(data) ? data : [];
+                            console.log('   Calling renderLatestNotifications with:', notificationsArray);
+                            renderLatestNotifications(notificationsArray);
+                        })
+                        .catch(function(error) {
+                            clearTimeout(timeoutId);
+                            console.error('❌ Error fetching latest notifications:', error);
+                            console.error('   Error stack:', error.stack);
+                            // Always render empty array to hide loading and show empty state
+                            renderLatestNotifications([]);
+                        });
+                }
+
+                function refreshUnreadCount() {
+                    console.log('🔔 Fetching unread count from /notifications/api/unread-count');
+                    fetch('/notifications/api/unread-count', {
+                        credentials: 'include',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(function(response) {
+                            if (!response.ok) {
+                                console.error('Failed to fetch unread count:', response.status, response.statusText);
+                                if (response.status === 401) {
+                                    console.error('Authentication failed - user not logged in');
+                                }
+                                return 0;
+                            }
+                            return response.json();
+                        })
+                        .then(function(count) {
+                            console.log('Unread count:', count);
+                            updateBadge(count);
+                            if (count > 0) {
+                                refreshLatestNotifications(false);
+                            }
+                        })
+                        .catch(function(error) { 
+                            console.error('Error fetching notification count:', error);
+                            updateBadge(0);
+                        });
+                }
+
+                if (typeof bootstrap !== 'undefined' && container) {
+                    const dropdownInstance = bootstrap.Dropdown.getOrCreateInstance(trigger);
+
+                    const showDropdown = function() {
+                        if (hideTimeout) {
+                            clearTimeout(hideTimeout);
+                            hideTimeout = null;
+                        }
+                        dropdownInstance.show();
+                    };
+
+                    const scheduleHide = function() {
+                        if (hideTimeout) {
+                            clearTimeout(hideTimeout);
+                        }
+                        hideTimeout = setTimeout(function() {
+                            dropdownInstance.hide();
+                        }, hoverDelay);
+                    };
+
+                    container.addEventListener('mouseenter', function() {
+                        showDropdown();
+                    });
+
+                    container.addEventListener('mouseleave', function() {
+                        scheduleHide();
+                    });
+
+                    if (menu) {
+                        menu.addEventListener('mouseenter', function() {
+                            if (hideTimeout) {
+                                clearTimeout(hideTimeout);
+                                hideTimeout = null;
+                            }
+                        });
+                        menu.addEventListener('mouseleave', function() {
+                            scheduleHide();
+                        });
+                    }
+
+                    trigger.addEventListener('click', function() {
+                        if (hideTimeout) {
+                            clearTimeout(hideTimeout);
+                            hideTimeout = null;
+                        }
+                    });
+
+                    trigger.addEventListener('show.bs.dropdown', function() {
+                        console.log('🔔 Dropdown opened, refreshing notifications...');
+                        // Only refresh if list is empty or showing loading/empty state
+                        if (!listContainer || listContainer.children.length === 0 || 
+                            listContainer.innerHTML.includes('fa-spinner') || 
+                            listContainer.innerHTML.includes('fa-bell-slash')) {
+                            refreshLatestNotifications(true);
+                        } else {
+                            // If we already have notifications, just refresh in background without showing loading
+                            refreshLatestNotifications(false);
+                        }
+                    });
+                }
+
+                console.log('🔔 Initializing notification bell...');
+                refreshUnreadCount();
+                refreshLatestNotifications(true);
+                setInterval(refreshUnreadCount, 30000);
+                console.log('✅ Notification bell initialized');
+            } catch (initError) {
+                console.error('❌ Error initializing notification bell:', initError);
+                console.error('   Error stack:', initError.stack);
             }
-        }
-        if (summaryBadge) {
-            if (count > 0) {
-                summaryBadge.textContent = count;
-                summaryBadge.classList.remove('d-none');
-            } else {
-                summaryBadge.classList.add('d-none');
-            }
-        }
-    }
-
-    function formatTimestamp(isoString) {
-        if (!isoString) {
-            return '';
-        }
-        const date = new Date(isoString);
-        if (Number.isNaN(date.getTime())) {
-            return isoString;
-        }
-        return date.toLocaleString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
-    }
-
-    function renderLatestNotifications(notifications) {
-        if (!listContainer) {
-            console.error('List container not found');
-            return;
         }
         
-        console.log('Rendering notifications:', notifications);
-        listContainer.innerHTML = '';
-
-        if (!Array.isArray(notifications) || notifications.length === 0) {
-            console.log('No notifications to display');
-            const emptyItem = document.createElement('li');
-            emptyItem.className = 'dropdown-item-text text-center';
-            emptyItem.style.color = 'var(--text-light)';
-            emptyItem.innerHTML = '<i class="fas fa-bell-slash me-2" style="color: var(--primary-blue, var(--ds-primary-black));"></i>Không có thông báo mới';
-            listContainer.appendChild(emptyItem);
-            return;
-        }
-        
-        console.log('Rendering ' + notifications.length + ' notifications');
-
-        notifications.slice(0, 5).forEach(function(notification, index) {
-            console.log('   Rendering notification ' + (index + 1) + ':', notification);
-            const li = document.createElement('li');
-
-            const link = document.createElement('a');
-            link.className = 'dropdown-item d-flex align-items-start notification-bell__link';
-            link.href = '/notifications/' + notification.id;
-
-            const contentWrapper = document.createElement('div');
-            contentWrapper.className = 'flex-grow-1';
-
-            const titleEl = document.createElement('div');
-            titleEl.className = 'fw-bold';
-            titleEl.style.color = 'var(--text-dark)';
-            titleEl.textContent = notification.title || 'Thông báo';
-
-            const timeEl = document.createElement('div');
-            timeEl.className = 'small';
-            timeEl.style.color = 'var(--text-light)';
-            timeEl.textContent = formatTimestamp(notification.publishAt);
-
-            contentWrapper.appendChild(titleEl);
-            contentWrapper.appendChild(timeEl);
-            link.appendChild(contentWrapper);
-
-            if (notification.unread) {
-                const statusEl = document.createElement('div');
-                statusEl.className = 'ms-2 notification-bell__status';
-                statusEl.style.color = 'var(--primary-blue, var(--ds-primary-black))';
-                statusEl.innerHTML = '<i class="fas fa-circle" style="font-size: 8px;"></i>';
-                link.appendChild(statusEl);
-            }
-
-            li.appendChild(link);
-            listContainer.appendChild(li);
-            console.log('   ✅ Notification ' + (index + 1) + ' rendered and appended');
-        });
-        console.log('✅ All notifications rendered. Total items in list:', listContainer.children.length);
-    }
-
-    function refreshLatestNotifications(force) {
-        if (!listContainer) {
-            return;
-        }
-        const now = Date.now();
-        if (!force && now - lastLatestFetch < latestRefreshInterval) {
-            return;
-        }
-        lastLatestFetch = now;
-        fetch('/notifications/api/latest', {
-            credentials: 'include',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-            .then(function(response) {
-                console.log('🔔 API Response status:', response.status, response.statusText);
-                if (!response.ok) {
-                    console.error('❌ Failed to fetch latest notifications:', response.status, response.statusText);
-                    if (response.status === 401) {
-                        console.error('❌ Authentication failed - user not logged in');
-                    }
-                    throw new Error('Failed to fetch latest notifications: ' + response.status);
-                }
-                return response.json();
-            })
-            .then(function(data) {
-                console.log('✅ Received notifications data:', data);
-                console.log('   Type:', typeof data);
-                console.log('   Is array:', Array.isArray(data));
-                console.log('   Length:', Array.isArray(data) ? data.length : 'N/A');
-                if (Array.isArray(data) && data.length > 0) {
-                    console.log('   First notification:', data[0]);
-                }
-                renderLatestNotifications(data);
-            })
-            .catch(function(error) {
-                console.error('Error fetching latest notifications:', error);
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            console.log('   DOM is loading, waiting for DOMContentLoaded...');
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('   DOMContentLoaded fired, calling initNotificationBell...');
+                initNotificationBell();
             });
-    }
-
-    function refreshUnreadCount() {
-        fetch('/notifications/api/unread-count', {
-            credentials: 'include',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-            .then(function(response) {
-                if (!response.ok) {
-                    console.error('Failed to fetch unread count:', response.status, response.statusText);
-                    if (response.status === 401) {
-                        console.error('Authentication failed - user not logged in');
-                    }
-                    return 0;
-                }
-                return response.json();
-            })
-            .then(function(count) {
-                console.log('Unread count:', count);
-                updateBadge(count);
-                if (count > 0) {
-                    refreshLatestNotifications(false);
-                }
-            })
-            .catch(function(error) { 
-                console.error('Error fetching notification count:', error);
-                updateBadge(0);
-            });
-    }
-
-    if (typeof bootstrap !== 'undefined' && container) {
-        const dropdownInstance = bootstrap.Dropdown.getOrCreateInstance(trigger);
-
-        const showDropdown = function() {
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
-            }
-            dropdownInstance.show();
-        };
-
-        const scheduleHide = function() {
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-            }
-            hideTimeout = setTimeout(function() {
-                dropdownInstance.hide();
-            }, hoverDelay);
-        };
-
-        container.addEventListener('mouseenter', function() {
-            showDropdown();
-        });
-
-        container.addEventListener('mouseleave', function() {
-            scheduleHide();
-        });
-
-        if (menu) {
-            menu.addEventListener('mouseenter', function() {
-                if (hideTimeout) {
-                    clearTimeout(hideTimeout);
-                    hideTimeout = null;
-                }
-            });
-            menu.addEventListener('mouseleave', function() {
-                scheduleHide();
-            });
+        } else {
+            console.log('   DOM already ready, calling initNotificationBell in 100ms...');
+            // DOM already ready, run immediately
+            setTimeout(function() {
+                console.log('   Timeout fired, calling initNotificationBell...');
+                initNotificationBell();
+            }, 100);
         }
-
-        trigger.addEventListener('click', function() {
-            if (hideTimeout) {
-                clearTimeout(hideTimeout);
-                hideTimeout = null;
-            }
-        });
-
-        trigger.addEventListener('show.bs.dropdown', function() {
-            refreshLatestNotifications(true);
-        });
+    } catch (outerError) {
+        console.error('❌ Error in notification bell script wrapper:', outerError);
+        console.error('   Error stack:', outerError.stack);
     }
-
-    console.log('🔔 Initializing notification bell...');
-    refreshUnreadCount();
-    refreshLatestNotifications(true);
-    setInterval(refreshUnreadCount, 30000);
-    console.log('✅ Notification bell initialized');
-})();
-/*]]>*/
-</script>
+    })();
+    console.log('🔔 Notification bell IIFE completed');
+    /*]]>*/
+    </script>
+</div>
