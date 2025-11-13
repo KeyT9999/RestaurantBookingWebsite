@@ -154,6 +154,12 @@ public class RateLimitStatistics {
     
     // Helper methods
     public void incrementBlockedCount() {
+        // LOGGING để trace xem method nào gọi
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String caller = stackTrace.length > 2 ? stackTrace[2].getClassName() + "." + stackTrace[2].getMethodName() + ":" + stackTrace[2].getLineNumber() : "unknown";
+        String caller2 = stackTrace.length > 3 ? stackTrace[3].getClassName() + "." + stackTrace[3].getMethodName() + ":" + stackTrace[3].getLineNumber() : "unknown";
+        
+        int oldValue = this.blockedCount;
         this.blockedCount++;
         this.lastBlockedAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -161,6 +167,14 @@ public class RateLimitStatistics {
         if (this.firstBlockedAt == null) {
             this.firstBlockedAt = LocalDateTime.now();
         }
+        
+        // Log chi tiết để debug
+        System.out.println("🔍 INCREMENT BLOCKED COUNT - IP: " + this.ipAddress + 
+                         ", Old: " + oldValue + " -> New: " + this.blockedCount +
+                         ", Caller: " + caller +
+                         ", Caller2: " + caller2 +
+                         ", Thread: " + Thread.currentThread().getName() +
+                         ", Time: " + LocalDateTime.now());
     }
     
     public void resetBlockedCount() {

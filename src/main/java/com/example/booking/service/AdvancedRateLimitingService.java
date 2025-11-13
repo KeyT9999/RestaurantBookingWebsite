@@ -77,80 +77,145 @@ public class AdvancedRateLimitingService {
         String userAgent = request.getHeader("User-Agent");
         String requestPath = request.getRequestURI();
         
+        // Validate IP address
+        if (clientIp == null || clientIp.isEmpty() || "unknown".equals(clientIp)) {
+            logger.warn("⚠️ Invalid IP address: {}, allowing request", clientIp);
+            return true; // Allow request if IP cannot be determined
+        }
+        
+        // LOGGING để trace
+        System.out.println("═══════════════════════════════════════════════════════════");
+        System.out.println("🔍 [TRACE] isRequestAllowed() CALLED");
+        System.out.println("   IP: " + clientIp);
+        System.out.println("   Path: " + requestPath);
+        System.out.println("   Operation: " + operationType);
+        System.out.println("   Thread: " + Thread.currentThread().getName());
+        System.out.println("   Time: " + LocalDateTime.now());
+        
         logger.info("🔍 ADVANCED RATE LIMIT CHECK - IP: {}, Operation: {}, Path: {}, Time: {}", 
                 clientIp, operationType, requestPath, LocalDateTime.now().format(formatter));
         
-        // Get or create statistics
-        RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
-                .orElse(new RateLimitStatistics(clientIp));
+        // Kiểm tra xem request này đã được xử lý chưa (tránh duplicate từ nhiều interceptor)
+        // Sử dụng synchronized để đảm bảo chỉ 1 thread xử lý
+        String requestKey = "rate-limit-processed-" + clientIp + "-" + requestPath;
+        synchronized ((requestKey + "-sync").intern()) {
+            Object processed = request.getAttribute(requestKey);
+            if (processed != null) {
+                logger.warn("⏭️ Request already processed for rate limiting - IP: {}, Path: {}, Skipping duplicate check", clientIp, requestPath);
+                return true; // Đã được xử lý bởi interceptor khác, skip
+            }
+            request.setAttribute(requestKey, Boolean.TRUE);
+        }
         
-        // Update basic statistics
-        stats.incrementTotalRequests();
-        stats.setLastRequestAt(LocalDateTime.now());
-        stats.setUserAgent(userAgent);
-        
-        // Check for suspicious patterns
-        if (suspiciousDetectionEnabled) {
-            SuspiciousActivity suspiciousActivity = analyzeSuspiciousActivity(clientIp, request, operationType);
-            if (suspiciousActivity != null) {
-                stats.setIsSuspicious(true);
-                stats.incrementFailedRequests();
+        // Synchronize trên IP address để đảm bảo thread-safe và tránh duplicate increment
+        synchronized (("rate-limit-" + clientIp).intern()) {
+            // Get or create statistics - reload từ database để đảm bảo có dữ liệu mới nhất
+            RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
+                    .orElse(new RateLimitStatistics(clientIp));
+            
+            // Update basic statistics
+            stats.incrementTotalRequests();
+            stats.setLastRequestAt(LocalDateTime.now());
+            stats.setUserAgent(userAgent);
+            
+            // Check for suspicious patterns
+            if (suspiciousDetectionEnabled) {
+                SuspiciousActivity suspiciousActivity = analyzeSuspiciousActivity(clientIp, request, operationType);
+                if (suspiciousActivity != null) {
+                    stats.setIsSuspicious(true);
+                    stats.incrementFailedRequests();
+                    
+                    logger.warn("🚨 SUSPICIOUS ACTIVITY DETECTED - IP: {}, Type: {}, Details: {}", 
+                            clientIp, suspiciousActivity.getType(), suspiciousActivity.getDetails());
+                    
+                    // Save stats TRƯỚC KHI log để đảm bảo dữ liệu đã được lưu
+                    statisticsRepository.save(stats);
+                    
+                    // Log to monitoring (SAU KHI save stats)
+                    // NOTE: Suspicious activity KHÔNG tăng blockedCount, chỉ tăng failedRequests
+                    if (monitoringEnabled) {
+                        monitoringService.logBlockedRequest(clientIp, requestPath, userAgent);
+                        // Pass false vì không tăng blockedCount trong trường hợp này
+                        databaseService.logBlockedRequest(clientIp, requestPath, userAgent, operationType, false);
+                    }
+                    
+                    // Auto-block if threshold exceeded
+                    if (autoBlockEnabled && stats.getBlockedCount() >= autoBlockThreshold) {
+                        autoBlockIp(clientIp, "Suspicious activity detected: " + suspiciousActivity.getType());
+                    }
+                    
+                    return false;
+                }
+            }
+            
+            // Check basic rate limiting
+            boolean basicAllowed = checkBasicRateLimit(stats, operationType);
+            if (!basicAllowed) {
+                // Double-check: Reload stats từ database để đảm bảo có giá trị mới nhất
+                // Tránh trường hợp đã được tăng bởi thread khác
+                stats = statisticsRepository.findByIpAddress(clientIp)
+                        .orElse(new RateLimitStatistics(clientIp));
                 
-                logger.warn("🚨 SUSPICIOUS ACTIVITY DETECTED - IP: {}, Type: {}, Details: {}", 
-                        clientIp, suspiciousActivity.getType(), suspiciousActivity.getDetails());
+                // Lưu blockedCount trước khi tăng để debug
+                int blockedCountBefore = stats.getBlockedCount();
                 
-                // Log to monitoring
-                if (monitoringEnabled) {
-                    monitoringService.logBlockedRequest(clientIp, requestPath, userAgent);
-                    databaseService.logBlockedRequest(clientIp, requestPath, userAgent, operationType);
+                // CHỈ tăng nếu chưa được tăng trong request này
+                // Kiểm tra xem có attribute đánh dấu đã tăng chưa
+                String incrementKey = "rate-limit-incremented-" + clientIp + "-" + requestPath;
+                Object alreadyIncremented = request.getAttribute(incrementKey);
+                
+                System.out.println("🔍 [TRACE] Before increment check - IP: " + clientIp + 
+                                 ", Already incremented: " + (alreadyIncremented != null) +
+                                 ", BlockedCount before: " + blockedCountBefore);
+                
+                if (alreadyIncremented == null) {
+                    System.out.println("✅ [TRACE] CALLING incrementBlockedCount() from isRequestAllowed()");
+                    stats.incrementBlockedCount();
+                    stats.incrementFailedRequests();
+                    request.setAttribute(incrementKey, Boolean.TRUE);
+                    
+                    int blockedCountAfter = stats.getBlockedCount();
+                    
+                    System.out.println("🔍 [TRACE] After increment - IP: " + clientIp + 
+                                     ", BlockedCount: " + blockedCountBefore + " -> " + blockedCountAfter);
+                    
+                    logger.warn("🚫 RATE LIMIT EXCEEDED - IP: {}, Operation: {}, Blocked Count: {} -> {}", 
+                            clientIp, operationType, blockedCountBefore, blockedCountAfter);
+                    
+                    // Save stats TRƯỚC KHI log để đảm bảo blockedCount đã được lưu vào database
+                    statisticsRepository.save(stats);
+                    
+                    // Log to monitoring (SAU KHI save stats để tránh duplicate increment)
+                    // Pass false vì blockedCount đã được tăng và save ở trên rồi
+                    if (monitoringEnabled) {
+                        monitoringService.logBlockedRequest(clientIp, requestPath, userAgent);
+                        databaseService.logBlockedRequest(clientIp, requestPath, userAgent, operationType, false);
+                    }
+                    
+                    // Auto-block if threshold exceeded
+                    if (autoBlockEnabled && stats.getBlockedCount() >= autoBlockThreshold) {
+                        autoBlockIp(clientIp, "Rate limit exceeded multiple times");
+                    }
+                } else {
+                    logger.warn("⏭️ BlockedCount already incremented for this request - IP: {}, Path: {}, Skipping", 
+                            clientIp, requestPath);
                 }
                 
-                // Auto-block if threshold exceeded
-                if (autoBlockEnabled && stats.getBlockedCount() >= autoBlockThreshold) {
-                    autoBlockIp(clientIp, "Suspicious activity detected: " + suspiciousActivity.getType());
-                }
-                
-                statisticsRepository.save(stats);
                 return false;
             }
-        }
-        
-        // Check basic rate limiting
-        boolean basicAllowed = checkBasicRateLimit(stats, operationType);
-        if (!basicAllowed) {
-            stats.incrementBlockedCount();
-            stats.incrementFailedRequests();
             
-            logger.warn("🚫 RATE LIMIT EXCEEDED - IP: {}, Operation: {}, Blocked Count: {}", 
-                    clientIp, operationType, stats.getBlockedCount());
-            
-            // Log to monitoring
-            if (monitoringEnabled) {
-                monitoringService.logBlockedRequest(clientIp, requestPath, userAgent);
-                databaseService.logBlockedRequest(clientIp, requestPath, userAgent, operationType);
-            }
-            
-            // Auto-block if threshold exceeded
-            if (autoBlockEnabled && stats.getBlockedCount() >= autoBlockThreshold) {
-                autoBlockIp(clientIp, "Rate limit exceeded multiple times");
-            }
-            
+            // Request allowed
+            stats.incrementSuccessfulRequests();
+            stats.calculateRiskScore();
+            stats.updateSuspiciousFlag();
             statisticsRepository.save(stats);
-            return false;
+            
+            logger.info("✅ REQUEST ALLOWED - IP: {}, Operation: {}, Success Rate: {}", 
+                    clientIp, operationType, stats.getFormattedSuccessRate());
+            
+            addAdvancedHeaders(response, stats);
+            return true;
         }
-        
-        // Request allowed
-        stats.incrementSuccessfulRequests();
-        stats.calculateRiskScore();
-        stats.updateSuspiciousFlag();
-        
-        statisticsRepository.save(stats);
-        
-        logger.info("✅ REQUEST ALLOWED - IP: {}, Operation: {}, Success Rate: {}", 
-                clientIp, operationType, stats.getFormattedSuccessRate());
-        
-        addAdvancedHeaders(response, stats);
-        return true;
     }
     
     /**
@@ -198,6 +263,8 @@ public class AdvancedRateLimitingService {
     private boolean checkBasicRateLimit(RateLimitStatistics stats, String operationType) {
         // This would integrate with existing rate limiting services
         // For now, return true - actual implementation would check against configured limits
+        // NOTE: Method này luôn return true, nên sẽ không block request
+        // Nếu muốn block, cần implement logic check rate limit ở đây
         return true;
     }
     
@@ -238,20 +305,59 @@ public class AdvancedRateLimitingService {
     }
     
     /**
-     * Get client IP address
+     * Get client IP address - improved version to handle all cases
      */
     private String getClientIpAddress(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+        if (request == null) {
+            logger.warn("⚠️ Request is null, returning 'unknown'");
+            return "unknown";
         }
         
+        // Try X-Forwarded-For header first (for proxy/load balancer)
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
+            // X-Forwarded-For can contain multiple IPs, get the first one (original client)
+            String ip = xForwardedFor.split(",")[0].trim();
+            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+                logger.debug("📍 Got IP from X-Forwarded-For: {}", ip);
+                return ip;
+            }
+        }
+        
+        // Try X-Real-IP header (for nginx proxy)
         String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
+        if (xRealIp != null && !xRealIp.isEmpty() && !"unknown".equalsIgnoreCase(xRealIp)) {
+            logger.debug("📍 Got IP from X-Real-IP: {}", xRealIp);
             return xRealIp;
         }
         
-        return request.getRemoteAddr();
+        // Try Proxy-Client-IP header
+        String proxyClientIp = request.getHeader("Proxy-Client-IP");
+        if (proxyClientIp != null && !proxyClientIp.isEmpty() && !"unknown".equalsIgnoreCase(proxyClientIp)) {
+            logger.debug("📍 Got IP from Proxy-Client-IP: {}", proxyClientIp);
+            return proxyClientIp;
+        }
+        
+        // Try WL-Proxy-Client-IP header (WebLogic)
+        String wlProxyClientIp = request.getHeader("WL-Proxy-Client-IP");
+        if (wlProxyClientIp != null && !wlProxyClientIp.isEmpty() && !"unknown".equalsIgnoreCase(wlProxyClientIp)) {
+            logger.debug("📍 Got IP from WL-Proxy-Client-IP: {}", wlProxyClientIp);
+            return wlProxyClientIp;
+        }
+        
+        // Fallback to RemoteAddr
+        String remoteAddr = request.getRemoteAddr();
+        if (remoteAddr != null && !remoteAddr.isEmpty()) {
+            // Handle IPv6 localhost
+            if ("0:0:0:0:0:0:0:1".equals(remoteAddr) || "::1".equals(remoteAddr)) {
+                remoteAddr = "127.0.0.1";
+            }
+            logger.debug("📍 Got IP from RemoteAddr: {}", remoteAddr);
+            return remoteAddr;
+        }
+        
+        logger.warn("⚠️ Could not determine client IP, returning 'unknown'");
+        return "unknown";
     }
     
     /**
@@ -316,6 +422,9 @@ public class AdvancedRateLimitingService {
     /**
      * Check rate limit for IP and operation type
      * Returns true if allowed, false if blocked
+     * 
+     * NOTE: Method này KHÔNG nên được gọi trực tiếp từ interceptor vì đã có isRequestAllowed()
+     * Chỉ dùng cho các trường hợp đặc biệt không có HttpServletRequest
      */
     public boolean checkRateLimit(String clientIp, String operationType) {
         if (clientIp == null) {
@@ -323,54 +432,87 @@ public class AdvancedRateLimitingService {
             return false;
         }
         
+        // LOGGING để trace
+        System.out.println("═══════════════════════════════════════════════════════════");
+        System.out.println("🔍 [TRACE] checkRateLimit() CALLED");
+        System.out.println("   IP: " + clientIp);
+        System.out.println("   Operation: " + operationType);
+        System.out.println("   Thread: " + Thread.currentThread().getName());
+        System.out.println("   Time: " + LocalDateTime.now());
+        
         logger.info("🔍 CHECK RATE LIMIT - IP: {}, Operation: {}, Time: {}", 
                 clientIp, operationType, LocalDateTime.now().format(formatter));
         
-        // Get or create statistics
-        RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
-                .orElse(new RateLimitStatistics(clientIp));
-        
-        // Increment total requests
-        stats.incrementTotalRequests();
-        stats.setLastRequestAt(LocalDateTime.now());
-        
-        // Check if IP is currently blocked
-        if (stats.isCurrentlyBlocked()) {
-            stats.incrementBlockedCount();
-            stats.incrementFailedRequests();
-            statisticsRepository.save(stats);
+        // Synchronize trên IP để tránh duplicate với isRequestAllowed()
+        synchronized (("rate-limit-" + clientIp).intern()) {
+            // Get or create statistics - reload từ database để đảm bảo có dữ liệu mới nhất
+            RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
+                    .orElse(new RateLimitStatistics(clientIp));
             
-            logger.warn("🚫 IP BLOCKED - IP: {}, Until: {}", 
-                    clientIp, stats.getBlockedUntil());
-            return false;
-        }
-        
-        // Check basic rate limit
-        boolean allowed = checkBasicRateLimit(stats, operationType);
-        
-        if (!allowed) {
-            stats.incrementBlockedCount();
-            stats.incrementFailedRequests();
+            // Increment total requests
+            stats.incrementTotalRequests();
+            stats.setLastRequestAt(LocalDateTime.now());
             
-            // Create alert if threshold exceeded
-            if (stats.getBlockedCount() >= alertThreshold) {
-                if (monitoringEnabled) {
-                    monitoringService.logBlockedRequest(clientIp, operationType, "Rate limit exceeded");
-                }
+            // Check if IP is currently blocked
+            if (stats.isCurrentlyBlocked()) {
+                int blockedCountBefore = stats.getBlockedCount();
+                
+                System.out.println("✅ [TRACE] CALLING incrementBlockedCount() from checkRateLimit() - IP currently blocked");
+                stats.incrementBlockedCount();
+                stats.incrementFailedRequests();
+                
+                int blockedCountAfter = stats.getBlockedCount();
+                
+                System.out.println("🔍 [TRACE] checkRateLimit() - IP BLOCKED - IP: " + clientIp + 
+                                 ", BlockedCount: " + blockedCountBefore + " -> " + blockedCountAfter);
+                
+                logger.warn("🚫 IP BLOCKED - IP: {}, Until: {}, Blocked Count: {} -> {}", 
+                        clientIp, stats.getBlockedUntil(), blockedCountBefore, blockedCountAfter);
+                
+                statisticsRepository.save(stats);
+                return false;
             }
             
-            logger.warn("🚫 RATE LIMIT EXCEEDED - IP: {}, Operation: {}, Blocked Count: {}", 
-                    clientIp, operationType, stats.getBlockedCount());
-        } else {
-            stats.incrementSuccessfulRequests();
-            logger.info("✅ RATE LIMIT OK - IP: {}, Operation: {}", clientIp, operationType);
+            // Check basic rate limit
+            boolean allowed = checkBasicRateLimit(stats, operationType);
+            
+            if (!allowed) {
+                int blockedCountBefore = stats.getBlockedCount();
+                
+                System.out.println("✅ [TRACE] CALLING incrementBlockedCount() from checkRateLimit() - Rate limit exceeded");
+                stats.incrementBlockedCount();
+                stats.incrementFailedRequests();
+                
+                int blockedCountAfter = stats.getBlockedCount();
+                
+                System.out.println("🔍 [TRACE] checkRateLimit() - RATE LIMIT EXCEEDED - IP: " + clientIp + 
+                                 ", BlockedCount: " + blockedCountBefore + " -> " + blockedCountAfter);
+                
+                logger.warn("🚫 RATE LIMIT EXCEEDED - IP: {}, Operation: {}, Blocked Count: {} -> {}", 
+                        clientIp, operationType, blockedCountBefore, blockedCountAfter);
+                
+                // Save stats TRƯỚC KHI log
+                statisticsRepository.save(stats);
+                
+                // Create alert if threshold exceeded
+                if (stats.getBlockedCount() >= alertThreshold) {
+                    if (monitoringEnabled) {
+                        monitoringService.logBlockedRequest(clientIp, operationType, "Rate limit exceeded");
+                        // Pass false vì blockedCount đã được tăng và save ở trên rồi
+                        databaseService.logBlockedRequest(clientIp, operationType, "Rate limit exceeded", operationType, false);
+                    }
+                }
+            } else {
+                stats.incrementSuccessfulRequests();
+                logger.info("✅ RATE LIMIT OK - IP: {}, Operation: {}", clientIp, operationType);
+            }
+            
+            stats.calculateRiskScore();
+            stats.updateSuspiciousFlag();
+            statisticsRepository.save(stats);
+            
+            return allowed;
         }
-        
-        stats.calculateRiskScore();
-        stats.updateSuspiciousFlag();
-        statisticsRepository.save(stats);
-        
-        return allowed;
     }
     
     /**
