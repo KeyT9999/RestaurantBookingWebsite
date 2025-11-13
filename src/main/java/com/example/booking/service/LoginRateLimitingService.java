@@ -69,9 +69,20 @@ public class LoginRateLimitingService {
             logger.warn("🚫 LOGIN BLOCKED - IP: {}, Attempts: {}/{}, Time: {}",
                     clientIp, attemptInfo.getAttemptCount(), maxLoginAttempts, LocalDateTime.now().format(formatter));
             
+            // LOGGING để trace
+            System.out.println("═══════════════════════════════════════════════════════════");
+            System.out.println("🔍 [TRACE] LoginRateLimitingService - Rate limit exceeded");
+            System.out.println("   IP: " + clientIp);
+            System.out.println("   Attempts: " + attemptInfo.getAttemptCount() + "/" + maxLoginAttempts);
+            System.out.println("   Thread: " + Thread.currentThread().getName());
+            System.out.println("   Time: " + LocalDateTime.now());
+            
             // Log to both memory and database
+            // LoginRateLimitingService cần tăng blockedCount vì không tự tăng như AdvancedRateLimitingService
             monitoringService.logBlockedRequest(clientIp, "/login", request.getHeader("User-Agent"));
-            databaseService.logBlockedRequest(clientIp, "/login", request.getHeader("User-Agent"), "login");
+            
+            System.out.println("✅ [TRACE] CALLING databaseService.logBlockedRequest(..., true) from LoginRateLimitingService");
+            databaseService.logBlockedRequest(clientIp, "/login", request.getHeader("User-Agent"), "login", true);
             
             return false;
         }

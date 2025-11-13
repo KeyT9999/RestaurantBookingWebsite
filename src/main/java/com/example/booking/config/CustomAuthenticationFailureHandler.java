@@ -46,8 +46,9 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
             if (!loginRateLimitingService.isLoginAllowed(request, response)) {
                 logger.warn("🚫 RATE LIMIT EXCEEDED - IP: {}, redirecting to login with rate limit parameter", clientIp);
                 
-                // ✅ CHỈ KHI RATE LIMIT EXCEEDED MỚI TÍNH BLOCKED
-                updateDatabaseStatisticsForRateLimitExceeded(clientIp, request);
+                // ❌ KHÔNG GỌI updateDatabaseStatisticsForRateLimitExceeded() NỮA
+                // Vì LoginRateLimitingService.isLoginAllowed() đã gọi databaseService.logBlockedRequest(..., true)
+                // → đã tăng blockedCount rồi, không cần tăng thêm lần nữa
                 
                 // ✅ KIỂM TRA XEM CÓ NÊN ĐƯA VÀO DANH SÁCH CẢNH BÁO KHÔNG
                 checkAndMarkAsSuspicious(clientIp, request);
@@ -99,32 +100,16 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
     }
     
     /**
-     * Update database statistics when rate limit is exceeded
+     * DEPRECATED: Method này không còn được sử dụng
+     * Update database statistics khi rate limit exceeded đã được xử lý trong LoginRateLimitingService
+     * 
+     * @deprecated Không sử dụng nữa vì LoginRateLimitingService.isLoginAllowed() đã gọi
+     *             databaseService.logBlockedRequest(..., true) → đã tăng blockedCount rồi
      */
+    @Deprecated
     private void updateDatabaseStatisticsForRateLimitExceeded(String clientIp, HttpServletRequest request) {
-        try {
-            // Get or create statistics record
-            RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
-                    .orElse(new RateLimitStatistics(clientIp));
-            
-            // ✅ CHỈ KHI RATE LIMIT EXCEEDED MỚI TÍNH BLOCKED
-            stats.incrementBlockedCount();
-            stats.setLastRequestAt(LocalDateTime.now());
-            stats.setUserAgent(request.getHeader("User-Agent"));
-            
-            // Calculate risk score and suspicious flag
-            stats.calculateRiskScore();
-            stats.updateSuspiciousFlag();
-            
-            // Save to database
-            statisticsRepository.save(stats);
-            
-            logger.info("🚫 DATABASE UPDATED (RATE LIMIT EXCEEDED) - IP: {}, Blocked: {}, Risk: {}", 
-                    clientIp, stats.getBlockedCount(), stats.getRiskScore());
-            
-        } catch (Exception e) {
-            logger.error("❌ DATABASE UPDATE FAILED (RATE LIMIT) - IP: {}, Error: {}", clientIp, e.getMessage());
-        }
+        // Method này không còn được sử dụng để tránh duplicate increment
+        // LoginRateLimitingService đã xử lý việc tăng blockedCount
     }
     
     /**

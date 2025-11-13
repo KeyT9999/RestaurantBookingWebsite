@@ -273,8 +273,15 @@ public class RestaurantSecurityService {
                 
                 // Auto-block if risk score is high
                 if (stats.getRiskScore() >= 80) {
-                    stats.setBlockedCount(stats.getBlockedCount() + 1);
+                    int blockedCountBefore = stats.getBlockedCount();
+                    
+                    System.out.println("✅ [TRACE] CALLING incrementBlockedCount() from RestaurantSecurityService - Risk score >= 80");
                     stats.incrementBlockedCount();
+                    
+                    int blockedCountAfter = stats.getBlockedCount();
+                    System.out.println("🔍 [TRACE] RestaurantSecurityService - IP: " + ipAddress + 
+                                     ", BlockedCount: " + blockedCountBefore + " -> " + blockedCountAfter);
+                    
                     rateLimitStatisticsRepository.save(stats);
                     
                     result.put("detected", true);

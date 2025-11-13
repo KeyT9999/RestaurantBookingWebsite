@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,20 +31,58 @@ public class DatabaseRateLimitingService {
 
     /**
      * Ghi lại request bị block vào database
+     * 
+     * @param incrementBlockedCount true nếu cần tăng blockedCount (cho các service không tự tăng),
+     *                              false nếu đã được tăng ở service chính (như AdvancedRateLimitingService)
      */
     public void logBlockedRequest(String clientIp, String requestPath, String userAgent, String operationType) {
-        // Lưu block request
+        logBlockedRequest(clientIp, requestPath, userAgent, operationType, false);
+    }
+    
+    /**
+     * Ghi lại request bị block vào database với option tăng blockedCount
+     * 
+     * IMPORTANT: Khi incrementBlockedCount = false, method này CHỈ lưu log block, KHÔNG động vào stats
+     * để tránh duplicate increment. Stats đã được save ở service chính rồi.
+     * 
+     * Khi incrementBlockedCount = true, method này sẽ tăng blockedCount và save stats.
+     */
+    public void logBlockedRequest(String clientIp, String requestPath, String userAgent, String operationType, boolean incrementBlockedCount) {
+        // Lưu block request (luôn luôn lưu log)
         RateLimitBlock block = new RateLimitBlock(clientIp, requestPath, userAgent, operationType);
         blockRepository.save(block);
 
-        // Cập nhật thống kê
-        RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
-                .orElse(new RateLimitStatistics(clientIp));
-        stats.incrementBlockedCount();
-        statisticsRepository.save(stats);
-
-        // Tạo cảnh báo nếu cần
-        createAlertIfNeeded(clientIp, stats.getBlockedCount());
+        // CHỈ xử lý stats nếu cần tăng blockedCount (cho các service như LoginRateLimitingService)
+        // Nếu incrementBlockedCount = false, KHÔNG động vào stats để tránh duplicate
+        System.out.println("🔍 [TRACE] logBlockedRequest() CALLED - IP: " + clientIp + 
+                         ", incrementBlockedCount: " + incrementBlockedCount);
+        
+        if (incrementBlockedCount) {
+            // Lấy hoặc tạo thống kê và tăng blockedCount
+            RateLimitStatistics stats = statisticsRepository.findByIpAddress(clientIp)
+                    .orElse(new RateLimitStatistics(clientIp));
+            
+            int blockedCountBefore = stats.getBlockedCount();
+            
+            System.out.println("✅ [TRACE] CALLING incrementBlockedCount() from logBlockedRequest() - incrementBlockedCount=true");
+            stats.incrementBlockedCount();
+            int blockedCountAfter = stats.getBlockedCount();
+            
+            statisticsRepository.save(stats);
+            
+            // Log để debug
+            System.out.println("🔍 DATABASE SERVICE - Incrementing blockedCount for IP: " + clientIp + 
+                             ", Before: " + blockedCountBefore + ", After: " + blockedCountAfter);
+            
+            // Tạo cảnh báo nếu cần (dựa trên blockedCount sau khi tăng)
+            createAlertIfNeeded(clientIp, stats.getBlockedCount());
+        } else {
+            // Nếu incrementBlockedCount = false, KHÔNG làm gì với stats
+            // Stats đã được xử lý và save ở service chính (AdvancedRateLimitingService) rồi
+            // Chỉ cần lưu log block là đủ
+            System.out.println("🔍 DATABASE SERVICE - Logging block for IP: " + clientIp + 
+                             " WITHOUT incrementing blockedCount (already incremented in service)");
+        }
     }
 
     /**

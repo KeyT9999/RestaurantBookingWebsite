@@ -3,7 +3,7 @@ package com.example.booking.config;
 import com.example.booking.service.EndpointRateLimitingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
+import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,8 +13,12 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Advanced interceptor for comprehensive rate limiting across all endpoints
+ * 
+ * NOTE: Interceptor này KHÔNG được đăng ký trong RateLimitingConfig để tránh duplicate với RateLimitingInterceptor
+ * Nếu cần sử dụng, phải đăng ký thủ công trong addInterceptors()
+ * 
+ * DISABLED: Bỏ @Component để tránh auto-registration và duplicate với RateLimitingInterceptor
  */
-@Component
 public class AdvancedRateLimitingInterceptor implements HandlerInterceptor {
     
     private static final Logger logger = LoggerFactory.getLogger(AdvancedRateLimitingInterceptor.class);
@@ -23,7 +27,7 @@ public class AdvancedRateLimitingInterceptor implements HandlerInterceptor {
     private EndpointRateLimitingService endpointRateLimitingService;
     
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
         String requestPath = request.getRequestURI();
         String method = request.getMethod();
         
