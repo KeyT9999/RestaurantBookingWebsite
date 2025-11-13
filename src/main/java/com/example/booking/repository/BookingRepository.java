@@ -153,6 +153,35 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     List<Booking> findByRestaurantAndStatusAndBookingTimeBetween(RestaurantProfile restaurant, BookingStatus status,
                   LocalDateTime startTime, LocalDateTime endTime);
 
+    @Query("SELECT CAST(b.createdAt AS date) AS period, COALESCE(SUM(b.depositAmount), 0) " +
+           "FROM Booking b " +
+           "WHERE b.status = :status AND b.createdAt >= :start AND b.createdAt < :end " +
+           "GROUP BY CAST(b.createdAt AS date) " +
+           "ORDER BY period")
+    List<Object[]> sumDepositByStatusGroupedByDay(@Param("status") BookingStatus status,
+                                                  @Param("start") LocalDateTime start,
+                                                  @Param("end") LocalDateTime end);
+
+    @Query(value = "SELECT date_trunc('month', b.created_at) AS period, COALESCE(SUM(b.deposit_amount), 0) " +
+                   "FROM booking b " +
+                   "WHERE b.status = :status AND b.created_at >= :start AND b.created_at < :end " +
+                   "GROUP BY period " +
+                   "ORDER BY period",
+           nativeQuery = true)
+    List<Object[]> sumDepositByStatusGroupedByMonth(@Param("status") String status,
+                                                    @Param("start") LocalDateTime start,
+                                                    @Param("end") LocalDateTime end);
+
+    @Query(value = "SELECT date_trunc('year', b.created_at) AS period, COALESCE(SUM(b.deposit_amount), 0) " +
+                   "FROM booking b " +
+                   "WHERE b.status = :status AND b.created_at >= :start AND b.created_at < :end " +
+                   "GROUP BY period " +
+                   "ORDER BY period",
+           nativeQuery = true)
+    List<Object[]> sumDepositByStatusGroupedByYear(@Param("status") String status,
+                                                   @Param("start") LocalDateTime start,
+                                                   @Param("end") LocalDateTime end);
+
     /**
      * Find table conflicts in time range
      */
