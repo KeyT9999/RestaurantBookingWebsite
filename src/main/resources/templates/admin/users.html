@@ -23,7 +23,7 @@
 		
 		/* Page layout follows light/blue baseline */
 		.page-bg {
-			background-color: var(--background-light);
+			background-color: #f5f6f8;
 			min-height: 100vh;
 		}
 		
@@ -44,11 +44,11 @@
 			position: relative;
 			z-index: 100;
 			padding: 1.5rem 0;
-			background: var(--background-white);
-			border-bottom: 1px solid var(--border-light);
+			background: #ffffff;
+			border-bottom: 1px solid rgba(226, 232, 240, 0.8);
 			margin-bottom: 2rem;
-			border-radius: 12px;
-			box-shadow: var(--shadow-card);
+			border-radius: 16px;
+			box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 		}
 		
 		/* Primary action button consistent with home */
@@ -71,47 +71,21 @@
 			box-shadow: var(--shadow-hover) !important;
 		}
 		
-		/* Cards */
+		/* Cards & containers */
 		.filter-card {
-			background: var(--background-white);
-			border: 1px solid var(--border-light);
+			background: #ffffff;
+			border: 1px solid rgba(226, 232, 240, 0.8);
 			color: var(--text-dark);
-			box-shadow: var(--shadow-card);
-			border-radius: 12px;
+			box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+			border-radius: 16px;
 		}
 		
-		.user-card {
-			background: var(--background-white);
-			border: 1px solid var(--border-light);
-			color: var(--text-dark);
-			border-radius: 12px;
-			transition: var(--transition);
-			box-shadow: var(--shadow-card);
-		}
-		
-		.user-card:hover {
-			transform: translateY(-3px);
-			box-shadow: var(--shadow-hover);
-			border-color: var(--primary-blue);
-		}
-		
-		.user-card h5 {
-			font-family: var(--font-heading);
-			font-weight: 600;
-			font-size: 1.1rem;
-		}
-		
-		.user-avatar {
-			width: 56px;
-			height: 56px;
-			border-radius: 50%;
-			background: var(--background-light);
-			color: var(--primary-blue);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-weight: 700;
-			font-size: 1.1rem;
+		.user-list-card {
+			background: #ffffff;
+			border: 1px solid rgba(226, 232, 240, 0.8);
+			box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+			border-radius: 20px;
+			overflow: hidden;
 		}
 		
 		.badge-role, .badge-status {
@@ -156,6 +130,99 @@
 			border-color: var(--primary-blue-dark);
 			transform: translateY(-1px);
 			box-shadow: var(--shadow-hover);
+		}
+		
+		/* Users table */
+		.users-table thead {
+			background: #f7fafd;
+			border-bottom: 1px solid rgba(209, 218, 230, 0.7);
+		}
+		
+		.users-table thead th {
+			font-size: 0.82rem;
+			font-weight: 600;
+			color: #4f647b;
+			text-transform: uppercase;
+			letter-spacing: .08em;
+			padding: 0.85rem 1rem;
+		}
+		
+		.users-table tbody tr {
+			background: rgba(255, 255, 255, 0.98);
+			border-bottom: 1px solid rgba(231, 238, 248, 0.8);
+			transition: var(--transition);
+		}
+		
+		.users-table tbody tr:hover {
+			background: rgba(247, 250, 252, 0.92);
+			border-color: rgba(15, 23, 42, 0.08);
+		}
+		
+		.users-table td {
+			padding: 0.95rem 1rem;
+			color: var(--text-dark);
+			vertical-align: middle;
+		}
+		
+		.user-meta {
+			display: flex;
+			align-items: center;
+			gap: 0.85rem;
+		}
+		
+		.user-avatar {
+			width: 44px;
+			height: 44px;
+			border-radius: 14px;
+			background: rgba(74, 144, 226, 0.14);
+			color: var(--primary-blue-dark);
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: 600;
+			font-size: 1rem;
+		}
+		
+		.user-name {
+			font-family: var(--font-heading);
+			font-weight: 600;
+			font-size: 1rem;
+			color: var(--text-dark);
+			margin-bottom: 2px;
+		}
+		
+		.user-username {
+			font-size: 0.82rem;
+			color: #7b8ba0;
+		}
+		
+		.role-badge {
+			padding: 0.4rem 0.85rem;
+			border-radius: 999px;
+			font-size: 0.75rem;
+			font-weight: 600;
+			box-shadow: inset 0 1px 2px rgba(255,255,255,0.6);
+		}
+		
+		.role-admin { background: linear-gradient(135deg, rgba(244,63,94,0.15), rgba(190,18,60,0.18)); color: #a41639; }
+		.role-customer { background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,122,85,0.18)); color: #0f7a57; }
+		.role-owner { background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(37,99,235,0.18)); color: #1d4ed8; }
+		
+		.status-badge {
+			padding: 0.4rem 0.85rem;
+			border-radius: 999px;
+			font-size: 0.75rem;
+			font-weight: 600;
+			box-shadow: inset 0 1px 2px rgba(255,255,255,0.6);
+		}
+		
+		.status-active { background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(22,163,74,0.18)); color: #178148; }
+		.status-inactive { background: linear-gradient(135deg, rgba(251,191,36,0.2), rgba(217,119,6,0.18)); color: #9a5b08; }
+		
+		.actions-cell {
+			display: flex;
+			align-items: center;
+			gap: 0.4rem;
 		}
 		
 		.toggle-btn, .edit-btn { border-radius: 8px; transition: var(--transition); }
@@ -247,68 +314,72 @@
 				</div>
 			</div>
 
-			<!-- Users Grid -->
-			<div class="row g-4" th:if="${users.totalElements > 0}">
-				<div class="col-md-6 col-xl-4" th:each="u : ${users.content}">
-					<div class="user-card p-4 h-100" th:data-user-id="${u.id}">
-						<div class="d-flex align-items-center mb-4">
-							<div class="user-avatar me-3" th:text="${(#strings.isEmpty(u.fullName) ? u.username : u.fullName).substring(0,1).toUpperCase()}">U</div>
-							<div>
-								<h5 class="mb-1 text-dark" th:text="${#strings.isEmpty(u.fullName) ? u.username : u.fullName}">User</h5>
-								<div class="table-muted small" th:text="${u.email}">email@example.com</div>
-								<div class="table-muted small" th:text="'@' + ${u.username}">@username</div>
-							</div>
-						</div>
-						
-						<div class="mb-3">
-							<span class="table-muted small fw-500">VAI TRÒ:</span>
-							<br>
-							<span class="badge badge-role mt-1"
-								  th:classappend="${u.role.getValue()=='admin'} ? ' bg-danger' : (${u.role.getValue()=='restaurant_owner'} ? ' bg-info' : ' bg-success')"
-								  th:text="${u.role.getValue().toUpperCase()}">CUSTOMER</span>
-						</div>
-						
-						<div class="mb-3">
-							<span class="table-muted small fw-500">TRẠNG THÁI:</span>
-							<br>
-													<span class="badge badge-status mt-1 status-badge" 
-							  th:id="'status-badge-' + ${u.id}"
-							  th:classappend="${u.active && u.emailVerified} ? ' bg-success' : ' bg-warning text-dark'" 
-							  th:text="${u.active && u.emailVerified} ? 'ACTIVE' : 'INACTIVE'">Active</span>
-						</div>
-						
-						<div class="mb-2">
-							<span class="table-muted small">Tạo:</span>
-							<span class="text-light small" th:text="${#temporals.format(u.createdAt,'dd/MM/yyyy')}"></span>
-						</div>
-						
-						<div class="mb-4">
-							<span class="table-muted small">Đăng nhập cuối:</span>
-							<span class="text-light small" th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'dd/MM/yyyy') : 'Chưa bao giờ'}"></span>
-						</div>
-						
-						<div class="d-flex gap-2">
-							<!-- Toggle Active Button với AJAX -->
-													<button type="button" class="btn btn-outline-secondary btn-sm toggle-btn toggle-active-btn" 
-								th:id="'toggle-btn-' + ${u.id}"
-								th:data-user-id="${u.id}"
-								th:data-current-status="${u.active && u.emailVerified}"
-								th:title="${u.active && u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
-								<i class="fas toggle-icon" th:classappend="${u.active && u.emailVerified} ? ' fa-lock' : ' fa-unlock'"></i>
-							</button>
-							
-							<a class="btn btn-outline-primary btn-sm edit-btn" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa thông tin">
-								<i class="fas fa-user-edit"></i>
-							</a>
-						</div>
-
-						<!-- Thêm nút restore nếu user đã bị xóa -->
-						<form th:if="${u.deletedAt != null}" method="post" th:action="@{|/admin/users/${u.id}/restore|}" class="mt-2">
-							<button type="submit" class="btn btn-outline-success btn-sm w-100">
-								<i class="fas fa-undo me-1"></i> Khôi phục tài khoản
-							</button>
-						</form>
-					</div>
+			<!-- Users list -->
+			<div class="user-list-card" th:if="${users.totalElements > 0}">
+				<div class="table-responsive">
+					<table class="table align-middle users-table mb-0">
+						<thead>
+							<tr>
+								<th>Người dùng</th>
+								<th>Vai trò</th>
+								<th>Trạng thái</th>
+								<th>Tạo lúc</th>
+								<th>Đăng nhập gần nhất</th>
+								<th class="text-end">Thao tác</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="u : ${users.content}">
+								<td>
+									<div class="user-meta">
+										<div class="user-avatar" th:text="${(#strings.isEmpty(u.fullName) ? u.username : u.fullName).substring(0,1).toUpperCase()}">U</div>
+										<div>
+											<div class="user-name" th:text="${#strings.isEmpty(u.fullName) ? u.username : u.fullName}">User name</div>
+											<div class="small text-muted" th:text="${u.email}">email@example.com</div>
+											<div class="user-username" th:text="'@' + ${u.username}">@username</div>
+										</div>
+									</div>
+								</td>
+								<td>
+									<span class="role-badge"
+									      th:classappend="${u.role.getValue()=='admin'} ? ' role-admin' : (${u.role.getValue()=='restaurant_owner'} ? ' role-owner' : ' role-customer')"
+									      th:text="${u.role.getValue().toUpperCase()}">CUSTOMER</span>
+								</td>
+								<td>
+									<span class="status-badge"
+										  th:id="'status-badge-' + ${u.id}"
+										  th:classappend="${u.active && u.emailVerified} ? ' status-active' : ' status-inactive'"
+										  th:text="${u.active && u.emailVerified} ? 'Active' : 'Inactive'">Active</span>
+								</td>
+								<td>
+									<div class="small text-muted" th:text="${#temporals.format(u.createdAt,'dd/MM/yyyy')}">17/11/2025</div>
+								</td>
+								<td>
+									<div class="small text-muted" th:text="${u.lastLogin != null ? #temporals.format(u.lastLogin,'dd/MM/yyyy HH:mm') : 'Chưa bao giờ'}">Chưa bao giờ</div>
+								</td>
+								<td class="text-end">
+									<div class="actions-cell justify-content-end">
+										<button type="button"
+										        class="btn btn-outline-secondary btn-sm toggle-btn toggle-active-btn"
+										        th:id="'toggle-btn-' + ${u.id}"
+										        th:data-user-id="${u.id}"
+										        th:data-current-status="${u.active && u.emailVerified}"
+										        th:title="${u.active && u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
+											<i class="fas toggle-icon" th:classappend="${u.active && u.emailVerified} ? ' fa-lock' : ' fa-unlock'"></i>
+										</button>
+										<a class="btn btn-outline-primary btn-sm edit-btn" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa thông tin">
+											<i class="fas fa-user-edit"></i>
+										</a>
+									</div>
+									<form th:if="${u.deletedAt != null}" method="post" th:action="@{|/admin/users/${u.id}/restore|}" class="mt-2">
+										<button type="submit" class="btn btn-outline-success btn-sm">
+											<i class="fas fa-undo me-1"></i>Khôi phục
+										</button>
+									</form>
+								</td>
+							</tr>
+						</tbody>
+					</table>
 				</div>
 			</div>
 
