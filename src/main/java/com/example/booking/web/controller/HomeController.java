@@ -1,5 +1,16 @@
 package com.example.booking.web.controller;
 
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,33 +26,25 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.example.booking.domain.RestaurantProfile;
-import com.example.booking.domain.RestaurantMedia;
-import com.example.booking.domain.Dish;
-import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.Customer;
+import com.example.booking.domain.Dish;
+import com.example.booking.domain.RestaurantMedia;
+import com.example.booking.domain.RestaurantProfile;
+import com.example.booking.domain.RestaurantTable;
 import com.example.booking.domain.User;
 import com.example.booking.dto.DishWithImageDto;
 import com.example.booking.dto.PopularRestaurantDto;
 import com.example.booking.dto.ReviewDto;
 import com.example.booking.dto.ReviewForm;
 import com.example.booking.dto.ReviewStatisticsDto;
-import com.example.booking.service.RestaurantOwnerService;
-import com.example.booking.service.RestaurantManagementService;
-import com.example.booking.service.CustomerService;
-import com.example.booking.service.ReviewService;
-import com.example.booking.service.NotificationService;
 import com.example.booking.repository.RestaurantMediaRepository;
 
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import com.example.booking.service.CustomerService;
+import com.example.booking.service.NotificationService;
+import com.example.booking.service.RestaurantManagementService;
+import com.example.booking.service.RestaurantOwnerService;
+import com.example.booking.service.ReviewService;
+import com.example.booking.service.SimpleUserService;
 
 /**
  * Controller for handling home page and static pages
@@ -77,6 +80,9 @@ public class HomeController {
     
     @Autowired
     private NotificationService notificationService;
+    
+    @Autowired
+    private SimpleUserService userService;
 
     /**
      * Home page - main landing page
@@ -115,9 +121,13 @@ public class HomeController {
             
             // Add notification count for authenticated users
             try {
-                User user = (User) authentication.getPrincipal();
-                long unreadCount = notificationService.countUnreadByUserId(user.getId());
-                model.addAttribute("unreadCount", unreadCount);
+                User user = getUserFromAuthentication(authentication);
+                if (user != null) {
+                    long unreadCount = notificationService.countUnreadByUserId(user.getId());
+                    model.addAttribute("unreadCount", unreadCount);
+                } else {
+                    model.addAttribute("unreadCount", 0L);
+                }
             } catch (Exception e) {
                 System.err.println("Error loading notification count: " + e.getMessage());
                 model.addAttribute("unreadCount", 0L);
@@ -416,21 +426,27 @@ public class HomeController {
                     log.info("   Distance to Đà Nẵng: {} km", String.format("%.2f", distanceToDaNang));
                     log.info("   Distance to Hồ Chí Minh: {} km", String.format("%.2f", distanceToHCM));
                     
-                    // If user is closer to HCM than Đà Nẵng, and distance to Đà Nẵng > 50km, likely wrong location
+                    // Enhanced validation: Reject location if it's clearly wrong
+                    // Case 1: User is closer to HCM than Đà Nẵng, and distance to Đà Nẵng > 50km
+                    // This indicates user is likely in Đà Nẵng but browser returned HCM location (IP-based geolocation)
                     if (distanceToHCM < distanceToDaNang && distanceToDaNang > 50) {
                         log.error("❌ User location seems to be in HCM area ({} km from HCM, {} km from Đà Nẵng). " +
-                            "This might be a cached/wrong location if user is actually in Đà Nẵng.", 
+                            "This is likely IP-based geolocation returning wrong location. " +
+                            "User is probably in Đà Nẵng but browser detected HCM.", 
                             String.format("%.2f", distanceToHCM), String.format("%.2f", distanceToDaNang));
                         model.addAttribute("error", 
-                            String.format("Vị trí hiện tại có vẻ không đúng (cách Đà Nẵng %.0f km, cách HCM %.0f km). " +
-                                "Vui lòng xóa cache và cập nhật lại vị trí.", 
+                            String.format("Vị trí tự động không chính xác (cách Đà Nẵng %.0f km, cách HCM %.0f km). " +
+                                "Hệ thống đã phát hiện vị trí có vẻ không đúng. " +
+                                "Vui lòng chọn thành phố thủ công trong cài đặt vị trí để có kết quả chính xác.", 
                                 distanceToDaNang, distanceToHCM));
-                        // Fallback to normal filtering
+                        // Fallback to normal filtering - don't use wrong location
                         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
                         Pageable pageable = PageRequest.of(page, size, sort);
                         restaurants = restaurantService.getRestaurantsWithFilters(
                             pageable, search, cuisineType, priceRange, ratingFilter);
-                    } else if (!withinVietnam) {
+                    } 
+                    // Case 2: Location is outside Vietnam bounds
+                    else if (!withinVietnam) {
                         log.warn("⚠️ Coordinates outside Vietnam bounds: lat={}, lon={}", latitude, longitude);
                         log.warn("   Expected range: lat 8-24, lon 102-111");
                         
@@ -744,37 +760,73 @@ public class HomeController {
 
                 // Check if user has reviewed this restaurant
                 if (authentication != null && authentication.isAuthenticated()) {
-                    User user = (User) authentication.getPrincipal();
-                    System.out.println("🔍 User ID: " + user.getId());
+                    User user = getUserFromAuthentication(authentication);
+                    if (user != null) {
+                        System.out.println("🔍 User ID: " + user.getId());
 
-                    Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
-                    System.out.println("🔍 Customer found: " + customerOpt.isPresent());
+                        Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
+                        System.out.println("🔍 Customer found: " + customerOpt.isPresent());
 
-                    if (customerOpt.isPresent()) {
-                        hasReviewed = reviewService.hasCustomerReviewedRestaurant(customerOpt.get().getCustomerId(),
-                                id);
-                        System.out.println("🔍 Has reviewed: " + hasReviewed);
+                        if (customerOpt.isPresent()) {
+                            UUID customerId = customerOpt.get().getCustomerId();
+                            System.out.println("🔍 Customer ID: " + customerId);
+                            System.out.println("🔍 Restaurant ID: " + id);
+                            
+                            hasReviewed = reviewService.hasCustomerReviewedRestaurant(customerId, id);
+                            System.out.println("🔍 Has reviewed: " + hasReviewed);
 
-                        if (hasReviewed) {
-                            // Get customer's review for this restaurant
-                            List<ReviewDto> customerReviews = reviewService
-                                    .getReviewsByCustomer(customerOpt.get().getCustomerId());
-                            Optional<ReviewDto> customerReviewOpt = customerReviews.stream()
-                                    .filter(r -> r.getRestaurantId().equals(id))
-                                    .findFirst();
-                            if (customerReviewOpt.isPresent()) {
-                                customerReview = customerReviewOpt.get();
-                                System.out.println("🔍 Customer review found: " + customerReview.getReviewId());
+                            if (hasReviewed) {
+                                // Get customer's review for this restaurant - use the proper method
+                                Optional<ReviewDto> customerReviewOpt = reviewService
+                                        .getCustomerReviewForRestaurant(customerId, id);
+                                if (customerReviewOpt.isPresent()) {
+                                    customerReview = customerReviewOpt.get();
+                                    System.out.println("✅ Customer review found: ID=" + customerReview.getReviewId() + 
+                                                      ", Rating=" + customerReview.getRating() + 
+                                                      ", Comment=" + customerReview.getComment());
+                                } else {
+                                    System.out.println("⚠️ Has reviewed but review not found - using fallback");
+                                    // Fallback: get all reviews and filter
+                                    List<ReviewDto> customerReviews = reviewService
+                                            .getReviewsByCustomer(customerId);
+                                    System.out.println("🔍 Total customer reviews: " + customerReviews.size());
+                                    customerReviewOpt = customerReviews.stream()
+                                            .filter(r -> r.getRestaurantId().equals(id))
+                                            .findFirst();
+                                    if (customerReviewOpt.isPresent()) {
+                                        customerReview = customerReviewOpt.get();
+                                        System.out.println("✅ Customer review found (fallback): ID=" + customerReview.getReviewId());
+                                    } else {
+                                        System.out.println("❌ Customer review not found even in fallback");
+                                    }
+                                }
+                            } else {
+                                System.out.println("⚠️ Customer has NOT reviewed this restaurant yet");
                             }
+                        } else {
+                            System.out.println("⚠️ Customer not found for user");
                         }
+                    } else {
+                        System.out.println("⚠️ Could not get User from authentication");
                     }
                 }
 
-                // Get recent reviews (3-5 reviews)
+                // Get recent reviews (3-5 reviews) - exclude customer's own review if exists
                 Pageable pageable = PageRequest.of(0, 5);
                 Page<ReviewDto> recentReviewsPage = reviewService.getReviewsByRestaurant(id, pageable);
                 recentReviews = recentReviewsPage.getContent();
-                System.out.println("🔍 Recent reviews count: " + recentReviews.size());
+                
+                // Filter out customer's own review from recent reviews if they have reviewed
+                ReviewDto finalCustomerReview = customerReview; // Make effectively final for lambda
+                if (hasReviewed && finalCustomerReview != null) {
+                    final Integer customerReviewId = finalCustomerReview.getReviewId();
+                    recentReviews = recentReviews.stream()
+                            .filter(r -> !r.getReviewId().equals(customerReviewId))
+                            .collect(Collectors.toList());
+                    System.out.println("🔍 Recent reviews count (excluding customer's review): " + recentReviews.size());
+                } else {
+                    System.out.println("🔍 Recent reviews count: " + recentReviews.size());
+                }
 
                 // Get review statistics
                 statistics = reviewService.getRestaurantReviewStatistics(id);
@@ -893,5 +945,37 @@ public class HomeController {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         
         return EARTH_RADIUS_KM * c;
+    }
+    
+    /**
+     * Helper method để lấy User từ authentication (xử lý cả User và OAuth2User)
+     */
+    private User getUserFromAuthentication(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return null;
+        }
+        
+        Object principal = authentication.getPrincipal();
+        
+        // Nếu là User object trực tiếp (regular login)
+        if (principal instanceof User) {
+            return (User) principal;
+        }
+        
+        // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email cho OAuth users
+            
+            // Tìm User thực tế từ database
+            try {
+                return (User) userService.loadUserByUsername(username);
+            } catch (Exception e) {
+                System.err.println("❌ Error loading user by username: " + username + " - " + e.getMessage());
+                return null;
+            }
+        }
+        
+        System.err.println("❌ Unknown principal type: " + principal.getClass().getName());
+        return null;
     }
 }

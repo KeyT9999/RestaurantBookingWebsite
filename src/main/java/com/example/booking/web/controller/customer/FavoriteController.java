@@ -1,7 +1,6 @@
 package com.example.booking.web.controller.customer;
 
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,11 +21,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.User;
+import com.example.booking.domain.UserRole;
 import com.example.booking.dto.customer.FavoriteRestaurantDto;
 import com.example.booking.dto.customer.ToggleFavoriteRequest;
 import com.example.booking.dto.customer.ToggleFavoriteResponse;
 import com.example.booking.repository.CustomerRepository;
 import com.example.booking.service.FavoriteService;
+import com.example.booking.service.SimpleUserService;
 
 @Controller
 @RequestMapping("/customer/favorites")
@@ -37,6 +38,9 @@ public class FavoriteController {
     
     @Autowired
     private CustomerRepository customerRepository;
+    
+    @Autowired
+    private SimpleUserService userService;
     
     /**
      * Display favorites page
@@ -170,7 +174,7 @@ public class FavoriteController {
     }
     
     /**
-     * Get customer from authentication
+     * Get customer from authentication, create if not exists
      */
     private Customer getCustomerFromAuthentication(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
@@ -178,12 +182,54 @@ public class FavoriteController {
         }
         
         Object principal = authentication.getPrincipal();
+        User user = null;
         
+        // Nếu là User object trực tiếp (regular login)
         if (principal instanceof User) {
-            User user = (User) principal;
-            return customerRepository.findByUserId(user.getId()).orElse(null);
+            user = (User) principal;
+        }
+        // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)
+        else if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email cho OAuth users
+            
+            // Tìm User thực tế từ database
+            try {
+                user = (User) userService.loadUserByUsername(username);
+            } catch (Exception e) {
+                System.err.println("❌ Error loading user by username in FavoriteController: " + username + " - " + e.getMessage());
+                return null;
+            }
         }
         
-        return null;
+        if (user == null) {
+            return null;
+        }
+        
+        // Tìm Customer, nếu chưa có thì tự động tạo
+        Customer customer = customerRepository.findByUserId(user.getId()).orElse(null);
+        
+        if (customer == null) {
+            // Customer entity doesn't exist, create it automatically
+            try {
+                // Verify user has CUSTOMER role
+                if (user.getRole() == null || !user.getRole().isCustomer()) {
+                    System.err.println("⚠️ User is not a customer: " + user.getId() + " (role: " + user.getRole() + ")");
+                    return null;
+                }
+                
+                // Create new Customer entity
+                customer = new Customer();
+                customer.setUser(user);
+                customer.setFullName(user.getFullName() != null ? user.getFullName() : user.getUsername());
+                customer = customerRepository.save(customer);
+                System.out.println("✅ Auto-created Customer for user: " + user.getId());
+            } catch (Exception e) {
+                System.err.println("❌ Error creating Customer for user " + user.getId() + ": " + e.getMessage());
+                e.printStackTrace();
+                return null;
+            }
+        }
+        
+        return customer;
     }
 }

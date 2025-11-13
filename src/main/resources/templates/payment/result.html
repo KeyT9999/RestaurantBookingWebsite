@@ -190,8 +190,8 @@
 
                             <div th:case="'PENDING'">
                                 <div class="ds-note-warning ds-mb-4"
-                                     th:with="totalValue=${totalAmount != null ? totalAmount : payment.amount},
-                                              remainingValue=${remainingAmount != null ? remainingAmount : (totalAmount != null ? totalAmount.subtract(payment.amount) : T(java.math.BigDecimal).ZERO)}">
+                                     th:with="totalValue=${totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)},
+                                              remainingValue=${remainingAmount != null ? remainingAmount : ((totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)).subtract(payment.amount))}">
                                     <h3 class="ds-heading-6 ds-mb-2">
                                         <i class="fas fa-bell me-2"></i> Hoàn tất thanh toán để giữ chỗ
                                     </h3>
@@ -285,8 +285,8 @@
 
                         <div class="ds-summary-grid"
                              th:if="${payment != null}"
-                             th:with="totalValue=${totalAmount != null ? totalAmount : payment.amount},
-                                      remainingValue=${remainingAmount != null ? remainingAmount : (totalAmount != null ? totalAmount.subtract(payment.amount) : T(java.math.BigDecimal).ZERO)}">
+                             th:with="totalValue=${totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)},
+                                      remainingValue=${remainingAmount != null ? remainingAmount : ((totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)).subtract(payment.amount))}">
                             <div class="ds-summary-card">
                                 <small>Tổng giá trị đơn</small>
                                 <strong th:text="${#numbers.formatDecimal(totalValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>

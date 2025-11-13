@@ -1,12 +1,10 @@
 package com.example.booking.web.controller;
 
-import static org.mockito.Mockito.verify;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.ui.ExtendedModelMap;
+import org.springframework.ui.Model;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -18,14 +16,17 @@ class GlobalExceptionHandlerTest {
 
     private GlobalExceptionHandler handler;
     private RedirectAttributes redirectAttributes;
+    private Model model;
+    private MockHttpServletRequest request;
 
     @BeforeEach
     void setUp() {
         handler = new GlobalExceptionHandler();
         redirectAttributes = new RedirectAttributesModelMap();
+        model = new ExtendedModelMap();
+        request = new MockHttpServletRequest();
         
         // Setup request context for redirect
-        MockHttpServletRequest request = new MockHttpServletRequest();
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
 
@@ -36,7 +37,7 @@ class GlobalExceptionHandlerTest {
         IllegalArgumentException ex = new IllegalArgumentException("Invalid input provided");
         
         // When
-        String result = handler.handleIllegalArgumentException(ex, null, redirectAttributes);
+        String result = handler.handleIllegalArgumentException(ex, model, redirectAttributes, request);
         
         // Then
         assert result.equals("redirect:/");
@@ -51,7 +52,7 @@ class GlobalExceptionHandlerTest {
         IllegalArgumentException ex = new IllegalArgumentException("Invalid input");
         
         // When
-        handler.handleIllegalArgumentException(ex, null, redirectAttributes);
+        handler.handleIllegalArgumentException(ex, model, redirectAttributes, request);
         
         // Then
         assert redirectAttributes.getFlashAttributes().get("errorMessage").equals("Invalid input");
@@ -64,7 +65,7 @@ class GlobalExceptionHandlerTest {
         RuntimeException ex = new RuntimeException("Database connection failed");
         
         // When
-        String result = handler.handleGenericException(ex, null, redirectAttributes);
+        String result = handler.handleGenericException(ex, model, redirectAttributes, request);
         
         // Then
         assert result.equals("redirect:/");
@@ -80,7 +81,7 @@ class GlobalExceptionHandlerTest {
         NullPointerException ex = new NullPointerException();
         
         // When
-        handler.handleGenericException(ex, null, redirectAttributes);
+        handler.handleGenericException(ex, model, redirectAttributes, request);
         
         // Then
         assert redirectAttributes.getFlashAttributes().containsKey("errorMessage");

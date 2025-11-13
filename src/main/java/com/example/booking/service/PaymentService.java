@@ -18,7 +18,6 @@ import com.example.booking.domain.Customer;
 import com.example.booking.domain.Payment;
 import com.example.booking.domain.PaymentMethod;
 import com.example.booking.domain.PaymentStatus;
-import com.example.booking.domain.Voucher;
 import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.CustomerRepository;
 import com.example.booking.repository.PaymentRepository;
@@ -56,7 +55,7 @@ public class PaymentService {
     
     @Autowired
     private EmailService emailService;
-    
+
     /**
      * Create payment for booking
      * @param bookingId The booking ID
@@ -90,9 +89,17 @@ public class PaymentService {
         // Validate payment method and type combination
         validatePaymentMethodAndType(paymentMethod, paymentType);
         
-        // Calculate total amount based on payment type (do this FIRST)
+        // Calculate total amount based on payment type
+        // This directly uses booking.getDepositAmount() or booking.getTotalAmount()
+        // No adjustment needed - booking deposit is already calculated correctly
         BigDecimal totalAmount = calculateTotalAmount(booking, paymentType, voucherCode);
         
+        // If deposit = 0, skip payment creation
+        if (totalAmount.compareTo(BigDecimal.ZERO) == 0) {
+            logger.info("💰 Deposit amount is 0, skipping payment creation. BookingId: {}", bookingId);
+            return null; // Return null to indicate no payment needed
+        }
+
         // Check if payment already exists for this booking and type
         Optional<Payment> existingPayment = findExistingPayment(booking, paymentType);
         if (existingPayment.isPresent()) {
@@ -147,15 +154,11 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
         payment.setPaidAt(LocalDateTime.now());
         
-        // Apply voucher if provided
-        if (voucherCode != null && !voucherCode.trim().isEmpty()) {
-            Voucher voucher = findValidVoucher(voucherCode, customer);
-            if (voucher != null) {
-                payment.setVoucher(voucher);
-                totalAmount = applyVoucherDiscount(totalAmount, voucher);
-                payment.setAmount(totalAmount);
-            }
-        }
+        // Apply voucher if provided (voucher discount already applied in
+        // calculateTotalAmount)
+        // Note: Voucher is applied to fullTotal before calculating deposit, so no need
+        // to apply again here
+        payment.setAmount(totalAmount);
         
         // Generate unique orderCode for PayOS
         Long orderCode = generateUniqueOrderCode(bookingId);
@@ -460,86 +463,42 @@ public class PaymentService {
     
     /**
      * Calculate total amount for booking based on payment type
-     * NEW LOGIC:
-     * - Deposit = 10% of total
-     * - Full payment = 100% total
+     * SIMPLIFIED LOGIC:
+     * - For DEPOSIT: Use booking.getDepositAmount() directly (calculated from
+     * subtotal, NOT affected by voucher)
+     * - For FULL_PAYMENT: Use booking.getTotalAmount() (calculated from subtotal
+     * AFTER voucher discount)
+     * 
+     * Note: Deposit is calculated as 10% of subtotal (before voucher), while
+     * totalAmount is subtotal minus voucher discount.
      * 
      * @param booking     The booking
      * @param paymentType The payment type
-     * @param voucherCode The voucher code
+     * @param voucherCode The voucher code (not used anymore, kept for
+     *                    compatibility)
      * @return Total amount
      */
-    private BigDecimal calculateTotalAmount(Booking booking, PaymentType paymentType, String voucherCode) {
-        // Calculate FULL total first (deposit + dishes + services)
-        BigDecimal fullTotal = calculateFullPaymentAmount(booking);
-        
-        logger.info("💰 Calculating payment amount - Full total: {}, Type: {}", fullTotal, paymentType);
+    private BigDecimal calculateTotalAmount(Booking booking, PaymentType paymentType,
+            @SuppressWarnings("unused") String voucherCode) {
+        logger.info("💰 Calculating payment amount - Booking ID: {}, Type: {}", booking.getBookingId(), paymentType);
         
         BigDecimal paymentAmount;
-        
         if (paymentType == PaymentType.DEPOSIT) {
-            // Deposit = 10% of total
-            paymentAmount = fullTotal.multiply(new BigDecimal("0.1"));
-            logger.info("   → Deposit (10% of {}): {}", fullTotal, paymentAmount);
+            // Use deposit amount directly from booking (calculated from subtotal, NOT
+            // affected by voucher)
+            paymentAmount = booking.getDepositAmount() != null ? booking.getDepositAmount() : BigDecimal.ZERO;
+            logger.info("   → Deposit from booking: {} (NOT affected by voucher)", paymentAmount);
         } else {
-            // FULL_PAYMENT: use full total
-            paymentAmount = fullTotal;
-            logger.info("   → Full payment: {}", paymentAmount);
+            // FULL_PAYMENT: use totalAmount from booking (calculated from subtotal AFTER
+            // voucher discount)
+            paymentAmount = booking.getTotalAmount() != null ? booking.getTotalAmount() : BigDecimal.ZERO;
+            logger.info("   → Full payment from booking: {} (after voucher discount)", paymentAmount);
         }
-        
-        // Apply voucher discount (if applicable)
-        if (voucherCode != null && !voucherCode.trim().isEmpty()) {
-            Customer customer = booking.getCustomer();
-            Voucher voucher = findValidVoucher(voucherCode, customer);
-            if (voucher != null) {
-                BigDecimal originalAmount = paymentAmount;
-                paymentAmount = applyVoucherDiscount(paymentAmount, voucher);
-                logger.info("   → After voucher discount: {} (was: {})", paymentAmount, originalAmount);
-            }
-        }
-        
+
         logger.info("✅ Final payment amount: {}", paymentAmount);
         return paymentAmount;
     }
-    
-    /**
-     * Calculate full payment amount including all items (excluding deposit)
-     * @param booking The booking
-     * @return Full payment amount (subtotal = table fees + dishes + services)
-     */
-    private BigDecimal calculateFullPaymentAmount(Booking booking) {
-        // Sử dụng BookingService.calculateSubtotal() để lấy subtotal
-        // Subtotal = table fees + dishes + services (KHÔNG bao gồm deposit)
-        return bookingService.calculateSubtotal(booking);
-    }
-    
-    /**
-     * Find valid voucher for customer
-     * @param voucherCode The voucher code
-     * @param customer The customer
-     * @return Voucher if valid
-     */
-    @SuppressWarnings("unused")
-    private Voucher findValidVoucher(@SuppressWarnings("unused") String voucherCode, @SuppressWarnings("unused") Customer customer) {
-        // TODO: Implement voucher validation logic
-        // Check if voucher exists, is active, not expired, and available for customer
-        // Currently not implemented, so returning null
-        return null;
-    }
-    
-    /**
-     * Apply voucher discount
-     * @param amount The original amount
-     * @param voucher The voucher
-     * @return Discounted amount
-     */
-    @SuppressWarnings("unused")
-    private BigDecimal applyVoucherDiscount(BigDecimal amount, @SuppressWarnings("unused") Voucher voucher) {
-        // TODO: Implement voucher discount logic
-        // Apply percentage or fixed discount based on voucher type
-        // For now, return the original amount
-        return amount;
-    }
+
     
     // Scheduled MoMo polling removed
     

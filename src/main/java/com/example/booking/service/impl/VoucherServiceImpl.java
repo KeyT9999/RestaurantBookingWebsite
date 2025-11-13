@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.booking.domain.Booking;
 import com.example.booking.domain.Customer;
 import com.example.booking.domain.CustomerVoucher;
 import com.example.booking.domain.DiscountType;
@@ -21,6 +22,7 @@ import com.example.booking.domain.User;
 import com.example.booking.domain.Voucher;
 import com.example.booking.domain.VoucherRedemption;
 import com.example.booking.domain.VoucherStatus;
+import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.CustomerRepository;
 import com.example.booking.repository.CustomerVoucherRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
@@ -50,6 +52,9 @@ public class VoucherServiceImpl implements VoucherService {
     
     @Autowired
     private RestaurantProfileRepository restaurantProfileRepository;
+    
+    @Autowired
+    private BookingRepository bookingRepository;
 
     @Override
     public Optional<Voucher> findByCode(String code) {
@@ -167,6 +172,14 @@ public class VoucherServiceImpl implements VoucherService {
                 voucher, req.customerId(), discountApplied, 
                 req.orderAmount(), req.orderAmount().subtract(discountApplied)
             );
+            
+            // Set booking if bookingId is provided
+            if (req.bookingId() != null) {
+                Booking booking = bookingRepository.findById(req.bookingId())
+                    .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + req.bookingId()));
+                redemption.setBooking(booking);
+            }
+            
             redemption = redemptionRepository.save(redemption);
 
             // Update customer voucher usage if assigned

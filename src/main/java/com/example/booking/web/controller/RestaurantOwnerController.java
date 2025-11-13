@@ -1982,7 +1982,12 @@ public class RestaurantOwnerController {
         System.out.println("🚀 RestaurantOwnerController.showEditBookingForm() called for booking ID: " + bookingId);
         try {
             // Get restaurant owner info
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                model.addAttribute("error", "Không tìm thấy thông tin người dùng");
+                return "error/404";
+            }
+            
             RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
 
@@ -2096,7 +2101,12 @@ public class RestaurantOwnerController {
 
         try {
             // Get restaurant owner info
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy thông tin người dùng");
+                return "redirect:/restaurant-owner/bookings/" + bookingId + "/edit";
+            }
+            
             RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
 
@@ -2379,7 +2389,14 @@ public class RestaurantOwnerController {
             Authentication authentication) {
         try {
             // Get restaurant owner info
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("error", "Không tìm thấy thông tin người dùng");
+                return ResponseEntity.status(401).body(errorResponse);
+            }
+            
             RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
 
@@ -2432,7 +2449,14 @@ public class RestaurantOwnerController {
             Authentication authentication) {
         try {
             // Get restaurant owner info
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("error", "Không tìm thấy thông tin người dùng");
+                return ResponseEntity.status(401).body(errorResponse);
+            }
+            
             RestaurantOwner owner = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId())
                     .orElseThrow(() -> new RuntimeException("Restaurant owner not found"));
 

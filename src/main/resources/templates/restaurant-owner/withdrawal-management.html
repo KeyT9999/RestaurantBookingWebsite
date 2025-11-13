@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,12 @@
     
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Dashboard CSS -->
+    <link th:href="@{/css/dashboard.css}" rel="stylesheet">
     
     <style>
         .balance-card {
@@ -80,24 +85,84 @@
     </style>
 </head>
 <body class="bg-light">
-    <!-- Header -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/restaurant-owner">
-                <i class="bi bi-shop"></i> Quản lý Nhà hàng
-            </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text text-white me-3">
-                    <i class="bi bi-person-circle"></i> <span th:text="${restaurantName}">Nhà hàng ABC</span>
-                </span>
-                <form action="/logout" method="post" class="d-inline">
-                    <button type="submit" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-box-arrow-right"></i> Đăng xuất
+    <!-- Dashboard Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <a href="/" class="logo">Book Eat</a>
+                
+                <!-- Restaurant Selector -->
+                <div class="restaurant-selector" th:if="${restaurants != null and !restaurants.empty}">
+                    <div class="restaurant-dropdown" onclick="toggleRestaurantMenu()">
+                        <div class="restaurant-info">
+                            <div class="restaurant-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="restaurant-details">
+                                <h4 th:text="${selectedRestaurant != null ? selectedRestaurant.restaurantName : (restaurants != null and !restaurants.empty ? restaurants[0].restaurantName : 'Chọn nhà hàng')}">Nhà hàng mặc định</h4>
+                                <p th:text="${selectedRestaurant != null ? selectedRestaurant.address : (restaurants != null and !restaurants.empty ? restaurants[0].address : 'Địa chỉ nhà hàng')}">Địa chỉ nhà hàng</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+                    
+                    <div class="restaurant-menu" id="restaurantMenu">
+                        <div th:each="restaurant, iterStat : ${restaurants}" 
+                             class="restaurant-item" 
+                             th:classappend="${restaurant.restaurantId == restaurantId ? 'active' : ''}"
+                             th:attr="data-restaurant-id=${restaurant.restaurantId}"
+                             onclick="selectRestaurant(this.dataset.restaurantId)">
+                            <div class="restaurant-info">
+                                <div class="restaurant-icon">
+                                    <i class="fas fa-store"></i>
+                                </div>
+                                <div class="restaurant-details">
+                                    <h4 th:text="${restaurant.restaurantName}">Tên nhà hàng</h4>
+                                    <p th:text="${restaurant.address}">Địa chỉ</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm...">
+                </div>
+                
+                <div class="user-info dropdown">
+                    <div class="user-avatar" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <h5 sec:authentication="name">Restaurant Owner</h5>
+                        <p>Quản lý nhà hàng</p>
+                    </div>
+                
+                    <!-- Dropdown menu -->
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/auth/profile}">
+                                <i class="fas fa-user me-2"></i>
+                                Profile
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="d-inline">
+                                <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    Đăng xuất
                     </button>
                 </form>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </nav>
+    </header>
 
     <div class="container-fluid mt-4">
         
@@ -126,7 +191,7 @@
                 <div class="card balance-card">
                     <div class="card-body text-center">
                         <h5 class="card-title">
-                            <i class="bi bi-wallet2"></i> Số dư khả dụng
+                            <i class="fas fa-wallet"></i> Số dư khả dụng
                         </h5>
                         <h2 class="mb-2">
                             <span th:text="${#numbers.formatDecimal(balance.availableBalance, 0, 'COMMA', 0, 'POINT')}">9,250,000</span> VNĐ
@@ -144,7 +209,7 @@
                 <div class="card info-card">
                     <div class="card-body">
                         <h6 class="card-title">
-                            <i class="bi bi-info-circle"></i> Thông tin Số dư
+                            <i class="fas fa-info-circle"></i> Thông tin Số dư
                         </h6>
                         <div class="row">
                             <div class="col-6">
@@ -185,19 +250,19 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="withdrawal-tab" data-bs-toggle="pill" 
                                 data-bs-target="#withdrawal" type="button" role="tab">
-                            <i class="bi bi-cash-stack"></i> Tạo yêu cầu rút tiền
+                            <i class="fas fa-money-bill-wave"></i> Tạo yêu cầu rút tiền
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="bank-accounts-tab" data-bs-toggle="pill" 
                                 data-bs-target="#bank-accounts" type="button" role="tab">
-                            <i class="bi bi-bank"></i> Tài khoản ngân hàng
+                            <i class="fas fa-university"></i> Tài khoản ngân hàng
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="history-tab" data-bs-toggle="pill" 
                                 data-bs-target="#history" type="button" role="tab">
-                            <i class="bi bi-clock-history"></i> Lịch sử rút tiền
+                            <i class="fas fa-history"></i> Lịch sử rút tiền
                         </button>
                     </li>
                 </ul>
@@ -207,11 +272,12 @@
                     <!-- Tab 1: Create Withdrawal -->
                     <div class="tab-pane fade show active" id="withdrawal" role="tabpanel">
                         <div class="form-section">
-                            <h5><i class="bi bi-plus-circle"></i> Tạo yêu cầu rút tiền</h5>
+                            <h5><i class="fas fa-plus-circle"></i> Tạo yêu cầu rút tiền</h5>
                             
                             <!-- Withdrawal Form -->
                             <form th:action="@{/restaurant-owner/withdrawal/request}" method="post">
                                 <input type="hidden" name="_csrf" th:value="${_csrf?.token}"/>
+                                <input type="hidden" name="restaurantId" th:value="${restaurantId}"/>
                                 
                                 <div class="row">
                                     <div class="col-md-6">
@@ -244,7 +310,7 @@
                                             </select>
                                             <div class="form-text">
                                                 <a href="#bank-accounts" class="text-decoration-none" onclick="switchTab('bank-accounts-tab')">
-                                                    <i class="bi bi-plus-circle"></i> Thêm tài khoản ngân hàng
+                                                    <i class="fas fa-plus-circle"></i> Thêm tài khoản ngân hàng
                                                 </a>
                                             </div>
                                         </div>
@@ -259,7 +325,7 @@
                                 
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                     <button type="submit" class="btn btn-success btn-lg">
-                                        <i class="bi bi-check-circle"></i> Tạo yêu cầu rút tiền
+                                        <i class="fas fa-check-circle"></i> Tạo yêu cầu rút tiền
                                     </button>
                                 </div>
                             </form>
@@ -270,19 +336,19 @@
                     <div class="tab-pane fade" id="bank-accounts" role="tabpanel">
                         <div class="form-section">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5><i class="bi bi-bank"></i> Tài khoản ngân hàng</h5>
+                                <h5><i class="fas fa-university"></i> Tài khoản ngân hàng</h5>
                                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBankAccountModal">
-                                    <i class="bi bi-plus-circle"></i> Thêm tài khoản
+                                    <i class="fas fa-plus-circle"></i> Thêm tài khoản
                                 </button>
                             </div>
                             
                             <!-- Bank Accounts List -->
                             <div th:if="${bankAccounts.empty}" class="text-center py-5">
-                                <i class="bi bi-bank" style="font-size: 3rem; color: #6c757d;"></i>
+                                <i class="fas fa-university" style="font-size: 3rem; color: #6c757d;"></i>
                                 <h5 class="text-muted mt-3">Chưa có tài khoản ngân hàng</h5>
                                 <p class="text-muted">Hãy thêm tài khoản ngân hàng để có thể rút tiền.</p>
                                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBankAccountModal">
-                                    <i class="bi bi-plus-circle"></i> Thêm tài khoản ngân hàng
+                                    <i class="fas fa-plus-circle"></i> Thêm tài khoản ngân hàng
                                 </button>
                             </div>
                             
@@ -290,7 +356,7 @@
                                  th:classappend="${account.isDefault ? 'default' : ''}">
                                 <div class="row align-items-center">
                                     <div class="col-md-2">
-                                        <i class="bi bi-bank" style="font-size: 2rem; color: #007bff;"></i>
+                                        <i class="fas fa-university" style="font-size: 2rem; color: #007bff;"></i>
                                     </div>
                                     <div class="col-md-4">
                                         <h6 class="mb-1" th:text="${account.bankName}">MB Bank</h6>
@@ -305,11 +371,11 @@
                                     <div class="col-md-3 text-end">
                                         <button type="button" class="btn btn-outline-primary btn-sm me-1" 
                                                 th:onclick="'editBankAccount(' + ${account.accountId} + ')'">
-                                            <i class="bi bi-pencil"></i> Sửa
+                                            <i class="fas fa-pencil-alt"></i> Sửa
                                         </button>
                                         <button type="button" class="btn btn-outline-danger btn-sm" 
                                                 th:onclick="'deleteBankAccount(' + ${account.accountId} + ')'">
-                                            <i class="bi bi-trash"></i> Xóa
+                                            <i class="fas fa-trash"></i> Xóa
                                         </button>
                                     </div>
                                 </div>
@@ -320,19 +386,23 @@
                     <!-- Tab 3: Withdrawal History -->
                     <div class="tab-pane fade" id="history" role="tabpanel">
                         <div class="form-section">
-                            <h5><i class="bi bi-clock-history"></i> Lịch sử rút tiền</h5>
+                            <h5><i class="fas fa-history"></i> Lịch sử rút tiền</h5>
                             
                             <!-- Filter -->
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <div class="btn-group" role="group">
-                                        <a href="/restaurant-owner/withdrawal" class="btn btn-outline-primary" 
+                                        <a th:href="${restaurantId != null ? '/restaurant-owner/withdrawal?restaurantId=' + restaurantId : '/restaurant-owner/withdrawal'}" 
+                                           class="btn btn-outline-primary" 
                                            th:classappend="${filter == 'ALL' ? 'active' : ''}">Tất cả</a>
-                                        <a href="/restaurant-owner/withdrawal?status=PENDING" class="btn btn-outline-warning" 
+                                        <a th:href="${restaurantId != null ? '/restaurant-owner/withdrawal?restaurantId=' + restaurantId + '&status=PENDING' : '/restaurant-owner/withdrawal?status=PENDING'}" 
+                                           class="btn btn-outline-warning" 
                                            th:classappend="${filter == 'PENDING' ? 'active' : ''}">Chờ duyệt</a>
-                                        <a href="/restaurant-owner/withdrawal?status=SUCCEEDED" class="btn btn-outline-success" 
+                                        <a th:href="${restaurantId != null ? '/restaurant-owner/withdrawal?restaurantId=' + restaurantId + '&status=SUCCEEDED' : '/restaurant-owner/withdrawal?status=SUCCEEDED'}" 
+                                           class="btn btn-outline-success" 
                                            th:classappend="${filter == 'SUCCEEDED' ? 'active' : ''}">Thành công</a>
-                                        <a href="/restaurant-owner/withdrawal?status=REJECTED" class="btn btn-outline-danger" 
+                                        <a th:href="${restaurantId != null ? '/restaurant-owner/withdrawal?restaurantId=' + restaurantId + '&status=REJECTED' : '/restaurant-owner/withdrawal?status=REJECTED'}" 
+                                           class="btn btn-outline-danger" 
                                            th:classappend="${filter == 'REJECTED' ? 'active' : ''}">Từ chối</a>
                                     </div>
                                 </div>
@@ -340,7 +410,7 @@
                             
                             <!-- Withdrawal History -->
                             <div th:if="${withdrawals.empty}" class="text-center py-5">
-                                <i class="bi bi-clock-history" style="font-size: 3rem; color: #6c757d;"></i>
+                                <i class="fas fa-history" style="font-size: 3rem; color: #6c757d;"></i>
                                 <h5 class="text-muted mt-3">Chưa có yêu cầu rút tiền nào</h5>
                                 <p class="text-muted">Lịch sử rút tiền sẽ hiển thị ở đây.</p>
                             </div>
@@ -383,8 +453,9 @@
         <!-- Back to Restaurant Dashboard -->
         <div class="row mt-4">
             <div class="col-12">
-                <a href="/restaurant-owner" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Quay lại Dashboard
+                <a th:href="${restaurantId != null ? '/restaurant-owner/dashboard?restaurantId=' + restaurantId : '/restaurant-owner/dashboard'}" 
+                   class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Quay lại Dashboard
                 </a>
             </div>
         </div>
@@ -396,11 +467,12 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-bank"></i> Thêm tài khoản ngân hàng</h5>
+                    <h5 class="modal-title"><i class="fas fa-university"></i> Thêm tài khoản ngân hàng</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form th:action="@{/restaurant-owner/withdrawal/bank-accounts}" method="post">
                     <input type="hidden" name="_csrf" th:value="${_csrf?.token}"/>
+                    <input type="hidden" name="restaurantId" th:value="${restaurantId}"/>
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="bankCode" class="form-label">Mã ngân hàng <span class="text-danger">*</span></label>
@@ -466,6 +538,35 @@
                 alert('Chức năng xóa tài khoản ngân hàng sẽ được implement');
             }
         }
+        
+        // Restaurant selector functions
+        function toggleRestaurantMenu() {
+            const menu = document.getElementById('restaurantMenu');
+            const dropdown = document.querySelector('.restaurant-dropdown');
+            if (menu) {
+                menu.classList.toggle('show');
+            }
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
+        }
+
+        function selectRestaurant(restaurantId) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('restaurantId', restaurantId);
+            window.location.href = currentUrl.toString();
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const selector = document.querySelector('.restaurant-selector');
+            if (selector && !selector.contains(event.target)) {
+                const menu = document.getElementById('restaurantMenu');
+                const dropdown = document.querySelector('.restaurant-dropdown');
+                if (menu) menu.classList.remove('show');
+                if (dropdown) dropdown.classList.remove('active');
+            }
+        });
     </script>
 </body>
 </html>

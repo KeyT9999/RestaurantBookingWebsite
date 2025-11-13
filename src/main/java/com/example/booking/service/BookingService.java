@@ -210,17 +210,9 @@ public class BookingService {
         booking.setBookingTime(form.getBookingTime());
         booking.setNumberOfGuests(form.getGuestCount());
 
-        // Set deposit amount - KHÔNG tính phí bàn vào deposit nữa
-        // Deposit sẽ được tính sau = 10% của (table fees + dishes + services)
-        BigDecimal depositAmount = BigDecimal.ZERO;
-        boolean depositProvidedByForm = false;
-
-        if (form.getDepositAmount() != null) {
-            depositAmount = form.getDepositAmount();
-            depositProvidedByForm = true;
-            System.out.println("✅ Using form deposit amount: " + depositAmount);
-        }
-        booking.setDepositAmount(depositAmount);
+        // Deposit will be calculated later = 10% of finalTotal (after voucher discount)
+        // Don't set deposit here, it will be calculated after we have finalTotal
+        booking.setDepositAmount(BigDecimal.ZERO); // Temporary, will be recalculated
         booking.setNote(form.getNote()); // Set note from form
         booking.setStatus(BookingStatus.PENDING);
         System.out.println("✅ Booking object created with status: " + booking.getStatus());
@@ -247,32 +239,9 @@ public class BookingService {
             throw e;
         }
 
-        // Apply voucher if valid
-        if (voucherDiscount.compareTo(BigDecimal.ZERO) > 0 && voucherCodeToApply != null) {
-            try {
-                System.out.println("🔍 Applying voucher: " + voucherCodeToApply + " with discount: " + voucherDiscount);
-                VoucherService.ApplyRequest applyReq = new VoucherService.ApplyRequest(
-                    voucherCodeToApply,
-                    form.getRestaurantId(),
-                    customerId,
-                    calculateOrderAmount(form),
-                    booking.getBookingId()
-                );
-                
-                VoucherService.ApplyResult applyResult = voucherService != null
-                        ? voucherService.applyToBooking(applyReq)
-                        : null;
-                if (applyResult == null) {
-                    System.out.println("⚠️ Voucher application returned no result, skipping apply step");
-                } else if (!applyResult.success()) {
-                    throw new IllegalArgumentException("Failed to apply voucher: " + applyResult.reason());
-                } else {
-                    System.out.println("✅ Voucher applied successfully! Redemption ID: " + applyResult.redemptionId());
-                }
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Voucher application failed: " + e.getMessage());
-            }
-        }
+        // Apply voucher if valid - will be applied after subtotal is calculated
+        // Store voucher info for later use
+        boolean hasVoucher = voucherDiscount.compareTo(BigDecimal.ZERO) > 0 && voucherCodeToApply != null;
 
         // Assign tables if specified
         if (form.getTableIds() != null && !form.getTableIds().trim().isEmpty()) {
@@ -364,28 +333,77 @@ public class BookingService {
         BigDecimal subtotal = calculateSubtotal(booking);
         System.out.println("💰 Subtotal (table fees + dishes + services): " + subtotal);
 
-        // Save totalAmount to database for quick access (denormalized for performance)
-        booking.setTotalAmount(subtotal);
-        System.out.println("✅ Total amount saved to database: " + subtotal);
+        // Calculate deposit = 10% of subtotal (BEFORE voucher discount)
+        // Deposit is NOT affected by voucher discount
+        BigDecimal depositAmount = BigDecimal.ZERO;
+        if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
+            depositAmount = subtotal.multiply(new BigDecimal("0.10"));
+            depositAmount = depositAmount.setScale(0, java.math.RoundingMode.HALF_UP);
+            booking.setDepositAmount(depositAmount);
+            System.out.println("✅ Deposit calculated as 10% of subtotal (before voucher): " + depositAmount);
+        } else {
+            booking.setDepositAmount(BigDecimal.ZERO);
+            System.out.println("⚠️ Subtotal is zero or negative, deposit set to 0");
+        }
 
-        // Apply deposit rule: deposit = 10% of subtotal
-        try {
-            if (!depositProvidedByForm) {
-                if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
-                    BigDecimal computedDeposit = subtotal.multiply(new BigDecimal("0.10"));
-                    computedDeposit = computedDeposit.setScale(0, java.math.RoundingMode.HALF_UP);
-                    booking.setDepositAmount(computedDeposit);
-                    System.out.println("✅ Deposit set to 10% of subtotal: " + computedDeposit);
+        // Apply voucher discount to subtotal (voucher only affects totalAmount, NOT
+        // deposit)
+        // Apply voucher AFTER subtotal is calculated to get accurate discount
+        BigDecimal finalTotal = subtotal;
+        BigDecimal actualVoucherDiscount = BigDecimal.ZERO;
+
+        if (hasVoucher && voucherCodeToApply != null) {
+            try {
+                System.out.println("🔍 Applying voucher: " + voucherCodeToApply + " with subtotal: " + subtotal);
+                VoucherService.ApplyRequest applyReq = new VoucherService.ApplyRequest(
+                        voucherCodeToApply,
+                        form.getRestaurantId(),
+                        customerId,
+                        subtotal, // Use actual subtotal instead of calculateOrderAmount(form)
+                        booking.getBookingId());
+
+                VoucherService.ApplyResult applyResult = voucherService != null
+                        ? voucherService.applyToBooking(applyReq)
+                        : null;
+                if (applyResult == null) {
+                    System.out.println("⚠️ Voucher application returned no result, skipping apply step");
+                } else if (!applyResult.success()) {
+                    throw new IllegalArgumentException("Failed to apply voucher: " + applyResult.reason());
                 } else {
-                    booking.setDepositAmount(BigDecimal.ZERO);
-                    System.out.println("⚠️ Subtotal is zero, deposit set to 0");
+                    // Use discount from VoucherRedemption (actual applied discount)
+                    actualVoucherDiscount = applyResult.discountApplied() != null
+                            ? applyResult.discountApplied()
+                            : voucherDiscount;
+                    finalTotal = subtotal.subtract(actualVoucherDiscount);
+                    // Ensure finalTotal is not negative
+                    if (finalTotal.compareTo(BigDecimal.ZERO) < 0) {
+                        System.out.println("⚠️ Voucher discount exceeds subtotal, setting finalTotal to 0");
+                        finalTotal = BigDecimal.ZERO;
+                    }
+                    System.out.println("✅ Voucher applied successfully! Redemption ID: " + applyResult.redemptionId());
+                    System.out.println(
+                            "💰 After voucher discount: " + finalTotal + " (discount: " + actualVoucherDiscount + ")");
                 }
-            } else {
-                System.out.println("ℹ️ Deposit provided by form, skipping automatic calculation");
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Voucher application failed: " + e.getMessage());
             }
+        }
+
+        // Save totalAmount to database (after voucher discount)
+        // Deposit is already set above and is NOT affected by voucher
+        booking.setTotalAmount(finalTotal);
+        System.out.println("✅ Total amount saved to database: " + finalTotal + " (after voucher discount)");
+        System.out.println("✅ Deposit amount: " + booking.getDepositAmount() + " (NOT affected by voucher)");
+
+        // Save booking with deposit and totalAmount
+        try {
             booking = bookingRepository.save(booking);
+            System.out.println("✅ Booking saved with deposit: " + booking.getDepositAmount() + ", total: "
+                    + booking.getTotalAmount());
         } catch (Exception e) {
-            System.err.println("⚠️ Failed to apply deposit rule: " + e.getMessage());
+            System.err.println("⚠️ Failed to save booking: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // Re-throw to see the actual error
         }
 
         // Create notification for customer
