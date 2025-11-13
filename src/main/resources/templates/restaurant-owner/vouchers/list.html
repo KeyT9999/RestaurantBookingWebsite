@@ -275,68 +275,116 @@
             }
         }
 
-        /* Create Voucher Modal Styles */
-        .voucher-form-section {
-            transition: all 0.3s ease;
+        /* Modal Styles - Matching voucher-card */
+        #viewVoucherModal .modal-content,
+        #createVoucherModal .modal-content,
+        #editVoucherModal .modal-content {
+            border: 2px solid #000000 !important;
+            border-radius: 16px !important;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+            overflow: hidden;
         }
 
-        .voucher-form-section:hover {
+        #viewVoucherModal .modal-content,
+        #editVoucherModal .modal-content,
+        #createVoucherModal .modal-content {
+            background: linear-gradient(135deg, #f0f8ff 0%, #ffffff 100%) !important;
+            border-left: 5px solid #000000 !important;
+            position: relative;
+        }
+
+        #viewVoucherModal .modal-content::before,
+        #editVoucherModal .modal-content::before,
+        #createVoucherModal .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, rgba(0,123,255,0.1) 0%, transparent 50%);
+            border-radius: 0 16px 0 100px;
+            pointer-events: none;
+        }
+
+        #viewVoucherModal .modal-header,
+        #createVoucherModal .modal-header,
+        #editVoucherModal .modal-header {
+            border-bottom: 2px solid #000000 !important;
+            padding: 24px !important;
+        }
+
+        #viewVoucherModal .modal-body,
+        #createVoucherModal .modal-body,
+        #editVoucherModal .modal-body {
+            padding: 24px !important;
+        }
+
+        #viewVoucherModal .modal-footer,
+        #createVoucherModal .modal-footer,
+        #editVoucherModal .modal-footer {
+            border-top: 2px solid #000000 !important;
+            padding: 20px 24px !important;
+        }
+
+        /* View, Create and Edit Voucher Modal Specific */
+        #viewVoucherModal .modal-header,
+        #createVoucherModal .modal-header,
+        #editVoucherModal .modal-header {
+            background: linear-gradient(135deg, #f0f8ff 0%, #ffffff 100%) !important;
+        }
+
+        #viewVoucherModal .modal-body,
+        #createVoucherModal .modal-body,
+        #editVoucherModal .modal-body {
+            background: linear-gradient(135deg, #f0f8ff 0%, #ffffff 100%) !important;
+        }
+
+        #viewVoucherModal .modal-footer,
+        #createVoucherModal .modal-footer,
+        #editVoucherModal .modal-footer {
+            background: linear-gradient(135deg, #f0f8ff 0%, #ffffff 100%) !important;
+        }
+
+        /* Create and Edit Voucher Modal Styles */
+        #createVoucherModal .voucher-form-section {
+            transition: all 0.3s ease;
+            background: rgba(240,248,255,0.6) !important;
+            border: 2px solid #000000 !important;
+            border-radius: 8px !important;
+            padding: 20px !important;
+            margin-bottom: 20px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
+        }
+
+        #createVoucherModal .voucher-form-section:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12) !important;
-            border-color: #333333 !important;
-        }
-
-        #createVoucherModal .form-control:focus,
-        #createVoucherModal .form-select:focus {
             border-color: #000000 !important;
-            box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.25) !important;
-            outline: none;
+            background: rgba(240,248,255,0.8) !important;
         }
 
-        #createVoucherModal .btn-primary:hover {
-            background: #333333 !important;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-        }
-
-        #createVoucherModal .btn-secondary:hover {
-            background: #f0f0f0 !important;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
-        }
-
-        #createVoucherModal .form-label {
-            font-weight: 600;
-            color: #212529;
-            margin-bottom: 8px;
-        }
-
-        #createVoucherModal .voucher-form-section h5 {
-            border-bottom: 2px solid #e9ecef;
-            padding-bottom: 12px;
-            margin-bottom: 20px;
-        }
-
-        #createVoucherModal .form-control:hover,
-        #createVoucherModal .form-select:hover {
-            border-color: #333333;
-        }
-
-        #createVoucherModal .text-muted {
-            color: #6c757d !important;
-        }
-
-        /* Edit Voucher Modal Styles - Same as Create */
+        /* Edit modal sections should be more transparent to show gradient */
         #editVoucherModal .voucher-form-section {
             transition: all 0.3s ease;
+            background: rgba(240,248,255,0.6) !important;
+            border: 2px solid #000000 !important;
+            border-radius: 8px !important;
+            padding: 20px !important;
+            margin-bottom: 20px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
         }
 
         #editVoucherModal .voucher-form-section:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12) !important;
-            border-color: #333333 !important;
+            border-color: #000000 !important;
+            background: rgba(240,248,255,0.8) !important;
         }
 
+        #createVoucherModal .form-control:focus,
+        #createVoucherModal .form-select:focus,
         #editVoucherModal .form-control:focus,
         #editVoucherModal .form-select:focus {
             border-color: #000000 !important;
@@ -344,37 +392,115 @@
             outline: none;
         }
 
+        #createVoucherModal .btn-primary:hover,
         #editVoucherModal .btn-primary:hover {
-            background: #333333 !important;
+            background: linear-gradient(135deg, #0056b3 0%, #004085 100%) !important;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+            box-shadow: 0 4px 8px rgba(0,123,255,0.3) !important;
         }
 
+        #createVoucherModal .btn-secondary:hover,
         #editVoucherModal .btn-secondary:hover {
-            background: #f0f0f0 !important;
+            background: linear-gradient(135deg, #5a6268 0%, #3d4043 100%) !important;
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
         }
 
+        #createVoucherModal .form-label,
         #editVoucherModal .form-label {
             font-weight: 600;
             color: #212529;
             margin-bottom: 8px;
         }
 
+        #createVoucherModal .voucher-form-section h5,
         #editVoucherModal .voucher-form-section h5 {
-            border-bottom: 2px solid #e9ecef;
+            border-bottom: 2px solid #000000;
             padding-bottom: 12px;
             margin-bottom: 20px;
+            color: #000000;
+            font-weight: 700;
         }
 
+        #createVoucherModal .form-control:hover,
+        #createVoucherModal .form-select:hover,
         #editVoucherModal .form-control:hover,
         #editVoucherModal .form-select:hover {
-            border-color: #333333;
+            border-color: #000000;
+            box-shadow: 0 0 0 0.1rem rgba(0, 0, 0, 0.1);
         }
 
+        #createVoucherModal .text-muted,
         #editVoucherModal .text-muted {
             color: #6c757d !important;
+        }
+
+        /* Additional styling for edit modal to match voucher-card */
+        #editVoucherModal .modal-content {
+            position: relative;
+        }
+
+        #editVoucherModal .input-group-text {
+            border: 2px solid #000000;
+            border-left: none;
+            background: #000000;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        #createVoucherModal .input-group-text,
+        #editVoucherModal .input-group-text {
+            border: 2px solid #000000 !important;
+            border-left: none !important;
+            background: #000000 !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 1.1rem !important;
+        }
+
+        #createVoucherModal .input-group .form-control:first-child,
+        #editVoucherModal .input-group .form-control:first-child {
+            border-radius: 8px 0 0 8px !important;
+        }
+
+        #createVoucherModal .input-group .input-group-text:last-child,
+        #editVoucherModal .input-group .input-group-text:last-child {
+            border-radius: 0 8px 8px 0 !important;
+        }
+
+        /* Ensure form controls have consistent black borders */
+        #createVoucherModal .form-control,
+        #createVoucherModal .form-select,
+        #editVoucherModal .form-control,
+        #editVoucherModal .form-select {
+            border: 2px solid #000000 !important;
+            border-radius: 8px !important;
+            padding: 10px !important;
+            background: #ffffff !important;
+        }
+
+        #createVoucherModal .form-control[type="number"],
+        #editVoucherModal .form-control[type="number"] {
+            font-weight: 600 !important;
+        }
+
+        #createVoucherModal .form-select,
+        #editVoucherModal .form-select {
+            font-weight: 500 !important;
+        }
+
+        #createVoucherModal .form-control:read-only,
+        #editVoucherModal .form-control:read-only {
+            background: #f8f9fa !important;
+            color: #6c757d !important;
+        }
+
+        /* Ensure modal body background shows gradient */
+        #createVoucherModal .modal-body,
+        #editVoucherModal .modal-body {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+            max-height: calc(90vh - 200px);
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -770,106 +896,86 @@
     <!-- View Voucher Detail Modal -->
     <div class="modal fade" id="viewVoucherModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
-            <div class="modal-content" style="border: 2px solid #000000;">
-                <div class="modal-header" style="border-bottom: 2px solid #000000; background: #ffffff;">
-                    <h5 class="modal-title" style="font-weight: 600;">
-                        <i class="fas fa-ticket-alt me-2"></i>
-                        Chi tiết Voucher
-                    </h5>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="voucher-header" style="width: 100%; margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
+                        <h5 class="modal-title" style="font-weight: 600; margin: 0;">
+                            <i class="fas fa-ticket-alt me-2"></i>
+                            Chi tiết Voucher
+                        </h5>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="border: 2px solid #000000;"></button>
                 </div>
-                <div class="modal-body" style="background: #ffffff;">
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <div style="border: 2px solid #000000; border-radius: 8px; padding: 16px; background: #f8f9fa;">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h4 id="modalVoucherCode" style="font-family: 'Courier New', monospace; font-weight: bold; color: #000000; margin: 0;">VOUCHER123</h4>
-                                        <small class="text-muted">Mã voucher</small>
-                                    </div>
-                                    <span class="badge" id="modalVoucherStatus" style="padding: 8px 16px; border: 2px solid #000000; background: #ffffff; color: #000000;">ACTIVE</span>
-                                </div>
+                <div class="modal-body">
+                    <div class="voucher-header" style="margin-bottom: 24px;">
+                        <div class="voucher-code" id="modalVoucherCode" style="margin: 0;">VOUCHER123</div>
+                    </div>
+                    
+                    <div class="voucher-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Mô tả</div>
+                            <div class="detail-value" id="modalVoucherDescription">Chưa có mô tả</div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-label">Loại</div>
+                            <div class="detail-value">
+                                <span class="badge" id="modalVoucherType" style="border: 1px solid #000000; background: #ffffff; color: #000000;">PERCENT</span>
                             </div>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
-                            <div style="border: 1px solid #000000; border-radius: 8px; padding: 12px;">
-                                <div class="detail-label">Mô tả</div>
-                                <div class="detail-value" id="modalVoucherDescription">Chưa có mô tả</div>
-                            </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Giá trị</div>
+                            <div class="detail-value discount-value" id="modalVoucherValue">10%</div>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
-                            <div style="border: 1px solid #000000; border-radius: 8px; padding: 12px;">
-                                <div class="detail-label">Loại</div>
-                                <div class="detail-value">
-                                    <span class="badge" id="modalVoucherType" style="border: 1px solid #000000; background: #ffffff; color: #000000;">PERCENT</span>
-                                </div>
-                            </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Đơn hàng tối thiểu</div>
+                            <div class="detail-value" id="modalVoucherMinOrder">₫0</div>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
-                            <div style="border: 1px solid #000000; border-radius: 8px; padding: 12px;">
-                                <div class="detail-label">Giá trị</div>
-                                <div class="detail-value" id="modalVoucherValue">10%</div>
-                            </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Giới hạn sử dụng</div>
+                            <div class="detail-value" id="modalVoucherLimit">Không giới hạn</div>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
-                            <div style="border: 1px solid #000000; border-radius: 8px; padding: 12px;">
-                                <div class="detail-label">Đơn hàng tối thiểu</div>
-                                <div class="detail-value" id="modalVoucherMinOrder">₫0</div>
-                            </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Mỗi khách hàng</div>
+                            <div class="detail-value" id="modalVoucherPerCustomer">1 lần</div>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
-                            <div style="border: 1px solid #000000; border-radius: 8px; padding: 12px;">
-                                <div class="detail-label">Giới hạn sử dụng</div>
-                                <div class="detail-value" id="modalVoucherLimit">Không giới hạn</div>
-                            </div>
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <div class="detail-label">Thời gian hiệu lực</div>
+                            <div class="detail-value" id="modalVoucherPeriod">01/01/2024 - 31/12/2024</div>
                         </div>
                         
-                        <div class="col-md-6 mb-3">
-                            <div style="border: 1px solid #000000; border-radius: 8px; padding: 12px;">
-                                <div class="detail-label">Mỗi khách hàng</div>
-                                <div class="detail-value" id="modalVoucherPerCustomer">1 lần</div>
+                        <div class="detail-item" style="grid-column: 1 / -1; display: none;" id="modalUsageProgress">
+                            <div class="detail-label">Tiến độ sử dụng</div>
+                            <div class="progress mt-2" style="height: 20px; border: 1px solid #000000;">
+                                <div class="progress-bar bg-dark" role="progressbar" id="modalProgressBar" style="width: 0%;">0%</div>
                             </div>
+                            <small class="text-muted mt-1 d-block" id="modalUsageText">0 / 0 đã sử dụng</small>
                         </div>
                         
-                        <div class="col-md-12 mb-3">
-                            <div style="border: 1px solid #000000; border-radius: 8px; padding: 12px;">
-                                <div class="detail-label">Thời gian hiệu lực</div>
-                                <div class="detail-value" id="modalVoucherPeriod">01/01/2024 - 31/12/2024</div>
+                        <div class="detail-item" style="grid-column: 1 / -1; display: none;" id="modalBookingList">
+                            <div class="detail-label">
+                                <i class="fas fa-list me-2"></i>Danh sách Booking đã sử dụng
                             </div>
-                        </div>
-                        
-                        <div class="col-md-12 mb-3" id="modalUsageProgress" style="display: none;">
-                            <div style="border: 1px solid #000000; border-radius: 8px; padding: 12px;">
-                                <div class="detail-label">Tiến độ sử dụng</div>
-                                <div class="progress mt-2" style="height: 20px; border: 1px solid #000000;">
-                                    <div class="progress-bar bg-dark" role="progressbar" id="modalProgressBar" style="width: 0%;">0%</div>
-                                </div>
-                                <small class="text-muted mt-1 d-block" id="modalUsageText">0 / 0 đã sử dụng</small>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-12 mb-3" id="modalBookingList" style="display: none;">
-                            <div style="border: 1px solid #000000; border-radius: 8px; padding: 12px;">
-                                <div class="detail-label">
-                                    <i class="fas fa-list me-2"></i>Danh sách Booking đã sử dụng
-                                </div>
-                                <div id="modalBookingIds" class="mt-2" style="max-height: 150px; overflow-y: auto;">
-                                    <div class="text-center text-muted py-2">
-                                        <i class="fas fa-spinner fa-spin me-2"></i>Đang tải...
-                                    </div>
+                            <div id="modalBookingIds" class="mt-2" style="max-height: 150px; overflow-y: auto;">
+                                <div class="text-center text-muted py-2">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>Đang tải...
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
+                    <div style="display: flex; justify-content: center; margin-top: 20px;">
+                        <span class="status-badge" id="modalVoucherStatus" style="padding: 8px 16px;">ACTIVE</span>
+                    </div>
                 </div>
-                <div class="modal-footer" style="border-top: 2px solid #000000; background: #ffffff;">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border: 2px solid #000000; background: #ffffff; color: #000000;">Đóng</button>
-                    <a id="modalEditLink" href="#" class="btn btn-primary" style="border: 2px solid #000000; background: #000000; color: #ffffff;">
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border: 2px solid #000000; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; font-weight: 600; padding: 10px 20px; border-radius: 8px;">Đóng</button>
+                    <a id="modalEditLink" href="#" class="btn btn-primary" style="border: 2px solid #000000; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; font-weight: 600; padding: 10px 20px; border-radius: 8px;">
                         <i class="fas fa-edit me-1"></i> Sửa
                     </a>
                 </div>
@@ -910,17 +1016,20 @@
     <!-- Create Voucher Modal -->
     <div class="modal fade" id="createVoucherModal" tabindex="-1" aria-labelledby="createVoucherModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-height: 90vh;">
-            <div class="modal-content" style="border: 2px solid #000000; border-radius: 12px; overflow: hidden;">
-                <div class="modal-header" style="border-bottom: 2px solid #000000; background: #000000; color: white; padding: 20px 24px;">
-                    <h5 class="modal-title" id="createVoucherModalLabel" style="font-weight: 700; font-size: 1.5rem;">
-                        <i class="fas fa-plus-circle me-2" style="color: #ffffff;"></i>
-                        Tạo Voucher Mới
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 1;"></button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="voucher-header" style="width: 100%; margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
+                        <h5 class="modal-title" id="createVoucherModalLabel" style="font-weight: 600; margin: 0;">
+                            <i class="fas fa-ticket-alt me-2"></i>
+                            Tạo Voucher Mới
+                        </h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="border: 2px solid #000000;"></button>
                 </div>
                 <form id="createVoucherForm" 
                       th:action="@{/restaurant-owner/vouchers/new}" 
-                      method="post">
+                      method="post"
+                      th:object="${voucherForm}">
                     <input type="hidden" 
                            th:name="${_csrf != null ? _csrf.parameterName : ''}" 
                            th:value="${_csrf != null ? _csrf.token : ''}" />
@@ -928,9 +1037,9 @@
                            name="restaurantId" 
                            th:value="${selectedRestaurantId != null ? selectedRestaurantId : (restaurantId != null ? restaurantId : (restaurants != null and !restaurants.empty ? restaurants[0].restaurantId : ''))}">
                     
-                    <div class="modal-body" style="background: #f8f9fa; padding: 24px; max-height: calc(90vh - 200px); overflow-y: auto;">
+                    <div class="modal-body">
                         <!-- Basic Information -->
-                        <div class="mb-4 voucher-form-section" style="background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #000000; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);">
+                        <div class="mb-4 voucher-form-section">
                             <h5 class="mb-3" style="color: #000000; font-weight: 700; display: flex; align-items: center;">
                                 <i class="fas fa-info-circle me-2" style="color: #000000; font-size: 1.3rem;"></i>Thông tin cơ bản
                             </h5>
@@ -943,11 +1052,10 @@
                                     <input type="text" 
                                            class="form-control" 
                                            id="createCode" 
-                                           name="code"
+                                           th:field="*{code}"
                                            required
                                            maxlength="50"
-                                           placeholder="VD: WELCOME10"
-                                           style="border: 2px solid #000000; border-radius: 8px; padding: 10px; font-weight: 600; background: #ffffff;">
+                                           placeholder="VD: WELCOME10">
                                     <small class="form-text text-muted">
                                         Mã voucher duy nhất (không thể thay đổi sau khi tạo)
                                     </small>
@@ -959,11 +1067,12 @@
                                     </label>
                                     <select class="form-select" 
                                             id="createStatus" 
-                                            name="status"
+                                            th:field="*{status}"
                                             required
                                             style="border: 2px solid #000000; border-radius: 8px; padding: 10px; font-weight: 500; background: #ffffff;">
-                                        <option value="ACTIVE">Hoạt động</option>
-                                        <option value="INACTIVE">Không hoạt động</option>
+                                        <option th:each="status : ${statuses}" 
+                                                th:value="${status.name()}" 
+                                                th:text="${status.getDisplayName()}"></option>
                                     </select>
                                 </div>
                             </div>
@@ -972,7 +1081,7 @@
                                 <label for="createDescription" class="form-label">Mô tả</label>
                                 <textarea class="form-control" 
                                           id="createDescription" 
-                                          name="description"
+                                          th:field="*{description}"
                                           rows="3" 
                                           maxlength="255"
                                           placeholder="Mô tả mục đích và lợi ích của voucher"
@@ -981,7 +1090,7 @@
                         </div>
                         
                         <!-- Discount Configuration -->
-                        <div class="mb-4 voucher-form-section" style="background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #000000; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);">
+                        <div class="mb-4 voucher-form-section">
                             <h5 class="mb-3" style="color: #000000; font-weight: 700; display: flex; align-items: center;">
                                 <i class="fas fa-percentage me-2" style="color: #000000; font-size: 1.3rem;"></i>Cấu hình giảm giá
                             </h5>
@@ -993,7 +1102,7 @@
                                     </label>
                                     <select class="form-select" 
                                             id="createDiscountType" 
-                                            name="discountType"
+                                            th:field="*{discountType}"
                                             required
                                             onchange="updateDiscountUnit()"
                                             style="border: 2px solid #000000; border-radius: 8px; padding: 10px; font-weight: 500; background: #ffffff;">
@@ -1011,7 +1120,7 @@
                                         <input type="number" 
                                                class="form-control" 
                                                id="createDiscountValue" 
-                                               name="discountValue"
+                                               th:field="*{discountValue}"
                                                required
                                                step="0.01" 
                                                min="0"
@@ -1028,7 +1137,7 @@
                                     <input type="number" 
                                            class="form-control" 
                                            id="createMinOrderAmount" 
-                                           name="minOrderAmount"
+                                           th:field="*{minOrderAmount}"
                                            step="1000" 
                                            min="0"
                                            placeholder="0"
@@ -1043,7 +1152,7 @@
                                     <input type="number" 
                                            class="form-control" 
                                            id="createMaxDiscountAmount" 
-                                           name="maxDiscountAmount"
+                                           th:field="*{maxDiscountAmount}"
                                            step="1000" 
                                            min="0"
                                            placeholder="0"
@@ -1056,7 +1165,7 @@
                         </div>
                         
                         <!-- Usage Limits -->
-                        <div class="mb-4 voucher-form-section" style="background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #000000; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);">
+                        <div class="mb-4 voucher-form-section">
                             <h5 class="mb-3" style="color: #000000; font-weight: 700; display: flex; align-items: center;">
                                 <i class="fas fa-users me-2" style="color: #000000; font-size: 1.3rem;"></i>Giới hạn sử dụng
                             </h5>
@@ -1067,7 +1176,7 @@
                                     <input type="number" 
                                            class="form-control" 
                                            id="createGlobalUsageLimit" 
-                                           name="globalUsageLimit"
+                                           th:field="*{globalUsageLimit}"
                                            min="1"
                                            placeholder="Để trống nếu không giới hạn"
                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
@@ -1083,10 +1192,9 @@
                                     <input type="number" 
                                            class="form-control" 
                                            id="createPerCustomerLimit" 
-                                           name="perCustomerLimit"
+                                           th:field="*{perCustomerLimit}"
                                            required
                                            min="1"
-                                           value="1"
                                            placeholder="1"
                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff; font-weight: 600;">
                                     <small class="form-text text-muted">
@@ -1097,7 +1205,7 @@
                         </div>
                         
                         <!-- Validity Period -->
-                        <div class="mb-4 voucher-form-section" style="background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #000000; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);">
+                        <div class="mb-4 voucher-form-section">
                             <h5 class="mb-3" style="color: #000000; font-weight: 700; display: flex; align-items: center;">
                                 <i class="fas fa-calendar me-2" style="color: #000000; font-size: 1.3rem;"></i>Thời gian hiệu lực
                             </h5>
@@ -1108,7 +1216,7 @@
                                     <input type="date" 
                                            class="form-control" 
                                            id="createStartDate" 
-                                           name="startDate"
+                                           th:field="*{startDate}"
                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
                                     <small class="form-text text-muted">
                                         Để trống để bắt đầu ngay lập tức
@@ -1120,7 +1228,7 @@
                                     <input type="date" 
                                            class="form-control" 
                                            id="createEndDate" 
-                                           name="endDate"
+                                           th:field="*{endDate}"
                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
                                     <small class="form-text text-muted">
                                         Để trống nếu không có ngày kết thúc
@@ -1130,11 +1238,11 @@
                         </div>
                     </div>
                     
-                    <div class="modal-footer" style="border-top: 2px solid #000000; background: #f8f9fa; padding: 20px 24px;">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border: 2px solid #000000; background: #ffffff; color: #000000; font-weight: 600; padding: 10px 24px; border-radius: 8px; transition: all 0.3s;">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border: 2px solid #000000; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; font-weight: 600; padding: 10px 24px; border-radius: 8px; transition: all 0.3s;">
                             <i class="fas fa-times me-1"></i> Hủy
                         </button>
-                        <button type="submit" class="btn btn-primary" style="border: 2px solid #000000; background: #000000; color: #ffffff; font-weight: 700; padding: 10px 24px; border-radius: 8px; transition: all 0.3s;">
+                        <button type="submit" class="btn btn-primary" style="border: 2px solid #000000; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; font-weight: 700; padding: 10px 24px; border-radius: 8px; transition: all 0.3s;">
                             <i class="fas fa-save me-1"></i> Tạo Voucher
                         </button>
                     </div>
@@ -1146,13 +1254,15 @@
     <!-- Edit Voucher Modal -->
     <div class="modal fade" id="editVoucherModal" tabindex="-1" aria-labelledby="editVoucherModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-height: 90vh;">
-            <div class="modal-content" style="border: 2px solid #000000; border-radius: 12px; overflow: hidden;">
-                <div class="modal-header" style="border-bottom: 2px solid #000000; background: #000000; color: white; padding: 20px 24px;">
-                    <h5 class="modal-title" id="editVoucherModalLabel" style="font-weight: 700; font-size: 1.5rem;">
-                        <i class="fas fa-edit me-2" style="color: #ffffff;"></i>
-                        Chỉnh sửa Voucher
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="opacity: 1;"></button>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="voucher-header" style="width: 100%; margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
+                        <h5 class="modal-title" id="editVoucherModalLabel" style="font-weight: 600; margin: 0;">
+                            <i class="fas fa-ticket-alt me-2"></i>
+                            Chỉnh sửa Voucher
+                        </h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="border: 2px solid #000000;"></button>
                 </div>
                 <form id="editVoucherForm" method="post">
                     <input type="hidden" 
@@ -1160,9 +1270,9 @@
                            th:value="${_csrf != null ? _csrf.token : ''}" />
                     <input type="hidden" id="editRestaurantId" name="restaurantId" />
                     
-                    <div class="modal-body" style="background: #f8f9fa; padding: 24px; max-height: calc(90vh - 200px); overflow-y: auto;">
+                    <div class="modal-body">
                         <!-- Basic Information -->
-                        <div class="mb-4 voucher-form-section" style="background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #000000; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);">
+                        <div class="mb-4 voucher-form-section">
                             <h5 class="mb-3" style="color: #000000; font-weight: 700; display: flex; align-items: center;">
                                 <i class="fas fa-info-circle me-2" style="color: #000000; font-size: 1.3rem;"></i>Thông tin cơ bản
                             </h5>
@@ -1175,8 +1285,7 @@
                                     <input type="text" 
                                            class="form-control" 
                                            id="editCode" 
-                                           readonly
-                                           style="border: 2px solid #000000; border-radius: 8px; padding: 10px; font-weight: 600; background: #f8f9fa; color: #6c757d;">
+                                           readonly>
                                     <small class="form-text text-muted">
                                         Mã voucher không thể thay đổi
                                     </small>
@@ -1189,8 +1298,7 @@
                                     <select class="form-select" 
                                             id="editStatus" 
                                             name="status"
-                                            required
-                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; font-weight: 500; background: #ffffff;">
+                                            required>
                                         <option value="ACTIVE">Hoạt động</option>
                                         <option value="INACTIVE">Không hoạt động</option>
                                     </select>
@@ -1204,13 +1312,12 @@
                                           name="description"
                                           rows="3" 
                                           maxlength="255"
-                                          placeholder="Mô tả mục đích và lợi ích của voucher"
-                                          style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;"></textarea>
+                                          placeholder="Mô tả mục đích và lợi ích của voucher"></textarea>
                             </div>
                         </div>
                         
                         <!-- Discount Configuration -->
-                        <div class="mb-4 voucher-form-section" style="background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #000000; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);">
+                        <div class="mb-4 voucher-form-section">
                             <h5 class="mb-3" style="color: #000000; font-weight: 700; display: flex; align-items: center;">
                                 <i class="fas fa-percentage me-2" style="color: #000000; font-size: 1.3rem;"></i>Cấu hình giảm giá
                             </h5>
@@ -1224,8 +1331,7 @@
                                             id="editDiscountType" 
                                             name="discountType"
                                             required
-                                            onchange="updateEditDiscountUnit()"
-                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; font-weight: 500; background: #ffffff;">
+                                            onchange="updateEditDiscountUnit()">
                                         <option value="">Chọn loại giảm giá</option>
                                         <option value="PERCENT">Phần trăm (%)</option>
                                         <option value="FIXED">Số tiền cố định (₫)</option>
@@ -1244,9 +1350,8 @@
                                                required
                                                step="0.01" 
                                                min="0"
-                                               placeholder="Nhập giá trị giảm giá"
-                                               style="border: 2px solid #000000; border-radius: 8px 0 0 8px; padding: 10px; font-weight: 600; background: #ffffff;">
-                                        <span class="input-group-text" id="editDiscountUnit" style="border: 2px solid #000000; border-left: none; border-radius: 0 8px 8px 0; background: #000000; color: #ffffff; font-weight: 700; font-size: 1.1rem;">%</span>
+                                               placeholder="Nhập giá trị giảm giá">
+                                        <span class="input-group-text" id="editDiscountUnit">%</span>
                                     </div>
                                 </div>
                             </div>
@@ -1260,8 +1365,7 @@
                                            name="minOrderAmount"
                                            step="1000" 
                                            min="0"
-                                           placeholder="0"
-                                           style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
+                                           placeholder="0">
                                     <small class="form-text text-muted">
                                         Để trống nếu không có yêu cầu đơn hàng tối thiểu
                                     </small>
@@ -1275,8 +1379,7 @@
                                            name="maxDiscountAmount"
                                            step="1000" 
                                            min="0"
-                                           placeholder="0"
-                                           style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
+                                           placeholder="0">
                                     <small class="form-text text-muted">
                                         Để trống nếu không có giới hạn giảm giá tối đa
                                     </small>
@@ -1285,7 +1388,7 @@
                         </div>
                         
                         <!-- Usage Limits -->
-                        <div class="mb-4 voucher-form-section" style="background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #000000; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);">
+                        <div class="mb-4 voucher-form-section">
                             <h5 class="mb-3" style="color: #000000; font-weight: 700; display: flex; align-items: center;">
                                 <i class="fas fa-users me-2" style="color: #000000; font-size: 1.3rem;"></i>Giới hạn sử dụng
                             </h5>
@@ -1298,8 +1401,7 @@
                                            id="editGlobalUsageLimit" 
                                            name="globalUsageLimit"
                                            min="1"
-                                           placeholder="Để trống nếu không giới hạn"
-                                           style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
+                                           placeholder="Để trống nếu không giới hạn">
                                     <small class="form-text text-muted">
                                         Tổng số lần voucher này có thể được sử dụng
                                     </small>
@@ -1315,8 +1417,7 @@
                                            name="perCustomerLimit"
                                            required
                                            min="1"
-                                           placeholder="1"
-                                           style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff; font-weight: 600;">
+                                           placeholder="1">
                                     <small class="form-text text-muted">
                                         Số lần mỗi khách hàng có thể sử dụng voucher này
                                     </small>
@@ -1325,7 +1426,7 @@
                         </div>
                         
                         <!-- Validity Period -->
-                        <div class="mb-4 voucher-form-section" style="background: #ffffff; padding: 20px; border-radius: 8px; border: 2px solid #000000; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);">
+                        <div class="mb-4 voucher-form-section">
                             <h5 class="mb-3" style="color: #000000; font-weight: 700; display: flex; align-items: center;">
                                 <i class="fas fa-calendar me-2" style="color: #000000; font-size: 1.3rem;"></i>Thời gian hiệu lực
                             </h5>
@@ -1336,8 +1437,7 @@
                                     <input type="date" 
                                            class="form-control" 
                                            id="editStartDate" 
-                                           name="startDate"
-                                           style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
+                                           name="startDate">
                                     <small class="form-text text-muted">
                                         Để trống để bắt đầu ngay lập tức
                                     </small>
@@ -1348,8 +1448,7 @@
                                     <input type="date" 
                                            class="form-control" 
                                            id="editEndDate" 
-                                           name="endDate"
-                                           style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
+                                           name="endDate">
                                     <small class="form-text text-muted">
                                         Để trống nếu không có ngày kết thúc
                                     </small>
@@ -1358,11 +1457,11 @@
                         </div>
                     </div>
                     
-                    <div class="modal-footer" style="border-top: 2px solid #000000; background: #f8f9fa; padding: 20px 24px;">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border: 2px solid #000000; background: #ffffff; color: #000000; font-weight: 600; padding: 10px 24px; border-radius: 8px; transition: all 0.3s;">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border: 2px solid #000000; background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; font-weight: 600; padding: 10px 24px; border-radius: 8px; transition: all 0.3s;">
                             <i class="fas fa-times me-1"></i> Hủy
                         </button>
-                        <button type="submit" class="btn btn-primary" style="border: 2px solid #000000; background: #000000; color: #ffffff; font-weight: 700; padding: 10px 24px; border-radius: 8px; transition: all 0.3s;">
+                        <button type="submit" class="btn btn-primary" style="border: 2px solid #000000; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; font-weight: 700; padding: 10px 24px; border-radius: 8px; transition: all 0.3s;">
                             <i class="fas fa-save me-1"></i> Lưu thay đổi
                         </button>
                     </div>
@@ -1648,6 +1747,210 @@
             if (createModal) {
                 createModal.addEventListener('hidden.bs.modal', function() {
                     resetCreateVoucherForm();
+                    // Clear any error messages
+                    const errorAlert = document.getElementById('createVoucherError');
+                    if (errorAlert) {
+                        errorAlert.remove();
+                    }
+                });
+            }
+            
+            // Handle form submission via AJAX
+            const createVoucherForm = document.getElementById('createVoucherForm');
+            if (createVoucherForm) {
+                createVoucherForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    console.log('📝 Starting form submission via AJAX...');
+                    
+                    // Get form data - FormData will get all fields including th:field generated names
+                    const formData = new FormData(createVoucherForm);
+                    
+                    // Note: Spring @ModelAttribute("voucherForm") can handle both:
+                    // - Fields with prefix "voucherForm.code" 
+                    // - Fields without prefix "code"
+                    // Thymeleaf th:field creates "voucherForm.code", so we keep it as is
+                    const formDataToSubmit = formData;
+                    
+                    // Get restaurantId from URL or form
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const restaurantId = urlParams.get('restaurantId') || formDataToSubmit.get('restaurantId');
+                    if (restaurantId) {
+                        formDataToSubmit.set('restaurantId', restaurantId);
+                    }
+                    
+                    // Debug: Log form data
+                    const formDataObj = {};
+                    for (let [key, value] of formDataToSubmit.entries()) {
+                        formDataObj[key] = value;
+                    }
+                    console.log('📝 Form Data (after fix):', formDataObj);
+                    console.log('🔗 Form Action:', createVoucherForm.action);
+                    console.log('🏪 Restaurant ID:', restaurantId);
+                    
+                    // Show loading state first
+                    const submitButton = createVoucherForm.querySelector('button[type="submit"]');
+                    const originalButtonText = submitButton.innerHTML;
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang tạo...';
+                    
+                    // Validate required fields before submit
+                    const requiredFields = {
+                        'code': 'Mã Voucher',
+                        'status': 'Trạng thái',
+                        'discountType': 'Loại giảm giá',
+                        'discountValue': 'Giá trị giảm giá',
+                        'perCustomerLimit': 'Giới hạn mỗi khách hàng'
+                    };
+                    
+                    const missingFields = [];
+                    for (const [field, label] of Object.entries(requiredFields)) {
+                        // Check both direct field name and voucherForm.field name
+                        const fieldValue = formDataObj[field] || formDataObj[`voucherForm.${field}`];
+                        if (!fieldValue || fieldValue === '' || fieldValue === 'undefined') {
+                            missingFields.push(label);
+                        }
+                    }
+                    
+                    if (missingFields.length > 0) {
+                        const errorMsg = 'Vui lòng điền đầy đủ các trường bắt buộc: ' + missingFields.join(', ');
+                        alert(errorMsg);
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                        return;
+                    }
+                    
+                    // Clear previous errors
+                    const errorAlert = document.getElementById('createVoucherError');
+                    if (errorAlert) {
+                        errorAlert.remove();
+                    }
+                    
+                    // Build URL with restaurantId
+                    let submitUrl = createVoucherForm.action;
+                    if (restaurantId) {
+                        submitUrl += (submitUrl.includes('?') ? '&' : '?') + 'restaurantId=' + restaurantId;
+                    }
+                    
+                    console.log('🚀 Submitting to:', submitUrl);
+                    
+                    // Submit via AJAX
+                    fetch(submitUrl, {
+                        method: 'POST',
+                        body: formDataToSubmit,
+                        credentials: 'same-origin',
+                        redirect: 'follow' // Follow redirects to get final response
+                    })
+                    .then(async response => {
+                        console.log('📥 Response status:', response.status);
+                        console.log('📥 Response URL:', response.url);
+                        
+                        const finalUrl = response.url;
+                        
+                        // Check if redirected to form page (error) or list page (success)
+                        if (finalUrl.includes('/vouchers/new')) {
+                            // Error - get error message from response
+                            console.log('❌ Error: Redirected back to form page');
+                            const html = await response.text();
+                            console.log('📄 HTML length:', html.length);
+                            
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            
+                            let errorMsg = 'Có lỗi xảy ra khi tạo voucher. Vui lòng kiểm tra lại thông tin.';
+                            
+                            // 1. Try to find error message in alert-danger
+                            const alertError = doc.querySelector('.alert-danger');
+                            if (alertError) {
+                                const text = alertError.textContent.trim();
+                                console.log('🔍 Found alert-danger:', text.substring(0, 200));
+                                if (text && text.length > 0 && text.length < 1000) {
+                                    // Extract just the error message, not the whole alert
+                                    const errorText = text.replace(/Lỗi:|Error:/gi, '').trim();
+                                    if (errorText.length > 0) {
+                                        errorMsg = errorText;
+                                    } else {
+                                        errorMsg = text;
+                                    }
+                                }
+                            }
+                            
+                            // 2. Check for validation errors
+                            const validationErrors = doc.querySelectorAll('.invalid-feedback');
+                            if (validationErrors.length > 0) {
+                                const errors = Array.from(validationErrors)
+                                    .map(el => el.textContent.trim())
+                                    .filter(Boolean)
+                                    .filter(text => text.length < 200 && text.length > 0);
+                                if (errors.length > 0) {
+                                    console.log('🔍 Found validation errors:', errors);
+                                    errorMsg = errors.join(', ');
+                                }
+                            }
+                            
+                            // 3. If still no error found, check server console logs
+                            if (errorMsg === 'Có lỗi xảy ra khi tạo voucher. Vui lòng kiểm tra lại thông tin.') {
+                                console.warn('⚠️ No clear error message found. Check server console logs for details.');
+                                console.log('📋 Full HTML preview:', html.substring(0, 2000));
+                                
+                                // Try to find any text that might indicate an error
+                                const bodyText = doc.body?.textContent || '';
+                                if (bodyText.includes('error') || bodyText.includes('lỗi') || bodyText.includes('Error')) {
+                                    console.log('🔍 Found error keywords in body text');
+                                }
+                                
+                                // Show more detailed error
+                                errorMsg = 'Có lỗi xảy ra khi tạo voucher. Vui lòng kiểm tra:\n' +
+                                          '1. Server console logs (nơi chạy Spring Boot)\n' +
+                                          '2. Browser console logs\n' +
+                                          '3. Đảm bảo tất cả trường bắt buộc đã được điền';
+                            }
+                            
+                            throw new Error(errorMsg);
+                            
+                        } else if (finalUrl.includes('/vouchers') && !finalUrl.includes('/new')) {
+                            // Success - close modal and reload page
+                            console.log('✅ Success! Closing modal and reloading...');
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('createVoucherModal'));
+                            if (modal) {
+                                modal.hide();
+                            }
+                            // Reload page to show new voucher
+                            window.location.reload();
+                            return;
+                        } else {
+                            // Unknown response - reload page
+                            console.log('⚠️ Unknown response, reloading page...');
+                            window.location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Error creating voucher:', error);
+                        
+                        // Show error message in modal
+                        const modalBody = createVoucherForm.querySelector('.modal-body');
+                        const errorAlert = document.createElement('div');
+                        errorAlert.id = 'createVoucherError';
+                        errorAlert.className = 'alert alert-danger alert-dismissible fade show';
+                        errorAlert.style.marginBottom = '20px';
+                        
+                        let errorMessage = error.message || 'Có lỗi xảy ra khi tạo voucher. Vui lòng thử lại.';
+                        
+                        errorAlert.innerHTML = `
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <strong>Lỗi:</strong> ${errorMessage}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        `;
+                        modalBody.insertBefore(errorAlert, modalBody.firstChild);
+                        
+                        // Scroll to error
+                        errorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    })
+                    .finally(() => {
+                        // Restore button state
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                    });
                 });
             }
         });
