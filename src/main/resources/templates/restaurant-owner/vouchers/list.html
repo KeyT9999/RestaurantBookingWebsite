@@ -920,7 +920,8 @@
                 </div>
                 <form id="createVoucherForm" 
                       th:action="@{/restaurant-owner/vouchers/new}" 
-                      method="post">
+                      method="post"
+                      th:object="${voucherForm}">
                     <input type="hidden" 
                            th:name="${_csrf != null ? _csrf.parameterName : ''}" 
                            th:value="${_csrf != null ? _csrf.token : ''}" />
@@ -943,7 +944,7 @@
                                     <input type="text" 
                                            class="form-control" 
                                            id="createCode" 
-                                           name="code"
+                                           th:field="*{code}"
                                            required
                                            maxlength="50"
                                            placeholder="VD: WELCOME10"
@@ -959,11 +960,12 @@
                                     </label>
                                     <select class="form-select" 
                                             id="createStatus" 
-                                            name="status"
+                                            th:field="*{status}"
                                             required
                                             style="border: 2px solid #000000; border-radius: 8px; padding: 10px; font-weight: 500; background: #ffffff;">
-                                        <option value="ACTIVE">Hoạt động</option>
-                                        <option value="INACTIVE">Không hoạt động</option>
+                                        <option th:each="status : ${statuses}" 
+                                                th:value="${status.name()}" 
+                                                th:text="${status.getDisplayName()}"></option>
                                     </select>
                                 </div>
                             </div>
@@ -972,7 +974,7 @@
                                 <label for="createDescription" class="form-label">Mô tả</label>
                                 <textarea class="form-control" 
                                           id="createDescription" 
-                                          name="description"
+                                          th:field="*{description}"
                                           rows="3" 
                                           maxlength="255"
                                           placeholder="Mô tả mục đích và lợi ích của voucher"
@@ -993,7 +995,7 @@
                                     </label>
                                     <select class="form-select" 
                                             id="createDiscountType" 
-                                            name="discountType"
+                                            th:field="*{discountType}"
                                             required
                                             onchange="updateDiscountUnit()"
                                             style="border: 2px solid #000000; border-radius: 8px; padding: 10px; font-weight: 500; background: #ffffff;">
@@ -1011,7 +1013,7 @@
                                         <input type="number" 
                                                class="form-control" 
                                                id="createDiscountValue" 
-                                               name="discountValue"
+                                               th:field="*{discountValue}"
                                                required
                                                step="0.01" 
                                                min="0"
@@ -1028,7 +1030,7 @@
                                     <input type="number" 
                                            class="form-control" 
                                            id="createMinOrderAmount" 
-                                           name="minOrderAmount"
+                                           th:field="*{minOrderAmount}"
                                            step="1000" 
                                            min="0"
                                            placeholder="0"
@@ -1043,7 +1045,7 @@
                                     <input type="number" 
                                            class="form-control" 
                                            id="createMaxDiscountAmount" 
-                                           name="maxDiscountAmount"
+                                           th:field="*{maxDiscountAmount}"
                                            step="1000" 
                                            min="0"
                                            placeholder="0"
@@ -1067,7 +1069,7 @@
                                     <input type="number" 
                                            class="form-control" 
                                            id="createGlobalUsageLimit" 
-                                           name="globalUsageLimit"
+                                           th:field="*{globalUsageLimit}"
                                            min="1"
                                            placeholder="Để trống nếu không giới hạn"
                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
@@ -1083,10 +1085,9 @@
                                     <input type="number" 
                                            class="form-control" 
                                            id="createPerCustomerLimit" 
-                                           name="perCustomerLimit"
+                                           th:field="*{perCustomerLimit}"
                                            required
                                            min="1"
-                                           value="1"
                                            placeholder="1"
                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff; font-weight: 600;">
                                     <small class="form-text text-muted">
@@ -1108,7 +1109,7 @@
                                     <input type="date" 
                                            class="form-control" 
                                            id="createStartDate" 
-                                           name="startDate"
+                                           th:field="*{startDate}"
                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
                                     <small class="form-text text-muted">
                                         Để trống để bắt đầu ngay lập tức
@@ -1120,7 +1121,7 @@
                                     <input type="date" 
                                            class="form-control" 
                                            id="createEndDate" 
-                                           name="endDate"
+                                           th:field="*{endDate}"
                                            style="border: 2px solid #000000; border-radius: 8px; padding: 10px; background: #ffffff;">
                                     <small class="form-text text-muted">
                                         Để trống nếu không có ngày kết thúc
@@ -1648,6 +1649,210 @@
             if (createModal) {
                 createModal.addEventListener('hidden.bs.modal', function() {
                     resetCreateVoucherForm();
+                    // Clear any error messages
+                    const errorAlert = document.getElementById('createVoucherError');
+                    if (errorAlert) {
+                        errorAlert.remove();
+                    }
+                });
+            }
+            
+            // Handle form submission via AJAX
+            const createVoucherForm = document.getElementById('createVoucherForm');
+            if (createVoucherForm) {
+                createVoucherForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    console.log('📝 Starting form submission via AJAX...');
+                    
+                    // Get form data - FormData will get all fields including th:field generated names
+                    const formData = new FormData(createVoucherForm);
+                    
+                    // Note: Spring @ModelAttribute("voucherForm") can handle both:
+                    // - Fields with prefix "voucherForm.code" 
+                    // - Fields without prefix "code"
+                    // Thymeleaf th:field creates "voucherForm.code", so we keep it as is
+                    const formDataToSubmit = formData;
+                    
+                    // Get restaurantId from URL or form
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const restaurantId = urlParams.get('restaurantId') || formDataToSubmit.get('restaurantId');
+                    if (restaurantId) {
+                        formDataToSubmit.set('restaurantId', restaurantId);
+                    }
+                    
+                    // Debug: Log form data
+                    const formDataObj = {};
+                    for (let [key, value] of formDataToSubmit.entries()) {
+                        formDataObj[key] = value;
+                    }
+                    console.log('📝 Form Data (after fix):', formDataObj);
+                    console.log('🔗 Form Action:', createVoucherForm.action);
+                    console.log('🏪 Restaurant ID:', restaurantId);
+                    
+                    // Show loading state first
+                    const submitButton = createVoucherForm.querySelector('button[type="submit"]');
+                    const originalButtonText = submitButton.innerHTML;
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang tạo...';
+                    
+                    // Validate required fields before submit
+                    const requiredFields = {
+                        'code': 'Mã Voucher',
+                        'status': 'Trạng thái',
+                        'discountType': 'Loại giảm giá',
+                        'discountValue': 'Giá trị giảm giá',
+                        'perCustomerLimit': 'Giới hạn mỗi khách hàng'
+                    };
+                    
+                    const missingFields = [];
+                    for (const [field, label] of Object.entries(requiredFields)) {
+                        // Check both direct field name and voucherForm.field name
+                        const fieldValue = formDataObj[field] || formDataObj[`voucherForm.${field}`];
+                        if (!fieldValue || fieldValue === '' || fieldValue === 'undefined') {
+                            missingFields.push(label);
+                        }
+                    }
+                    
+                    if (missingFields.length > 0) {
+                        const errorMsg = 'Vui lòng điền đầy đủ các trường bắt buộc: ' + missingFields.join(', ');
+                        alert(errorMsg);
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                        return;
+                    }
+                    
+                    // Clear previous errors
+                    const errorAlert = document.getElementById('createVoucherError');
+                    if (errorAlert) {
+                        errorAlert.remove();
+                    }
+                    
+                    // Build URL with restaurantId
+                    let submitUrl = createVoucherForm.action;
+                    if (restaurantId) {
+                        submitUrl += (submitUrl.includes('?') ? '&' : '?') + 'restaurantId=' + restaurantId;
+                    }
+                    
+                    console.log('🚀 Submitting to:', submitUrl);
+                    
+                    // Submit via AJAX
+                    fetch(submitUrl, {
+                        method: 'POST',
+                        body: formDataToSubmit,
+                        credentials: 'same-origin',
+                        redirect: 'follow' // Follow redirects to get final response
+                    })
+                    .then(async response => {
+                        console.log('📥 Response status:', response.status);
+                        console.log('📥 Response URL:', response.url);
+                        
+                        const finalUrl = response.url;
+                        
+                        // Check if redirected to form page (error) or list page (success)
+                        if (finalUrl.includes('/vouchers/new')) {
+                            // Error - get error message from response
+                            console.log('❌ Error: Redirected back to form page');
+                            const html = await response.text();
+                            console.log('📄 HTML length:', html.length);
+                            
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            
+                            let errorMsg = 'Có lỗi xảy ra khi tạo voucher. Vui lòng kiểm tra lại thông tin.';
+                            
+                            // 1. Try to find error message in alert-danger
+                            const alertError = doc.querySelector('.alert-danger');
+                            if (alertError) {
+                                const text = alertError.textContent.trim();
+                                console.log('🔍 Found alert-danger:', text.substring(0, 200));
+                                if (text && text.length > 0 && text.length < 1000) {
+                                    // Extract just the error message, not the whole alert
+                                    const errorText = text.replace(/Lỗi:|Error:/gi, '').trim();
+                                    if (errorText.length > 0) {
+                                        errorMsg = errorText;
+                                    } else {
+                                        errorMsg = text;
+                                    }
+                                }
+                            }
+                            
+                            // 2. Check for validation errors
+                            const validationErrors = doc.querySelectorAll('.invalid-feedback');
+                            if (validationErrors.length > 0) {
+                                const errors = Array.from(validationErrors)
+                                    .map(el => el.textContent.trim())
+                                    .filter(Boolean)
+                                    .filter(text => text.length < 200 && text.length > 0);
+                                if (errors.length > 0) {
+                                    console.log('🔍 Found validation errors:', errors);
+                                    errorMsg = errors.join(', ');
+                                }
+                            }
+                            
+                            // 3. If still no error found, check server console logs
+                            if (errorMsg === 'Có lỗi xảy ra khi tạo voucher. Vui lòng kiểm tra lại thông tin.') {
+                                console.warn('⚠️ No clear error message found. Check server console logs for details.');
+                                console.log('📋 Full HTML preview:', html.substring(0, 2000));
+                                
+                                // Try to find any text that might indicate an error
+                                const bodyText = doc.body?.textContent || '';
+                                if (bodyText.includes('error') || bodyText.includes('lỗi') || bodyText.includes('Error')) {
+                                    console.log('🔍 Found error keywords in body text');
+                                }
+                                
+                                // Show more detailed error
+                                errorMsg = 'Có lỗi xảy ra khi tạo voucher. Vui lòng kiểm tra:\n' +
+                                          '1. Server console logs (nơi chạy Spring Boot)\n' +
+                                          '2. Browser console logs\n' +
+                                          '3. Đảm bảo tất cả trường bắt buộc đã được điền';
+                            }
+                            
+                            throw new Error(errorMsg);
+                            
+                        } else if (finalUrl.includes('/vouchers') && !finalUrl.includes('/new')) {
+                            // Success - close modal and reload page
+                            console.log('✅ Success! Closing modal and reloading...');
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('createVoucherModal'));
+                            if (modal) {
+                                modal.hide();
+                            }
+                            // Reload page to show new voucher
+                            window.location.reload();
+                            return;
+                        } else {
+                            // Unknown response - reload page
+                            console.log('⚠️ Unknown response, reloading page...');
+                            window.location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Error creating voucher:', error);
+                        
+                        // Show error message in modal
+                        const modalBody = createVoucherForm.querySelector('.modal-body');
+                        const errorAlert = document.createElement('div');
+                        errorAlert.id = 'createVoucherError';
+                        errorAlert.className = 'alert alert-danger alert-dismissible fade show';
+                        errorAlert.style.marginBottom = '20px';
+                        
+                        let errorMessage = error.message || 'Có lỗi xảy ra khi tạo voucher. Vui lòng thử lại.';
+                        
+                        errorAlert.innerHTML = `
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <strong>Lỗi:</strong> ${errorMessage}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        `;
+                        modalBody.insertBefore(errorAlert, modalBody.firstChild);
+                        
+                        // Scroll to error
+                        errorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    })
+                    .finally(() => {
+                        // Restore button state
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = originalButtonText;
+                    });
                 });
             }
         });

@@ -28,6 +28,20 @@
                             </h4>
                         </div>
                         <div class="card-body">
+                            <!-- Error Message -->
+                            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <strong>Lỗi:</strong> <span th:text="${errorMessage}"></span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            
+                            <!-- Success Message -->
+                            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Thành công:</strong> <span th:text="${successMessage}"></span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            
                             <!-- Restaurant Selector -->
                             <div class="row mb-4" th:if="${restaurants != null and !#lists.isEmpty(restaurants)}">
                                 <div class="col-12">
