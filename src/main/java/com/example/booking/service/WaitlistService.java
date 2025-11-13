@@ -87,6 +87,9 @@ public class WaitlistService {
 
     @Autowired
     private BookingConflictService conflictService;
+    
+    @Autowired
+    private WaitlistNotificationService waitlistNotificationService;
 
     /**
      * Thêm customer vào waitlist với validation cải thiện
@@ -135,7 +138,16 @@ public class WaitlistService {
         System.out.println("   Queue Position: " + queuePosition);
         System.out.println("   Estimated Wait Time: " + estimatedWaitMinutes + " minutes");
         
-        return waitlistRepository.save(waitlist);
+        Waitlist savedWaitlist = waitlistRepository.save(waitlist);
+        
+        // Send notification to restaurant owner
+        try {
+            waitlistNotificationService.notifyNewWaitlistToRestaurant(savedWaitlist);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send new waitlist notification: " + e.getMessage());
+        }
+        
+        return savedWaitlist;
     }
     
     /**
@@ -166,9 +178,17 @@ public class WaitlistService {
         if (waitlist.getStatus() != WaitlistStatus.WAITING) {
             throw new IllegalArgumentException("Cannot cancel waitlist entry that is not waiting");
         }
-            
+        
+        WaitlistStatus oldStatus = waitlist.getStatus();
         waitlist.setStatus(WaitlistStatus.CANCELLED);
-        waitlistRepository.save(waitlist);
+        Waitlist savedWaitlist = waitlistRepository.save(waitlist);
+
+        // Send notification to restaurant owner
+        try {
+            waitlistNotificationService.notifyWaitlistStatusChanged(savedWaitlist, oldStatus);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send waitlist cancelled notification: " + e.getMessage());
+        }
 
         System.out.println("✅ Waitlist entry cancelled: " + waitlistId);
     }
@@ -191,23 +211,22 @@ public class WaitlistService {
 
     /**
      * Get called customers (compatibility method)
+     * @deprecated CALLED status is no longer used. This method returns empty list.
      */
+    @Deprecated
     public List<Waitlist> getCalledCustomers(Integer restaurantId) {
-        return waitlistRepository.findByRestaurantIdAndStatusOrderByJoinTimeAsc(restaurantId, WaitlistStatus.CALLED);
+        // CALLED status is deprecated, return empty list
+        return new java.util.ArrayList<>();
     }
 
     /**
      * Call next from waitlist (compatibility method)
+     * @deprecated This functionality has been removed. Use seatCustomer() directly instead.
      */
+    @Deprecated
     public Waitlist callNextFromWaitlist(Integer restaurantId) {
-        Optional<Waitlist> nextCustomer = waitlistRepository
-                .findFirstByRestaurantIdAndStatusOrderByJoinTimeAsc(restaurantId, WaitlistStatus.WAITING);
-        if (nextCustomer.isPresent()) {
-            Waitlist waitlist = nextCustomer.get();
-            waitlist.setStatus(WaitlistStatus.CALLED);
-            return waitlistRepository.save(waitlist);
-        }
-        return null;
+        // This functionality has been removed
+        throw new UnsupportedOperationException("Call functionality has been removed. Use seatCustomer() directly instead.");
     }
 
     /**
@@ -217,8 +236,18 @@ public class WaitlistService {
         Waitlist waitlist = waitlistRepository.findById(waitlistId)
                 .orElseThrow(() -> new IllegalArgumentException("Waitlist entry not found"));
 
+        WaitlistStatus oldStatus = waitlist.getStatus();
         waitlist.setStatus(WaitlistStatus.SEATED);
-        return waitlistRepository.save(waitlist);
+        Waitlist savedWaitlist = waitlistRepository.save(waitlist);
+        
+        // Send notification to customer
+        try {
+            waitlistNotificationService.notifyWaitlistStatusChanged(savedWaitlist, oldStatus);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send waitlist seated notification: " + e.getMessage());
+        }
+        
+        return savedWaitlist;
     }
 
     /**
@@ -270,8 +299,16 @@ public class WaitlistService {
         Waitlist waitlist = waitlistRepository.findById(waitlistId)
                 .orElseThrow(() -> new IllegalArgumentException("Waitlist entry not found"));
 
+        WaitlistStatus oldStatus = waitlist.getStatus();
         waitlist.setStatus(WaitlistStatus.CANCELLED);
-        waitlistRepository.save(waitlist);
+        Waitlist savedWaitlist = waitlistRepository.save(waitlist);
+        
+        // Send notification to restaurant owner
+        try {
+            waitlistNotificationService.notifyWaitlistStatusChanged(savedWaitlist, oldStatus);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send waitlist cancelled notification: " + e.getMessage());
+        }
 
         System.out.println("✅ Waitlist entry cancelled: " + waitlistId);
     }
@@ -338,6 +375,7 @@ public class WaitlistService {
         if (partySize != null) {
             waitlist.setPartySize(partySize);
         }
+        WaitlistStatus oldStatus = waitlist.getStatus();
         if (status != null) {
             try {
                 waitlist.setStatus(WaitlistStatus.valueOf(status));
@@ -347,6 +385,16 @@ public class WaitlistService {
         }
 
         Waitlist savedWaitlist = waitlistRepository.save(waitlist);
+        
+        // Send notification if status changed
+        if (status != null && oldStatus != savedWaitlist.getStatus()) {
+            try {
+                waitlistNotificationService.notifyWaitlistStatusChanged(savedWaitlist, oldStatus);
+            } catch (Exception e) {
+                System.err.println("❌ Failed to send waitlist status change notification: " + e.getMessage());
+            }
+        }
+        
         return convertToWaitlistDetailDto(savedWaitlist);
     }
 
@@ -476,6 +524,13 @@ public class WaitlistService {
         System.out.println("   Dishes: " + dishIds);
         System.out.println("   Services: " + serviceIds);
         System.out.println("   Tables: " + tableIds);
+
+        // Send notification to restaurant owner
+        try {
+            waitlistNotificationService.notifyNewWaitlistToRestaurant(waitlist);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send new waitlist notification: " + e.getMessage());
+        }
 
         return waitlist;
     }
@@ -764,8 +819,16 @@ public class WaitlistService {
         bookingRepository.save(savedBooking);
 
         // Cập nhật waitlist status
+        WaitlistStatus oldStatus = waitlist.getStatus();
         waitlist.setStatus(WaitlistStatus.SEATED);
-        waitlistRepository.save(waitlist);
+        Waitlist savedWaitlist = waitlistRepository.save(waitlist);
+        
+        // Send notification to customer
+        try {
+            waitlistNotificationService.notifyWaitlistStatusChanged(savedWaitlist, oldStatus);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to send waitlist seated notification: " + e.getMessage());
+        }
 
         System.out.println("✅ Waitlist confirmed to booking successfully");
         System.out.println("   Waitlist ID: " + waitlistId);

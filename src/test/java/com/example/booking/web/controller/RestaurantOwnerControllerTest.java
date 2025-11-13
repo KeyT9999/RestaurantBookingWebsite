@@ -543,12 +543,15 @@ public class RestaurantOwnerControllerTest {
                 com.example.booking.common.enums.BookingStatus.CONFIRMED;
         com.example.booking.domain.Booking booking = new com.example.booking.domain.Booking();
         when(bookingService.updateBookingStatus(bookingId, bookingStatus)).thenReturn(booking);
+        RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
 
         // When
-        ResponseEntity<?> result = restaurantOwnerController.updateBookingStatus(bookingId, status);
+        String result = restaurantOwnerController.updateBookingStatus(bookingId, status, redirectAttributes);
 
         // Then
         assertNotNull(result);
+        assertTrue(result.startsWith("redirect:"));
+        verify(redirectAttributes).addFlashAttribute(eq("success"), anyString());
     }
 
     @Test
@@ -557,14 +560,15 @@ public class RestaurantOwnerControllerTest {
         // Given
         Integer bookingId = 1;
         String status = "INVALID";
-        when(bookingRepository.findById(bookingId)).thenReturn(Optional.empty());
+        RedirectAttributes redirectAttributes = mock(RedirectAttributes.class);
 
         // When
-        ResponseEntity<?> result = restaurantOwnerController.updateBookingStatus(bookingId, status);
+        String result = restaurantOwnerController.updateBookingStatus(bookingId, status, redirectAttributes);
 
         // Then
         assertNotNull(result);
-        assertTrue(result.getStatusCode().is4xxClientError() || result.getStatusCode().is5xxServerError());
+        assertTrue(result.startsWith("redirect:"));
+        verify(redirectAttributes).addFlashAttribute(eq("error"), anyString());
     }
 
     // ========== getBookingDetailJson() Tests ==========

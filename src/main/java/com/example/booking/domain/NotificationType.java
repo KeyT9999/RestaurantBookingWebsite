@@ -18,6 +18,7 @@ public enum NotificationType {
     RESTAURANT_RESUBMIT("Nhà hàng cần chỉnh sửa"),
     RESTAURANT_SUSPENDED("Nhà hàng bị tạm dừng"),
     RESTAURANT_ACTIVATED("Nhà hàng được kích hoạt"),
+    WAITLIST_STATUS("Trạng thái danh sách chờ"),
     SYSTEM_ANNOUNCEMENT("Thông báo hệ thống");
 
     private final String displayName;

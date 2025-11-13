@@ -30,6 +30,7 @@ import com.example.booking.repository.UserRepository;
 import com.example.booking.repository.VoucherRedemptionRepository;
 import com.example.booking.repository.VoucherRepository;
 import com.example.booking.service.VoucherService;
+import com.example.booking.service.VoucherNotificationService;
 
 @Service
 @Transactional(readOnly = true)
@@ -55,6 +56,9 @@ public class VoucherServiceImpl implements VoucherService {
     
     @Autowired
     private BookingRepository bookingRepository;
+
+    @Autowired
+    private VoucherNotificationService voucherNotificationService;
 
     @Override
     public Optional<Voucher> findByCode(String code) {
@@ -306,13 +310,42 @@ public class VoucherServiceImpl implements VoucherService {
             if (existing.isEmpty()) {
                 // Create new assignment
                 CustomerVoucher customerVoucher = new CustomerVoucher();
-                customerVoucher.setCustomer(customerRepository.findById(customerId)
-                    .orElseThrow(() -> new RuntimeException("Customer not found")));
+                Customer customer = customerRepository.findById(customerId)
+                        .orElseThrow(() -> new RuntimeException("Customer not found"));
+                customerVoucher.setCustomer(customer);
                 customerVoucher.setVoucher(voucher);
                 customerVoucher.setTimesUsed(0);
                 customerVoucher.setLastUsedAt(null);
                 
                 customerVoucherRepository.save(customerVoucher);
+
+                // Send notification to customer
+                try {
+                    UUID userId = customer.getUser().getId();
+                    // Calculate max discount amount for notification
+                    BigDecimal discountAmount = BigDecimal.ZERO;
+                    if (voucher.getDiscountType() == DiscountType.PERCENT) {
+                        discountAmount = voucher.getDiscountValue() != null
+                                ? voucher.getDiscountValue()
+                                : BigDecimal.ZERO;
+                    } else if (voucher.getDiscountType() == DiscountType.FIXED) {
+                        discountAmount = voucher.getDiscountValue() != null
+                                ? voucher.getDiscountValue()
+                                : BigDecimal.ZERO;
+                    }
+                    if (voucher.getMaxDiscountAmount() != null
+                            && discountAmount.compareTo(voucher.getMaxDiscountAmount()) > 0) {
+                        discountAmount = voucher.getMaxDiscountAmount();
+                    }
+                    voucherNotificationService.notifyVoucherAssigned(
+                            userId,
+                            voucher.getCode(),
+                            discountAmount,
+                            voucher.getDescription());
+                } catch (Exception e) {
+                    // Log error but don't fail the assignment
+                    System.err.println("Failed to send voucher notification: " + e.getMessage());
+                }
             }
         }
     }

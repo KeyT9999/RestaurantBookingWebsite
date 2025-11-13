@@ -113,12 +113,9 @@ public class WithdrawalService {
         logger.info("📝 Created withdrawal request {} for restaurant {} - Amount: {}", 
             request.getRequestId(), restaurantId, dto.getAmount());
         
-        // Log creation
-        logger.info("Created withdrawal request {} for restaurant {}", request.getRequestId(), restaurantId);
-        
         // Send notification
         try {
-            notificationService.notifyWithdrawalCreated(request);
+            notificationService.notifyWithdrawalStatusChanged(request, null);
         } catch (Exception e) {
             logger.error("Failed to send notification for withdrawal created", e);
         }
@@ -164,16 +161,16 @@ public class WithdrawalService {
         logger.info("🔒 Locked {} VNĐ for withdrawal request {}", request.getAmount(), requestId);
         
         // Step 5: Approve request
+        WithdrawalStatus oldStatus = request.getStatus();
         request.approve(adminUserId, notes);
         request.setStatus(WithdrawalStatus.APPROVED);
         withdrawalRepository.save(request);
         
         logger.info("✅ Approved withdrawal request {} by admin {}", requestId, adminUserId);
         
-        
         // Send notification
         try {
-            notificationService.notifyWithdrawalApproved(request);
+            notificationService.notifyWithdrawalStatusChanged(request, oldStatus);
         } catch (Exception e) {
             logger.error("Failed to send notification for withdrawal approved", e);
         }
@@ -199,15 +196,15 @@ public class WithdrawalService {
         }
         
         // Reject request
+        WithdrawalStatus oldStatus = request.getStatus();
         request.reject(adminUserId, reason);
         withdrawalRepository.save(request);
         
         logger.info("❌ Rejected withdrawal request {} by admin {}: {}", requestId, adminUserId, reason);
         
-        
         // Send notification
         try {
-            notificationService.notifyWithdrawalRejected(request);
+            notificationService.notifyWithdrawalStatusChanged(request, oldStatus);
         } catch (Exception e) {
             logger.error("Failed to send notification for withdrawal rejected", e);
         }
@@ -461,6 +458,7 @@ public class WithdrawalService {
         request.setManualProofUrl(dto.getProofUrl());
         
         // 4) Set status to SUCCEEDED and update timestamps
+        WithdrawalStatus oldStatus = request.getStatus();
         request.setStatus(WithdrawalStatus.SUCCEEDED);
         request.setReviewedByUserId(adminId);
         request.setReviewedAt(LocalDateTime.now());
@@ -473,7 +471,7 @@ public class WithdrawalService {
         
         // 6) Send notification
         try {
-            notificationService.notifyWithdrawalSucceeded(request);
+            notificationService.notifyWithdrawalStatusChanged(request, oldStatus);
         } catch (Exception e) {
             logger.error("Failed to send notification for withdrawal succeeded", e);
         }

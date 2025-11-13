@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/restaurant-admin.css" />
     <style>
         .chip-waiting { background: #fff3cd; color: #856404; }
-        .chip-called { background: #d1ecf1; color: #0c5460; }
         .chip-seated { background: #d4edda; color: #155724; }
         .chip-cancelled { background: #f8d7da; color: #721c24; }
         
@@ -112,7 +111,6 @@
                 <p class="muted">Quản lý danh sách khách hàng chờ bàn</p>
             </div>
             <div class="actions">
-                <button class="btn" onclick="callNextCustomer()">📞 Gọi khách tiếp theo</button>
                 <button class="btn btn-ghost" onclick="refreshWaitlist()">🔄 Làm mới</button>
             </div>
         </header>
@@ -142,17 +140,13 @@
         <!-- Waitlist Statistics -->
         <div class="card" th:if="${error == null}">
             <h2 class="h2">Thống kê Waitlist</h2>
-            <div class="grid grid-3">
+            <div class="grid grid-2">
                 <div class="stat-item">
                     <div class="stat-number" th:text="${waitingCount}">0</div>
                     <div class="stat-label">Đang chờ</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number" th:text="${calledCount}">0</div>
-                    <div class="stat-label">Đã gọi</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number" th:text="${waitingCount + calledCount}">0</div>
+                    <div class="stat-number" th:text="${waitingCount}">0</div>
                     <div class="stat-label">Tổng cộng</div>
                 </div>
             </div>
@@ -190,10 +184,6 @@
                                 title="Xác nhận thành booking">
                             ✅ Xác nhận Booking
                         </button>
-                        <form th:action="@{/restaurant-owner/waitlist/call-next}" method="post" style="display: inline;">
-                            <input type="hidden" name="restaurantId" th:value="${restaurantId}">
-                            <button type="submit" class="btn btn-small">📞 Gọi</button>
-                        </form>
                         <form th:action="@{/restaurant-owner/waitlist/cancel/{id}(id=${waitlist.waitlistId})}" method="post" style="display: inline;">
                             <button type="submit" class="btn btn-small btn-ghost" onclick="return confirm('Bạn có chắc muốn hủy waitlist này?')">❌ Hủy</button>
                         </form>
@@ -208,44 +198,6 @@
             </div>
         </div>
 
-        <!-- Called Customers -->
-        <div class="waitlist-section" th:if="${error == null}">
-            <div class="waitlist-header">
-                <h2 class="h2">Khách hàng đã gọi</h2>
-                <div class="waitlist-count" th:text="${calledCount} + ' khách'">0 khách</div>
-            </div>
-            
-            <div th:if="${calledCustomers != null and !calledCustomers.empty}">
-                <div th:each="waitlist : ${calledCustomers}" class="waitlist-item">
-                    <div class="customer-info">
-                        <div class="customer-name" th:text="${waitlist.customer != null and waitlist.customer.user != null and waitlist.customer.user.fullName != null} ? ${waitlist.customer.user.fullName} : 'Khách hàng #' + ${waitlist.waitlistId}">Nguyễn Văn A</div>
-                        <div class="restaurant-name" th:text="${restaurantNames != null and restaurantNames[waitlist.restaurant.restaurantId] != null} ? ${restaurantNames[waitlist.restaurant.restaurantId]} : ${waitlist.restaurant.restaurantName}" style="font-size: 0.9em; color: #666; font-weight: 500;">Nhà hàng ABC</div>
-                        <div class="customer-details">
-                            <span th:text="${waitlist.partySize} + ' người'">2 người</span> • 
-                            <span th:text="${#temporals.format(waitlist.joinTime, 'HH:mm')}">18:30</span> • 
-                            <span class="estimated-time">Đã gọi</span>
-                        </div>
-                    </div>
-                    <div class="waitlist-actions">
-                        <a th:href="@{/restaurant-owner/waitlist/{waitlistId}(waitlistId=${waitlist.waitlistId})}" 
-                           class="btn btn-small btn-info" 
-                           title="Xem chi tiết">
-                            👁️ Chi tiết
-                        </a>
-                        <button class="btn btn-small" th:onclick="'showSeatDialog(' + ${waitlist.waitlistId} + ')'">🪑 Cho ngồi</button>
-                        <form th:action="@{/restaurant-owner/waitlist/cancel/{id}(id=${waitlist.waitlistId})}" method="post" style="display: inline;">
-                            <button type="submit" class="btn btn-small btn-ghost" onclick="return confirm('Bạn có chắc muốn hủy waitlist này?')">❌ Hủy</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            
-            <div th:if="${calledCustomers == null or calledCustomers.empty}" class="empty-state">
-                <div class="empty-state-icon">📞</div>
-                <h3>Không có khách hàng nào đã được gọi</h3>
-                <p>Chưa có khách hàng nào được gọi từ waitlist</p>
-            </div>
-        </div>
     </div>
 
     <!-- Confirm Waitlist to Booking Modal -->
@@ -323,12 +275,6 @@
     </div>
 
     <script>
-        function callNextCustomer() {
-            if (confirm('Bạn có chắc muốn gọi khách hàng tiếp theo?')) {
-                // This will be handled by the form submission
-            }
-        }
-
         function refreshWaitlist() {
             location.reload();
         }

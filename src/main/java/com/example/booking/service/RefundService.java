@@ -50,6 +50,9 @@ public class RefundService {
     @Autowired
     private PayOsService payOsService;
 
+    @Autowired
+    private RefundNotificationService refundNotificationService;
+
     /**
      * Hoàn tiền cho một payment với logic mới:
      * - Trừ 30% hoa hồng từ ví nhà hàng
@@ -153,8 +156,15 @@ public class RefundService {
 
             Payment updatedPayment = paymentRepository.save(payment);
 
-            // 4. Gửi notification cho admin
+            // 4. Gửi notification cho admin (legacy method - keep for compatibility)
             sendRefundRequestNotification(refundRequest);
+
+            // 5. Send in-app notifications
+            try {
+                refundNotificationService.notifyRefundStatusChanged(refundRequest, null);
+            } catch (Exception e) {
+                logger.error("Failed to send refund request notifications", e);
+            }
 
             logger.info("✅ Refund request created successfully: {}", refundRequest.getRefundRequestId());
             return updatedPayment;
@@ -224,13 +234,6 @@ public class RefundService {
 
         // Generate VietQR details upfront to keep legacy behaviour for manual refunds
         String description = buildRefundTransferDescription(payment, reason);
-        String qrData = payOsService.createTransferQRCode(
-                actualRefundAmount,
-                accountNumber,
-                bankName,
-                refundRequest.getCustomerAccountHolder(),
-                description
-        );
 
         String qrUrl = payOsService.createTransferQRCodeUrl(
                 actualRefundAmount,
@@ -240,11 +243,14 @@ public class RefundService {
                 description
         );
 
-        if (qrUrl != null && !qrUrl.trim().isEmpty()) {
+        if (qrUrl != null && !qrUrl.trim().isEmpty() &&
+                (qrUrl.startsWith("http://") || qrUrl.startsWith("https://"))) {
+            // Chỉ lưu URL hợp lệ (bắt đầu bằng http:// hoặc https://)
             refundRequest.setVietqrUrl(qrUrl);
-        } else if (qrData != null && !qrData.trim().isEmpty()) {
-            // Fallback: store raw QR data so admin can still access instructions
-            refundRequest.setVietqrUrl(qrData);
+        } else {
+            // Không lưu JSON data vào vietqrUrl vì nó không phải URL hợp lệ
+            // Admin sẽ cần tạo lại VietQR bằng generateVietQRForRefund()
+            logger.warn("⚠️ createTransferQRCodeUrl returned invalid URL or null. QR data will not be stored as URL.");
         }
 
         return refundRequestRepository.save(refundRequest);
@@ -306,6 +312,7 @@ public class RefundService {
         }
 
         // Cập nhật refund request
+        com.example.booking.common.enums.RefundStatus oldStatus = refundRequest.getStatus();
         refundRequest.setStatus(RefundStatus.COMPLETED);
         refundRequest.setProcessedAt(LocalDateTime.now());
         refundRequest.setProcessedBy(adminId);
@@ -328,6 +335,13 @@ public class RefundService {
 
         refundRequestRepository.save(refundRequest);
         paymentRepository.save(payment);
+
+        // Send notifications
+        try {
+            refundNotificationService.notifyRefundStatusChanged(refundRequest, oldStatus);
+        } catch (Exception e) {
+            logger.error("Failed to send refund succeeded notification", e);
+        }
 
         logger.info("✅ Refund completed by admin: {}", refundRequestId);
     }
@@ -371,6 +385,7 @@ public class RefundService {
         }
 
         // Cập nhật refund request
+        com.example.booking.common.enums.RefundStatus oldStatus = refundRequest.getStatus();
         refundRequest.setStatus(RefundStatus.REJECTED);
         refundRequest.setProcessedAt(LocalDateTime.now());
         refundRequest.setProcessedBy(adminId);
@@ -392,6 +407,13 @@ public class RefundService {
 
         refundRequestRepository.save(refundRequest);
         paymentRepository.save(payment);
+
+        // Send notifications
+        try {
+            refundNotificationService.notifyRefundStatusChanged(refundRequest, oldStatus);
+        } catch (Exception e) {
+            logger.error("Failed to send refund rejected notification", e);
+        }
 
         logger.info("✅ Refund rejected by admin: {}", refundRequestId);
     }
@@ -456,14 +478,19 @@ public class RefundService {
                 description = "Refund #" + bookingId.substring(0, Math.min(bookingId.length(), 18));
             }
 
-            // Tạo VietQR URL
+            // Tạo VietQR URL với URL encoding cho các tham số
+            String encodedDescription = java.net.URLEncoder.encode(description,
+                    java.nio.charset.StandardCharsets.UTF_8);
+            String encodedAccountName = java.net.URLEncoder.encode(customerAccountName,
+                    java.nio.charset.StandardCharsets.UTF_8);
+
             String vietqrUrl = String.format(
                     "https://img.vietqr.io/image/%s-%s-compact2.png?amount=%d&addInfo=%s&accountName=%s",
                     customerBankCode,
                     customerAccountNumber,
                     refundRequest.getAmount().longValue(),
-                    description,
-                    customerAccountName);
+                    encodedDescription,
+                    encodedAccountName);
 
             // Lưu VietQR URL vào RefundRequest
             refundRequest.setVietqrUrl(vietqrUrl);

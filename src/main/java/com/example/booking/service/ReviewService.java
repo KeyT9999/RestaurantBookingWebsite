@@ -37,6 +37,9 @@ public class ReviewService {
     @Autowired
     private RestaurantProfileRepository restaurantProfileRepository;
     
+    @Autowired
+    private ReviewNotificationService reviewNotificationService;
+    
     /**
      * Tạo hoặc cập nhật review
      * Đảm bảo mỗi customer chỉ có thể review một restaurant một lần
@@ -56,6 +59,7 @@ public class ReviewService {
         Optional<Review> existingReview = reviewRepository.findByCustomerAndRestaurant(customer, restaurant);
         
         Review review;
+        boolean isNewReview = false;
         if (existingReview.isPresent()) {
             // Cập nhật review hiện tại
             review = existingReview.get();
@@ -65,11 +69,21 @@ public class ReviewService {
         } else {
             // Tạo review mới
             review = new Review(customer, restaurant, form.getRating(), form.getComment());
+            isNewReview = true;
             System.out.println("✅ Creating new review");
         }
         
         Review savedReview = reviewRepository.save(review);
         System.out.println("✅ Review saved with ID: " + savedReview.getReviewId());
+        
+        // Send notification for new reviews
+        if (isNewReview) {
+            try {
+                reviewNotificationService.notifyNewReviewToRestaurant(savedReview);
+            } catch (Exception e) {
+                System.err.println("❌ Failed to send review notification: " + e.getMessage());
+            }
+        }
         
         return savedReview;
     }

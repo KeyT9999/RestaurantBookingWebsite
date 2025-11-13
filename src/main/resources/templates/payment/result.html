@@ -59,335 +59,330 @@
                     </div>
                 </article>
 
-                <article class="ds-card ds-card-emphasis"
-                         th:if="${payment != null}">
-                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-4 ds-items-center ds-text-center"
-                         th:with="status=${statusName}">
-                        <div class="ds-status-ring ds-status-ring--lg"
-                             th:classappend="' ds-status--' + ${#strings.toLowerCase(status)}">
-                            <i th:class="${status == 'COMPLETED' ? 'fas fa-check-circle'
-                                         : (status == 'FAILED' ? 'fas fa-times-circle'
-                                         : (status == 'PROCESSING' ? 'fas fa-clock'
-                                         : 'fas fa-hourglass-half'))}"></i>
-                        </div>
+                <div th:if="${payment != null}" class="row g-4 align-items-start mt-4 payment-result-layout">
+                    <div class="col-12 col-xl-7 col-lg-8 d-flex flex-column gap-4">
+                        <article class="ds-card ds-card-emphasis">
+                            <div class="ds-card-body ds-flex ds-flex-col ds-gap-4" th:with="status=${statusName}">
+                                <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-4 w-100">
+                                    <div class="flex-grow-1">
+                                        <h1 class="ds-heading-2 ds-mb-2" th:switch="${status}">
+                                            <span th:case="'COMPLETED'">Thanh toán thành công</span>
+                                            <span th:case="'FAILED'">Thanh toán thất bại</span>
+                                            <span th:case="'PROCESSING'">Đang xử lý thanh toán</span>
+                                            <span th:case="*">Chờ thanh toán</span>
+                                        </h1>
 
-                        <h1 class="ds-heading-2" th:switch="${status}">
-                            <span th:case="'COMPLETED'">Thanh toán thành công</span>
-                            <span th:case="'FAILED'">Thanh toán thất bại</span>
-                            <span th:case="'PROCESSING'">Đang xử lý thanh toán</span>
-                            <span th:case="*">Chờ thanh toán</span>
-                        </h1>
+                                        <p class="status-caption ds-text-base ds-mb-2"
+                                           th:if="${status == 'COMPLETED'}">
+                                            <span th:if="${isDeposit}">
+                                                Bạn đã đặt cọc thành công
+                                                <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
+                                                cho đặt bàn của mình.
+                                            </span>
+                                            <span th:unless="${isDeposit}">
+                                                Bạn đã hoàn tất thanh toán
+                                                <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ.
+                                            </span>
+                                            Chúng tôi đã gửi xác nhận qua email và sẽ đồng hành cùng bạn cho trải nghiệm sắp tới.
+                                        </p>
 
-                        <p class="status-caption ds-text-base"
-                           th:if="${status == 'COMPLETED'}">
-                            <span th:if="${isDeposit}">
-                                Bạn đã đặt cọc thành công
-                                <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
-                                cho đặt bàn của mình.
-                            </span>
-                            <span th:unless="${isDeposit}">
-                                Bạn đã hoàn tất thanh toán
-                                <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ.
-                            </span>
-                            Chúng tôi đã gửi xác nhận qua email và sẽ đồng hành cùng bạn cho trải nghiệm sắp tới.
-                        </p>
+                                        <div class="ds-note-success"
+                                             th:if="${status == 'COMPLETED' && isDeposit && remainingAmount > 0}">
+                                            <h3 class="ds-heading-6 ds-mb-1">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                Bạn đã đặt cọc thành công
+                                            </h3>
+                                            <p class="ds-text-base ds-m-0">
+                                                Vui lòng thanh toán phần còn lại trực tiếp tại nhà hàng:
+                                                <strong th:text="${#numbers.formatDecimal(remainingAmount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ.
+                                            </p>
+                                        </div>
 
-                        <p class="status-caption ds-text-base"
-                           th:if="${status == 'FAILED'}"
-                           th:text="${payment.payosDesc} ?: 'Thanh toán không thành công. Vui lòng thử lại hoặc chọn phương thức khác.'">
-                        </p>
+                                        <div class="action-grid mt-3"
+                                             th:if="${status == 'COMPLETED'}">
+                                            <a href="/booking/my" class="ds-btn ds-btn-primary ds-btn-lg">
+                                                <i class="fas fa-list"></i>
+                                                Xem đặt bàn của tôi
+                                            </a>
+                                            <button type="button" class="ds-btn ds-btn-secondary ds-btn-lg"
+                                                    onclick="printReceipt()">
+                                                <i class="fas fa-print"></i>
+                                                In hóa đơn
+                                            </button>
+                                            <button type="button" class="ds-btn ds-btn-tertiary ds-btn-lg"
+                                                    onclick="viewInvoices(event)">
+                                                <i class="fas fa-file-download"></i>
+                                                Hóa đơn điện tử
+                                            </button>
+                                        </div>
 
-                        <div class="ds-flex ds-flex-col ds-items-center ds-gap-3"
-                             th:if="${status == 'PROCESSING'}">
-                            <p class="status-caption ds-text-base">
-                                Giao dịch của bạn đang được xử lý. Vui lòng chờ trong giây lát hoặc kiểm tra trạng thái sau ít phút.
-                            </p>
-                            <div class="status-spinner" role="status" aria-label="Processing payment"></div>
-                        </div>
+                                        <div class="ds-text-base ds-mt-3"
+                                             th:if="${status == 'COMPLETED'}">
+                                            <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}"
+                                               class="ds-link">
+                                                <i class="fas fa-external-link-alt me-2"></i>
+                                                Mở lại trang thanh toán
+                                            </a>
+                                        </div>
 
-                        <p class="status-caption ds-text-base"
-                           th:if="${status == 'PENDING'}">
-                            Vui lòng hoàn tất thanh toán theo phương thức bạn đã lựa chọn để giữ chỗ đặt bàn này.
-                        </p>
-                    </div>
-                </article>
-            </div>
-        </section>
+                                        <p class="status-caption ds-text-base ds-mb-0"
+                                           th:if="${status == 'FAILED'}"
+                                           th:text="${payment.payosDesc} ?: 'Thanh toán không thành công. Vui lòng thử lại hoặc chọn phương thức khác.'">
+                                        </p>
 
-        <section th:if="${payment != null}"
-                 class="ds-section-compact">
-            <div class="ds-container">
-                <article class="ds-card ds-text-center">
-                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-5"
-                         th:with="status=${payment.status.name()}">
-                        <h2 class="ds-heading-4 ds-mb-0">Các thao tác tiếp theo</h2>
-                        <p class="ds-text-secondary ds-text-base ds-mb-0">
-                            Lựa chọn hành động phù hợp để đảm bảo đặt bàn của bạn được xử lý trọn vẹn.
-                        </p>
+                                        <div class="ds-flex ds-flex-col ds-gap-3 ds-items-start w-100"
+                                             th:if="${status == 'PROCESSING'}">
+                                            <p class="status-caption ds-text-base ds-mb-0">
+                                                Giao dịch của bạn đang được xử lý. Vui lòng chờ trong giây lát hoặc kiểm tra trạng thái sau ít phút.
+                                            </p>
+                                            <div class="status-spinner" role="status" aria-label="Processing payment"></div>
+                                        </div>
 
-                        <div th:switch="${status}">
-                            <div th:case="'COMPLETED'">
-                                <div class="action-grid">
-                                    <a href="/booking/my" class="ds-btn ds-btn-primary ds-btn-lg">
-                                        <i class="fas fa-list"></i>
-                                        Xem đặt bàn của tôi
-                                    </a>
-                                    <button type="button" class="ds-btn ds-btn-secondary ds-btn-lg"
-                                            onclick="printReceipt()">
-                                        <i class="fas fa-print"></i>
-                                        In hóa đơn
-                                    </button>
-                                    <button type="button" class="ds-btn ds-btn-tertiary ds-btn-lg"
-                                            onclick="viewInvoices(event)">
-                                        <i class="fas fa-file-download"></i>
-                                        Hóa đơn điện tử
-                                    </button>
+                                        <p class="status-caption ds-text-base ds-mb-0"
+                                           th:if="${status == 'PENDING'}">
+                                            Vui lòng hoàn tất thanh toán theo phương thức bạn đã lựa chọn để giữ chỗ đặt bàn này.
+                                        </p>
+                                    </div>
                                 </div>
+                            </div>
+                        </article>
 
-                                <div class="ds-note-warning"
-                                     th:if="${isDeposit && remainingAmount > 0}">
-                                    <h3 class="ds-heading-6 ds-mb-2">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        Bạn còn khoản cần thanh toán trực tiếp
-                                    </h3>
-                                    <p class="ds-text-base ds-mb-1">
-                                        Vui lòng thanh toán phần còn lại khi đến nhà hàng:
+                        <article class="ds-card" th:if="${payment.status.name() != 'COMPLETED'}">
+                            <div class="ds-card-body ds-flex ds-flex-col ds-gap-5"
+                                 th:with="status=${payment.status.name()}">
+                                <div>
+                                    <h2 class="ds-heading-4 ds-mb-2">Các thao tác tiếp theo</h2>
+                                    <p class="ds-text-secondary ds-text-base ds-mb-0">
+                                        Lựa chọn hành động phù hợp để đảm bảo đặt bàn của bạn được xử lý trọn vẹn.
                                     </p>
-                                    <h4 class="ds-heading-5 ds-text-danger ds-m-0"
-                                        th:text="${#numbers.formatDecimal(remainingAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">
-                                        0 VNĐ
-                                    </h4>
                                 </div>
-                            </div>
 
-                            <div th:case="'PROCESSING'">
-                                <div class="action-grid">
-                                    <button type="button" class="ds-btn ds-btn-primary ds-btn-lg"
-                                            onclick="checkPaymentStatus()">
-                                        <i class="fas fa-sync-alt"></i>
-                                        Kiểm tra trạng thái
-                                    </button>
-                                    <a href="/booking/my" class="ds-btn ds-btn-secondary ds-btn-lg">
-                                        <i class="fas fa-arrow-left"></i>
-                                        Quay lại đặt bàn
-                                    </a>
+                                <div th:switch="${status}">
+                                    <div th:case="'PROCESSING'">
+                                        <div class="action-grid">
+                                            <button type="button" class="ds-btn ds-btn-primary ds-btn-lg"
+                                                    onclick="checkPaymentStatus()">
+                                                <i class="fas fa-sync-alt"></i>
+                                                Kiểm tra trạng thái
+                                            </button>
+                                            <a href="/booking/my" class="ds-btn ds-btn-secondary ds-btn-lg">
+                                                <i class="fas fa-arrow-left"></i>
+                                                Quay lại đặt bàn
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div th:case="'FAILED'">
+                                        <div class="action-grid">
+                                            <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}"
+                                               class="ds-btn ds-btn-primary ds-btn-lg">
+                                                <i class="fas fa-redo"></i>
+                                                Thử lại thanh toán
+                                            </a>
+                                            <a href="/booking/my" class="ds-btn ds-btn-secondary ds-btn-lg">
+                                                <i class="fas fa-arrow-left"></i>
+                                                Quay lại đặt bàn
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div th:case="'PENDING'">
+                                        <div class="ds-note-warning ds-mb-4"
+                                             th:with="totalValue=${totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)},
+                                                      remainingValue=${remainingAmount != null ? remainingAmount : ((totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)).subtract(payment.amount))}">
+                                            <h3 class="ds-heading-6 ds-mb-2">
+                                                <i class="fas fa-bell me-2"></i> Hoàn tất thanh toán để giữ chỗ
+                                            </h3>
+                                            <p class="ds-text-base ds-mb-1">
+                                                Tổng đơn: <strong th:text="${#numbers.formatDecimal(totalValue, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ &nbsp;•&nbsp;
+                                                Đã thanh toán: <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
+                                            </p>
+                                            <p class="ds-text-base ds-m-0">
+                                                <span th:if="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                                                    Vui lòng thanh toán thêm
+                                                    <strong th:text="${#numbers.formatDecimal(remainingValue, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
+                                                    qua <strong th:text="${payment.paymentMethod.displayName}">PayOS</strong> để xác nhận đặt chỗ.
+                                                </span>
+                                                <span th:unless="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                                                    Vui lòng hoàn tất thao tác với phương thức
+                                                    <strong th:text="${payment.paymentMethod.displayName}">PayOS</strong> để xác nhận đặt chỗ.
+                                                </span>
+                                            </p>
+                                        </div>
+
+                                        <div class="action-grid">
+                                            <button type="button"
+                                                    th:if="${payment.paymentMethod.name() == 'PAYOS'}"
+                                                    class="ds-btn ds-btn-primary ds-btn-lg"
+                                                    onclick="initiatePayOSPayment(event)">
+                                                <i class="fas fa-qrcode"></i>
+                                                Thanh toán bằng PayOS
+                                            </button>
+
+                                            <button type="button"
+                                                    th:if="${payment.paymentMethod.name() == 'CASH'}"
+                                                    class="ds-btn ds-btn-primary ds-btn-lg"
+                                                    onclick="confirmCashPayment(event)">
+                                                <i class="fas fa-money-bill-wave"></i>
+                                                Xác nhận thanh toán tiền mặt
+                                            </button>
+
+                                            <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}"
+                                               class="ds-btn ds-btn-secondary ds-btn-lg">
+                                                <i class="fas fa-credit-card"></i>
+                                                Đổi phương thức
+                                            </a>
+
+                                            <button type="button" class="ds-btn ds-btn-tertiary ds-btn-lg"
+                                                    onclick="checkPayOSStatus(event)">
+                                                <i class="fas fa-sync"></i>
+                                                Kiểm tra PayOS
+                                            </button>
+
+                                            <button type="button" class="ds-btn ds-btn-tertiary ds-btn-lg"
+                                                    onclick="cancelPayOSPayment(event)">
+                                                <i class="fas fa-times"></i>
+                                                Hủy thanh toán
+                                            </button>
+                                        </div>
+
+                                        <div class="ds-text-base ds-mt-4">
+                                            <a href="/booking/my" class="ds-link">
+                                                <i class="fas fa-arrow-left me-2"></i>
+                                                Quay lại danh sách đặt bàn
+                                            </a>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div th:case="'FAILED'">
-                                <div class="action-grid">
+                                <div>
                                     <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}"
-                                       class="ds-btn ds-btn-primary ds-btn-lg">
-                                        <i class="fas fa-redo"></i>
-                                        Thử lại thanh toán
-                                    </a>
-                                    <a href="/booking/my" class="ds-btn ds-btn-secondary ds-btn-lg">
-                                        <i class="fas fa-arrow-left"></i>
-                                        Quay lại đặt bàn
+                                       class="ds-link">
+                                        <i class="fas fa-external-link-alt me-2"></i>
+                                        Mở lại trang thanh toán
                                     </a>
                                 </div>
                             </div>
+                        </article>
+                    </div>
 
-                            <div th:case="'PENDING'">
-                                <div class="ds-note-warning ds-mb-4"
+                    <div class="col-12 col-xl-5 col-lg-4 d-flex flex-column gap-4">
+                        <article class="ds-card">
+                            <div class="ds-card-body ds-flex ds-flex-col ds-gap-5">
+                                <header class="ds-flex ds-items-center ds-gap-3">
+                                    <div class="ds-status-ring ds-status--pending">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="ds-heading-4 ds-mb-1">Chi tiết giao dịch</h2>
+                                        <p class="ds-text-secondary ds-m-0">Thông tin thanh toán của bạn được tổng hợp bên dưới.</p>
+                                    </div>
+                                </header>
+
+                                <div class="ds-summary-grid"
+                                     th:if="${payment != null}"
                                      th:with="totalValue=${totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)},
                                               remainingValue=${remainingAmount != null ? remainingAmount : ((totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)).subtract(payment.amount))}">
-                                    <h3 class="ds-heading-6 ds-mb-2">
-                                        <i class="fas fa-bell me-2"></i> Hoàn tất thanh toán để giữ chỗ
-                                    </h3>
-                                    <p class="ds-text-base ds-mb-1">
-                                        Tổng đơn: <strong th:text="${#numbers.formatDecimal(totalValue, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ &nbsp;•&nbsp;
-                                        Đã thanh toán: <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
-                                    </p>
-                                    <p class="ds-text-base ds-m-0">
-                                        <span th:if="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
-                                            Vui lòng thanh toán thêm
-                                            <strong th:text="${#numbers.formatDecimal(remainingValue, 0, 'COMMA', 0, 'POINT')}">0</strong> VNĐ
-                                            qua <strong th:text="${payment.paymentMethod.displayName}">PayOS</strong> để xác nhận đặt chỗ.
+                                    <div class="ds-summary-card">
+                                        <small>Tổng giá trị đơn</small>
+                                        <strong th:text="${#numbers.formatDecimal(totalValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
+                                    </div>
+                                    <div class="ds-summary-card">
+                                        <small>Đã thanh toán</small>
+                                        <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
+                                    </div>
+                                    <div class="ds-summary-card">
+                                        <small>Còn lại</small>
+                                        <strong th:classappend="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) > 0} ? ' text-danger' : ' text-success'"
+                                              th:text="${#numbers.formatDecimal(remainingValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
+                                    </div>
+                                </div>
+
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <strong>Mã giao dịch</strong>
+                                        <span class="text-primary" th:text="${payment.paymentId}">PAY-000</span>
+                                    </div>
+                                    <div class="detail-item" th:if="${payment.orderCode != null}">
+                                        <strong>Mã đơn hàng</strong>
+                                        <span th:text="${payment.orderCode}">ORDER-000</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <strong>Phương thức</strong>
+                                        <span th:text="${payment.paymentMethod.displayName}">PayOS</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <strong>Loại thanh toán</strong>
+                                        <span>
+                                            <span th:if="${isDeposit}">
+                                                <i class="fas fa-coins text-warning"></i> Đặt cọc
+                                            </span>
+                                            <span th:unless="${isDeposit}">
+                                                <i class="fas fa-credit-card text-success"></i> Thanh toán toàn bộ
+                                            </span>
                                         </span>
-                                        <span th:unless="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
-                                            Vui lòng hoàn tất thao tác với phương thức
-                                            <strong th:text="${payment.paymentMethod.displayName}">PayOS</strong> để xác nhận đặt chỗ.
-                                        </span>
-                                    </p>
-                                </div>
-
-                                <div class="action-grid">
-                                    <button type="button"
-                                            th:if="${payment.paymentMethod.name() == 'PAYOS'}"
-                                            class="ds-btn ds-btn-primary ds-btn-lg"
-                                            onclick="initiatePayOSPayment(event)">
-                                        <i class="fas fa-qrcode"></i>
-                                        Thanh toán bằng PayOS
-                                    </button>
-
-                                    <button type="button"
-                                            th:if="${payment.paymentMethod.name() == 'CASH'}"
-                                            class="ds-btn ds-btn-primary ds-btn-lg"
-                                            onclick="confirmCashPayment(event)">
-                                        <i class="fas fa-money-bill-wave"></i>
-                                        Xác nhận thanh toán tiền mặt
-                                    </button>
-
-                                    <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}"
-                                       class="ds-btn ds-btn-secondary ds-btn-lg">
-                                        <i class="fas fa-credit-card"></i>
-                                        Đổi phương thức
-                                    </a>
-
-                                    <button type="button" class="ds-btn ds-btn-tertiary ds-btn-lg"
-                                            onclick="checkPayOSStatus(event)">
-                                        <i class="fas fa-sync"></i>
-                                        Kiểm tra PayOS
-                                    </button>
-
-                                    <button type="button" class="ds-btn ds-btn-tertiary ds-btn-lg"
-                                            onclick="cancelPayOSPayment(event)">
-                                        <i class="fas fa-times"></i>
-                                        Hủy thanh toán
-                                    </button>
-                                </div>
-
-                                <div class="ds-text-center ds-mt-4">
-                                    <a href="/booking/my" class="ds-link">
-                                        <i class="fas fa-arrow-left me-2"></i>
-                                        Quay lại danh sách đặt bàn
-                                    </a>
+                                    </div>
+                                    <div class="detail-item">
+                                        <strong>Số tiền</strong>
+                                        <span class="amount text-success"
+                                              th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
+                                    </div>
+                                    <div class="detail-item">
+                                        <strong>Trạng thái</strong>
+                                        <span th:text="${payment.status.displayName}">Hoàn tất</span>
+                                    </div>
+                                    <div class="detail-item" th:if="${payment.paidAt != null}">
+                                        <strong>Thời gian thanh toán</strong>
+                                        <span th:text="${#temporals.format(payment.paidAt, 'dd/MM/yyyy HH:mm:ss')}">01/01/2024 12:00</span>
+                                    </div>
+                                    <div class="detail-item" th:if="${payment.payosPaymentLinkId != null}">
+                                        <strong>Mã PayOS</strong>
+                                        <span class="small text-muted"
+                                              th:text="${payment.payosPaymentLinkId}">Link-000</span>
+                                    </div>
+                                    <div class="detail-item" th:if="${payment.payosDesc != null}">
+                                        <strong>Mô tả</strong>
+                                        <span class="text-muted" th:text="${payment.payosDesc}">Success</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </article>
 
-                        <div class="ds-text-center">
-                            <a th:href="@{/payment/{bookingId}(bookingId=${payment.booking.bookingId})}"
-                               class="ds-link">
-                                <i class="fas fa-external-link-alt me-2"></i>
-                                Mở lại trang thanh toán
-                            </a>
-                        </div>
+                        <article class="ds-card">
+                            <div class="ds-card-body ds-flex ds-flex-col ds-gap-5">
+                                <header class="ds-flex ds-items-center ds-gap-3">
+                                    <div>
+                                        <h2 class="ds-heading-4 ds-mb-1">Thông tin đặt bàn</h2>
+                                        <p class="ds-text-secondary ds-m-0">Tóm tắt chi tiết đặt chỗ gắn với giao dịch này.</p>
+                                    </div>
+                                </header>
+
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <strong>Nhà hàng</strong>
+                                        <span th:text="${payment.booking != null && payment.booking.restaurant != null ? payment.booking.restaurant.restaurantName : '—'}">Nhà hàng</span>
+                                    </div>
+                                    <div class="detail-item" th:if="${payment.booking != null && payment.booking.bookingTime != null}">
+                                        <strong>Thời gian</strong>
+                                        <span th:text="${#temporals.format(payment.booking.bookingTime, 'dd/MM/yyyy HH:mm')}">01/01/2024 19:00</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <strong>Số khách</strong>
+                                        <span th:text="${payment.booking.numberOfGuests}">0</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <strong>Mã đặt bàn</strong>
+                                        <span th:text="${payment.booking.bookingId}">0</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <strong>Trạng thái đặt bàn</strong>
+                                        <span th:text="${payment.booking.status.displayName}">Chờ xác nhận</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
                     </div>
-                </article>
-            </div>
-        </section>
-        <section th:if="${payment != null}"
-                 class="ds-section-compact">
-            <div class="ds-container card-grid">
-                <article class="ds-card">
-                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-5">
-                        <header class="ds-flex ds-items-center ds-gap-3">
-                            <div class="ds-status-ring ds-status--pending">
-                                <i class="fas fa-file-invoice-dollar"></i>
-                            </div>
-                            <div>
-                                <h2 class="ds-heading-4 ds-mb-1">Chi tiết giao dịch</h2>
-                                <p class="ds-text-secondary ds-m-0">Thông tin thanh toán của bạn được tổng hợp bên dưới.</p>
-                            </div>
-                        </header>
-
-                        <div class="ds-summary-grid"
-                             th:if="${payment != null}"
-                             th:with="totalValue=${totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)},
-                                      remainingValue=${remainingAmount != null ? remainingAmount : ((totalAmount != null ? totalAmount : (payment.booking != null && payment.booking.totalAmount != null ? payment.booking.totalAmount : payment.amount)).subtract(payment.amount))}">
-                            <div class="ds-summary-card">
-                                <small>Tổng giá trị đơn</small>
-                                <strong th:text="${#numbers.formatDecimal(totalValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
-                            </div>
-                            <div class="ds-summary-card">
-                                <small>Đã thanh toán</small>
-                                <strong th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
-                            </div>
-                            <div class="ds-summary-card">
-                                <small>Còn lại</small>
-                                <strong th:classappend="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) > 0} ? ' text-danger' : ' text-success'"
-                                      th:text="${#numbers.formatDecimal(remainingValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
-                            </div>
-                        </div>
-
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <strong>Mã giao dịch</strong>
-                                <span class="text-primary" th:text="${payment.paymentId}">PAY-000</span>
-                            </div>
-                            <div class="detail-item" th:if="${payment.orderCode != null}">
-                                <strong>Mã đơn hàng</strong>
-                                <span th:text="${payment.orderCode}">ORDER-000</span>
-                            </div>
-                            <div class="detail-item">
-                                <strong>Phương thức</strong>
-                                <span th:text="${payment.paymentMethod.displayName}">PayOS</span>
-                            </div>
-                            <div class="detail-item">
-                                <strong>Loại thanh toán</strong>
-                                <span>
-                                    <span th:if="${isDeposit}">
-                                        <i class="fas fa-coins text-warning"></i> Đặt cọc
-                                    </span>
-                                    <span th:unless="${isDeposit}">
-                                        <i class="fas fa-credit-card text-success"></i> Thanh toán toàn bộ
-                                    </span>
-                                </span>
-                            </div>
-                            <div class="detail-item">
-                                <strong>Số tiền</strong>
-                                <span class="amount text-success"
-                                      th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')}">0</span> VNĐ
-                            </div>
-                            <div class="detail-item">
-                                <strong>Trạng thái</strong>
-                                <span th:text="${payment.status.displayName}">Hoàn tất</span>
-                            </div>
-                            <div class="detail-item" th:if="${payment.paidAt != null}">
-                                <strong>Thời gian thanh toán</strong>
-                                <span th:text="${#temporals.format(payment.paidAt, 'dd/MM/yyyy HH:mm:ss')}">01/01/2024 12:00</span>
-                            </div>
-                            <div class="detail-item" th:if="${payment.payosPaymentLinkId != null}">
-                                <strong>Mã PayOS</strong>
-                                <span class="small text-muted"
-                                      th:text="${payment.payosPaymentLinkId}">Link-000</span>
-                            </div>
-                            <div class="detail-item" th:if="${payment.payosDesc != null}">
-                                <strong>Mô tả</strong>
-                                <span class="text-muted" th:text="${payment.payosDesc}">Success</span>
-                            </div>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="ds-card">
-                    <div class="ds-card-body ds-flex ds-flex-col ds-gap-5">
-                        <header class="ds-flex ds-items-center ds-gap-3">
-                            <div class="ds-status-ring ds-status--success">
-                                <i class="fas fa-calendar-alt"></i>
-                            </div>
-                            <div>
-                                <h2 class="ds-heading-4 ds-mb-1">Thông tin đặt bàn</h2>
-                                <p class="ds-text-secondary ds-m-0">Tóm tắt chi tiết đặt chỗ gắn với giao dịch này.</p>
-                            </div>
-                        </header>
-
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <strong>Nhà hàng</strong>
-                                <span th:text="${payment.booking != null && payment.booking.restaurant != null ? payment.booking.restaurant.restaurantName : '—'}">Nhà hàng</span>
-                            </div>
-                            <div class="detail-item" th:if="${payment.booking != null && payment.booking.bookingTime != null}">
-                                <strong>Thời gian</strong>
-                                <span th:text="${#temporals.format(payment.booking.bookingTime, 'dd/MM/yyyy HH:mm')}">01/01/2024 19:00</span>
-                            </div>
-                            <div class="detail-item">
-                                <strong>Số khách</strong>
-                                <span th:text="${payment.booking.numberOfGuests}">0</span>
-                            </div>
-                            <div class="detail-item">
-                                <strong>Mã đặt bàn</strong>
-                                <span th:text="${payment.booking.bookingId}">0</span>
-                            </div>
-                            <div class="detail-item">
-                                <strong>Trạng thái đặt bàn</strong>
-                                <span th:text="${payment.booking.status.displayName}">Chờ xác nhận</span>
-                            </div>
-                        </div>
-                    </div>
-                </article>
+                </div>
             </div>
         </section>
     </main>
