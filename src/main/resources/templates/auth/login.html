@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Book Eat</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .login-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a1a 0%, #000000 50%, #1a1a1a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .login-card {
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        
+        .login-logo i {
+            font-size: 2.5rem;
+            color: #ffffff;
+        }
+        
+        .login-brand {
+            color: #000000;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .login-welcome {
+            color: #666666;
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+        
+        .form-label {
+            color: #333333;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        
+        .form-label i {
+            margin-right: 6px;
+            color: #666666;
+        }
+        
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            padding: 14px 16px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            background: #ffffff;
+        }
+        
+        .form-control:focus {
+            border-color: #000000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+            outline: none;
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: white;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            color: white;
+            background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .btn-google {
+            background: #ffffff;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #333333;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-google:hover {
+            border-color: #000000;
+            color: #000000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .login-separator {
+            text-align: center;
+            margin: 24px 0;
+            position: relative;
+        }
+        
+        .login-separator::before,
+        .login-separator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        
+        .login-separator::before {
+            left: 0;
+        }
+        
+        .login-separator::after {
+            right: 0;
+        }
+        
+        .login-separator span {
+            background: #ffffff;
+            padding: 0 16px;
+            color: #999999;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .form-check-label {
+            color: #666666;
+            font-size: 0.9rem;
+        }
+        
+        .form-check-input:checked {
+            background-color: #000000;
+            border-color: #000000;
+        }
+        
+        .form-check-input:focus {
+            border-color: #000000;
+            box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.25);
+        }
+        
+        .login-register {
+            text-align: center;
+            margin-top: 24px;
+            color: #666666;
+            font-size: 0.9rem;
+        }
+        
+        .login-register a {
+            color: #000000;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        
+        .login-register a:hover {
+            text-decoration: underline;
+            color: #1a1a1a;
+        }
+        
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 14px 16px;
+            margin-bottom: 24px;
+        }
+        
+        .alert-danger {
+            background: #fee;
+            color: #c33;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .alert-warning {
+            background: #fff8e1;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert i {
+            margin-right: 8px;
+        }
+        
+        a.text-decoration-none {
+            color: #000000 !important;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        a.text-decoration-none:hover {
+            color: #1a1a1a !important;
+            text-decoration: underline !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="fas fa-utensils"></i>
+                </div>
+                <h3 class="login-brand">Book Eat</h3>
+                <p class="login-welcome">Đăng nhập để tiếp tục hành trình ẩm thực của bạn</p>
+            </div>
+            
+            <!-- Flash Messages -->
+            <div th:if="${param.error != null}" class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-circle"></i>
+                <strong>Đăng nhập thất bại</strong><br>
+                <span th:if="${param.error[0] == 'badcredentials'}">
+                    Tên đăng nhập hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại thông tin đăng nhập.
+                </span>
+                <span th:unless="${param.error[0] == 'badcredentials'}">
+                    Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.
+                </span>
+            </div>
+            
+            <div th:if="${param.ratelimit != null}" class="alert alert-warning" role="alert">
+                <i class="fas fa-clock"></i>
+                <strong>Quá nhiều lần thử đăng nhập</strong><br>
+                Bạn đã thử đăng nhập quá nhiều lần. Vui lòng đợi một chút trước khi thử lại.
+            </div>
+            
+            <div th:if="${param.logout != null}" class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle"></i>
+                <strong>Đăng xuất thành công!</strong> Bạn đã đăng xuất khỏi hệ thống.
+            </div>
+            
+            <!-- Login Form -->
+            <form th:action="@{/login}" method="post">
+                <div class="mb-3">
+                    <label for="username" class="form-label">
+                        <i class="fas fa-user"></i> Tên đăng nhập
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="username" 
+                           name="username" 
+                           placeholder="Nhập tên đăng nhập"
+                           required 
+                           autofocus>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock"></i> Mật khẩu
+                    </label>
+                    <input type="password" 
+                           class="form-control" 
+                           id="password" 
+                           name="password" 
+                           placeholder="Nhập mật khẩu"
+                           required>
+                </div>
+                
+                <div class="login-options">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="remember-me" name="remember-me">
+                        <label class="form-check-label" for="remember-me">
+                            Ghi nhớ tôi
+                        </label>
+                    </div>
+                    <a href="/auth/forgot-password" class="text-decoration-none" style="color: #667eea;">
+                        Quên mật khẩu?
+                    </a>
+                </div>
+                
+                <button type="submit" class="btn btn-login mb-3">
+                    Đăng nhập
+                    <i class="fas fa-arrow-right ms-2"></i>
+                </button>
+                
+                <div class="login-separator">
+                    <span>HOẶC</span>
+                </div>
+                
+                <a href="/oauth2/authorization/google" class="btn-google">
+                    <i class="fab fa-google me-2"></i>
+                    Đăng nhập với Google
+                </a>
+                
+                <div class="login-register">
+                    <span>Chưa có tài khoản?</span>
+                    <a href="/auth/register">Đăng ký ngay.</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
