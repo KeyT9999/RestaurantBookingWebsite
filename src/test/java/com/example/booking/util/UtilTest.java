@@ -1,12 +1,27 @@
 package com.example.booking.util;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for Utilities: GeoUtils, CityGeoResolver, PayOSSignatureGenerator
  */
 class UtilTest {
+
+    private RestTemplate restTemplate;
+    private CityGeoResolver cityGeoResolver;
+
+    @BeforeEach
+    void setUp() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(5000);
+        this.restTemplate = new RestTemplate(factory);
+        this.cityGeoResolver = new CityGeoResolver(restTemplate);
+    }
 
     // ========== GeoUtils Tests ==========
     @Test
@@ -66,9 +81,7 @@ class UtilTest {
     // ========== CityGeoResolver Tests ==========
     @Test
     void testCityGeoResolver_ResolveFromAddress_HoChiMinh() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result = resolver.resolveFromAddress("123 Nguyen Hue, Ho Chi Minh City");
+        CityGeoResolver.LatLng result = cityGeoResolver.resolveFromAddress("123 Nguyen Hue, Ho Chi Minh City");
         
         assertThat(result).isNotNull();
         assertThat(result.lat).isCloseTo(10.776889, org.assertj.core.data.Offset.offset(0.001));
@@ -77,9 +90,7 @@ class UtilTest {
 
     @Test
     void testCityGeoResolver_ResolveFromAddress_HCM() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result = resolver.resolveFromAddress("District 1, HCM");
+        CityGeoResolver.LatLng result = cityGeoResolver.resolveFromAddress("District 1, HCM");
         
         assertThat(result).isNotNull();
         assertThat(result.lat).isCloseTo(10.776889, org.assertj.core.data.Offset.offset(0.001));
@@ -87,9 +98,7 @@ class UtilTest {
 
     @Test
     void testCityGeoResolver_ResolveFromAddress_Hanoi() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result = resolver.resolveFromAddress("Ha Noi, Vietnam");
+        CityGeoResolver.LatLng result = cityGeoResolver.resolveFromAddress("Ha Noi, Vietnam");
         
         assertThat(result).isNotNull();
         assertThat(result.lat).isCloseTo(21.027763, org.assertj.core.data.Offset.offset(0.001));
@@ -98,9 +107,7 @@ class UtilTest {
 
     @Test
     void testCityGeoResolver_ResolveFromAddress_DaNang() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result = resolver.resolveFromAddress("Da Nang City");
+        CityGeoResolver.LatLng result = cityGeoResolver.resolveFromAddress("Da Nang City");
         
         assertThat(result).isNotNull();
         assertThat(result.lat).isCloseTo(16.047079, org.assertj.core.data.Offset.offset(0.001));
@@ -108,9 +115,7 @@ class UtilTest {
 
     @Test
     void testCityGeoResolver_ResolveFromAddress_HaiPhong() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result = resolver.resolveFromAddress("Hai Phong, Vietnam");
+        CityGeoResolver.LatLng result = cityGeoResolver.resolveFromAddress("Hai Phong, Vietnam");
         
         assertThat(result).isNotNull();
         assertThat(result.lat).isCloseTo(20.844911, org.assertj.core.data.Offset.offset(0.001));
@@ -118,9 +123,7 @@ class UtilTest {
 
     @Test
     void testCityGeoResolver_ResolveFromAddress_CanTho() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result = resolver.resolveFromAddress("Can Tho");
+        CityGeoResolver.LatLng result = cityGeoResolver.resolveFromAddress("Can Tho");
         
         assertThat(result).isNotNull();
         assertThat(result.lat).isCloseTo(10.045162, org.assertj.core.data.Offset.offset(0.001));
@@ -128,11 +131,9 @@ class UtilTest {
 
     @Test
     void testCityGeoResolver_ResolveFromAddress_VietnameseAccents() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result1 = resolver.resolveFromAddress("Hồ Chí Minh");
-        CityGeoResolver.LatLng result2 = resolver.resolveFromAddress("Hà Nội");
-        CityGeoResolver.LatLng result3 = resolver.resolveFromAddress("Đà Nẵng");
+        CityGeoResolver.LatLng result1 = cityGeoResolver.resolveFromAddress("Hồ Chí Minh");
+        CityGeoResolver.LatLng result2 = cityGeoResolver.resolveFromAddress("Hà Nội");
+        CityGeoResolver.LatLng result3 = cityGeoResolver.resolveFromAddress("Đà Nẵng");
         
         assertThat(result1).isNotNull();
         assertThat(result2).isNotNull();
@@ -141,20 +142,16 @@ class UtilTest {
 
     @Test
     void testCityGeoResolver_ResolveFromAddress_Null() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result = resolver.resolveFromAddress(null);
+        CityGeoResolver.LatLng result = cityGeoResolver.resolveFromAddress(null);
         
         assertThat(result).isNull();
     }
 
     @Test
     void testCityGeoResolver_ResolveFromAddress_Blank() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result1 = resolver.resolveFromAddress("");
-        CityGeoResolver.LatLng result2 = resolver.resolveFromAddress("   ");
-        CityGeoResolver.LatLng result3 = resolver.resolveFromAddress("\t\n");
+        CityGeoResolver.LatLng result1 = cityGeoResolver.resolveFromAddress("");
+        CityGeoResolver.LatLng result2 = cityGeoResolver.resolveFromAddress("   ");
+        CityGeoResolver.LatLng result3 = cityGeoResolver.resolveFromAddress("\t\n");
         
         assertThat(result1).isNull();
         assertThat(result2).isNull();
@@ -163,9 +160,7 @@ class UtilTest {
 
     @Test
     void testCityGeoResolver_ResolveFromAddress_UnknownCity() {
-        CityGeoResolver resolver = new CityGeoResolver();
-        
-        CityGeoResolver.LatLng result = resolver.resolveFromAddress("Unknown City, Somewhere");
+        CityGeoResolver.LatLng result = cityGeoResolver.resolveFromAddress("Unknown City, Somewhere");
         
         assertThat(result).isNull();
     }

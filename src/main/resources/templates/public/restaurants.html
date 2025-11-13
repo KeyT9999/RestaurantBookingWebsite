@@ -2221,13 +2221,24 @@
                             const latitude = position.latitude;
                             const longitude = position.longitude;
                             
+                            const accuracy = position.accuracy || 0;
+                            const accuracyKm = accuracy > 0 ? (accuracy / 1000).toFixed(2) : 'N/A';
+                            
                             console.log('✅ User location retrieved (from cache or new):', latitude, longitude);
                             console.log('📍 Location details:', {
                                 latitude: latitude,
                                 longitude: longitude,
-                                accuracy: position.accuracy || 'N/A',
-                                timestamp: new Date().toISOString()
+                                accuracy: accuracy + ' meters (' + accuracyKm + ' km)',
+                                timestamp: new Date().toISOString(),
+                                isLowAccuracy: accuracy > 10000
                             });
+                            
+                            // Warn if accuracy is very low (likely IP-based geolocation)
+                            if (accuracy > 10000) {
+                                console.warn('⚠️ Low accuracy location detected (' + accuracyKm + ' km). ' +
+                                    'This might be IP-based geolocation and may not reflect your actual location.');
+                                console.warn('💡 Tip: Make sure GPS/location services are enabled on your device.');
+                            }
                             
                             // Validate coordinates
                             if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
@@ -2245,6 +2256,121 @@
                                 console.warn('   Expected range: lat 8-24, lon 102-111');
                                 console.warn('   Đà Nẵng should be around: lat 16.047079, lon 108.206230');
                                 // Still proceed, but log warning
+                            }
+                            
+                            // Validate location - check if it's closer to HCM than Đà Nẵng
+                            // Đà Nẵng: 16.047079, 108.206230
+                            // HCM: 10.776889, 106.700806
+                            const daNangLat = 16.047079;
+                            const daNangLon = 108.206230;
+                            const hcmLat = 10.776889;
+                            const hcmLon = 106.700806;
+                            
+                            // Calculate distances using Haversine formula
+                            function haversineDistance(lat1, lon1, lat2, lon2) {
+                                const R = 6371; // Earth radius in km
+                                const dLat = (lat2 - lat1) * Math.PI / 180;
+                                const dLon = (lon2 - lon1) * Math.PI / 180;
+                                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                                    Math.sin(dLon/2) * Math.sin(dLon/2);
+                                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                                return R * c;
+                            }
+                            
+                            const distToDaNang = haversineDistance(latitude, longitude, daNangLat, daNangLon);
+                            const distToHCM = haversineDistance(latitude, longitude, hcmLat, hcmLon);
+                            
+                            console.log('📍 Location validation:');
+                            console.log('   Distance to Đà Nẵng:', distToDaNang.toFixed(2), 'km');
+                            console.log('   Distance to HCM:', distToHCM.toFixed(2), 'km');
+                            
+                            // If closer to HCM and far from Đà Nẵng, likely wrong location
+                            if (distToHCM < distToDaNang && distToDaNang > 50) {
+                                console.error('❌ Location seems to be in HCM area!');
+                                console.error('   This might be a cached location from previous visit.');
+                                console.error('   Please clear location cache and try again.');
+                                
+                                const shouldProceed = confirm(
+                                    'Vị trí hiện tại có vẻ không đúng (cách Đà Nẵng ' + distToDaNang.toFixed(0) + 
+                                    ' km, cách HCM ' + distToHCM.toFixed(0) + ' km).\n\n' +
+                                    'Có thể đang dùng vị trí đã lưu từ lần truy cập trước.\n\n' +
+                                    'Bạn có muốn xóa cache và lấy vị trí mới không?'
+                                );
+                                
+                                if (shouldProceed) {
+                                    // Clear location cache
+                                    if (window.LocationUtils && window.LocationUtils.clearLocation) {
+                                        window.LocationUtils.clearLocation();
+                                        console.log('✅ Location cache cleared');
+                                    }
+                                    // Clear localStorage and sessionStorage
+                                    localStorage.removeItem('userLocation');
+                                    sessionStorage.removeItem('userLocation');
+                                    console.log('✅ Storage cleared, retrying with force refresh...');
+                                    
+                                    // Retry getting location with force refresh flag
+                                    btn.innerHTML = originalHTML;
+                                    setTimeout(() => {
+                                        // Force fresh location by passing forceRefresh flag
+                                        if (window.LocationUtils && window.LocationUtils.getUserLocation) {
+                                            window.LocationUtils.getUserLocation(
+                                                function(position) {
+                                                    const latitude = position.latitude;
+                                                    const longitude = position.longitude;
+                                                    
+                                                    // Get maxDistance from distance filter if available
+                                                    const distanceFilter = document.getElementById('distanceFilter');
+                                                    const maxDistance = distanceFilter ? distanceFilter.value : '';
+                                                    
+                                                    // Redirect to restaurants page with location parameters
+                                                    const url = new URL(window.location);
+                                                    url.searchParams.set('latitude', latitude);
+                                                    url.searchParams.set('longitude', longitude);
+                                                    url.searchParams.set('nearby', 'true');
+                                                    url.searchParams.set('page', '0');
+                                                    
+                                                    // Clear other filters when using nearby search
+                                                    url.searchParams.delete('search');
+                                                    url.searchParams.delete('cuisineType');
+                                                    url.searchParams.delete('priceRange');
+                                                    url.searchParams.delete('ratingFilter');
+                                                    
+                                                    // Apply maxDistance filter if selected
+                                                    if (maxDistance) {
+                                                        url.searchParams.set('maxDistance', maxDistance);
+                                                    } else {
+                                                        url.searchParams.delete('maxDistance');
+                                                    }
+                                                    
+                                                    url.searchParams.set('sortBy', 'distance');
+                                                    url.searchParams.set('sortDir', 'asc');
+                                                    
+                                                    console.log('🔄 Redirecting to:', url.toString());
+                                                    window.location.href = url.toString();
+                                                },
+                                                function(errorMessage) {
+                                                    console.error('❌ Error getting location:', errorMessage);
+                                                    btn.disabled = false;
+                                                    btn.innerHTML = originalHTML;
+                                                    showToast(errorMessage, 'error');
+                                                },
+                                                {
+                                                    enableHighAccuracy: true,
+                                                    timeout: 10000,
+                                                    maximumAge: 0,  // Force fresh location
+                                                    forceRefresh: true  // Also clear internal cache
+                                                }
+                                            );
+                                        } else {
+                                            findNearbyRestaurants();
+                                        }
+                                    }, 500);
+                                    return;
+                                } else {
+                                    // User chose to proceed anyway
+                                    console.warn('⚠️ Proceeding with potentially wrong location');
+                                }
                             }
                             
                             // Get maxDistance from distance filter if available
@@ -2287,7 +2413,7 @@
                         {
                             enableHighAccuracy: true,
                             timeout: 10000,
-                            maximumAge: 30 * 60 * 1000  // Allow using cached location up to 30 minutes old
+                            maximumAge: 0  // Force fresh location, don't use cache to avoid wrong location
                         }
                     );
                 } else {
@@ -2365,7 +2491,7 @@
                         {
                             enableHighAccuracy: true,
                             timeout: 10000,
-                            maximumAge: 30 * 60 * 1000  // Allow using cached location up to 30 minutes old
+                            maximumAge: 0  // Force fresh location, don't use cache to avoid wrong location
                         }
                     );
                 }

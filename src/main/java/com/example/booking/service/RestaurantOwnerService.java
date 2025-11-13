@@ -29,7 +29,6 @@ import com.example.booking.domain.RestaurantOwner;
 import com.example.booking.domain.RestaurantProfile;
 import com.example.booking.domain.RestaurantService;
 import com.example.booking.domain.RestaurantTable;
-import com.example.booking.domain.Booking;
 import com.example.booking.domain.Payment;
 import com.example.booking.domain.ReviewReport;
 import com.example.booking.domain.User;
@@ -47,6 +46,7 @@ import com.example.booking.repository.RestaurantServiceRepository;
 import com.example.booking.repository.ReviewReportRepository;
 import com.example.booking.repository.WithdrawalRequestRepository;
 import com.example.booking.dto.DishWithImageDto;
+import com.example.booking.util.CityGeoResolver;
 
 /**
  * Service for Restaurant Owner management operations
@@ -73,6 +73,7 @@ public class RestaurantOwnerService {
     private final SimpleUserService userService;
     private final RestaurantNotificationService restaurantNotificationService;
     private final ImageUploadService imageUploadService;
+    private CityGeoResolver cityGeoResolver;
     
     @PersistenceContext
     private EntityManager entityManager;
@@ -108,6 +109,13 @@ public class RestaurantOwnerService {
         this.userService = userService;
         this.restaurantNotificationService = restaurantNotificationService;
         this.imageUploadService = imageUploadService;
+    }
+    
+    @Autowired(required = false)
+    public void setCityGeoResolver(org.springframework.web.client.RestTemplate restTemplate) {
+        if (restTemplate != null) {
+            this.cityGeoResolver = new CityGeoResolver(restTemplate);
+        }
     }
 
     /**
@@ -292,6 +300,9 @@ public class RestaurantOwnerService {
         // Set creation timestamp
         restaurantProfile.setCreatedAt(LocalDateTime.now());
         
+        // Auto-geocode address and save coordinates if not already set
+        geocodeAndSetCoordinates(restaurantProfile);
+        
         // Save restaurant
         RestaurantProfile savedRestaurant = restaurantRepository.save(restaurantProfile);
         
@@ -311,7 +322,38 @@ public class RestaurantOwnerService {
     public RestaurantProfile updateRestaurantProfile(RestaurantProfile restaurantProfile) {
         // Set update timestamp
         restaurantProfile.setUpdatedAt(LocalDateTime.now());
+        
+        // Auto-geocode address and update coordinates if address changed or coordinates are missing
+        geocodeAndSetCoordinates(restaurantProfile);
+        
         return restaurantRepository.save(restaurantProfile);
+    }
+    
+    /**
+     * Geocode restaurant address and set coordinates if not already set
+     * This ensures all restaurants have coordinates stored in database for accurate distance calculation
+     */
+    private void geocodeAndSetCoordinates(RestaurantProfile restaurant) {
+        // Only geocode if coordinates are missing or address has changed
+        if (restaurant.getLatitude() == null || restaurant.getLongitude() == null) {
+            if (restaurant.getAddress() != null && !restaurant.getAddress().isBlank() && cityGeoResolver != null) {
+                try {
+                    CityGeoResolver.LatLng coords = cityGeoResolver.resolveFromAddress(restaurant.getAddress());
+                    if (coords != null) {
+                        restaurant.setLatitude(java.math.BigDecimal.valueOf(coords.lat));
+                        restaurant.setLongitude(java.math.BigDecimal.valueOf(coords.lng));
+                        logger.info("✅ Auto-geocoded and saved coordinates for restaurant '{}': ({}, {})", 
+                            restaurant.getRestaurantName(), coords.lat, coords.lng);
+                    } else {
+                        logger.warn("⚠️ Could not geocode address for restaurant '{}': {}", 
+                            restaurant.getRestaurantName(), restaurant.getAddress());
+                    }
+                } catch (Exception e) {
+                    logger.warn("⚠️ Error geocoding address for restaurant '{}': {}", 
+                        restaurant.getRestaurantName(), e.getMessage());
+                }
+            }
+        }
     }
 
     /**
