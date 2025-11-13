@@ -60,28 +60,58 @@ public class RestaurantWithdrawalViewController {
     @GetMapping
     public String withdrawalManagement(
         @RequestParam(required = false) String status,
+        @RequestParam(value = "restaurantId", required = false) Integer restaurantId,
         Principal principal,
         Model model
     ) {
         try {
-            // Lấy restaurant ID
-            Integer restaurantId = getRestaurantId(principal);
-            logger.info("🏪 Restaurant owner {} accessing withdrawal page", restaurantId);
+            // Lấy danh sách restaurants của owner
+            List<com.example.booking.domain.RestaurantProfile> restaurants = getAllRestaurantsByOwner(principal);
             
-            // Lấy thông tin nhà hàng
-            var restaurant = restaurantRepository.findById(restaurantId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhà hàng"));
-            model.addAttribute("restaurantName", restaurant.getRestaurantName());
+            if (restaurants.isEmpty()) {
+                model.addAttribute("error", "Không tìm thấy nhà hàng nào của bạn. Vui lòng tạo nhà hàng trước.");
+                model.addAttribute("restaurants", new ArrayList<>());
+                model.addAttribute("balance", createEmptyBalance());
+                model.addAttribute("bankAccounts", new ArrayList<>());
+                model.addAttribute("withdrawals", new ArrayList<>());
+                return "restaurant-owner/withdrawal-management";
+            }
+            
+            // Xác định restaurant ID để hiển thị
+            Integer finalRestaurantId;
+            if (restaurantId == null) {
+                // Dùng restaurant đầu tiên làm mặc định
+                finalRestaurantId = restaurants.get(0).getRestaurantId();
+            } else {
+                // Kiểm tra restaurant có thuộc owner không
+                boolean restaurantBelongsToUser = restaurants.stream()
+                    .anyMatch(r -> r.getRestaurantId().equals(restaurantId));
+                
+                if (!restaurantBelongsToUser) {
+                    logger.warn("⚠️ User tried to access restaurant {} they don't own", restaurantId);
+                    finalRestaurantId = restaurants.get(0).getRestaurantId();
+                } else {
+                    finalRestaurantId = restaurantId;
+                }
+            }
+            
+            // Tìm restaurant được chọn
+            com.example.booking.domain.RestaurantProfile selectedRestaurant = restaurants.stream()
+                .filter(r -> r.getRestaurantId().equals(finalRestaurantId))
+                .findFirst()
+                .orElse(restaurants.get(0));
+            
+            logger.info("🏪 Restaurant owner accessing withdrawal page for restaurant {}", finalRestaurantId);
             
             // Lấy số dư
-            RestaurantBalanceDto balance = balanceService.getBalance(restaurantId);
+            RestaurantBalanceDto balance = balanceService.getBalance(finalRestaurantId);
             model.addAttribute("balance", balance);
-            logger.debug("💰 Restaurant {} balance: {} VNĐ", restaurantId, balance.getAvailableBalance());
+            logger.debug("💰 Restaurant {} balance: {} VNĐ", finalRestaurantId, balance.getAvailableBalance());
             
             // Lấy danh sách tài khoản ngân hàng
-            List<RestaurantBankAccountDto> bankAccounts = bankAccountService.getBankAccounts(restaurantId);
+            List<RestaurantBankAccountDto> bankAccounts = bankAccountService.getBankAccounts(finalRestaurantId);
             model.addAttribute("bankAccounts", bankAccounts);
-            logger.debug("🏦 Restaurant {} has {} bank accounts", restaurantId, bankAccounts.size());
+            logger.debug("🏦 Restaurant {} has {} bank accounts", finalRestaurantId, bankAccounts.size());
             
             // Lấy lịch sử withdrawal
             List<WithdrawalRequestDto> withdrawals;
@@ -89,19 +119,24 @@ public class RestaurantWithdrawalViewController {
                 WithdrawalStatus withdrawalStatus = WithdrawalStatus.valueOf(status);
                 withdrawals = withdrawalService.getWithdrawalsByStatus(withdrawalStatus)
                     .stream()
-                    .filter(w -> w.getRestaurantId().equals(restaurantId))
+                    .filter(w -> w.getRestaurantId().equals(finalRestaurantId))
                     .collect(java.util.stream.Collectors.toList());
                 model.addAttribute("filter", status);
             } else {
                 withdrawals = withdrawalService.getAllWithdrawals(Pageable.unpaged()).getContent()
                     .stream()
-                    .filter(w -> w.getRestaurantId().equals(restaurantId))
+                    .filter(w -> w.getRestaurantId().equals(finalRestaurantId))
                     .collect(java.util.stream.Collectors.toList());
                 model.addAttribute("filter", "ALL");
             }
             
+            // Thêm dữ liệu vào model
+            model.addAttribute("restaurants", restaurants);
+            model.addAttribute("selectedRestaurant", selectedRestaurant);
+            model.addAttribute("restaurantId", finalRestaurantId);
+            model.addAttribute("restaurantName", selectedRestaurant.getRestaurantName());
             model.addAttribute("withdrawals", withdrawals);
-            logger.debug("📜 Restaurant {} has {} withdrawal requests", restaurantId, withdrawals.size());
+            logger.debug("📜 Restaurant {} has {} withdrawal requests", finalRestaurantId, withdrawals.size());
             
             return "restaurant-owner/withdrawal-management";
             
@@ -126,11 +161,14 @@ public class RestaurantWithdrawalViewController {
         @RequestParam String amount,
         @RequestParam Integer bankAccountId,
         @RequestParam(required = false) String description,
+        @RequestParam(value = "restaurantId", required = false) Integer restaurantId,
         Principal principal,
         RedirectAttributes redirectAttributes
     ) {
         try {
-            Integer restaurantId = getRestaurantId(principal);
+            if (restaurantId == null) {
+                restaurantId = getRestaurantId(principal);
+            }
             logger.info("💸 Restaurant {} creating withdrawal request for {} VNĐ", restaurantId, amount);
             
             // Tạo DTO
@@ -153,7 +191,10 @@ public class RestaurantWithdrawalViewController {
             redirectAttributes.addFlashAttribute("error", "Lỗi khi tạo yêu cầu rút tiền: " + e.getMessage());
         }
         
-        return "redirect:/restaurant-owner/withdrawal";
+        String redirectUrl = restaurantId != null 
+            ? "redirect:/restaurant-owner/withdrawal?restaurantId=" + restaurantId
+            : "redirect:/restaurant-owner/withdrawal";
+        return redirectUrl;
     }
     
     /**
@@ -161,9 +202,15 @@ public class RestaurantWithdrawalViewController {
      * GET /restaurant-owner/withdrawal/fix-balance
      */
     @GetMapping("/fix-balance")
-    public String fixBalance(Principal principal, RedirectAttributes redirectAttributes) {
+    public String fixBalance(
+        @RequestParam(value = "restaurantId", required = false) Integer restaurantId,
+        Principal principal,
+        RedirectAttributes redirectAttributes
+    ) {
         try {
-            Integer restaurantId = getRestaurantId(principal);
+            if (restaurantId == null) {
+                restaurantId = getRestaurantId(principal);
+            }
             logger.info("🔧 Force fixing balance for restaurant {}", restaurantId);
             
             // Gọi method fix balance từ withdrawal requests
@@ -177,7 +224,10 @@ public class RestaurantWithdrawalViewController {
             redirectAttributes.addFlashAttribute("error", "Lỗi khi sửa số dư: " + e.getMessage());
         }
         
-        return "redirect:/restaurant-owner/withdrawal";
+        String redirectUrl = restaurantId != null 
+            ? "redirect:/restaurant-owner/withdrawal?restaurantId=" + restaurantId
+            : "redirect:/restaurant-owner/withdrawal";
+        return redirectUrl;
     }
     
     /**
@@ -185,9 +235,15 @@ public class RestaurantWithdrawalViewController {
      * GET /restaurant-owner/withdrawal/recalculate-balance
      */
     @GetMapping("/recalculate-balance")
-    public String recalculateBalance(Principal principal, RedirectAttributes redirectAttributes) {
+    public String recalculateBalance(
+        @RequestParam(value = "restaurantId", required = false) Integer restaurantId,
+        Principal principal,
+        RedirectAttributes redirectAttributes
+    ) {
         try {
-            Integer restaurantId = getRestaurantId(principal);
+            if (restaurantId == null) {
+                restaurantId = getRestaurantId(principal);
+            }
             logger.info("🔄 Force recalculating balance for restaurant {}", restaurantId);
             
             // Gọi database function để recalculate
@@ -201,7 +257,10 @@ public class RestaurantWithdrawalViewController {
             redirectAttributes.addFlashAttribute("error", "Lỗi khi cập nhật số dư: " + e.getMessage());
         }
         
-        return "redirect:/restaurant-owner/withdrawal";
+        String redirectUrl = restaurantId != null 
+            ? "redirect:/restaurant-owner/withdrawal?restaurantId=" + restaurantId
+            : "redirect:/restaurant-owner/withdrawal";
+        return redirectUrl;
     }
     
     /**
@@ -214,11 +273,14 @@ public class RestaurantWithdrawalViewController {
         @RequestParam String accountNumber,
         @RequestParam String accountHolderName,
         @RequestParam(required = false) Boolean isDefault,
+        @RequestParam(value = "restaurantId", required = false) Integer restaurantId,
         Principal principal,
         RedirectAttributes redirectAttributes
     ) {
         try {
-            Integer restaurantId = getRestaurantId(principal);
+            if (restaurantId == null) {
+                restaurantId = getRestaurantId(principal);
+            }
             logger.info("🏦 Restaurant {} adding bank account: {}", restaurantId, accountNumber);
             
             // Tạo DTO
@@ -240,19 +302,74 @@ public class RestaurantWithdrawalViewController {
             redirectAttributes.addFlashAttribute("error", "Lỗi khi thêm tài khoản ngân hàng: " + e.getMessage());
         }
         
-        return "redirect:/restaurant-owner/withdrawal#bank-accounts";
+        String redirectUrl = restaurantId != null 
+            ? "redirect:/restaurant-owner/withdrawal?restaurantId=" + restaurantId + "#bank-accounts"
+            : "redirect:/restaurant-owner/withdrawal#bank-accounts";
+        return redirectUrl;
     }
     
     /**
-     * Helper method to get restaurant ID from principal
+     * Get all restaurants owned by current user
+     */
+    private List<com.example.booking.domain.RestaurantProfile> getAllRestaurantsByOwner(Principal principal) {
+        try {
+            String username = principal.getName();
+            logger.debug("🔍 Getting restaurants for username: {}", username);
+            
+            List<com.example.booking.domain.RestaurantProfile> restaurants = 
+                restaurantRepository.findByOwnerUsername(username);
+            
+            logger.debug("✅ Found {} restaurants for username: {}", restaurants.size(), username);
+            return restaurants;
+            
+        } catch (Exception e) {
+            logger.error("❌ Error getting restaurants for principal: {}", 
+                principal != null ? principal.getName() : "null", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Helper method to get restaurant ID from principal (first restaurant)
      */
     private Integer getRestaurantId(Principal principal) {
-        String username = principal.getName(); // This returns username, not UUID
-        return restaurantRepository.findByOwnerUsername(username)
-            .stream()
-            .findFirst()
-            .map(r -> r.getRestaurantId())
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy nhà hàng với tài khoản: " + username));
+        try {
+            String username = principal.getName(); // This returns username, not UUID
+            logger.debug("🔍 Getting restaurant ID for username: {}", username);
+            
+            List<com.example.booking.domain.RestaurantProfile> restaurants = 
+                restaurantRepository.findByOwnerUsername(username);
+            
+            if (restaurants.isEmpty()) {
+                logger.error("❌ No restaurant found for username: {}", username);
+                throw new RuntimeException("Không tìm thấy nhà hàng với tài khoản: " + username);
+            }
+            
+            Integer restaurantId = restaurants.get(0).getRestaurantId();
+            logger.debug("✅ Found restaurant ID: {} for username: {}", restaurantId, username);
+            return restaurantId;
+            
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            // Lỗi: User không tồn tại trong database (orphaned restaurant_owner)
+            String errorMsg = "Lỗi dữ liệu: Không tìm thấy thông tin người dùng trong hệ thống. " +
+                             "Có thể do dữ liệu không nhất quán trong database. " +
+                             "Vui lòng liên hệ admin để kiểm tra và sửa lỗi.";
+            logger.error("❌ EntityNotFoundException - User not found in database. Principal: {}", 
+                principal != null ? principal.getName() : "null", e);
+            throw new RuntimeException(errorMsg, e);
+        } catch (org.hibernate.LazyInitializationException e) {
+            // Lỗi: Không thể load User entity
+            String errorMsg = "Lỗi dữ liệu: Không thể tải thông tin người dùng. " +
+                             "Có thể do dữ liệu không nhất quán trong database. " +
+                             "Vui lòng liên hệ admin để kiểm tra và sửa lỗi.";
+            logger.error("❌ LazyInitializationException - Cannot load User entity. Principal: {}", 
+                principal != null ? principal.getName() : "null", e);
+            throw new RuntimeException(errorMsg, e);
+        } catch (Exception e) {
+            logger.error("❌ Error getting restaurant ID for principal: {}", 
+                principal != null ? principal.getName() : "null", e);
+            throw new RuntimeException("Lỗi khi lấy thông tin nhà hàng: " + e.getMessage(), e);
+        }
     }
     
     /**

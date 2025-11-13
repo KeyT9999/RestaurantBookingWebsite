@@ -28,6 +28,7 @@ import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.service.CustomerService;
 import com.example.booking.annotation.RateLimited;
 import com.example.booking.service.ReviewService;
+import com.example.booking.service.SimpleUserService;
 import com.example.booking.util.InputSanitizer;
 
 import jakarta.validation.Valid;
@@ -44,6 +45,9 @@ public class ReviewController {
     
     @Autowired
     private InputSanitizer inputSanitizer;
+    
+    @Autowired
+    private SimpleUserService userService;
     
     /**
      * Hiển thị danh sách review của restaurant
@@ -106,7 +110,13 @@ public class ReviewController {
             return;
         }
         
-        User user = (User) authentication.getPrincipal();
+        User user = getUserFromAuthentication(authentication);
+        if (user == null) {
+            model.addAttribute("hasReviewed", false);
+            model.addAttribute("customerReview", null);
+            return;
+        }
+        
         Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
         
         if (customerOpt.isEmpty()) {
@@ -180,7 +190,12 @@ public class ReviewController {
         }
         
         try {
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin người dùng");
+                return "redirect:/restaurants/" + form.getRestaurantId();
+            }
+            
             Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
             
             if (customerOpt.isEmpty()) {
@@ -221,7 +236,11 @@ public class ReviewController {
         }
         
         try {
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                return "redirect:/error/404";
+            }
+            
             Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
             
             if (customerOpt.isEmpty()) {
@@ -277,7 +296,12 @@ public class ReviewController {
         }
         
         try {
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin người dùng");
+                return "redirect:/restaurants/" + form.getRestaurantId() + "#reviews";
+            }
+            
             Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
             
             if (customerOpt.isEmpty()) {
@@ -335,7 +359,12 @@ public class ReviewController {
         }
         
         try {
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin người dùng");
+                return "redirect:/";
+            }
+            
             Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
             
             if (customerOpt.isEmpty()) {
@@ -380,7 +409,12 @@ public class ReviewController {
         }
         
         try {
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                model.addAttribute("error", "Không tìm thấy thông tin người dùng");
+                return "error/404";
+            }
+            
             Optional<Customer> customerOpt = customerService.findByUserId(user.getId());
             
             if (customerOpt.isEmpty()) {
@@ -401,5 +435,37 @@ public class ReviewController {
             model.addAttribute("error", "Lỗi khi tải đánh giá: " + e.getMessage());
             return "review/my-reviews";
         }
+    }
+    
+    /**
+     * Helper method để lấy User từ authentication (xử lý cả User và OAuth2User)
+     */
+    private User getUserFromAuthentication(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return null;
+        }
+        
+        Object principal = authentication.getPrincipal();
+        
+        // Nếu là User object trực tiếp (regular login)
+        if (principal instanceof User) {
+            return (User) principal;
+        }
+        
+        // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email cho OAuth users
+            
+            // Tìm User thực tế từ database
+            try {
+                return (User) userService.loadUserByUsername(username);
+            } catch (Exception e) {
+                System.err.println("❌ Error loading user by username: " + username + " - " + e.getMessage());
+                return null;
+            }
+        }
+        
+        System.err.println("❌ Unknown principal type: " + principal.getClass().getName());
+        return null;
     }
 }
