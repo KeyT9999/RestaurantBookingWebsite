@@ -213,6 +213,30 @@ public class BookingApiController {
     }
     
     /**
+     * API endpoint để lấy tọa độ nhà hàng (latitude, longitude)
+     */
+    @GetMapping("/restaurants/{restaurantId}/coordinates")
+    public ResponseEntity<Map<String, Object>> getRestaurantCoordinates(@PathVariable("restaurantId") Integer restaurantId) {
+        try {
+            return restaurantService.findRestaurantById(restaurantId)
+                    .map(restaurant -> {
+                        Map<String, Object> coords = new HashMap<>();
+                        coords.put("restaurantId", restaurant.getRestaurantId());
+                        coords.put("restaurantName", restaurant.getRestaurantName());
+                        coords.put("latitude", restaurant.getLatitude());
+                        coords.put("longitude", restaurant.getLongitude());
+                        coords.put("address", restaurant.getAddress());
+                        return ResponseEntity.ok(coords);
+                    })
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            System.err.println("❌ API Error getting coordinates: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    /**
      * API endpoint để lấy danh sách nhà hàng
      */
     @GetMapping("/restaurants")
