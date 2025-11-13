@@ -32,6 +32,7 @@ import com.example.booking.dto.ReviewStatisticsDto;
 import com.example.booking.service.RestaurantOwnerService;
 import com.example.booking.service.ReviewReportService;
 import com.example.booking.service.ReviewService;
+import com.example.booking.service.SimpleUserService;
 import com.example.booking.util.InputSanitizer;
 
 @Controller
@@ -50,6 +51,9 @@ public class RestaurantReviewController {
     @Autowired
     private InputSanitizer inputSanitizer;
     
+    @Autowired
+    private SimpleUserService userService;
+    
     /**
      * Hiển thị trang quản lý review cho restaurant owner
      */
@@ -67,7 +71,12 @@ public class RestaurantReviewController {
         System.out.println("   RestaurantId: " + restaurantId);
         
         try {
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                model.addAttribute("error", "Không tìm thấy thông tin người dùng");
+                return "error/404";
+            }
+            
             Optional<RestaurantOwner> ownerOpt = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId());
             
             if (ownerOpt.isEmpty()) {
@@ -162,12 +171,17 @@ public class RestaurantReviewController {
             Authentication authentication,
             RedirectAttributes redirectAttributes) {
 
-        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+        if (authentication == null) {
             return "redirect:/login";
         }
 
         try {
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy thông tin người dùng");
+                return "redirect:/login";
+            }
+            
             Optional<RestaurantOwner> ownerOpt = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId());
 
             if (ownerOpt.isEmpty()) {
@@ -242,7 +256,12 @@ public class RestaurantReviewController {
         System.out.println("🔍 RestaurantReviewController.reviewStatistics() called");
         
         try {
-            User user = (User) authentication.getPrincipal();
+            User user = getUserFromAuthentication(authentication);
+            if (user == null) {
+                model.addAttribute("error", "Không tìm thấy thông tin người dùng");
+                return "error/404";
+            }
+            
             Optional<RestaurantOwner> ownerOpt = restaurantOwnerService.getRestaurantOwnerByUserId(user.getId());
             
             if (ownerOpt.isEmpty()) {
@@ -308,6 +327,38 @@ public class RestaurantReviewController {
             model.addAttribute("error", "Lỗi khi tải thống kê đánh giá: " + e.getMessage());
             return "restaurant-owner/review-statistics";
         }
+    }
+    
+    /**
+     * Helper method để lấy User từ authentication (xử lý cả User và OAuth2User)
+     */
+    private User getUserFromAuthentication(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return null;
+        }
+        
+        Object principal = authentication.getPrincipal();
+        
+        // Nếu là User object trực tiếp (regular login)
+        if (principal instanceof User) {
+            return (User) principal;
+        }
+        
+        // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email cho OAuth users
+            
+            // Tìm User thực tế từ database
+            try {
+                return (User) userService.loadUserByUsername(username);
+            } catch (Exception e) {
+                System.err.println("❌ Error loading user by username: " + username + " - " + e.getMessage());
+                return null;
+            }
+        }
+        
+        System.err.println("❌ Unknown principal type: " + principal.getClass().getName());
+        return null;
     }
     
 }

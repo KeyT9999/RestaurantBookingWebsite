@@ -27,8 +27,21 @@
                                 <p class="login-welcome">Đăng nhập để tiếp tục hành trình ẩm thực của bạn</p>
                             </div>
                             
+                            <!-- Error Messages -->
+                            <div id="loginErrorAlert" class="alert alert-danger" role="alert" style="display: none; margin-bottom: 20px; padding: 12px 15px; border-radius: 8px;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <strong>Đăng nhập thất bại</strong><br>
+                                <span id="loginErrorText">Tên đăng nhập hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại thông tin đăng nhập.</span>
+                            </div>
+                            
+                            <div id="loginRateLimitAlert" class="alert alert-warning" role="alert" style="display: none; margin-bottom: 20px; padding: 12px 15px; border-radius: 8px;">
+                                <i class="fas fa-clock"></i>
+                                <strong>Quá nhiều lần thử đăng nhập</strong><br>
+                                Bạn đã thử đăng nhập quá nhiều lần. Vui lòng đợi một chút trước khi thử lại.
+                            </div>
+                            
                             <!-- Login Form -->
-                            <form th:action="@{/login}" method="post" class="login-form">
+                            <form th:action="@{/login}" method="post" class="login-form" id="loginForm">
                                 <div class="login-field-group">
                                     <label for="username" class="login-label">
                                         <i class="fas fa-user"></i>
@@ -87,5 +100,81 @@
             </div>
         </div>
     </div>
+    
+    <script>
+        // Check URL parameters when modal is shown
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal) {
+                loginModal.addEventListener('show.bs.modal', function() {
+                    checkLoginError();
+                });
+                
+                // Also check on page load if modal should be shown
+                checkLoginError();
+            }
+        });
+        
+        function checkLoginError() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            const ratelimit = urlParams.get('ratelimit');
+            
+            const errorAlert = document.getElementById('loginErrorAlert');
+            const rateLimitAlert = document.getElementById('loginRateLimitAlert');
+            
+            // Hide both alerts first
+            if (errorAlert) errorAlert.style.display = 'none';
+            if (rateLimitAlert) rateLimitAlert.style.display = 'none';
+            
+            // Show appropriate alert
+            if (ratelimit === '1' && rateLimitAlert) {
+                rateLimitAlert.style.display = 'block';
+                // Open modal if not already open
+                const modalElement = document.getElementById('loginModal');
+                if (modalElement) {
+                    let loginModal = bootstrap.Modal.getInstance(modalElement);
+                    if (!loginModal) {
+                        loginModal = new bootstrap.Modal(modalElement);
+                    }
+                    loginModal.show();
+                }
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (error && errorAlert) {
+                // Set error message based on error type
+                const errorText = document.getElementById('loginErrorText');
+                if (error === 'badcredentials' && errorText) {
+                    errorText.textContent = 'Tên đăng nhập hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại thông tin đăng nhập.';
+                } else if (errorText) {
+                    errorText.textContent = 'Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.';
+                }
+                errorAlert.style.display = 'block';
+                // Open modal if not already open
+                const modalElement = document.getElementById('loginModal');
+                if (modalElement) {
+                    let loginModal = bootstrap.Modal.getInstance(modalElement);
+                    if (!loginModal) {
+                        loginModal = new bootstrap.Modal(modalElement);
+                    }
+                    loginModal.show();
+                }
+                // Clean URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+        
+        // Also check when form is submitted (in case of AJAX or redirect back)
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function() {
+                // Clear previous errors
+                const errorAlert = document.getElementById('loginErrorAlert');
+                const rateLimitAlert = document.getElementById('loginRateLimitAlert');
+                if (errorAlert) errorAlert.style.display = 'none';
+                if (rateLimitAlert) rateLimitAlert.style.display = 'none';
+            });
+        }
+    </script>
 </body>
 </html>

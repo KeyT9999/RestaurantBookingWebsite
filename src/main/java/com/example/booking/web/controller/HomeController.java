@@ -123,9 +123,13 @@ public class HomeController {
             
             // Add notification count for authenticated users
             try {
-                User user = (User) authentication.getPrincipal();
-                long unreadCount = notificationService.countUnreadByUserId(user.getId());
-                model.addAttribute("unreadCount", unreadCount);
+                User user = getUserFromAuthentication(authentication);
+                if (user != null) {
+                    long unreadCount = notificationService.countUnreadByUserId(user.getId());
+                    model.addAttribute("unreadCount", unreadCount);
+                } else {
+                    model.addAttribute("unreadCount", 0L);
+                }
             } catch (Exception e) {
                 System.err.println("Error loading notification count: " + e.getMessage());
                 model.addAttribute("unreadCount", 0L);
