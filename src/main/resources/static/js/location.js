@@ -63,20 +63,31 @@
   function getUserLocation(onSuccess, onError, options = {}) {
     console.log('📍 getUserLocation() called');
     
-    // PRIORITY 1: Check if we have cached location (fastest path)
-    if (hasLocation()) {
-      const loc = getLocation();
-      // Check if location is still fresh (less than 30 minutes old for better UX)
-      const age = Date.now() - (loc.ts || 0);
-      const maxAge = options.maximumAge || (30 * 60 * 1000); // Default 30 minutes
-      
-      if (age < maxAge) {
-        console.log('✅ Using cached location (age:', Math.round(age / 1000), 'seconds)');
-        console.log('   Location:', loc.lat, loc.lng);
-        if (onSuccess) onSuccess({ latitude: loc.lat, longitude: loc.lng });
-        return;
-      } else {
-        console.log('⚠️ Cached location is too old (age:', Math.round(age / 1000), 'seconds), will refresh');
+    // Check if force refresh is requested (maximumAge === 0 means force fresh location)
+    const forceRefresh = options.forceRefresh === true || options.maximumAge === 0;
+    
+    if (forceRefresh) {
+      console.log('🔄 Force refresh requested, bypassing cache');
+      // Clear cache if force refresh
+      if (options.forceRefresh === true) {
+        clearLocation();
+      }
+    } else {
+      // PRIORITY 1: Check if we have cached location (fastest path)
+      if (hasLocation()) {
+        const loc = getLocation();
+        // Check if location is still fresh (less than 30 minutes old for better UX)
+        const age = Date.now() - (loc.ts || 0);
+        const maxAge = options.maximumAge || (30 * 60 * 1000); // Default 30 minutes
+        
+        if (age < maxAge) {
+          console.log('✅ Using cached location (age:', Math.round(age / 1000), 'seconds)');
+          console.log('   Location:', loc.lat, loc.lng);
+          if (onSuccess) onSuccess({ latitude: loc.lat, longitude: loc.lng });
+          return;
+        } else {
+          console.log('⚠️ Cached location is too old (age:', Math.round(age / 1000), 'seconds), will refresh');
+        }
       }
     }
     
@@ -172,8 +183,12 @@
     }
     
     // Use maximumAge to allow using cached location from browser if available
-    // If silent is true, use longer cache time (1 hour) to avoid frequent requests
-    const maxAge = silent ? (60 * 60 * 1000) : (options.maximumAge !== undefined ? options.maximumAge : (30 * 60 * 1000));
+    // If maximumAge is 0, force fresh location (don't use browser cache)
+    // If silent is true and maximumAge is not explicitly set, use longer cache time (1 hour) to avoid frequent requests
+    // But always respect explicit maximumAge value from options
+    const maxAge = options.maximumAge !== undefined 
+      ? options.maximumAge 
+      : (silent ? (60 * 60 * 1000) : (30 * 60 * 1000));
     
     const geolocationOptions = {
       enableHighAccuracy: options.enableHighAccuracy !== false,
@@ -186,13 +201,23 @@
         const { latitude, longitude } = position.coords;
         const accuracy = position.coords.accuracy || 'N/A';
         
+        const accuracyValue = typeof accuracy === 'number' ? accuracy : parseFloat(accuracy) || 0;
+        const isLowAccuracy = accuracyValue > 10000; // More than 10km accuracy is considered low
+        
         console.log('✅ Location retrieved from browser:', {
           latitude: latitude,
           longitude: longitude,
           accuracy: accuracy + ' meters',
           timestamp: new Date(position.timestamp || Date.now()).toISOString(),
-          silent: silent
+          silent: silent,
+          isLowAccuracy: isLowAccuracy
         });
+        
+        // Warn if accuracy is very low (likely IP-based geolocation)
+        if (isLowAccuracy) {
+          console.warn('⚠️ Low accuracy location detected (' + Math.round(accuracyValue / 1000) + ' km). ' +
+            'This might be IP-based geolocation and may not reflect your actual location.');
+        }
         
         // Validate coordinates
         if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
@@ -203,7 +228,12 @@
         
         // Save location and mark permission as granted
         setLocation(latitude, longitude);
-        if (onSuccess) onSuccess({ latitude, longitude, accuracy });
+        if (onSuccess) onSuccess({ 
+          latitude, 
+          longitude, 
+          accuracy: accuracyValue,
+          isLowAccuracy: isLowAccuracy
+        });
       },
       (error) => {
         console.log('❌ Error getting location from browser:', error.code, error.message);
@@ -350,8 +380,65 @@
         picker && (picker.style.display = 'block');
         return;
       }
+      
+      // Clear old location cache when user explicitly allows location access
+      // This ensures we get fresh location from device, not cached location
+      console.log('🔄 User allowed location access, clearing old cache and getting fresh location');
+      clearLocation();
+      
+      // Force fresh location (maximumAge: 0) to get current device location
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude, longitude } = pos.coords;
+        const accuracy = pos.coords.accuracy || 0;
+        console.log('✅ Fresh location retrieved after user permission:', {
+          latitude: latitude,
+          longitude: longitude,
+          accuracy: accuracy + ' meters'
+        });
+        
+        // Warn if accuracy is very low (likely IP-based geolocation)
+        // But still save the location as user explicitly allowed it
+        if (accuracy > 50000) {
+          console.warn('⚠️ Location accuracy is low (' + Math.round(accuracy / 1000) + ' km). ' +
+            'This might be IP-based geolocation, not GPS. ' +
+            'If the location is incorrect, please use "Chọn khu vực thủ công" option.');
+        } else if (accuracy > 10000) {
+          console.warn('⚠️ Location accuracy is moderate (' + Math.round(accuracy / 1000) + ' km). ' +
+            'Make sure GPS/location services are enabled for better accuracy.');
+        }
+        
+        // Calculate distance to major cities for logging
+        const daNangLat = 16.047079;
+        const daNangLon = 108.206230;
+        const hcmLat = 10.776889;
+        const hcmLon = 106.700806;
+        const hanoiLat = 21.027763;
+        const hanoiLon = 105.834160;
+        
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+          const R = 6371; // Earth radius in km
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLon = (lon2 - lon1) * Math.PI / 180;
+          const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          return R * c;
+        }
+        
+        const distToDaNang = haversineDistance(latitude, longitude, daNangLat, daNangLon);
+        const distToHCM = haversineDistance(latitude, longitude, hcmLat, hcmLon);
+        const distToHanoi = haversineDistance(latitude, longitude, hanoiLat, hanoiLon);
+        
+        console.log('📍 Location info:', {
+          'Distance to Đà Nẵng': distToDaNang.toFixed(2) + ' km',
+          'Distance to HCM': distToHCM.toFixed(2) + ' km',
+          'Distance to Hà Nội': distToHanoi.toFixed(2) + ' km'
+        });
+        
+        // Save location as user explicitly allowed it
+        // User can always choose manual location if this is incorrect
+        console.log('✅ Saving location as requested by user:', { latitude, longitude, accuracy });
         setLocation(latitude, longitude);
         // Mark that prompt has been handled in this session
         sessionStorage.setItem(promptKey, '1');
@@ -362,7 +449,11 @@
       }, () => {
         // denied -> show manual picker
         picker && (picker.style.display = 'block');
-      }, { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 });
+      }, { 
+        enableHighAccuracy: true,  // Use high accuracy for better location
+        timeout: 10000,  // Increase timeout to allow GPS to get accurate location
+        maximumAge: 0  // Force fresh location, don't use browser cache
+      });
     });
 
     deny && deny.addEventListener('click', () => {
@@ -448,13 +539,117 @@
           if (navigator.permissions && navigator.permissions.query) {
             const status = await navigator.permissions.query({ name: 'geolocation' });
             if (status && status.state === 'granted') {
+              // Use fresh location (maximumAge: 0) to get current device location
               navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
+                const accuracy = pos.coords.accuracy || 0;
+                console.log('✅ Location retrieved silently (permission granted):', {
+                  latitude: latitude,
+                  longitude: longitude,
+                  accuracy: accuracy + ' meters'
+                });
+                
+                // Check if location is accurate enough and seems correct
+                const daNangLat = 16.047079;
+                const daNangLon = 108.206230;
+                const hcmLat = 10.776889;
+                const hcmLon = 106.700806;
+                
+                // Calculate distance to major cities
+                function haversineDistance(lat1, lon1, lat2, lon2) {
+                  const R = 6371; // Earth radius in km
+                  const dLat = (lat2 - lat1) * Math.PI / 180;
+                  const dLon = (lon2 - lon1) * Math.PI / 180;
+                  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+                  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                  return R * c;
+                }
+                
+                const distToDaNang = haversineDistance(latitude, longitude, daNangLat, daNangLon);
+                const distToHCM = haversineDistance(latitude, longitude, hcmLat, hcmLon);
+                
+                console.log('📍 Location validation:', {
+                  'Coordinates': latitude.toFixed(6) + ', ' + longitude.toFixed(6),
+                  'Distance to Đà Nẵng': distToDaNang.toFixed(2) + ' km',
+                  'Distance to HCM': distToHCM.toFixed(2) + ' km',
+                  'Accuracy': Math.round(accuracy / 1000) + ' km'
+                });
+                
+                // Reject location if accuracy is too low (likely IP-based geolocation)
+                // Threshold: 50km - if accuracy is worse than 50km, it's probably IP-based
+                if (accuracy > 50000) {
+                  console.error('❌ Location accuracy too low (' + Math.round(accuracy / 1000) + ' km). ' +
+                    'This appears to be IP-based geolocation, not GPS. ' +
+                    'Detected location: ' + latitude.toFixed(6) + ', ' + longitude.toFixed(6) + 
+                    ' (Distance to HCM: ' + distToHCM.toFixed(0) + ' km, Distance to Đà Nẵng: ' + distToDaNang.toFixed(0) + ' km). ' +
+                    'Please select your location manually for accurate results.');
+                  
+                  // Don't save this inaccurate location
+                  // Clear any existing cached location that might be wrong
+                  console.warn('⚠️ Not saving inaccurate location. Clearing cached location and asking user to select manually.');
+                  clearLocation(); // Clear any wrong cached location
+                  
+                  // Try to show manual picker if modal exists
+                  const modal = document.getElementById('locationPermissionModal');
+                  const picker = document.getElementById('locationPicker');
+                  if (modal && picker) {
+                    // Show modal with manual picker
+                    try {
+                      const modalInstance = new (window.bootstrap && window.bootstrap.Modal ? window.bootstrap.Modal : function(){}) (modal);
+                      modalInstance.show();
+                      picker.style.display = 'block';
+                      
+                      // Hide the action buttons since we're showing manual picker
+                      const locActions = modal.querySelector('.loc-actions');
+                      if (locActions) {
+                        locActions.style.display = 'none';
+                      }
+                      
+                      // Show warning message
+                      const modalBody = modal.querySelector('.modal-body');
+                      if (modalBody) {
+                        let warningDiv = modalBody.querySelector('.low-accuracy-warning');
+                        if (!warningDiv) {
+                          warningDiv = document.createElement('div');
+                          warningDiv.className = 'alert alert-warning low-accuracy-warning mt-3';
+                          warningDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>' +
+                            '<strong>Vị trí tự động không chính xác</strong><br>' +
+                            'Độ chính xác: ' + Math.round(accuracy / 1000) + ' km<br>' +
+                            'Vị trí được phát hiện: ' + latitude.toFixed(6) + ', ' + longitude.toFixed(6) + '<br>' +
+                            'Khoảng cách đến HCM: ' + distToHCM.toFixed(0) + ' km | Đến Đà Nẵng: ' + distToDaNang.toFixed(0) + ' km<br><br>' +
+                            'Vui lòng chọn thành phố của bạn thủ công để có kết quả chính xác hơn.';
+                          modalBody.insertBefore(warningDiv, picker);
+                        }
+                      }
+                    } catch (e) {
+                      console.warn('Could not show modal:', e);
+                    }
+                  } else {
+                    // If modal doesn't exist on this page, show a toast/notification
+                    console.error('⚠️ Modal not found. Please manually select your location from settings.');
+                  }
+                  
+                  // Don't use inaccurate location - return without saving
+                  return;
+                }
+                
+                // Warn if accuracy is low but still acceptable
+                if (accuracy > 10000) {
+                  console.warn('⚠️ Low accuracy location (' + Math.round(accuracy / 1000) + ' km). ' +
+                    'Make sure GPS/location services are enabled for better accuracy.');
+                }
+                
                 setLocation(latitude, longitude);
                 const items = await fetchNearby(latitude, longitude);
                 renderNearby(items);
                 startWatch();
-              }, () => { /* ignore failure */ }, { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 });
+              }, () => { /* ignore failure */ }, { 
+                enableHighAccuracy: true, 
+                timeout: 15000,  // Increase timeout to allow GPS more time
+                maximumAge: 0  // Force fresh location
+              });
               return; // Don't show modal
             }
           }
@@ -489,6 +684,14 @@
     console.log('  - showLocationPrompt:', showLocationPrompt);
     console.log('  - APP_CTX.showLocationPrompt value:', window.APP_CTX?.showLocationPrompt);
     console.log('  - sessionStorage.getItem(promptKey):', sessionStorage.getItem(promptKey));
+    
+    // When user logs in (new session), clear old location cache to ensure fresh location
+    if (showLocationPrompt && !alreadyAsked) {
+      console.log('🔄 New login detected, clearing old location cache');
+      clearLocation();
+      // Also clear localStorage location to force fresh location
+      localStorage.removeItem(storageKey);
+    }
     
     // Show modal if:
     // 1. Modal exists on page
@@ -527,20 +730,32 @@
     
     const modalExists = document.getElementById('locationPermissionModal');
     const nearbySectionExists = document.querySelector('.nearby-section');
+    const nearbyButtonExists = document.getElementById('nearbyRestaurantsBtn');
+    
+    // Check if URL has nearby search params (latitude, longitude, nearby=true)
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasNearbyParams = urlParams.get('nearby') === 'true' && 
+                           urlParams.get('latitude') && 
+                           urlParams.get('longitude');
     
     console.log('🔍 Elements check:');
     console.log('  - modalExists:', !!modalExists);
     console.log('  - nearbySectionExists:', !!nearbySectionExists);
+    console.log('  - nearbyButtonExists:', !!nearbyButtonExists);
+    console.log('  - hasNearbyParams:', hasNearbyParams);
     
-    // Only run full initialization if modal or nearby section exists (home page)
-    if (modalExists || nearbySectionExists) {
+    // Run initialization if:
+    // 1. Modal or nearby section exists (home page)
+    // 2. Nearby button exists (restaurants page)
+    // 3. URL has nearby search params (user already did nearby search)
+    if (modalExists || nearbySectionExists || nearbyButtonExists || hasNearbyParams) {
       console.log('✅ Running initLocationFeature()');
       // Wait a bit to ensure APP_CTX is set (it's set in inline script before this file)
       setTimeout(() => {
         initLocationFeature();
       }, 100);
     } else {
-      console.log('⏭️ Skipping initLocationFeature() - modal/nearby section not found');
+      console.log('⏭️ Skipping initLocationFeature() - modal/nearby section/button not found');
       console.log('✅ LocationUtils is still available for use (getUserLocation, etc.)');
       // Just ensure LocationUtils is available, but don't run modal logic
       // This allows other pages to use LocationUtils.getUserLocation() etc.

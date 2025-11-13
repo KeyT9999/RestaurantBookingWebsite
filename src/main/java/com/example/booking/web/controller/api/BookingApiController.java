@@ -27,6 +27,9 @@ import com.example.booking.dto.BookingServiceDto;
 import com.example.booking.dto.DishWithImageDto;
 import com.example.booking.service.RestaurantManagementService;
 import com.example.booking.service.SimpleUserService;
+import com.example.booking.util.CityGeoResolver;
+
+import jakarta.annotation.PostConstruct;
 import java.util.Map;
 import java.util.HashMap;
 import com.example.booking.service.BookingService;
@@ -35,7 +38,6 @@ import com.example.booking.domain.RestaurantMedia;
 import com.example.booking.dto.RestaurantDto;
 import com.example.booking.dto.NearbyRestaurantDto;
 import com.example.booking.util.GeoUtils;
-import com.example.booking.util.CityGeoResolver;
 
 @RestController
 @RequestMapping("/api/booking")
@@ -52,8 +54,16 @@ public class BookingApiController {
 
     @Autowired
     private SimpleUserService userService;
+    
+    @Autowired
+    private org.springframework.web.client.RestTemplate restTemplate;
 
-    private final CityGeoResolver cityGeoResolver = new CityGeoResolver();
+    private CityGeoResolver cityGeoResolver;
+    
+    @PostConstruct
+    private void initCityGeoResolver() {
+        this.cityGeoResolver = new CityGeoResolver(restTemplate);
+    }
     
     /**
      * API endpoint để lấy table layouts theo nhà hàng
