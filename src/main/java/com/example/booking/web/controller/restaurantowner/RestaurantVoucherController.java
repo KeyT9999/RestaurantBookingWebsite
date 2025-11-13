@@ -539,7 +539,7 @@ public class RestaurantVoucherController {
             System.out.println("🔧 Testing simple template...");
             
             // Get current user
-            User currentUser = (User) authentication.getPrincipal();
+            User currentUser = getUserFromAuthentication(authentication);
             if (currentUser == null) {
                 return "redirect:/login";
             }
@@ -682,5 +682,37 @@ public class RestaurantVoucherController {
             e.printStackTrace();
             return List.of();
         }
+    }
+    
+    /**
+     * Helper method để lấy User từ authentication (xử lý cả User và OAuth2User)
+     */
+    private User getUserFromAuthentication(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return null;
+        }
+        
+        Object principal = authentication.getPrincipal();
+        
+        // Nếu là User object trực tiếp (regular login)
+        if (principal instanceof User) {
+            return (User) principal;
+        }
+        
+        // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email cho OAuth users
+            
+            // Tìm User thực tế từ database
+            try {
+                return (User) userService.loadUserByUsername(username);
+            } catch (Exception e) {
+                System.err.println("❌ Error loading user by username: " + username + " - " + e.getMessage());
+                return null;
+            }
+        }
+        
+        System.err.println("❌ Unknown principal type: " + principal.getClass().getName());
+        return null;
     }
 }

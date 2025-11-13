@@ -21,12 +21,16 @@ import com.example.booking.domain.ReviewReportStatus;
 import com.example.booking.domain.User;
 import com.example.booking.dto.ReviewReportView;
 import com.example.booking.service.ReviewReportService;
+import com.example.booking.service.SimpleUserService;
 
 @Controller
 @RequestMapping("/admin/moderation")
 public class AdminModerationController {
 
     private final ReviewReportService reviewReportService;
+    
+    @Autowired
+    private SimpleUserService userService;
 
     @Autowired
     public AdminModerationController(ReviewReportService reviewReportService) {
@@ -67,10 +71,7 @@ public class AdminModerationController {
                                 RedirectAttributes redirectAttributes) {
 
         try {
-            UUID adminId = null;
-            if (authentication != null && authentication.getPrincipal() instanceof User user) {
-                adminId = user.getId();
-            }
+            UUID adminId = getUserIdFromAuthentication(authentication);
 
             reviewReportService.resolveReport(reportId, adminId, resolutionMessage);
             redirectAttributes.addFlashAttribute("success", "Đã phê duyệt và ẩn review");
@@ -88,10 +89,7 @@ public class AdminModerationController {
                                RedirectAttributes redirectAttributes) {
 
         try {
-            UUID adminId = null;
-            if (authentication != null && authentication.getPrincipal() instanceof User user) {
-                adminId = user.getId();
-            }
+            UUID adminId = getUserIdFromAuthentication(authentication);
 
             reviewReportService.rejectReport(reportId, adminId, resolutionMessage);
             redirectAttributes.addFlashAttribute("success", "Đã từ chối báo cáo");
@@ -100,6 +98,38 @@ public class AdminModerationController {
         }
 
         return "redirect:/admin/moderation";
+    }
+    
+    /**
+     * Helper method để lấy User ID từ authentication (xử lý cả User và OAuth2User)
+     */
+    private UUID getUserIdFromAuthentication(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return null;
+        }
+        
+        Object principal = authentication.getPrincipal();
+        
+        // Nếu là User object trực tiếp (regular login)
+        if (principal instanceof User) {
+            return ((User) principal).getId();
+        }
+        
+        // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email cho OAuth users
+            
+            // Tìm User thực tế từ database
+            try {
+                User user = (User) userService.loadUserByUsername(username);
+                return user != null ? user.getId() : null;
+            } catch (Exception e) {
+                System.err.println("❌ Error loading user by username in AdminModerationController: " + username + " - " + e.getMessage());
+                return null;
+            }
+        }
+        
+        return null;
     }
 }
 

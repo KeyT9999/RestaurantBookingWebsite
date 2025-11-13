@@ -27,6 +27,7 @@ import com.example.booking.dto.customer.ToggleFavoriteRequest;
 import com.example.booking.dto.customer.ToggleFavoriteResponse;
 import com.example.booking.repository.CustomerRepository;
 import com.example.booking.service.FavoriteService;
+import com.example.booking.service.SimpleUserService;
 
 @Controller
 @RequestMapping("/customer/favorites")
@@ -37,6 +38,9 @@ public class FavoriteController {
     
     @Autowired
     private CustomerRepository customerRepository;
+    
+    @Autowired
+    private SimpleUserService userService;
     
     /**
      * Display favorites page
@@ -179,9 +183,25 @@ public class FavoriteController {
         
         Object principal = authentication.getPrincipal();
         
+        // Nếu là User object trực tiếp (regular login)
         if (principal instanceof User) {
             User user = (User) principal;
             return customerRepository.findByUserId(user.getId()).orElse(null);
+        }
+        
+        // Nếu là OAuth2User hoặc OidcUser (OAuth2 login)
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User) {
+            String username = authentication.getName(); // username = email cho OAuth users
+            
+            // Tìm User thực tế từ database
+            try {
+                User user = (User) userService.loadUserByUsername(username);
+                if (user != null) {
+                    return customerRepository.findByUserId(user.getId()).orElse(null);
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Error loading user by username in FavoriteController: " + username + " - " + e.getMessage());
+            }
         }
         
         return null;
