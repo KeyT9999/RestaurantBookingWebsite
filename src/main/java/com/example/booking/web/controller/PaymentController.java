@@ -120,8 +120,11 @@ public class PaymentController {
                 }
             }
             
-            // Calculate total amount for full payment display
-            java.math.BigDecimal fullTotalAmount = bookingService.calculateTotalAmount(booking);
+            // Use booking.getTotalAmount() (after voucher discount) for display
+            // This is the correct total amount that customer needs to pay
+            java.math.BigDecimal totalAmount = booking.getTotalAmount() != null
+                    ? booking.getTotalAmount()
+                    : java.math.BigDecimal.ZERO;
             
             // Get voucher info if applied
             java.math.BigDecimal voucherDiscount = java.math.BigDecimal.ZERO;
@@ -135,7 +138,7 @@ public class PaymentController {
             }
             
             model.addAttribute("booking", booking);
-            model.addAttribute("fullTotalAmount", fullTotalAmount);
+            model.addAttribute("totalAmount", totalAmount); // After voucher discount
             model.addAttribute("voucherDiscount", voucherDiscount);
             model.addAttribute("voucherCode", voucherCode);
             model.addAttribute("paymentMethods", PaymentMethod.values());
@@ -712,7 +715,17 @@ public class PaymentController {
             // Create payment
             logger.info("📝 Creating payment record...");
             Payment payment = paymentService.createPayment(bookingId, customerId, paymentMethod, paymentType, voucherCode);
-            logger.info("✅ Payment created: PaymentId={}, OrderCode={}", payment.getPaymentId(), payment.getOrderCode());
+
+            // If payment is null, deposit = 0, skip payment
+            if (payment == null) {
+                logger.info("✅ Deposit amount is 0, no payment needed. BookingId: {}", bookingId);
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "✅ Đặt bàn thành công! Không cần đặt cọc. Vui lòng thanh toán khi đến nhà hàng.");
+                return "redirect:/booking/my";
+            }
+
+            logger.info("✅ Payment created: PaymentId={}, OrderCode={}, Amount={}",
+                    payment.getPaymentId(), payment.getOrderCode(), payment.getAmount());
             
             // Process based on payment method
             return switch (paymentMethod) {
@@ -840,13 +853,25 @@ public class PaymentController {
                 return "error/403";
             }
             
-            // Calculate remaining amount for deposit payments
+            // Get total amount from booking (after voucher discount)
             Booking booking = payment.getBooking();
-            java.math.BigDecimal totalAmount = bookingService.calculateTotalAmount(booking);
+            java.math.BigDecimal totalAmount = booking.getTotalAmount() != null
+                    ? booking.getTotalAmount()
+                    : java.math.BigDecimal.ZERO;
+
+            logger.info("💰 Payment Result - PaymentId: {}, BookingId: {}", payment.getPaymentId(),
+                    booking.getBookingId());
+            logger.info("   - Booking TotalAmount (after voucher): {}", totalAmount);
+            logger.info("   - Payment Amount: {}", payment.getAmount());
+
+            // Calculate remaining amount = totalAmount - payment.amount
+            // Can be negative if deposit > totalAmount (after voucher)
             java.math.BigDecimal remainingAmount = totalAmount.subtract(payment.getAmount());
+            logger.info("   - Remaining Amount: {}", remainingAmount);
             
             model.addAttribute("payment", payment);
-            model.addAttribute("totalAmount", totalAmount);
+            model.addAttribute("booking", booking); // Add booking to model for template fallback
+            model.addAttribute("totalAmount", totalAmount); // After voucher discount
             model.addAttribute("remainingAmount", remainingAmount);
             model.addAttribute("isDeposit", payment.getPaymentType() == PaymentType.DEPOSIT);
             model.addAttribute("pageTitle", "Kết quả thanh toán");
