@@ -1997,12 +1997,13 @@
             document.getElementById('servicesTotalAmount').textContent = formatCurrency(servicesTotal);
             document.getElementById('subtotalAmount').textContent = formatCurrency(subtotal);
             
-            // Calculate final total with voucher discount
-            const finalTotal = Math.max(0, subtotal - voucherDiscount);
-            
-            // Calculate deposit = 10% of final total (after voucher discount)
-            const depositAmount = Math.round(finalTotal * 0.1);
+            // Calculate deposit = 10% of subtotal (BEFORE voucher discount)
+            // Deposit is NOT affected by voucher discount
+            const depositAmount = Math.round(subtotal * 0.1);
             document.getElementById('totalDepositAmount').textContent = formatCurrency(depositAmount);
+            
+            // Calculate final total with voucher discount (for display only, not used for deposit)
+            const finalTotal = Math.max(0, subtotal - voucherDiscount);
             
             // Update hidden input
             document.getElementById('depositAmount').value = depositAmount;
@@ -3416,6 +3417,12 @@
          * Restore form state from saved data
          */
         function restoreFormState(formData) {
+            // Check if formData is valid
+            if (!formData || typeof formData !== 'object') {
+                console.warn('restoreFormState: formData is invalid or undefined');
+                return;
+            }
+            
             // Restore basic form fields
             if (formData.restaurantId) {
                 const restaurantSelect = document.getElementById('restaurantId');
@@ -3440,15 +3447,24 @@
             
             // Restore selected tables, dishes, services if any
             if (formData.selectedTableIds) {
-                document.getElementById('selectedTableIds').value = formData.selectedTableIds;
+                const selectedTableIdsInput = document.getElementById('selectedTableIds');
+                if (selectedTableIdsInput) {
+                    selectedTableIdsInput.value = formData.selectedTableIds;
+                }
             }
             
             if (formData.selectedDishIds) {
-                document.getElementById('selectedDishIds').value = formData.selectedDishIds;
+                const selectedDishIdsInput = document.getElementById('selectedDishIds');
+                if (selectedDishIdsInput) {
+                    selectedDishIdsInput.value = formData.selectedDishIds;
+                }
             }
             
             if (formData.selectedServiceIds) {
-                document.getElementById('selectedServiceIds').value = formData.selectedServiceIds;
+                const selectedServiceIdsInput = document.getElementById('selectedServiceIds');
+                if (selectedServiceIdsInput) {
+                    selectedServiceIdsInput.value = formData.selectedServiceIds;
+                }
             }
             
             // Update UI if needed

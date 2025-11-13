@@ -37,18 +37,21 @@
                             <span class="badge badge--warning" th:text="${booking.status.displayName}">Đang xử lý</span>
                         </div>
 
-                        <div class="ds-summary-grid">
+                        <div class="ds-summary-grid" th:with="totalValue=${totalAmount != null ? totalAmount : booking.totalAmount != null ? booking.totalAmount : T(java.math.BigDecimal).ZERO},
+                                                                  depositValue=${booking.depositAmount != null ? booking.depositAmount : T(java.math.BigDecimal).ZERO},
+                                                                  remainingValue=${(totalAmount != null ? totalAmount : booking.totalAmount != null ? booking.totalAmount : T(java.math.BigDecimal).ZERO).subtract(booking.depositAmount != null ? booking.depositAmount : T(java.math.BigDecimal).ZERO)}">
                             <div class="ds-summary-card">
                                 <small>Tổng giá trị đơn hàng</small>
-                                <strong th:text="${fullTotalAmount != null ? #numbers.formatDecimal(fullTotalAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</strong>
+                                <strong th:text="${#numbers.formatDecimal(totalValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
                             </div>
                             <div class="ds-summary-card">
                                 <small>Số tiền đặt cọc (10%)</small>
-                                <strong th:text="${fullTotalAmount != null ? #numbers.formatDecimal(fullTotalAmount * 0.1, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : (booking.depositAmount != null ? #numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ')}">0 VNĐ</strong>
+                                <strong th:text="${#numbers.formatDecimal(depositValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
                             </div>
                             <div class="ds-summary-card">
                                 <small>Còn lại (thanh toán tại nhà hàng)</small>
-                                <strong th:text="${fullTotalAmount != null ? #numbers.formatDecimal(fullTotalAmount * 0.9, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</strong>
+                                <strong th:classappend="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) < 0} ? 'ds-text-success' : ''"
+                                        th:text="${#numbers.formatDecimal(remainingValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
                             </div>
                         </div>
 
@@ -93,18 +96,21 @@
                         <div class="ds-card-body ds-flex ds-flex-col ds-gap-4">
                             <h2 class="ds-heading-5 ds-mb-0"><i class="fas fa-calculator"></i> Tổng kết thanh toán</h2>
 
-                            <div class="ds-flex ds-flex-col ds-gap-3">
+                            <div class="ds-flex ds-flex-col ds-gap-3" th:with="totalValue=${totalAmount != null ? totalAmount : booking.totalAmount != null ? booking.totalAmount : T(java.math.BigDecimal).ZERO},
+                                                                              depositValue=${booking.depositAmount != null ? booking.depositAmount : T(java.math.BigDecimal).ZERO},
+                                                                              remainingValue=${(totalAmount != null ? totalAmount : booking.totalAmount != null ? booking.totalAmount : T(java.math.BigDecimal).ZERO).subtract(booking.depositAmount != null ? booking.depositAmount : T(java.math.BigDecimal).ZERO)}">
                                 <div class="ds-flex ds-justify-between ds-items-center">
                                     <span>Tổng giá trị đơn hàng</span>
-                                    <strong th:text="${fullTotalAmount != null ? #numbers.formatDecimal(fullTotalAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</strong>
+                                    <strong th:text="${#numbers.formatDecimal(totalValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
                                 </div>
                                 <div class="ds-flex ds-justify-between ds-items-center">
                                     <span>Số tiền đặt cọc (10%)</span>
-                                    <strong class="ds-text-primary" th:text="${fullTotalAmount != null ? #numbers.formatDecimal(fullTotalAmount * 0.1, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : (booking.depositAmount != null ? #numbers.formatDecimal(booking.depositAmount, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ')}">0 VNĐ</strong>
+                                    <strong class="ds-text-primary" th:text="${#numbers.formatDecimal(depositValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
                                 </div>
                                 <div class="ds-flex ds-justify-between ds-items-center">
                                     <span>Số tiền còn lại (trả tại nhà hàng)</span>
-                                    <strong class="ds-text-error" th:text="${fullTotalAmount != null ? #numbers.formatDecimal(fullTotalAmount * 0.9, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</strong>
+                                    <strong th:classappend="${remainingValue.compareTo(T(java.math.BigDecimal).ZERO) < 0} ? 'ds-text-success' : 'ds-text-error'"
+                                            th:text="${#numbers.formatDecimal(remainingValue, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">0 VNĐ</strong>
                                 </div>
                             </div>
                         </div>
