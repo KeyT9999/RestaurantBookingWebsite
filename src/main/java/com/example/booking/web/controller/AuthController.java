@@ -83,16 +83,27 @@ public class AuthController {
         }
         
         try {
+            System.out.println("✅ Starting user registration for: " + registerForm.getEmail());
             userService.registerUser(registerForm);
+            System.out.println("✅ User registered successfully");
 
             // Reset rate limit for successful registration
-            String clientIp = getClientIpAddress();
-            authRateLimitingService.resetRegisterRateLimit(clientIp);
+            try {
+                String clientIp = getClientIpAddress();
+                authRateLimitingService.resetRegisterRateLimit(clientIp);
+                System.out.println("✅ Rate limit reset for IP: " + clientIp);
+            } catch (Exception rateLimitException) {
+                // Log but don't fail registration if rate limit reset fails
+                System.err.println("⚠️ Rate limit reset failed (non-critical): " + rateLimitException.getMessage());
+            }
 
             redirectAttributes.addFlashAttribute("successMessage", 
                 "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.");
+            System.out.println("✅ Redirecting to /auth/register-success");
             return "redirect:/auth/register-success";
         } catch (Exception e) {
+            System.err.println("❌ Registration failed: " + e.getMessage());
+            e.printStackTrace();
             model.addAttribute("errorMessage", e.getMessage());
             return "auth/register";
         }
@@ -100,6 +111,7 @@ public class AuthController {
     
     @GetMapping("/register-success")
     public String showRegisterSuccess() {
+        System.out.println("✅ Loading register-success page");
         return "auth/register-success";
     }
     
