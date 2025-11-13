@@ -92,10 +92,6 @@ public class ChatApiController {
             // Convert to DTO to avoid Hibernate proxy issues
             List<RestaurantChatDto> restaurantDtos = restaurants.stream()
                     .map(restaurant -> {
-                        // Check if there's an existing room for this restaurant and user
-                        String existingRoomId = chatService.getExistingRoomId(user.getId(), userRole,
-                                restaurant.getRestaurantId());
-
                         RestaurantChatDto dto = new RestaurantChatDto(
                                 restaurant.getRestaurantId(),
                                 restaurant.getRestaurantName(),
@@ -103,15 +99,27 @@ public class ChatApiController {
                                 restaurant.getPhone(),
                                 true // Default to active, can be enhanced later
                         );
-                        dto.setRoomId(existingRoomId); // Set room ID if available
-
-                        // If room exists, get unread count
-                        if (existingRoomId != null) {
-                            Map<String, Object> unreadData = chatService.getUnreadCountForRoom(existingRoomId,
-                                    user.getId());
-                            dto.setUnreadCount((Long) unreadData.get("unreadCount"));
+                        
+                        // Calculate unread count based on user role
+                        if (userRole == UserRole.RESTAURANT_OWNER || userRole == UserRole.restaurant_owner) {
+                            // For restaurant owner: calculate total unread count for all rooms of this restaurant
+                            long unreadCount = chatService.getUnreadMessageCountForRestaurant(
+                                    restaurant.getRestaurantId(), user.getId());
+                            dto.setUnreadCount(unreadCount);
                         } else {
-                            dto.setUnreadCount(0L);
+                            // For customer and admin: check if there's an existing room
+                            String existingRoomId = chatService.getExistingRoomId(user.getId(), userRole,
+                                    restaurant.getRestaurantId());
+                            dto.setRoomId(existingRoomId); // Set room ID if available
+
+                            // If room exists, get unread count
+                            if (existingRoomId != null) {
+                                Map<String, Object> unreadData = chatService.getUnreadCountForRoom(existingRoomId,
+                                        user.getId());
+                                dto.setUnreadCount((Long) unreadData.get("unreadCount"));
+                            } else {
+                                dto.setUnreadCount(0L);
+                            }
                         }
 
                         return dto;
