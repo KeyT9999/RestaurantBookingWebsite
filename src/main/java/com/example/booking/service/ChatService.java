@@ -314,6 +314,14 @@ public class ChatService {
     }
     
     /**
+     * Get total unread message count for all rooms of a restaurant (for restaurant owner)
+     */
+    @Transactional(readOnly = true)
+    public long getUnreadMessageCountForRestaurant(Integer restaurantId, UUID userId) {
+        return messageRepository.countUnreadMessagesByRestaurantIdAndUserId(restaurantId, userId);
+    }
+    
+    /**
      * Get chat room by ID with validation
      */
     @Transactional(readOnly = true)
