@@ -4,164 +4,322 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Chi tiết báo cáo review</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-moderation-detail.css}" rel="stylesheet">
 </head>
-<body>
-    <div th:replace="fragments/header :: site-header"></div>
+<body class="mod-dashboard">
+    <div th:with="activeNav='admin-moderation'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
-    <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1 class="h3">
-                <i class="fas fa-file-alt me-2"></i>
-                Báo cáo #<span th:text="${report.reportId}">1</span>
-            </h1>
-            <a th:href="@{/admin/moderation}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>
-                Quay lại danh sách
-            </a>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h5 class="card-title mb-0">Chi tiết review bị báo cáo</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="fw-semibold">Nhà hàng</label>
-                            <div th:text="${report.restaurantName}">Nhà hàng ABC</div>
-                            <div class="text-muted small" th:text="|Chủ sở hữu: ${report.ownerName}|"></div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="fw-semibold">Khách hàng</label>
-                            <div th:text="${report.customerName}">Nguyễn Văn A</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="fw-semibold">Đánh giá</label>
-                            <div class="d-flex align-items-center gap-2">
-                                <div>
-                                    <span class="badge bg-warning text-dark">⭐</span>
-                                    <span th:text="${report.reviewRating}">5</span>
-                                </div>
-                                <div class="text-muted small" th:text="${#temporals.format(report.reviewCreatedAt, 'dd/MM/yyyy HH:mm')}">30/01/2025 10:00</div>
-                            </div>
-                            <div class="mt-2 p-3 bg-light rounded" th:text="${report.reviewComment}">Nội dung review</div>
-                        </div>
-
-                        <div th:if="${report.currentReviewExists}" class="mb-3">
-                            <label class="fw-semibold text-success">
-                                Review hiện tại (đã cập nhật)
-                            </label>
-                            <div class="d-flex align-items-center gap-2">
-                                <div>
-                                    <span class="badge bg-warning text-dark">⭐</span>
-                                    <span th:text="${report.currentReviewRating}">4</span>
-                                </div>
-                                <div class="text-muted small" th:text="${#temporals.format(report.currentReviewCreatedAt, 'dd/MM/yyyy HH:mm')}">31/01/2025 08:00</div>
-                            </div>
-                            <div class="mt-2 p-3 bg-success-subtle rounded" th:text="${report.currentReviewComment}">Review cập nhật</div>
-                        </div>
+    <main>
+        <section class="mod-hero">
+            <div class="ds-container mod-hero-content">
+                <div>
+                    <span class="mod-badge">
+                        <i class="fas fa-user-shield"></i>
+                        Moderation Center
+                    </span>
+                    <h1>
+                        Báo cáo #<span th:text="${report.reportId}">1</span>
+                    </h1>
+                    <p>
+                        Theo dõi và xử lý các báo cáo review vi phạm chính sách của Book Eat. Kiểm tra nội dung,
+                        minh chứng và đưa ra quyết định phù hợp cho khách hàng và nhà hàng.
+                    </p>
+                    <div class="mod-hero-meta">
+                        <span class="mod-pill" th:classappend="${report.status.name() == 'RESOLVED'} ? ' mod-pill-success' :
+                                                             (${report.status.name() == 'PENDING'} ? ' mod-pill-warning' : ' mod-pill-danger')">
+                            <i class="fas fa-circle-check"></i>
+                            <span th:text="|Trạng thái: ${report.status.displayName}|">Trạng thái: Pending</span>
+                        </span>
+                        <span class="mod-pill">
+                            <i class="fas fa-clock"></i>
+                            <span th:text="|Báo cáo lúc: ${#temporals.format(report.reportedAt, 'dd/MM/yyyy HH:mm')}|">
+                                Báo cáo lúc: 31/01/2025 09:30
+                            </span>
+                        </span>
+                        <span class="mod-pill">
+                            <i class="fas fa-user"></i>
+                            <span th:text="|Khách: ${report.customerName}|">Khách: Nguyễn Văn A</span>
+                        </span>
                     </div>
                 </div>
+                <div class="mod-hero-actions">
+                    <a th:href="@{/admin/moderation}" class="mod-btn mod-btn-outline">
+                        <i class="fas fa-arrow-left"></i>
+                        Quay lại danh sách
+                    </a>
+                </div>
+            </div>
+        </section>
 
-                <div class="card mt-4">
-                    <div class="card-header bg-light">
-                        <h5 class="card-title mb-0">Minh chứng</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3" th:if="${report.evidenceItems != null and !report.evidenceItems.isEmpty()}">
-                            <div class="col-md-4" th:each="evidence : ${report.evidenceItems}">
-                                <div class="border rounded p-2 text-center">
-                                    <a th:href="${evidence.url}" target="_blank">
-                                        <img th:if="${evidence.contentType != null and evidence.contentType.startsWith('image/') }"
-                                             th:src="${evidence.url}"
-                                             class="img-fluid rounded"
-                                             alt="Evidence image">
-                                        <div th:unless="${evidence.contentType != null and evidence.contentType.startsWith('image/') }" class="py-4">
-                                            <i class="fas fa-file-alt fa-2x text-muted"></i>
-                                        </div>
-                                    </a>
-                                    <div class="mt-2 text-muted small">
+        <section class="mod-section">
+            <div class="ds-container">
+                <div class="mod-summary-grid">
+                    <article class="mod-summary-card">
+                        <small>Nhà hàng</small>
+                        <strong th:text="${report.restaurantName}">Nhà hàng ABC</strong>
+                        <span class="mod-tertiary" th:text="|Chủ sở hữu: ${report.ownerName}|">Chủ sở hữu: Nguyễn Văn B</span>
+                    </article>
+                    <article class="mod-summary-card">
+                        <small>Điểm đánh giá</small>
+                        <strong>
+                            <i class="fas fa-star text-warning me-1"></i>
+                            <span th:text="${report.reviewRating}">4</span>
+                        </strong>
+                        <span class="mod-tertiary" th:text="${#temporals.format(report.reviewCreatedAt, 'dd/MM/yyyy HH:mm')}">
+                            30/01/2025 10:00
+                        </span>
+                    </article>
+                    <article class="mod-summary-card">
+                        <small>Lý do báo cáo</small>
+                        <strong th:text="${report.reasonText}">Ngôn từ không phù hợp</strong>
+                        <span class="mod-tertiary">Kiểm tra chính sách cộng đồng</span>
+                    </article>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-xl-8 d-flex flex-column gap-4">
+                        <article class="mod-card">
+                            <div class="mod-card-header">
+                                <div>
+                                    <h2 class="mod-card-title">
+                                        <i class="fas fa-comments"></i>
+                                        Chi tiết review bị báo cáo
+                                    </h2>
+                                    <p class="mod-tertiary">
+                                        Nội dung review ban đầu và các cập nhật gần nhất từ phía khách hàng.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mod-review-block">
+                                <div class="mod-review-header">
+                                    <div class="mod-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${report.reviewRating}">5</span>
+                                    </div>
+                                    <div class="mod-tertiary" th:text="${#temporals.format(report.reviewCreatedAt, 'dd/MM/yyyy HH:mm')}">
+                                        30/01/2025 10:00
+                                    </div>
+                                </div>
+                                <div class="mod-review-content" th:text="${report.reviewComment}">
+                                    Nội dung review
+                                </div>
+                            </div>
+
+                            <div th:if="${report.currentReviewExists}" class="mod-review-block is-updated">
+                                <div class="mod-review-header">
+                                    <div class="mod-rating">
+                                        <i class="fas fa-star"></i>
+                                        <span th:text="${report.currentReviewRating}">4</span>
+                                    </div>
+                                    <div class="mod-tertiary" th:text="${#temporals.format(report.currentReviewCreatedAt, 'dd/MM/yyyy HH:mm')}">
+                                        31/01/2025 08:00
+                                    </div>
+                                </div>
+                                <div class="mod-review-content" th:text="${report.currentReviewComment}">
+                                    Review cập nhật
+                                </div>
+                                <div class="mod-tertiary">
+                                    <i class="fas fa-info-circle me-1 text-success"></i>
+                                    Khách hàng đã chỉnh sửa đánh giá sau khi được phản hồi.
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="mod-card">
+                            <div class="mod-card-header">
+                                <div>
+                                    <h2 class="mod-card-title">
+                                        <i class="fas fa-folder-open"></i>
+                                        Minh chứng đính kèm
+                                    </h2>
+                                    <p class="mod-tertiary">
+                                        Ảnh chụp màn hình hoặc tài liệu hỗ trợ cho báo cáo này.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mod-evidence-grid"
+                                 th:if="${report.evidenceItems != null and !report.evidenceItems.isEmpty()}">
+                                <a th:each="evidence : ${report.evidenceItems}"
+                                   class="mod-evidence-item"
+                                   th:href="${evidence.url}"
+                                   target="_blank">
+                                    <img th:if="${evidence.contentType != null and evidence.contentType.startsWith('image/') }"
+                                         th:src="${evidence.url}"
+                                         alt="Evidence image">
+                                    <div th:unless="${evidence.contentType != null and evidence.contentType.startsWith('image/') }">
+                                        <i class="fas fa-file-alt fa-2x text-muted"></i>
+                                    </div>
+                                    <div class="mod-tertiary">
                                         <span th:text="${evidence.contentType}">image/png</span>
-                                        <span th:if="${evidence.fileSize != null}" th:text="| - ${evidence.fileSize / 1024} KB|"></span>
+                                        <span th:if="${evidence.fileSize != null}"
+                                              th:text="| • ${#numbers.formatDecimal(evidence.fileSize / 1024, 0, 1)} KB|"></span>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="mod-empty-state"
+                                 th:if="${report.evidenceItems == null or report.evidenceItems.isEmpty()}">
+                                <i class="fas fa-camera-slash"></i>
+                                <p>Không có minh chứng được đính kèm.</p>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="col-xl-4 d-flex flex-column gap-4">
+                        <article class="mod-card">
+                            <div class="mod-card-header">
+                                <div>
+                                    <h2 class="mod-card-title">
+                                        <i class="fas fa-circle-info"></i>
+                                        Thông tin báo cáo
+                                    </h2>
+                                </div>
+                            </div>
+                            <div class="mod-meta-list">
+                                <div class="mod-meta-item">
+                                    <span class="mod-meta-label">Trạng thái</span>
+                                    <span class="mod-meta-value">
+                                        <span class="mod-pill"
+                                              th:classappend="${report.status.name() == 'RESOLVED'} ? ' mod-pill-success' :
+                                                              (${report.status.name() == 'PENDING'} ? ' mod-pill-warning' : ' mod-pill-danger')"
+                                              th:text="${report.status.displayName}">
+                                            Pending
+                                        </span>
+                                    </span>
+                                </div>
+                                <div class="mod-meta-item">
+                                    <span class="mod-meta-label">Ngày báo cáo</span>
+                                    <span class="mod-meta-value"
+                                          th:text="${#temporals.format(report.reportedAt, 'dd/MM/yyyy HH:mm')}">
+                                        31/01/2025 09:30
+                                    </span>
+                                </div>
+                                <div class="mod-meta-item">
+                                    <span class="mod-meta-label">Lý do báo cáo</span>
+                                    <span class="mod-meta-value" th:text="${report.reasonText}">
+                                        Ngôn từ không phù hợp
+                                    </span>
+                                </div>
+                                <div class="mod-meta-item" th:if="${report.resolutionMessage != null}">
+                                    <span class="mod-meta-label">Ghi chú xử lý</span>
+                                    <div class="mod-review-content">
+                                        <div th:text="${report.resolutionMessage}">Đã xóa review...</div>
+                                        <div class="mod-tertiary mt-2"
+                                             th:text="${#temporals.format(report.resolvedAt, 'dd/MM/yyyy HH:mm')}">
+                                            01/02/2025 09:30
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div th:if="${report.evidenceItems == null or report.evidenceItems.isEmpty()}" class="text-muted text-center py-4">
-                            <i class="fas fa-camera-slash fa-2x mb-2"></i>
-                            <p class="mb-0">Không có minh chứng được đính kèm.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        </article>
 
-            <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h5 class="card-title mb-0">Thông tin báo cáo</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="fw-semibold">Trạng thái</label>
-                            <div>
-                                <span class="badge" th:text="${report.status.displayName}"
-                                      th:classappend="${report.status.name() == 'PENDING'} ? ' bg-warning text-dark' :
-                                                    (${report.status.name() == 'RESOLVED'} ? ' bg-success' : ' bg-secondary')"></span>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="fw-semibold">Ngày báo cáo</label>
-                            <div th:text="${#temporals.format(report.reportedAt, 'dd/MM/yyyy HH:mm')}">31/01/2025 09:30</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="fw-semibold">Lý do báo cáo</label>
-                            <div class="p-3 bg-light rounded" th:text="${report.reasonText}">Ngôn từ không phù hợp...</div>
-                        </div>
-
-                        <div class="mb-3" th:if="${report.resolutionMessage != null}">
-                            <label class="fw-semibold">Ghi chú xử lý</label>
-                            <div class="p-3 bg-success-subtle rounded" th:text="${report.resolutionMessage}">Đã xóa review...</div>
-                            <div class="text-muted small mt-1" th:text="${#temporals.format(report.resolvedAt, 'dd/MM/yyyy HH:mm')}"></div>
-                        </div>
-
-                        <div th:if="${report.status.name() == 'PENDING'}">
-                            <form th:action="@{/admin/moderation/{id}/resolve(id=${report.reportId})}" method="post" class="mb-3">
-                                <div class="mb-2">
-                                    <label class="form-label">Ghi chú phản hồi (gửi cho nhà hàng)</label>
-                                    <textarea name="resolutionMessage" class="form-control" rows="3" placeholder="Ví dụ: review vi phạm chính sách nên đã bị gỡ..." ></textarea>
+                        <article class="mod-card">
+                            <div class="mod-card-header">
+                                <div>
+                                    <h2 class="mod-card-title">
+                                        <i class="fas fa-stream"></i>
+                                        Dòng thời gian xử lý
+                                    </h2>
                                 </div>
-                                <button type="submit" class="btn btn-success w-100">
-                                    <i class="fas fa-check-circle me-1"></i>
+                            </div>
+                            <div class="mod-timeline">
+                                <div class="mod-timeline-item">
+                                    <strong>Review được tạo</strong>
+                                    <span th:text="${#temporals.format(report.reviewCreatedAt, 'dd/MM/yyyy HH:mm')}">
+                                        30/01/2025 10:00
+                                    </span>
+                                </div>
+                                <div class="mod-timeline-item">
+                                    <strong>Nhà hàng gửi báo cáo</strong>
+                                    <span th:text="${#temporals.format(report.reportedAt, 'dd/MM/yyyy HH:mm')}">
+                                        31/01/2025 09:30
+                                    </span>
+                                </div>
+                                <div class="mod-timeline-item" th:if="${report.currentReviewExists}">
+                                    <strong>Khách cập nhật review</strong>
+                                    <span th:text="${#temporals.format(report.currentReviewCreatedAt, 'dd/MM/yyyy HH:mm')}">
+                                        31/01/2025 08:00
+                                    </span>
+                                </div>
+                                <div class="mod-timeline-item" th:if="${report.resolvedAt != null}">
+                                    <strong>Admin xử lý</strong>
+                                    <span th:text="${#temporals.format(report.resolvedAt, 'dd/MM/yyyy HH:mm')}">
+                                        01/02/2025 09:30
+                                    </span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="mod-card" th:if="${report.status.name() == 'PENDING'}">
+                            <div class="mod-card-header">
+                                <div>
+                                    <h2 class="mod-card-title">
+                                        <i class="fas fa-toolbox"></i>
+                                        Thao tác xử lý
+                                    </h2>
+                                    <p class="mod-tertiary">
+                                        Gửi phản hồi cuối cùng đến nhà hàng sau khi đánh giá nội dung.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <form th:action="@{/admin/moderation/{id}/resolve(id=${report.reportId})}"
+                                  method="post"
+                                  class="mod-form"
+                                  data-mod-action="approve">
+                                <label class="mod-meta-label">Ghi chú phản hồi (gửi cho nhà hàng)</label>
+                                <textarea name="resolutionMessage"
+                                          placeholder="Ví dụ: review vi phạm chính sách nên đã bị gỡ..."
+                                          data-mod-counter
+                                          maxlength="600"></textarea>
+                                <div class="mod-form-footer">
+                                    <span>Gửi cùng quyết định phê duyệt.</span>
+                                    <span class="mod-char-counter">0/600</span>
+                                </div>
+                                <button type="submit" class="mod-primary-action">
+                                    <i class="fas fa-check-circle me-2"></i>
                                     Phê duyệt (ẩn review)
                                 </button>
                             </form>
 
-                            <form th:action="@{/admin/moderation/{id}/reject(id=${report.reportId})}" method="post">
-                                <div class="mb-2">
-                                    <label class="form-label">Lý do từ chối (gửi nhà hàng)</label>
-                                    <textarea name="resolutionMessage" class="form-control" rows="2" placeholder="Ví dụ: nội dung review hợp lệ nên không thể gỡ..." ></textarea>
+                            <form th:action="@{/admin/moderation/{id}/reject(id=${report.reportId})}"
+                                  method="post"
+                                  class="mod-form"
+                                  data-mod-action="reject">
+                                <label class="mod-meta-label">Lý do từ chối (gửi nhà hàng)</label>
+                                <textarea name="resolutionMessage"
+                                          placeholder="Ví dụ: nội dung review hợp lệ nên không thể gỡ..."
+                                          data-mod-counter
+                                          maxlength="600"></textarea>
+                                <div class="mod-form-footer">
+                                    <span>Sẽ giữ nguyên review hiện tại.</span>
+                                    <span class="mod-char-counter">0/600</span>
                                 </div>
-                                <button type="submit" class="btn btn-outline-danger w-100">
-                                    <i class="fas fa-times-circle me-1"></i>
+                                <button type="submit" class="mod-secondary-action">
+                                    <i class="fas fa-times-circle me-2"></i>
                                     Từ chối báo cáo
                                 </button>
                             </form>
-                        </div>
+                        </article>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
+
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:src="@{/js/admin-moderation-detail.js}"></script>
 </body>
 </html>
 
