@@ -21,6 +21,7 @@ class AdminChatManager {
     this.initWebSocket();
     this.setupEventListeners();
     this.setupInfiniteScroll();
+    this.setupRoomClickHandlers(); // Setup click handlers for chat rooms
     this.loadAvailableRestaurants();
     this.loadChatRooms(); // Load rooms with unread count
   }
@@ -190,17 +191,35 @@ class AdminChatManager {
     }
   }
 
+  // Setup click handlers for chat room items
+  setupRoomClickHandlers() {
+    // Use event delegation for dynamically loaded rooms
+    const chatRoomsList = document.getElementById("chat-rooms-list");
+    if (chatRoomsList) {
+      chatRoomsList.addEventListener("click", (e) => {
+        const roomItem = e.target.closest(".chat-room-item");
+        if (roomItem) {
+          const roomId = roomItem.dataset.roomId;
+          if (roomId) {
+            this.openChatRoom(roomId);
+          }
+        }
+      });
+    }
+  }
+
   // Show welcome screen
   showWelcomeScreen() {
-    const chatWelcome = document.getElementById("chat-welcome");
-    const chatMessages = document.getElementById("chat-messages");
-    const chatInput = document.getElementById("chat-input");
+    const welcomeScreen = document.getElementById("welcome-screen");
+    const chatInterface = document.getElementById("chat-interface");
 
-    if (chatWelcome) chatWelcome.style.display = "flex";
-    if (chatMessages) chatMessages.style.display = "none";
-    if (chatInput) chatInput.style.display = "none";
+    if (welcomeScreen) welcomeScreen.style.display = "flex";
+    if (chatInterface) chatInterface.style.display = "none";
 
-    // Remove active class from all restaurant items
+    // Remove active class from all room items
+    document.querySelectorAll(".chat-room-item").forEach((item) => {
+      item.classList.remove("active");
+    });
     document.querySelectorAll(".restaurant-item").forEach((item) => {
       item.classList.remove("active");
     });
@@ -219,9 +238,13 @@ class AdminChatManager {
         this.updateTotalUnreadBadge(rooms);
       } else {
         console.error("Failed to load chat rooms");
+        // If API fails, rooms might already be loaded from server template
+        this.setupRoomClickHandlers();
       }
     } catch (error) {
       console.error("Error loading chat rooms:", error);
+      // If API fails, rooms might already be loaded from server template
+      this.setupRoomClickHandlers();
     }
   }
 
@@ -396,23 +419,44 @@ class AdminChatManager {
 
   // Update restaurant info in chat header
   updateRestaurantInfo(roomId) {
-    // Find restaurant item with this room ID
-    const restaurantItem = document.querySelector(`[data-room-id="${roomId}"]`);
-    if (restaurantItem) {
+    // Find chat room item or restaurant item with this room ID
+    const roomItem = document.querySelector(`.chat-room-item[data-room-id="${roomId}"]`);
+    const restaurantItem = document.querySelector(`.restaurant-item[data-room-id="${roomId}"]`);
+    
+    const participantNameElement = document.getElementById("participant-name");
+    
+    if (roomItem) {
+      const roomName = roomItem.querySelector(".room-name span");
+      if (roomName && participantNameElement) {
+        participantNameElement.textContent = roomName.textContent;
+        console.log("Updated restaurant info from room item:", roomName.textContent);
+      }
+    } else if (restaurantItem) {
       const restaurantName = restaurantItem.querySelector(".restaurant-name");
-      const restaurantOwner = restaurantItem.querySelector(".restaurant-owner");
+      if (restaurantName && participantNameElement) {
+        participantNameElement.textContent = restaurantName.textContent;
+        console.log("Updated restaurant info from restaurant item:", restaurantName.textContent);
+      }
+    } else {
+      console.log("No room item or restaurant item found for room:", roomId);
+      // Try to get from API
+      this.loadRoomInfo(roomId);
+    }
+  }
 
-      if (restaurantName) {
-        const restaurantNameElement =
-          document.getElementById("restaurant-name");
-        if (restaurantNameElement) {
-          restaurantNameElement.textContent = restaurantName.textContent;
+  // Load room info from API
+  async loadRoomInfo(roomId) {
+    try {
+      const response = await fetch(`/api/chat/rooms/${roomId}`);
+      if (response.ok) {
+        const room = await response.json();
+        const participantNameElement = document.getElementById("participant-name");
+        if (participantNameElement && room.restaurantName) {
+          participantNameElement.textContent = room.restaurantName;
         }
       }
-
-      console.log("Updated restaurant info:", restaurantName?.textContent);
-    } else {
-      console.log("No restaurant item found for room:", roomId);
+    } catch (error) {
+      console.error("Error loading room info:", error);
     }
   }
 
@@ -433,25 +477,34 @@ class AdminChatManager {
 
   // Show chat interface
   showChatInterface() {
-    const chatWelcome = document.getElementById("chat-welcome");
-    const chatMessages = document.getElementById("chat-messages");
-    const chatInput = document.getElementById("chat-input");
+    const welcomeScreen = document.getElementById("welcome-screen");
+    const chatInterface = document.getElementById("chat-interface");
 
-    if (chatWelcome) chatWelcome.style.display = "none";
-    if (chatMessages) chatMessages.style.display = "flex";
-    if (chatInput) chatInput.style.display = "block";
+    if (welcomeScreen) welcomeScreen.style.display = "none";
+    if (chatInterface) chatInterface.style.display = "flex";
   }
 
   // Update room selection
   updateRoomSelection(roomId) {
-    // Remove active class from all restaurant items
+    // Remove active class from all room items
+    document.querySelectorAll(".chat-room-item").forEach((item) => {
+      item.classList.remove("active");
+    });
     document.querySelectorAll(".restaurant-item").forEach((item) => {
       item.classList.remove("active");
     });
 
-    // Add active class to current room's restaurant item
+    // Add active class to current room item
+    const currentRoomItem = document.querySelector(
+      `.chat-room-item[data-room-id="${roomId}"]`
+    );
+    if (currentRoomItem) {
+      currentRoomItem.classList.add("active");
+    }
+    
+    // Also check restaurant items
     const currentRestaurantItem = document.querySelector(
-      `[data-room-id="${roomId}"]`
+      `.restaurant-item[data-room-id="${roomId}"]`
     );
     if (currentRestaurantItem) {
       currentRestaurantItem.classList.add("active");
@@ -662,12 +715,19 @@ class AdminChatManager {
       messageElement.classList.toString()
     );
 
-    messageElement.querySelector(".sender-name").textContent =
-      message.senderName;
-    messageElement.querySelector(".message-text").innerHTML = message.content;
-    messageElement.querySelector(".message-time").textContent = this.formatTime(
-      message.sentAt
-    );
+    const senderElement = messageElement.querySelector(".message-sender");
+    const textElement = messageElement.querySelector(".message-text");
+    const timeElement = messageElement.querySelector(".message-time");
+    
+    if (senderElement) {
+      senderElement.textContent = message.senderName || "Unknown";
+    }
+    if (textElement) {
+      textElement.textContent = message.content || "";
+    }
+    if (timeElement) {
+      timeElement.textContent = this.formatTime(message.sentAt);
+    }
 
     // Debug logging
     console.log("=== DEBUG ADMIN MESSAGE ===");
@@ -789,12 +849,153 @@ class AdminChatManager {
     }
   }
 
-  // Display rooms in sidebar (update existing restaurant items)
+  // Display rooms in sidebar (update existing restaurant items and chat room items)
   displayRooms(rooms) {
-    // Update existing restaurant items with room data
+    const chatRoomsList = document.getElementById("chat-rooms-list");
+    if (!chatRoomsList) return;
+
+    // Remove empty state if rooms exist
+    const emptyState = chatRoomsList.querySelector(".empty-state");
+    
+    // Get all existing room items (both server-rendered and dynamically added)
+    const existingRoomItems = chatRoomsList.querySelectorAll(".chat-room-item[data-room-id]");
+    const existingRoomIds = Array.from(existingRoomItems).map(item => item.dataset.roomId);
+    
+    // Update existing room items
+    existingRoomItems.forEach((roomItem) => {
+      const roomId = roomItem.dataset.roomId;
+      const room = rooms.find(r => r.roomId === roomId);
+      if (room) {
+        this.updateChatRoomItem(roomItem, room);
+      }
+    });
+
+    // Add new rooms that don't exist in the list
     rooms.forEach((room) => {
+      if (!existingRoomIds.includes(room.roomId)) {
+        const roomItem = this.createChatRoomItem(room);
+        if (roomItem) {
+          // Insert before empty state if it exists, otherwise append
+          if (emptyState) {
+            chatRoomsList.insertBefore(roomItem, emptyState);
+          } else {
+            chatRoomsList.appendChild(roomItem);
+          }
+        }
+      }
+      
+      // Also update restaurant items with room data
       this.updateRestaurantItemWithRoomData(room);
     });
+
+    // Show/hide empty state and section title
+    const roomsSectionTitle = document.querySelector(".rooms-section-title");
+    if (rooms.length > 0) {
+      if (emptyState) {
+        emptyState.remove();
+      }
+      if (roomsSectionTitle) {
+        roomsSectionTitle.style.display = "flex";
+      }
+    } else {
+      if (!emptyState) {
+        // Add empty state if no rooms
+        const emptyStateDiv = document.createElement("div");
+        emptyStateDiv.className = "empty-state";
+        emptyStateDiv.innerHTML = `
+          <i class="fas fa-comments text-muted"></i>
+          <p class="text-muted">Chưa có cuộc trò chuyện nào</p>
+        `;
+        chatRoomsList.appendChild(emptyStateDiv);
+      }
+      if (roomsSectionTitle) {
+        roomsSectionTitle.style.display = "none";
+      }
+    }
+  }
+
+  // Create chat room item from template
+  createChatRoomItem(room) {
+    const template = document.getElementById("chat-room-item-template");
+    if (!template) {
+      console.error("Chat room item template not found");
+      return null;
+    }
+    
+    const roomItem = template.content.cloneNode(true);
+    const roomElement = roomItem.querySelector(".chat-room-item");
+    
+    if (!roomElement) return null;
+    
+    roomElement.dataset.roomId = room.roomId;
+    if (room.restaurantId) {
+      roomElement.dataset.restaurantId = room.restaurantId;
+    }
+    
+    // Update room info
+    const roomName = roomElement.querySelector(".room-name span");
+    if (roomName) {
+      roomName.textContent = room.restaurantName || "Nhà hàng";
+    }
+    
+    const lastMessage = roomElement.querySelector(".room-last-message");
+    if (lastMessage) {
+      lastMessage.textContent = room.lastMessage || "Chưa có tin nhắn";
+    }
+    
+    const roomTime = roomElement.querySelector(".room-time");
+    if (roomTime && room.lastMessageAt) {
+      roomTime.textContent = this.formatTime(room.lastMessageAt);
+    }
+    
+    const roomUnread = roomElement.querySelector(".room-unread");
+    if (roomUnread) {
+      if (room.unreadCount && room.unreadCount > 0) {
+        roomUnread.textContent = room.unreadCount;
+        roomUnread.style.display = "inline-block";
+      } else {
+        roomUnread.style.display = "none";
+      }
+    }
+    
+    return roomElement;
+  }
+
+  // Update existing chat room item
+  updateChatRoomItem(roomItem, room) {
+    // Update room name
+    const roomName = roomItem.querySelector(".room-name span");
+    if (roomName) {
+      roomName.textContent = room.restaurantName || "Nhà hàng";
+    }
+    
+    // Update last message
+    const lastMessage = roomItem.querySelector(".room-last-message");
+    if (lastMessage) {
+      lastMessage.textContent = room.lastMessage || "Chưa có tin nhắn";
+    }
+    
+    // Update time
+    const roomTime = roomItem.querySelector(".room-time");
+    if (roomTime) {
+      if (room.lastMessageAt) {
+        roomTime.textContent = this.formatTime(room.lastMessageAt);
+        roomTime.style.display = "inline-block";
+      } else {
+        roomTime.style.display = "none";
+      }
+    }
+    
+    // Update unread count
+    const roomUnread = roomItem.querySelector(".room-unread");
+    if (roomUnread) {
+      if (room.unreadCount && room.unreadCount > 0) {
+        roomUnread.textContent = room.unreadCount;
+        roomUnread.style.display = "inline-block";
+      } else {
+        roomUnread.style.display = "none";
+      }
+    }
   }
 
   // Update restaurant item with room data
@@ -833,10 +1034,27 @@ class AdminChatManager {
 
   // Update room last message
   updateRoomLastMessage(roomId, content, sentAt) {
-    const roomItem = document.querySelector(`[data-room-id="${roomId}"]`);
+    // Update chat room item
+    const roomItem = document.querySelector(`.chat-room-item[data-room-id="${roomId}"]`);
     if (roomItem) {
       const lastMessageElement = roomItem.querySelector(".room-last-message");
       const timeElement = roomItem.querySelector(".room-time");
+
+      if (lastMessageElement) {
+        lastMessageElement.textContent = content;
+      }
+
+      if (timeElement) {
+        timeElement.textContent = this.formatTime(sentAt);
+        timeElement.style.display = "inline-block";
+      }
+    }
+    
+    // Also update restaurant item if exists
+    const restaurantItem = document.querySelector(`.restaurant-item[data-room-id="${roomId}"]`);
+    if (restaurantItem) {
+      const lastMessageElement = restaurantItem.querySelector(".room-last-message");
+      const timeElement = restaurantItem.querySelector(".room-time");
 
       if (lastMessageElement) {
         lastMessageElement.textContent = content;
