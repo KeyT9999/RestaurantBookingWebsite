@@ -150,6 +150,9 @@ public class RestaurantVoucherController {
             model.addAttribute("totalPages", 0);
             model.addAttribute("search", search);
             model.addAttribute("status", status);
+            // Add voucherForm for modal
+            model.addAttribute("voucherForm", new VoucherCreateForm());
+            model.addAttribute("statuses", VoucherStatus.values());
             
             return "restaurant-owner/vouchers/list";
             
@@ -204,6 +207,14 @@ public class RestaurantVoucherController {
                                Authentication authentication,
                                RedirectAttributes redirectAttributes) {
         
+        System.out.println("🔍 createVoucher called");
+        System.out.println("   Form code: " + form.getCode());
+        System.out.println("   Form status: " + form.getStatus());
+        System.out.println("   Form discountType: " + form.getDiscountType());
+        System.out.println("   Form discountValue: " + form.getDiscountValue());
+        System.out.println("   Form perCustomerLimit: " + form.getPerCustomerLimit());
+        System.out.println("   RestaurantId param: " + restaurantId);
+        
         // Get restaurants and handle null restaurantId
         List<RestaurantProfile> restaurants = getRestaurantsFromAuth(authentication);
         if (restaurants.isEmpty()) {
@@ -214,10 +225,26 @@ public class RestaurantVoucherController {
         // If no restaurantId provided, use the first restaurant
         final Integer finalRestaurantId = (restaurantId == null) ? restaurants.get(0).getRestaurantId() : restaurantId;
         
+        System.out.println("   Final restaurantId: " + finalRestaurantId);
+        System.out.println("   BindingResult hasErrors: " + bindingResult.hasErrors());
+        
         if (bindingResult.hasErrors()) {
+            System.out.println("   ❌ Validation errors found:");
+            bindingResult.getFieldErrors().forEach(error -> {
+                System.out.println("      - " + error.getField() + ": " + error.getDefaultMessage());
+            });
+            
             // Get restaurants for form redisplay
             redirectAttributes.addFlashAttribute("restaurants", restaurants);
             redirectAttributes.addFlashAttribute("selectedRestaurantId", finalRestaurantId);
+            
+            // Add error message for validation errors
+            StringBuilder errorMsg = new StringBuilder("Có lỗi validation: ");
+            bindingResult.getFieldErrors().forEach(error -> {
+                errorMsg.append(error.getField()).append(" - ").append(error.getDefaultMessage()).append("; ");
+            });
+            redirectAttributes.addFlashAttribute("errorMessage", errorMsg.toString());
+            
             return "redirect:/restaurant-owner/vouchers/new?restaurantId=" + finalRestaurantId;
         }
         
@@ -246,12 +273,23 @@ public class RestaurantVoucherController {
                 form.getStatus()
             );
             
-            voucherService.createRestaurantVoucher(finalRestaurantId, dto);
+            // Get current user from authentication
+            User currentUser = getUserFromAuthentication(authentication);
+            if (currentUser == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Không thể xác định người dùng. Vui lòng đăng nhập lại.");
+                return "redirect:/restaurant-owner/vouchers/new?restaurantId=" + finalRestaurantId;
+            }
+            
+            System.out.println("   ✅ Current user: " + currentUser.getUsername() + " (ID: " + currentUser.getId() + ")");
+            
+            voucherService.createRestaurantVoucher(finalRestaurantId, dto, currentUser);
             redirectAttributes.addFlashAttribute("successMessage", "Voucher created successfully!");
             return "redirect:/restaurant-owner/vouchers?restaurantId=" + finalRestaurantId;
             
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error creating voucher: " + e.getMessage());
+            System.err.println("❌ Exception creating voucher: " + e.getMessage());
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi tạo voucher: " + e.getMessage());
             return "redirect:/restaurant-owner/vouchers/new?restaurantId=" + finalRestaurantId;
         }
     }

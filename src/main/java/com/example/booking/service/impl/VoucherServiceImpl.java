@@ -258,11 +258,21 @@ public class VoucherServiceImpl implements VoucherService {
     @Override
     @Transactional
     public Voucher createRestaurantVoucher(Integer restaurantId, VoucherCreateDto dto) {
-        // For now, use a default user - TODO: Get from authentication context
+        // Fallback: Try to find any restaurant owner (for backward compatibility)
         User createdBy = userRepository.findAll().stream()
             .filter(user -> user.getRole().name().equals("RESTAURANT_OWNER"))
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("No restaurant owner user found"));
+            .orElseThrow(() -> new RuntimeException("No restaurant owner user found. Please use createRestaurantVoucher with User parameter."));
+        
+        return createRestaurantVoucher(restaurantId, dto, createdBy);
+    }
+    
+    @Override
+    @Transactional
+    public Voucher createRestaurantVoucher(Integer restaurantId, VoucherCreateDto dto, User createdBy) {
+        if (createdBy == null) {
+            throw new IllegalArgumentException("CreatedBy user cannot be null");
+        }
 
         // Load restaurant from database instead of creating new object
         RestaurantProfile restaurant = restaurantProfileRepository.findById(restaurantId)

@@ -2,6 +2,7 @@ package com.example.booking.web.controller;
 
 import com.example.booking.domain.User;
 import com.example.booking.domain.UserRole;
+import com.example.booking.dto.ChatRoomDto;
 import com.example.booking.service.ChatService;
 import com.example.booking.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/admin")
@@ -32,11 +35,20 @@ public class AdminChatController {
                 return "redirect:/error?message=Access denied. Admin role required.";
             }
             
+            // Get all chat rooms for this admin
+            List<ChatRoomDto> chatRooms = chatService.getUserChatRooms(admin.getId(), admin.getRole());
+            
             // Add admin info to model
             model.addAttribute("admin", admin);
             model.addAttribute("adminId", admin.getId());
             model.addAttribute("adminName", admin.getFullName());
             model.addAttribute("adminEmail", admin.getEmail());
+            
+            // Add chat rooms to model
+            model.addAttribute("chatRooms", chatRooms);
+            
+            // Set active navigation for header (same as home page)
+            model.addAttribute("activeNav", "chat");
             
             return "admin/chat";
             

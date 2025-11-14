@@ -41,6 +41,7 @@ public interface VoucherService {
     // Admin/Restaurant Owner methods
     Voucher createAdminVoucher(VoucherCreateDto dto);
     Voucher createRestaurantVoucher(Integer restaurantId, VoucherCreateDto dto);
+    Voucher createRestaurantVoucher(Integer restaurantId, VoucherCreateDto dto, com.example.booking.domain.User createdBy);
     Voucher updateVoucher(Integer voucherId, VoucherCreateDto dto);
     Voucher updateVoucher(Integer voucherId, VoucherEditDto dto);
     List<Voucher> getVouchersByRestaurant(Integer restaurantId);

@@ -62,7 +62,7 @@
                         <div class="metric-card__label">
                             <i class="fas fa-calendar-day"></i>
                             Booking hôm nay
-                        </div>
+                            </div>
                         <div class="metric-card__value ds-text-info"
                              th:text="${todayBookings != null ? todayBookings : 0}">0</div>
                         <div class="metric-card__footer">Số lượng đặt bàn đã hoàn tất</div>
@@ -72,7 +72,7 @@
                         <div class="metric-card__label">
                             <i class="fas fa-coins"></i>
                             Hoa hồng/booking
-                        </div>
+                            </div>
                         <div class="metric-card__value ds-text-warning"
                              th:text="${avgCommissionPerBooking != null ? avgCommissionPerBooking + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
                         <div class="metric-card__footer">Giá trị trung bình theo đơn</div>
@@ -92,7 +92,7 @@
                                 <option value="monthly">6 tháng gần nhất</option>
                                 <option value="yearly">5 năm gần nhất</option>
                             </select>
-                        </div>
+                            </div>
                         <div class="chart-wrapper">
                             <canvas id="commissionChart"></canvas>
                         </div>
@@ -102,13 +102,13 @@
                         <div class="chart-card__title">
                             <h3><i class="fas fa-clipboard-check me-2"></i>Hoạt động booking</h3>
                             <span class="ds-text-sm ds-text-secondary">Tỷ trọng hoàn thành & chờ xử lý</span>
-                        </div>
+                            </div>
                         <div class="chart-wrapper">
                             <canvas id="bookingChart"></canvas>
                         </div>
                     </article>
                 </section>
-
+                
                 <!-- Actions & management -->
                 <section class="section-card">
                     <header class="chart-card__title">
@@ -138,13 +138,13 @@
                         <a th:href="@{/admin/reports}" class="quick-actions__item text-decoration-none">
                             <div class="quick-actions__icon">
                                 <i class="fas fa-file-chart-column"></i>
-                            </div>
+                    </div>
                             <div class="quick-actions__label">
                                 <strong>Báo cáo tổng hợp</strong>
                                 <span>Xem báo cáo doanh thu theo khoảng thời gian</span>
-                            </div>
-                        </a>
-                    </div>
+                                </div>
+                                        </a>
+                                    </div>
                 </section>
 
                 <!-- Withdrawal management overview -->
@@ -191,14 +191,14 @@
                             <div class="metric-card__label">
                                 <i class="fas fa-hourglass-half"></i>
                                 Avg processing time
-                            </div>
+                                </div>
                             <div class="metric-card__value ds-text-info"
                                  th:text="${withdrawalAvgHours != null ? #numbers.formatDecimal(withdrawalAvgHours, 1, 'COMMA', 1, 'POINT') + ' h' : '0 h'}">0 h</div>
                             <div class="metric-card__footer">
                                 Trung bình giờ duyệt (đã thanh toán/đã từ chối)
                             </div>
                         </article>
-                    </div>
+                        </div>
                     <div class="ds-flex ds-justify-end">
                         <a href="/admin/withdrawal" class="ds-btn ds-btn-primary ds-btn-sm">
                             <i class="fas fa-arrow-right me-2"></i>Tới trang quản lý rút tiền

@@ -66,4 +66,12 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
      */
     @Query("SELECT COUNT(m) FROM Message m WHERE m.isRead = false")
     long countUnreadMessages();
+    
+    /**
+     * Count total unread messages for a restaurant owner across all rooms of a specific restaurant
+     */
+    @Query("SELECT COUNT(m) FROM Message m WHERE m.room.restaurant.restaurantId = :restaurantId " +
+           "AND m.room.restaurant.owner.user.id = :userId " +
+           "AND m.sender.id != :userId AND m.isRead = false")
+    long countUnreadMessagesByRestaurantIdAndUserId(@Param("restaurantId") Integer restaurantId, @Param("userId") UUID userId);
 }
