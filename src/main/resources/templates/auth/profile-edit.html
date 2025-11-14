@@ -14,6 +14,8 @@
     
     <!-- Home Resy Style CSS -->
     <link th:href="@{/css/home-resy.css}" rel="stylesheet">
+    <!-- Login Modal CSS -->
+    <link th:href="@{/css/login-modal.css}" rel="stylesheet">
     
     <style>
         /* Profile Edit Page Specific Styles */
@@ -454,73 +456,8 @@
     </style>
 </head>
 <body>
-    <!-- Main Header (same as home page) -->
-    <header class="header">
-        <div class="container">
-            <!-- Left Section: Logo only -->
-            <div class="header-left">
-                <a th:href="@{/}" class="logo">Book Eat</a>
-            </div>
-            
-            <!-- Center Section: Navigation -->
-            <div class="header-center">
-                <nav>
-                    <ul class="nav-menu">
-                        <li><a th:href="@{/}" th:classappend="${activeNav == 'home' ? 'active' : ''}">Trang chủ</a></li>
-                        <li><a th:href="@{/restaurants}" th:classappend="${activeNav == 'restaurants' ? 'active' : ''}">Nhà hàng</a></li>
-                    </ul>
-                </nav>
-            </div>
-            
-            <!-- Right Section: Actions -->
-            <div class="header-right">
-                <div class="header-actions">
-                    <!-- Guest User Actions -->
-                    <button type="button" class="btn-resy-outline" data-bs-toggle="modal" data-bs-target="#loginModal" sec:authorize="!isAuthenticated()">Đăng nhập</button>
-                    <a th:href="@{/auth/register}" class="btn-resy" sec:authorize="!isAuthenticated()">Đăng ký</a>
-                    
-                    <!-- Authenticated User Actions -->
-                    <div sec:authorize="isAuthenticated()" class="user-actions">
-                        <!-- Notification Bell -->
-                        <div class="notification-bell-wrapper">
-                            <div th:insert="~{fragments/notification-bell :: notification-bell}"></div>
-                        </div>
-                        
-                        <!-- User Profile Dropdown -->
-                        <div class="user-dropdown">
-                            <button class="btn-resy-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-user-circle"></i>
-                                <span sec:authentication="name">User</span>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" th:href="@{/auth/profile}">
-                                        <i class="fas fa-user me-2"></i>
-                                        Profile
-                                    </a>
-                                </li>
-                                <li sec:authorize="hasRole('CUSTOMER')">
-                                    <a class="dropdown-item" th:href="@{/booking/my}">
-                                        <i class="fas fa-calendar-check me-2"></i>
-                                        My Reservations
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form th:action="@{/logout}" method="post" class="d-inline">
-                                        <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
-                                            <i class="fas fa-sign-out-alt me-2"></i>
-                                            Đăng xuất
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    <!-- Customer Header Fragment -->
+    <div th:replace="~{fragments/customer-header :: customer-header}"></div>
     
     <!-- Profile Edit Section -->
     <section class="profile-edit-section">

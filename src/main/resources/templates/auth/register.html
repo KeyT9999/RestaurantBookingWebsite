@@ -11,6 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link th:href="@{/css/design-system.css}" rel="stylesheet">
     <link th:href="@{/css/auth-common.css}" rel="stylesheet">
+    <!-- Customer Header CSS -->
+    <link th:href="@{/css/home-resy.css}" rel="stylesheet">
+    <link th:href="@{/css/login-modal.css}" rel="stylesheet">
     <style>
         .password-field-group .password-input-wrapper {
             position: relative;
@@ -43,9 +46,9 @@
     </style>
 </head>
 <body class="ds-bg-white">
-    <!-- Unified Header -->
+    <!-- Customer Header -->
     <div th:with="activeNav=''"
-         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+         th:replace="~{fragments/customer-header :: customer-header}"></div>
 
     <main>
         <!-- Compact Header Section -->
