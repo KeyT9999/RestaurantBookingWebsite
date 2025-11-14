@@ -8,7 +8,10 @@
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 	<link th:href="@{/css/design-system.css}" rel="stylesheet">
-	<link th:href="@{/css/luxury.css}" rel="stylesheet">
+	<!-- <link th:href="@{/css/luxury.css}" rel="stylesheet"> -->
+	<!-- Customer Header CSS -->
+	<link th:href="@{/css/home-resy.css}" rel="stylesheet">
+	<link th:href="@{/css/login-modal.css}" rel="stylesheet">
 	<style>
 		/* Page baseline - Black & White */
 		.page-bg { 
@@ -386,9 +389,12 @@
 		}
 	</style>
 </head>
+<!-- Đặt trước </body> -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <body class="page-bg">
 	<div th:insert="fragments/flash :: flash"></div>
-	<div th:with="activeNav='notifications'" th:replace="~{fragments/design-system-components :: unified-header}"></div>
+	<div th:with="activeNav='notifications'" th:replace="~{fragments/customer-header :: customer-header}"></div>
 
 	<div class="detail-container">
 		<!-- Header -->

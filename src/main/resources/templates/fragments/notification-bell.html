@@ -101,8 +101,6 @@
                     return;
                 }
                 
-                const hoverDelay = 200;
-                let hideTimeout = null;
                 let lastLatestFetch = 0;
                 const latestRefreshInterval = 15000;
 
@@ -365,52 +363,10 @@
                 }
 
                 if (typeof bootstrap !== 'undefined' && container) {
+                    // Initialize Bootstrap dropdown (click to toggle)
                     const dropdownInstance = bootstrap.Dropdown.getOrCreateInstance(trigger);
 
-                    const showDropdown = function() {
-                        if (hideTimeout) {
-                            clearTimeout(hideTimeout);
-                            hideTimeout = null;
-                        }
-                        dropdownInstance.show();
-                    };
-
-                    const scheduleHide = function() {
-                        if (hideTimeout) {
-                            clearTimeout(hideTimeout);
-                        }
-                        hideTimeout = setTimeout(function() {
-                            dropdownInstance.hide();
-                        }, hoverDelay);
-                    };
-
-                    container.addEventListener('mouseenter', function() {
-                        showDropdown();
-                    });
-
-                    container.addEventListener('mouseleave', function() {
-                        scheduleHide();
-                    });
-
-                    if (menu) {
-                        menu.addEventListener('mouseenter', function() {
-                            if (hideTimeout) {
-                                clearTimeout(hideTimeout);
-                                hideTimeout = null;
-                            }
-                        });
-                        menu.addEventListener('mouseleave', function() {
-                            scheduleHide();
-                        });
-                    }
-
-                    trigger.addEventListener('click', function() {
-                        if (hideTimeout) {
-                            clearTimeout(hideTimeout);
-                            hideTimeout = null;
-                        }
-                    });
-
+                    // Refresh notifications when dropdown is opened (on click)
                     trigger.addEventListener('show.bs.dropdown', function() {
                         console.log('🔔 Dropdown opened, refreshing notifications...');
                         // Only refresh if list is empty or showing loading/empty state
