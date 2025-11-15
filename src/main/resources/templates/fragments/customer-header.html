@@ -39,49 +39,19 @@
                     </button>
                     <div class="search-dropdown" id="searchDropdown">
                         <form th:action="@{/restaurants}" method="get" class="search-form">
-                            <div class="search-row">
-                                <div class="search-field">
-                                    <i class="fas fa-search search-icon"></i>
-                                    <input type="text" 
-                                           name="search" 
-                                           placeholder="Tên nhà hàng, địa chỉ..." 
-                                           class="search-input"
-                                           th:value="${search}">
-                                </div>
-                            </div>
-                            <div class="search-row">
-                                <div class="search-field">
-                                    <i class="fas fa-utensils search-icon"></i>
-                                    <select name="cuisineType" class="search-select">
-                                        <option value="">Loại ẩm thực</option>
-                                        <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
-                                        <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
-                                        <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
-                                        <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
-                                        <option value="Western" th:selected="${cuisineType == 'Western'}">Phương Tây</option>
-                                        <option value="Thai" th:selected="${cuisineType == 'Thai'}">Thái Lan</option>
-                                        <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
-                                    </select>
-                                </div>
-                                <div class="search-field">
-                                    <i class="fas fa-dollar-sign search-icon"></i>
-                                    <select name="priceRange" class="search-select">
-                                        <option value="">Khoảng giá</option>
-                                        <option value="under-50k" th:selected="${priceRange == 'under-50k'}">Dưới 50k</option>
-                                        <option value="50k-100k" th:selected="${priceRange == '50k-100k'}">50k - 100k</option>
-                                        <option value="100k-200k" th:selected="${priceRange == '100k-200k'}">100k - 200k</option>
-                                        <option value="over-200k" th:selected="${priceRange == 'over-200k'}">Trên 200k</option>
-                                    </select>
-                                </div>
+                            <div class="search-field">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" 
+                                       name="search" 
+                                       placeholder="Tên nhà hàng, địa chỉ..." 
+                                       class="search-input"
+                                       th:value="${search}"
+                                       autocomplete="off">
                             </div>
                             <div class="search-actions">
                                 <button type="submit" class="search-submit">
                                     <i class="fas fa-search"></i>
                                     Tìm kiếm
-                                </button>
-                                <button type="button" class="search-clear" onclick="clearSearch()">
-                                    <i class="fas fa-times"></i>
-                                    Xóa
                                 </button>
                             </div>
                         </form>
@@ -188,6 +158,7 @@
             
             // Toggle current dropdown
             if (!isOpen) {
+                // Open dropdown
                 dropdown.classList.add('show');
                 // Focus on search input when opened
                 setTimeout(() => {
@@ -195,14 +166,10 @@
                     if (searchInput) {
                         searchInput.focus();
                     }
-                }, 100);
-            }
-        };
-        
-        window.clearSearch = function() {
-            const form = document.querySelector('.search-form');
-            if (form) {
-                form.reset();
+                }, 150);
+            } else {
+                // Close dropdown if already open
+                dropdown.classList.remove('show');
             }
         };
         
