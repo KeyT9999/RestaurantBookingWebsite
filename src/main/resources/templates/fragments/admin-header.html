@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- This fragment is for inclusion only -->
+</head>
+<body>
+
+<!-- ================================================
+     ADMIN HEADER FRAGMENT
+     Reusable header for admin pages based on dashboard style
+     ================================================ -->
+
+<div th:fragment="admin-header">
+    <div class="dashboard-header">
+        <div>
+            <h1>
+                <i th:if="${headerIcon}" th:class="'fas ' + ${headerIcon} + ' me-2'"></i>
+                <span th:text="${headerTitle}">Page Title</span>
+            </h1>
+            <p th:if="${headerSubtitle}" th:text="${headerSubtitle}">Page subtitle</p>
+        </div>
+        <div th:if="${headerActionUrl}" class="status-pill">
+            <a th:href="${headerActionUrl}" class="ds-btn ds-btn-primary ds-btn-sm text-decoration-none">
+                <i th:if="${headerActionIcon}" th:class="'fas ' + ${headerActionIcon} + ' me-2'"></i>
+                <span th:text="${headerActionText}">Action</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+

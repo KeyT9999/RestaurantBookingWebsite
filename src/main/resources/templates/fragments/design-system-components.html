@@ -39,6 +39,32 @@
                     <div sec:authorize="isAuthenticated()" class="ds-user-actions">
                         <!-- Customer Actions -->
 
+                        <!-- Header Search Dropdown -->
+                        <div class="header-search">
+                            <button class="search-toggle" onclick="toggleSearchDropdown()" type="button" aria-label="Tìm kiếm">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <div class="search-dropdown" id="searchDropdown">
+                                <form th:action="@{/restaurants}" method="get" class="search-form">
+                                    <div class="search-field">
+                                        <i class="fas fa-search search-icon"></i>
+                                        <input type="text" 
+                                               name="search" 
+                                               placeholder="Tên nhà hàng, địa chỉ..." 
+                                               class="search-input"
+                                               th:value="${search}"
+                                               autocomplete="off">
+                                    </div>
+                                    <div class="search-actions">
+                                        <button type="submit" class="search-submit">
+                                            <i class="fas fa-search"></i>
+                                            Tìm kiếm
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
                         <!-- Notification Bell -->
                         <div class="ds-notification-bell" th:insert="~{fragments/notification-bell :: notification-bell}"></div>
                         
@@ -246,6 +272,58 @@
                     usernameInput.focus();
                 }
             }
+        });
+        
+        // Search Dropdown Functions
+        window.toggleSearchDropdown = function() {
+            const dropdown = document.getElementById('searchDropdown');
+            if (!dropdown) return;
+            
+            const isOpen = dropdown.classList.contains('show');
+            
+            // Close all other dropdowns first
+            document.querySelectorAll('.search-dropdown').forEach(dd => {
+                dd.classList.remove('show');
+            });
+            
+            // Toggle current dropdown
+            if (!isOpen) {
+                // Open dropdown
+                dropdown.classList.add('show');
+                // Focus on search input when opened
+                setTimeout(() => {
+                    const searchInput = dropdown.querySelector('.search-input');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }, 150);
+            } else {
+                // Close dropdown if already open
+                dropdown.classList.remove('show');
+            }
+        };
+        
+        // Initialize search dropdown when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const searchContainer = document.querySelector('.header-search');
+                const dropdown = document.getElementById('searchDropdown');
+                
+                if (searchContainer && dropdown && !searchContainer.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+            
+            // Close dropdown on escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    const dropdown = document.getElementById('searchDropdown');
+                    if (dropdown) {
+                        dropdown.classList.remove('show');
+                    }
+                }
+            });
         });
     </script>
 </div>
