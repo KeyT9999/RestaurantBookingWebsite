@@ -1504,7 +1504,8 @@ body:not(:has(.mini-header)) .header {
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     padding: 1.5rem;
-    min-width: 400px;
+    min-width: 450px;
+    max-width: 500px;
     z-index: 1050; /* Tăng cao hơn header (1000) để không bị che */
     opacity: 0;
     visibility: hidden;
@@ -1512,6 +1513,8 @@ body:not(:has(.mini-header)) .header {
     transition: all 0.3s ease;
     margin-top: 0.5rem;
     pointer-events: none; /* Ẩn tương tác khi không có class show */
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .search-dropdown.show {
@@ -1566,7 +1569,7 @@ body:not(:has(.mini-header)) .header {
 
 .search-select {
     width: 100%;
-    padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+    padding: 0.75rem 2rem 0.75rem 1rem;
     border: 2px solid #E5E7EB;
     border-radius: 8px;
     font-size: 0.9rem;
@@ -1579,7 +1582,6 @@ body:not(:has(.mini-header)) .header {
     background-position: right 0.5rem center;
     background-repeat: no-repeat;
     background-size: 1.25em 1.25em;
-    padding-right: 2rem;
 }
 
 .search-select:focus {
@@ -1594,7 +1596,8 @@ body:not(:has(.mini-header)) .header {
     margin-top: 0.5rem;
 }
 
-.search-submit {
+/* Default search-submit style (for backward compatibility) */
+.search-submit:not(.ds-btn) {
     background: var(--resy-red);
     color: white;
     border: none;
@@ -1609,10 +1612,16 @@ body:not(:has(.mini-header)) .header {
     gap: 0.5rem;
 }
 
-.search-submit:hover {
+.search-submit:not(.ds-btn):hover {
     background: #B91C1C;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* When search-submit uses ds-btn classes, design system styles take precedence */
+.search-submit.ds-btn {
+    /* Design system styles will apply via .ds-btn and .ds-btn-primary classes */
+    gap: 0.5rem; /* Keep gap for icon spacing */
 }
 
 .search-clear {
@@ -1638,8 +1647,15 @@ body:not(:has(.mini-header)) .header {
 @media (max-width: 768px) {
     .search-dropdown {
         min-width: 320px;
+        max-width: 400px;
         right: -50px;
         padding: 1rem;
+    }
+    
+    /* Cuisine Type and Price Range on same row - make responsive */
+    .filter-row-inline {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
     }
     
     .search-row {
@@ -1662,13 +1678,18 @@ body:not(:has(.mini-header)) .header {
 @media (max-width: 480px) {
     .search-dropdown {
         min-width: 280px;
+        max-width: 320px;
         right: -80px;
         padding: 0.75rem;
     }
     
-    .search-input,
-    .search-select {
+    .search-input {
         padding: 0.625rem 0.625rem 0.625rem 2.25rem;
+        font-size: 0.85rem;
+    }
+    
+    .search-select {
+        padding: 0.625rem 2rem 0.625rem 1rem;
         font-size: 0.85rem;
     }
     

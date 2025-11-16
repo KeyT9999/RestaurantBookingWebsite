@@ -958,12 +958,11 @@
                                 <label class="ds-form-label" for="cuisineFilter">Loại ẩm thực</label>
                                 <select id="cuisineFilter" class="ds-form-select">
                                     <option value="">Tất cả</option>
-                                    <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
-                                    <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
-                                    <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
-                                    <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
-                                    <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
-                                    <option value="American" th:selected="${cuisineType == 'American'}">Mỹ</option>
+                                    <option th:each="cuisine : ${availableCuisineTypes}" 
+                                            th:value="${cuisine}" 
+                                            th:text="${cuisine}"
+                                            th:selected="${cuisineType != null and cuisineType == cuisine}">
+                                    </option>
                                 </select>
                             </div>
                             <div class="ds-form-group filter-item">
