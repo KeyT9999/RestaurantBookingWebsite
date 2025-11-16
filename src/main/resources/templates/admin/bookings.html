@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Bookings - Admin Dashboard</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Design System CSS -->
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+    <link th:href="@{/css/booking-list.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-dashboard.css}" rel="stylesheet">
+</head>
+<body>
+    <div th:with="activeNav='admin-dashboard'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+
+    <main>
+        <section style="padding: var(--ds-space-12) 0;">
+            <div class="ds-container dashboard-shell">
+                
+                <!-- Page Header -->
+                <div class="dashboard-header">
+                    <div>
+                        <h1>Quản lý Bookings</h1>
+                        <p>Xem tất cả các đặt bàn trong hệ thống</p>
+                    </div>
+                    <div>
+                        <a th:href="@{/admin/dashboard}" class="ds-btn ds-btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Quay lại Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div th:if="${error}" class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span th:text="${error}"></span>
+                </div>
+
+                <!-- Statistics Cards -->
+                <section class="dashboard-grid dashboard-grid--summary" style="margin-bottom: var(--ds-space-6);">
+                    <article class="metric-card metric-card--primary">
+                        <div class="metric-card__label">
+                            <i class="fas fa-calendar-check"></i>
+                            Tổng số bookings
+                        </div>
+                        <div class="metric-card__value ds-text-primary"
+                             th:text="${totalBookings != null ? totalBookings : 0}">0</div>
+                        <div class="metric-card__footer">Tất cả bookings trong hệ thống</div>
+                    </article>
+
+                    <article class="metric-card metric-card--success">
+                        <div class="metric-card__label">
+                            <i class="fas fa-check-circle"></i>
+                            Đã xác nhận
+                        </div>
+                        <div class="metric-card__value ds-text-success"
+                             th:text="${confirmedBookings != null ? confirmedBookings : 0}">0</div>
+                        <div class="metric-card__footer">Bookings đã xác nhận</div>
+                    </article>
+
+                    <article class="metric-card metric-card--warning">
+                        <div class="metric-card__label">
+                            <i class="fas fa-clock"></i>
+                            Đang chờ
+                        </div>
+                        <div class="metric-card__value ds-text-warning"
+                             th:text="${pendingBookings != null ? pendingBookings : 0}">0</div>
+                        <div class="metric-card__footer">Bookings đang chờ xử lý</div>
+                    </article>
+
+                    <article class="metric-card metric-card--accent">
+                        <div class="metric-card__label">
+                            <i class="fas fa-money-bill-wave"></i>
+                            Tổng tiền nhận được
+                        </div>
+                        <div class="metric-card__value ds-text-primary"
+                             th:text="${totalAmountReceived != null ? #numbers.formatDecimal(totalAmountReceived, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
+                        <div class="metric-card__footer">Từ các thanh toán đã hoàn thành</div>
+                    </article>
+                </section>
+
+                <!-- Filter Section -->
+                <section class="section-card" style="margin-bottom: var(--ds-space-4);">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a th:href="@{/admin/bookings}" 
+                               th:classappend="${selectedStatus == null or selectedStatus.isEmpty()} ? 'ds-btn ds-btn-primary' : 'ds-btn ds-btn-secondary'"
+                               class="ds-btn">
+                                Tất cả
+                            </a>
+                            <a th:href="@{/admin/bookings(status='PENDING')}" 
+                               th:classappend="${selectedStatus == 'PENDING'} ? 'ds-btn ds-btn-primary' : 'ds-btn ds-btn-secondary'"
+                               class="ds-btn">
+                                Đang chờ
+                            </a>
+                            <a th:href="@{/admin/bookings(status='CONFIRMED')}" 
+                               th:classappend="${selectedStatus == 'CONFIRMED'} ? 'ds-btn ds-btn-primary' : 'ds-btn ds-btn-secondary'"
+                               class="ds-btn">
+                                Đã xác nhận
+                            </a>
+                            <a th:href="@{/admin/bookings(status='COMPLETED')}" 
+                               th:classappend="${selectedStatus == 'COMPLETED'} ? 'ds-btn ds-btn-primary' : 'ds-btn ds-btn-secondary'"
+                               class="ds-btn">
+                                Hoàn thành
+                            </a>
+                            <a th:href="@{/admin/bookings(status='CANCELLED')}" 
+                               th:classappend="${selectedStatus == 'CANCELLED'} ? 'ds-btn ds-btn-primary' : 'ds-btn ds-btn-secondary'"
+                               class="ds-btn">
+                                Đã hủy
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Bookings List -->
+                <section class="surface-block" style="padding: var(--ds-space-4);">
+                    <div th:if="${bookings == null or #lists.isEmpty(bookings)}" class="empty-state">
+                        <div class="empty-state__icon" aria-hidden="true">📅</div>
+                        <h3 class="empty-state__title">Không có bookings</h3>
+                        <p class="empty-state__body">Hiện tại không có booking nào trong hệ thống.</p>
+                    </div>
+                
+                    <div th:unless="${bookings == null or #lists.isEmpty(bookings)}" class="booking-cards">
+                        <div class="booking-card" th:each="bookingInfo : ${bookings}">
+                            <div class="booking-card__content">
+                                <div class="booking-card__main">
+                                    <div class="booking-card__restaurant">
+                                        <h3 class="booking-card__restaurant-name" 
+                                            th:text="${bookingInfo.booking.restaurant != null ? bookingInfo.booking.restaurant.restaurantName : 'N/A'}">
+                                            Restaurant Name
+                                        </h3>
+                                        <p class="text-muted mb-0" style="font-size: 0.875rem; margin-top: 0.25rem;">
+                                            Booking ID: <span th:text="${bookingInfo.booking.bookingId}">#</span>
+                                        </p>
+                                    </div>
+                                    <div class="booking-card__essential-info">
+                                        <div class="booking-card__info-row">
+                                            <i class="fas fa-calendar-alt booking-card__info-icon"></i>
+                                            <span class="booking-card__info-text" 
+                                                  th:text="${#temporals.format(bookingInfo.booking.bookingTime, 'dd/MM/yyyy HH:mm')}">
+                                                Date & Time
+                                            </span>
+                                        </div>
+                                        <div class="booking-card__info-row">
+                                            <i class="fas fa-users booking-card__info-icon"></i>
+                                            <span class="booking-card__info-text" 
+                                                  th:text="|${bookingInfo.booking.numberOfGuests} khách|">
+                                                Guests
+                                            </span>
+                                        </div>
+                                        <div class="booking-card__info-row" th:if="${bookingInfo.booking.table}">
+                                            <i class="fas fa-table booking-card__info-icon"></i>
+                                            <span class="booking-card__info-text" 
+                                                  th:text="${bookingInfo.booking.table.tableName}">
+                                                Table
+                                            </span>
+                                        </div>
+                                        <div class="booking-card__info-row">
+                                            <i class="fas fa-money-bill-wave booking-card__info-icon"></i>
+                                            <span class="booking-card__info-text" 
+                                                  style="color: var(--ds-success); font-weight: 600;"
+                                                  th:text="${bookingInfo.amountReceived != null ? #numbers.formatDecimal(bookingInfo.amountReceived, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">
+                                                Amount
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="booking-card__side">
+                                    <div class="booking-card__status">
+                                        <span class="badge badge--pending"
+                                              th:if="${bookingInfo.booking.status != null and bookingInfo.booking.status.name() == 'PENDING'}">
+                                            Đang chờ
+                                        </span>
+                                        <span class="badge badge--pending"
+                                              th:if="${bookingInfo.booking.status != null and bookingInfo.booking.status.name() == 'PENDING_CANCEL'}">
+                                            Đang chờ hủy
+                                        </span>
+                                        <span class="badge badge--success"
+                                              th:if="${bookingInfo.booking.status != null and bookingInfo.booking.status.name() == 'CONFIRMED'}">
+                                            Đã xác nhận
+                                        </span>
+                                        <span class="badge badge--error"
+                                              th:if="${bookingInfo.booking.status != null and bookingInfo.booking.status.name() == 'CANCELLED'}">
+                                            Đã hủy
+                                        </span>
+                                        <span class="badge badge--info"
+                                              th:if="${bookingInfo.booking.status != null and bookingInfo.booking.status.name() == 'COMPLETED'}">
+                                            Hoàn thành
+                                        </span>
+                                        <span class="badge"
+                                              th:if="${bookingInfo.booking.status != null and bookingInfo.booking.status.name() == 'NO_SHOW'}">
+                                            Không đến
+                                        </span>
+                                        <span class="badge"
+                                              th:if="${bookingInfo.booking.status == null}">
+                                            Không xác định
+                                        </span>
+                                    </div>
+                                    <div class="booking-card__status" style="margin-top: var(--ds-space-2);">
+                                        <span class="badge badge--success"
+                                              th:if="${bookingInfo.paymentStatus != null and bookingInfo.paymentStatus.name() == 'COMPLETED'}">
+                                            <i class="fas fa-check-circle me-1"></i>Đã thanh toán
+                                        </span>
+                                        <span class="badge badge--warning"
+                                              th:if="${bookingInfo.paymentStatus != null and bookingInfo.paymentStatus.name() == 'PENDING'}">
+                                            <i class="fas fa-clock me-1"></i>Chờ thanh toán
+                                        </span>
+                                        <span class="badge badge--error"
+                                              th:if="${bookingInfo.paymentStatus != null and bookingInfo.paymentStatus.name() == 'FAILED'}">
+                                            <i class="fas fa-times-circle me-1"></i>Thanh toán thất bại
+                                        </span>
+                                        <span class="badge badge--info"
+                                              th:if="${bookingInfo.paymentStatus != null and bookingInfo.paymentStatus.name() == 'REFUNDED'}">
+                                            <i class="fas fa-undo me-1"></i>Đã hoàn tiền
+                                        </span>
+                                        <span class="badge badge--secondary"
+                                              th:if="${bookingInfo.paymentStatus == null}">
+                                            <i class="fas fa-question-circle me-1"></i>Chưa thanh toán
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+</body>
+</html>
+

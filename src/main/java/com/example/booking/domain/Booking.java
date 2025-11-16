@@ -272,6 +272,48 @@ public class Booking {
         return null;
     }
 
+    /**
+     * Kiểm tra xem có table nào đang ở trạng thái OCCUPIED không (đã check-in)
+     */
+    public boolean hasOccupiedTable() {
+        if (bookingTables == null || bookingTables.isEmpty()) {
+            return false;
+        }
+        return bookingTables.stream()
+                .anyMatch(bt -> bt.getTable() != null 
+                        && bt.getTable().getStatus() != null 
+                        && bt.getTable().getStatus().name().equals("OCCUPIED"));
+    }
+
+    /**
+     * Kiểm tra xem có table nào đang ở trạng thái CLEANING không (đã check-out)
+     */
+    public boolean hasCleaningTable() {
+        if (bookingTables == null || bookingTables.isEmpty()) {
+            return false;
+        }
+        return bookingTables.stream()
+                .anyMatch(bt -> bt.getTable() != null 
+                        && bt.getTable().getStatus() != null 
+                        && bt.getTable().getStatus().name().equals("CLEANING"));
+    }
+
+    /**
+     * Kiểm tra xem booking có thể check-in được không
+     * (Có table ở RESERVED hoặc AVAILABLE, chưa check-in và chưa check-out)
+     */
+    public boolean canCheckIn() {
+        if (bookingTables == null || bookingTables.isEmpty()) {
+            return false;
+        }
+        // Có thể check-in nếu có table ở RESERVED hoặc AVAILABLE
+        return bookingTables.stream()
+                .anyMatch(bt -> bt.getTable() != null 
+                        && bt.getTable().getStatus() != null 
+                        && (bt.getTable().getStatus().name().equals("RESERVED") 
+                            || bt.getTable().getStatus().name().equals("AVAILABLE")));
+    }
+
     // Cancel-related getters and setters
     public String getCancelReason() {
         return cancelReason;

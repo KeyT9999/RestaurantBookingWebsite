@@ -80,5 +80,12 @@ public interface RestaurantBalanceRepository extends JpaRepository<RestaurantBal
      */
     @Query("SELECT COALESCE(SUM(rb.totalCommission), 0) FROM RestaurantBalance rb")
     BigDecimal getTotalCommissionEarned();
+    
+    /**
+     * Get average commission rate from all restaurants (for admin dashboard)
+     * Commission rate is stored as percentage (e.g., 7.00 = 7% của subtotal)
+     */
+    @Query("SELECT COALESCE(AVG(rb.commissionRate), 0) FROM RestaurantBalance rb WHERE rb.commissionRate IS NOT NULL")
+    BigDecimal getAverageCommissionRate();
 }
 

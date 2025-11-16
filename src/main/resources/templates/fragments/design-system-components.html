@@ -39,8 +39,8 @@
                     <div sec:authorize="isAuthenticated()" class="ds-user-actions">
                         <!-- Customer Actions -->
 
-                        <!-- Header Search Dropdown -->
-                        <div class="header-search">
+                        <!-- Header Search Dropdown - Hidden for Admin -->
+                        <div class="header-search" sec:authorize="!hasRole('ADMIN')">
                             <button class="search-toggle" onclick="toggleSearchDropdown()" type="button" aria-label="Tìm kiếm">
                                 <i class="fas fa-search"></i>
                             </button>
@@ -134,7 +134,7 @@
                         </div>
                         
                         <!-- Admin Dashboard Dropdown -->
-                        <div class="ds-admin-dropdown dropdown dropdown-hover" sec:authorize="hasRole('ADMIN')">
+                        <div class="ds-admin-dropdown dropdown" sec:authorize="hasRole('ADMIN')">
                             <button class="ds-btn ds-btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-cog"></i>
                                 Admin
@@ -142,51 +142,65 @@
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/withdrawal}">
-                                        <i class="fas fa-credit-card me-2"></i>
-                                        Quản lý rút tiền
+                                        <div>
+                                            <i class="fas fa-credit-card me-2"></i>
+                                            <span>Quản lý rút tiền</span>
+                                        </div>
                                         <small class="d-block text-muted">Xử lý yêu cầu rút tiền từ nhà hàng</small>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/restaurant/requests}">
-                                        <i class="fas fa-utensils me-2"></i>
-                                        Duyệt nhà hàng
+                                        <div>
+                                            <i class="fas fa-utensils me-2"></i>
+                                            <span>Duyệt nhà hàng</span>
+                                        </div>
                                         <small class="d-block text-muted">Quản lý các yêu cầu đăng ký mới</small>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/users}">
-                                        <i class="fas fa-users me-2"></i>
-                                        Quản lý người dùng
+                                        <div>
+                                            <i class="fas fa-users me-2"></i>
+                                            <span>Quản lý người dùng</span>
+                                        </div>
                                         <small class="d-block text-muted">Quản lý tài khoản khách hàng và nhà hàng</small>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/chat}">
-                                        <i class="fas fa-comments me-2"></i>
-                                        Quản lý chat
+                                        <div>
+                                            <i class="fas fa-comments me-2"></i>
+                                            <span>Quản lý chat</span>
+                                        </div>
                                         <small class="d-block text-muted">Hỗ trợ khách hàng qua hệ thống chat</small>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/moderation}">
-                                        <i class="fas fa-shield-alt me-2"></i>
-                                        Moderation
+                                        <div>
+                                            <i class="fas fa-shield-alt me-2"></i>
+                                            <span>Moderation</span>
+                                        </div>
                                         <small class="d-block text-muted">Duyệt báo cáo và nội dung vi phạm</small>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/rate-limiting}">
-                                        <i class="fas fa-tachometer-alt me-2"></i>
-                                        Rate limiting
+                                        <div>
+                                            <i class="fas fa-tachometer-alt me-2"></i>
+                                            <span>Rate limiting</span>
+                                        </div>
                                         <small class="d-block text-muted">Giám sát và cấu hình giới hạn tần suất</small>
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/dashboard}">
-                                        <i class="fas fa-tachometer-alt me-2"></i>
-                                        Dashboard
+                                        <div>
+                                            <i class="fas fa-tachometer-alt me-2"></i>
+                                            <span>Dashboard</span>
+                                        </div>
                                     </a>
                                 </li>
                             </ul>

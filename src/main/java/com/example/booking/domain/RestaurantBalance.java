@@ -44,7 +44,7 @@ public class RestaurantBalance {
     
     // Commission configuration
     @Column(name = "commission_rate", precision = 5, scale = 2)
-    private BigDecimal commissionRate = new BigDecimal("30.00"); // 30%
+    private BigDecimal commissionRate = new BigDecimal("7.00"); // 7% của subtotal (tổng đơn hàng ban đầu, không tính voucher)
     
     @Enumerated(EnumType.STRING)
     @Column(name = "commission_type", length = 20)
