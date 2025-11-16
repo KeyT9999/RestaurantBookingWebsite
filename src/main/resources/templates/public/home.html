@@ -563,49 +563,19 @@
                     </button>
                     <div class="search-dropdown" id="searchDropdown">
                         <form th:action="@{/restaurants}" method="get" class="search-form">
-                            <div class="search-row">
-                                <div class="search-field">
-                                    <i class="fas fa-search search-icon"></i>
-                                    <input type="text" 
-                                           name="search" 
-                                           placeholder="Tên nhà hàng, địa chỉ..." 
-                                           class="search-input"
-                                           th:value="${search}">
-                                </div>
-                            </div>
-                            <div class="search-row">
-                                <div class="search-field">
-                                    <i class="fas fa-utensils search-icon"></i>
-                                    <select name="cuisineType" class="search-select">
-                                        <option value="">Loại ẩm thực</option>
-                                        <option value="Vietnamese" th:selected="${cuisineType == 'Vietnamese'}">Việt Nam</option>
-                                        <option value="Korean" th:selected="${cuisineType == 'Korean'}">Hàn Quốc</option>
-                                        <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Nhật Bản</option>
-                                        <option value="Chinese" th:selected="${cuisineType == 'Chinese'}">Trung Quốc</option>
-                                        <option value="Western" th:selected="${cuisineType == 'Western'}">Phương Tây</option>
-                                        <option value="Thai" th:selected="${cuisineType == 'Thai'}">Thái Lan</option>
-                                        <option value="Italian" th:selected="${cuisineType == 'Italian'}">Ý</option>
-                                    </select>
-                                </div>
-                                <div class="search-field">
-                                    <i class="fas fa-dollar-sign search-icon"></i>
-                                    <select name="priceRange" class="search-select">
-                                        <option value="">Khoảng giá</option>
-                                        <option value="under-50k" th:selected="${priceRange == 'under-50k'}">Dưới 50k</option>
-                                        <option value="50k-100k" th:selected="${priceRange == '50k-100k'}">50k - 100k</option>
-                                        <option value="100k-200k" th:selected="${priceRange == '100k-200k'}">100k - 200k</option>
-                                        <option value="over-200k" th:selected="${priceRange == 'over-200k'}">Trên 200k</option>
-                                    </select>
-                                </div>
+                            <div class="search-field">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" 
+                                       name="search" 
+                                       placeholder="Tên nhà hàng, địa chỉ..." 
+                                       class="search-input"
+                                       th:value="${search}"
+                                       autocomplete="off">
                             </div>
                             <div class="search-actions">
                                 <button type="submit" class="search-submit">
                                     <i class="fas fa-search"></i>
                                     Tìm kiếm
-                                </button>
-                                <button type="button" class="search-clear" onclick="clearSearch()">
-                                    <i class="fas fa-times"></i>
-                                    Xóa
                                 </button>
                             </div>
                         </form>
@@ -675,10 +645,12 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item" th:href="@{/logout}">
-                                    <i class="fas fa-sign-out-alt me-2"></i>
-                                    Đăng xuất
-                                </a>
+                                <form th:action="@{/logout}" method="post" class="d-inline">
+                                    <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-start">
+                                        <i class="fas fa-sign-out-alt me-2"></i>
+                                        Đăng xuất
+                                    </button>
+                                </form>
                             </li>
                         </ul>
                     </div>
@@ -1179,8 +1151,14 @@
       window.APP_CTX = window.APP_CTX || {};
       APP_CTX.authenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
       APP_CTX.isRestaurantOwner = /*[[${#authorization.expression('hasRole(''RESTAURANT_OWNER'')')}]]*/ false;
-      APP_CTX.showLocationPrompt = /*[[${session.SHOW_LOCATION_PROMPT}]]*/ false;
+      APP_CTX.showLocationPrompt = /*[[${session.SHOW_LOCATION_PROMPT != null ? session.SHOW_LOCATION_PROMPT : false}]]*/ false;
       APP_CTX.baseUrl = /*[[@{/}]]*/ '/';
+      console.log('🚀 APP_CTX initialized:', {
+        authenticated: APP_CTX.authenticated,
+        isRestaurantOwner: APP_CTX.isRestaurantOwner,
+        showLocationPrompt: APP_CTX.showLocationPrompt,
+        sessionValue: /*[[${session.SHOW_LOCATION_PROMPT}]]*/ null
+      });
     </script>
     <script th:src="@{/js/ai-search.js}"></script>
     <script th:src="@{/js/location.js}"></script>
@@ -1189,6 +1167,8 @@
     <script>
         function toggleSearchDropdown() {
             const dropdown = document.getElementById('searchDropdown');
+            if (!dropdown) return;
+            
             const isOpen = dropdown.classList.contains('show');
             
             // Close all other dropdowns first
@@ -1198,6 +1178,7 @@
             
             // Toggle current dropdown
             if (!isOpen) {
+                // Open dropdown
                 dropdown.classList.add('show');
                 // Focus on search input when opened
                 setTimeout(() => {
@@ -1205,14 +1186,10 @@
                     if (searchInput) {
                         searchInput.focus();
                     }
-                }, 100);
-            }
-        }
-        
-        function clearSearch() {
-            const form = document.querySelector('.search-form');
-            if (form) {
-                form.reset();
+                }, 150);
+            } else {
+                // Close dropdown if already open
+                dropdown.classList.remove('show');
             }
         }
         
@@ -1221,7 +1198,7 @@
             const searchContainer = document.querySelector('.header-search');
             const dropdown = document.getElementById('searchDropdown');
             
-            if (!searchContainer.contains(event.target)) {
+            if (searchContainer && dropdown && !searchContainer.contains(event.target)) {
                 dropdown.classList.remove('show');
             }
         });
@@ -1230,7 +1207,9 @@
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 const dropdown = document.getElementById('searchDropdown');
-                dropdown.classList.remove('show');
+                if (dropdown) {
+                    dropdown.classList.remove('show');
+                }
             }
         });
         
@@ -1263,7 +1242,7 @@
     </script>
     
     <!-- Messenger Style Chat Widget -->
-    <div id="messenger-chat-widget" class="messenger-chat-widget" sec:authorize="isAuthenticated() and (hasRole('CUSTOMER') or hasRole('customer') or hasRole('RESTAURANT_OWNER') or hasRole('restaurant_owner') or hasRole('ADMIN') or hasRole('admin'))">
+    <div id="messenger-chat-widget" class="messenger-chat-widget" sec:authorize="isAuthenticated() and (hasRole('CUSTOMER') or hasRole('customer'))">
         <!-- Chat Toggle Button -->
         <button class="messenger-chat-toggle" id="messengerChatToggle" title="Chat với nhà hàng">
             <i class="fas fa-comments"></i>
@@ -1294,31 +1273,9 @@
                 <!-- Rooms List View -->
                 <div id="messengerRoomsView" class="messenger-rooms-view">
                     <div class="messenger-rooms-header">
-                        <h6 id="messengerRoomsHeaderTitle">Xem tất cả</h6>
-                        <div class="messenger-rooms-actions">
-                            <!-- Nút chọn nhà hàng - hiển thị cho ADMIN và RESTAURANT_OWNER -->
-                            <button class="messenger-btn-select-restaurant" id="messengerSelectRestaurantBtn" title="Chọn nhà hàng" style="display: none;">
-                                <i class="fas fa-store"></i>
-                            </button>
-                            <!-- Nút quay lại chọn nhà hàng - chỉ cho restaurant owner -->
-                            <button class="messenger-btn-select-restaurant" id="messengerBackToRestaurantBtn" title="Chọn nhà hàng khác" style="display: none;">
-                                <i class="fas fa-arrow-left"></i>
-                            </button>
-                            <button class="messenger-btn-new-chat" id="messengerNewChatBtn" title="Chat mới">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Nút chọn loại chat (chỉ cho restaurant owner) -->
-                    <div class="messenger-chat-type-selector" id="messengerChatTypeSelector" style="display: none;">
-                        <button class="messenger-chat-type-btn" id="messengerChatWithCustomerBtn">
-                            <i class="fas fa-users"></i>
-                            <span>Customer</span>
-                        </button>
-                        <button class="messenger-chat-type-btn" id="messengerChatWithAdminBtn">
-                            <i class="fas fa-user-shield"></i>
-                            <span>Admin</span>
+                        <h6>Xem tất cả</h6>
+                        <button class="messenger-btn-new-chat" id="messengerNewChatBtn" title="Chat mới">
+                            <i class="fas fa-plus"></i>
                         </button>
                     </div>
                     
@@ -1334,31 +1291,7 @@
                     <div id="messengerRoomsEmpty" class="messenger-empty" style="display: none;">
                         <i class="fas fa-inbox"></i>
                         <p>Chưa có cuộc trò chuyện nào</p>
-                        <a id="messengerEmptyChatLink" href="#" class="messenger-btn-link">Bắt đầu chat mới</a>
-                    </div>
-                </div>
-                
-                <!-- Restaurant Selection View (cho ADMIN và RESTAURANT_OWNER) -->
-                <div id="messengerRestaurantSelectionView" class="messenger-restaurant-selection-view" style="display: none;">
-                    <div class="messenger-restaurant-selection-header">
-                        <button class="messenger-btn-back" id="messengerBackFromRestaurantBtn" style="display: none;">
-                            <i class="fas fa-arrow-left"></i>
-                        </button>
-                        <h6 id="messengerRestaurantSelectionTitle">Chọn nhà hàng để chat</h6>
-                    </div>
-                    
-                    <div id="messengerRestaurantLoading" class="messenger-loading">
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
-                        <span>Đang tải...</span>
-                    </div>
-                    
-                    <div id="messengerRestaurantList" class="messenger-restaurant-list" style="display: none;">
-                        <!-- Restaurants will be loaded here -->
-                    </div>
-                    
-                    <div id="messengerRestaurantEmpty" class="messenger-empty" style="display: none;">
-                        <i class="fas fa-store"></i>
-                        <p>Không có nhà hàng nào</p>
+                        <a th:href="@{/customer/chat}" class="messenger-btn-link">Bắt đầu chat mới</a>
                     </div>
                 </div>
                 
@@ -1571,31 +1504,6 @@
             color: #111827;
         }
 
-        .messenger-rooms-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .messenger-btn-select-restaurant {
-            background: #000000;
-            border: 2px solid #000000;
-            color: #FFFFFF;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .messenger-btn-select-restaurant:hover {
-            background: #FFFFFF;
-            color: #000000;
-        }
-
         .messenger-btn-new-chat {
             background: #000000;
             border: 2px solid #000000;
@@ -1733,133 +1641,6 @@
             min-width: 18px;
             text-align: center;
             margin-left: 8px;
-        }
-
-        /* Restaurant Selection View */
-        .messenger-restaurant-selection-view {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .messenger-restaurant-selection-header {
-            padding: 16px 20px;
-            border-bottom: 2px solid #000000;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .messenger-restaurant-selection-header h6 {
-            margin: 0;
-            font-weight: 600;
-            font-size: 16px;
-            color: #111827;
-            flex: 1;
-        }
-
-        .messenger-restaurant-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px 0;
-        }
-
-        .messenger-restaurant-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            border-bottom: 1px solid #E5E7EB;
-        }
-
-        .messenger-restaurant-item:hover {
-            background-color: #F9FAFB;
-        }
-
-        .messenger-restaurant-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #FFFFFF;
-            font-size: 20px;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-
-        .messenger-restaurant-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .messenger-restaurant-name {
-            font-weight: 600;
-            font-size: 15px;
-            color: #111827;
-            margin: 0 0 4px 0;
-        }
-
-        .messenger-restaurant-owner {
-            font-size: 13px;
-            color: #6B7280;
-            margin: 0;
-        }
-
-        .messenger-restaurant-unread {
-            background: #000000;
-            color: #FFFFFF;
-            border-radius: 12px;
-            padding: 2px 8px;
-            font-size: 11px;
-            font-weight: 600;
-            min-width: 18px;
-            text-align: center;
-            margin-left: 8px;
-        }
-
-        /* Chat Type Selector (cho restaurant owner) */
-        .messenger-chat-type-selector {
-            display: flex;
-            gap: 8px;
-            padding: 12px 20px;
-            border-top: 1px solid #E5E7EB;
-            background: #FFFFFF;
-        }
-
-        .messenger-chat-type-btn {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border: 2px solid #000000;
-            background: #FFFFFF;
-            color: #000000;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .messenger-chat-type-btn:hover {
-            background: #000000;
-            color: #FFFFFF;
-        }
-
-        .messenger-chat-type-btn.active {
-            background: #000000;
-            color: #FFFFFF;
-        }
-
-        .messenger-chat-type-btn i {
-            font-size: 16px;
         }
 
         /* Chat View */
@@ -2093,13 +1874,9 @@
                 this.stompClient = null;
                 this.currentRoomId = null;
                 this.currentUserId = null;
-                this.userRole = null;
-                this.selectedRestaurantId = null; // Lưu restaurant đã chọn (cho restaurant owner)
-                this.chatType = 'customer'; // 'customer' hoặc 'admin' (cho restaurant owner)
                 this.isConnected = false;
                 this.isMinimized = false;
                 this.typingTimer = null;
-                this.unreadCountInterval = null;
                 
                 this.init();
             }
@@ -2108,11 +1885,19 @@
                 this.setupEventListeners();
                 this.loadUnreadCount();
                 this.initWebSocket();
-                
-                // Cập nhật unread count định kỳ mỗi 30 giây
-                this.unreadCountInterval = setInterval(() => {
-                    this.loadUnreadCount();
-                }, 30000);
+                // Restore chat state from localStorage
+                this.restoreChatState();
+            }
+            
+            restoreChatState() {
+                // Check if chat was open in previous session
+                const wasOpen = localStorage.getItem('messengerChatOpen') === 'true';
+                if (wasOpen) {
+                    // Small delay to ensure DOM is ready
+                    setTimeout(() => {
+                        this.openChat();
+                    }, 500);
+                }
             }
             
             setupEventListeners() {
@@ -2123,9 +1908,6 @@
                 const sendBtn = document.getElementById('messengerSendBtn');
                 const messageInput = document.getElementById('messengerMessageInput');
                 const newChatBtn = document.getElementById('messengerNewChatBtn');
-                const selectRestaurantBtn = document.getElementById('messengerSelectRestaurantBtn');
-                const backToRestaurantBtn = document.getElementById('messengerBackToRestaurantBtn');
-                const backFromRestaurantBtn = document.getElementById('messengerBackFromRestaurantBtn');
                 
                 if (toggleBtn) {
                     toggleBtn.addEventListener('click', () => this.toggleChat());
@@ -2162,76 +1944,9 @@
                 
                 if (newChatBtn) {
                     newChatBtn.addEventListener('click', () => {
-                        const chatUrl = this.getChatUrlByRole();
-                        window.location.href = chatUrl;
+                        window.location.href = '/customer/chat';
                     });
                 }
-                
-                // Set link cho empty state
-                const emptyChatLink = document.getElementById('messengerEmptyChatLink');
-                if (emptyChatLink) {
-                    emptyChatLink.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        const chatUrl = this.getChatUrlByRole();
-                        window.location.href = chatUrl;
-                    });
-                }
-                
-                // Xử lý nút chọn nhà hàng (cho ADMIN và RESTAURANT_OWNER)
-                if (selectRestaurantBtn) {
-                    selectRestaurantBtn.addEventListener('click', () => {
-                        this.showRestaurantSelection();
-                    });
-                }
-                
-                // Xử lý nút quay lại chọn nhà hàng (chỉ cho restaurant owner)
-                if (backToRestaurantBtn) {
-                    backToRestaurantBtn.addEventListener('click', () => {
-                        this.showRestaurantSelection();
-                    });
-                }
-                
-                // Xử lý nút quay lại từ restaurant selection
-                if (backFromRestaurantBtn) {
-                    backFromRestaurantBtn.addEventListener('click', () => {
-                        // Đối với restaurant owner: quay lại restaurant selection
-                        // Đối với admin: quay lại rooms view
-                        if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                            this.showRestaurantSelection();
-                        } else {
-                            this.showRoomsView();
-                        }
-                    });
-                }
-                
-                // Xử lý nút chọn loại chat (Customer/Admin) - chỉ cho restaurant owner
-                const chatWithCustomerBtn = document.getElementById('messengerChatWithCustomerBtn');
-                const chatWithAdminBtn = document.getElementById('messengerChatWithAdminBtn');
-                
-                if (chatWithCustomerBtn) {
-                    chatWithCustomerBtn.addEventListener('click', () => {
-                        this.selectChatType('customer');
-                    });
-                }
-                
-                if (chatWithAdminBtn) {
-                    chatWithAdminBtn.addEventListener('click', () => {
-                        this.selectChatType('admin');
-                    });
-                }
-            }
-            
-            getChatUrlByRole() {
-                // Trả về URL chat phù hợp dựa trên role
-                if (this.userRole === 'CUSTOMER' || this.userRole === 'customer') {
-                    return '/customer/chat';
-                } else if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    return '/restaurant-owner/chat';
-                } else if (this.userRole === 'ADMIN' || this.userRole === 'admin') {
-                    return '/admin/chat';
-                }
-                // Default fallback
-                return '/customer/chat';
             }
             
             toggleChat() {
@@ -2247,47 +1962,9 @@
                 const window = document.getElementById('messengerChatWindow');
                 window.style.display = 'flex';
                 this.isMinimized = false;
-                this.loadUnreadCount(); // Cập nhật unread count khi mở chat
-                
-                // Đối với restaurant owner: hiển thị rooms view với nút Customer/Admin
-                if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    // Nếu chưa chọn restaurant và đang ở chế độ customer → hiển thị restaurant selection
-                    if (!this.selectedRestaurantId && this.chatType === 'customer') {
-                        this.showRestaurantSelection();
-                    } else {
-                        // Hiển thị rooms view
-                        this.showRoomsView();
-                        this.loadChatRooms();
-                    }
-                } else {
-                    // Admin và Customer: hiển thị rooms trực tiếp
-                    this.showRoomsView();
-                    this.loadChatRooms();
-                }
-                
-                // Hiển thị nút chọn nhà hàng nếu là ADMIN hoặc RESTAURANT_OWNER
-                const selectRestaurantBtn = document.getElementById('messengerSelectRestaurantBtn');
-                const backToRestaurantBtn = document.getElementById('messengerBackToRestaurantBtn');
-                
-                if (this.userRole === 'ADMIN' || this.userRole === 'admin') {
-                    // Admin: hiển thị nút chọn nhà hàng
-                    if (selectRestaurantBtn) selectRestaurantBtn.style.display = 'flex';
-                    if (backToRestaurantBtn) backToRestaurantBtn.style.display = 'none';
-                } else if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    // Restaurant owner: 
-                    // - Nếu chưa chọn restaurant: hiển thị nút chọn nhà hàng
-                    // - Nếu đã chọn restaurant: hiển thị nút quay lại chọn nhà hàng
-                    if (this.selectedRestaurantId) {
-                        if (selectRestaurantBtn) selectRestaurantBtn.style.display = 'none';
-                        if (backToRestaurantBtn) backToRestaurantBtn.style.display = 'flex';
-                    } else {
-                        if (selectRestaurantBtn) selectRestaurantBtn.style.display = 'flex';
-                        if (backToRestaurantBtn) backToRestaurantBtn.style.display = 'none';
-                    }
-                } else {
-                    if (selectRestaurantBtn) selectRestaurantBtn.style.display = 'none';
-                    if (backToRestaurantBtn) backToRestaurantBtn.style.display = 'none';
-                }
+                this.loadChatRooms();
+                // Save state to localStorage
+                localStorage.setItem('messengerChatOpen', 'true');
             }
             
             minimizeChat() {
@@ -2301,6 +1978,8 @@
                 window.style.display = 'none';
                 this.currentRoomId = null;
                 this.showRoomsView();
+                // Save closed state to localStorage
+                localStorage.setItem('messengerChatOpen', 'false');
             }
             
             async loadChatRooms() {
@@ -2313,52 +1992,24 @@
                 emptyEl.style.display = 'none';
                 
                 try {
-                    let url = '/api/chat/rooms';
-                    const params = new URLSearchParams();
-                    
-                    // Đối với restaurant owner
-                    if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                        // Nếu đang chọn Customer: filter theo restaurant đã chọn
-                        if (this.chatType === 'customer' && this.selectedRestaurantId) {
-                            params.append('restaurantId', this.selectedRestaurantId);
-                        }
-                        // Nếu đang chọn Admin: không filter, sẽ filter ở client side
-                    }
-                    
-                    if (params.toString()) {
-                        url += '?' + params.toString();
-                    }
-                    
-                    const response = await fetch(url);
+                    const response = await fetch('/api/chat/rooms');
                     if (!response.ok) throw new Error('Failed to load rooms');
                     
                     const rooms = await response.json();
                     loadingEl.style.display = 'none';
                     
-                    // Filter rooms dựa trên chat type cho restaurant owner
-                    let filteredRooms = rooms;
-                    if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                        if (this.chatType === 'customer') {
-                            // Chỉ lấy rooms có customer (participantRole === 'CUSTOMER')
-                            filteredRooms = rooms.filter(room => room.participantRole === 'CUSTOMER');
-                        } else if (this.chatType === 'admin') {
-                            // Chỉ lấy rooms có admin (participantRole === 'ADMIN')
-                            filteredRooms = rooms.filter(room => room.participantRole === 'ADMIN');
-                        }
-                    }
-                    
-                    if (filteredRooms && filteredRooms.length > 0) {
-                        this.displayRooms(filteredRooms);
+                    if (rooms && rooms.length > 0) {
+                        this.displayRooms(rooms);
                         listEl.style.display = 'block';
                     } else {
-                        // Vẫn hiển thị AI Chat Assistant ngay cả khi không có room nào (chỉ cho customer)
+                        // Vẫn hiển thị AI Chat Assistant ngay cả khi không có room nào
                         this.displayRooms([]);
                         listEl.style.display = 'block';
                     }
                 } catch (error) {
                     console.error('Error loading rooms:', error);
                     loadingEl.style.display = 'none';
-                    // Vẫn hiển thị AI Chat Assistant khi có lỗi (chỉ cho customer)
+                    // Vẫn hiển thị AI Chat Assistant khi có lỗi
                     this.displayRooms([]);
                     listEl.style.display = 'block';
                 }
@@ -2368,11 +2019,9 @@
                 const listEl = document.getElementById('messengerRoomsList');
                 listEl.innerHTML = '';
                 
-                // Chỉ thêm AI Chat Assistant cho CUSTOMER
-                if (this.userRole === 'CUSTOMER' || this.userRole === 'customer') {
-                    const aiChatRoom = this.createAIChatRoom();
-                    listEl.appendChild(aiChatRoom);
-                }
+                // Thêm AI Chat Assistant ở đầu danh sách (luôn luôn đầu tiên)
+                const aiChatRoom = this.createAIChatRoom();
+                listEl.appendChild(aiChatRoom);
                 
                 // Sắp xếp các room restaurant theo thời gian tin nhắn cuối cùng (mới nhất trước)
                 const sortedRooms = [...rooms].sort((a, b) => {
@@ -2430,12 +2079,6 @@
             }
             
             async openAIChat() {
-                // Chỉ CUSTOMER mới có thể mở AI Chat
-                if (this.userRole !== 'CUSTOMER' && this.userRole !== 'customer') {
-                    console.warn('AI Chat is only available for CUSTOMER role');
-                    return;
-                }
-                
                 this.currentRoomId = 'AI_CHAT';
                 this.showChatView('Trợ Lý AI');
                 
@@ -2492,39 +2135,11 @@
             createRoomItem(room) {
                 const item = document.createElement('div');
                 item.className = 'messenger-room-item';
-                
-                // Xác định tên hiển thị dựa trên role
-                let displayName;
-                let roomNameForChat;
-                if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    // Restaurant owner: hiển thị tên customer
-                    displayName = room.participantName || 'Khách hàng';
-                    roomNameForChat = room.participantName || 'Khách hàng';
-                } else {
-                    // Customer và Admin: hiển thị tên nhà hàng
-                    displayName = room.restaurantName || 'Nhà hàng';
-                    roomNameForChat = room.restaurantName || 'Nhà hàng';
-                }
-                
-                item.addEventListener('click', () => this.openChatRoom(room.roomId, roomNameForChat));
+                item.addEventListener('click', () => this.openChatRoom(room.roomId, room.restaurantName));
                 
                 const avatar = document.createElement('div');
                 avatar.className = 'messenger-room-avatar';
-                
-                // Đối với restaurant owner: hiển thị avatar customer hoặc icon user
-                // Đối với customer/admin: hiển thị icon store
-                if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    if (room.participantAvatarUrl) {
-                        avatar.style.backgroundImage = `url(${room.participantAvatarUrl})`;
-                        avatar.style.backgroundSize = 'cover';
-                        avatar.style.backgroundPosition = 'center';
-                    } else {
-                        avatar.innerHTML = '<i class="fas fa-user"></i>';
-                        avatar.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                    }
-                } else {
-                    avatar.innerHTML = '<i class="fas fa-store"></i>';
-                }
+                avatar.innerHTML = '<i class="fas fa-store"></i>';
                 
                 const info = document.createElement('div');
                 info.className = 'messenger-room-info';
@@ -2534,7 +2149,7 @@
                 
                 const name = document.createElement('h6');
                 name.className = 'messenger-room-name';
-                name.textContent = displayName;
+                name.textContent = room.restaurantName || 'Nhà hàng';
                 
                 const time = document.createElement('span');
                 time.className = 'messenger-room-time';
@@ -2575,329 +2190,19 @@
             
             showChatView(roomName) {
                 document.getElementById('messengerRoomsView').style.display = 'none';
-                document.getElementById('messengerRestaurantSelectionView').style.display = 'none';
                 document.getElementById('messengerChatView').style.display = 'flex';
                 document.getElementById('messengerChatRoomName').textContent = roomName || 'Nhà hàng';
             }
             
             showRoomsView() {
-                document.getElementById('messengerRestaurantSelectionView').style.display = 'none';
-                document.getElementById('messengerChatView').style.display = 'none';
                 document.getElementById('messengerRoomsView').style.display = 'flex';
-                this.currentRoomId = null;
-                
-                // Hiển thị nút chọn loại chat cho restaurant owner
-                const chatTypeSelector = document.getElementById('messengerChatTypeSelector');
-                if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    if (chatTypeSelector) {
-                        chatTypeSelector.style.display = 'flex';
-                        // Cập nhật active state
-                        const customerBtn = document.getElementById('messengerChatWithCustomerBtn');
-                        const adminBtn = document.getElementById('messengerChatWithAdminBtn');
-                        if (customerBtn && adminBtn) {
-                            if (this.chatType === 'customer') {
-                                customerBtn.classList.add('active');
-                                adminBtn.classList.remove('active');
-                            } else {
-                                customerBtn.classList.remove('active');
-                                adminBtn.classList.add('active');
-                            }
-                        }
-                    }
-                } else {
-                    if (chatTypeSelector) chatTypeSelector.style.display = 'none';
-                }
-                
-                // Cập nhật header: hiển thị tên restaurant nếu đã chọn
-                const roomsHeader = document.getElementById('messengerRoomsHeaderTitle');
-                if (roomsHeader) {
-                    if ((this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') && this.selectedRestaurantId) {
-                        // Load tên restaurant từ API
-                        this.updateRestaurantHeaderName();
-                    } else if ((this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') && this.chatType === 'admin') {
-                        roomsHeader.textContent = 'Chat với Admin';
-                    } else {
-                        roomsHeader.textContent = 'Xem tất cả';
-                    }
-                }
-            }
-            
-            async updateRestaurantHeaderName() {
-                const roomsHeader = document.getElementById('messengerRoomsHeaderTitle');
-                if (!roomsHeader || !this.selectedRestaurantId) return;
-                
-                try {
-                    // Load restaurants để lấy tên
-                    const restaurants = await this.getUserRestaurants();
-                    const restaurant = restaurants.find(r => r.restaurantId === this.selectedRestaurantId);
-                    if (restaurant) {
-                        let restaurantName = restaurant.restaurantName || 'Nhà hàng';
-                        // Bỏ phần sau dấu "-"
-                        restaurantName = restaurantName.split(/[-–]/)[0].trim();
-                        roomsHeader.textContent = restaurantName;
-                    } else {
-                        roomsHeader.textContent = 'Xem tất cả';
-                    }
-                } catch (error) {
-                    console.error('Error loading restaurant name:', error);
-                    roomsHeader.textContent = 'Xem tất cả';
-                }
-            }
-            
-            showRestaurantSelection() {
-                // Chỉ cho phép ADMIN và RESTAURANT_OWNER
-                if (this.userRole !== 'ADMIN' && this.userRole !== 'admin' && 
-                    this.userRole !== 'RESTAURANT_OWNER' && this.userRole !== 'restaurant_owner') {
-                    console.warn('Restaurant selection is only available for ADMIN and RESTAURANT_OWNER roles');
-                    return;
-                }
-                
-                document.getElementById('messengerRoomsView').style.display = 'none';
                 document.getElementById('messengerChatView').style.display = 'none';
-                document.getElementById('messengerRestaurantSelectionView').style.display = 'flex';
-                
-                // Reset selected restaurant khi quay lại selection view (chỉ cho restaurant owner)
-                if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    this.selectedRestaurantId = null;
-                }
-                
-                // Cập nhật title và nút back
-                const titleEl = document.getElementById('messengerRestaurantSelectionTitle');
-                const backBtn = document.getElementById('messengerBackFromRestaurantBtn');
-                if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    if (titleEl) titleEl.textContent = 'Chọn nhà hàng để xem tin nhắn';
-                    if (backBtn) backBtn.style.display = 'none'; // Không có nút back cho restaurant owner
-                } else {
-                    if (titleEl) titleEl.textContent = 'Chọn nhà hàng để chat';
-                    if (backBtn) backBtn.style.display = 'flex'; // Có nút back cho admin
-                }
-                
-                // Load danh sách restaurants
-                this.loadAvailableRestaurants();
-            }
-            
-            selectChatType(type) {
-                // Chỉ cho phép restaurant owner
-                if (this.userRole !== 'RESTAURANT_OWNER' && this.userRole !== 'restaurant_owner') {
-                    return;
-                }
-                
-                this.chatType = type; // 'customer' hoặc 'admin'
-                
-                // Cập nhật active state của các nút
-                const customerBtn = document.getElementById('messengerChatWithCustomerBtn');
-                const adminBtn = document.getElementById('messengerChatWithAdminBtn');
-                
-                if (customerBtn && adminBtn) {
-                    if (type === 'customer') {
-                        customerBtn.classList.add('active');
-                        adminBtn.classList.remove('active');
-                        // Nếu chưa chọn restaurant, hiển thị restaurant selection
-                        if (!this.selectedRestaurantId) {
-                            this.showRestaurantSelection();
-                        } else {
-                            // Đã chọn restaurant, hiển thị rooms với customers
-                            this.showRoomsView();
-                            this.loadChatRooms();
-                        }
-                    } else {
-                        customerBtn.classList.remove('active');
-                        adminBtn.classList.add('active');
-                        // Hiển thị rooms với admin
-                        this.showRoomsView();
-                        this.loadChatRooms();
-                    }
-                }
-            }
-            
-            async getUserRestaurants() {
-                try {
-                    const response = await fetch('/api/chat/available-restaurants');
-                    if (!response.ok) throw new Error('Failed to load restaurants');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error loading restaurants:', error);
-                    return [];
-                }
-            }
-            
-            async loadAvailableRestaurants() {
-                const loadingEl = document.getElementById('messengerRestaurantLoading');
-                const listEl = document.getElementById('messengerRestaurantList');
-                const emptyEl = document.getElementById('messengerRestaurantEmpty');
-                
-                loadingEl.style.display = 'flex';
-                listEl.style.display = 'none';
-                emptyEl.style.display = 'none';
-                
-                try {
-                    const response = await fetch('/api/chat/available-restaurants');
-                    if (!response.ok) throw new Error('Failed to load restaurants');
-                    
-                    const restaurants = await response.json();
-                    loadingEl.style.display = 'none';
-                    
-                    if (restaurants && restaurants.length > 0) {
-                        this.displayRestaurants(restaurants);
-                        listEl.style.display = 'block';
-                    } else {
-                        emptyEl.style.display = 'flex';
-                    }
-                } catch (error) {
-                    console.error('Error loading restaurants:', error);
-                    loadingEl.style.display = 'none';
-                    emptyEl.style.display = 'flex';
-                }
-            }
-            
-            displayRestaurants(restaurants) {
-                const listEl = document.getElementById('messengerRestaurantList');
-                listEl.innerHTML = '';
-                
-                // Tính tổng unread count cho restaurant owner
-                if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    const totalUnread = restaurants.reduce((sum, r) => sum + (r.unreadCount || 0), 0);
-                    this.updateUnreadBadge(totalUnread);
-                }
-                
-                restaurants.forEach(restaurant => {
-                    const restaurantItem = this.createRestaurantItem(restaurant);
-                    listEl.appendChild(restaurantItem);
-                });
-            }
-            
-            createRestaurantItem(restaurant) {
-                const item = document.createElement('div');
-                item.className = 'messenger-restaurant-item';
-                item.setAttribute('data-restaurant-id', restaurant.restaurantId);
-                
-                // Đối với restaurant owner: chọn restaurant để xem rooms
-                // Đối với admin: tạo room mới để chat
-                if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                    item.addEventListener('click', () => this.selectRestaurantForChat(restaurant.restaurantId, restaurant.restaurantName));
-                } else {
-                    item.addEventListener('click', () => this.startChatWithRestaurant(restaurant.restaurantId));
-                }
-                
-                const avatar = document.createElement('div');
-                avatar.className = 'messenger-restaurant-avatar';
-                avatar.innerHTML = '<i class="fas fa-store"></i>';
-                
-                const info = document.createElement('div');
-                info.className = 'messenger-restaurant-info';
-                
-                const nameRow = document.createElement('div');
-                nameRow.style.display = 'flex';
-                nameRow.style.alignItems = 'center';
-                nameRow.style.justifyContent = 'space-between';
-                nameRow.style.marginBottom = '4px';
-                
-                const name = document.createElement('h6');
-                name.className = 'messenger-restaurant-name';
-                name.textContent = restaurant.restaurantName || 'Nhà hàng';
-                name.style.margin = '0';
-                name.style.flex = '1';
-                
-                nameRow.appendChild(name);
-                
-                // Hiển thị unread count nếu có (bên phải tên)
-                if (restaurant.unreadCount && restaurant.unreadCount > 0) {
-                    const unreadBadge = document.createElement('span');
-                    unreadBadge.className = 'messenger-restaurant-unread';
-                    unreadBadge.textContent = restaurant.unreadCount > 99 ? '99+' : restaurant.unreadCount.toString();
-                    nameRow.appendChild(unreadBadge);
-                }
-                
-                const owner = document.createElement('p');
-                owner.className = 'messenger-restaurant-owner';
-                owner.textContent = restaurant.ownerName || restaurant.address || 'Chủ nhà hàng';
-                
-                info.appendChild(nameRow);
-                info.appendChild(owner);
-                
-                item.appendChild(avatar);
-                item.appendChild(info);
-                
-                return item;
-            }
-            
-            async startChatWithRestaurant(restaurantId) {
-                try {
-                    // Tìm tên nhà hàng từ danh sách đã load
-                    const restaurantItem = document.querySelector(`[data-restaurant-id="${restaurantId}"]`);
-                    let restaurantName = 'Nhà hàng';
-                    if (restaurantItem) {
-                        const nameEl = restaurantItem.querySelector('.messenger-restaurant-name');
-                        if (nameEl) {
-                            restaurantName = nameEl.textContent;
-                        }
-                    }
-                    
-                    // Đối với restaurant owner, tìm room đã có hoặc tạo mới
-                    let roomId;
-                    if (this.userRole === 'RESTAURANT_OWNER' || this.userRole === 'restaurant_owner') {
-                        // Restaurant owner chat với customers của restaurant này
-                        // Tìm room đã có hoặc tạo mới qua API rooms
-                        const response = await fetch('/api/chat/rooms', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: `restaurantId=${restaurantId}`
-                        });
-                        
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(errorText || 'Failed to create chat room');
-                        }
-                        
-                        const result = await response.json();
-                        roomId = result.roomId;
-                    } else {
-                        // Admin chat với restaurant
-                        const response = await fetch('/api/chat/rooms/restaurant', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: `restaurantId=${restaurantId}`
-                        });
-                        
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(errorText || 'Failed to create chat room');
-                        }
-                        
-                        const result = await response.json();
-                        roomId = result.roomId;
-                    }
-                    
-                    // Mở chat room
-                    this.openChatRoom(roomId, restaurantName);
-                } catch (error) {
-                    console.error('Error starting chat with restaurant:', error);
-                    alert('Không thể bắt đầu chat với nhà hàng: ' + error.message);
-                }
+                this.currentRoomId = null;
             }
             
             backToRooms() {
                 this.showRoomsView();
                 this.loadChatRooms();
-            }
-            
-            selectRestaurantForChat(restaurantId, restaurantName) {
-                // Lưu restaurant đã chọn
-                this.selectedRestaurantId = restaurantId;
-                
-                // Đảm bảo chat type là customer
-                this.chatType = 'customer';
-                
-                // Hiển thị rooms view và load rooms của restaurant này
-                this.showRoomsView();
-                this.loadChatRooms();
-                
-                // Cập nhật header để hiển thị tên restaurant đã chọn
-                this.updateRestaurantHeaderName();
             }
             
             async loadMessages(roomId) {
@@ -2960,13 +2265,8 @@
                 
                 if (!content) return;
                 
-                // Xử lý riêng cho AI Chat - chỉ cho phép CUSTOMER
+                // Xử lý riêng cho AI Chat
                 if (this.currentRoomId === 'AI_CHAT') {
-                    // Chỉ CUSTOMER mới có thể sử dụng AI Chat
-                    if (this.userRole !== 'CUSTOMER' && this.userRole !== 'customer') {
-                        console.warn('AI Chat is only available for CUSTOMER role');
-                        return;
-                    }
                     await this.sendAIMessage(content);
                     input.value = '';
                     return;
@@ -3081,27 +2381,14 @@
             handleIncomingMessage(data) {
                 if (!data || !data.messageId || !data.content) return;
                 
-                // Chỉ hiển thị tin nhắn nếu đang ở room đó
                 if (data.roomId === this.currentRoomId) {
                     const messageEl = this.createMessageElement(data);
                     document.getElementById('messengerMessagesContainer').appendChild(messageEl);
                     this.scrollToBottom();
-                    
-                    // Đánh dấu đã đọc nếu đang xem room này
-                    this.markMessagesAsRead(data.roomId);
-                } else {
-                    // Nếu không đang xem room này, cập nhật unread count
-                    this.loadUnreadCount();
                 }
                 
-                // Luôn reload rooms để cập nhật last message
                 this.loadChatRooms();
-                
-                // Nếu đang ở restaurant selection view, reload để cập nhật unread count
-                const restaurantSelectionView = document.getElementById('messengerRestaurantSelectionView');
-                if (restaurantSelectionView && restaurantSelectionView.style.display !== 'none') {
-                    this.loadAvailableRestaurants();
-                }
+                this.loadUnreadCount();
             }
             
             handleTyping() {
@@ -3150,16 +2437,9 @@
             subscribeToMessages() {
                 if (!this.isConnected) return;
                 
-                // Subscribe to room messages
                 this.stompClient.subscribe('/topic/room/*', (message) => {
                     const data = JSON.parse(message.body);
                     this.handleIncomingMessage(data);
-                });
-                
-                // Subscribe to unread count updates
-                this.stompClient.subscribe('/user/queue/unread-updates', (message) => {
-                    const data = JSON.parse(message.body);
-                    this.updateUnreadBadge(data.unreadCount || 0);
                 });
             }
             
@@ -3171,8 +2451,6 @@
             async markMessagesAsRead(roomId) {
                 try {
                     await fetch(`/api/chat/rooms/${roomId}/read`, { method: 'POST' });
-                    // Cập nhật unread count sau khi đánh dấu đã đọc
-                    this.loadUnreadCount();
                 } catch (error) {
                     console.error('Error marking as read:', error);
                 }
@@ -3183,22 +2461,18 @@
                     const response = await fetch('/api/chat/unread-count');
                     if (response.ok) {
                         const data = await response.json();
-                        this.updateUnreadBadge(data.unreadCount || 0);
+                        const badge = document.getElementById('messengerUnreadBadge');
+                        if (badge) {
+                            if (data.unreadCount > 0) {
+                                badge.textContent = data.unreadCount > 99 ? '99+' : data.unreadCount;
+                                badge.style.display = 'flex';
+                            } else {
+                                badge.style.display = 'none';
+                            }
+                        }
                     }
                 } catch (error) {
                     console.error('Error loading unread count:', error);
-                }
-            }
-            
-            updateUnreadBadge(count) {
-                const badge = document.getElementById('messengerUnreadBadge');
-                if (badge) {
-                    if (count > 0) {
-                        badge.textContent = count > 99 ? '99+' : count.toString();
-                        badge.style.display = 'flex';
-                    } else {
-                        badge.style.display = 'none';
-                    }
                 }
             }
             
@@ -3228,22 +2502,33 @@
         let messengerChatWidget;
         document.addEventListener('DOMContentLoaded', function() {
             // Load user info for chat
-            fetch('/api/user/current')
-                .then(response => response.json())
+            fetch('/api/user/current', {
+                credentials: 'include' // Important: include cookies for session
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 401 || response.status === 403) {
+                            // User not authenticated, widget will not be initialized
+                            console.log('User not authenticated, chat widget disabled');
+                            return null;
+                        }
+                        throw new Error('Failed to load user info');
+                    }
+                    return response.json();
+                })
                 .then(user => {
-                    messengerChatWidget = new MessengerChatWidget();
-                    messengerChatWidget.currentUserId = user.id;
-                    messengerChatWidget.userRole = user.role;
-                    
-                    // Cập nhật link cho empty state nếu có
-                    const emptyChatLink = document.getElementById('messengerEmptyChatLink');
-                    if (emptyChatLink) {
-                        emptyChatLink.href = messengerChatWidget.getChatUrlByRole();
+                    if (user && user.id) {
+                        messengerChatWidget = new MessengerChatWidget();
+                        messengerChatWidget.currentUserId = user.id;
+                        console.log('Messenger chat widget initialized for user:', user.id);
+                    } else {
+                        console.log('No user data, chat widget not initialized');
                     }
                 })
                 .catch(error => {
                     console.error('Error loading user info:', error);
-                    messengerChatWidget = new MessengerChatWidget();
+                    // Don't initialize widget if we can't get user info
+                    // This prevents errors when trying to use the widget
                 });
         });
     </script>

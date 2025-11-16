@@ -39,6 +39,32 @@
                     <div sec:authorize="isAuthenticated()" class="ds-user-actions">
                         <!-- Customer Actions -->
 
+                        <!-- Header Search Dropdown - Hidden for Admin -->
+                        <div class="header-search" sec:authorize="!hasRole('ADMIN')">
+                            <button class="search-toggle" onclick="toggleSearchDropdown()" type="button" aria-label="Tìm kiếm">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <div class="search-dropdown" id="searchDropdown">
+                                <form th:action="@{/restaurants}" method="get" class="search-form">
+                                    <div class="search-field">
+                                        <i class="fas fa-search search-icon"></i>
+                                        <input type="text" 
+                                               name="search" 
+                                               placeholder="Tên nhà hàng, địa chỉ..." 
+                                               class="search-input"
+                                               th:value="${search}"
+                                               autocomplete="off">
+                                    </div>
+                                    <div class="search-actions">
+                                        <button type="submit" class="search-submit">
+                                            <i class="fas fa-search"></i>
+                                            Tìm kiếm
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
                         <!-- Notification Bell -->
                         <div class="ds-notification-bell" th:insert="~{fragments/notification-bell :: notification-bell}"></div>
                         
@@ -108,7 +134,7 @@
                         </div>
                         
                         <!-- Admin Dashboard Dropdown -->
-                        <div class="ds-admin-dropdown dropdown dropdown-hover" sec:authorize="hasRole('ADMIN')">
+                        <div class="ds-admin-dropdown dropdown" sec:authorize="hasRole('ADMIN')">
                             <button class="ds-btn ds-btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-cog"></i>
                                 Admin
@@ -116,44 +142,65 @@
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/withdrawal}">
-                                        <i class="fas fa-credit-card me-2"></i>
-                                        Quản lý rút tiền
+                                        <div>
+                                            <i class="fas fa-credit-card me-2"></i>
+                                            <span>Quản lý rút tiền</span>
+                                        </div>
                                         <small class="d-block text-muted">Xử lý yêu cầu rút tiền từ nhà hàng</small>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/restaurant/requests}">
-                                        <i class="fas fa-utensils me-2"></i>
-                                        Duyệt nhà hàng
+                                        <div>
+                                            <i class="fas fa-utensils me-2"></i>
+                                            <span>Duyệt nhà hàng</span>
+                                        </div>
                                         <small class="d-block text-muted">Quản lý các yêu cầu đăng ký mới</small>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/users}">
-                                        <i class="fas fa-users me-2"></i>
-                                        Quản lý người dùng
+                                        <div>
+                                            <i class="fas fa-users me-2"></i>
+                                            <span>Quản lý người dùng</span>
+                                        </div>
                                         <small class="d-block text-muted">Quản lý tài khoản khách hàng và nhà hàng</small>
                                     </a>
                                 </li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/chat}">
-                                        <i class="fas fa-comments me-2"></i>
-                                        Quản lý chat
+                                        <div>
+                                            <i class="fas fa-comments me-2"></i>
+                                            <span>Quản lý chat</span>
+                                        </div>
                                         <small class="d-block text-muted">Hỗ trợ khách hàng qua hệ thống chat</small>
                                     </a>
                                 </li>
                                 <li>
+                                    <a class="dropdown-item" th:href="@{/admin/moderation}">
+                                        <div>
+                                            <i class="fas fa-shield-alt me-2"></i>
+                                            <span>Moderation</span>
+                                        </div>
+                                        <small class="d-block text-muted">Duyệt báo cáo và nội dung vi phạm</small>
+                                    </a>
+                                </li>
+                                <li>
                                     <a class="dropdown-item" th:href="@{/admin/rate-limiting}">
-                                        <i class="fas fa-tachometer-alt me-2"></i>
-                                        Rate limiting
+                                        <div>
+                                            <i class="fas fa-tachometer-alt me-2"></i>
+                                            <span>Rate limiting</span>
+                                        </div>
                                         <small class="d-block text-muted">Giám sát và cấu hình giới hạn tần suất</small>
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" th:href="@{/admin/dashboard}">
-                                        <i class="fas fa-tachometer-alt me-2"></i>
-                                        Dashboard
+                                        <div>
+                                            <i class="fas fa-tachometer-alt me-2"></i>
+                                            <span>Dashboard</span>
+                                        </div>
                                     </a>
                                 </li>
                             </ul>
@@ -239,6 +286,58 @@
                     usernameInput.focus();
                 }
             }
+        });
+        
+        // Search Dropdown Functions
+        window.toggleSearchDropdown = function() {
+            const dropdown = document.getElementById('searchDropdown');
+            if (!dropdown) return;
+            
+            const isOpen = dropdown.classList.contains('show');
+            
+            // Close all other dropdowns first
+            document.querySelectorAll('.search-dropdown').forEach(dd => {
+                dd.classList.remove('show');
+            });
+            
+            // Toggle current dropdown
+            if (!isOpen) {
+                // Open dropdown
+                dropdown.classList.add('show');
+                // Focus on search input when opened
+                setTimeout(() => {
+                    const searchInput = dropdown.querySelector('.search-input');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }, 150);
+            } else {
+                // Close dropdown if already open
+                dropdown.classList.remove('show');
+            }
+        };
+        
+        // Initialize search dropdown when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const searchContainer = document.querySelector('.header-search');
+                const dropdown = document.getElementById('searchDropdown');
+                
+                if (searchContainer && dropdown && !searchContainer.contains(event.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+            
+            // Close dropdown on escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    const dropdown = document.getElementById('searchDropdown');
+                    if (dropdown) {
+                        dropdown.classList.remove('show');
+                    }
+                }
+            });
         });
     </script>
 </div>

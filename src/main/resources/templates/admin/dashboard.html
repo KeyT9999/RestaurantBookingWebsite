@@ -25,12 +25,13 @@
                     <span th:text="${error}"></span>
                 </div>
 
+                <!-- Page Header -->
                 <div class="dashboard-header">
                     <div>
                         <h1>Bảng điều khiển quản trị</h1>
                         <p>Theo dõi doanh thu hoa hồng và hoạt động đặt chỗ</p>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div>
                         <form id="periodForm" method="get" action="/admin/dashboard" style="margin: 0;">
                             <select id="periodSelect" name="period" class="form-select" style="min-width: 200px; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 0.9rem;">
                                 <option value="today" th:selected="${period == 'today' or period == null}">Hôm nay</option>
@@ -45,10 +46,6 @@
                                 <option value="all" th:selected="${period == 'all'}">Tất cả</option>
                             </select>
                         </form>
-                        <div class="status-pill">
-                            <i class="fas fa-signal"></i>
-                            Theo dõi theo thời gian thực
-                        </div>
                     </div>
                 </div>
 
@@ -135,7 +132,7 @@
                                 <option value="monthly">6 tháng gần nhất</option>
                                 <option value="yearly">5 năm gần nhất</option>
                             </select>
-                        </div>
+                            </div>
                         <div class="chart-wrapper">
                             <canvas id="commissionChart"></canvas>
                         </div>
@@ -145,13 +142,13 @@
                         <div class="chart-card__title">
                             <h3><i class="fas fa-clipboard-check me-2"></i>Hoạt động booking</h3>
                             <span class="ds-text-sm ds-text-secondary">Tỷ trọng hoàn thành & chờ xử lý</span>
-                        </div>
+                            </div>
                         <div class="chart-wrapper">
                             <canvas id="bookingChart"></canvas>
                         </div>
                     </article>
                 </section>
-
+                
                 <!-- Actions & management -->
                 <section class="section-card">
                     <header class="chart-card__title">
@@ -190,13 +187,13 @@
                         <a th:href="@{/admin/reports}" class="quick-actions__item text-decoration-none">
                             <div class="quick-actions__icon">
                                 <i class="fas fa-file-chart-column"></i>
-                            </div>
+                    </div>
                             <div class="quick-actions__label">
                                 <strong>Báo cáo tổng hợp</strong>
                                 <span>Xem báo cáo doanh thu theo khoảng thời gian</span>
-                            </div>
-                        </a>
-                    </div>
+                                </div>
+                                        </a>
+                                    </div>
                 </section>
 
                 <!-- Withdrawal management overview -->
@@ -243,14 +240,14 @@
                             <div class="metric-card__label">
                                 <i class="fas fa-hourglass-half"></i>
                                 Avg processing time
-                            </div>
+                                </div>
                             <div class="metric-card__value ds-text-info"
                                  th:text="${withdrawalAvgHours != null ? #numbers.formatDecimal(withdrawalAvgHours, 1, 'COMMA', 1, 'POINT') + ' h' : '0 h'}">0 h</div>
                             <div class="metric-card__footer">
                                 Trung bình giờ duyệt (đã thanh toán/đã từ chối)
                             </div>
                         </article>
-                    </div>
+                        </div>
                     <div class="ds-flex ds-justify-end">
                         <a href="/admin/withdrawal" class="ds-btn ds-btn-primary ds-btn-sm">
                             <i class="fas fa-arrow-right me-2"></i>Tới trang quản lý rút tiền
@@ -393,16 +390,25 @@
                             </div>
                         </article>
 
-                        <!-- Today's Bookings -->
+                        <!-- Period Bookings -->
                         <article class="metric-card metric-card--primary">
                             <div class="metric-card__label">
                                 <i class="fas fa-calendar-day"></i>
-                                Đặt bàn hôm nay
+                                <span th:text="${period == 'today' ? 'Đặt bàn hôm nay' : 
+                                                 period == 'yesterday' ? 'Đặt bàn hôm qua' :
+                                                 period == 'thisWeek' ? 'Đặt bàn tuần này' :
+                                                 period == 'lastWeek' ? 'Đặt bàn tuần trước' :
+                                                 period == 'thisMonth' ? 'Đặt bàn tháng này' :
+                                                 period == 'lastMonth' ? 'Đặt bàn tháng trước' :
+                                                 period == 'last3Months' ? 'Đặt bàn 3 tháng qua' :
+                                                 period == 'last6Months' ? 'Đặt bàn 6 tháng qua' :
+                                                 period == 'thisYear' ? 'Đặt bàn năm nay' :
+                                                 'Tổng đặt bàn'}">Đặt bàn</span>
                             </div>
                             <div class="metric-card__value ds-text-info"
                                  th:text="${todayTotalBookings != null ? todayTotalBookings : 0}">0</div>
                             <div class="metric-card__footer">
-                                <span th:text="'Hoàn thành: ' + ${todayCompletedBookings != null ? todayCompletedBookings : 0}">Hoàn thành: 0</span>
+                                <span th:text="'Đã thanh toán: ' + ${todayCompletedBookings != null ? todayCompletedBookings : 0}">Đã thanh toán: 0</span>
                             </div>
                         </article>
                     </div>

@@ -238,13 +238,8 @@ public class AdminDashboardController {
             long totalChatRooms = chatRoomRepository.count();
             long activeChatRooms = chatRoomRepository.countActiveRooms();
             
-            // Today's statistics
-            LocalDateTime startOfDay = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
-            LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59).withNano(999999999);
-            
-            long todayTotalBookings = bookingRepository.countByBookingTimeBetween(startOfDay, endOfDay);
-            long todayCompletedBookings = bookingRepository.countByStatusAndBookingTimeBetween(
-                BookingStatus.COMPLETED, startOfDay, endOfDay);
+            // Period-based statistics (using payment paidAt, not booking time)
+            // These are already calculated above: bookingsCountForPeriod, completedPaymentsForPeriod
             
             // Add all statistics to model (ensure no null values)
             // Use period-specific values
@@ -287,8 +282,9 @@ public class AdminDashboardController {
             model.addAttribute("totalReviews", totalReviews);
             model.addAttribute("totalChatRooms", totalChatRooms);
             model.addAttribute("activeChatRooms", activeChatRooms);
-            model.addAttribute("todayTotalBookings", todayTotalBookings);
-            model.addAttribute("todayCompletedBookings", todayCompletedBookings);
+            // Use period-based bookings count (based on payment paidAt)
+            model.addAttribute("todayTotalBookings", bookingsCountForPeriod);
+            model.addAttribute("todayCompletedBookings", bookingsCountForPeriod);
             
             Map<String, List<CommissionSeriesPoint>> commissionSeries = new HashMap<>();
             commissionSeries.put("daily", dailySeries);
