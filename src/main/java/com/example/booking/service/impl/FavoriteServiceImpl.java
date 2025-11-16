@@ -303,6 +303,7 @@ public class FavoriteServiceImpl implements FavoriteService {
             boolean matchesPrice = false;
             
             switch (priceRange) {
+                // Old format (for backward compatibility)
                 case "under-50k":
                     matchesPrice = price < 50000;
                     break;
@@ -314,6 +315,19 @@ public class FavoriteServiceImpl implements FavoriteService {
                     break;
                 case "over-200k":
                     matchesPrice = price > 200000;
+                    break;
+                // New format (current UI)
+                case "low":
+                    // Dưới 200k
+                    matchesPrice = price < 200000;
+                    break;
+                case "medium":
+                    // 200k - 500k
+                    matchesPrice = price >= 200000 && price <= 500000;
+                    break;
+                case "high":
+                    // Trên 500k
+                    matchesPrice = price > 500000;
                     break;
             }
             

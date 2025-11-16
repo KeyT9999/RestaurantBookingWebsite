@@ -113,7 +113,7 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
            "     LOWER(r.restaurantName) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "     LOWER(r.address) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "     LOWER(r.cuisineType) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-           "AND (:cuisineType IS NULL OR :cuisineType = '' OR r.cuisineType = :cuisineType) " +
+           "AND (:cuisineType IS NULL OR :cuisineType = '' OR LOWER(TRIM(r.cuisineType)) = LOWER(TRIM(:cuisineType))) " +
            "AND (:minPrice IS NULL OR r.averagePrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR r.averagePrice <= :maxPrice) " +
            "AND (1=1 OR :minRating IS NULL)")
@@ -124,6 +124,17 @@ public interface RestaurantProfileRepository extends JpaRepository<RestaurantPro
             @Param("maxPrice") java.math.BigDecimal maxPrice,
             @Param("minRating") Double minRating,
             Pageable pageable);
+    
+    /**
+     * Find distinct cuisine types from approved restaurants
+     * Returns list of unique, non-null, non-empty cuisine types
+     */
+    @Query("SELECT DISTINCT r.cuisineType FROM RestaurantProfile r " +
+           "WHERE r.approvalStatus = 'APPROVED' " +
+           "AND r.cuisineType IS NOT NULL " +
+           "AND TRIM(r.cuisineType) != '' " +
+           "ORDER BY r.cuisineType ASC")
+    List<String> findDistinctCuisineTypes();
     
     /**
      * Find top-rated approved restaurants sorted by rating, review count, and approval time

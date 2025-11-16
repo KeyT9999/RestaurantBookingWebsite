@@ -48,6 +48,22 @@ public class RestaurantManagementService {
     private RestaurantMediaRepository restaurantMediaRepository;
 
     /**
+     * Get all distinct cuisine types from approved restaurants
+     * Used for populating filter dropdowns
+     */
+    @Transactional(readOnly = true)
+    public List<String> getAllCuisineTypes() {
+        List<String> cuisineTypes = restaurantProfileRepository.findDistinctCuisineTypes();
+        // Normalize and filter out null/empty values
+        return cuisineTypes.stream()
+                .filter(ct -> ct != null && !ct.trim().isEmpty())
+                .map(String::trim)
+                .distinct()
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
      * Lấy tất cả nhà hàng (chỉ APPROVED cho customer)
      */
     @Transactional(readOnly = true)
@@ -257,11 +273,19 @@ public class RestaurantManagementService {
         System.out.println("Rating Filter: " + ratingFilter);
         System.out.println("Sort By: " + pageable.getSort());
         
+        // Normalize cuisineType (trim and handle null/empty)
+        String normalizedCuisineType = null;
+        if (cuisineType != null && !cuisineType.trim().isEmpty()) {
+            normalizedCuisineType = cuisineType.trim();
+            System.out.println("Normalized Cuisine Type: '" + normalizedCuisineType + "'");
+        }
+        
         // Convert UI filter strings to database query parameters
         java.math.BigDecimal minPrice = null;
         java.math.BigDecimal maxPrice = null;
         if (priceRange != null && !priceRange.trim().isEmpty()) {
             switch (priceRange) {
+                // Old format (for backward compatibility)
                 case "under-50k":
                     maxPrice = new java.math.BigDecimal("50000");
                     break;
@@ -275,6 +299,20 @@ public class RestaurantManagementService {
                     break;
                 case "over-200k":
                     minPrice = new java.math.BigDecimal("200000");
+                    break;
+                // New format (current UI)
+                case "low":
+                    // Dưới 200k
+                    maxPrice = new java.math.BigDecimal("200000");
+                    break;
+                case "medium":
+                    // 200k - 500k
+                    minPrice = new java.math.BigDecimal("200000");
+                    maxPrice = new java.math.BigDecimal("500000");
+                    break;
+                case "high":
+                    // Trên 500k
+                    minPrice = new java.math.BigDecimal("500000");
                     break;
             }
         }
@@ -299,7 +337,7 @@ public class RestaurantManagementService {
         
         // Single database query with all filters and pagination
         Page<RestaurantProfile> result = restaurantProfileRepository.findApprovedWithFilters(
-            search, cuisineType, minPrice, maxPrice, minRating, pageable);
+            search, normalizedCuisineType, minPrice, maxPrice, minRating, pageable);
         
         // Apply rating filter in Java (since averageRating is computed, not a DB column)
         if (minRating != null) {

@@ -38,20 +38,70 @@
                         <i class="fas fa-search"></i>
                     </button>
                     <div class="search-dropdown" id="searchDropdown">
-                        <form th:action="@{/restaurants}" method="get" class="search-form">
-                            <div class="search-field">
-                                <i class="fas fa-search search-icon"></i>
-                                <input type="text" 
-                                       name="search" 
-                                       placeholder="Tên nhà hàng, địa chỉ..." 
-                                       class="search-input"
-                                       th:value="${search}"
-                                       autocomplete="off">
+                        <form th:action="@{/restaurants}" method="get" class="search-form" id="headerSearchForm">
+                            <!-- Search Input -->
+                            <div class="ds-form-group" style="margin-bottom: 0.75rem;">
+                                <label class="ds-form-label" for="headerSearchInput" style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">Tìm kiếm</label>
+                                <div class="search-field">
+                                    <i class="fas fa-search search-icon"></i>
+                                    <input type="text" 
+                                           name="search" 
+                                           id="headerSearchInput"
+                                           placeholder="Tên nhà hàng..." 
+                                           class="search-input"
+                                           th:value="${search}"
+                                           autocomplete="off">
+                                </div>
                             </div>
+                            
+                            <!-- Cuisine Type and Price Range Filters - Same Row -->
+                            <div class="filter-row-inline" style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+                                <!-- Cuisine Type Filter -->
+                                <div class="ds-form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label class="ds-form-label" for="headerCuisineFilter" style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">Loại ẩm thực</label>
+                                    <select id="headerCuisineFilter" class="ds-form-select search-select">
+                                        <option value="">Tất cả</option>
+                                        <option th:each="cuisine : ${availableCuisineTypes}" 
+                                                th:value="${cuisine}" 
+                                                th:text="${cuisine}"
+                                                th:selected="${cuisineType != null and cuisineType == cuisine}">
+                                        </option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Price Range Filter -->
+                                <div class="ds-form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label class="ds-form-label" for="headerPriceFilter" style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">Khoảng giá</label>
+                                    <select id="headerPriceFilter" class="ds-form-select search-select">
+                                        <option value="">Tất cả</option>
+                                        <option value="low" th:selected="${priceRange == 'low'}">Dưới 200k</option>
+                                        <option value="medium" th:selected="${priceRange == 'medium'}">200k - 500k</option>
+                                        <option value="high" th:selected="${priceRange == 'high'}">Trên 500k</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Sort By Filter -->
+                            <div class="ds-form-group" style="margin-bottom: 0.75rem;">
+                                <label class="ds-form-label" for="headerSortSelect" style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">Sắp xếp</label>
+                                <select id="headerSortSelect" class="ds-form-select search-select">
+                                    <option value="restaurantName-asc" th:selected="${sortBy == 'restaurantName' and sortDir == 'asc'}">Tên (A-Z)</option>
+                                    <option value="restaurantName-desc" th:selected="${sortBy == 'restaurantName' and sortDir == 'desc'}">Tên (Z-A)</option>
+                                    <option value="averageRating-desc" th:selected="${sortBy == 'averageRating' and sortDir == 'desc'}">Đánh giá cao nhất</option>
+                                    <option value="averagePrice-asc" th:selected="${sortBy == 'averagePrice' and sortDir == 'asc'}">Giá thấp nhất</option>
+                                    <option value="averagePrice-desc" th:selected="${sortBy == 'averagePrice' and sortDir == 'desc'}">Giá cao nhất</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Action Buttons -->
                             <div class="search-actions">
-                                <button type="submit" class="search-submit">
-                                    <i class="fas fa-search"></i>
-                                    Tìm kiếm
+                                <button type="button" class="ds-btn ds-btn-secondary search-clear" onclick="clearHeaderFilters()" style="flex: 1;">
+                                    <i class="fas fa-times"></i>
+                                    Xóa
+                                </button>
+                                <button type="submit" class="ds-btn ds-btn-primary search-submit" style="flex: 1;">
+                                    <i class="fas fa-filter"></i>
+                                    Lọc
                                 </button>
                             </div>
                         </form>
@@ -142,119 +192,78 @@
         </div>
     </header>
     
-    <!-- Header Search JavaScript -->
-    <script>
-        // Make functions globally available
-        window.toggleSearchDropdown = function() {
-            const dropdown = document.getElementById('searchDropdown');
-            if (!dropdown) return;
-            
-            const isOpen = dropdown.classList.contains('show');
-            
-            // Close all other dropdowns first
-            document.querySelectorAll('.search-dropdown').forEach(dd => {
-                dd.classList.remove('show');
-            });
-            
-            // Toggle current dropdown
-            if (!isOpen) {
-                // Open dropdown
-                dropdown.classList.add('show');
-                // Focus on search input when opened
-                setTimeout(() => {
-                    const searchInput = dropdown.querySelector('.search-input');
-                    if (searchInput) {
-                        searchInput.focus();
-                    }
-                }, 150);
-            } else {
-                // Close dropdown if already open
-                dropdown.classList.remove('show');
-            }
-        };
-        
-        // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(event) {
-                const searchContainer = document.querySelector('.header-search');
-                const dropdown = document.getElementById('searchDropdown');
-                
-                if (searchContainer && dropdown && !searchContainer.contains(event.target)) {
-                    dropdown.classList.remove('show');
-                }
-            });
-            
-            // Close dropdown on escape key
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') {
-                    const dropdown = document.getElementById('searchDropdown');
-                    if (dropdown) {
-                        dropdown.classList.remove('show');
-                    }
-                }
-            });
-        });
-    </script>
-    
     <!-- Login Modal Fragment -->
     <div th:insert="~{fragments/login-modal :: login-modal}"></div>
     
-    <!-- Login Modal Helper Functions -->
-    <script>
-        window.closeLoginModal = function() {
-            const modal = document.getElementById('loginModal');
-            if (modal) {
-                // Wait for Bootstrap to be available
-                if (typeof bootstrap !== 'undefined') {
-                    const bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
-                    bsModal.hide();
-                } else {
-                    // Fallback if Bootstrap not loaded yet
-                    setTimeout(() => {
-                        if (typeof bootstrap !== 'undefined') {
-                            const bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
-                            bsModal.hide();
-                        }
-                    }, 100);
-                }
-            }
-        };
-        
-        // Initialize dropdowns when DOM and Bootstrap are ready
-        document.addEventListener('DOMContentLoaded', function() {
-            // Wait for Bootstrap to be available
-            function initBootstrapDropdowns() {
-                if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-                    // Initialize all dropdowns manually if needed
-                    const dropdownElements = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-                    dropdownElements.forEach(function(dropdownElement) {
-                        try {
-                            // Bootstrap 5 auto-initializes, but we can ensure it works
-                            new bootstrap.Dropdown(dropdownElement);
-                        } catch (e) {
-                            // Dropdown already initialized, ignore
-                        }
-                    });
-                } else {
-                    // Retry after a short delay
-                    setTimeout(initBootstrapDropdowns, 100);
-                }
-            }
-            
-            initBootstrapDropdowns();
-            
-            // Auto-focus on username input when modal opens
-            document.addEventListener('shown.bs.modal', function(event) {
-                if (event.target.id === 'loginModal') {
-                    const usernameInput = event.target.querySelector('#username');
-                    if (usernameInput) {
-                        usernameInput.focus();
+    <!-- Customer Header Scripts Fragment -->
+    <!-- Note: header-search.js is loaded via resy-scripts fragment -->
+    <th:block th:fragment="customer-header-scripts">
+        <!-- Login Modal Helper Functions -->
+        <script>
+            window.closeLoginModal = function() {
+                const modal = document.getElementById('loginModal');
+                if (modal) {
+                    // Wait for Bootstrap to be available
+                    if (typeof bootstrap !== 'undefined') {
+                        const bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
+                        bsModal.hide();
+                    } else {
+                        // Fallback if Bootstrap not loaded yet
+                        setTimeout(() => {
+                            if (typeof bootstrap !== 'undefined') {
+                                const bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
+                                bsModal.hide();
+                            }
+                        }, 100);
                     }
                 }
-            });
-        });
-    </script>
+            };
+            
+            // Initialize dropdowns when DOM and Bootstrap are ready
+            (function() {
+                function init() {
+                    // Wait for Bootstrap to be available
+                    function initBootstrapDropdowns() {
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                            // Initialize all dropdowns manually if needed
+                            const dropdownElements = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+                            dropdownElements.forEach(function(dropdownElement) {
+                                try {
+                                    // Bootstrap 5 auto-initializes, but we can ensure it works
+                                    new bootstrap.Dropdown(dropdownElement);
+                                } catch (e) {
+                                    // Dropdown already initialized, ignore
+                                }
+                            });
+                        } else {
+                            // Retry after a short delay
+                            setTimeout(initBootstrapDropdowns, 100);
+                        }
+                    }
+                    
+                    initBootstrapDropdowns();
+                    
+                    // Auto-focus on username input when modal opens
+                    document.addEventListener('shown.bs.modal', function(event) {
+                        if (event.target.id === 'loginModal') {
+                            const usernameInput = event.target.querySelector('#username');
+                            if (usernameInput) {
+                                usernameInput.focus();
+                            }
+                        }
+                    });
+                }
+                
+                // Check if DOM is already loaded
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', init);
+                } else {
+                    // DOM already loaded, execute immediately
+                    init();
+                }
+            })();
+        </script>
+    </th:block>
 </body>
 </html>
 
