@@ -55,7 +55,7 @@ public class RefundService {
 
     /**
      * Hoàn tiền cho một payment với logic mới:
-     * - Trừ 30% hoa hồng từ ví nhà hàng
+     * - Trừ 7% hoa hồng từ ví nhà hàng (7% của subtotal - tổng đơn hàng ban đầu, không tính voucher)
      * - Admin chuyển tiền cho khách hàng
      * - Thông báo khách hàng về thời gian hoàn tiền (1-3 ngày)
      * @param paymentId ID của payment cần hoàn tiền
@@ -109,12 +109,12 @@ public class RefundService {
 
     /**
      * Process refund với webhook approach (sử dụng EnhancedRefundService)
-     * Admin sẽ nhận 30% hoa hồng, PayOS sẽ xử lý refund tự động
+     * Admin sẽ nhận 7% hoa hồng (7% của subtotal - tổng đơn hàng ban đầu, không tính voucher), PayOS sẽ xử lý refund tự động
      */
     public Payment processRefundWithWebhook(Integer paymentId, String reason) {
         logger.info("🔄 Processing refund with webhook for paymentId: {}, reason: {}", paymentId, reason);
 
-        // Sử dụng EnhancedRefundService với logic đúng (30% commission)
+        // Sử dụng EnhancedRefundService với logic đúng (7% commission trên subtotal)
         return enhancedRefundService.processRefundWithCommissionDeduction(paymentId, null, reason);
     }
 

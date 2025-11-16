@@ -870,20 +870,8 @@ body {
     top: 100%;
     right: 0;
     z-index: 1000;
-    display: none;
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: all 0.2s ease 0.1s;
     background-color: var(--ds-primary-white);
     margin-top: var(--ds-space-1);
-    pointer-events: none;
-}
-
-.ds-admin-dropdown:hover .dropdown-menu {
-    display: block;
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
 }
 
 .ds-admin-dropdown .dropdown-item {
@@ -893,11 +881,26 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    font-family: var(--ds-font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+    font-size: var(--ds-font-size-sm);
+    font-weight: var(--ds-font-weight-normal);
+    color: var(--ds-neutral-900);
 }
 
 .ds-admin-dropdown .dropdown-item:hover {
     background-color: var(--ds-neutral-50);
     color: var(--ds-primary-black);
+}
+
+.ds-admin-dropdown .dropdown-item > div {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.ds-admin-dropdown .dropdown-item > div > span {
+    font-weight: var(--ds-font-weight-medium);
+    font-family: var(--ds-font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
 }
 
 .ds-admin-dropdown .dropdown-item i {
@@ -907,8 +910,10 @@ body {
 }
 
 .ds-admin-dropdown .dropdown-item small {
-    margin-top: var(--ds-space-1);
-    font-size: var(--ds-font-size-xs);
+    margin-top: 0.25rem;
+    font-size: var(--ds-font-size-sm);
+    font-family: var(--ds-font-family-base, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
+    font-weight: var(--ds-font-weight-normal);
     color: var(--ds-neutral-500);
     line-height: 1.3;
 }

@@ -32,6 +32,7 @@ import com.example.booking.repository.BookingRepository;
 import com.example.booking.repository.RestaurantBalanceRepository;
 import com.example.booking.repository.RestaurantProfileRepository;
 import com.example.booking.repository.WithdrawalRequestRepository;
+import com.example.booking.repository.PaymentRepository;
 
 /**
  * Service để quản lý số dư nhà hàng
@@ -45,8 +46,9 @@ public class RestaurantBalanceService {
     private final RestaurantProfileRepository restaurantRepository;
     private final WithdrawalRequestRepository withdrawalRepository;
     private final BookingRepository bookingRepository;
+    private final PaymentRepository paymentRepository;
 
-    private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("0.30");
+    private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("0.07"); // 7% của subtotal (tổng đơn hàng ban đầu, không tính voucher)
     private static final DateTimeFormatter DAY_LABEL_FORMATTER = DateTimeFormatter.ofPattern("dd/MM");
     private static final DateTimeFormatter MONTH_LABEL_FORMATTER = DateTimeFormatter.ofPattern("MM/yyyy");
     
@@ -54,12 +56,14 @@ public class RestaurantBalanceService {
         RestaurantBalanceRepository balanceRepository,
         RestaurantProfileRepository restaurantRepository,
         WithdrawalRequestRepository withdrawalRepository,
-        BookingRepository bookingRepository
+        BookingRepository bookingRepository,
+        PaymentRepository paymentRepository
     ) {
         this.balanceRepository = balanceRepository;
         this.restaurantRepository = restaurantRepository;
         this.withdrawalRepository = withdrawalRepository;
         this.bookingRepository = bookingRepository;
+        this.paymentRepository = paymentRepository;
     }
     
     /**
@@ -97,7 +101,7 @@ public class RestaurantBalanceService {
         // Set default test data for development
         newBalance.setTotalRevenue(new BigDecimal("10000000")); // 10 triệu VNĐ
         newBalance.setTotalBookingsCompleted(50);
-        newBalance.setCommissionRate(new BigDecimal("5.0")); // 5%
+        newBalance.setCommissionRate(new BigDecimal("7.0")); // 7% của subtotal
         newBalance.setCommissionType(com.example.booking.common.enums.CommissionType.PERCENTAGE);
         newBalance.setCommissionFixedAmount(BigDecimal.ZERO);
         
@@ -204,11 +208,18 @@ public class RestaurantBalanceService {
 
     /**
      * Admin commission metrics
+     * Tính hoa hồng hôm nay dựa trên payment date (paidAt), không phải booking created date
      */
     @Transactional(readOnly = true)
     public BigDecimal getCommissionToday() {
         LocalDate today = LocalDate.now();
-        return getCommissionBetween(today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+        
+        // Tính hoa hồng từ subtotal (tổng tiền ban đầu) của bookings có payment được thanh toán hôm nay (paidAt)
+        // Hoa hồng = 7% của subtotal
+        BigDecimal subtotal = paymentRepository.sumSubtotalFromPaymentsByPaidAtRange(startOfDay, endOfDay);
+        return calculateCommissionFromSubtotal(subtotal);
     }
 
     @Transactional(readOnly = true)
@@ -238,13 +249,29 @@ public class RestaurantBalanceService {
 
     @Transactional(readOnly = true)
     public BigDecimal getTotalCommission() {
-        BigDecimal gross = bookingRepository.sumDepositByStatus(BookingStatus.COMPLETED);
-        return calculateCommission(gross);
+        // Tính hoa hồng từ subtotal (tổng tiền ban đầu) của bookings có payment COMPLETED
+        // Hoa hồng = 7% của subtotal (table fees + dishes + services, trước voucher discount)
+        // Không phải từ bookings COMPLETED vì không phải tất cả bookings COMPLETED đều có payment COMPLETED
+        BigDecimal subtotal = paymentRepository.sumSubtotalFromAllCompletedPayments();
+        return calculateCommissionFromSubtotal(subtotal);
+    }
+
+    /**
+     * Get commission for a specific date range
+     * @param startDate Start date
+     * @param endDate End date
+     * @return Total commission for the date range
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal getCommissionByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        return getCommissionBetween(startDate, endDate);
     }
 
     @Transactional(readOnly = true)
     public BigDecimal getAverageCommissionPerBooking() {
-        long totalBookings = bookingRepository.countByStatus(BookingStatus.COMPLETED);
+        // Đếm số lượng bookings có payment COMPLETED, không phải số lượng bookings COMPLETED
+        // Vì không phải tất cả bookings COMPLETED đều có payment COMPLETED
+        long totalBookings = paymentRepository.countDistinctBookingsWithCompletedPayments();
         if (totalBookings == 0) {
             return BigDecimal.ZERO.setScale(0);
         }
@@ -254,7 +281,9 @@ public class RestaurantBalanceService {
 
     @Transactional(readOnly = true)
     public BigDecimal getCommissionRate() {
-        return DEFAULT_COMMISSION_RATE.multiply(new BigDecimal("100"));
+        // Luôn trả về 7% (tỷ lệ hoa hồng mới: 7% của subtotal - tổng đơn hàng ban đầu, không tính voucher)
+        // Không lấy trung bình từ database vì có thể có dữ liệu cũ (5% hoặc 30%)
+        return DEFAULT_COMMISSION_RATE.multiply(new BigDecimal("100")); // 7.0%
     }
 
     public enum CommissionSeriesGranularity {
@@ -382,16 +411,43 @@ public class RestaurantBalanceService {
     }
 
     private BigDecimal getCommissionBetween(LocalDateTime start, LocalDateTime end) {
-        BigDecimal gross = bookingRepository.sumDepositByStatusAndCreatedBetween(
-            BookingStatus.COMPLETED, start, end);
-        return calculateCommission(gross);
+        // Tính hoa hồng từ subtotal (tổng tiền ban đầu) của bookings có payment trong khoảng thời gian
+        // Hoa hồng = 7% của subtotal
+        BigDecimal subtotal = paymentRepository.sumSubtotalFromPaymentsByPaidAtRange(start, end);
+        return calculateCommissionFromSubtotal(subtotal);
     }
 
+    /**
+     * Calculate commission from subtotal (tổng tiền ban đầu)
+     * Commission = 7% của subtotal (table fees + dishes + services, trước voucher discount)
+     * @param subtotal Tổng tiền ban đầu (subtotal)
+     * @return Commission amount (7% of subtotal)
+     */
+    private BigDecimal calculateCommissionFromSubtotal(BigDecimal subtotal) {
+        if (subtotal == null) {
+            subtotal = BigDecimal.ZERO;
+        }
+        // Commission = 7% của subtotal (tổng đơn hàng ban đầu, không tính voucher)
+        return subtotal.multiply(DEFAULT_COMMISSION_RATE).setScale(0, RoundingMode.HALF_UP);
+    }
+    
+    /**
+     * Calculate commission from deposit (legacy method, kept for backward compatibility)
+     * @deprecated Use calculateCommissionFromSubtotal() instead for clarity
+     * @param grossAmount Deposit amount (10% of subtotal)
+     * @return Commission amount (7% of subtotal = 70% of deposit)
+     */
+    @Deprecated
     private BigDecimal calculateCommission(BigDecimal grossAmount) {
         if (grossAmount == null) {
             grossAmount = BigDecimal.ZERO;
         }
-        return grossAmount.multiply(DEFAULT_COMMISSION_RATE).setScale(0, RoundingMode.HALF_UP);
+        // grossAmount là deposit (10% của subtotal)
+        // Cần tính 7% trên subtotal (tổng đơn hàng ban đầu, không tính voucher)
+        // Vì deposit = 10% subtotal, nên subtotal = deposit * 10
+        // Commission = 7% subtotal = 7% * (deposit * 10) = 70% deposit
+        BigDecimal subtotal = grossAmount.multiply(new BigDecimal("10")); // deposit * 10 = subtotal
+        return calculateCommissionFromSubtotal(subtotal); // 7% của subtotal
     }
     
     /**

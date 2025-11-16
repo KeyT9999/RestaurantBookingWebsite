@@ -41,4 +41,18 @@ public interface BookingTableRepository extends JpaRepository<BookingTable, Inte
                   @Param("endTime") LocalDateTime endTime,
                   @Param("excludeBookingId") Integer excludeBookingId);
 
+    /**
+     * Tìm các booking tables khác đang sử dụng cùng table
+     * Chỉ tìm các bookings có table đang ở trạng thái OCCUPIED (đã check-in nhưng chưa check-out)
+     */
+    @Query("SELECT bt FROM BookingTable bt " +
+           "JOIN bt.booking b " +
+           "JOIN bt.table t " +
+           "WHERE t = :table " +
+           "AND t.status = 'OCCUPIED' " +
+           "AND b.bookingId != :excludeBookingId " +
+           "AND b.status IN ('CONFIRMED', 'COMPLETED')")
+    List<BookingTable> findOtherActiveBookingsByTable(@Param("table") RestaurantTable table,
+                                                      @Param("excludeBookingId") Integer excludeBookingId);
+
 }

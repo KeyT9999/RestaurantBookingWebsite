@@ -10,7 +10,9 @@
 	
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 	<link th:href="@{/css/design-system.css}" rel="stylesheet">
+	<link th:href="@{/css/admin-dashboard.css}" rel="stylesheet">
 	<link th:href="@{/css/luxury.css}" rel="stylesheet">
 	
 	<style>
@@ -27,49 +29,6 @@
 			min-height: 100vh;
 		}
 		
-		.section-title {
-			color: var(--text-dark);
-			font-family: var(--font-heading);
-			font-weight: 700;
-			font-size: 2.2rem;
-		}
-		
-		/* Space for fixed header */
-		.admin-content {
-			padding-top: 100px !important;
-		}
-		
-		/* Top actions section */
-		.add-user-section {
-			position: relative;
-			z-index: 100;
-			padding: 1.5rem 0;
-			background: #ffffff;
-			border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-			margin-bottom: 2rem;
-			border-radius: 16px;
-			box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-		}
-		
-		/* Primary action button consistent with home */
-		.btn-add-user {
-			background: var(--primary-blue) !important;
-			border: 1px solid var(--primary-blue) !important;
-			color: var(--background-white) !important;
-			font-weight: 600 !important;
-			font-size: 1rem !important;
-			padding: 0.75rem 1.5rem !important;
-			border-radius: 8px !important;
-			box-shadow: var(--shadow-button) !important;
-			transition: var(--transition) !important;
-		}
-		
-		.btn-add-user:hover {
-			background: var(--primary-blue-dark) !important;
-			border-color: var(--primary-blue-dark) !important;
-			transform: translateY(-1px) !important;
-			box-shadow: var(--shadow-hover) !important;
-		}
 		
 		/* Cards & containers */
 		.filter-card {
@@ -225,9 +184,36 @@
 			gap: 0.4rem;
 		}
 		
-		.toggle-btn, .edit-btn { border-radius: 8px; transition: var(--transition); }
-		.toggle-btn:hover { background-color: var(--background-light); transform: scale(1.03); }
-		.edit-btn:hover { border-color: var(--primary-blue); color: var(--primary-blue); background-color: rgba(74,144,226,0.08); }
+		.toggle-btn, .edit-btn { 
+			border-radius: 8px; 
+			transition: all 0.2s ease;
+			font-weight: 500;
+			font-size: 0.875rem;
+			padding: 0.4rem 0.75rem;
+		}
+		.toggle-btn.btn-outline-danger {
+			border-color: #dc3545;
+			color: #dc3545;
+		}
+		.toggle-btn.btn-outline-danger:hover {
+			background-color: #dc3545;
+			color: #fff;
+			border-color: #dc3545;
+		}
+		.toggle-btn.btn-outline-success {
+			border-color: #28a745;
+			color: #28a745;
+		}
+		.toggle-btn.btn-outline-success:hover {
+			background-color: #28a745;
+			color: #fff;
+			border-color: #28a745;
+		}
+		.edit-btn:hover { 
+			border-color: #4a90e2; 
+			color: #4a90e2; 
+			background-color: rgba(74,144,226,0.08); 
+		}
 		
 		/* Toast styles */
 		.toast-container { position: fixed; top: 120px; right: 20px; z-index: 1055; }
@@ -240,6 +226,54 @@
 		@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 		
 		.csrf-token { display: none; }
+		
+		/* Ban/Unban Modal Styles */
+		#banUnbanModal .modal-content {
+			border-radius: 16px;
+			border: 1px solid rgba(226, 232, 240, 0.8);
+			box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+		}
+		
+		#banUnbanModal .modal-header {
+			border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+			padding: 1.25rem 1.5rem;
+		}
+		
+		#banUnbanModal .modal-title {
+			font-weight: 600;
+			color: var(--text-dark);
+			font-size: 1.25rem;
+		}
+		
+		#banUnbanModal .modal-body {
+			padding: 1.5rem;
+		}
+		
+		#banUnbanModal .modal-footer {
+			border-top: 1px solid rgba(226, 232, 240, 0.8);
+			padding: 1rem 1.5rem;
+		}
+		
+		#banUnbanModal .alert {
+			border-radius: 8px;
+			border: none;
+			padding: 1rem;
+		}
+		
+		#banUnbanModal .alert-warning {
+			background-color: #fff3cd;
+			color: #856404;
+		}
+		
+		#banUnbanModal .alert-info {
+			background-color: #d1ecf1;
+			color: #0c5460;
+		}
+		
+		#banUnbanModal #modalUserAvatar {
+			font-size: 1.25rem;
+			font-weight: 600;
+		}
 	</style>
 </head>
 <body class="page-bg">
@@ -247,31 +281,17 @@
 	<div th:with="activeNav='admin-users'"
 	     th:replace="~{fragments/design-system-components :: unified-header}"></div>
 
-
-
-
-	</div>
-
-	<!-- THÊM CLASS admin-content để TRÁNH HEADER -->
-	<div class="admin-content py-5">
-		<div class="container">
-			<!-- ADD USER SECTION - ĐẶC BIỆT NỔI BẬT -->
-			<div class="add-user-section">
-				<div class="row align-items-center">
-					<div class="col-md-8">
-						<h1 class="section-title mb-2">
-							<i class="fas fa-users text-primary me-3"></i> Quản lý người dùng
-						</h1>
-						<p class="text-muted mb-0 fs-6">Quản lý và theo dõi tất cả người dùng trong hệ thống</p>
-					</div>
-					<div class="col-md-4 text-end">
-						<a class="btn btn-add-user" th:href="@{/admin/users/create}">
-							<i class="fas fa-user-plus"></i>
-							<span class="fw-bold">Thêm người dùng mới</span>
-						</a>
-					</div>
-				</div>
-			</div>
+	<main>
+		<section style="padding: var(--ds-space-12) 0;">
+			<div class="ds-container dashboard-shell">
+				<!-- Admin Header -->
+				<div th:with="headerTitle='Quản lý người dùng', 
+				             headerSubtitle='Quản lý và theo dõi tất cả người dùng trong hệ thống',
+				             headerIcon='fa-users',
+				             headerActionUrl=@{/admin/users/create},
+				             headerActionText='Thêm người dùng mới',
+				             headerActionIcon='fa-user-plus'"
+				     th:replace="~{fragments/admin-header :: admin-header}"></div>
 
 			<!-- Filter / Search -->
 			<div class="card filter-card mb-4">
@@ -360,12 +380,14 @@
 								<td class="text-end">
 									<div class="actions-cell justify-content-end">
 										<button type="button"
-										        class="btn btn-outline-secondary btn-sm toggle-btn toggle-active-btn"
+										        class="btn btn-sm toggle-btn toggle-active-btn"
 										        th:id="'toggle-btn-' + ${u.id}"
 										        th:data-user-id="${u.id}"
 										        th:data-current-status="${u.active && u.emailVerified}"
+										        th:classappend="${u.active && u.emailVerified} ? 'btn-outline-danger' : 'btn-outline-success'"
 										        th:title="${u.active && u.emailVerified} ? 'Khóa tài khoản' : 'Mở khóa tài khoản'">
-											<i class="fas toggle-icon" th:classappend="${u.active && u.emailVerified} ? ' fa-lock' : ' fa-unlock'"></i>
+											<i class="fas toggle-icon me-1" th:classappend="${u.active && u.emailVerified} ? ' fa-ban' : ' fa-check-circle'"></i>
+											<span class="toggle-text" th:text="${u.active && u.emailVerified} ? 'Ban' : 'Unban'">Ban</span>
 										</button>
 										<a class="btn btn-outline-primary btn-sm edit-btn" th:href="@{|/admin/users/${u.id}/edit|}" title="Chỉnh sửa thông tin">
 											<i class="fas fa-user-edit"></i>
@@ -408,6 +430,43 @@
 					</li>
 				</ul>
 			</nav>
+			</div>
+		</section>
+	</main>
+
+	<!-- Ban/Unban Confirmation Modal -->
+	<div class="modal fade" id="banUnbanModal" tabindex="-1" aria-labelledby="banUnbanModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="banUnbanModalLabel">
+						<i class="fas fa-exclamation-triangle text-warning me-2"></i>
+						Xác nhận thao tác
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="d-flex align-items-start mb-3">
+						<div class="flex-shrink-0">
+							<div id="modalUserAvatar" class="user-avatar" style="width: 48px; height: 48px;">U</div>
+						</div>
+						<div class="flex-grow-1 ms-3">
+							<h6 class="mb-1" id="modalUserName">User Name</h6>
+							<p class="text-muted small mb-0" id="modalUserEmail">email@example.com</p>
+						</div>
+					</div>
+					<div class="alert" id="modalAlert" role="alert">
+						<p class="mb-0" id="modalMessage">Bạn có chắc chắn muốn thực hiện thao tác này?</p>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+					<button type="button" class="btn" id="confirmBanUnbanBtn">
+						<i class="fas me-1" id="confirmIcon"></i>
+						<span id="confirmText">Xác nhận</span>
+					</button>
+				</div>
+			</div>
 		</div>
 	</div>
 
@@ -423,76 +482,160 @@
 	
 	<script>
 	document.addEventListener('DOMContentLoaded', function() {
-		// Handle toggle active buttons với AJAX
+		const banUnbanModalEl = document.getElementById('banUnbanModal');
+		const banUnbanModal = new bootstrap.Modal(banUnbanModalEl);
+		let currentButton = null;
+		let currentUserId = null;
+		
+		// Reset modal when closed
+		banUnbanModalEl.addEventListener('hidden.bs.modal', function() {
+			currentButton = null;
+			currentUserId = null;
+			const confirmBtn = document.getElementById('confirmBanUnbanBtn');
+			confirmBtn.disabled = false;
+			confirmBtn.querySelector('span').textContent = 'Xác nhận';
+		});
+		
+		// Handle toggle active buttons - show confirmation modal
 		document.querySelectorAll('.toggle-active-btn').forEach(button => {
 			button.addEventListener('click', function(event) {
 				event.preventDefault();
 				
-				const userId = this.dataset.userId;
+				currentButton = this;
+				currentUserId = this.dataset.userId;
 				const currentStatus = this.dataset.currentStatus === 'true';
 				
-				console.log(`Toggling user ${userId}, current status: ${currentStatus}`);
+				// Get user info from the table row
+				const row = this.closest('tr');
+				const userName = row.querySelector('.user-name')?.textContent || 'Người dùng';
+				const userEmail = row.querySelector('.small.text-muted')?.textContent || '';
+				const userAvatar = row.querySelector('.user-avatar')?.textContent || 'U';
 				
-				// Disable button during request
-				this.disabled = true;
-				const icon = this.querySelector('.toggle-icon');
-				const originalClass = icon.className;
-				icon.className = 'fas fa-spinner fa-spin loading-spinner';
+				// Update modal content
+				document.getElementById('modalUserAvatar').textContent = userAvatar;
+				document.getElementById('modalUserName').textContent = userName;
+				document.getElementById('modalUserEmail').textContent = userEmail;
 				
-				// AJAX request với CSRF token
-				fetch(`/admin/users/${userId}/toggle-active`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-Requested-With': 'XMLHttpRequest'
-					},
-					body: JSON.stringify({})
-				})
-				.then(response => {
-					if (!response.ok) {
-						throw new Error('Network response was not ok');
-					}
-					return response.json();
-				})
-				.then(data => {
-					console.log('Toggle response:', data);
+				// Set modal message and button based on action
+				const confirmBtn = document.getElementById('confirmBanUnbanBtn');
+				const confirmIcon = document.getElementById('confirmIcon');
+				const confirmText = document.getElementById('confirmText');
+				const modalAlert = document.getElementById('modalAlert');
+				const modalMessage = document.getElementById('modalMessage');
+				
+				if (currentStatus) {
+					// Will ban user
+					modalMessage.textContent = `Bạn có chắc chắn muốn khóa tài khoản của "${userName}"? Người dùng này sẽ không thể đăng nhập vào hệ thống.`;
+					modalAlert.className = 'alert alert-warning';
+					confirmBtn.className = 'btn btn-outline-danger';
+					confirmIcon.className = 'fas fa-ban me-1';
+					confirmText.textContent = 'Khóa tài khoản';
+				} else {
+					// Will unban user
+					modalMessage.textContent = `Bạn có chắc chắn muốn mở khóa tài khoản của "${userName}"? Người dùng này sẽ có thể đăng nhập lại vào hệ thống.`;
+					modalAlert.className = 'alert alert-info';
+					confirmBtn.className = 'btn btn-outline-success';
+					confirmIcon.className = 'fas fa-check-circle me-1';
+					confirmText.textContent = 'Mở khóa tài khoản';
+				}
+				
+				// Show modal
+				banUnbanModal.show();
+			});
+		});
+		
+		// Handle confirm button in modal
+		document.getElementById('confirmBanUnbanBtn').addEventListener('click', function() {
+			if (!currentButton || !currentUserId) return;
+			
+			const button = currentButton;
+			const userId = currentUserId;
+			const icon = button.querySelector('.toggle-icon');
+			const toggleText = button.querySelector('.toggle-text');
+			
+			// Disable button during request
+			button.disabled = true;
+			const originalIconClass = icon.className;
+			icon.className = 'fas fa-spinner fa-spin loading-spinner';
+			
+			// Disable confirm button
+			this.disabled = true;
+			const originalConfirmText = this.querySelector('span').textContent;
+			this.querySelector('span').textContent = 'Đang xử lý...';
+			
+			// AJAX request với CSRF token
+			fetch(`/admin/users/${userId}/toggle-active`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Requested-With': 'XMLHttpRequest'
+				},
+				body: JSON.stringify({})
+			})
+			.then(response => {
+				if (!response.ok) {
+					throw new Error('Network response was not ok');
+				}
+				return response.json();
+			})
+			.then(data => {
+				console.log('Toggle response:', data);
+				
+				if (data.success) {
+					// Update status badge
+					const badge = document.getElementById(`status-badge-${userId}`);
 					
-					if (data.success) {
-						// Update status badge
-						const badge = document.getElementById(`status-badge-${userId}`);
-						
-						if (data.data.newStatus === 'ACTIVE') {
-							badge.className = 'badge badge-status mt-1 status-badge bg-success';
-							badge.textContent = '✅ ACTIVE';
-							if (icon) {
-								icon.className = 'fas fa-lock toggle-icon';
-							}
-							this.title = 'Khóa tài khoản';
-							this.dataset.currentStatus = 'true';
-						} else {
-							badge.className = 'badge badge-status mt-1 status-badge bg-warning text-dark';
-							badge.textContent = '🚫 INACTIVE';
-							if (icon) {
-								icon.className = 'fas fa-unlock toggle-icon';
-							}
-							this.title = 'Mở khóa tài khoản';
-							this.dataset.currentStatus = 'false';
+					if (data.data.newStatus === 'ACTIVE') {
+						badge.className = 'status-badge status-active';
+						badge.textContent = 'Active';
+						if (icon) {
+							icon.className = 'fas fa-ban toggle-icon me-1';
 						}
-						
-						showToast('success', data.message);
+						if (toggleText) {
+							toggleText.textContent = 'Ban';
+						}
+						button.className = 'btn btn-sm toggle-btn toggle-active-btn btn-outline-danger';
+						button.title = 'Khóa tài khoản';
+						button.dataset.currentStatus = 'true';
 					} else {
-						showToast('error', data.message || 'Có lỗi xảy ra');
+						badge.className = 'status-badge status-inactive';
+						badge.textContent = 'Inactive';
+						if (icon) {
+							icon.className = 'fas fa-check-circle toggle-icon me-1';
+						}
+						if (toggleText) {
+							toggleText.textContent = 'Unban';
+						}
+						button.className = 'btn btn-sm toggle-btn toggle-active-btn btn-outline-success';
+						button.title = 'Mở khóa tài khoản';
+						button.dataset.currentStatus = 'false';
 					}
-				})
-				.catch(error => {
-					console.error('Toggle error:', error);
-					showToast('error', 'Không thể kết nối với server. Vui lòng thử lại.');
-				})
-				.finally(() => {
-					// Re-enable button
-					this.disabled = false;
-					icon.className = originalClass;
-				});
+					
+					// Close modal and show success message
+					banUnbanModal.hide();
+					showToast('success', data.message);
+				} else {
+					showToast('error', data.message || 'Có lỗi xảy ra');
+				}
+			})
+			.catch(error => {
+				console.error('Toggle error:', error);
+				showToast('error', 'Không thể kết nối với server. Vui lòng thử lại.');
+			})
+			.finally(() => {
+				// Re-enable buttons
+				button.disabled = false;
+				this.disabled = false;
+				this.querySelector('span').textContent = originalConfirmText;
+				
+				// Reset icon if there was an error (success case already updated it)
+				if (icon && icon.className.includes('fa-spinner')) {
+					icon.className = originalIconClass;
+				}
+				
+				// Reset current references
+				currentButton = null;
+				currentUserId = null;
 			});
 		});
 		

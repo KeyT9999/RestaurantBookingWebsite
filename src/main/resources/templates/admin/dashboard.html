@@ -25,14 +25,27 @@
                     <span th:text="${error}"></span>
                 </div>
 
+                <!-- Page Header -->
                 <div class="dashboard-header">
                     <div>
                         <h1>Bảng điều khiển quản trị</h1>
                         <p>Theo dõi doanh thu hoa hồng và hoạt động đặt chỗ</p>
                     </div>
-                    <div class="status-pill">
-                        <i class="fas fa-signal"></i>
-                        Theo dõi theo thời gian thực
+                    <div>
+                        <form id="periodForm" method="get" action="/admin/dashboard" style="margin: 0;">
+                            <select id="periodSelect" name="period" class="form-select" style="min-width: 200px; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 0.9rem;">
+                                <option value="today" th:selected="${period == 'today' or period == null}">Hôm nay</option>
+                                <option value="yesterday" th:selected="${period == 'yesterday'}">Hôm qua</option>
+                                <option value="thisWeek" th:selected="${period == 'thisWeek'}">Tuần này</option>
+                                <option value="lastWeek" th:selected="${period == 'lastWeek'}">Tuần trước</option>
+                                <option value="thisMonth" th:selected="${period == 'thisMonth'}">Tháng này</option>
+                                <option value="lastMonth" th:selected="${period == 'lastMonth'}">Tháng trước</option>
+                                <option value="last3Months" th:selected="${period == 'last3Months'}">3 tháng qua</option>
+                                <option value="last6Months" th:selected="${period == 'last6Months'}">6 tháng qua</option>
+                                <option value="thisYear" th:selected="${period == 'thisYear'}">Năm nay</option>
+                                <option value="all" th:selected="${period == 'all'}">Tất cả</option>
+                            </select>
+                        </form>
                     </div>
                 </div>
 
@@ -41,11 +54,29 @@
                     <article class="metric-card metric-card--accent">
                         <div class="metric-card__label">
                             <i class="fas fa-percentage"></i>
-                            Hoa hồng hôm nay
+                            <span th:text="${period == 'today' ? 'Hoa hồng hôm nay' : 
+                                             period == 'yesterday' ? 'Hoa hồng hôm qua' :
+                                             period == 'thisWeek' ? 'Hoa hồng tuần này' :
+                                             period == 'lastWeek' ? 'Hoa hồng tuần trước' :
+                                             period == 'thisMonth' ? 'Hoa hồng tháng này' :
+                                             period == 'lastMonth' ? 'Hoa hồng tháng trước' :
+                                             period == 'last3Months' ? 'Hoa hồng 3 tháng qua' :
+                                             period == 'last6Months' ? 'Hoa hồng 6 tháng qua' :
+                                             period == 'thisYear' ? 'Hoa hồng năm nay' :
+                                             'Tổng hoa hồng'}">Hoa hồng</span>
                         </div>
                         <div class="metric-card__value ds-text-primary"
-                             th:text="${commissionToday != null ? commissionToday + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
-                        <div class="metric-card__footer">So sánh với ngày hôm qua</div>
+                             th:text="${commissionToday != null ? #numbers.formatDecimal(commissionToday, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
+                        <div class="metric-card__footer" th:text="${period == 'today' ? 'So sánh với ngày hôm qua' : 
+                                                                      period == 'yesterday' ? 'Hoa hồng ngày hôm qua' :
+                                                                      period == 'thisWeek' ? 'Hoa hồng từ đầu tuần đến nay' :
+                                                                      period == 'lastWeek' ? 'Hoa hồng tuần trước' :
+                                                                      period == 'thisMonth' ? 'Hoa hồng từ đầu tháng đến nay' :
+                                                                      period == 'lastMonth' ? 'Hoa hồng tháng trước' :
+                                                                      period == 'last3Months' ? 'Hoa hồng 3 tháng qua' :
+                                                                      period == 'last6Months' ? 'Hoa hồng 6 tháng qua' :
+                                                                      period == 'thisYear' ? 'Hoa hồng từ đầu năm đến nay' :
+                                                                      'Tổng hoa hồng tất cả thời gian'}">Hoa hồng</div>
                     </article>
 
                     <article class="metric-card metric-card--primary">
@@ -54,28 +85,37 @@
                             Tỷ lệ hoa hồng
                         </div>
                         <div class="metric-card__value ds-text-success"
-                             th:text="${commissionRate != null ? commissionRate + '%' : '7.5%'}">7.5%</div>
-                        <div class="metric-card__footer">Áp dụng cho mọi giao dịch hoàn tất</div>
+                             th:text="${commissionRate != null ? #numbers.formatDecimal(commissionRate, 1, 'COMMA', 1, 'POINT') + '%' : '7%'}">7%</div>
+                        <div class="metric-card__footer">Tính trên tổng đơn hàng ban đầu (không tính voucher)</div>
                     </article>
 
                     <article class="metric-card metric-card--primary">
                         <div class="metric-card__label">
                             <i class="fas fa-calendar-day"></i>
-                            Booking hôm nay
-                            </div>
+                            <span th:text="${period == 'today' ? 'Booking hôm nay' : 
+                                             period == 'yesterday' ? 'Booking hôm qua' :
+                                             period == 'thisWeek' ? 'Booking tuần này' :
+                                             period == 'lastWeek' ? 'Booking tuần trước' :
+                                             period == 'thisMonth' ? 'Booking tháng này' :
+                                             period == 'lastMonth' ? 'Booking tháng trước' :
+                                             period == 'last3Months' ? 'Booking 3 tháng qua' :
+                                             period == 'last6Months' ? 'Booking 6 tháng qua' :
+                                             period == 'thisYear' ? 'Booking năm nay' :
+                                             'Tổng booking'}">Booking</span>
+                        </div>
                         <div class="metric-card__value ds-text-info"
                              th:text="${todayBookings != null ? todayBookings : 0}">0</div>
-                        <div class="metric-card__footer">Số lượng đặt bàn đã hoàn tất</div>
+                        <div class="metric-card__footer">Số lượng đặt bàn đã thanh toán</div>
                     </article>
 
                     <article class="metric-card metric-card--primary">
                         <div class="metric-card__label">
                             <i class="fas fa-coins"></i>
-                            Hoa hồng/booking
-                            </div>
+                            Tổng hoa hồng
+                        </div>
                         <div class="metric-card__value ds-text-warning"
-                             th:text="${avgCommissionPerBooking != null ? avgCommissionPerBooking + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
-                        <div class="metric-card__footer">Giá trị trung bình theo đơn</div>
+                             th:text="${totalCommission != null ? #numbers.formatDecimal(totalCommission, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
+                        <div class="metric-card__footer">Tổng hoa hồng từ tất cả bookings đã thanh toán</div>
                     </article>
                 </section>
 
@@ -117,6 +157,15 @@
                     </header>
 
                     <div class="quick-actions">
+                        <a th:href="@{/admin/bookings}" class="quick-actions__item text-decoration-none">
+                            <div class="quick-actions__icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="quick-actions__label">
+                                <strong>Quản lý Bookings</strong>
+                                <span>Xem tất cả bookings, số tiền nhận được và trạng thái</span>
+                            </div>
+                        </a>
                         <a th:href="@{/admin/refund-requests}" class="quick-actions__item text-decoration-none">
                             <div class="quick-actions__icon">
                                 <i class="fas fa-money-bill-wave"></i>
@@ -126,7 +175,7 @@
                                 <span>Xử lý yêu cầu hoàn tiền đang chờ</span>
                             </div>
                         </a>
-                        <a th:href="@{/admin/restaurant-requests}" class="quick-actions__item text-decoration-none">
+                        <a th:href="@{/admin/restaurant/requests}" class="quick-actions__item text-decoration-none">
                             <div class="quick-actions__icon">
                                 <i class="fas fa-store"></i>
                             </div>
@@ -233,9 +282,136 @@
                                 <i class="fas fa-wallet ds-text-info"></i>
                                 Tổng hoa hồng đã ghi nhận
                             </div>
-                            <span th:text="${totalCommission != null ? totalCommission + ' VNĐ' : '0 VNĐ'}">0 VNĐ</span>
+                            <span th:text="${totalCommission != null ? #numbers.formatDecimal(totalCommission, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</span>
                         </li>
                     </ul>
+                </section>
+
+                <!-- Database Statistics Overview -->
+                <section class="section-card">
+                    <header class="chart-card__title">
+                        <h3><i class="fas fa-database me-2"></i>Thống kê tổng quan hệ thống</h3>
+                        <span class="ds-text-sm ds-text-secondary">Dữ liệu từ database</span>
+                    </header>
+
+                    <div class="dashboard-grid dashboard-grid--summary">
+                        <!-- Users Statistics -->
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-users"></i>
+                                Tổng số người dùng
+                            </div>
+                            <div class="metric-card__value ds-text-primary"
+                                 th:text="${totalUsers != null ? totalUsers : 0}">0</div>
+                            <div class="metric-card__footer">
+                                <span th:text="'Khách hàng: ' + ${totalCustomers != null ? totalCustomers : 0}">Khách hàng: 0</span>
+                                <span th:text="'| Chủ nhà hàng: ' + ${totalRestaurantOwners != null ? totalRestaurantOwners : 0}">| Chủ nhà hàng: 0</span>
+                            </div>
+                        </article>
+
+                        <!-- Restaurants Statistics -->
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-store"></i>
+                                Tổng số nhà hàng
+                            </div>
+                            <div class="metric-card__value ds-text-success"
+                                 th:text="${totalRestaurants != null ? totalRestaurants : 0}">0</div>
+                            <div class="metric-card__footer">
+                                <span th:text="'Đã duyệt: ' + ${approvedRestaurants != null ? approvedRestaurants : 0}">Đã duyệt: 0</span>
+                                <span th:text="'| Chờ duyệt: ' + ${pendingRestaurants != null ? pendingRestaurants : 0}">| Chờ duyệt: 0</span>
+                            </div>
+                        </article>
+
+                        <!-- Bookings Statistics -->
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-calendar-check"></i>
+                                Tổng số đặt bàn
+                            </div>
+                            <div class="metric-card__value ds-text-info"
+                                 th:text="${totalBookings != null ? totalBookings : 0}">0</div>
+                            <div class="metric-card__footer">
+                                <span th:text="'Hoàn thành: ' + ${completedBookings != null ? completedBookings : 0}">Hoàn thành: 0</span>
+                                <span th:text="'| Chờ xử lý: ' + ${pendingBookings != null ? pendingBookings : 0}">| Chờ xử lý: 0</span>
+                            </div>
+                        </article>
+
+                        <!-- Payments Statistics -->
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-money-bill-wave"></i>
+                                Tổng số thanh toán
+                            </div>
+                            <div class="metric-card__value ds-text-warning"
+                                 th:text="${totalPayments != null ? totalPayments : 0}">0</div>
+                            <div class="metric-card__footer">
+                                <span th:text="'Hoàn thành: ' + ${completedPayments != null ? completedPayments : 0}">Hoàn thành: 0</span>
+                                <span th:text="'| Chờ xử lý: ' + ${pendingPayments != null ? pendingPayments : 0}">| Chờ xử lý: 0</span>
+                            </div>
+                        </article>
+
+                        <!-- Revenue Statistics -->
+                        <article class="metric-card metric-card--accent">
+                            <div class="metric-card__label">
+                                <i class="fas fa-chart-line"></i>
+                                Tổng doanh thu
+                            </div>
+                            <div class="metric-card__value ds-text-success"
+                                 th:text="${totalRevenue != null ? #numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</div>
+                            <div class="metric-card__footer">
+                                Từ các thanh toán đã hoàn thành
+                            </div>
+                        </article>
+
+                        <!-- Reviews Statistics -->
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-star"></i>
+                                Tổng số đánh giá
+                            </div>
+                            <div class="metric-card__value ds-text-info"
+                                 th:text="${totalReviews != null ? totalReviews : 0}">0</div>
+                            <div class="metric-card__footer">
+                                Tổng số đánh giá từ khách hàng
+                            </div>
+                        </article>
+
+                        <!-- Chat Rooms Statistics -->
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-comments"></i>
+                                Tổng số phòng chat
+                            </div>
+                            <div class="metric-card__value ds-text-primary"
+                                 th:text="${totalChatRooms != null ? totalChatRooms : 0}">0</div>
+                            <div class="metric-card__footer">
+                                <span th:text="'Đang hoạt động: ' + ${activeChatRooms != null ? activeChatRooms : 0}">Đang hoạt động: 0</span>
+                            </div>
+                        </article>
+
+                        <!-- Period Bookings -->
+                        <article class="metric-card metric-card--primary">
+                            <div class="metric-card__label">
+                                <i class="fas fa-calendar-day"></i>
+                                <span th:text="${period == 'today' ? 'Đặt bàn hôm nay' : 
+                                                 period == 'yesterday' ? 'Đặt bàn hôm qua' :
+                                                 period == 'thisWeek' ? 'Đặt bàn tuần này' :
+                                                 period == 'lastWeek' ? 'Đặt bàn tuần trước' :
+                                                 period == 'thisMonth' ? 'Đặt bàn tháng này' :
+                                                 period == 'lastMonth' ? 'Đặt bàn tháng trước' :
+                                                 period == 'last3Months' ? 'Đặt bàn 3 tháng qua' :
+                                                 period == 'last6Months' ? 'Đặt bàn 6 tháng qua' :
+                                                 period == 'thisYear' ? 'Đặt bàn năm nay' :
+                                                 'Tổng đặt bàn'}">Đặt bàn</span>
+                            </div>
+                            <div class="metric-card__value ds-text-info"
+                                 th:text="${todayTotalBookings != null ? todayTotalBookings : 0}">0</div>
+                            <div class="metric-card__footer">
+                                <span th:text="'Đã thanh toán: ' + ${todayCompletedBookings != null ? todayCompletedBookings : 0}">Đã thanh toán: 0</span>
+                            </div>
+                        </article>
+                    </div>
                 </section>
 
                 <div id="dashboardData"
@@ -254,6 +430,18 @@
     </main>
 
     <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+
+    <script>
+        // Auto-submit form when period select changes
+        document.addEventListener('DOMContentLoaded', function() {
+            const periodSelect = document.getElementById('periodSelect');
+            if (periodSelect) {
+                periodSelect.addEventListener('change', function() {
+                    document.getElementById('periodForm').submit();
+                });
+            }
+        });
+    </script>
     <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

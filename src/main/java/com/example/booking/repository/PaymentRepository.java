@@ -215,4 +215,153 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
            "ORDER BY p.booking_id", nativeQuery = true)
     List<Integer> findBookingIdsByVoucherId(@Param("voucherId") Integer voucherId);
     
+    /**
+     * Calculate total revenue from completed payments
+     * NOTE: This calculates from payment amounts, which may be deposit (10% subtotal) or full payment
+     * @deprecated Use getTotalRevenueFromCompletedBookings() instead for accurate subtotal calculation
+     * @return Total revenue from all completed payments
+     */
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = 'COMPLETED'")
+    BigDecimal getTotalRevenueFromCompletedPayments();
+    
+    /**
+     * Calculate total revenue (subtotal) from bookings with completed payments
+     * Revenue = subtotal = deposit * 10 (because deposit = 10% of subtotal)
+     * This gives the actual subtotal (table fees + dishes + services) before voucher discount
+     * Uses subquery to avoid double counting if a booking has multiple payments
+     * @return Total subtotal from all bookings with completed payments
+     */
+    @Query("SELECT COALESCE(SUM(b.depositAmount * 10), 0) FROM Booking b " +
+           "WHERE b.bookingId IN (" +
+           "    SELECT DISTINCT p.booking.bookingId FROM Payment p " +
+           "    WHERE p.status = 'COMPLETED'" +
+           ") " +
+           "AND b.depositAmount IS NOT NULL " +
+           "AND b.depositAmount > 0")
+    BigDecimal getTotalRevenueFromCompletedBookings();
+    
+    /**
+     * Get total revenue from completed payments within a date range
+     * @param startDate Start date
+     * @param endDate End date
+     * @return Total revenue from completed payments in the date range
+     */
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = 'COMPLETED' AND p.paidAt >= :startDate AND p.paidAt <= :endDate")
+    BigDecimal getTotalRevenueFromCompletedPaymentsByDateRange(@Param("startDate") LocalDateTime startDate, 
+                                                                 @Param("endDate") LocalDateTime endDate);
+    
+    /**
+     * Get total deposit amount from bookings that have completed payments within a date range
+     * Used for calculating commission based on payment date (paidAt), not booking creation date
+     * @param startDate Start date
+     * @param endDate End date
+     * @return Total deposit amount from bookings with payments paid in the date range
+     */
+    @Query("SELECT COALESCE(SUM(b.depositAmount), 0) FROM Payment p " +
+           "JOIN p.booking b " +
+           "WHERE p.status = 'COMPLETED' " +
+           "AND b.status = 'COMPLETED' " +
+           "AND p.paidAt >= :startDate AND p.paidAt <= :endDate")
+    BigDecimal sumDepositFromPaymentsByPaidAtRange(@Param("startDate") LocalDateTime startDate,
+                                                    @Param("endDate") LocalDateTime endDate);
+    
+    /**
+     * Get total subtotal (tổng tiền ban đầu) from bookings that have completed payments within a date range
+     * Subtotal = table fees + dishes + services (trước voucher discount)
+     * Used for calculating commission as 7% of subtotal based on payment date (paidAt)
+     * Uses native SQL query because JPQL doesn't support subqueries in SELECT clause
+     * @param startDate Start date
+     * @param endDate End date
+     * @return Total subtotal from bookings with payments paid in the date range
+     */
+    @Query(value = "SELECT COALESCE(SUM(" +
+           "    COALESCE((SELECT SUM(bt.table_fee) FROM booking_table bt WHERE bt.booking_id = b.booking_id), 0) + " +
+           "    COALESCE((SELECT SUM(bd.price * bd.quantity) FROM booking_dish bd WHERE bd.booking_id = b.booking_id), 0) + " +
+           "    COALESCE((SELECT SUM(bs.price * bs.quantity) FROM booking_service bs WHERE bs.booking_id = b.booking_id), 0)" +
+           "), 0) FROM booking b " +
+           "WHERE b.booking_id IN (" +
+           "    SELECT DISTINCT p.booking_id FROM payment p " +
+           "    WHERE p.status = 'COMPLETED' " +
+           "    AND p.paid_at >= :startDate AND p.paid_at <= :endDate" +
+           ") " +
+           "AND b.status = 'COMPLETED'", nativeQuery = true)
+    BigDecimal sumSubtotalFromPaymentsByPaidAtRange(@Param("startDate") LocalDateTime startDate,
+                                                     @Param("endDate") LocalDateTime endDate);
+    
+    /**
+     * Get total deposit amount from all bookings that have completed payments
+     * Used for calculating total commission (no date range filter)
+     * Uses subquery to avoid double counting if a booking has multiple payments
+     * @return Total deposit amount from all bookings with completed payments
+     */
+    @Query("SELECT COALESCE(SUM(b.depositAmount), 0) FROM Booking b " +
+           "WHERE b.bookingId IN (" +
+           "    SELECT DISTINCT p.booking.bookingId FROM Payment p " +
+           "    WHERE p.status = 'COMPLETED'" +
+           ") " +
+           "AND b.status = 'COMPLETED' " +
+           "AND b.depositAmount IS NOT NULL " +
+           "AND b.depositAmount > 0")
+    BigDecimal sumDepositFromAllCompletedPayments();
+    
+    /**
+     * Get total subtotal (tổng tiền ban đầu) from all bookings that have completed payments
+     * Subtotal = table fees + dishes + services (trước voucher discount)
+     * Used for calculating commission as 7% of subtotal
+     * Uses native SQL query because JPQL doesn't support subqueries in SELECT clause
+     * @return Total subtotal from all bookings with completed payments
+     */
+    @Query(value = "SELECT COALESCE(SUM(" +
+           "    COALESCE((SELECT SUM(bt.table_fee) FROM booking_table bt WHERE bt.booking_id = b.booking_id), 0) + " +
+           "    COALESCE((SELECT SUM(bd.price * bd.quantity) FROM booking_dish bd WHERE bd.booking_id = b.booking_id), 0) + " +
+           "    COALESCE((SELECT SUM(bs.price * bs.quantity) FROM booking_service bs WHERE bs.booking_id = b.booking_id), 0)" +
+           "), 0) FROM booking b " +
+           "WHERE b.booking_id IN (" +
+           "    SELECT DISTINCT p.booking_id FROM payment p " +
+           "    WHERE p.status = 'COMPLETED'" +
+           ") " +
+           "AND b.status = 'COMPLETED'", nativeQuery = true)
+    BigDecimal sumSubtotalFromAllCompletedPayments();
+    
+    /**
+     * Count payments by status
+     * @param status The PaymentStatus
+     * @return Count of payments with the specified status
+     */
+    long countByStatus(PaymentStatus status);
+    
+    /**
+     * Count distinct bookings that have completed payments
+     * Used for calculating average commission per booking
+     * @return Count of distinct bookings with completed payments
+     */
+    @Query("SELECT COUNT(DISTINCT p.booking.bookingId) FROM Payment p WHERE p.status = 'COMPLETED'")
+    long countDistinctBookingsWithCompletedPayments();
+    
+    /**
+     * Count distinct bookings that have completed payments within a date range
+     * @param startDate Start date
+     * @param endDate End date
+     * @return Count of distinct bookings with completed payments in the date range
+     */
+    @Query("SELECT COUNT(DISTINCT p.booking.bookingId) FROM Payment p " +
+           "WHERE p.status = 'COMPLETED' " +
+           "AND p.paidAt >= :startDate AND p.paidAt <= :endDate")
+    long countDistinctBookingsWithCompletedPaymentsByDateRange(@Param("startDate") LocalDateTime startDate,
+                                                                 @Param("endDate") LocalDateTime endDate);
+    
+    /**
+     * Count payments by status and paidAt date range
+     * @param status Payment status
+     * @param startDate Start date
+     * @param endDate End date
+     * @return Count of payments with the specified status and paidAt in the date range
+     */
+    @Query("SELECT COUNT(p) FROM Payment p " +
+           "WHERE p.status = :status " +
+           "AND p.paidAt >= :startDate AND p.paidAt <= :endDate")
+    long countByStatusAndPaidAtBetween(@Param("status") PaymentStatus status,
+                                        @Param("startDate") LocalDateTime startDate,
+                                        @Param("endDate") LocalDateTime endDate);
+    
 }

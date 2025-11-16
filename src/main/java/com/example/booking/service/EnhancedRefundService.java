@@ -20,8 +20,8 @@ import com.example.booking.repository.RestaurantBalanceRepository;
 import com.example.booking.service.RefundNotificationService;
 /**
  * Service xử lý hoàn tiền với logic mới:
- * - Admin nhận 30% hoa hồng từ tiền đặt cọc
- * - Khi hoàn tiền: trừ 30% từ ví nhà hàng, admin chuyển tiền cho khách
+ * - Admin nhận 7% hoa hồng từ subtotal (tổng đơn hàng ban đầu, không tính voucher)
+ * - Khi hoàn tiền: trừ 7% từ ví nhà hàng, admin chuyển tiền cho khách
  * - Cho phép số dư âm nếu nhà hàng không đủ tiền
  */
 @Service
@@ -45,7 +45,7 @@ public class EnhancedRefundService {
     
     /**
      * Hoàn tiền với logic mới:
-     * 1. Tính toán số tiền cần trừ từ ví nhà hàng (30% của tiền đặt cọc)
+     * 1. Tính toán số tiền cần trừ từ ví nhà hàng (7% của subtotal - tổng đơn hàng ban đầu, không tính voucher)
      * 2. Trừ tiền từ ví nhà hàng (cho phép âm)
      * 3. Admin chuyển tiền cho khách hàng
      * 4. Thông báo cho khách hàng về thời gian hoàn tiền (1-3 ngày)
@@ -78,7 +78,7 @@ public class EnhancedRefundService {
         }
         
         try {
-            // Step 1: Calculate commission deduction (30% of deposit amount)
+            // Step 1: Calculate commission deduction (7% of subtotal - tổng đơn hàng ban đầu, không tính voucher)
             BigDecimal commissionDeduction = calculateCommissionDeduction(actualRefundAmount);
             
             // Step 2: Deduct commission from restaurant balance (allow negative)
@@ -115,11 +115,15 @@ public class EnhancedRefundService {
     }
     
     /**
-     * Tính toán số tiền hoa hồng cần trừ (30% của tiền đặt cọc)
+     * Tính toán số tiền hoa hồng cần trừ (7% của subtotal - tổng đơn hàng ban đầu, không tính voucher)
+     * refundAmount là deposit (10% của subtotal)
      */
     private BigDecimal calculateCommissionDeduction(BigDecimal refundAmount) {
-        BigDecimal commissionRate = new BigDecimal("0.30"); // 30%
-        return refundAmount.multiply(commissionRate).setScale(0, java.math.RoundingMode.HALF_UP);
+        BigDecimal commissionRate = new BigDecimal("0.07"); // 7% của subtotal
+        // refundAmount là deposit, cần tính 7% trên subtotal
+        // Vì deposit = 10% subtotal, nên subtotal = deposit * 10
+        BigDecimal subtotal = refundAmount.multiply(new BigDecimal("10")); // deposit * 10 = subtotal
+        return subtotal.multiply(commissionRate).setScale(0, java.math.RoundingMode.HALF_UP); // 7% của subtotal
     }
     
     /**

@@ -59,4 +59,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 	
 	// Method for RestaurantNotificationService
 	List<User> findByRoleAndActiveTrue(UserRole role);
+	
+	// Count users by role
+	long countByRole(UserRole role);
 } 
