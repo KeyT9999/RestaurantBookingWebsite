@@ -1,6 +1,7 @@
 package com.example.booking.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ public class TableStatusManagementService {
     
     @Autowired
     private BookingRepository bookingRepository;
+    
+    @Autowired
+    private BookingService bookingService;
     
     // Constants
     private static final int NO_SHOW_MINUTES = 15; // 15 phút sau booking time
@@ -149,7 +153,12 @@ public class TableStatusManagementService {
     
     /**
      * Manual: Chuyển từ RESERVED hoặc AVAILABLE → OCCUPIED khi khách tới
-     * Check-in chỉ thay đổi table status, không thay đổi booking status
+     * Check-in chỉ thay đổi table status, KHÔNG thay đổi booking status
+     * (Booking status chỉ thay đổi khi thanh toán thành công: CONFIRMED → COMPLETED)
+     * 
+     * Lưu ý: Chỉ check-in table nếu:
+     * 1. Table chưa được check-in bởi booking khác CÙNG THỜI ĐIỂM
+     * 2. Booking time đã đến hoặc sắp đến (trong vòng 2 giờ)
      */
     public void checkInCustomer(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -160,27 +169,102 @@ public class TableStatusManagementService {
             throw new IllegalArgumentException("Booking must be CONFIRMED or COMPLETED to check-in");
         }
         
-        // Không thay đổi booking status, chỉ thay đổi table status
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime bookingTime = booking.getBookingTime();
+        
+        // Kiểm tra booking time: chỉ cho phép check-in nếu booking time đã đến hoặc sắp đến (trong vòng 2 giờ)
+        // Hoặc đã qua booking time (cho phép check-in muộn)
+        if (bookingTime.isAfter(now.plusHours(2))) {
+            throw new IllegalArgumentException("Cannot check-in: Booking time is more than 2 hours away. Booking time: " + bookingTime);
+        }
+        
+        // KHÔNG thay đổi booking status - giữ nguyên CONFIRMED hoặc COMPLETED
+        // Chỉ thay đổi table status: RESERVED hoặc AVAILABLE → OCCUPIED
+        // Nhưng chỉ check-in table nếu không có booking khác CÙNG THỜI ĐIỂM đã check-in
         List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
+        boolean tableUpdated = false;
+        List<String> skippedTables = new ArrayList<>();
+        
+        // Tính toán time range để kiểm tra conflict (2 giờ trước và sau booking time)
+        LocalDateTime timeRangeStart = bookingTime.minusHours(2);
+        LocalDateTime timeRangeEnd = bookingTime.plusHours(2);
+        
         for (BookingTable bookingTable : bookingTables) {
             RestaurantTable table = bookingTable.getTable();
             // Chuyển từ RESERVED hoặc AVAILABLE → OCCUPIED
             if (table.getStatus() == TableStatus.RESERVED || table.getStatus() == TableStatus.AVAILABLE) {
+                // Kiểm tra xem có booking khác CÙNG THỜI ĐIỂM đã check-in table này chưa
+                // Chỉ kiểm tra các bookings có booking time trong cùng time range (2 giờ)
+                List<BookingTable> conflictingBookings = bookingTableRepository.findAll().stream()
+                        .filter(bt -> bt.getTable().getTableId().equals(table.getTableId())
+                                && !bt.getBooking().getBookingId().equals(bookingId)
+                                && (bt.getBooking().getStatus() == BookingStatus.CONFIRMED 
+                                    || bt.getBooking().getStatus() == BookingStatus.COMPLETED)
+                                && bt.getBooking().getBookingTime().isAfter(timeRangeStart)
+                                && bt.getBooking().getBookingTime().isBefore(timeRangeEnd)
+                                && table.getStatus() == TableStatus.OCCUPIED)
+                        .toList();
+                
+                // Nếu có booking khác CÙNG THỜI ĐIỂM đã check-in table này, không check-in nữa
+                if (!conflictingBookings.isEmpty()) {
+                    skippedTables.add(table.getTableName());
+                    System.out.println("⚠️ Table " + table.getTableName() + " is already checked in by " + 
+                            conflictingBookings.size() + " other booking(s) at the same time, skipping check-in");
+                    continue;
+                }
+                
+                // Chỉ check-in table nếu không có booking khác CÙNG THỜI ĐIỂM đã check-in
                 TableStatus oldStatus = table.getStatus();
                 table.setStatus(TableStatus.OCCUPIED);
                 restaurantTableRepository.save(table);
+                tableUpdated = true;
                 System.out.println("✅ Customer checked in - Table " + table.getTableName() + " set to OCCUPIED (from "
-                        + oldStatus + ")");
+                        + oldStatus + ") for booking at " + bookingTime);
+            } else if (table.getStatus() == TableStatus.OCCUPIED) {
+                // Table đã OCCUPIED, kiểm tra xem có phải do booking khác CÙNG THỜI ĐIỂM check-in không
+                List<BookingTable> conflictingBookings = bookingTableRepository.findAll().stream()
+                        .filter(bt -> bt.getTable().getTableId().equals(table.getTableId())
+                                && !bt.getBooking().getBookingId().equals(bookingId)
+                                && (bt.getBooking().getStatus() == BookingStatus.CONFIRMED 
+                                    || bt.getBooking().getStatus() == BookingStatus.COMPLETED)
+                                && bt.getBooking().getBookingTime().isAfter(timeRangeStart)
+                                && bt.getBooking().getBookingTime().isBefore(timeRangeEnd))
+                        .toList();
+                
+                if (!conflictingBookings.isEmpty()) {
+                    skippedTables.add(table.getTableName());
+                    System.out.println("⚠️ Table " + table.getTableName() + " is already checked in by other booking(s) at the same time");
+                } else {
+                    // Table đã OCCUPIED nhưng không có booking khác CÙNG THỜI ĐIỂM, có thể đã check-in rồi hoặc booking khác thời điểm
+                    System.out.println("ℹ️ Table " + table.getTableName() + " is already OCCUPIED (may be checked in by booking at different time)");
+                    // Vẫn cho phép check-in nếu booking time đã đến
+                    if (bookingTime.isBefore(now) || bookingTime.isBefore(now.plusHours(1))) {
+                        tableUpdated = true; // Đánh dấu là đã xử lý (table đã OCCUPIED)
+                    }
+                }
             } else {
                 System.out.println("⚠️ Table " + table.getTableName() + " is in " + table.getStatus()
                         + " status, cannot check-in");
+            }
+        }
+        
+        // Nếu không có table nào được check-in, throw exception với thông báo rõ ràng
+        if (!tableUpdated) {
+            if (!skippedTables.isEmpty()) {
+                throw new IllegalArgumentException("Cannot check-in: All tables are already checked in by other bookings at the same time. Tables: " + 
+                        String.join(", ", skippedTables));
+            } else {
+                throw new IllegalArgumentException("Cannot check-in: No tables were updated. Please check table status and booking time.");
             }
         }
     }
     
     /**
      * Manual: Chuyển từ OCCUPIED → CLEANING khi khách rời
-     * Check-out chỉ thay đổi table status, không thay đổi booking status
+     * Check-out chỉ thay đổi table status, KHÔNG thay đổi booking status
+     * (Booking status chỉ thay đổi khi thanh toán thành công: CONFIRMED → COMPLETED)
+     * 
+     * Lưu ý: Chỉ check-out table nếu không có booking khác đang sử dụng table đó
      */
     public void checkOutCustomer(Integer bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
@@ -191,14 +275,70 @@ public class TableStatusManagementService {
             throw new IllegalArgumentException("Booking must be CONFIRMED or COMPLETED to check-out");
         }
         
-        // Không thay đổi booking status, chỉ thay đổi table status
+        // Kiểm tra xem có table nào đang ở OCCUPIED không (đã check-in)
         List<BookingTable> bookingTables = bookingTableRepository.findByBooking(booking);
+        boolean hasOccupiedTable = false;
         for (BookingTable bookingTable : bookingTables) {
             RestaurantTable table = bookingTable.getTable();
             if (table.getStatus() == TableStatus.OCCUPIED) {
+                hasOccupiedTable = true;
+                break;
+            }
+        }
+        
+        if (!hasOccupiedTable) {
+            throw new IllegalArgumentException("Cannot check-out: No tables are in OCCUPIED status. Customer must check-in first.");
+        }
+        
+        // KHÔNG thay đổi booking status - giữ nguyên CONFIRMED hoặc COMPLETED
+        // Chỉ thay đổi table status: OCCUPIED → CLEANING
+        // Nhưng chỉ check-out table nếu không có booking khác đang sử dụng table đó
+        boolean tableUpdated = false;
+        List<String> skippedTables = new ArrayList<>();
+        
+        for (BookingTable bookingTable : bookingTables) {
+            RestaurantTable table = bookingTable.getTable();
+            if (table.getStatus() == TableStatus.OCCUPIED) {
+                // Kiểm tra xem có booking khác đang sử dụng table này không
+                // (các booking khác có status CONFIRMED hoặc COMPLETED và có table này)
+                List<BookingTable> otherBookingTables = bookingTableRepository
+                        .findOtherActiveBookingsByTable(table, bookingId);
+                
+                // Nếu có booking khác đang sử dụng table này, không check-out table
+                if (!otherBookingTables.isEmpty()) {
+                    skippedTables.add(table.getTableName());
+                    System.out.println("⚠️ Table " + table.getTableName() + " is being used by " + 
+                            otherBookingTables.size() + " other booking(s), skipping check-out for this table");
+                    continue;
+                }
+                
+                // Chỉ check-out table nếu không có booking khác đang sử dụng
                 table.setStatus(TableStatus.CLEANING);
                 restaurantTableRepository.save(table);
+                tableUpdated = true;
                 System.out.println("✅ Customer checked out - Table " + table.getTableName() + " set to CLEANING");
+            }
+        }
+        
+        // Nếu không có table nào được check-out, throw exception với thông báo rõ ràng
+        if (!tableUpdated) {
+            if (!skippedTables.isEmpty()) {
+                throw new IllegalArgumentException("Cannot check-out: All tables are being used by other bookings. Tables: " + 
+                        String.join(", ", skippedTables));
+            } else {
+                throw new IllegalArgumentException("Cannot check-out: No tables were updated. Please check table status.");
+            }
+        }
+        
+        // Sau khi check-out thành công, nếu booking đang ở CONFIRMED thì chuyển sang COMPLETED
+        // (COMPLETED = thanh toán thành công, đã check-out)
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            try {
+                bookingService.completeBooking(bookingId);
+                System.out.println("✅ Booking " + bookingId + " status changed from CONFIRMED to COMPLETED after check-out");
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to update booking status to COMPLETED: " + e.getMessage());
+                // Không throw exception vì check-out table đã thành công
             }
         }
     }

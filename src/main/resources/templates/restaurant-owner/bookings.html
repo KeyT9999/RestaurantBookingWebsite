@@ -421,19 +421,23 @@
                                 </form>
                                 
                                 <!-- Check-in/Check-out buttons -->
-                                <button th:if="${booking.status.name() == 'CONFIRMED' or booking.status.name() == 'COMPLETED'}" 
+                                <!-- Hiển thị Check-in nếu: chưa check-in, chưa check-out, và có table RESERVED/AVAILABLE -->
+                                <button th:if="${(booking.status.name() == 'CONFIRMED' or booking.status.name() == 'COMPLETED') and booking.canCheckIn() and !booking.hasOccupiedTable() and !booking.hasCleaningTable()}" 
                                         class="btn btn-success small" 
                                         th:onclick="'checkInCustomer(' + ${booking.bookingId} + ')'">
                                     <i class="fas fa-sign-in-alt"></i>
                                     Check-in
                                 </button>
                                 
-                                <button th:if="${booking.status.name() == 'CONFIRMED' or booking.status.name() == 'COMPLETED'}" 
+                                <!-- Hiển thị Check-out nếu đã check-in (có table OCCUPIED) -->
+                                <button th:if="${(booking.status.name() == 'CONFIRMED' or booking.status.name() == 'COMPLETED') and booking.hasOccupiedTable()}" 
                                         class="btn btn-secondary small" 
                                         th:onclick="'checkOutCustomer(' + ${booking.bookingId} + ')'">
                                     <i class="fas fa-sign-out-alt"></i>
                                     Check-out
                                 </button>
+                                
+                                <!-- Không hiển thị nút nào nếu đã check-out (có table CLEANING hoặc đã hoàn thành) -->
                             </td>
                         </tr>
                         

@@ -690,7 +690,8 @@ public class BookingService {
                 .orElseThrow(() -> new IllegalArgumentException("Restaurant not found"));
         System.out.println("✅ Restaurant found: " + restaurant.getRestaurantName());
 
-        List<Booking> bookings = bookingRepository.findByRestaurantOrderByBookingTimeDesc(restaurant);
+        // Use eager fetch to load bookingTables and table status
+        List<Booking> bookings = bookingRepository.findByRestaurantRestaurantIdOrderByBookingTimeDesc(restaurantId);
         System.out.println("📋 Repository returned " + bookings.size() + " bookings for restaurant");
 
         // Log each booking details

@@ -65,6 +65,26 @@
                     </div>
                 </div>
 
+                <!-- Period Filter -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="btn-group" role="group">
+                            <a th:href="@{/admin/reports(period='week')}" 
+                               th:class="${selectedPeriod == 'week'} ? 'btn btn-primary' : 'btn btn-outline-primary'"
+                               class="btn btn-outline-primary">7 ngày</a>
+                            <a th:href="@{/admin/reports(period='month')}" 
+                               th:class="${selectedPeriod == 'month'} ? 'btn btn-primary' : 'btn btn-outline-primary'"
+                               class="btn btn-outline-primary">30 ngày</a>
+                            <a th:href="@{/admin/reports(period='quarter')}" 
+                               th:class="${selectedPeriod == 'quarter'} ? 'btn btn-primary' : 'btn btn-outline-primary'"
+                               class="btn btn-outline-primary">3 tháng</a>
+                            <a th:href="@{/admin/reports(period='year')}" 
+                               th:class="${selectedPeriod == 'year'} ? 'btn btn-primary' : 'btn btn-outline-primary'"
+                               class="btn btn-outline-primary">1 năm</a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Statistics Cards -->
                 <div class="row mb-4">
                     <div class="col-md-3">
@@ -73,7 +93,7 @@
                                 <div class="d-flex justify-content-between">
                                     <div>
                                         <h4 class="card-title" th:text="${reports.totalUsers}">0</h4>
-                                        <p class="card-text">Total Users</p>
+                                        <p class="card-text">Tổng người dùng</p>
                                     </div>
                                     <div class="align-self-center">
                                         <i class="fas fa-users fa-2x"></i>
@@ -88,7 +108,7 @@
                                 <div class="d-flex justify-content-between">
                                     <div>
                                         <h4 class="card-title" th:text="${reports.totalRestaurants}">0</h4>
-                                        <p class="card-text">Total Restaurants</p>
+                                        <p class="card-text">Tổng nhà hàng</p>
                                     </div>
                                     <div class="align-self-center">
                                         <i class="fas fa-store fa-2x"></i>
@@ -102,11 +122,11 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h4 class="card-title" th:text="${reports.totalBookings}">0</h4>
-                                        <p class="card-text">Total Bookings</p>
+                                        <h4 class="card-title" th:text="${reports.periodRevenue != null ? #numbers.formatDecimal(reports.periodRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</h4>
+                                        <p class="card-text">Doanh thu (kỳ này)</p>
                                     </div>
                                     <div class="align-self-center">
-                                        <i class="fas fa-calendar-alt fa-2x"></i>
+                                        <i class="fas fa-money-bill-wave fa-2x"></i>
                                     </div>
                                 </div>
                             </div>
@@ -117,11 +137,11 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <h4 class="card-title" th:text="${#numbers.formatDecimal(reports.noShowRate, 1, 1)}">0.0</h4>
-                                        <p class="card-text">No-Show Rate (%)</p>
+                                        <h4 class="card-title" th:text="${reports.periodCommission != null ? #numbers.formatDecimal(reports.periodCommission, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</h4>
+                                        <p class="card-text">Hoa hồng (kỳ này)</p>
                                     </div>
                                     <div class="align-self-center">
-                                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                        <i class="fas fa-percentage fa-2x"></i>
                                     </div>
                                 </div>
                             </div>
@@ -155,25 +175,37 @@
                                     <div class="col-6">
                                         <div class="text-center">
                                             <h3 class="text-primary" th:text="${reports.pendingBookings}">0</h3>
-                                            <p class="text-muted">Pending</p>
+                                            <p class="text-muted">Chờ xác nhận</p>
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="text-center">
                                             <h3 class="text-success" th:text="${reports.confirmedBookings}">0</h3>
-                                            <p class="text-muted">Confirmed</p>
+                                            <p class="text-muted">Đã xác nhận</p>
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="text-center">
                                             <h3 class="text-danger" th:text="${reports.cancelledBookings}">0</h3>
-                                            <p class="text-muted">Cancelled</p>
+                                            <p class="text-muted">Đã hủy</p>
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="text-center">
                                             <h3 class="text-warning" th:text="${reports.noShowBookings}">0</h3>
-                                            <p class="text-muted">No-Show</p>
+                                            <p class="text-muted">Không đến</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-center">
+                                            <h3 class="text-info" th:text="${reports.completedBookings}">0</h3>
+                                            <p class="text-muted">Hoàn thành</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-center">
+                                            <h3 class="text-secondary" th:text="${reports.periodBookings}">0</h3>
+                                            <p class="text-muted">Bookings (kỳ này)</p>
                                         </div>
                                     </div>
                                 </div>
@@ -232,6 +264,10 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Get data from Thymeleaf
+        const reportsData = /*[[${reports}]]*/ {};
+        const dailyBookingsData = reportsData.dailyBookingsData || [];
+        
         // Booking Status Chart
         const bookingStatusCtx = document.getElementById('bookingStatusChart').getContext('2d');
         new Chart(bookingStatusCtx, {
@@ -240,10 +276,10 @@
                 labels: ['Pending', 'Confirmed', 'Cancelled', 'No-Show'],
                 datasets: [{
                     data: [
-                        /*[[${reports.pendingBookings}]]*/ 0,
-                        /*[[${reports.confirmedBookings}]]*/ 0,
-                        /*[[${reports.cancelledBookings}]]*/ 0,
-                        /*[[${reports.noShowBookings}]]*/ 0
+                        reportsData.pendingBookings || 0,
+                        reportsData.confirmedBookings || 0,
+                        reportsData.cancelledBookings || 0,
+                        reportsData.noShowBookings || 0
                     ],
                     backgroundColor: [
                         '#ffc107',
@@ -259,15 +295,21 @@
             }
         });
 
-        // Daily Bookings Chart
+        // Daily Bookings Chart - Use real data
         const dailyBookingsCtx = document.getElementById('dailyBookingsChart').getContext('2d');
+        const dailyLabels = dailyBookingsData.map(d => {
+            const date = new Date(d.date);
+            return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        });
+        const dailyCounts = dailyBookingsData.map(d => d.count || 0);
+        
         new Chart(dailyBookingsCtx, {
             type: 'line',
             data: {
-                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                labels: dailyLabels.length > 0 ? dailyLabels : ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
                 datasets: [{
                     label: 'Bookings',
-                    data: [12, 19, 3, 5, 2, 3, 7],
+                    data: dailyCounts.length > 0 ? dailyCounts : [0, 0, 0, 0, 0, 0, 0],
                     borderColor: '#007bff',
                     backgroundColor: 'rgba(0, 123, 255, 0.1)',
                     tension: 0.1
@@ -284,14 +326,18 @@
             }
         });
 
-        // User Distribution Chart
+        // User Distribution Chart - Use real data
         const userDistributionCtx = document.getElementById('userDistributionChart').getContext('2d');
+        const totalCustomers = reportsData.totalCustomers || 0;
+        const totalRestaurantOwners = reportsData.totalRestaurantOwners || 0;
+        const totalAdmins = (reportsData.totalUsers || 0) - totalCustomers - totalRestaurantOwners;
+        
         new Chart(userDistributionCtx, {
             type: 'pie',
             data: {
                 labels: ['Customers', 'Restaurants', 'Admins'],
                 datasets: [{
-                    data: [70, 25, 5],
+                    data: [totalCustomers, totalRestaurantOwners, totalAdmins],
                     backgroundColor: [
                         '#007bff',
                         '#28a745',
