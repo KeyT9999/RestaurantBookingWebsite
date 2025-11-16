@@ -3,353 +3,971 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${pageTitle}">Reports & Analytics - BookEat Admin</title>
+    <title th:text="${pageTitle}">Báo cáo & Phân tích - BookEat Admin</title>
+    
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link th:href="@{/css/luxury.css}" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Design System -->
+    <link th:href="@{/css/design-system.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-dashboard.css}" rel="stylesheet">
+    
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #F9FAFB;
+        }
+        
+        /* Hide search dropdown on admin pages */
+        .header-search {
+            display: none !important;
+        }
+        
+        .search-dropdown {
+            display: none !important;
+        }
+        
+        /* Clean admin header - hide restaurant owner actions */
+        .ds-user-actions a[href*="restaurant-owner/restaurants/create"] {
+            display: none !important;
+        }
+        
+        .ds-user-actions .dropdown.dropdown-hover:not(.ds-admin-dropdown) {
+            display: none !important;
+        }
+        
+        .page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding-bottom: 24px;
+            border-bottom: 2px solid #F3F4F6;
+        }
+        
+        .page-header h1 {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #111827 0%, #374151 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            letter-spacing: -0.5px;
+        }
+        
+        .page-header h1 i {
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 36px;
+        }
+        
+        .page-header p {
+            font-size: 16px;
+            color: #6B7280;
+            margin: 0;
+            font-weight: 500;
+        }
+        
+        .btn-back {
+            background: #FFFFFF;
+            color: #374151;
+            border: 1px solid #E5E7EB;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .btn-back:hover {
+            background: #F9FAFB;
+            border-color: #D1D5DB;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            color: #111827;
+        }
+        
+        /* Period Filter Buttons */
+        .period-filter {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .period-btn {
+            padding: 12px 24px;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            background: #FFFFFF;
+            color: #374151;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .period-btn:hover {
+            border-color: #667EEA;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            color: #667EEA;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        
+        .period-btn.active {
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            border-color: transparent;
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .period-btn.active:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        /* Statistics Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+        
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 70%);
+            transform: translate(30%, -30%);
+            transition: all 0.4s ease;
+        }
+        
+        .stat-card:hover {
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+            border-color: transparent;
+        }
+        
+        .stat-card:hover::before {
+            transform: translate(20%, -20%) scale(1.5);
+        }
+        
+        .stat-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .stat-label i {
+            font-size: 18px;
+            padding: 8px;
+            border-radius: 10px;
+        }
+        
+        .stat-value {
+            font-size: 42px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+            line-height: 1;
+        }
+        
+        .stat-footer {
+            font-size: 13px;
+            color: #9CA3AF;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Stat card color variants */
+        .stat-card.users {
+            border-left: 4px solid #667EEA;
+        }
+        
+        .stat-card.users .stat-value {
+            color: #667EEA;
+        }
+        
+        .stat-card.users .stat-label i {
+            background: linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%);
+            color: #5B21B6;
+        }
+        
+        .stat-card.restaurants {
+            border-left: 4px solid #10B981;
+        }
+        
+        .stat-card.restaurants .stat-value {
+            color: #10B981;
+        }
+        
+        .stat-card.restaurants .stat-label i {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            color: #059669;
+        }
+        
+        .stat-card.revenue {
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .stat-card.revenue .stat-value {
+            color: #3B82F6;
+            font-size: 28px;
+        }
+        
+        .stat-card.revenue .stat-label i {
+            background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+            color: #1E40AF;
+        }
+        
+        .stat-card.commission {
+            border-left: 4px solid #F59E0B;
+        }
+        
+        .stat-card.commission .stat-value {
+            color: #F59E0B;
+            font-size: 28px;
+        }
+        
+        .stat-card.commission .stat-label i {
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+            color: #D97706;
+        }
+        
+        /* Booking Stats Grid */
+        .booking-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        @media (max-width: 768px) {
+            .booking-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .booking-stat-item {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .booking-stat-item:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .booking-stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .booking-stat-label {
+            font-size: 13px;
+            color: #6B7280;
+            font-weight: 500;
+        }
+        
+        .booking-stat-item.pending .booking-stat-value {
+            color: #F59E0B;
+        }
+        
+        .booking-stat-item.confirmed .booking-stat-value {
+            color: #10B981;
+        }
+        
+        .booking-stat-item.cancelled .booking-stat-value {
+            color: #EF4444;
+        }
+        
+        .booking-stat-item.noshow .booking-stat-value {
+            color: #F97316;
+        }
+        
+        .booking-stat-item.completed .booking-stat-value {
+            color: #3B82F6;
+        }
+        
+        .booking-stat-item.period .booking-stat-value {
+            color: #8B5CF6;
+        }
+        
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .chart-card {
+            background: #FFFFFF;
+            border: 1px solid #E5E7EB;
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+        
+        .chart-card:hover {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #F3F4F6;
+        }
+        
+        .chart-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .chart-title i {
+            background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .chart-subtitle {
+            font-size: 13px;
+            color: #9CA3AF;
+            font-weight: 500;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+        
+        .chart-wrapper canvas {
+            max-height: 300px;
+        }
+        
+        /* Report Info Card */
+        .report-info-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+            border: 1px solid #E5E7EB;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        
+        .report-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        @media (max-width: 640px) {
+            .report-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .report-info-item h6 {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .report-info-item p {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 28px;
+            }
+            
+            .stat-value {
+                font-size: 32px;
+            }
+            
+            .period-filter {
+                flex-direction: column;
+            }
+            
+            .period-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
-<body>
-    <!-- Header Fragment -->
-    <div th:replace="fragments/header :: site-header"></div>
 
-    <!-- Main Content -->
-    <div class="container-fluid py-4">
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
-                <div class="position-sticky pt-3">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/dashboard}">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/users}">
-                                <i class="fas fa-users"></i> User Management
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/partners}">
-                                <i class="fas fa-store"></i> Partner Management
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link active" th:href="@{/admin/reports}">
-                                <i class="fas fa-chart-bar"></i> Reports
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/moderation}">
-                                <i class="fas fa-shield-alt"></i> Moderation
-                            </a>
-                        </li>
-                    </ul>
+<body>
+    <div th:with="activeNav='admin-reports'"
+         th:replace="~{fragments/design-system-components :: unified-header}"></div>
+    
+    <div class="page-container">
+        
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1>
+                    <i class="fas fa-chart-line"></i>
+                    Báo cáo & Phân tích
+                </h1>
+                <p>Thống kê và phân tích hoạt động hệ thống</p>
+            </div>
+            <a href="/admin/dashboard" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Quay lại Dashboard
+            </a>
+        </div>
+        
+        <!-- Period Filter -->
+        <div class="period-filter">
+            <a th:href="@{/admin/reports(period='week')}" 
+               th:class="${selectedPeriod == 'week' or selectedPeriod == null} ? 'period-btn active' : 'period-btn'">
+                <i class="fas fa-calendar-week"></i>
+                7 ngày qua
+            </a>
+            <a th:href="@{/admin/reports(period='month')}" 
+               th:class="${selectedPeriod == 'month'} ? 'period-btn active' : 'period-btn'">
+                <i class="fas fa-calendar-alt"></i>
+                30 ngày qua
+            </a>
+            <a th:href="@{/admin/reports(period='quarter')}" 
+               th:class="${selectedPeriod == 'quarter'} ? 'period-btn active' : 'period-btn'">
+                <i class="fas fa-calendar"></i>
+                3 tháng qua
+            </a>
+            <a th:href="@{/admin/reports(period='year')}" 
+               th:class="${selectedPeriod == 'year'} ? 'period-btn active' : 'period-btn'">
+                <i class="fas fa-calendar-check"></i>
+                1 năm qua
+            </a>
+        </div>
+        
+        <!-- Main Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card users">
+                <div class="stat-label">
+                    <i class="fas fa-users"></i>
+                    Người dùng
+                </div>
+                <div class="stat-value" th:text="${reports.totalUsers ?: 0}">0</div>
+                <div class="stat-footer">Tổng số người dùng</div>
+            </div>
+            
+            <div class="stat-card restaurants">
+                <div class="stat-label">
+                    <i class="fas fa-store"></i>
+                    Nhà hàng
+                </div>
+                <div class="stat-value" th:text="${reports.totalRestaurants ?: 0}">0</div>
+                <div class="stat-footer">Tổng số nhà hàng</div>
+            </div>
+            
+            <div class="stat-card revenue">
+                <div class="stat-label">
+                    <i class="fas fa-money-bill-wave"></i>
+                    Doanh thu
+                </div>
+                <div class="stat-value" th:text="${reports.periodRevenue != null ? #numbers.formatDecimal(reports.periodRevenue, 0, 'COMMA', 0, 'POINT') : '0'}">0</div>
+                <div class="stat-footer">VNĐ (kỳ này)</div>
+            </div>
+            
+            <div class="stat-card commission">
+                <div class="stat-label">
+                    <i class="fas fa-percentage"></i>
+                    Hoa hồng
+                </div>
+                <div class="stat-value" th:text="${reports.periodCommission != null ? #numbers.formatDecimal(reports.periodCommission, 0, 'COMMA', 0, 'POINT') : '0'}">0</div>
+                <div class="stat-footer">VNĐ (kỳ này)</div>
+            </div>
+        </div>
+        
+        <!-- Booking Statistics Detail -->
+        <div class="chart-card mb-4">
+            <div class="chart-header">
+                <div>
+                    <h3 class="chart-title">
+                        <i class="fas fa-calendar-check"></i>
+                        Thống kê Booking
+                    </h3>
+                    <p class="chart-subtitle">Chi tiết theo trạng thái</p>
                 </div>
             </div>
-
-            <!-- Main Content Area -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Reports & Analytics</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <div class="btn-group me-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-download"></i> Export PDF
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-file-excel"></i> Export Excel
-                            </button>
-                        </div>
-                    </div>
+            <div class="booking-stats-grid">
+                <div class="booking-stat-item pending">
+                    <div class="booking-stat-value" th:text="${reports.pendingBookings ?: 0}">0</div>
+                    <div class="booking-stat-label">Chờ xác nhận</div>
                 </div>
-
-                <!-- Period Filter -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="btn-group" role="group">
-                            <a th:href="@{/admin/reports(period='week')}" 
-                               th:class="${selectedPeriod == 'week'} ? 'btn btn-primary' : 'btn btn-outline-primary'"
-                               class="btn btn-outline-primary">7 ngày</a>
-                            <a th:href="@{/admin/reports(period='month')}" 
-                               th:class="${selectedPeriod == 'month'} ? 'btn btn-primary' : 'btn btn-outline-primary'"
-                               class="btn btn-outline-primary">30 ngày</a>
-                            <a th:href="@{/admin/reports(period='quarter')}" 
-                               th:class="${selectedPeriod == 'quarter'} ? 'btn btn-primary' : 'btn btn-outline-primary'"
-                               class="btn btn-outline-primary">3 tháng</a>
-                            <a th:href="@{/admin/reports(period='year')}" 
-                               th:class="${selectedPeriod == 'year'} ? 'btn btn-primary' : 'btn btn-outline-primary'"
-                               class="btn btn-outline-primary">1 năm</a>
-                        </div>
-                    </div>
+                <div class="booking-stat-item confirmed">
+                    <div class="booking-stat-value" th:text="${reports.confirmedBookings ?: 0}">0</div>
+                    <div class="booking-stat-label">Đã xác nhận</div>
                 </div>
-
-                <!-- Statistics Cards -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card text-white bg-primary">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h4 class="card-title" th:text="${reports.totalUsers}">0</h4>
-                                        <p class="card-text">Tổng người dùng</p>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-users fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-success">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h4 class="card-title" th:text="${reports.totalRestaurants}">0</h4>
-                                        <p class="card-text">Tổng nhà hàng</p>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-store fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-info">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h4 class="card-title" th:text="${reports.periodRevenue != null ? #numbers.formatDecimal(reports.periodRevenue, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</h4>
-                                        <p class="card-text">Doanh thu (kỳ này)</p>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-money-bill-wave fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card text-white bg-warning">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h4 class="card-title" th:text="${reports.periodCommission != null ? #numbers.formatDecimal(reports.periodCommission, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '0 VNĐ'}">0 VNĐ</h4>
-                                        <p class="card-text">Hoa hồng (kỳ này)</p>
-                                    </div>
-                                    <div class="align-self-center">
-                                        <i class="fas fa-percentage fa-2x"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="booking-stat-item cancelled">
+                    <div class="booking-stat-value" th:text="${reports.cancelledBookings ?: 0}">0</div>
+                    <div class="booking-stat-label">Đã hủy</div>
                 </div>
-
-                <!-- Booking Status Overview -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-chart-pie"></i> Booking Status Overview
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="bookingStatusChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-chart-bar"></i> Booking Statistics
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <h3 class="text-primary" th:text="${reports.pendingBookings}">0</h3>
-                                            <p class="text-muted">Chờ xác nhận</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <h3 class="text-success" th:text="${reports.confirmedBookings}">0</h3>
-                                            <p class="text-muted">Đã xác nhận</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <h3 class="text-danger" th:text="${reports.cancelledBookings}">0</h3>
-                                            <p class="text-muted">Đã hủy</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <h3 class="text-warning" th:text="${reports.noShowBookings}">0</h3>
-                                            <p class="text-muted">Không đến</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <h3 class="text-info" th:text="${reports.completedBookings}">0</h3>
-                                            <p class="text-muted">Hoàn thành</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <h3 class="text-secondary" th:text="${reports.periodBookings}">0</h3>
-                                            <p class="text-muted">Bookings (kỳ này)</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="booking-stat-item noshow">
+                    <div class="booking-stat-value" th:text="${reports.noShowBookings ?: 0}">0</div>
+                    <div class="booking-stat-label">Không đến</div>
                 </div>
-
-                <!-- Charts Row -->
-                <div class="row mb-4">
-                    <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-chart-line"></i> Daily Bookings Trend
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="dailyBookingsChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-chart-doughnut"></i> User Distribution
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="userDistributionChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
-                    </div>
+                <div class="booking-stat-item completed">
+                    <div class="booking-stat-value" th:text="${reports.completedBookings ?: 0}">0</div>
+                    <div class="booking-stat-label">Hoàn thành</div>
                 </div>
-
-                <!-- Report Generation Info -->
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Report Generated</h6>
-                                <p class="text-muted" th:text="${#temporals.format(reports.reportGeneratedAt, 'dd/MM/yyyy HH:mm:ss')}">Date</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6>Data Range</h6>
-                                <p class="text-muted">Last 30 days</p>
-                            </div>
-                        </div>
-                    </div>
+                <div class="booking-stat-item period">
+                    <div class="booking-stat-value" th:text="${reports.periodBookings ?: 0}">0</div>
+                    <div class="booking-stat-label">Bookings (kỳ này)</div>
                 </div>
-            </main>
+            </div>
         </div>
+        
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <!-- Daily Bookings Trend -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">
+                            <i class="fas fa-chart-line"></i>
+                            Xu hướng Booking hàng ngày
+                        </h3>
+                        <p class="chart-subtitle">Biểu đồ theo thời gian</p>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="dailyBookingsChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Booking Status Pie Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">
+                            <i class="fas fa-chart-pie"></i>
+                            Trạng thái Booking
+                        </h3>
+                        <p class="chart-subtitle">Phân bổ theo trạng thái</p>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="bookingStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Distribution Chart -->
+        <div class="chart-card mb-4">
+            <div class="chart-header">
+                <div>
+                    <h3 class="chart-title">
+                        <i class="fas fa-users"></i>
+                        Phân bổ người dùng
+                    </h3>
+                    <p class="chart-subtitle">Theo vai trò</p>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="userDistributionChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Report Generation Info -->
+        <div class="report-info-card">
+            <div class="report-info-grid">
+                <div class="report-info-item">
+                    <h6><i class="fas fa-clock me-2"></i>Báo cáo được tạo</h6>
+                    <p th:text="${reports.reportGeneratedAt != null ? #temporals.format(reports.reportGeneratedAt, 'dd/MM/yyyy HH:mm:ss') : 'N/A'}">Date</p>
+                </div>
+                <div class="report-info-item">
+                    <h6><i class="fas fa-calendar-alt me-2"></i>Khoảng dữ liệu</h6>
+                    <p th:text="${selectedPeriod == 'week' ? '7 ngày qua' : (selectedPeriod == 'month' ? '30 ngày qua' : (selectedPeriod == 'quarter' ? '3 tháng qua' : (selectedPeriod == 'year' ? '1 năm qua' : '7 ngày qua')))}">30 ngày qua</p>
+                </div>
+            </div>
+        </div>
+        
     </div>
-
-    <!-- Scripts -->
+    
+    <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+    <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
+    
+    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Get data from Thymeleaf
-        const reportsData = /*[[${reports}]]*/ {};
-        const dailyBookingsData = reportsData.dailyBookingsData || [];
+    
+    <script th:inline="javascript">
+        // Hide search dropdown on admin pages
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchDropdown = document.getElementById('searchDropdown');
+            if (searchDropdown) {
+                searchDropdown.classList.remove('show');
+                searchDropdown.style.display = 'none';
+            }
+            
+            const headerSearch = document.querySelector('.header-search');
+            if (headerSearch) {
+                headerSearch.style.display = 'none';
+            }
+        });
+        
+        // Get data from Thymeleaf - using proper inline syntax
+        const reportsData = {
+            totalUsers: /*[[${reports.totalUsers}]]*/ 0,
+            totalCustomers: /*[[${reports.totalCustomers}]]*/ 0,
+            totalRestaurantOwners: /*[[${reports.totalRestaurantOwners}]]*/ 0,
+            totalRestaurants: /*[[${reports.totalRestaurants}]]*/ 0,
+            pendingBookings: /*[[${reports.pendingBookings}]]*/ 0,
+            confirmedBookings: /*[[${reports.confirmedBookings}]]*/ 0,
+            cancelledBookings: /*[[${reports.cancelledBookings}]]*/ 0,
+            noShowBookings: /*[[${reports.noShowBookings}]]*/ 0,
+            completedBookings: /*[[${reports.completedBookings}]]*/ 0,
+            periodBookings: /*[[${reports.periodBookings}]]*/ 0,
+            periodRevenue: /*[[${reports.periodRevenue}]]*/ 0,
+            periodCommission: /*[[${reports.periodCommission}]]*/ 0
+        };
+        
+        // Get daily bookings data
+        const dailyBookingsData = /*[[${reports.dailyBookingsData}]]*/ [];
+        
+        // Debug: Log data to console
+        console.log('Reports Data:', reportsData);
+        console.log('Daily Bookings Data:', dailyBookingsData);
+        
+        // Chart.js Global Configuration
+        Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+        Chart.defaults.color = '#6B7280';
         
         // Booking Status Chart
-        const bookingStatusCtx = document.getElementById('bookingStatusChart').getContext('2d');
-        new Chart(bookingStatusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Pending', 'Confirmed', 'Cancelled', 'No-Show'],
-                datasets: [{
-                    data: [
-                        reportsData.pendingBookings || 0,
-                        reportsData.confirmedBookings || 0,
-                        reportsData.cancelledBookings || 0,
-                        reportsData.noShowBookings || 0
-                    ],
-                    backgroundColor: [
-                        '#ffc107',
-                        '#28a745',
-                        '#dc3545',
-                        '#fd7e14'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-
-        // Daily Bookings Chart - Use real data
-        const dailyBookingsCtx = document.getElementById('dailyBookingsChart').getContext('2d');
-        const dailyLabels = dailyBookingsData.map(d => {
-            const date = new Date(d.date);
-            return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-        });
-        const dailyCounts = dailyBookingsData.map(d => d.count || 0);
-        
-        new Chart(dailyBookingsCtx, {
-            type: 'line',
-            data: {
-                labels: dailyLabels.length > 0 ? dailyLabels : ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
-                datasets: [{
-                    label: 'Bookings',
-                    data: dailyCounts.length > 0 ? dailyCounts : [0, 0, 0, 0, 0, 0, 0],
-                    borderColor: '#007bff',
-                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
+        const bookingStatusCtx = document.getElementById('bookingStatusChart');
+        if (bookingStatusCtx) {
+            const statusData = [
+                reportsData.pendingBookings,
+                reportsData.confirmedBookings,
+                reportsData.cancelledBookings,
+                reportsData.noShowBookings
+            ];
+            
+            console.log('Booking Status Chart Data:', statusData);
+            
+            new Chart(bookingStatusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Chờ xác nhận', 'Đã xác nhận', 'Đã hủy', 'Không đến'],
+                    datasets: [{
+                        data: statusData,
+                        backgroundColor: [
+                            '#F59E0B',
+                            '#10B981',
+                            '#EF4444',
+                            '#F97316'
+                        ],
+                        borderWidth: 3,
+                        borderColor: '#FFFFFF',
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 13,
+                                    weight: 500
+                                },
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14,
+                                weight: 600
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            borderColor: '#E5E7EB',
+                            borderWidth: 1
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        // User Distribution Chart - Use real data
-        const userDistributionCtx = document.getElementById('userDistributionChart').getContext('2d');
-        const totalCustomers = reportsData.totalCustomers || 0;
-        const totalRestaurantOwners = reportsData.totalRestaurantOwners || 0;
-        const totalAdmins = (reportsData.totalUsers || 0) - totalCustomers - totalRestaurantOwners;
-        
-        new Chart(userDistributionCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Customers', 'Restaurants', 'Admins'],
-                datasets: [{
-                    data: [totalCustomers, totalRestaurantOwners, totalAdmins],
-                    backgroundColor: [
-                        '#007bff',
-                        '#28a745',
-                        '#dc3545'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
+        // Daily Bookings Chart
+        const dailyBookingsCtx = document.getElementById('dailyBookingsChart');
+        if (dailyBookingsCtx) {
+            let dailyLabels = [];
+            let dailyCounts = [];
+            
+            if (dailyBookingsData && dailyBookingsData.length > 0) {
+                dailyLabels = dailyBookingsData.map(d => {
+                    // Handle date properly
+                    let dateStr = d.date;
+                    if (Array.isArray(dateStr)) {
+                        // Java LocalDate comes as [year, month, day]
+                        dateStr = `${dateStr[0]}-${String(dateStr[1]).padStart(2, '0')}-${String(dateStr[2]).padStart(2, '0')}`;
+                    }
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+                });
+                dailyCounts = dailyBookingsData.map(d => d.count || 0);
+            } else {
+                // Fallback data
+                dailyLabels = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'];
+                dailyCounts = [0, 0, 0, 0, 0, 0, 0];
             }
-        });
+            
+            console.log('Daily Chart Labels:', dailyLabels);
+            console.log('Daily Chart Counts:', dailyCounts);
+            
+            new Chart(dailyBookingsCtx, {
+                type: 'line',
+                data: {
+                    labels: dailyLabels,
+                    datasets: [{
+                        label: 'Số lượng Booking',
+                        data: dailyCounts,
+                        borderColor: '#667EEA',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#667EEA',
+                        pointBorderColor: '#FFFFFF',
+                        pointBorderWidth: 3,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#764BA2',
+                        pointHoverBorderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14,
+                                weight: 600
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            borderColor: '#E5E7EB',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Bookings: ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#F3F4F6',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                font: {
+                                    size: 12,
+                                    weight: 500
+                                },
+                                callback: function(value) {
+                                    return Number.isInteger(value) ? value : '';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12,
+                                    weight: 500
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // User Distribution Chart
+        const userDistributionCtx = document.getElementById('userDistributionChart');
+        if (userDistributionCtx) {
+            const totalCustomers = reportsData.totalCustomers || 0;
+            const totalRestaurantOwners = reportsData.totalRestaurantOwners || 0;
+            const totalUsers = reportsData.totalUsers || 0;
+            const totalAdmins = totalUsers - totalCustomers - totalRestaurantOwners;
+            
+            console.log('User Distribution:', {
+                customers: totalCustomers,
+                owners: totalRestaurantOwners,
+                admins: totalAdmins
+            });
+            
+            new Chart(userDistributionCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Khách hàng', 'Chủ nhà hàng', 'Quản trị viên'],
+                    datasets: [{
+                        data: [totalCustomers, totalRestaurantOwners, totalAdmins > 0 ? totalAdmins : 0],
+                        backgroundColor: [
+                            '#667EEA',
+                            '#10B981',
+                            '#EF4444'
+                        ],
+                        borderWidth: 3,
+                        borderColor: '#FFFFFF',
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 13,
+                                    weight: 500
+                                },
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14,
+                                weight: 600
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            borderColor: '#E5E7EB',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>

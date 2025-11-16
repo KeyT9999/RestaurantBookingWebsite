@@ -10,64 +10,748 @@
     
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Design System -->
     <link th:href="@{/css/design-system.css}" rel="stylesheet">
+    <link th:href="@{/css/admin-dashboard.css}" rel="stylesheet">
     
     <style>
-        .admin-header {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #F9FAFB;
         }
         
-        .stats-card {
-            background: white;
+        /* Hide search dropdown on admin pages */
+        .header-search {
+            display: none !important;
+        }
+        
+        .search-dropdown {
+            display: none !important;
+        }
+        
+        /* Clean admin header - hide restaurant owner actions */
+        .ds-user-actions a[href*="restaurant-owner/restaurants/create"] {
+            display: none !important;
+        }
+        
+        .ds-user-actions .dropdown.dropdown-hover:not(.ds-admin-dropdown) {
+            display: none !important;
+        }
+        
+        .page-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+        
+         /* Page Header */
+         .page-header {
+             display: flex;
+             justify-content: space-between;
+             align-items: flex-start;
+             margin-bottom: 40px;
+             flex-wrap: wrap;
+             gap: 20px;
+             padding-bottom: 24px;
+             border-bottom: 2px solid #F3F4F6;
+         }
+         
+         .page-header h1 {
+             font-size: 36px;
+             font-weight: 800;
+             background: linear-gradient(135deg, #111827 0%, #374151 100%);
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+             background-clip: text;
+             margin: 0 0 8px 0;
+             display: flex;
+             align-items: center;
+             gap: 16px;
+             letter-spacing: -0.5px;
+         }
+         
+         .page-header h1 i {
+             background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+             background-clip: text;
+             font-size: 36px;
+         }
+         
+         .page-header p {
+             font-size: 16px;
+             color: #6B7280;
+             margin: 0;
+             font-weight: 500;
+         }
+        
+        .btn-back {
+            background: #FFFFFF;
+            color: #374151;
+            border: 1px solid #E5E7EB;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .btn-back:hover {
+            background: #F9FAFB;
+            border-color: #D1D5DB;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            color: #111827;
+        }
+        
+         /* Statistics Cards */
+         .stats-grid {
+             display: grid;
+             grid-template-columns: repeat(4, 1fr);
+             gap: 24px;
+             margin-bottom: 48px;
+         }
+         
+         @media (max-width: 1024px) {
+             .stats-grid {
+                 grid-template-columns: repeat(2, 1fr);
+             }
+         }
+         
+         @media (max-width: 640px) {
+             .stats-grid {
+                 grid-template-columns: 1fr;
+             }
+         }
+         
+         .stat-card {
+             background: #FFFFFF;
+             border: 1px solid #E5E7EB;
+             border-radius: 16px;
+             padding: 28px;
+             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+             position: relative;
+             overflow: hidden;
+         }
+         
+         .stat-card::before {
+             content: '';
+             position: absolute;
+             top: 0;
+             right: 0;
+             width: 100px;
+             height: 100px;
+             background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 70%);
+             transform: translate(30%, -30%);
+             transition: all 0.4s ease;
+         }
+         
+         .stat-card:hover {
+             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+             transform: translateY(-4px);
+             border-color: transparent;
+         }
+         
+         .stat-card:hover::before {
+             transform: translate(20%, -20%) scale(1.5);
+         }
+         
+         .stat-label {
+             display: flex;
+             align-items: center;
+             gap: 10px;
+             font-size: 12px;
+             font-weight: 600;
+             color: #6B7280;
+             text-transform: uppercase;
+             letter-spacing: 0.8px;
+             margin-bottom: 16px;
+             position: relative;
+             z-index: 1;
+         }
+         
+         .stat-label i {
+             font-size: 18px;
+             padding: 8px;
+             border-radius: 10px;
+             background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+         }
+         
+         .stat-value {
+             font-size: 42px;
+             font-weight: 800;
+             color: #111827;
+             margin-bottom: 12px;
+             position: relative;
+             z-index: 1;
+             line-height: 1;
+         }
+         
+         .stat-card.pending {
+             border-left: 4px solid #F59E0B;
+         }
+         
+         .stat-card.pending .stat-value {
+             color: #F59E0B;
+         }
+         
+         .stat-card.pending .stat-label i {
+             background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+             color: #D97706;
+         }
+         
+         .stat-card.approved {
+             border-left: 4px solid #10B981;
+         }
+         
+         .stat-card.approved .stat-value {
+             color: #10B981;
+         }
+         
+         .stat-card.approved .stat-label i {
+             background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+             color: #059669;
+         }
+         
+         .stat-card.rejected {
+             border-left: 4px solid #EF4444;
+         }
+         
+         .stat-card.rejected .stat-value {
+             color: #EF4444;
+         }
+         
+         .stat-card.rejected .stat-label i {
+             background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+             color: #DC2626;
+         }
+         
+         .stat-card.suspended {
+             border-left: 4px solid #8B5CF6;
+         }
+         
+         .stat-card.suspended .stat-value {
+             color: #8B5CF6;
+         }
+         
+         .stat-card.suspended .stat-label i {
+             background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%);
+             color: #7C3AED;
+         }
+         
+         .stat-footer {
+             font-size: 13px;
+             color: #9CA3AF;
+             font-weight: 500;
+             position: relative;
+             z-index: 1;
+         }
+        
+         /* Section Title */
+         .section-header {
+             display: flex;
+             align-items: center;
+             gap: 16px;
+             margin-bottom: 32px;
+             padding: 20px 28px;
+             background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+             border-radius: 16px;
+             border: 1px solid #E5E7EB;
+             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+         }
+         
+         .section-header h2 {
+             font-size: 24px;
+             font-weight: 700;
+             color: #111827;
+             margin: 0;
+             display: flex;
+             align-items: center;
+             gap: 12px;
+         }
+         
+         .section-header h2 i {
+             background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+             background-clip: text;
+             font-size: 24px;
+         }
+         
+         .section-header .count-badge {
+             background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+             color: #FFFFFF;
+             font-size: 14px;
+             font-weight: 700;
+             padding: 6px 16px;
+             border-radius: 24px;
+             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+             min-width: 32px;
+             text-align: center;
+         }
+        
+        /* Restaurant Cards Grid */
+        .restaurant-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 1200px) {
+            .restaurant-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .restaurant-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+         /* Restaurant Card */
+         .restaurant-card {
+             background: #FFFFFF;
+             border: 1px solid #E5E7EB;
+             border-radius: 20px;
+             overflow: hidden;
+             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+             display: flex;
+             flex-direction: column;
+             height: 100%;
+             position: relative;
+         }
+         
+         .restaurant-card::before {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: 0;
+             right: 0;
+             bottom: 0;
+             border-radius: 20px;
+             padding: 2px;
+             background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+             -webkit-mask-composite: xor;
+             mask-composite: exclude;
+             opacity: 0;
+             transition: opacity 0.4s ease;
+         }
+         
+         .restaurant-card:hover {
+             box-shadow: 0 20px 48px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
+             transform: translateY(-8px) scale(1.02);
+             border-color: transparent;
+         }
+         
+         .restaurant-card:hover::before {
+             opacity: 1;
+         }
+         
+         /* Restaurant Image/Icon Section */
+         .restaurant-image {
+             position: relative;
+             height: 240px;
+             background: linear-gradient(135deg, #667EEA 0%, #764BA2 50%, #F093FB 100%);
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             overflow: hidden;
+         }
+         
+         /* Animated gradient overlay */
+         .restaurant-image::before {
+             content: '';
+             position: absolute;
+             top: -50%;
+             left: -50%;
+             width: 200%;
+             height: 200%;
+             background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 50%);
+             animation: gradientShift 8s ease-in-out infinite;
+         }
+         
+         @keyframes gradientShift {
+             0%, 100% {
+                 transform: translate(0, 0);
+             }
+             33% {
+                 transform: translate(30%, 30%);
+             }
+             66% {
+                 transform: translate(-20%, 20%);
+             }
+         }
+         
+         .restaurant-image::after {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: 0;
+             right: 0;
+             bottom: 0;
+             background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.05) 100%);
+         }
+         
+         .restaurant-image i {
+             font-size: 64px;
+             color: rgba(255, 255, 255, 0.95);
+             z-index: 1;
+             filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.15));
+             transition: transform 0.4s ease;
+         }
+         
+         .restaurant-card:hover .restaurant-image i {
+             transform: scale(1.08) rotate(3deg);
+         }
+         
+         /* Beautiful gradient variations */
+         .restaurant-card:nth-child(6n+1) .restaurant-image {
+             background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+         }
+         
+         .restaurant-card:nth-child(6n+2) .restaurant-image {
+             background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%);
+         }
+         
+         .restaurant-card:nth-child(6n+3) .restaurant-image {
+             background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%);
+         }
+         
+         .restaurant-card:nth-child(6n+4) .restaurant-image {
+             background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%);
+         }
+         
+         .restaurant-card:nth-child(6n+5) .restaurant-image {
+             background: linear-gradient(135deg, #30CFD0 0%, #330867 100%);
+         }
+         
+         .restaurant-card:nth-child(6n+6) .restaurant-image {
+             background: linear-gradient(135deg, #A8EDEA 0%, #FED6E3 100%);
+         }
+         
+         /* Pending Badge - Modern Design */
+         .pending-badge {
+             position: absolute;
+             top: 16px;
+             left: 16px;
+             background: rgba(255, 255, 255, 0.95);
+             backdrop-filter: blur(10px);
+             color: #F59E0B;
+             padding: 6px 12px;
+             border-radius: 20px;
+             font-size: 10px;
+             font-weight: 600;
+             z-index: 5;
+             text-transform: uppercase;
+             letter-spacing: 0.5px;
+             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+             display: inline-flex;
+             align-items: center;
+             gap: 6px;
+             border: 1px solid rgba(245, 158, 11, 0.2);
+             transition: all 0.3s ease;
+         }
+         
+         .restaurant-card:hover .pending-badge {
+             transform: scale(1.05);
+             box-shadow: 0 12px 32px rgba(245, 158, 11, 0.3);
+         }
+         
+         .pending-badge i {
+             animation: pulse 2s ease-in-out infinite;
+         }
+         
+         @keyframes pulse {
+             0%, 100% {
+                 opacity: 1;
+             }
+             50% {
+                 opacity: 0.6;
+             }
+         }
+        
+         /* Restaurant Info Section */
+         .restaurant-info {
+             padding: 24px;
+             flex: 1;
+             display: flex;
+             flex-direction: column;
+             background: linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%);
+         }
+         
+         .restaurant-name {
+             font-size: 20px;
+             font-weight: 700;
+             color: #111827;
+             margin: 0 0 6px 0;
+             line-height: 1.3;
+             display: -webkit-box;
+             -webkit-line-clamp: 2;
+             -webkit-box-orient: vertical;
+             overflow: hidden;
+             transition: color 0.3s ease;
+         }
+         
+         .restaurant-card:hover .restaurant-name {
+             color: #667EEA;
+         }
+         
+         .restaurant-cuisine {
+             font-size: 14px;
+             color: #6B7280;
+             margin: 0 0 20px 0;
+             font-weight: 500;
+             padding: 4px 12px;
+             background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+             border-radius: 16px;
+             display: inline-block;
+             width: fit-content;
+         }
+         
+         /* Restaurant Details */
+         .restaurant-details {
+             display: flex;
+             flex-direction: column;
+             gap: 12px;
+             margin-bottom: 20px;
+             flex: 1;
+         }
+         
+         .detail-item {
+             display: flex;
+             align-items: flex-start;
+             gap: 12px;
+             font-size: 14px;
+             color: #374151;
+             line-height: 1.6;
+             padding: 8px 12px;
+             border-radius: 10px;
+             background: #FFFFFF;
+             transition: all 0.2s ease;
+         }
+         
+         .detail-item:hover {
+             background: #F9FAFB;
+             transform: translateX(4px);
+         }
+         
+         .detail-item i {
+             color: #667EEA;
+             width: 20px;
+             text-align: center;
+             flex-shrink: 0;
+             margin-top: 2px;
+             font-size: 16px;
+         }
+         
+         .detail-item .detail-text {
+             flex: 1;
+             word-break: break-word;
+         }
+         
+         .detail-item .highlight {
+             font-weight: 600;
+             color: #111827;
+         }
+         
+         /* Action Buttons */
+         .action-buttons {
+             display: flex;
+             gap: 12px;
+             margin-top: auto;
+             padding-top: 20px;
+             border-top: 2px solid #F3F4F6;
+         }
+         
+         .btn-approve,
+         .btn-reject {
+             flex: 1;
+             padding: 14px 20px;
+             border: none;
+             border-radius: 12px;
+             font-weight: 700;
+             font-size: 14px;
+             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+             display: inline-flex;
+             align-items: center;
+             justify-content: center;
+             gap: 8px;
+             cursor: pointer;
+             position: relative;
+             overflow: hidden;
+         }
+         
+         .btn-approve::before,
+         .btn-reject::before {
+             content: '';
+             position: absolute;
+             top: 50%;
+             left: 50%;
+             width: 0;
+             height: 0;
+             border-radius: 50%;
+             background: rgba(255, 255, 255, 0.3);
+             transform: translate(-50%, -50%);
+             transition: width 0.6s, height 0.6s;
+         }
+         
+         .btn-approve:hover::before,
+         .btn-reject:hover::before {
+             width: 300px;
+             height: 300px;
+         }
+         
+         .btn-approve {
+             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+             color: #FFFFFF;
+             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+         }
+         
+         .btn-approve:hover {
+             background: linear-gradient(135deg, #059669 0%, #047857 100%);
+             transform: translateY(-3px);
+             box-shadow: 0 12px 28px rgba(16, 185, 129, 0.4);
+         }
+         
+         .btn-approve i,
+         .btn-reject i {
+             z-index: 1;
+         }
+         
+         .btn-reject {
+             background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+             color: #FFFFFF;
+             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+         }
+         
+         .btn-reject:hover {
+             background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+             transform: translateY(-3px);
+             box-shadow: 0 12px 28px rgba(239, 68, 68, 0.4);
+         }
+         
+         .btn-approve:active,
+         .btn-reject:active {
+             transform: translateY(-1px);
+         }
+         
+         .btn-approve:disabled,
+         .btn-reject:disabled {
+             opacity: 0.5;
+             cursor: not-allowed;
+             transform: none;
+             box-shadow: none;
+         }
+        
+         /* Empty State */
+         .empty-state {
+             text-align: center;
+             padding: 100px 40px;
+             background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+             border: 2px dashed #E5E7EB;
+             border-radius: 24px;
+             position: relative;
+             overflow: hidden;
+         }
+         
+         .empty-state::before {
+             content: '';
+             position: absolute;
+             top: -50%;
+             left: -50%;
+             width: 200%;
+             height: 200%;
+             background: radial-gradient(circle, rgba(102, 126, 234, 0.03) 0%, transparent 70%);
+             animation: rotateBackground 20s linear infinite;
+         }
+         
+         @keyframes rotateBackground {
+             0% {
+                 transform: rotate(0deg);
+             }
+             100% {
+                 transform: rotate(360deg);
+             }
+         }
+         
+         .empty-state i {
+             font-size: 96px;
+             background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%);
+             -webkit-background-clip: text;
+             -webkit-text-fill-color: transparent;
+             background-clip: text;
+             margin-bottom: 24px;
+             position: relative;
+             z-index: 1;
+             animation: float 3s ease-in-out infinite;
+         }
+         
+         @keyframes float {
+             0%, 100% {
+                 transform: translateY(0px);
+             }
+             50% {
+                 transform: translateY(-10px);
+             }
+         }
+         
+         .empty-state h3 {
+             font-size: 28px;
+             font-weight: 700;
+             color: #374151;
+             margin-bottom: 12px;
+             position: relative;
+             z-index: 1;
+         }
+         
+         .empty-state p {
+             font-size: 16px;
+             color: #6B7280;
+             position: relative;
+             z-index: 1;
+             max-width: 400px;
+             margin: 0 auto;
+         }
+        
+        /* Alerts */
+        .alert {
             border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-left: 4px solid #007bff;
-        }
-        
-        .stats-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #007bff;
-        }
-        
-        .restaurant-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border: 1px solid #e9ecef;
-        }
-        
-        .status-pending {
-            background-color: #FFF3CD;
-            color: #856404;
-            padding: 0.4rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        
-        .btn-approve {
-            background-color: #28a745;
-            color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
+            padding: 16px 20px;
+            font-size: 14px;
             font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         
-        .btn-reject {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 500;
+        .alert-success {
+            background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+            color: #047857;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+            color: #991B1B;
+        }
+        
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 24px;
+            }
+            
+            .stat-value {
+                font-size: 28px;
+            }
         }
     </style>
 </head>
@@ -76,175 +760,150 @@
     <div th:with="activeNav='admin-restaurant-requests'"
          th:replace="~{fragments/design-system-components :: unified-header}"></div>
     
-    <main class="main-content">
-        <section class="admin-header">
-            <div class="container">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h1 class="mb-2">
-                            <i class="fas fa-utensils me-3"></i>
-                            Duyệt và Quản lý Đăng ký Nhà hàng
-                        </h1>
-                        <p class="mb-0 opacity-75">Duyệt và quản lý các yêu cầu đăng ký nhà hàng mới</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <a href="/admin/dashboard" class="btn btn-light">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Quay lại Dashboard
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <div class="page-container">
         
-        <div class="container">
-            <!-- Flash Messages -->
-            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <span th:text="${success}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <!-- Flash Messages -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <!-- Page Header -->
+        <div class="page-header">
+            <div>
+                <h1>
+                    <i class="fas fa-store"></i>
+                    Duyệt Đăng ký Nhà hàng
+                </h1>
+                <p>Quản lý và phê duyệt các yêu cầu đăng ký nhà hàng mới</p>
+            </div>
+            <a href="/admin/dashboard" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Quay lại Dashboard
+            </a>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card pending">
+                <div class="stat-label">
+                    <i class="fas fa-clock"></i>
+                    Chờ duyệt
+                </div>
+                <div class="stat-value" th:text="${pendingCount}">0</div>
+                <div class="stat-footer">Đang chờ xử lý</div>
             </div>
             
-            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                <span th:text="${error}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div class="stat-card approved">
+                <div class="stat-label">
+                    <i class="fas fa-check-circle"></i>
+                    Đã duyệt
+                </div>
+                <div class="stat-value" th:text="${approvedCount}">0</div>
+                <div class="stat-footer">Đã được chấp thuận</div>
             </div>
             
-            <!-- Statistics Cards -->
-            <div class="row mb-4">
-                <div class="col-md-3 mb-3">
-                    <div class="stats-card">
-                        <div class="stats-number" th:text="${pendingCount}">0</div>
-                        <div class="text-muted">
-                            <i class="fas fa-clock me-2"></i>
-                            Chờ duyệt
-                        </div>
-                    </div>
+            <div class="stat-card rejected">
+                <div class="stat-label">
+                    <i class="fas fa-times-circle"></i>
+                    Từ chối
                 </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stats-card">
-                        <div class="stats-number" th:text="${approvedCount}">0</div>
-                        <div class="text-muted">
-                            <i class="fas fa-check-circle me-2"></i>
-                            Đã duyệt
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stats-card">
-                        <div class="stats-number" th:text="${rejectedCount}">0</div>
-                        <div class="text-muted">
-                            <i class="fas fa-times-circle me-2"></i>
-                            Bị từ chối
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <div class="stats-card">
-                        <div class="stats-number" th:text="${suspendedCount}">0</div>
-                        <div class="text-muted">
-                            <i class="fas fa-pause-circle me-2"></i>
-                            Tạm dừng
-                        </div>
-                    </div>
-                </div>
+                <div class="stat-value" th:text="${rejectedCount}">0</div>
+                <div class="stat-footer">Không đạt yêu cầu</div>
             </div>
             
-            <!-- Restaurant List -->
-            <div class="row">
-                <div class="col-12">
-                    <h4 class="mb-3">
-                        <i class="fas fa-list me-2"></i>
-                        Nhà hàng chờ duyệt 
-                        <span class="badge bg-primary ms-2" th:text="${#lists.size(restaurants)}">0</span>
-                    </h4>
-                    
-                    <!-- Empty State -->
-                    <div th:if="${#lists.isEmpty(restaurants)}" class="text-center py-5">
-                        <i class="fas fa-utensils text-muted" style="font-size: 4rem;"></i>
-                        <h4 class="mt-3 text-muted">Không có nhà hàng nào chờ duyệt</h4>
-                        <p class="text-muted">Tất cả nhà hàng đã được xử lý!</p>
-                    </div>
-                    
-                    <!-- Restaurant Cards -->
-                    <div th:unless="${#lists.isEmpty(restaurants)}">
-                        <div class="row">
-                            <div th:each="restaurant : ${restaurants}" class="col-md-6 col-lg-4 mb-4">
-                                <div class="restaurant-card">
-                                    <!-- Restaurant Info -->
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
-                                             style="width: 50px; height: 50px;">
-                                            <i class="fas fa-utensils"></i>
-                                        </div>
-                                        <div>
-                                            <h5 class="mb-1" th:text="${restaurant.restaurantName}">Restaurant Name</h5>
-                                            <p class="mb-0 text-muted" th:text="${restaurant.cuisineType}">Cuisine Type</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Address -->
-                                    <div class="mb-3">
-                                        <small class="text-muted">
-                                            <i class="fas fa-map-marker-alt me-1"></i>
-                                            <span th:text="${restaurant.address}">Address</span>
-                                        </small>
-                                    </div>
-                                    
-                                    <!-- Phone -->
-                                    <div class="mb-3" th:if="${restaurant.phone != null and restaurant.phone != ''}">
-                                        <small class="text-muted">
-                                            <i class="fas fa-phone me-1"></i>
-                                            <span th:text="${restaurant.phone}">Phone</span>
-                                        </small>
-                                    </div>
-                                    
-                                    <!-- Status -->
-                                    <div class="mb-3">
-                                        <span class="status-pending">
-                                            <i class="fas fa-clock me-1"></i>
-                                            Chờ duyệt
-                                        </span>
-                                    </div>
-                                    
-                                    <!-- Created Date -->
-                                    <div class="mb-3">
-                                        <small class="text-muted">
-                                            <i class="fas fa-calendar me-1"></i>
-                                            Đăng ký: 
-                                            <span th:text="${#temporals.format(restaurant.createdAt, 'dd/MM/yyyy HH:mm')}">Date</span>
-                                        </small>
-                                    </div>
-                                    
-                                    <!-- Action Buttons -->
-                                    <div class="d-flex gap-2">
-                                        <form th:action="@{'/admin/restaurant/approve/' + ${restaurant.restaurantId}}" 
-                                              method="post" class="flex-fill">
-                                            <button type="submit" class="btn btn-approve w-100" 
-                                                    onclick="return confirm('Bạn có chắc muốn duyệt nhà hàng \'' + this.form.closest('.restaurant-card').querySelector('h5').textContent + '\'?')">
-                                                <i class="fas fa-check me-2"></i>
-                                                Duyệt
-                                            </button>
-                                        </form>
-                                        
-                                        <form th:action="@{'/admin/restaurant/reject/' + ${restaurant.restaurantId}}" 
-                                              method="post" class="flex-fill">
-                                            <button type="submit" class="btn btn-reject w-100" 
-                                                    onclick="return confirm('Bạn có chắc muốn từ chối nhà hàng \'' + this.form.closest('.restaurant-card').querySelector('h5').textContent + '\'?')">
-                                                <i class="fas fa-times me-2"></i>
-                                                Từ chối
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="stat-card suspended">
+                <div class="stat-label">
+                    <i class="fas fa-pause-circle"></i>
+                    Tạm dừng
                 </div>
+                <div class="stat-value" th:text="${suspendedCount}">0</div>
+                <div class="stat-footer">Bị tạm ngưng</div>
             </div>
         </div>
-    </main>
+        
+        <!-- Section Header -->
+        <div class="section-header">
+            <h2>
+                <i class="fas fa-list"></i>
+                Danh sách chờ duyệt
+                <span class="count-badge" th:text="${#lists.size(restaurants)}">0</span>
+            </h2>
+        </div>
+        
+        <!-- Empty State -->
+        <div th:if="${#lists.isEmpty(restaurants)}" class="empty-state">
+            <i class="fas fa-check-double"></i>
+            <h3>Tất cả đã hoàn tất!</h3>
+            <p>Không có nhà hàng nào đang chờ duyệt</p>
+        </div>
+        
+        <!-- Restaurant Cards Grid -->
+        <div th:unless="${#lists.isEmpty(restaurants)}" class="restaurant-grid">
+            <article th:each="restaurant : ${restaurants}" class="restaurant-card">
+                <!-- Restaurant Image/Icon -->
+                <div class="restaurant-image">
+                    <span class="pending-badge">
+                        <i class="fas fa-clock"></i>
+                        Chờ duyệt
+                    </span>
+                    <i class="fas fa-utensils"></i>
+                </div>
+                
+                <!-- Restaurant Info -->
+                <div class="restaurant-info">
+                    <h3 class="restaurant-name" th:text="${restaurant.restaurantName}">Tên nhà hàng</h3>
+                    <p class="restaurant-cuisine" th:text="${restaurant.cuisineType}">Loại ẩm thực</p>
+                    
+                    <!-- Details -->
+                    <div class="restaurant-details">
+                        <div class="detail-item">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span class="detail-text" th:text="${restaurant.address}">Địa chỉ</span>
+                        </div>
+                        
+                        <div class="detail-item" th:if="${restaurant.phone != null and restaurant.phone != ''}">
+                            <i class="fas fa-phone"></i>
+                            <span class="detail-text" th:text="${restaurant.phone}">Số điện thoại</span>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <i class="fas fa-calendar"></i>
+                            <span class="detail-text">
+                                Đăng ký: <span class="highlight" th:text="${#temporals.format(restaurant.createdAt, 'dd/MM/yyyy HH:mm')}">Ngày giờ</span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <form th:action="@{'/admin/restaurant/approve/' + ${restaurant.restaurantId}}" 
+                              method="post" style="flex: 1;">
+                            <button type="submit" class="btn-approve">
+                                <i class="fas fa-check"></i>
+                                Duyệt
+                            </button>
+                        </form>
+                        
+                        <form th:action="@{'/admin/restaurant/reject/' + ${restaurant.restaurantId}}" 
+                              method="post" style="flex: 1;">
+                            <button type="submit" class="btn-reject">
+                                <i class="fas fa-times"></i>
+                                Từ chối
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
     
     <div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
     <div th:replace="~{fragments/resy-scripts :: basic-scripts}"></div>
@@ -253,7 +912,21 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Auto-hide flash messages
+        // Hide search dropdown on admin pages
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchDropdown = document.getElementById('searchDropdown');
+            if (searchDropdown) {
+                searchDropdown.classList.remove('show');
+                searchDropdown.style.display = 'none';
+            }
+            
+            const headerSearch = document.querySelector('.header-search');
+            if (headerSearch) {
+                headerSearch.style.display = 'none';
+            }
+        });
+        
+        // Auto-hide flash messages after 5 seconds
         setTimeout(function() {
             const alerts = document.querySelectorAll('.alert');
             alerts.forEach(function(alert) {
@@ -262,33 +935,44 @@
             });
         }, 5000);
         
-        // Enhanced confirmation
+        // Enhanced confirmation and loading state for form submissions
         document.addEventListener('DOMContentLoaded', function() {
             const forms = document.querySelectorAll('form');
+            
             forms.forEach(function(form) {
                 form.addEventListener('submit', function(e) {
                     const action = form.action.includes('/approve/') ? 'duyệt' : 'từ chối';
                     const restaurantCard = form.closest('.restaurant-card');
-                    const restaurantName = restaurantCard ? restaurantCard.querySelector('h5').textContent : 'nhà hàng này';
+                    const restaurantName = restaurantCard ? restaurantCard.querySelector('.restaurant-name').textContent.trim() : 'nhà hàng này';
                     
+                    // Confirmation dialog
                     if (!confirm(`Bạn có chắc muốn ${action} "${restaurantName}"?\n\nHành động này không thể hoàn tác.`)) {
                         e.preventDefault();
                         return false;
                     }
                     
-                    // Show loading state
-                    const button = form.querySelector('button');
+                    // Show loading state on button
+                    const button = form.querySelector('button[type="submit"]');
                     if (button) {
-                        const originalText = button.innerHTML;
-                        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+                        const originalHTML = button.innerHTML;
+                        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
                         button.disabled = true;
                         
                         // Re-enable after 10 seconds in case of error
                         setTimeout(function() {
-                            button.innerHTML = originalText;
+                            button.innerHTML = originalHTML;
                             button.disabled = false;
                         }, 10000);
                     }
+                    
+                    // Disable all other buttons to prevent multiple submissions
+                    const allButtons = document.querySelectorAll('.btn-approve, .btn-reject');
+                    allButtons.forEach(btn => {
+                        if (btn !== button) {
+                            btn.disabled = true;
+                            btn.style.opacity = '0.5';
+                        }
+                    });
                 });
             });
         });
