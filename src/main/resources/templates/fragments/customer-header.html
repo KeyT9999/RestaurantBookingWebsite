@@ -172,122 +172,78 @@
         </div>
     </header>
     
-    <!-- Header Search JavaScript -->
-    <script>
-        // Make functions globally available
-        window.toggleSearchDropdown = function() {
-            const dropdown = document.getElementById('searchDropdown');
-            if (!dropdown) return;
-            
-            const isOpen = dropdown.classList.contains('show');
-            
-            // Close all other dropdowns first
-            document.querySelectorAll('.search-dropdown').forEach(dd => {
-                dd.classList.remove('show');
-            });
-            
-            // Toggle current dropdown
-            if (!isOpen) {
-                dropdown.classList.add('show');
-                // Focus on search input when opened
-                setTimeout(() => {
-                    const searchInput = dropdown.querySelector('.search-input');
-                    if (searchInput) {
-                        searchInput.focus();
-                    }
-                }, 100);
-            }
-        };
-        
-        window.clearSearch = function() {
-            const form = document.querySelector('.search-form');
-            if (form) {
-                form.reset();
-            }
-        };
-        
-        // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(event) {
-                const searchContainer = document.querySelector('.header-search');
-                const dropdown = document.getElementById('searchDropdown');
-                
-                if (searchContainer && dropdown && !searchContainer.contains(event.target)) {
-                    dropdown.classList.remove('show');
-                }
-            });
-            
-            // Close dropdown on escape key
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') {
-                    const dropdown = document.getElementById('searchDropdown');
-                    if (dropdown) {
-                        dropdown.classList.remove('show');
-                    }
-                }
-            });
-        });
-    </script>
-    
     <!-- Login Modal Fragment -->
     <div th:insert="~{fragments/login-modal :: login-modal}"></div>
     
-    <!-- Login Modal Helper Functions -->
-    <script>
-        window.closeLoginModal = function() {
-            const modal = document.getElementById('loginModal');
-            if (modal) {
-                // Wait for Bootstrap to be available
-                if (typeof bootstrap !== 'undefined') {
-                    const bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
-                    bsModal.hide();
-                } else {
-                    // Fallback if Bootstrap not loaded yet
-                    setTimeout(() => {
-                        if (typeof bootstrap !== 'undefined') {
-                            const bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
-                            bsModal.hide();
-                        }
-                    }, 100);
-                }
-            }
-        };
-        
-        // Initialize dropdowns when DOM and Bootstrap are ready
-        document.addEventListener('DOMContentLoaded', function() {
-            // Wait for Bootstrap to be available
-            function initBootstrapDropdowns() {
-                if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
-                    // Initialize all dropdowns manually if needed
-                    const dropdownElements = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-                    dropdownElements.forEach(function(dropdownElement) {
-                        try {
-                            // Bootstrap 5 auto-initializes, but we can ensure it works
-                            new bootstrap.Dropdown(dropdownElement);
-                        } catch (e) {
-                            // Dropdown already initialized, ignore
-                        }
-                    });
-                } else {
-                    // Retry after a short delay
-                    setTimeout(initBootstrapDropdowns, 100);
-                }
-            }
-            
-            initBootstrapDropdowns();
-            
-            // Auto-focus on username input when modal opens
-            document.addEventListener('shown.bs.modal', function(event) {
-                if (event.target.id === 'loginModal') {
-                    const usernameInput = event.target.querySelector('#username');
-                    if (usernameInput) {
-                        usernameInput.focus();
+    <!-- Customer Header Scripts Fragment -->
+    <!-- Note: header-search.js is loaded via resy-scripts fragment -->
+    <th:block th:fragment="customer-header-scripts">
+        <!-- Login Modal Helper Functions -->
+        <script>
+            window.closeLoginModal = function() {
+                const modal = document.getElementById('loginModal');
+                if (modal) {
+                    // Wait for Bootstrap to be available
+                    if (typeof bootstrap !== 'undefined') {
+                        const bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
+                        bsModal.hide();
+                    } else {
+                        // Fallback if Bootstrap not loaded yet
+                        setTimeout(() => {
+                            if (typeof bootstrap !== 'undefined') {
+                                const bsModal = bootstrap.Modal.getInstance(modal) || new bootstrap.Modal(modal);
+                                bsModal.hide();
+                            }
+                        }, 100);
                     }
                 }
-            });
-        });
-    </script>
+            };
+            
+            // Initialize dropdowns when DOM and Bootstrap are ready
+            (function() {
+                function init() {
+                    // Wait for Bootstrap to be available
+                    function initBootstrapDropdowns() {
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                            // Initialize all dropdowns manually if needed
+                            const dropdownElements = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+                            dropdownElements.forEach(function(dropdownElement) {
+                                try {
+                                    // Bootstrap 5 auto-initializes, but we can ensure it works
+                                    new bootstrap.Dropdown(dropdownElement);
+                                } catch (e) {
+                                    // Dropdown already initialized, ignore
+                                }
+                            });
+                        } else {
+                            // Retry after a short delay
+                            setTimeout(initBootstrapDropdowns, 100);
+                        }
+                    }
+                    
+                    initBootstrapDropdowns();
+                    
+                    // Auto-focus on username input when modal opens
+                    document.addEventListener('shown.bs.modal', function(event) {
+                        if (event.target.id === 'loginModal') {
+                            const usernameInput = event.target.querySelector('#username');
+                            if (usernameInput) {
+                                usernameInput.focus();
+                            }
+                        }
+                    });
+                }
+                
+                // Check if DOM is already loaded
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', init);
+                } else {
+                    // DOM already loaded, execute immediately
+                    init();
+                }
+            })();
+        </script>
+    </th:block>
 </body>
 </html>
 

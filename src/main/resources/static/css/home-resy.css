@@ -1505,18 +1505,20 @@ body:not(:has(.mini-header)) .header {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     padding: 1.5rem;
     min-width: 400px;
-    z-index: 1000;
+    z-index: 1050; /* Tăng cao hơn header (1000) để không bị che */
     opacity: 0;
     visibility: hidden;
     transform: translateY(-10px);
     transition: all 0.3s ease;
     margin-top: 0.5rem;
+    pointer-events: none; /* Ẩn tương tác khi không có class show */
 }
 
 .search-dropdown.show {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+    pointer-events: auto; /* Cho phép tương tác khi hiện */
 }
 
 .search-form {
