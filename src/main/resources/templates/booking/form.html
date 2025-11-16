@@ -1230,29 +1230,35 @@
             return fetch(`/api/booking/restaurants/${restaurantId}/dishes`)
                 .then(response => response.json())
                 .then(dishes => {
-                    
-                    // Load dish images
+                    // Load dish images - include ALL dishes, even without images
                     const dishesWithImages = dishes.map(dish => {
+                        // Create placeholder SVG for dishes without images
+                        // Use encodeURIComponent instead of btoa to support Unicode (Vietnamese characters)
+                        let placeholderImage = '';
+                        if (!dish.imageUrl && !dish.mainImageUrl) {
+                            const svgContent = `<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="300" height="200" fill="#f8f9fa"/>
+                                <text x="150" y="100" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" fill="#6c757d">
+                                    ${(dish.name || 'No Image').substring(0, 20)}
+                                </text>
+                            </svg>`;
+                            placeholderImage = `data:image/svg+xml,${encodeURIComponent(svgContent)}`;
+                        }
+                        
                         return {
                             ...dish,
-                            imageUrl: dish.imageUrl || `data:image/svg+xml;base64,${btoa(`
-                                <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
-                                    <rect width="300" height="200" fill="#f8f9fa"/>
-                                    <text x="150" y="100" text-anchor="middle" font-family="Arial" font-size="14" fill="#6c757d">
-                                        ${dish.name || 'No Image'}
-                                    </text>
-                                </svg>
-                            `)}`
+                            imageUrl: dish.imageUrl || dish.mainImageUrl || placeholderImage
                         };
                     });
                     
                     availableDishes = dishesWithImages;
+                    filteredDishes = dishesWithImages; // Initialize filtered dishes
                     
                     // Display menu items directly
                     const menuItemsContainer = document.getElementById('menuItemsContainer');
                     const menuItemsList = document.getElementById('menuItemsList');
                     
-                    if (dishes.length === 0) {
+                    if (dishesWithImages.length === 0) {
                         menuItemsContainer.style.display = 'none';
                     } else {
                         menuItemsContainer.style.display = 'block';
@@ -1264,7 +1270,7 @@
                         // Simulate loading delay for better UX
                         setTimeout(() => {
                             menuItemsList.innerHTML = '';
-                            dishes.forEach(dish => {
+                            dishesWithImages.forEach(dish => {
                                 const dishCard = createDishCard(dish);
                                 menuItemsList.appendChild(dishCard);
                             });
@@ -1591,14 +1597,18 @@
             col.className = 'col-12 mb-2';
             
             const price = new Intl.NumberFormat('vi-VN').format(dish.price) + ' VNĐ';
-            const imageUrl = dish.imageUrl || `data:image/svg+xml;base64,${btoa(`
-                <svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+            
+            // Create placeholder SVG if no image - use encodeURIComponent to support Unicode
+            let imageUrl = dish.imageUrl;
+            if (!imageUrl) {
+                const svgContent = `<svg width="80" height="80" xmlns="http://www.w3.org/2000/svg">
                     <rect width="80" height="80" fill="#f8f9fa"/>
-                    <text x="40" y="40" text-anchor="middle" font-family="Arial" font-size="12" fill="#6c757d">
-                        ${dish.name || 'No Image'}
+                    <text x="40" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#6c757d">
+                        ${(dish.name || 'No Image').substring(0, 15)}
                     </text>
-                </svg>
-            `)}`;
+                </svg>`;
+                imageUrl = `data:image/svg+xml,${encodeURIComponent(svgContent)}`;
+            }
             
             col.innerHTML = `
                 <div class="card dish-card" data-dish-id="${dish.dishId}" data-price="${dish.price}">
