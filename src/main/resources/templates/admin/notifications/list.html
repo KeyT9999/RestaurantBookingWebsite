@@ -1,49 +1,233 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Quản lý thông báo - BookEat Admin</title>
+	
+	<!-- Bootstrap 5 CSS -->
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	
+	<!-- Font Awesome -->
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-	<link th:href="@{/css/luxury.css}" rel="stylesheet">
+	
+	<!-- Google Fonts -->
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+	
+	<!-- Design System -->
+	<link th:href="@{/css/design-system.css}" rel="stylesheet">
+	<link th:href="@{/css/admin-dashboard.css}" rel="stylesheet">
+	
 	<style>
-		/* Page baseline light/blue */
-		.page-bg { background-color: var(--background-light); min-height: 100vh; }
-		.section-title { color: var(--text-dark); font-family: var(--font-heading); font-weight: 700; font-size: 2.2rem; }
+		body {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			background-color: #F9FAFB;
+		}
+		
+		/* Hide search dropdown on admin pages */
+		.header-search {
+			display: none !important;
+		}
+		
+		.search-dropdown {
+			display: none !important;
+		}
+		
+		/* Clean admin header - hide restaurant owner actions */
+		.ds-user-actions a[href*="restaurant-owner/restaurants/create"] {
+			display: none !important;
+		}
+		
+		.ds-user-actions .dropdown.dropdown-hover:not(.ds-admin-dropdown) {
+			display: none !important;
+		}
+		
+		.page-container {
+			max-width: 1400px;
+			margin: 0 auto;
+			padding: 2rem 1rem;
+		}
+		
+		.section-title { 
+			color: #1F2937; 
+			font-family: 'Inter', sans-serif; 
+			font-weight: 700; 
+			font-size: 2rem; 
+		}
 		
 		/* Cards */
-		.filter-card { background: var(--background-white); border: 1px solid var(--border-light); color: var(--text-dark); box-shadow: var(--shadow-card); border-radius: 12px; }
-		.notification-card { background: var(--background-white); border: 1px solid var(--border-light); color: var(--text-dark); border-radius: 12px; transition: var(--transition); box-shadow: var(--shadow-card); }
-		.notification-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: var(--primary-blue); }
+		.filter-card { 
+			background: white; 
+			border: 1px solid #E5E7EB; 
+			color: #1F2937; 
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+			border-radius: 12px; 
+		}
+		
+		.notification-card { 
+			background: white; 
+			border: 1px solid #E5E7EB; 
+			color: #1F2937; 
+			border-radius: 12px; 
+			transition: all 0.2s; 
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+		}
+		
+		.notification-card:hover { 
+			transform: translateY(-2px); 
+			box-shadow: 0 4px 6px rgba(0,0,0,0.15); 
+			border-color: #3B82F6; 
+		}
 		
 		.badge-role, .badge-status { font-size: .8rem; }
-		.table-muted { color: var(--text-light); }
+		.table-muted { color: #6B7280; }
 		
 		/* Forms */
-		.form-control, .form-select { background: var(--background-white); color: var(--text-dark); border: 1px solid var(--border-medium); border-radius: 6px; }
-		.form-control::placeholder { color: var(--text-light); }
-		.form-control:focus, .form-select:focus { background: var(--background-white); color: var(--text-dark); border-color: var(--primary-blue); box-shadow: 0 0 0 0.2rem rgba(74,144,226,.15); }
+		.form-control, .form-select { 
+			background: white; 
+			color: #1F2937; 
+			border: 1px solid #D1D5DB; 
+			border-radius: 6px; 
+		}
+		
+		.form-control::placeholder { color: #9CA3AF; }
+		
+		.form-control:focus, .form-select:focus { 
+			background: white; 
+			color: #1F2937; 
+			border-color: #3B82F6; 
+			box-shadow: 0 0 0 0.2rem rgba(59,130,246,.15); 
+		}
 		
 		/* Buttons */
-		.btn-gold { background: var(--primary-blue); border-color: var(--primary-blue); color: var(--background-white); box-shadow: var(--shadow-button); }
-		.btn-gold:hover { background: var(--primary-blue-dark); border-color: var(--primary-blue-dark); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+		.btn-gold { 
+			background: #3B82F6; 
+			border-color: #3B82F6; 
+			color: white; 
+			box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
+		}
+		
+		.btn-gold:hover { 
+			background: #2563EB; 
+			border-color: #2563EB; 
+			box-shadow: 0 4px 6px rgba(0,0,0,0.15); 
+			transform: translateY(-1px); 
+		}
 		
 		/* Table */
-		.table thead th { border-bottom: 2px solid var(--border-medium); color: var(--text-dark); }
-		.table td { color: var(--text-dark); }
+		.table thead th { 
+			border-bottom: 2px solid #E5E7EB; 
+			color: #6B7280; 
+			font-weight: 600; 
+			font-size: 0.75rem;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			padding: 1rem 0.75rem;
+		}
+		.table td { 
+			color: #1F2937; 
+			vertical-align: middle; 
+			padding: 1rem 0.75rem;
+		}
+		.table { 
+			background: white; 
+			border-radius: 8px; 
+			overflow: hidden; 
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+		}
+		.table tbody tr {
+			border-bottom: 1px solid #F3F4F6;
+			transition: background-color 0.15s;
+		}
+		.table tbody tr:hover {
+			background-color: #F9FAFB;
+		}
 		
 		/* Icon */
-		.notification-icon { width:48px; height:48px; border-radius:50%; background: var(--background-light); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.2rem; }
-		/* Space for fixed header */
-		.admin-content { padding-top: 100px !important; }
+		.notification-icon { 
+			width: 36px; 
+			height: 36px; 
+			border-radius: 8px; 
+			background: #EFF6FF; 
+			color: #3B82F6; 
+			display: flex; 
+			align-items: center; 
+			justify-content: center; 
+			font-weight: 700; 
+			font-size: 0.875rem; 
+			flex-shrink: 0;
+		}
+		
+		.notification-title {
+			font-weight: 600;
+			color: #1F2937;
+			font-size: 0.875rem;
+			margin-bottom: 0.25rem;
+			display: block;
+		}
+		
+		.notification-content {
+			color: #6B7280;
+			font-size: 0.8125rem;
+			line-height: 1.4;
+		}
+		
+		.id-badge {
+			font-family: 'Monaco', 'Courier New', monospace;
+			font-size: 0.75rem;
+			padding: 0.25rem 0.5rem;
+			background: #F3F4F6;
+			color: #6B7280;
+			border-radius: 4px;
+			font-weight: 600;
+		}
+		
+		.type-badge {
+			font-size: 0.75rem;
+			padding: 0.375rem 0.75rem;
+			border-radius: 6px;
+			font-weight: 500;
+		}
+		
+		.recipient-info {
+			font-size: 0.8125rem;
+		}
+		
+		.recipient-badge {
+			display: inline-block;
+			padding: 0.25rem 0.625rem;
+			border-radius: 4px;
+			font-size: 0.75rem;
+			font-weight: 500;
+			margin-bottom: 0.25rem;
+		}
+		
+		.time-info {
+			color: #6B7280;
+			font-size: 0.8125rem;
+		}
+		
+		.time-info i {
+			width: 14px;
+			text-align: center;
+		}
+		
+		/* Page content spacing */
+		main {
+			padding-top: 100px;
+		}
 	</style>
 </head>
-<body class="page-bg">
+<body>
+	<!-- Unified Header -->
+	<div th:with="activeNav='admin-notifications'" 
+	     th:replace="~{fragments/design-system-components :: unified-header}"></div>
+	
+	<!-- Flash Messages -->
 	<div th:insert="fragments/flash :: flash"></div>
-	<div th:replace="~{fragments/header :: site-header}"></div>
-
-	<div class="admin-content py-4">
+	
+	<main>
+		<div class="page-container">
 		<div class="container">
 			<div class="d-flex align-items-center justify-content-between mb-4">
 				<h1 class="section-title mb-0">
@@ -111,75 +295,85 @@
 		</div>
 
 		<!-- Notifications Table -->
-		<div th:if="${!notifications.empty}" class="table-responsive">
-			<table class="table table-striped">
-				<thead>
-					<tr>
-						<th><i class="fas fa-hashtag me-1"></i> ID</th>
-						<th><i class="fas fa-bell me-1"></i> Thông báo</th>
-						<th><i class="fas fa-tag me-1"></i> Loại</th>
-						<th><i class="fas fa-users me-1"></i> Trạng thái</th>
-						<th><i class="fas fa-clock me-1"></i> Thời gian</th>
-						<th><i class="fas fa-user-friends me-1"></i> Người nhận</th>
-						<th><i class="fas fa-cog me-1"></i> Thao tác</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr th:each="notification : ${notifications.content}">
-						<td>
-							<span class="badge bg-secondary" th:text="${notification.id}">1</span>
-						</td>
-						<td>
-							<div class="d-flex align-items-start">
-								<div class="notification-icon me-3" th:text="${notification.type.toString().substring(0,1)}">S</div>
-								<div>
-									<strong class="text-white" th:text="${notification.title}">Tiêu đề</strong>
-									<br>
-									<small class="table-muted" th:text="${#strings.abbreviate(notification.content, 60)}">
-										Nội dung thông báo...
-									</small>
+		<div th:if="${!notifications.empty}" class="card border-0">
+			<div class="table-responsive">
+				<table class="table mb-0">
+					<thead>
+						<tr>
+							<th style="width: 80px;">ID</th>
+							<th style="min-width: 300px;">Thông báo</th>
+							<th style="width: 150px;">Loại</th>
+							<th style="width: 150px;">Thời gian</th>
+							<th style="width: 200px;">Người nhận</th>
+							<th style="width: 80px;" class="text-center">Thao tác</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="notification : ${notifications.content}">
+							<td>
+								<span class="id-badge" th:text="'#' + ${notification.id}">#1</span>
+							</td>
+							<td>
+								<div class="d-flex align-items-start gap-2">
+									<div class="notification-icon" th:text="${notification.type.toString().substring(0,1)}">B</div>
+									<div class="flex-grow-1">
+										<span class="notification-title" th:text="${notification.title}">Tiêu đề thông báo</span>
+										<div class="notification-content" th:text="${#strings.abbreviate(notification.content, 70)}">
+											Nội dung thông báo ngắn gọn...
+										</div>
+									</div>
 								</div>
-							</div>
-						</td>
-						<td>
-							<span class="badge badge-role" 
-								  th:classappend="${notification.type.name()=='SYSTEM_ANNOUNCEMENT'} ? ' bg-primary' : 
-								  (${notification.type.name()=='BOOKING_CONFIRMED'} ? ' bg-success' : 
-								  (${notification.type.name()=='BOOKING_CANCELLED'} ? ' bg-danger' : 
-								  (${notification.type.name()=='PAYMENT_SUCCESS'} ? ' bg-info' : ' bg-warning')))"
-								  th:text="${notification.type}">SYSTEM</span>
-						</td>
-						<td>
-							<span class="badge bg-secondary">Gộp</span>
-						</td>
-						<td>
-							<div class="table-muted small">
-								<div><i class="fas fa-calendar me-1"></i><span th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy')}">01/01/2024</span></div>
-								<div><i class="fas fa-clock me-1"></i><span th:text="${#temporals.format(notification.publishAt, 'HH:mm')}">10:00</span></div>
-							</div>
-						</td>
-						<td>
-							<span class="badge bg-info me-1" title="Tổng người nhận">
-								Tổng: <span th:text="${notification.totalRecipients}">0</span>
-							</span>
-							<span class="badge bg-success me-1" title="Khách hàng">
-								Khách hàng: <span th:text="${notification.customerRecipients}">0</span>
-							</span>
-							<span class="badge bg-primary" title="Chủ nhà hàng">
-								Chủ nhà hàng: <span th:text="${notification.restaurantOwnerRecipients}">0</span>
-							</span>
-						</td>
-						<td>
-							<div class="btn-group btn-group-sm">
+							</td>
+							<td>
+								<span class="type-badge" 
+									  th:classappend="${notification.type.name()=='SYSTEM_ANNOUNCEMENT'} ? ' bg-primary text-white' : 
+									  (${notification.type.name()=='BOOKING_CONFIRMED'} ? ' bg-success text-white' : 
+									  (${notification.type.name()=='BOOKING_CANCELLED'} ? ' bg-danger text-white' : 
+									  (${notification.type.name()=='PAYMENT_SUCCESS'} ? ' bg-info text-white' : ' bg-warning text-dark')))"
+									  th:text="${notification.type.name()=='SYSTEM_ANNOUNCEMENT'} ? 'Hệ thống' : 
+									  (${notification.type.name()=='BOOKING_CONFIRMED'} ? 'Đặt bàn' : 
+									  (${notification.type.name()=='BOOKING_CANCELLED'} ? 'Hủy bàn' : 
+									  (${notification.type.name()=='PAYMENT_SUCCESS'} ? 'Thanh toán' : 'Khác')))">Hệ thống</span>
+							</td>
+							<td>
+								<div class="time-info">
+									<div class="mb-1">
+										<i class="fas fa-calendar-day"></i>
+										<span th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy')}">17/11/2025</span>
+									</div>
+									<div>
+										<i class="fas fa-clock"></i>
+										<span th:text="${#temporals.format(notification.publishAt, 'HH:mm')}">20:27</span>
+									</div>
+								</div>
+							</td>
+							<td>
+								<div class="recipient-info">
+									<div class="recipient-badge bg-primary text-white d-block mb-1">
+										<i class="fas fa-users"></i> 
+										Tổng: <strong th:text="${notification.totalRecipients}">0</strong>
+									</div>
+									<div class="small text-muted">
+										<span class="me-2" title="Khách hàng">
+											<i class="fas fa-user"></i> <span th:text="${notification.customerRecipients}">0</span>
+										</span>
+										<span title="Chủ nhà hàng">
+											<i class="fas fa-store"></i> <span th:text="${notification.restaurantOwnerRecipients}">0</span>
+										</span>
+									</div>
+								</div>
+							</td>
+							<td class="text-center">
 								<a th:href="@{/admin/notifications/{id}(id=${notification.id})}" 
-								   class="btn btn-outline-primary" title="Xem một bản ghi bất kỳ trong đợt gửi">
+								   class="btn btn-sm btn-outline-primary" 
+								   title="Xem chi tiết">
 									<i class="fas fa-eye"></i>
 								</a>
-							</div>
-						</td>
-					</tr>
-				</tbody>
-			</table>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 		</div>
 
 		<!-- Pagination -->
@@ -200,9 +394,13 @@
 				</li>
 			</ul>
 		</nav>
-	</div>
+		</div>
+	</main>
 
-	<div th:replace="~{fragments/footer :: site-footer}"></div>
+	<!-- Footer -->
+	<div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+	
+	<!-- Scripts -->
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 	<script th:src="@{/js/main.js}" defer></script>
 </body>
