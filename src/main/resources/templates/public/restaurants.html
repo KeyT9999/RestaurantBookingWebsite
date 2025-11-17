@@ -2065,17 +2065,22 @@
 
             toastMessage.textContent = message;
 
+            // Remove any existing background classes first
+            toastElement.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-white', 'text-dark');
+
             if (type === 'success') {
                 toastElement.classList.add('bg-success', 'text-white');
             } else if (type === 'error') {
                 toastElement.classList.add('bg-danger', 'text-white');
+            } else if (type === 'warning') {
+                toastElement.classList.add('bg-warning', 'text-dark');
             }
 
             const toast = new bootstrap.Toast(toastElement);
             toast.show();
 
             toastElement.addEventListener('hidden.bs.toast', function () {
-                toastElement.classList.remove('bg-success', 'bg-danger', 'text-white');
+                toastElement.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-white', 'text-dark');
             }, { once: true });
         }
 
@@ -2208,6 +2213,21 @@
         function findNearbyRestaurants() {
             const btn = document.getElementById('nearbyRestaurantsBtn');
             if (!btn) return;
+            
+            // Check if user is authenticated using Thymeleaf security
+            const isAuthenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
+            
+            if (!isAuthenticated) {
+                // Show warning toast
+                showToast('Vui lòng đăng nhập để sử dụng tính năng "Nhà hàng gần bạn"', 'warning');
+                
+                // Redirect to login page after showing toast
+                setTimeout(() => {
+                    window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                }, 1500);
+                
+                return;
+            }
             
             // Disable button and show loading state
             btn.disabled = true;

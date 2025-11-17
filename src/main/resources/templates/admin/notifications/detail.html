@@ -1,33 +1,106 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="vi">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title th:text="${notification.title}">Chi tiết thông báo - BookEat Admin</title>
+	
+	<!-- Bootstrap 5 CSS -->
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	
+	<!-- Font Awesome -->
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-	<link th:href="@{/css/luxury.css}" rel="stylesheet">
+	
+	<!-- Google Fonts -->
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+	
+	<!-- Design System -->
+	<link th:href="@{/css/design-system.css}" rel="stylesheet">
+	<link th:href="@{/css/admin-dashboard.css}" rel="stylesheet">
+	
 	<style>
-		/* Page baseline light/blue */
-		.page-bg { background-color: var(--background-light); min-height:100vh; }
-		.section-title { color: var(--text-dark); font-family: var(--font-heading); font-weight: 700; }
-		.detail-card { background: var(--background-white); border:1px solid var(--border-light); color: var(--text-dark); border-radius:12px; box-shadow: var(--shadow-card); }
-		.notification-icon { width:64px; height:64px; border-radius:50%; background: var(--background-light); color: var(--primary-blue); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.5rem; }
-		.btn-gold { background: var(--primary-blue); border-color: var(--primary-blue); color:#fff; box-shadow: var(--shadow-button); }
-		.btn-gold:hover { background: var(--primary-blue-dark); border-color: var(--primary-blue-dark); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
-		.link-clear { color: var(--text-dark); border-color: var(--border-medium); }
-		.link-clear:hover { background: var(--background-light); }
-		.content-text { color: var(--text-dark); line-height:1.6; }
-		.meta-info { color: var(--text-light); }
-		.admin-content { padding-top: 100px !important; }
+		body {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			background-color: #F9FAFB;
+		}
+		
+		/* Hide search dropdown on admin pages */
+		.header-search {
+			display: none !important;
+		}
+		
+		.search-dropdown {
+			display: none !important;
+		}
+		
+		/* Clean admin header */
+		.ds-user-actions a[href*="restaurant-owner/restaurants/create"] {
+			display: none !important;
+		}
+		
+		.ds-user-actions .dropdown.dropdown-hover:not(.ds-admin-dropdown) {
+			display: none !important;
+		}
+		
+		main {
+			padding-top: 100px;
+		}
+		
+		.section-title { 
+			color: #1F2937; 
+			font-family: 'Inter', sans-serif; 
+			font-weight: 700; 
+		}
+		
+		.detail-card { 
+			background: white; 
+			border: 1px solid #E5E7EB; 
+			color: #1F2937; 
+			border-radius: 12px; 
+			box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+		}
+		
+		.notification-icon { 
+			width: 64px; 
+			height: 64px; 
+			border-radius: 50%; 
+			background: #EFF6FF; 
+			color: #3B82F6; 
+			display: flex; 
+			align-items: center; 
+			justify-content: center; 
+			font-weight: 700; 
+			font-size: 1.5rem; 
+		}
+		
+		.btn-gold { 
+			background: #3B82F6; 
+			border-color: #3B82F6; 
+			color: white; 
+			box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
+		}
+		
+		.btn-gold:hover { 
+			background: #2563EB; 
+			border-color: #2563EB; 
+			box-shadow: 0 4px 6px rgba(0,0,0,0.15); 
+			transform: translateY(-1px); 
+		}
+		
+		.content-text { color: #1F2937; line-height: 1.6; }
+		.meta-info { color: #6B7280; }
 	</style>
 </head>
-<body class="page-bg">
+<body>
+	<!-- Unified Header -->
+	<div th:with="activeNav='admin-notifications'" 
+	     th:replace="~{fragments/design-system-components :: unified-header}"></div>
+	
+	<!-- Flash Messages -->
 	<div th:insert="fragments/flash :: flash"></div>
-	<div th:replace="~{fragments/header :: site-header}"></div>
-
-	<div class="admin-content py-4">
-		<div class="container">
+	
+	<main>
+		<div class="container py-5">
 			<div class="row justify-content-center">
 				<div class="col-lg-8">
 					<div class="d-flex align-items-center mb-4">
@@ -39,62 +112,66 @@
 						</h1>
 					</div>
 
-				<div class="card detail-card">
-					<div class="card-body p-4">
-						<div class="d-flex align-items-start mb-4">
-							<div class="notification-icon me-3" th:text="${notification.type.toString().substring(0,1)}">S</div>
-							<div class="flex-grow-1">
-								<h2 class="text-white mb-2" th:text="${notification.title}">Tiêu đề thông báo</h2>
-								<div class="mb-3">
-									<span class="badge"
-										  th:classappend="${notification.type.name()=='SYSTEM_ANNOUNCEMENT'} ? ' bg-primary' : 
-										  (${notification.type.name()=='BOOKING_CONFIRMED'} ? ' bg-success' : 
-										  (${notification.type.name()=='BOOKING_CANCELLED'} ? ' bg-danger' : 
-										  (${notification.type.name()=='PAYMENT_SUCCESS'} ? ' bg-info' : ' bg-warning')))"
-										  th:text="${notification.type}">SYSTEM</span>
-								</div>
-								<div class="meta-info">
-									<div class="mb-1">
-										<i class="fas fa-calendar me-1"></i>
-										<span th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy')}">01/01/2024</span>
+					<div class="card detail-card">
+						<div class="card-body p-4">
+							<div class="d-flex align-items-start mb-4">
+								<div class="notification-icon me-3" th:text="${notification.type.toString().substring(0,1)}">S</div>
+								<div class="flex-grow-1">
+									<h2 class="mb-2" th:text="${notification.title}">Tiêu đề thông báo</h2>
+									<div class="mb-3">
+										<span class="badge"
+											  th:classappend="${notification.type.name()=='SYSTEM_ANNOUNCEMENT'} ? ' bg-primary' : 
+											  (${notification.type.name()=='BOOKING_CONFIRMED'} ? ' bg-success' : 
+											  (${notification.type.name()=='BOOKING_CANCELLED'} ? ' bg-danger' : 
+											  (${notification.type.name()=='PAYMENT_SUCCESS'} ? ' bg-info' : ' bg-warning')))"
+											  th:text="${notification.type}">SYSTEM</span>
 									</div>
-									<div>
-										<i class="fas fa-clock me-1"></i>
-										<span th:text="${#temporals.format(notification.publishAt, 'HH:mm')}">10:00</span>
+									<div class="meta-info">
+										<div class="mb-1">
+											<i class="fas fa-calendar me-1"></i>
+											<span th:text="${#temporals.format(notification.publishAt, 'dd/MM/yyyy')}">01/01/2024</span>
+										</div>
+										<div>
+											<i class="fas fa-clock me-1"></i>
+											<span th:text="${#temporals.format(notification.publishAt, 'HH:mm')}">10:00</span>
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
-						
-						<div class="content-text mb-4" th:utext="${notification.content}">
-							Nội dung thông báo
-						</div>
-						
-						<div th:if="${notification.linkUrl != null and !notification.linkUrl.isEmpty()}" class="mb-4">
-							<a th:href="${notification.linkUrl}" 
-							   class="btn btn-gold" 
-							   target="_blank">
-								<i class="fas fa-external-link-alt me-1"></i> Xem thêm
-							</a>
-							<div class="small mt-2 text-muted" th:text="${notification.linkUrl}"></div>
-						</div>
+							
+							<div class="content-text mb-4" th:utext="${notification.content}">
+								Nội dung thông báo
+							</div>
+							
+							<div th:if="${notification.linkUrl != null and !notification.linkUrl.isEmpty()}" class="mb-4">
+								<a th:href="${notification.linkUrl}" 
+								   class="btn btn-gold" 
+								   target="_blank">
+									<i class="fas fa-external-link-alt me-1"></i> Xem thêm
+								</a>
+								<div class="small mt-2 text-muted" th:text="${notification.linkUrl}"></div>
+							</div>
 
-						<div class="d-flex justify-content-between align-items-center pt-3 border-top" style="border-color: var(--border-light) !important;">
-							<a th:href="@{/admin/notifications}" class="btn btn-outline-secondary">
-								<i class="fas fa-arrow-left me-1"></i> Quay lại
-							</a>
-							<a th:href="@{/}" class="btn btn-gold">
-								<i class="fas fa-home me-1"></i> Về trang chủ
-							</a>
+							<div class="d-flex justify-content-between align-items-center pt-3 border-top">
+								<a th:href="@{/admin/notifications}" class="btn btn-outline-secondary">
+									<i class="fas fa-arrow-left me-1"></i> Quay lại
+								</a>
+								<a th:href="@{/}" class="btn btn-gold">
+									<i class="fas fa-home me-1"></i> Về trang chủ
+								</a>
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	</div>
+	</main>
 
-	<div th:replace="~{fragments/footer :: site-footer}"></div>
+	<!-- Footer -->
+	<div th:replace="~{fragments/design-system-components :: unified-footer}"></div>
+	
+	<!-- Scripts -->
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 	<script th:src="@{/js/main.js}" defer></script>
 </body>
-</html> 
+</html>
