@@ -44,17 +44,32 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         
         logger.info("🔄 RATE LIMIT RESET - IP: {} after successful login", clientIp);
         
-        // Set a session flag to trigger location prompt once per login session (skip for RESTAURANT_OWNER)
+        // Check if user is restaurant owner or admin
+        boolean isRestaurantOwner = false;
+        boolean isAdmin = false;
         try {
-            boolean isRestaurantOwner = authentication != null &&
-                    authentication.getAuthorities().stream()
-                            .anyMatch(a -> "ROLE_RESTAURANT_OWNER".equals(a.getAuthority()));
-            if (!isRestaurantOwner) {
-                request.getSession(true).setAttribute("SHOW_LOCATION_PROMPT", Boolean.TRUE);
-            } else {
-                request.getSession(true).removeAttribute("SHOW_LOCATION_PROMPT");
+            if (authentication != null && authentication.getAuthorities() != null) {
+                isRestaurantOwner = authentication.getAuthorities().stream()
+                        .anyMatch(a -> "ROLE_RESTAURANT_OWNER".equals(a.getAuthority()));
+                isAdmin = authentication.getAuthorities().stream()
+                        .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+                
+                // Set a session flag to trigger location prompt once per login session (skip for RESTAURANT_OWNER and ADMIN)
+                if (!isRestaurantOwner && !isAdmin) {
+                    request.getSession(true).setAttribute("SHOW_LOCATION_PROMPT", Boolean.TRUE);
+                } else {
+                    request.getSession(true).removeAttribute("SHOW_LOCATION_PROMPT");
+                    if (isRestaurantOwner) {
+                        logger.info("🏪 RESTAURANT OWNER DETECTED - Redirecting to dashboard");
+                    }
+                    if (isAdmin) {
+                        logger.info("👑 ADMIN DETECTED - Redirecting to admin dashboard");
+                    }
+                }
             }
-        } catch (Exception ignore) {}
+        } catch (Exception e) {
+            logger.warn("⚠️ Error checking user role: {}", e.getMessage());
+        }
 
         // Ensure session is committed before redirect
         try {
@@ -65,8 +80,19 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             logger.error("❌ SESSION CREATION FAILED - Error: {}", e.getMessage());
         }
 
-        // Redirect to home page
-        response.sendRedirect("/");
+        // Redirect based on user role
+        if (isRestaurantOwner) {
+            // Redirect restaurant owner directly to dashboard
+            logger.info("🔄 REDIRECTING OWNER TO DASHBOARD - Username: {}", username);
+            response.sendRedirect("/restaurant-owner/dashboard");
+        } else if (isAdmin) {
+            // Redirect admin directly to admin dashboard
+            logger.info("🔄 REDIRECTING ADMIN TO DASHBOARD - Username: {}", username);
+            response.sendRedirect("/admin/dashboard");
+        } else {
+            // Redirect other users to home page
+            response.sendRedirect("/");
+        }
     }
     
     /**
