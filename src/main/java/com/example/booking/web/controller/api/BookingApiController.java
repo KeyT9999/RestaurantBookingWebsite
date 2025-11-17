@@ -329,12 +329,7 @@ public class BookingApiController {
     public ResponseEntity<List<DishWithImageDto>> getDishesByRestaurant(
             @PathVariable("restaurantId") Integer restaurantId) {
         try {
-            System.out.println("🔍 API: Getting dishes with images for restaurant ID: " + restaurantId);
-
             List<DishWithImageDto> dishesWithImages = restaurantService.getDishesByRestaurantWithImages(restaurantId);
-            System.out.println("✅ API: Found " + dishesWithImages.size() + " dishes with images");
-
-            System.out.println("✅ API: Returning " + dishesWithImages.size() + " dish DTOs with images");
             return ResponseEntity.ok(dishesWithImages);
         } catch (Exception e) {
             System.err.println("❌ API Error: " + e.getMessage());

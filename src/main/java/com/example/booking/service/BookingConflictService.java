@@ -301,7 +301,7 @@ public class BookingConflictService {
     
     /**
      * Validate table conflicts - chỉ check overlap trong lịch booking
-     * Displays buffer range of CONFIRMED booking from database (NOT request time)
+     * Displays buffer range of CONFIRMED or COMPLETED booking from database (NOT request time)
      */
     private void validateTableConflicts(Integer tableId, LocalDateTime requestBookingTime, Integer guestCount, List<String> conflicts) {
         RestaurantTable table = restaurantTableRepository.findById(tableId)
@@ -311,18 +311,18 @@ public class BookingConflictService {
         LocalDateTime requestBufferStart = requestBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
         LocalDateTime requestBufferEnd = requestBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
         
-        // Calculate search range to find CONFIRMED bookings from database
+        // Calculate search range to find CONFIRMED or COMPLETED bookings from database
         // whose buffer ranges could overlap with request buffer
         LocalDateTime searchStart = requestBufferStart.minusMinutes(BUFFER_AFTER_MINUTES);
         LocalDateTime searchEnd = requestBufferEnd.plusMinutes(BUFFER_BEFORE_MINUTES);
         
-        // Find CONFIRMED bookings from database whose buffer ranges overlap with request buffer
+        // Find CONFIRMED or COMPLETED bookings from database whose buffer ranges overlap with request buffer
         List<Booking> conflictingBookings = bookingRepository.findTableConflictsInTimeRange(tableId, searchStart, searchEnd);
         
         // Filter to only bookings whose buffer ranges actually overlap
         List<Booking> actualConflicts = conflictingBookings.stream()
             .filter(booking -> {
-                // CONFIRMED booking buffer range from database
+                // CONFIRMED or COMPLETED booking buffer range from database
                 LocalDateTime dbBookingTime = booking.getBookingTime(); // FROM DATABASE
                 LocalDateTime existingBufferStart = dbBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
                 LocalDateTime existingBufferEnd = dbBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
@@ -350,7 +350,7 @@ public class BookingConflictService {
     
     /**
      * Validate table conflicts excluding current booking - chỉ check overlap trong lịch booking
-     * Displays buffer range of CONFIRMED booking from database (NOT request time)
+     * Displays buffer range of CONFIRMED or COMPLETED booking from database (NOT request time)
      */
     private void validateTableConflictsExcludingBooking(Integer tableId, LocalDateTime requestBookingTime, 
                                                       Integer guestCount, Integer excludeBookingId, List<String> conflicts) {
@@ -361,19 +361,19 @@ public class BookingConflictService {
         LocalDateTime requestBufferStart = requestBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
         LocalDateTime requestBufferEnd = requestBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);
         
-        // Calculate search range to find CONFIRMED bookings from database
+        // Calculate search range to find CONFIRMED or COMPLETED bookings from database
         // whose buffer ranges could overlap with request buffer
         LocalDateTime searchStart = requestBufferStart.minusMinutes(BUFFER_AFTER_MINUTES);
         LocalDateTime searchEnd = requestBufferEnd.plusMinutes(BUFFER_BEFORE_MINUTES);
         
-        // Find CONFIRMED bookings from database whose buffer ranges overlap with request buffer
+        // Find CONFIRMED or COMPLETED bookings from database whose buffer ranges overlap with request buffer
         List<Booking> conflictingBookings = bookingRepository.findTableConflictsInTimeRange(tableId, searchStart, searchEnd);
         
         // Filter to only bookings whose buffer ranges actually overlap, excluding the specified booking
         List<Booking> actualConflicts = conflictingBookings.stream()
             .filter(booking -> booking.getBookingId() != excludeBookingId) // Exclude current booking
             .filter(booking -> {
-                // CONFIRMED booking buffer range from database
+                // CONFIRMED or COMPLETED booking buffer range from database
                 LocalDateTime dbBookingTime = booking.getBookingTime(); // FROM DATABASE
                 LocalDateTime existingBufferStart = dbBookingTime.minusMinutes(BUFFER_BEFORE_MINUTES);
                 LocalDateTime existingBufferEnd = dbBookingTime.plusMinutes(BUFFER_AFTER_MINUTES);

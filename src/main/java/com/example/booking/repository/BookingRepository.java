@@ -186,7 +186,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
      * Find table conflicts in time range
      */
     /**
-     * Find CONFIRMED bookings for a table where buffer range overlaps with request buffer range
+     * Find CONFIRMED or COMPLETED bookings for a table where buffer range overlaps with request buffer range
      * 
      * Buffer range for a booking: [bookingTime - 90min, bookingTime + 120min]
      * Request buffer range: [requestStart, requestEnd]
@@ -206,7 +206,7 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     @Query("SELECT DISTINCT b FROM Booking b " +
                   "JOIN b.bookingTables bt " +
                   "WHERE bt.table.tableId = :tableId " +
-                  "AND b.status = 'CONFIRMED' " +
+                  "AND (b.status = 'CONFIRMED' OR b.status = 'COMPLETED') " +
                   "AND b.bookingTime >= :bufferStart " +
                   "AND b.bookingTime <= :bufferEnd " +
                   "ORDER BY b.bookingTime")

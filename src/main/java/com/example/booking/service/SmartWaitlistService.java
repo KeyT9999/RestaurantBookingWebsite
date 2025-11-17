@@ -91,7 +91,7 @@ public class SmartWaitlistService {
     
     /**
      * Find conflicts for a specific table in buffer time
-     * Only checks CONFIRMED bookings
+     * Checks both CONFIRMED and COMPLETED bookings
      * 
      * Logic: Check if buffer ranges overlap
      * - Request booking buffer: [requestTime - 1.5h, requestTime + 2h]
